@@ -58,7 +58,7 @@
             <input id="km" type="number" step="0.1" value="127" />
           </div>
           <div>
-            <label for="pedagio">Pedágio fixo (R$)</label>
+            <label for="pedagio">Pedágio por eixo (R$)</label>
             <input id="pedagio" type="number" step="0.01" value="0" />
           </div>
         </div>
@@ -88,7 +88,8 @@
         </div>
 
         <div class="muted">
-          Fórmula usada aqui: <b>Total = (R$/KM × KM) + Pedágio</b> e depois aplica <b>Margem</b> e <b>ICMS</b> se você preencher.
+          <b>Motorista:</b> ARREDONDAR.PARA.CIMA((((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso)×(1+Margem)×(1+ICMS);0)<br/>
+          <b>Empresa:</b> ARREDONDAR.PARA.CIMA(Motorista/(1-Margem)/(1-ICMS);0)
         </div>
       </div>
 
@@ -122,10 +123,6 @@
   </div>
 
 <script>
-/**
- * ✅ Edite só estes dados se precisar.
- * Números usando ponto como decimal.
- */
 const DATA = [
   { tipo: "9 Rodotrem",        rkm: 8.53,   custoCC: 877.83, peso: 49 },
   { tipo: "9 Rodocaçamba",     rkm: 8.53,   custoCC: 877.83, peso: 47 },
@@ -157,38 +154,55 @@ function fillTipos(){
   sel.value = "0";
 }
 
+function extrairEixos(tipo){
+  // pega o primeiro número no início: "9 Rodotrem" => 9 | "4º eixo..." => 4
+  const m = String(tipo).trim().match(/^(\d+)/);
+  return m ? Number(m[1]) : 0;
+}
+
+function ceil0(n){
+  // equivalente ao ARREDONDAR.PARA.CIMA(x;0)
+  return Math.ceil(n);
+}
+
 function calc(){
   const row = DATA[Number($("tipo").value)];
   const km = Number($("km").value || 0);
-  const pedagio = Number($("pedagio").value || 0);
+  const pedagioPorEixo = Number($("pedagio").value || 0);
+
   const margem = Number($("margem").value || 0) / 100;
   const icms = Number($("icms").value || 0) / 100;
 
-  // Base por KM (usando os R$/KM do tipo)
-  const base = (row.rkm * km) + pedagio;
+  const eixos = extrairEixos(row.tipo);
 
-  // Aplica margem e ICMS como acréscimos
-  const fator = (1 + margem) * (1 + icms);
+  // MOTORISTA:
+  // ARREDONDAR.PARA.CIMA((((rkm*KM)+custoCC+(pedagioEixo*eixos))/peso) * (1+margem) * (1+icms);0)
+  const numerador = (row.rkm * km) + row.custoCC + (pedagioPorEixo * eixos);
+  const base = numerador / row.peso;
+  const freteMotorista = ceil0(base * (1 + margem) * (1 + icms));
 
-  const total = base * fator;
+  // EMPRESA:
+  // ARREDONDAR.PARA.CIMA(FRETE_MOTORISTA/(1-MARGEM)/(1-ICMS);0)
+  const denomMargem = (1 - margem);
+  const denomIcms = (1 - icms);
 
-  // Saídas
+  // Evita divisão por zero (caso alguém coloque 100%)
+  const freteEmpresaRaw =
+    (denomMargem <= 0 || denomIcms <= 0)
+      ? NaN
+      : (freteMotorista / denomMargem / denomIcms);
+
+  const freteEmpresa = Number.isFinite(freteEmpresaRaw) ? ceil0(freteEmpresaRaw) : NaN;
+
+  // Saídas - dados do tipo
   $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
   $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
   $("outPeso").textContent = row.peso.toLocaleString("pt-BR");
-  $("outObs").textContent = row.tipo;
+  $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
-  // Aqui você pode escolher qual regra usar:
-  // Opção 1: mostrar o total calculado igual pra ambos:
-  // $("outMotorista").textContent = money(total);
-  // $("outEmpresa").textContent = money(total);
-
-  // Opção 2 (mais fiel à sua planilha): usar os "fretes" fixos por tipo como base
-  const baseMotorista = (row.motorista * km) + pedagio;
-  const baseEmpresa   = (row.empresa   * km) + pedagio;
-
-  $("outMotorista").textContent = money(baseMotorista * fator);
-  $("outEmpresa").textContent   = money(baseEmpresa   * fator);
+  // Saídas - resultados
+  $("outMotorista").textContent = money(freteMotorista);
+  $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
 }
 
 fillTipos();

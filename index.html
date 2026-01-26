@@ -84,21 +84,29 @@
       font-weight: 700; font-size: 12px;
     }
     .smallBtn:hover { filter: brightness(1.08); }
+
+    .topRight {
+      display:flex; gap:10px; align-items:center;
+    }
   </style>
 </head>
 <body>
 
-  <!-- TELA DE SENHA -->
+  <!-- TELA DE LOGIN -->
   <div class="lock" id="lock">
     <div class="lockCard">
       <p class="lockTitle">🔒 Acesso restrito</p>
-      <div class="muted">Digite a senha para acessar o cálculo.</div>
+      <div class="muted">Selecione seu usuário e digite a senha para acessar.</div>
 
       <div class="lockRow">
+        <label for="lockUser">Usuário</label>
+        <select id="lockUser"></select>
+
         <label for="lockPass">Senha</label>
-        <input id="lockPass" type="password" placeholder="Senha da equipe" />
+        <input id="lockPass" type="password" placeholder="Senha do usuário" />
+
         <button class="btn" id="lockBtn">Entrar</button>
-        <div class="muted" id="lockMsg" style="color:#ffb3b3; display:none;">Senha incorreta.</div>
+        <div class="muted" id="lockMsg" style="color:#ffb3b3; display:none;">Usuário ou senha incorretos.</div>
       </div>
 
       <div class="lockHint">Acesso somente para Nova Frota</div>
@@ -112,7 +120,11 @@
           <h1>🚚 Cálculo de Frete ANTT 6.067/2025 NOVA FROTA TRANSPORTES E LOGISTICA LTDA</h1>
           <div class="muted">Site simples Nova Frota.</div>
         </div>
-        <button class="smallBtn" id="btnLogout">Sair</button>
+
+        <div class="topRight">
+          <span class="pill" id="userBadge">Deslogado</span>
+          <button class="smallBtn" id="btnLogout">Sair</button>
+        </div>
       </div>
     </div>
 
@@ -198,7 +210,7 @@
         </div>
 
         <div class="muted">
-          Os pesos alterados ficam salvos neste navegador. Para voltar ao padrão:
+          Os pesos alterados ficam salvos neste navegador (por usuário). Para voltar ao padrão:
           <div style="margin-top:8px;">
             <button class="btn" id="btnResetPesos" style="margin-top:0;">Resetar pesos</button>
           </div>
@@ -233,15 +245,27 @@
   </div>
 
 <script>
-/* ================== BLOQUEIO SIMPLES ==================
-   Troque a senha aqui embaixo.
-   (isso é só um bloqueio básico para equipe, não é segurança forte)
+/* ================== LOGIN POR USUÁRIO (básico) ==================
+   Troque senhas aqui. (bloqueio leve)
 */
-const TEAM_PASSWORD = "2026"; // <<< TROQUE AQUI
-const AUTH_KEY = "antt_auth_ok_v1";
+const USERS = {
+  "LUZIANO": "2026",
+  "ARIEL": "2026",
+  "VALDEMI": "2026",
+  "LUIS": "2026",
+  "ELIEL": "2026",
+};
 
-function isAuthed(){ return localStorage.getItem(AUTH_KEY) === "1"; }
-function setAuthed(v){ localStorage.setItem(AUTH_KEY, v ? "1" : "0"); }
+const AUTH_KEY = "antt_auth_user_v1";
+
+function getAuthUser(){
+  const u = localStorage.getItem(AUTH_KEY);
+  return u && USERS[u] ? u : null;
+}
+function setAuthUser(user){
+  if (user) localStorage.setItem(AUTH_KEY, user);
+  else localStorage.removeItem(AUTH_KEY);
+}
 
 function showLock(show){
   const lock = document.getElementById("lock");
@@ -249,17 +273,37 @@ function showLock(show){
   if (show){
     lock.classList.add("show");
     app.style.display = "none";
-    const pass = document.getElementById("lockPass");
-    pass.value = "";
-    pass.focus();
+    document.getElementById("lockPass").value = "";
+    document.getElementById("lockMsg").style.display = "none";
+    document.getElementById("lockUser").focus();
   } else {
     lock.classList.remove("show");
     app.style.display = "";
   }
 }
 
+function updateUserBadge(){
+  const u = getAuthUser();
+  const el = document.getElementById("userBadge");
+  if (el) el.textContent = u ? `Logado: ${u}` : "Deslogado";
+}
+
+function getScopePrefix(){
+  const u = getAuthUser() || "DEFAULT";
+  return `antt_${u}_`;
+}
+
 function initAuth(){
-  if (!isAuthed()) showLock(true);
+  const sel = document.getElementById("lockUser");
+  sel.innerHTML = "";
+  Object.keys(USERS).forEach((name) => {
+    const op = document.createElement("option");
+    op.value = name;
+    op.textContent = name;
+    sel.appendChild(op);
+  });
+
+  if (!getAuthUser()) showLock(true);
   else showLock(false);
 
   const btn = document.getElementById("lockBtn");
@@ -267,11 +311,14 @@ function initAuth(){
   const msg = document.getElementById("lockMsg");
 
   function tryLogin(){
-    const ok = pass.value === TEAM_PASSWORD;
+    const user = sel.value;
+    const ok = USERS[user] && pass.value === USERS[user];
     msg.style.display = ok ? "none" : "block";
     if (ok){
-      setAuthed(true);
+      setAuthUser(user);
       showLock(false);
+      updateUserBadge();
+      pesosCustom = loadPesosCustom(); // recarrega pesos do usuário
       calc();
     }
   }
@@ -283,9 +330,12 @@ function initAuth(){
 
   const logout = document.getElementById("btnLogout");
   logout.addEventListener("click", () => {
-    setAuthed(false);
+    setAuthUser(null);
+    updateUserBadge();
     showLock(true);
   });
+
+  updateUserBadge();
 }
 
 /* ================== APP ================== */
@@ -329,12 +379,14 @@ function ceil0(n){
   return Math.ceil(n);
 }
 
-/* ====== PESO EDITÁVEL (salvo no navegador) ====== */
-const PESOS_KEY = "antt_pesos_custom_v1";
+/* ====== PESO EDITÁVEL (salvo no navegador, por usuário) ====== */
+function pesosKey(){
+  return getScopePrefix() + "pesos_custom_v1";
+}
 
 function loadPesosCustom(){
   try {
-    const raw = localStorage.getItem(PESOS_KEY);
+    const raw = localStorage.getItem(pesosKey());
     const obj = raw ? JSON.parse(raw) : {};
     return (obj && typeof obj === "object") ? obj : {};
   } catch (e) {
@@ -343,10 +395,10 @@ function loadPesosCustom(){
 }
 
 function savePesosCustom(obj){
-  localStorage.setItem(PESOS_KEY, JSON.stringify(obj));
+  localStorage.setItem(pesosKey(), JSON.stringify(obj));
 }
 
-let pesosCustom = loadPesosCustom();
+let pesosCustom = {};
 
 function getPeso(row){
   const v = pesosCustom[row.tipo];
@@ -402,7 +454,7 @@ function renderTabelaPesos(){
 
 function resetPesos(){
   pesosCustom = {};
-  localStorage.removeItem(PESOS_KEY);
+  localStorage.removeItem(pesosKey());
   calc();
 }
 
@@ -461,7 +513,7 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
 }
 
 function calc(){
-  if (!isAuthed()) return;
+  if (!getAuthUser()) return;
 
   const row = DATA[Number($("tipo").value)];
   const km = Number($("km").value || 0);
@@ -495,7 +547,11 @@ $("btnCalc").addEventListener("click", calc);
 $("tipo").addEventListener("change", calc);
 ["km","pedagio","margem","icms"].forEach(id => $(id).addEventListener("input", calc));
 
-if (isAuthed()) calc();
+/* se já estiver logado, carrega os pesos do usuário e calcula */
+if (getAuthUser()){
+  pesosCustom = loadPesosCustom();
+  calc();
+}
 </script>
 </body>
 </html>

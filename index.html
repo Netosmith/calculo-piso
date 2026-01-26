@@ -53,13 +53,67 @@
       padding: 8px 10px;
       border-radius: 10px;
     }
+
+    /* ====== BLOQUEIO SIMPLES (login) ====== */
+    .lock {
+      position: fixed; inset: 0;
+      background: rgba(11,16,32,.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+    .lock.show { display: flex; }
+    .lockCard {
+      width: min(520px, 100%);
+      background: #111a33;
+      border: 1px solid #22305e;
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .lockTitle { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
+    .lockRow { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+    .lockHint { font-size: 12px; opacity: .8; margin-top: 8px; }
+    .topbar {
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+    }
+    .smallBtn {
+      padding: 8px 10px; border-radius: 12px;
+      border: 1px solid #3a53a8; background: #1b2a5a; color: #e9eefc; cursor:pointer;
+      font-weight: 700; font-size: 12px;
+    }
+    .smallBtn:hover { filter: brightness(1.08); }
   </style>
 </head>
 <body>
-  <div class="wrap">
+
+  <!-- TELA DE SENHA -->
+  <div class="lock" id="lock">
+    <div class="lockCard">
+      <p class="lockTitle">🔒 Acesso restrito</p>
+      <div class="muted">Digite a senha para acessar o cálculo.</div>
+
+      <div class="lockRow">
+        <label for="lockPass">Senha</label>
+        <input id="lockPass" type="password" placeholder="Senha da equipe" />
+        <button class="btn" id="lockBtn">Entrar</button>
+        <div class="muted" id="lockMsg" style="color:#ffb3b3; display:none;">Senha incorreta.</div>
+      </div>
+
+      <div class="lockHint">Obs.: isso é um bloqueio simples (para equipe), não é segurança forte.</div>
+    </div>
+  </div>
+
+  <div class="wrap" id="app">
     <div class="card">
-      <h1>🚚 Cálculo de Frete ANTT 6.067/2025 NOVA FROTA TRANSPORTES E LOGISTICA LTDA</h1>
-      <div class="muted">Site simples Nova Frota.</div>
+      <div class="topbar">
+        <div>
+          <h1>🚚 Cálculo de Frete ANTT 6.067/2025 NOVA FROTA TRANSPORTES E LOGISTICA LTDA</h1>
+          <div class="muted">Site simples Nova Frota.</div>
+        </div>
+        <button class="smallBtn" id="btnLogout">Sair</button>
+      </div>
     </div>
 
     <div style="height:14px"></div>
@@ -108,7 +162,7 @@
 
         <div class="muted">
           <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso;0)<br/>
-          <b>Empresa:</b> Motorista×(1+Margem)×(1+ICMS) <span style="opacity:.9">(sem arredondar)</span>
+          <b>Empresa:</b> Motorista/(1-Margem)/(1-ICMS) <span style="opacity:.9">(sem arredondar)</span>
         </div>
       </div>
 
@@ -129,7 +183,6 @@
           </table>
         </div>
 
-        <!-- NOVO: tabela de pesos editável -->
         <div class="pill" style="margin-top:12px;">Peso médio (editável)</div>
 
         <div style="overflow:auto; margin-top:10px; border:1px solid #2b3a72; border-radius:12px; max-height: 260px;">
@@ -180,6 +233,62 @@
   </div>
 
 <script>
+/* ================== BLOQUEIO SIMPLES ==================
+   Troque a senha aqui embaixo.
+   (isso é só um bloqueio básico para equipe, não é segurança forte)
+*/
+const TEAM_PASSWORD = "novafrota123"; // <<< TROQUE AQUI
+const AUTH_KEY = "antt_auth_ok_v1";
+
+function isAuthed(){ return localStorage.getItem(AUTH_KEY) === "1"; }
+function setAuthed(v){ localStorage.setItem(AUTH_KEY, v ? "1" : "0"); }
+
+function showLock(show){
+  const lock = document.getElementById("lock");
+  const app = document.getElementById("app");
+  if (show){
+    lock.classList.add("show");
+    app.style.display = "none";
+    const pass = document.getElementById("lockPass");
+    pass.value = "";
+    pass.focus();
+  } else {
+    lock.classList.remove("show");
+    app.style.display = "";
+  }
+}
+
+function initAuth(){
+  if (!isAuthed()) showLock(true);
+  else showLock(false);
+
+  const btn = document.getElementById("lockBtn");
+  const pass = document.getElementById("lockPass");
+  const msg = document.getElementById("lockMsg");
+
+  function tryLogin(){
+    const ok = pass.value === TEAM_PASSWORD;
+    msg.style.display = ok ? "none" : "block";
+    if (ok){
+      setAuthed(true);
+      showLock(false);
+      calc();
+    }
+  }
+
+  btn.addEventListener("click", tryLogin);
+  pass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tryLogin();
+  });
+
+  const logout = document.getElementById("btnLogout");
+  logout.addEventListener("click", () => {
+    setAuthed(false);
+    showLock(true);
+  });
+}
+
+/* ================== APP ================== */
 const DATA = [
   { tipo: "9 Rodotrem",        rkm: 8.53,   custoCC: 877.83, peso: 49 },
   { tipo: "9 Rodocaçamba",     rkm: 8.53,   custoCC: 877.83, peso: 47 },
@@ -298,9 +407,9 @@ function resetPesos(){
 }
 
 /**
- * ✅ REGRA ATUALIZADA:
+ * ✅ REGRA:
  * Motorista = ceil( ((rkm*km) + custoCC + (pedagioPorEixo*eixos)) / peso )
- * Empresa   = Motorista * (1+margem) * (1+icms)   // SEM ARREDONDAR
+ * Empresa   = Motorista / (1-margem) / (1-icms)   // sem arredondar
  */
 function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const eixos = extrairEixos(row.tipo);
@@ -310,11 +419,8 @@ function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const pesoUsado = getPeso(row);
   const base = numerador / pesoUsado;
 
-  // Motorista: arredonda pra cima
   const freteMotorista = ceil0(base);
 
-  // Empresa: NÃO arredonda e usa margem como divisor (igual planilha)
-  // Empresa = Motorista / (1 - margem) / (1 - icms)
   const denomMargem = (1 - margem);
   const denomIcms = (1 - icms);
 
@@ -341,7 +447,7 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
     tr.innerHTML = `
       <td style="white-space:nowrap">${row.tipo}</td>
       <td class="num motorCol">${money(r.freteMotorista)}</td>
-      <td class="num empresaCol">${money(r.freteEmpresa)}</td>
+      <td class="num empresaCol">${Number.isFinite(r.freteEmpresa) ? money(r.freteEmpresa) : "Erro"}</td>
       <td class="num" style="opacity:.85">${r.eixos}</td>
     `;
 
@@ -355,6 +461,8 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
 }
 
 function calc(){
+  if (!isAuthed()) return;
+
   const row = DATA[Number($("tipo").value)];
   const km = Number($("km").value || 0);
   const pedagioPorEixo = Number($("pedagio").value || 0);
@@ -370,12 +478,14 @@ function calc(){
   $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
   $("outMotorista").textContent = money(freteMotorista);
-  $("outEmpresa").textContent = money(freteEmpresa);
+  $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
 
   renderTabela(km, pedagioPorEixo, margem, icms);
   renderTabelaPesos();
 }
 
+/* init */
+initAuth();
 fillTipos();
 
 const btnReset = $("btnResetPesos");
@@ -385,7 +495,7 @@ $("btnCalc").addEventListener("click", calc);
 $("tipo").addEventListener("change", calc);
 ["km","pedagio","margem","icms"].forEach(id => $(id).addEventListener("input", calc));
 
-calc();
+if (isAuthed()) calc();
 </script>
 </body>
 </html>

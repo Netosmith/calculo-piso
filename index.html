@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cálculo de Frete ANTT 6.067/2025</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #0b1020; color: #e9eefc; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 20px; }
+    .card { background: #111a33; border: 1px solid #22305e; border-radius: 14px; padding: 16px; }
+    h1 { margin: 0 0 10px; font-size: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 860px){ .grid { grid-template-columns: 1.1fr 0.9fr; } }
+    label { display:block; font-size: 12px; opacity: .9; margin: 10px 0 6px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid #2b3a72; background: #0d1430; color: #e9eefc;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #5b7cfa; box-shadow: 0 0 0 3px rgba(91,124,250,.25); }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .kpi { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    .k { background:#0d1430; border:1px solid #2b3a72; border-radius: 12px; padding: 12px; }
+    .k .t { font-size: 12px; opacity: .85; }
+    .k .v { font-size: 18px; font-weight: 700; margin-top: 6px; }
+    .muted { opacity: .75; font-size: 12px; margin-top: 8px; }
+    .btn {
+      margin-top: 12px; width: 100%; padding: 10px 12px; border-radius: 12px;
+      border: 1px solid #3a53a8; background: #1b2a5a; color: #e9eefc; cursor:pointer;
+      font-weight: 700;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .pill { display:inline-block; font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      background: rgba(91,124,250,.18); border: 1px solid rgba(91,124,250,.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>🚚 Cálculo de Frete ANTT 6.067/2025</h1>
+      <div class="muted">Site simples (GitHub Pages) usando somente os dados da sua planilha.</div>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="pill">Entrada</div>
+
+        <label for="tipo">Tipo</label>
+        <select id="tipo"></select>
+
+        <div class="row">
+          <div>
+            <label for="km">KM total</label>
+            <input id="km" type="number" step="0.1" value="127" />
+          </div>
+          <div>
+            <label for="pedagio">Pedágio fixo (R$)</label>
+            <input id="pedagio" type="number" step="0.01" value="0" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="margem">Margem (%)</label>
+            <input id="margem" type="number" step="0.01" value="5" />
+          </div>
+          <div>
+            <label for="icms">ICMS (%) (opcional)</label>
+            <input id="icms" type="number" step="0.01" value="0" />
+          </div>
+        </div>
+
+        <button class="btn" id="btnCalc">Calcular</button>
+
+        <div class="kpi">
+          <div class="k">
+            <div class="t">Frete Motorista (R$)</div>
+            <div class="v" id="outMotorista">-</div>
+          </div>
+          <div class="k">
+            <div class="t">Frete Empresa (R$)</div>
+            <div class="v" id="outEmpresa">-</div>
+          </div>
+        </div>
+
+        <div class="muted">
+          Fórmula usada aqui: <b>Total = (R$/KM × KM) + Pedágio</b> e depois aplica <b>Margem</b> e <b>ICMS</b> se você preencher.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="pill">Dados do Tipo</div>
+
+        <div class="kpi">
+          <div class="k">
+            <div class="t">R$ / KM</div>
+            <div class="v" id="outRkm">-</div>
+          </div>
+          <div class="k">
+            <div class="t">Custo CC</div>
+            <div class="v" id="outCC">-</div>
+          </div>
+          <div class="k">
+            <div class="t">Peso médio</div>
+            <div class="v" id="outPeso">-</div>
+          </div>
+          <div class="k">
+            <div class="t">Observação</div>
+            <div class="v" style="font-size:14px; font-weight:600" id="outObs">-</div>
+          </div>
+        </div>
+
+        <div class="muted">
+          Se você quiser, depois dá pra colocar um botão “Exportar PDF” ou “Salvar histórico”.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/**
+ * ✅ Edite só estes dados se precisar.
+ * Números usando ponto como decimal.
+ */
+const DATA = [
+  { tipo: "9 Rodotrem",        rkm: 8.53,   custoCC: 877.83, peso: 49, motorista: 41, empresa: 44 },
+  { tipo: "9 Rodocaçamba",     rkm: 8.53,   custoCC: 877.83, peso: 47, motorista: 42, empresa: 45 },
+  { tipo: "8 eixos Graneleiro",rkm: 7.4505, custoCC: 792.30, peso: 45, motorista: 39, empresa: 42 },
+  { tipo: "8 eixos Caçamba",   rkm: 7.4505, custoCC: 792.30, peso: 43, motorista: 41, empresa: 44 },
+  { tipo: "4º eixo Graneleiro",rkm: 7.4505, custoCC: 792.30, peso: 39, motorista: 45, empresa: 48 },
+  { tipo: "4º eixo Caçamba",   rkm: 7.4505, custoCC: 792.30, peso: 37, motorista: 47, empresa: 50 },
+  { tipo: "7 Bitrem",          rkm: 7.4505, custoCC: 792.30, peso: 37, motorista: 47, empresa: 50 },
+  { tipo: "7 Biçamba",         rkm: 7.4505, custoCC: 792.30, peso: 35, motorista: 50, empresa: 53 },
+  { tipo: "6 LS Graneleiro",   rkm: 6.8058, custoCC: 656.76, peso: 31, motorista: 50, empresa: 53 },
+  { tipo: "6 LS Caçamba",      rkm: 6.8058, custoCC: 656.76, peso: 29, motorista: 53, empresa: 56 },
+  { tipo: "5 LS Graneleiro",   rkm: 6.1859, custoCC: 642.10, peso: 26, motorista: 55, empresa: 58 },
+  { tipo: "5 LS TOCO Caçamba", rkm: 6.1859, custoCC: 642.10, peso: 25, motorista: 58, empresa: 62 },
+];
+
+const $ = (id) => document.getElementById(id);
+const money = (n) => n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+const numpt = (n, d=4) => n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function fillTipos(){
+  const sel = $("tipo");
+  sel.innerHTML = "";
+  DATA.forEach((r, idx) => {
+    const op = document.createElement("option");
+    op.value = idx;
+    op.textContent = r.tipo;
+    sel.appendChild(op);
+  });
+  sel.value = "0";
+}
+
+function calc(){
+  const row = DATA[Number($("tipo").value)];
+  const km = Number($("km").value || 0);
+  const pedagio = Number($("pedagio").value || 0);
+  const margem = Number($("margem").value || 0) / 100;
+  const icms = Number($("icms").value || 0) / 100;
+
+  // Base por KM (usando os R$/KM do tipo)
+  const base = (row.rkm * km) + pedagio;
+
+  // Aplica margem e ICMS como acréscimos
+  const fator = (1 + margem) * (1 + icms);
+
+  const total = base * fator;
+
+  // Saídas
+  $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
+  $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
+  $("outPeso").textContent = row.peso.toLocaleString("pt-BR");
+  $("outObs").textContent = row.tipo;
+
+  // Aqui você pode escolher qual regra usar:
+  // Opção 1: mostrar o total calculado igual pra ambos:
+  // $("outMotorista").textContent = money(total);
+  // $("outEmpresa").textContent = money(total);
+
+  // Opção 2 (mais fiel à sua planilha): usar os "fretes" fixos por tipo como base
+  const baseMotorista = (row.motorista * km) + pedagio;
+  const baseEmpresa   = (row.empresa   * km) + pedagio;
+
+  $("outMotorista").textContent = money(baseMotorista * fator);
+  $("outEmpresa").textContent   = money(baseEmpresa   * fator);
+}
+
+fillTipos();
+$("btnCalc").addEventListener("click", calc);
+$("tipo").addEventListener("change", calc);
+["km","pedagio","margem","icms"].forEach(id => $(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>

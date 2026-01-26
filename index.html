@@ -108,7 +108,7 @@
 
         <div class="muted">
           <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso;0)<br/>
-          <b>Empresa:</b> ARREDONDAR.PARA.CIMA(Motorista×(1+Margem)×(1+ICMS);0)
+          <b>Empresa:</b> Motorista×(1+Margem)×(1+ICMS) <span style="opacity:.9">(sem arredondar)</span>
         </div>
       </div>
 
@@ -298,9 +298,9 @@ function resetPesos(){
 }
 
 /**
- * ✅ REGRA:
+ * ✅ REGRA ATUALIZADA:
  * Motorista = ceil( ((rkm*km) + custoCC + (pedagioPorEixo*eixos)) / peso )
- * Empresa   = ceil( Motorista * (1+margem) * (1+icms) )
+ * Empresa   = Motorista * (1+margem) * (1+icms)   // SEM ARREDONDAR
  */
 function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const eixos = extrairEixos(row.tipo);
@@ -311,7 +311,7 @@ function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const base = numerador / pesoUsado;
 
   const freteMotorista = ceil0(base);
-  const freteEmpresa = ceil0(freteMotorista * (1 + margem) * (1 + icms));
+  const freteEmpresa = freteMotorista * (1 + margem) * (1 + icms); // sem arredondar
 
   return { eixos, pesoUsado, freteMotorista, freteEmpresa };
 }

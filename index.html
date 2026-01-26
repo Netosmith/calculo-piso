@@ -99,8 +99,8 @@
         </div>
 
         <div class="muted">
-          <b>Motorista:</b> ARREDONDAR.PARA.CIMA((((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso)×(1+Margem)×(1+ICMS);0)<br/>
-          <b>Empresa:</b> ARREDONDAR.PARA.CIMA(Motorista/(1-Margem)/(1-ICMS);0)
+          <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso;0)<br/>
+          <b>Empresa:</b> ARREDONDAR.PARA.CIMA(Motorista×(1+Margem)×(1+ICMS);0)
         </div>
       </div>
 
@@ -190,23 +190,19 @@ function ceil0(n){
   return Math.ceil(n);
 }
 
+/**
+ * ✅ NOVA REGRA (igual você definiu):
+ * Motorista = ceil( ((rkm*km) + custoCC + (pedagioPorEixo*eixos)) / peso )
+ * Empresa   = ceil( Motorista * (1+margem) * (1+icms) )
+ */
 function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const eixos = extrairEixos(row.tipo);
 
   const numerador = (row.rkm * km) + row.custoCC + (pedagioPorEixo * eixos);
   const base = numerador / row.peso;
 
-  const freteMotorista = ceil0(base * (1 + margem) * (1 + icms));
-
-  const denomMargem = (1 - margem);
-  const denomIcms = (1 - icms);
-
-  const freteEmpresaRaw =
-    (denomMargem <= 0 || denomIcms <= 0)
-      ? NaN
-      : (freteMotorista / denomMargem / denomIcms);
-
-  const freteEmpresa = Number.isFinite(freteEmpresaRaw) ? ceil0(freteEmpresaRaw) : NaN;
+  const freteMotorista = ceil0(base);
+  const freteEmpresa = ceil0(freteMotorista * (1 + margem) * (1 + icms));
 
   return { eixos, freteMotorista, freteEmpresa };
 }
@@ -226,7 +222,7 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
     tr.innerHTML = `
       <td style="white-space:nowrap">${row.tipo}</td>
       <td class="num motorCol">${money(r.freteMotorista)}</td>
-      <td class="num empresaCol">${Number.isFinite(r.freteEmpresa) ? money(r.freteEmpresa) : "Erro"}</td>
+      <td class="num empresaCol">${money(r.freteEmpresa)}</td>
       <td class="num" style="opacity:.85">${r.eixos}</td>
     `;
 
@@ -255,7 +251,7 @@ function calc(){
   $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
   $("outMotorista").textContent = money(freteMotorista);
-  $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
+  $("outEmpresa").textContent = money(freteEmpresa);
 
   renderTabela(km, pedagioPorEixo, margem, icms);
 }

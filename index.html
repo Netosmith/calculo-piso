@@ -34,6 +34,17 @@
     .pill { display:inline-block; font-size: 12px; padding: 4px 10px; border-radius: 999px;
       background: rgba(91,124,250,.18); border: 1px solid rgba(91,124,250,.35);
     }
+
+    /* tabela */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #1f2b55; font-size: 13px; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; opacity: .9; background: #0d1430; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; }
+    tr.rowItem { cursor: pointer; }
+    tr.rowItem:hover { background: rgba(91,124,250,.10); }
+    tr.active { background: rgba(91,124,250,.16); }
+    .motorCol { color: #ffb3b3; font-weight: 700; }
+    .empresaCol { color: #b7d4ff; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -94,7 +105,23 @@
       </div>
 
       <div class="card">
-        <div class="pill">Dados do Tipo</div>
+        <div class="pill">Tabela de Fretes (por tipo)</div>
+
+        <div style="overflow:auto; margin-top:10px; border:1px solid #2b3a72; border-radius:12px; max-height: 420px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th class="num">Frete Motorista</th>
+                <th class="num">Frete Empresa</th>
+                <th class="num">Eixos</th>
+              </tr>
+            </thead>
+            <tbody id="tblFretes"></tbody>
+          </table>
+        </div>
+
+        <div class="pill" style="margin-top:14px;">Dados do Tipo selecionado</div>
 
         <div class="kpi">
           <div class="k">
@@ -116,7 +143,7 @@
         </div>
 
         <div class="muted">
-          Se você quiser, depois dá pra colocar um botão “Exportar PDF” ou “Salvar histórico”.
+          Clique em uma linha da tabela para selecionar o tipo.
         </div>
       </div>
     </div>
@@ -155,14 +182,61 @@ function fillTipos(){
 }
 
 function extrairEixos(tipo){
-  // pega o primeiro número no início: "9 Rodotrem" => 9 | "4º eixo..." => 4
   const m = String(tipo).trim().match(/^(\d+)/);
   return m ? Number(m[1]) : 0;
 }
 
 function ceil0(n){
-  // equivalente ao ARREDONDAR.PARA.CIMA(x;0)
   return Math.ceil(n);
+}
+
+function calcFretes(row, km, pedagioPorEixo, margem, icms){
+  const eixos = extrairEixos(row.tipo);
+
+  const numerador = (row.rkm * km) + row.custoCC + (pedagioPorEixo * eixos);
+  const base = numerador / row.peso;
+
+  const freteMotorista = ceil0(base * (1 + margem) * (1 + icms));
+
+  const denomMargem = (1 - margem);
+  const denomIcms = (1 - icms);
+
+  const freteEmpresaRaw =
+    (denomMargem <= 0 || denomIcms <= 0)
+      ? NaN
+      : (freteMotorista / denomMargem / denomIcms);
+
+  const freteEmpresa = Number.isFinite(freteEmpresaRaw) ? ceil0(freteEmpresaRaw) : NaN;
+
+  return { eixos, freteMotorista, freteEmpresa };
+}
+
+function renderTabela(km, pedagioPorEixo, margem, icms){
+  const tbody = $("tblFretes");
+  tbody.innerHTML = "";
+
+  const idxSel = Number($("tipo").value);
+
+  DATA.forEach((row, idx) => {
+    const r = calcFretes(row, km, pedagioPorEixo, margem, icms);
+
+    const tr = document.createElement("tr");
+    tr.className = "rowItem" + (idx === idxSel ? " active" : "");
+
+    tr.innerHTML = `
+      <td style="white-space:nowrap">${row.tipo}</td>
+      <td class="num motorCol">${money(r.freteMotorista)}</td>
+      <td class="num empresaCol">${Number.isFinite(r.freteEmpresa) ? money(r.freteEmpresa) : "Erro"}</td>
+      <td class="num" style="opacity:.85">${r.eixos}</td>
+    `;
+
+    tr.addEventListener("click", () => {
+      $("tipo").value = String(idx);
+      calc();
+    });
+
+    tbody.appendChild(tr);
+  });
 }
 
 function calc(){
@@ -173,36 +247,17 @@ function calc(){
   const margem = Number($("margem").value || 0) / 100;
   const icms = Number($("icms").value || 0) / 100;
 
-  const eixos = extrairEixos(row.tipo);
+  const { eixos, freteMotorista, freteEmpresa } = calcFretes(row, km, pedagioPorEixo, margem, icms);
 
-  // MOTORISTA:
-  // ARREDONDAR.PARA.CIMA((((rkm*KM)+custoCC+(pedagioEixo*eixos))/peso) * (1+margem) * (1+icms);0)
-  const numerador = (row.rkm * km) + row.custoCC + (pedagioPorEixo * eixos);
-  const base = numerador / row.peso;
-  const freteMotorista = ceil0(base * (1 + margem) * (1 + icms));
-
-  // EMPRESA:
-  // ARREDONDAR.PARA.CIMA(FRETE_MOTORISTA/(1-MARGEM)/(1-ICMS);0)
-  const denomMargem = (1 - margem);
-  const denomIcms = (1 - icms);
-
-  // Evita divisão por zero (caso alguém coloque 100%)
-  const freteEmpresaRaw =
-    (denomMargem <= 0 || denomIcms <= 0)
-      ? NaN
-      : (freteMotorista / denomMargem / denomIcms);
-
-  const freteEmpresa = Number.isFinite(freteEmpresaRaw) ? ceil0(freteEmpresaRaw) : NaN;
-
-  // Saídas - dados do tipo
   $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
   $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
   $("outPeso").textContent = row.peso.toLocaleString("pt-BR");
   $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
-  // Saídas - resultados
   $("outMotorista").textContent = money(freteMotorista);
   $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
+
+  renderTabela(km, pedagioPorEixo, margem, icms);
 }
 
 fillTipos();

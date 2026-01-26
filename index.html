@@ -310,8 +310,18 @@ function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const pesoUsado = getPeso(row);
   const base = numerador / pesoUsado;
 
+  // Motorista: arredonda pra cima
   const freteMotorista = ceil0(base);
-  const freteEmpresa = freteMotorista * (1 + margem) * (1 + icms); // sem arredondar
+
+  // Empresa: NÃO arredonda e usa margem como divisor (igual planilha)
+  // Empresa = Motorista / (1 - margem) / (1 - icms)
+  const denomMargem = (1 - margem);
+  const denomIcms = (1 - icms);
+
+  const freteEmpresa =
+    (denomMargem <= 0 || denomIcms <= 0)
+      ? NaN
+      : (freteMotorista / denomMargem / denomIcms);
 
   return { eixos, pesoUsado, freteMotorista, freteEmpresa };
 }

@@ -69,7 +69,7 @@
 
     /* inputs da tabela de peso */
     .pesoInput {
-      max-width: 120px;
+      max-width: 140px;
       text-align: right;
       padding: 8px 10px;
       border-radius: 10px;
@@ -368,6 +368,7 @@ function initAuth(){
 }
 
 /* ================== APP ================== */
+/* ✅ mantém os pesos padrão aqui (para resetar) */
 const DATA = [
   { tipo: "9 Rodotrem",        rkm: 8.53,   custoCC: 877.83, peso: 49 },
   { tipo: "9 Rodocaçamba",     rkm: 8.53,   custoCC: 877.83, peso: 47 },
@@ -386,6 +387,21 @@ const DATA = [
 const $ = (id) => document.getElementById(id);
 const money = (n) => n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
 const numpt = (n, d=4) => n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+/* ✅ util: aceita "49,560" ou "49.560" e retorna número */
+function parsePtNumber(value){
+  const raw = String(value ?? "").trim()
+    .replace(/\s+/g, "")
+    .replace(".", "")     // se alguém digitar "1.234,56" (milhar), remove 1º ponto
+    .replace(",", ".");   // vírgula vira decimal
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/* ✅ util: formata com 3 casas e vírgula */
+function fmtPeso(n){
+  return Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+}
 
 function fillTipos(){
   const sel = $("tipo");
@@ -432,7 +448,7 @@ let pesosCustom = {};
 function getPeso(row){
   const v = pesosCustom[row.tipo];
   const n = Number(v);
-  return (Number.isFinite(n) && n > 0) ? n : row.peso;
+  return (Number.isFinite(n) && n > 0) ? n : row.peso; /* ✅ se não tiver custom, usa o padrão do DATA */
 }
 
 function renderTabelaPesos(){
@@ -454,18 +470,21 @@ function renderTabelaPesos(){
         <input
           class="pesoInput"
           data-tipo="${row.tipo}"
-          type="number"
-          step="1"
-          min="1"
-          value="${pesoAtual}"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          placeholder="${fmtPeso(row.peso)}"
+          value="${fmtPeso(pesoAtual)}"
         />
       </td>
     `;
 
     const input = tr.querySelector("input[data-tipo]");
+
+    /* ✅ aceita vírgula, deixa digitar livre e converte no cálculo */
     input.addEventListener("input", (ev) => {
       const tipo = ev.target.getAttribute("data-tipo");
-      const val = Number(ev.target.value);
+      const val = parsePtNumber(ev.target.value);
 
       if (Number.isFinite(val) && val > 0) {
         pesosCustom[tipo] = val;
@@ -477,10 +496,18 @@ function renderTabelaPesos(){
       calc();
     });
 
+    /* ✅ ao sair do campo, “ajeita” para 3 casas (49,560) */
+    input.addEventListener("blur", (ev) => {
+      const val = parsePtNumber(ev.target.value);
+      if (Number.isFinite(val) && val > 0) ev.target.value = fmtPeso(val);
+      else ev.target.value = fmtPeso(getPeso(row));
+    });
+
     tbody.appendChild(tr);
   });
 }
 
+/* ✅ reset volta ao padrão do DATA (que continua intacto) */
 function resetPesos(){
   pesosCustom = {};
   localStorage.removeItem(pesosKey());
@@ -555,7 +582,10 @@ function calc(){
 
   $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
   $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
-  $("outPeso").textContent = pesoUsado.toLocaleString("pt-BR");
+
+  /* ✅ mostra peso com 3 casas */
+  $("outPeso").textContent = fmtPeso(pesoUsado);
+
   $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
   $("outMotorista").textContent = money(freteMotorista);

@@ -7,7 +7,6 @@
   <style>
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
 
-    /* ✅ FIX: evita estouro de largura (padding/borda contam dentro do 100%) */
     *, *::before, *::after { box-sizing: border-box; }
 
     body { margin: 0; background: #0b1020; color: #e9eefc; }
@@ -21,7 +20,7 @@
 
     input, select {
       width: 100%;
-      max-width: 100%; /* ✅ garante */
+      max-width: 100%;
       padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid #2b3a72;
@@ -41,7 +40,7 @@
     .btn {
       margin-top: 12px;
       width: 100%;
-      max-width: 100%; /* ✅ garante */
+      max-width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid #3a53a8;
@@ -56,7 +55,6 @@
       background: rgba(91,124,250,.18); border: 1px solid rgba(91,124,250,.35);
     }
 
-    /* tabela */
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 10px; border-bottom: 1px solid #1f2b55; font-size: 13px; }
     th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; opacity: .9; background: #0d1430; position: sticky; top: 0; }
@@ -67,15 +65,15 @@
     .motorCol { color: #ffb3b3; font-weight: 700; }
     .empresaCol { color: #b7d4ff; font-weight: 700; }
 
-    /* inputs da tabela de peso */
+    /* ✅ Inputs do peso (melhor para mobile) */
     .pesoInput {
       max-width: 140px;
       text-align: right;
       padding: 8px 10px;
       border-radius: 10px;
+      font-variant-numeric: tabular-nums;
     }
 
-    /* ====== BLOQUEIO (login) ====== */
     .lock {
       position: fixed; inset: 0;
       background: rgba(11,16,32,.92);
@@ -92,7 +90,7 @@
       border: 1px solid #22305e;
       border-radius: 16px;
       padding: 18px;
-      overflow: hidden; /* ✅ impede qualquer “vazamento” */
+      overflow: hidden;
     }
     .lockTitle { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
     .lockRow { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
@@ -103,7 +101,7 @@
       gap:10px;
       align-items:center;
       justify-content:space-between;
-      flex-wrap: wrap; /* ✅ evita estourar em telas menores */
+      flex-wrap: wrap;
     }
     .smallBtn {
       padding: 8px 10px; border-radius: 12px;
@@ -115,7 +113,7 @@
 
     .topRight {
       display:flex; gap:10px; align-items:center;
-      flex-wrap: wrap; justify-content: flex-end; /* ✅ */
+      flex-wrap: wrap; justify-content: flex-end;
     }
   </style>
 </head>
@@ -147,7 +145,7 @@
       <div class="topbar">
         <div>
           <h1>🚚 NOVA FROTA TRANSPORTES E LOGISTICA LTDA</h1>
-          <div class="muted">Site exclusivo para Nova Frota - ANTT 6.067/2025                                              ©️Luziano Neto .</div>
+          <div class="muted">Site exclusivo para Nova Frota - ANTT 6.067/2025 ©️Luziano Neto.</div>
         </div>
 
         <div class="topRight">
@@ -274,9 +272,7 @@
   </div>
 
 <script>
-/* ================== LOGIN POR USUÁRIO (básico) ==================
-   Troque senhas aqui. (bloqueio leve)
-*/
+/* ================== LOGIN POR USUÁRIO (básico) ================== */
 const USERS = {
   "LUZIANO": "2026",
   "ARIEL": "2026",
@@ -347,7 +343,7 @@ function initAuth(){
       setAuthUser(user);
       showLock(false);
       updateUserBadge();
-      pesosCustom = loadPesosCustom(); // recarrega pesos do usuário
+      pesosCustom = loadPesosCustom();
       calc();
     }
   }
@@ -368,7 +364,7 @@ function initAuth(){
 }
 
 /* ================== APP ================== */
-/* ✅ mantém os pesos padrão aqui (para resetar) */
+/* ✅ PESOS PADRÃO FICAM AQUI PARA RESET */
 const DATA = [
   { tipo: "9 Rodotrem",        rkm: 8.53,   custoCC: 877.83, peso: 49 },
   { tipo: "9 Rodocaçamba",     rkm: 8.53,   custoCC: 877.83, peso: 47 },
@@ -388,17 +384,27 @@ const $ = (id) => document.getElementById(id);
 const money = (n) => n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
 const numpt = (n, d=4) => n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
 
-/* ✅ util: aceita "49,560" ou "49.560" e retorna número */
+/* ✅ aceita "49,560" / "49.560" e remove milhar quando houver */
 function parsePtNumber(value){
-  const raw = String(value ?? "").trim()
-    .replace(/\s+/g, "")
-    .replace(".", "")     // se alguém digitar "1.234,56" (milhar), remove 1º ponto
-    .replace(",", ".");   // vírgula vira decimal
-  const n = Number(raw);
+  let s = String(value ?? "").trim().replace(/\s+/g, "");
+  if (!s) return NaN;
+
+  // mantém somente números, ponto, vírgula e sinal
+  s = s.replace(/[^\d.,-]/g, "");
+
+  // se tiver vírgula, considera vírgula como decimal e remove pontos (milhar)
+  if (s.includes(",")) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else {
+    // se não tiver vírgula, deixa ponto como decimal
+    // (ex: 49.56)
+  }
+
+  const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
 }
 
-/* ✅ util: formata com 3 casas e vírgula */
+/* ✅ formata peso com 3 casas */
 function fmtPeso(n){
   return Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
@@ -424,11 +430,10 @@ function ceil0(n){
   return Math.ceil(n);
 }
 
-/* ====== PESO EDITÁVEL (salvo no navegador, por usuário) ====== */
+/* ====== PESO EDITÁVEL (por usuário) ====== */
 function pesosKey(){
   return getScopePrefix() + "pesos_custom_v1";
 }
-
 function loadPesosCustom(){
   try {
     const raw = localStorage.getItem(pesosKey());
@@ -438,17 +443,17 @@ function loadPesosCustom(){
     return {};
   }
 }
-
 function savePesosCustom(obj){
   localStorage.setItem(pesosKey(), JSON.stringify(obj));
 }
 
 let pesosCustom = {};
+let isEditingPeso = false; // ✅ trava para não redesenhar durante digitação
 
 function getPeso(row){
   const v = pesosCustom[row.tipo];
   const n = Number(v);
-  return (Number.isFinite(n) && n > 0) ? n : row.peso; /* ✅ se não tiver custom, usa o padrão do DATA */
+  return (Number.isFinite(n) && n > 0) ? n : row.peso;
 }
 
 function renderTabelaPesos(){
@@ -473,7 +478,8 @@ function renderTabelaPesos(){
           type="text"
           inputmode="decimal"
           autocomplete="off"
-          placeholder="${fmtPeso(row.peso)}"
+          autocapitalize="off"
+          spellcheck="false"
           value="${fmtPeso(pesoAtual)}"
         />
       </td>
@@ -481,47 +487,55 @@ function renderTabelaPesos(){
 
     const input = tr.querySelector("input[data-tipo]");
 
-    /* ✅ aceita vírgula, deixa digitar livre e converte no cálculo */
+    // ✅ ao focar: seleciona tudo (facilita apagar no celular)
+    input.addEventListener("focus", (ev) => {
+      isEditingPeso = true;
+      requestAnimationFrame(() => ev.target.select());
+    });
+
+    // ✅ enquanto digita: salva + recalcula, mas NÃO redesenha a tabela de pesos
     input.addEventListener("input", (ev) => {
+      const tipo = ev.target.getAttribute("data-tipo");
+      const val = parsePtNumber(ev.target.value);
+
+      if (Number.isFinite(val) && val > 0) pesosCustom[tipo] = val;
+      else delete pesosCustom[tipo];
+
+      savePesosCustom(pesosCustom);
+      calc({ skipPesosRender: true });
+    });
+
+    // ✅ ao sair: normaliza para 3 casas e libera redesenho
+    input.addEventListener("blur", (ev) => {
       const tipo = ev.target.getAttribute("data-tipo");
       const val = parsePtNumber(ev.target.value);
 
       if (Number.isFinite(val) && val > 0) {
         pesosCustom[tipo] = val;
+        ev.target.value = fmtPeso(val);
       } else {
         delete pesosCustom[tipo];
+        ev.target.value = fmtPeso(getPeso(row));
       }
 
       savePesosCustom(pesosCustom);
-      calc();
-    });
-
-    /* ✅ ao sair do campo, “ajeita” para 3 casas (49,560) */
-    input.addEventListener("blur", (ev) => {
-      const val = parsePtNumber(ev.target.value);
-      if (Number.isFinite(val) && val > 0) ev.target.value = fmtPeso(val);
-      else ev.target.value = fmtPeso(getPeso(row));
+      isEditingPeso = false;
+      calc(); // agora pode redesenhar tudo
     });
 
     tbody.appendChild(tr);
   });
 }
 
-/* ✅ reset volta ao padrão do DATA (que continua intacto) */
 function resetPesos(){
   pesosCustom = {};
   localStorage.removeItem(pesosKey());
   calc();
 }
 
-/**
- * ✅ REGRA:
- * Motorista = ceil( ((rkm*km) + custoCC + (pedagioPorEixo*eixos)) / peso )
- * Empresa   = Motorista / (1-margem) / (1-icms)   // sem arredondar
- */
+/* ✅ REGRA */
 function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const eixos = extrairEixos(row.tipo);
-
   const numerador = (row.rkm * km) + row.custoCC + (pedagioPorEixo * eixos);
 
   const pesoUsado = getPeso(row);
@@ -568,7 +582,8 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
   });
 }
 
-function calc(){
+/* ✅ calc com opção de não redesenhar pesos durante digitação */
+function calc(opts = {}){
   if (!getAuthUser()) return;
 
   const row = DATA[Number($("tipo").value)];
@@ -578,21 +593,22 @@ function calc(){
   const margem = Number($("margem").value || 0) / 100;
   const icms = Number($("icms").value || 0) / 100;
 
-  const { eixos, pesoUsado, freteMotorista, freteEmpresa } = calcFretes(row, km, pedagioPorEixo, margem, icms);
+  const { eixos, pesoUsado, freteMotorista, freteEmpresa } =
+    calcFretes(row, km, pedagioPorEixo, margem, icms);
 
   $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
   $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
-
-  /* ✅ mostra peso com 3 casas */
   $("outPeso").textContent = fmtPeso(pesoUsado);
-
   $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
   $("outMotorista").textContent = money(freteMotorista);
   $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
 
   renderTabela(km, pedagioPorEixo, margem, icms);
-  renderTabelaPesos();
+
+  if (!opts.skipPesosRender && !isEditingPeso) {
+    renderTabelaPesos();
+  }
 }
 
 /* init */
@@ -602,11 +618,10 @@ fillTipos();
 const btnReset = $("btnResetPesos");
 if (btnReset) btnReset.addEventListener("click", resetPesos);
 
-$("btnCalc").addEventListener("click", calc);
-$("tipo").addEventListener("change", calc);
-["km","pedagio","margem","icms"].forEach(id => $(id).addEventListener("input", calc));
+$("btnCalc").addEventListener("click", () => calc());
+$("tipo").addEventListener("change", () => calc());
+["km","pedagio","margem","icms"].forEach(id => $(id).addEventListener("input", () => calc()));
 
-/* se já estiver logado, carrega os pesos do usuário e calcula */
 if (getAuthUser()){
   pesosCustom = loadPesosCustom();
   calc();

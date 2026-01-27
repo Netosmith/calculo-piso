@@ -4,16 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cálculo de Frete ANTT 6.067/2025</title>
+
+  <!-- ✅ Para exportar a imagem JPEG -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
   <style>
     :root{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       --bg: #0b1020;
-      --card: rgba(17,26,51,.78);
       --cardBorder: rgba(34,48,94,.9);
       --ink: #e9eefc;
       --muted: rgba(233,238,252,.72);
       --blue: #5b7cfa;
-      --blue2: rgba(91,124,250,.22);
       --neon: rgba(60, 255, 160, .70);
       --neonSoft: rgba(60, 255, 160, .18);
       --neonBorder: rgba(60, 255, 160, .45);
@@ -32,6 +34,7 @@
     }
 
     .wrap{ max-width: 980px; margin: 0 auto; padding: 20px; }
+
     .card{
       background: linear-gradient(180deg, rgba(17,26,51,.86), rgba(13,20,48,.78));
       border: 1px solid var(--cardBorder);
@@ -43,7 +46,6 @@
       overflow: hidden;
     }
 
-    /* “linha de luz” discreta no topo do card */
     .card::before{
       content:"";
       position:absolute;
@@ -87,6 +89,7 @@
     }
 
     .row{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+
     .kpi{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:14px; }
     .k{
       background: rgba(13,20,48,.92);
@@ -155,7 +158,6 @@
     .motorCol{ color: #ffb3b3; font-weight: 800; }
     .empresaCol{ color: #b7d4ff; font-weight: 800; }
 
-    /* inputs do peso */
     .pesoInput{
       max-width: 160px;
       text-align: right;
@@ -237,8 +239,61 @@
     .smallBtn.green:hover{
       box-shadow: 0 0 0 3px rgba(60,255,160,.12);
     }
+
+    /* ✅ Área “printável” para o JPEG */
+    .exportShot{
+      display:none;
+      margin-top: 12px;
+    }
+    .shotGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 640px){
+      .shotGrid{ grid-template-columns: 1fr; }
+    }
+    .shotCell{
+      background: rgba(13,20,48,.92);
+      border: 1px solid rgba(43,58,114,.95);
+      border-radius: 14px;
+      padding: 12px;
+      position: relative;
+      overflow:hidden;
+    }
+    .shotCell::after{
+      content:"";
+      position:absolute;
+      inset:-40% -40% auto -40%;
+      height: 120px;
+      background: radial-gradient(closest-side, rgba(60,255,160,.10), transparent 70%);
+      opacity:.5;
+      pointer-events:none;
+    }
+    .shotLabel{
+      font-size: 12px;
+      opacity: .8;
+    }
+    .shotValue{
+      margin-top: 4px;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .shotTableWrap{
+      margin-top: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(43,58,114,.95);
+      border-radius: 14px;
+    }
+    .shotTableWrap table th{
+      position: static; /* no JPEG não precisa sticky */
+    }
   </style>
 </head>
+
 <body>
 
   <!-- TELA DE LOGIN -->
@@ -272,8 +327,50 @@
 
         <div class="topRight">
           <button class="smallBtn green" id="btnExportCSV" title="Exporta todos os tipos com os valores calculados atuais">⬇️ Exportar CSV</button>
+          <button class="smallBtn green" id="btnExportJPG" title="Gera um JPEG com KM/Margem/Pedágio/ICMS + Tabela completa">🖼️ Exportar JPEG</button>
           <span class="pill" id="userBadge">Deslogado</span>
           <button class="smallBtn" id="btnLogout">Sair</button>
+        </div>
+      </div>
+
+      <!-- ✅ bloco usado só para gerar o JPEG -->
+      <div class="exportShot" id="exportShot">
+        <div class="pill">Resumo + Tabela (Exportação)</div>
+
+        <div class="shotGrid">
+          <div class="shotCell">
+            <div class="shotLabel">KM TOTAL</div>
+            <div class="shotValue" id="shotKM">-</div>
+          </div>
+          <div class="shotCell">
+            <div class="shotLabel">PEDÁGIO POR EIXO (R$)</div>
+            <div class="shotValue" id="shotPed">-</div>
+          </div>
+          <div class="shotCell">
+            <div class="shotLabel">MARGEM (%)</div>
+            <div class="shotValue" id="shotMargem">-</div>
+          </div>
+          <div class="shotCell">
+            <div class="shotLabel">ICMS (%)</div>
+            <div class="shotValue" id="shotICMS">-</div>
+          </div>
+        </div>
+
+        <div class="shotTableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th class="num">Frete Motorista</th>
+                <th class="num">Frete Empresa</th>
+              </tr>
+            </thead>
+            <tbody id="shotTable"></tbody>
+          </table>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+          Gerado por: <b id="shotUser">-</b>
         </div>
       </div>
     </div>
@@ -487,7 +584,6 @@ function initAuth(){
 }
 
 /* ================== APP ================== */
-/* ✅ PESOS PADRÃO FICAM AQUI PARA RESET */
 const DATA = [
   { tipo: "9 Rodotrem",        rkm: 8.53,   custoCC: 877.83, peso: 49 },
   { tipo: "9 Rodocaçamba",     rkm: 8.53,   custoCC: 877.83, peso: 47 },
@@ -507,23 +603,15 @@ const $ = (id) => document.getElementById(id);
 const money = (n) => n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
 const numpt = (n, d=4) => n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
 
-/* ✅ aceita "49,560" / "49.560" e remove milhar quando houver */
 function parsePtNumber(value){
   let s = String(value ?? "").trim().replace(/\s+/g, "");
   if (!s) return NaN;
-
-  // mantém somente números, ponto, vírgula e sinal
   s = s.replace(/[^\d.,-]/g, "");
-
-  // se tiver vírgula, considera vírgula como decimal e remove pontos (milhar)
-  if (s.includes(",")) {
-    s = s.replace(/\./g, "").replace(",", ".");
-  }
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
   const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
 }
 
-/* ✅ formata peso com 3 casas */
 function fmtPeso(n){
   return Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
@@ -568,7 +656,6 @@ function bindGlow(el){
   el.addEventListener("blur",  () => el.classList.remove("editingGlow"));
 }
 
-/* pega valores atuais (para export e cálculos) */
 function getInputs(){
   const km = Number($("km").value || 0);
   const pedagioPorEixo = Number($("pedagio").value || 0);
@@ -617,7 +704,6 @@ function renderTabelaPesos(){
     input.addEventListener("focus", (ev) => {
       isEditingPeso = true;
       input.classList.add("editingGlow");
-      // facilita apagar no celular (seleciona tudo)
       requestAnimationFrame(() => ev.target.select());
     });
 
@@ -660,7 +746,6 @@ function resetPesos(){
   calc();
 }
 
-/* ✅ REGRA */
 function calcFretes(row, km, pedagioPorEixo, margem, icms){
   const eixos = extrairEixos(row.tipo);
   const numerador = (row.rkm * km) + row.custoCC + (pedagioPorEixo * eixos);
@@ -709,10 +794,9 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
   });
 }
 
-/* ✅ EXPORTAÇÃO (todos os tipos) */
+/* ================== EXPORT CSV ================== */
 function csvEscape(v){
   const s = String(v ?? "");
-  // CSV com ; (pt-BR). Se tiver ; ou " ou quebra linha, encapsula.
   if (/[;"\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
@@ -760,19 +844,16 @@ function exportCSV(){
   const headers = Object.keys(rows[0] || {});
   const lines = [];
 
-  // metadados no topo
   const { km, pedagioPorEixo, margem, icms } = getInputs();
   lines.push(csvEscape("NOVA FROTA - Exportação ANTT 6.067/2025"));
   lines.push(csvEscape(`Usuário: ${getAuthUser()} | KM: ${km} | Pedágio/eixo: ${pedagioPorEixo} | Margem: ${(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}% | ICMS: ${(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`));
-  lines.push(""); // linha em branco
+  lines.push("");
 
   lines.push(headers.map(csvEscape).join(";"));
 
   for (const r of rows){
     const line = headers.map((h) => {
       const v = r[h];
-
-      // formatos mais “humanos”
       if (h === "R$/KM") return csvEscape(toPt(v, 4));
       if (h === "Custo CC") return csvEscape(toPt(v, 2));
       if (h === "Peso padrão" || h === "Peso usado") return csvEscape(toPt(v, 3));
@@ -781,7 +862,6 @@ function exportCSV(){
       if (h === "Eixos") return csvEscape(toIntPt(v));
       if (h === "KM") return csvEscape(toPt(v, 1));
       if (h === "Pedágio por eixo (R$)") return csvEscape(toPt(v, 2));
-
       return csvEscape(v);
     }).join(";");
     lines.push(line);
@@ -805,7 +885,71 @@ function exportCSV(){
   setTimeout(() => URL.revokeObjectURL(url), 1200);
 }
 
-/* ✅ calc com opção de não redesenhar pesos durante digitação */
+/* ================== EXPORT JPEG (Resumo + Tabela) ================== */
+function renderShotTable(){
+  const tbody = $("shotTable");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const { km, pedagioPorEixo, margem, icms } = getInputs();
+  for (const row of DATA){
+    const r = calcFretes(row, km, pedagioPorEixo, margem, icms);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="white-space:nowrap">${row.tipo}</td>
+      <td class="num motorCol">${money(r.freteMotorista)}</td>
+      <td class="num empresaCol">${Number.isFinite(r.freteEmpresa) ? money(r.freteEmpresa) : "Erro"}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function exportJPG(){
+  if (!getAuthUser()) return;
+
+  const shot = $("exportShot");
+  const { km, pedagioPorEixo, margem, icms } = getInputs();
+
+  $("shotKM").textContent = km.toLocaleString("pt-BR",{maximumFractionDigits:1});
+  $("shotPed").textContent = pedagioPorEixo.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("shotMargem").textContent = (margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("shotICMS").textContent = (icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("shotUser").textContent = getAuthUser();
+
+  renderShotTable();
+
+  // mostra temporariamente para renderizar
+  shot.style.display = "block";
+
+  // captura
+  html2canvas(shot, {
+    backgroundColor: null,
+    scale: 2
+  }).then((canvas) => {
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
+    const filename = `antt_resumo_${getAuthUser()}_${stamp}.jpg`;
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+
+      // esconde de novo
+      shot.style.display = "none";
+    }, "image/jpeg", 0.92);
+  }).catch(() => {
+    shot.style.display = "none";
+    alert("Não consegui gerar a imagem. Se estiver offline, o html2canvas não carrega.");
+  });
+}
+
+/* ================== CALC ================== */
 function calc(opts = {}){
   if (!getAuthUser()) return;
 
@@ -847,6 +991,9 @@ $("tipo").addEventListener("change", () => calc());
 /* export */
 const btnExport = $("btnExportCSV");
 if (btnExport) btnExport.addEventListener("click", exportCSV);
+
+const btnJpg = $("btnExportJPG");
+if (btnJpg) btnJpg.addEventListener("click", exportJPG);
 
 if (getAuthUser()){
   pesosCustom = loadPesosCustom();

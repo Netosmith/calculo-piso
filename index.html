@@ -167,7 +167,7 @@
       background: rgba(10,16,40,.92);
     }
 
-    /* ====== LOGIN / MODAIS ====== */
+    /* ====== LOGIN ====== */
     .lock{
       position: fixed; inset: 0;
       background: rgba(11,16,32,.92);
@@ -228,6 +228,7 @@
       font-size: 12px;
       max-width: 100%;
       transition: transform .08s ease, filter .15s ease;
+      white-space: nowrap;
     }
     .smallBtn:hover{ filter: brightness(1.08); }
     .smallBtn:active{ transform: translateY(1px); }
@@ -238,6 +239,46 @@
     }
     .smallBtn.green:hover{
       box-shadow: 0 0 0 3px rgba(60,255,160,.12);
+    }
+
+    /* ===== Toggle bonito ===== */
+    .toggleWrap{
+      display:flex; align-items:center; gap:8px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(58,83,168,.75);
+      background: rgba(13,20,48,.55);
+      user-select:none;
+    }
+    .toggleWrap .lbl{
+      font-size: 12px; font-weight: 800; opacity: .9;
+    }
+    .toggle{
+      width: 44px; height: 24px; border-radius: 999px;
+      border: 1px solid rgba(91,124,250,.45);
+      background: rgba(91,124,250,.18);
+      position: relative;
+      cursor:pointer;
+      flex: 0 0 auto;
+    }
+    .toggle::after{
+      content:"";
+      position:absolute;
+      top: 50%; left: 3px;
+      width: 18px; height: 18px;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      background: rgba(233,238,252,.92);
+      box-shadow: 0 6px 14px rgba(0,0,0,.25);
+      transition: left .15s ease, background .15s ease;
+    }
+    .toggle.on{
+      border-color: rgba(60,255,160,.55);
+      background: rgba(60,255,160,.14);
+    }
+    .toggle.on::after{
+      left: 22px;
+      background: rgba(60,255,160,.92);
     }
 
     /* ✅ Área “printável” para o JPEG */
@@ -265,7 +306,7 @@
     .shotCell::after{
       content:"";
       position:absolute;
-      inset:-40% -40% auto -40px;
+      inset:-40% -40% auto -40%;
       height: 120px;
       background: radial-gradient(closest-side, rgba(60,255,160,.10), transparent 70%);
       opacity:.5;
@@ -290,6 +331,25 @@
     }
     .shotTableWrap table th{
       position: static; /* no JPEG não precisa sticky */
+    }
+
+    /* ================== MODO COTAÇÃO RÁPIDA ================== */
+    body.quoteMode .grid{
+      grid-template-columns: 1fr !important;
+    }
+    body.quoteMode .quoteHide{
+      display:none !important;
+    }
+    body.quoteMode .quoteTableGrow{
+      max-height: none !important;
+      height: calc(100vh - 320px);
+      min-height: 420px;
+    }
+    @media (max-width: 860px){
+      body.quoteMode .quoteTableGrow{
+        height: calc(100vh - 360px);
+        min-height: 380px;
+      }
     }
   </style>
 </head>
@@ -317,43 +377,6 @@
     </div>
   </div>
 
-  <!-- ✅ MODAL ADMIN -->
-  <div class="lock" id="adminModal">
-    <div class="lockCard">
-      <p class="lockTitle">🛠️ Painel Admin</p>
-      <div class="muted">Somente LUZIANO. Criar usuários, alterar senhas e ativar/desativar acessos.</div>
-
-      <div class="lockRow">
-        <div class="pill">Criar usuário</div>
-
-        <label for="admNewUser">Novo usuário</label>
-        <input id="admNewUser" placeholder="Ex: JOAO" />
-
-        <label for="admNewPass">Senha</label>
-        <input id="admNewPass" type="password" placeholder="Defina a senha" />
-
-        <button class="btn" id="admBtnCreate">Criar usuário</button>
-
-        <div class="pill" style="margin-top:10px;">Usuários cadastrados</div>
-        <div style="overflow:auto; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height:260px;">
-          <table>
-            <thead>
-              <tr>
-                <th>Usuário</th>
-                <th class="num">Status</th>
-                <th class="num">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="admUsersTable"></tbody>
-          </table>
-        </div>
-
-        <button class="smallBtn" id="admClose">Fechar</button>
-        <div class="muted" id="admMsg" style="color:#b7d4ff; display:none;"></div>
-      </div>
-    </div>
-  </div>
-
   <div class="wrap" id="app">
     <div class="card">
       <div class="topbar">
@@ -363,9 +386,14 @@
         </div>
 
         <div class="topRight">
+          <!-- ✅ Toggle Modo Cotação -->
+          <div class="toggleWrap" title="Tabela como principal (cotação rápida)">
+            <span class="lbl">⚡ Cotação Rápida</span>
+            <div class="toggle" id="toggleQuote" role="switch" aria-checked="false" tabindex="0"></div>
+          </div>
+
           <button class="smallBtn green" id="btnExportCSV" title="Exporta todos os tipos com os valores calculados atuais">⬇️ Exportar CSV</button>
           <button class="smallBtn green" id="btnExportJPG" title="Gera um JPEG com KM/Margem/Pedágio/ICMS + Tabela completa">🖼️ Exportar JPEG</button>
-          <button class="smallBtn green" id="btnAdmin" style="display:none;" title="Painel de administração (somente LUZIANO)">🛠️ Admin</button>
           <span class="pill" id="userBadge">Deslogado</span>
           <button class="smallBtn" id="btnLogout">Sair</button>
         </div>
@@ -416,6 +444,7 @@
     <div style="height:14px"></div>
 
     <div class="grid">
+      <!-- =================== ENTRADA =================== -->
       <div class="card">
         <div class="pill">Entrada</div>
 
@@ -444,9 +473,9 @@
           </div>
         </div>
 
-        <button class="btn" id="btnCalc">Calcular</button>
+        <button class="btn quoteHide" id="btnCalc">Calcular</button>
 
-        <div class="kpi">
+        <div class="kpi quoteHide">
           <div class="k">
             <div class="t">Frete Motorista (R$)</div>
             <div class="v" id="outMotorista">-</div>
@@ -457,16 +486,22 @@
           </div>
         </div>
 
-        <div class="muted">
+        <div class="muted quoteHide">
           <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso;0)<br/>
           <b>Empresa:</b> Motorista/(1-Margem)/(1-ICMS) <span style="opacity:.9">(sem arredondar)</span>
         </div>
+
+        <!-- ✅ Em modo cotação rápida, mostramos só o essencial e deixamos a tabela mandar -->
+        <div class="muted" style="margin-top:10px;">
+          Dica: Ative <b>⚡ Cotação Rápida</b> para usar a tabela como painel principal.
+        </div>
       </div>
 
+      <!-- =================== TABELAS =================== -->
       <div class="card">
         <div class="pill">Tabela de Fretes (por tipo)</div>
 
-        <div style="overflow:auto; margin-top:10px; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height: 320px;">
+        <div class="quoteTableGrow" style="overflow:auto; margin-top:10px; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height: 320px;">
           <table>
             <thead>
               <tr>
@@ -480,112 +515,98 @@
           </table>
         </div>
 
-        <div class="pill" style="margin-top:12px;">Peso médio (editável)</div>
+        <!-- Essas partes ficam ocultas no modo cotação -->
+        <div class="quoteHide">
+          <div class="pill" style="margin-top:12px;">Peso médio (editável)</div>
 
-        <div style="overflow:auto; margin-top:10px; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height: 260px;">
-          <table>
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th class="num">Peso médio</th>
-              </tr>
-            </thead>
-            <tbody id="tblPesos"></tbody>
-          </table>
-        </div>
+          <div style="overflow:auto; margin-top:10px; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height: 260px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th class="num">Peso médio</th>
+                </tr>
+              </thead>
+              <tbody id="tblPesos"></tbody>
+            </table>
+          </div>
 
-        <div class="muted">
-          Os pesos alterados ficam salvos neste navegador (por usuário). Para voltar ao padrão:
-          <div style="margin-top:8px;">
-            <button class="btn" id="btnResetPesos" style="margin-top:0;">Resetar pesos</button>
+          <div class="muted">
+            Os pesos alterados ficam salvos neste navegador (por usuário). Para voltar ao padrão:
+            <div style="margin-top:8px;">
+              <button class="btn" id="btnResetPesos" style="margin-top:0;">Resetar pesos</button>
+            </div>
           </div>
-        </div>
 
-        <div class="pill" style="margin-top:14px;">Dados do Tipo selecionado</div>
+          <div class="pill" style="margin-top:14px;">Dados do Tipo selecionado</div>
 
-        <div class="kpi">
-          <div class="k">
-            <div class="t">R$ / KM</div>
-            <div class="v" id="outRkm">-</div>
+          <div class="kpi">
+            <div class="k">
+              <div class="t">R$ / KM</div>
+              <div class="v" id="outRkm">-</div>
+            </div>
+            <div class="k">
+              <div class="t">Custo CC</div>
+              <div class="v" id="outCC">-</div>
+            </div>
+            <div class="k">
+              <div class="t">Peso médio (usado)</div>
+              <div class="v" id="outPeso">-</div>
+            </div>
+            <div class="k">
+              <div class="t">Observação</div>
+              <div class="v" style="font-size:14px; font-weight:700" id="outObs">-</div>
+            </div>
           </div>
-          <div class="k">
-            <div class="t">Custo CC</div>
-            <div class="v" id="outCC">-</div>
-          </div>
-          <div class="k">
-            <div class="t">Peso médio (usado)</div>
-            <div class="v" id="outPeso">-</div>
-          </div>
-          <div class="k">
-            <div class="t">Observação</div>
-            <div class="v" style="font-size:14px; font-weight:700" id="outObs">-</div>
-          </div>
-        </div>
 
-        <div class="muted">
-          Clique em uma linha da tabela para selecionar o tipo.
+          <div class="muted">
+            Clique em uma linha da tabela para selecionar o tipo.
+          </div>
         </div>
       </div>
     </div>
   </div>
 
 <script>
-/* ================== LOGIN + ADMIN (localStorage) ================== */
-const AUTH_KEY = "antt_auth_user_v2";
-const USERS_DB_KEY = "antt_users_db_v1";
+/* ================== LOGIN POR USUÁRIO (básico) ================== */
+/* ✅ Base fixa (fallback). Depois disso, o admin pode gerenciar via storage (opcional futuro). */
+const USERS = {
+  "LUZIANO": "1993",
+  "ARIEL": "1987",
+  "VALDEMI": "2026",
+  "LUIS": "2026",
+  "ELIEL": "2026",
+  "MATHEUS OS": "2026",
+};
 
-// ✅ somente você é admin
-const ADMIN_USER = "LUZIANO";
+const AUTH_KEY = "antt_auth_user_v1";
 
-function defaultUsersDB(){
-  // ✅ usuários iniciais (você pode depois criar/alterar pelo Admin)
-  return {
-    "LUZIANO":     { pass: "1993", active: true },
-    "ARIEL":       { pass: "1987", active: true },
-    "VALDEMI":     { pass: "2026", active: true },
-    "LUIS":        { pass: "2026", active: true },
-    "ELIEL":       { pass: "2026", active: true },
-    "MATHEUS OS":  { pass: "2026", active: true },
-  };
+/* ======= MODO COTAÇÃO (por usuário) ======= */
+function quoteModeKey(){
+  const u = getAuthUser() || "DEFAULT";
+  return `antt_${u}_quote_mode_v1`;
 }
+function isQuoteMode(){
+  return localStorage.getItem(quoteModeKey()) === "1";
+}
+function setQuoteMode(on){
+  localStorage.setItem(quoteModeKey(), on ? "1" : "0");
+}
+function applyQuoteModeUI(){
+  const on = isQuoteMode();
+  document.body.classList.toggle("quoteMode", on);
 
-function loadUsersDB(){
-  try{
-    const raw = localStorage.getItem(USERS_DB_KEY);
-    if (!raw){
-      const seed = defaultUsersDB();
-      localStorage.setItem(USERS_DB_KEY, JSON.stringify(seed));
-      return seed;
-    }
-    const obj = JSON.parse(raw);
-    return (obj && typeof obj === "object") ? obj : defaultUsersDB();
-  }catch(e){
-    const seed = defaultUsersDB();
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify(seed));
-    return seed;
+  const t = document.getElementById("toggleQuote");
+  if (t){
+    t.classList.toggle("on", on);
+    t.setAttribute("aria-checked", on ? "true" : "false");
   }
-}
-
-function saveUsersDB(db){
-  localStorage.setItem(USERS_DB_KEY, JSON.stringify(db));
-}
-
-function normalizeUserName(s){
-  return String(s||"").trim().toUpperCase().replace(/\s+/g, " ");
-}
-
-function isAdminUser(u){
-  return String(u||"").toUpperCase() === ADMIN_USER;
 }
 
 function getAuthUser(){
   const u = localStorage.getItem(AUTH_KEY);
-  const db = loadUsersDB();
-  if (!u) return null;
-  const rec = db[u];
-  return (rec && rec.active) ? u : null;
+  return u && USERS[u] ? u : null;
 }
-
 function setAuthUser(user){
   if (user) localStorage.setItem(AUTH_KEY, user);
   else localStorage.removeItem(AUTH_KEY);
@@ -609,10 +630,7 @@ function showLock(show){
 function updateUserBadge(){
   const u = getAuthUser();
   const el = document.getElementById("userBadge");
-  if (el) el.textContent = u ? `Logado: ${u}${isAdminUser(u) ? " (ADMIN)" : ""}` : "Deslogado";
-
-  const btnAdmin = document.getElementById("btnAdmin");
-  if (btnAdmin) btnAdmin.style.display = (u && isAdminUser(u)) ? "" : "none";
+  if (el) el.textContent = u ? `Logado: ${u}` : "Deslogado";
 }
 
 function getScopePrefix(){
@@ -622,18 +640,13 @@ function getScopePrefix(){
 
 function initAuth(){
   const sel = document.getElementById("lockUser");
-  const db = loadUsersDB();
-
   sel.innerHTML = "";
-  Object.keys(db)
-    .sort((a,b)=>a.localeCompare(b))
-    .forEach((name) => {
-      if (!db[name].active) return;
-      const op = document.createElement("option");
-      op.value = name;
-      op.textContent = name;
-      sel.appendChild(op);
-    });
+  Object.keys(USERS).forEach((name) => {
+    const op = document.createElement("option");
+    op.value = name;
+    op.textContent = name;
+    sel.appendChild(op);
+  });
 
   if (!getAuthUser()) showLock(true);
   else showLock(false);
@@ -644,180 +657,34 @@ function initAuth(){
 
   function tryLogin(){
     const user = sel.value;
-    const db2 = loadUsersDB();
-    const rec = db2[user];
-
-    const ok = rec && rec.active && pass.value === rec.pass;
-
+    const ok = USERS[user] && pass.value === USERS[user];
     msg.style.display = ok ? "none" : "block";
     if (ok){
       setAuthUser(user);
       showLock(false);
       updateUserBadge();
       pesosCustom = loadPesosCustom();
+
+      applyQuoteModeUI(); // ✅ aplica modo cotação do usuário ao logar
       calc();
     }
   }
 
   btn.addEventListener("click", tryLogin);
-  pass.addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+  pass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tryLogin();
+  });
 
   const logout = document.getElementById("btnLogout");
   logout.addEventListener("click", () => {
     setAuthUser(null);
     updateUserBadge();
     showLock(true);
+    document.body.classList.remove("quoteMode");
   });
-
-  const btnAdmin = document.getElementById("btnAdmin");
-  if (btnAdmin) btnAdmin.addEventListener("click", openAdmin);
 
   updateUserBadge();
 }
-
-/* ================== PAINEL ADMIN ================== */
-function showAdmin(show){
-  const modal = document.getElementById("adminModal");
-  if (!modal) return;
-  modal.classList.toggle("show", !!show);
-}
-
-function adminMsg(text){
-  const el = document.getElementById("admMsg");
-  if (!el) return;
-  el.style.display = text ? "block" : "none";
-  el.textContent = text || "";
-}
-
-function renderAdminUsers(){
-  const tbody = document.getElementById("admUsersTable");
-  if (!tbody) return;
-
-  const db = loadUsersDB();
-  const cur = getAuthUser();
-  const names = Object.keys(db).sort((a,b)=>a.localeCompare(b));
-
-  tbody.innerHTML = "";
-
-  for (const name of names){
-    const rec = db[name];
-    const isAdmin = isAdminUser(name);
-    const status = rec.active ? "Ativo" : "Inativo";
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td style="white-space:nowrap">${name}${isAdmin ? " ⭐" : ""}</td>
-      <td class="num" style="opacity:.9">${status}</td>
-      <td class="num">
-        <button class="smallBtn" data-act="toggle" data-user="${name}">${rec.active ? "Desativar" : "Ativar"}</button>
-        <button class="smallBtn green" data-act="pass" data-user="${name}">Senha</button>
-        <button class="smallBtn" data-act="del" data-user="${name}" ${isAdmin ? "disabled" : ""}>Excluir</button>
-      </td>
-    `;
-
-    // evita se trancar: não permite desativar/excluir o usuário atual
-    tr.querySelectorAll("button").forEach(btn=>{
-      const act = btn.getAttribute("data-act");
-      const u = btn.getAttribute("data-user");
-      if ((act === "toggle" || act === "del") && u === cur) btn.disabled = true;
-    });
-
-    tbody.appendChild(tr);
-  }
-
-  tbody.querySelectorAll("button[data-act]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const act = btn.getAttribute("data-act");
-      const user = btn.getAttribute("data-user");
-      if (!act || !user) return;
-
-      const db2 = loadUsersDB();
-
-      if (act === "toggle"){
-        db2[user].active = !db2[user].active;
-        saveUsersDB(db2);
-        adminMsg(`Status de ${user} atualizado.`);
-        renderAdminUsers();
-        initAuth();
-        return;
-      }
-
-      if (act === "pass"){
-        const newPass = prompt(`Nova senha para ${user}:`);
-        if (!newPass) return;
-        db2[user].pass = String(newPass);
-        saveUsersDB(db2);
-        adminMsg(`Senha de ${user} alterada.`);
-        renderAdminUsers();
-        initAuth();
-        return;
-      }
-
-      if (act === "del"){
-        if (isAdminUser(user)) return;
-        if (!confirm(`Excluir usuário ${user}?`)) return;
-        delete db2[user];
-        saveUsersDB(db2);
-        adminMsg(`Usuário ${user} excluído.`);
-        renderAdminUsers();
-        initAuth();
-        return;
-      }
-    });
-  });
-}
-
-function openAdmin(){
-  const u = getAuthUser();
-  if (!u || !isAdminUser(u)) return;
-  adminMsg("");
-  renderAdminUsers();
-  showAdmin(true);
-}
-
-(function bindAdminUI(){
-  const close = document.getElementById("admClose");
-  if (close) close.addEventListener("click", ()=>showAdmin(false));
-
-  const createBtn = document.getElementById("admBtnCreate");
-  if (createBtn){
-    createBtn.addEventListener("click", () => {
-      const cur = getAuthUser();
-      if (!cur || !isAdminUser(cur)) return;
-
-      const userRaw = document.getElementById("admNewUser").value;
-      const passRaw = document.getElementById("admNewPass").value;
-
-      const user = normalizeUserName(userRaw);
-      const pass = String(passRaw || "");
-
-      if (!user || user.length < 2){
-        adminMsg("Informe um nome de usuário válido.");
-        return;
-      }
-      if (!pass || pass.length < 3){
-        adminMsg("Senha muito curta (mínimo 3 caracteres).");
-        return;
-      }
-
-      const db = loadUsersDB();
-      if (db[user]){
-        adminMsg("Usuário já existe. Use o botão 'Senha' para alterar.");
-        return;
-      }
-
-      db[user] = { pass, active: true };
-      saveUsersDB(db);
-
-      document.getElementById("admNewUser").value = "";
-      document.getElementById("admNewPass").value = "";
-
-      adminMsg(`Usuário ${user} criado.`);
-      renderAdminUsers();
-      initAuth();
-    });
-  }
-})();
 
 /* ================== APP ================== */
 const DATA = [
@@ -868,6 +735,7 @@ function extrairEixos(tipo){
   const m = String(tipo).trim().match(/^(\d+)/);
   return m ? Number(m[1]) : 0;
 }
+
 function ceil0(n){ return Math.ceil(n); }
 
 /* ====== PESO EDITÁVEL (por usuário) ====== */
@@ -1191,13 +1059,14 @@ function calc(opts = {}){
   const { eixos, pesoUsado, freteMotorista, freteEmpresa } =
     calcFretes(row, km, pedagioPorEixo, margem, icms);
 
-  $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
-  $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
-  $("outPeso").textContent = fmtPeso(pesoUsado);
-  $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
+  // (Esses campos existem só fora do modo cotação; se não existirem, ignora)
+  if ($("outRkm")) $("outRkm").textContent = "R$ " + numpt(row.rkm, 4);
+  if ($("outCC")) $("outCC").textContent = "R$ " + numpt(row.custoCC, 3);
+  if ($("outPeso")) $("outPeso").textContent = fmtPeso(pesoUsado);
+  if ($("outObs")) $("outObs").textContent = `${row.tipo} | Eixos: ${eixos}`;
 
-  $("outMotorista").textContent = money(freteMotorista);
-  $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
+  if ($("outMotorista")) $("outMotorista").textContent = money(freteMotorista);
+  if ($("outEmpresa")) $("outEmpresa").textContent = Number.isFinite(freteEmpresa) ? money(freteEmpresa) : "Erro (margem/ICMS 100%)";
 
   renderTabela(km, pedagioPorEixo, margem, icms);
 
@@ -1206,19 +1075,21 @@ function calc(opts = {}){
   }
 }
 
-/* init */
+/* ================== INIT ================== */
 initAuth();
 fillTipos();
 
 const btnReset = $("btnResetPesos");
 if (btnReset) btnReset.addEventListener("click", resetPesos);
 
-$("btnCalc").addEventListener("click", () => calc());
+const btnCalc = $("btnCalc");
+if (btnCalc) btnCalc.addEventListener("click", () => calc());
+
 $("tipo").addEventListener("change", () => calc());
 ["km","pedagio","margem","icms"].forEach(id => $(id).addEventListener("input", () => calc()));
 
 /* glow nos inputs principais */
-["km","pedagio","margem","icms","tipo","lockPass","lockUser","admNewUser","admNewPass"].forEach(id => bindGlow($(id)));
+["km","pedagio","margem","icms","tipo","lockPass","lockUser"].forEach(id => bindGlow($(id)));
 
 /* export */
 const btnExport = $("btnExportCSV");
@@ -1227,8 +1098,28 @@ if (btnExport) btnExport.addEventListener("click", exportCSV);
 const btnJpg = $("btnExportJPG");
 if (btnJpg) btnJpg.addEventListener("click", exportJPG);
 
+/* ✅ Toggle modo cotação */
+const tgl = $("toggleQuote");
+function toggleQuote(){
+  if (!getAuthUser()) return;
+  const next = !isQuoteMode();
+  setQuoteMode(next);
+  applyQuoteModeUI();
+  calc();
+}
+if (tgl){
+  tgl.addEventListener("click", toggleQuote);
+  tgl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleQuote();
+    }
+  });
+}
+
 if (getAuthUser()){
   pesosCustom = loadPesosCustom();
+  applyQuoteModeUI();
   calc();
 }
 </script>

@@ -97,7 +97,36 @@
     /* campos e filtros alinhados e compactos */
     .filters{grid-template-columns: 240px 1fr;}
     @media (max-width:700px){ .filters{grid-template-columns:1fr;} }
-  </style>
+  
+/* ===== AJUSTE DE LAYOUT (TOP + TABELA EM TELA INTEIRA) ===== */
+.container.pageFretes{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-height:calc(100vh - 72px);
+  padding-bottom:18px;
+}
+.container.pageFretes .grid2{flex:0 0 auto}
+.card.tableFull{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  min-height:380px;
+}
+.card.tableFull .tableWrap{
+  flex:1 1 auto;
+  max-height:none !important;
+  height:auto !important;
+}
+.card.tableFull th, .card.tableFull td{padding:8px 10px}
+.card.tableFull th{font-size:11px}
+.cellInput{
+  padding:6px 8px !important;
+  height:34px;
+  border-radius:10px !important;
+}
+
+</style>
 </head>
 <body>
   <div class="topbar">
@@ -190,7 +219,13 @@
 
         <div style="height:10px;"></div>
 
-        <div class="tableWrap">
+      </div>
+    </div>
+  </div>
+      <div class="card tableFull">
+        <div class="pill">📋 Fretes (tela inteira)</div>
+        <div class="muted" style="margin-top:6px;">A tabela abaixo ocupa toda a parte de baixo da tela. Use os filtros acima para refinar.</div>
+<div class="tableWrap">
           <table>
             <thead>
               <tr>
@@ -227,10 +262,9 @@
             </thead>
             <tbody id="tbody"></tbody>
           </table>
-        </div>
+        </div
       </div>
-    </div>
-  </div>
+
 
   <!-- Modal simples (novo/editar) -->
   <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); z-index:9999; padding:18px; align-items:center; justify-content:center;">

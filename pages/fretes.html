@@ -19,19 +19,100 @@
     </div>
   </div>
 
-  <div class="container" style="padding-top:18px;">
-    <div class="card" style="padding:18px;">
+  <div class="container" style="padding-top:18px; padding-bottom:22px;">
+
+    <!-- Cabeçalho -->
+    <div class="card" style="padding:18px; margin-bottom:14px;">
       <div style="font-weight:900; font-size:22px;">🚚 Fretes (Operacional)</div>
       <div style="color: rgba(233,238,252,.75); margin-top:6px;">
-        Próximo passo: tabela dinâmica com botão “Novo Frete”, filtros e status.
+        Permissão Frete Mínimo: identifica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
       </div>
     </div>
+
+    <!-- Pesos médios (editáveis) -->
+    <div class="card" style="padding:18px; margin-bottom:14px;">
+      <div style="font-weight:900; margin-bottom:10px;">⚖️ Peso médio (referência ANTT)</div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; max-width:520px;">
+        <div>
+          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">9 eixos</label>
+          <input id="pesoRef9" type="number" step="0.001" value="47" />
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">4º eixo</label>
+          <input id="pesoRef4" type="number" step="0.001" value="39" />
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">7 eixos</label>
+          <input id="pesoRef7" type="number" step="0.001" value="36" />
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">6 eixos</label>
+          <input id="pesoRef6" type="number" step="0.001" value="31" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px; font-size:12px; opacity:.75;">
+        Dica: esses pesos ficam salvos no navegador (por usuário) e recalculam as permissões automaticamente.
+      </div>
+    </div>
+
+    <!-- Tabela de Fretes -->
+    <div class="card" style="padding:18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="font-weight:900;">📋 Tabela de Fretes</div>
+
+        <!-- Botões (o JS pode usar depois) -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="btnNovoFrete" class="btn" style="margin:0; padding:10px 12px; border-radius:12px; font-weight:900;">
+            + Novo Frete
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px; overflow:auto; border-radius:12px; border:1px solid rgba(43,58,114,.95);">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:10px;">Origem</th>
+              <th style="text-align:left; padding:10px;">Destino</th>
+              <th style="text-align:right; padding:10px;">KM</th>
+              <th style="text-align:right; padding:10px;">Pedágio/Eixo</th>
+              <th style="text-align:right; padding:10px;">Frete Motorista</th>
+
+              <!-- Permissão Frete Mínimo -->
+              <th style="text-align:right; padding:10px;">5E</th>
+              <th style="text-align:right; padding:10px;">6E</th>
+              <th style="text-align:right; padding:10px;">7E</th>
+              <th style="text-align:right; padding:10px;">4E</th>
+              <th style="text-align:right; padding:10px;">9E</th>
+            </tr>
+          </thead>
+
+          <tbody id="tblFretes">
+            <!-- O fretes.js vai renderizar as linhas aqui -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:10px; font-size:12px; opacity:.75;">
+        Colunas 5E/6E/7E/4E/9E mostram “S” ou “N” conforme o piso mínimo ANTT para o embarque.
+      </div>
+    </div>
+
   </div>
 
+  <!-- Auth -->
   <script src="../assets/js/auth.js"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
   </script>
+
+  <!-- Fretes (lógica da tabela + permissões) -->
+  <script src="../assets/js/fretes.js"></script>
 </body>
 </html>

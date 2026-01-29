@@ -1,127 +1,195 @@
-/* fretes.js - NOVA FROTA
-   Base operacional (igual planilha): tabela cheia, compacta, full-width.
-   Armazenamento: localStorage por usuário.
+/* fretes.js | NOVA FROTA
+   - Tabela Operacional + Permissão Frete Mínimo (5E/6E/7E/4E/9E)
+   - Contatos fixos (select)
+   - Separação por filial (linhas "grupo" como na planilha)
+   - Pesos editáveis salvos por usuário (localStorage)
 */
-
 (function () {
+  "use strict";
+
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);
 
-  function toBRMoney(v) {
+  const FILIAIS_ORDEM = [
+    "ITUMBIARA",
+    "ANAPOLIS",
+    "RIO VERDE",
+    "CRISTALINA",
+    "BOM JESUS",
+    "JATAI",
+    "CATALÃO",
+    "INDIARA",
+    "MINEIROS",
+    "MONTIVIDIU",
+    "CHAP CÉU"
+  ];
+
+  const CONTATOS_FIXOS = [
+    "ARIEL",
+    "JHONATAN",
+    "NARCISO",
+    "SERGIO",
+    "ELTON",
+    "EVERALDO",
+    "RONE",
+    "RAFAEL",
+    "KIEWERSON",
+    "PIRULITO"
+  ];
+
+  const LS_KEY_ROWS = "nf_fretes_rows_v1";
+  const LS_KEY_EXAMPLE = "nf_fretes_example_v1";
+  const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";
+  const LS_KEY_USER = "nf_auth_user"; // opcional: se seu auth.js não setar, cai no "default"
+
+  function getUserKey() {
+    // tenta reaproveitar qualquer badge/armazenamento existente
+    const u = localStorage.getItem(LS_KEY_USER) || localStorage.getItem("nf_user") || "default";
+    return String(u).trim().toUpperCase() || "default";
+  }
+
+  function formatBRL(v) {
     const n = Number(v);
     if (!isFinite(n)) return "";
     return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
-  function toBRNumber(v, decimals = 2) {
-    const n = Number(v);
-    if (!isFinite(n)) return "";
-    return n.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  function num(v) {
+    const n = Number(String(v).replace(",", "."));
+    return isFinite(n) ? n : 0;
   }
 
-  function norm(s) {
-    return String(s ?? "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+  function safeText(v) {
+    return (v ?? "").toString().trim();
   }
 
-  // Tenta pegar usuário do seu auth.js (se existir algo)
-  function getUserKey() {
-    // 1) se o auth.js salvar algo assim, pega
-    const possible =
-      localStorage.getItem("nf_user") ||
-      localStorage.getItem("nf_auth_user") ||
-      localStorage.getItem("nf_auth_username") ||
-      localStorage.getItem("user") ||
-      "";
-
-    const u = possible ? norm(possible).replace(/\s+/g, "_") : "default";
-    return `nf_fretes_v1_${u}`;
+  function statusClass(st) {
+    const s = safeText(st).toUpperCase();
+    if (s === "LIBERADO") return "liberado";
+    if (s === "PARADO") return "parado";
+    return "suspenso";
   }
 
-  const LS_KEY = getUserKey();
+  // ===== Pesos (editáveis) =====
+  const DEFAULT_WEIGHTS = { w9: 47, w4: 39, w7: 36, w6: 31 };
 
-  // ===== Campos da planilha =====
-  const FIELDS = [
-    { key: "regional", label: "Regional", type: "text" },
-    { key: "filial", label: "Filial", type: "text" },
-    { key: "cliente", label: "Cliente", type: "text" },
-    { key: "origem", label: "Origem", type: "text" },
-    { key: "coleta", label: "Coleta", type: "text" },
-    { key: "contato", label: "Contato de embarque", type: "text" },
-    { key: "destino", label: "Destino", type: "text" },
-    { key: "uf", label: "UF", type: "text" },
-    { key: "descarga", label: "Descarga", type: "text" },
-    { key: "volume", label: "Volume", type: "number" },
-    { key: "valorEmpresa", label: "Valor Empresa", type: "number" },
-    { key: "valorMotorista", label: "Valor Motorista", type: "number" },
-    { key: "km", label: "KM", type: "number" },
-    { key: "produto", label: "Produto", type: "text" },
-    { key: "icms", label: "ICMS", type: "text" },
-    { key: "pedidoSat", label: "Pedido SAT", type: "text" },
-    { key: "qtdPorta", label: "Qtd Porta", type: "number" },
-    { key: "qtdTransito", label: "Qtd Trânsito", type: "number" },
-    { key: "status", label: "Status", type: "select", options: ["LIBERADO", "PARADO", "SUSPENSO"] },
-    { key: "obs", label: "Observações", type: "text" },
-  ];
-
-  // ===== Estado =====
-  let rows = [];
-  let editingId = null;
-
-  // ===== Storage =====
-  function loadRows() {
+  function loadWeights() {
+    const key = LS_KEY_WEIGHTS_PREFIX + getUserKey();
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return [];
-      const data = JSON.parse(raw);
-      if (!Array.isArray(data)) return [];
-      return data;
+      const raw = localStorage.getItem(key);
+      if (!raw) return { ...DEFAULT_WEIGHTS };
+      const obj = JSON.parse(raw);
+      return {
+        w9: isFinite(Number(obj.w9)) ? Number(obj.w9) : DEFAULT_WEIGHTS.w9,
+        w4: isFinite(Number(obj.w4)) ? Number(obj.w4) : DEFAULT_WEIGHTS.w4,
+        w7: isFinite(Number(obj.w7)) ? Number(obj.w7) : DEFAULT_WEIGHTS.w7,
+        w6: isFinite(Number(obj.w6)) ? Number(obj.w6) : DEFAULT_WEIGHTS.w6
+      };
     } catch {
-      return [];
+      return { ...DEFAULT_WEIGHTS };
     }
   }
 
-  function saveRows() {
-    localStorage.setItem(LS_KEY, JSON.stringify(rows));
+  function saveWeights(weights) {
+    const key = LS_KEY_WEIGHTS_PREFIX + getUserKey();
+    localStorage.setItem(key, JSON.stringify(weights));
   }
 
-  // ===== Demo =====
-  function demoRows() {
+  // ===== Permissão (mesma lógica do Sheets) =====
+  function permYN(isOk) {
+    return isOk ? "S" : "N";
+  }
+
+  function calcPerm(row, weights) {
+    // Base: Frete motorista = L ; Pedágio/Eixo = M ; KM = N ; Pesos (R) (no site = weights)
+    const km = num(row.km);
+    const ped = num(row.pedagioEixo);
+    const mot = num(row.valorMotorista);
+
+    if (!km || km <= 0 || !isFinite(km) || (row.km === "")) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+
+    // 5 eixos (divide por 26 fixo)
+    const t5 = ((km * 6.0301) + (ped * 5) + 615.26) / 26;
+    // 6 eixos (divide pelo Peso6)
+    const t6 = ((km * 6.7408) + (ped * 6) + 663.07) / Math.max(1, num(weights.w6));
+    // 7 eixos (divide pelo Peso7)
+    const t7 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w7));
+    // 4º eixo (mesma base que você enviou, divide pelo Peso4)
+    const t4 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w4));
+    // 9 eixos (divide pelo Peso9)
+    const t9 = ((km * 8.242) + (ped * 9) + 808.17) / Math.max(1, num(weights.w9));
+
+    return {
+      p5: permYN(t5 < mot),
+      p6: permYN(t6 < mot),
+      p7: permYN(t7 < mot),
+      p4: permYN(t4 < mot),
+      p9: permYN(t9 < mot)
+    };
+  }
+
+  // ===== Dados (local) =====
+  function exampleRows() {
+    // exemplo curto para demonstrar
     return [
       {
         id: crypto.randomUUID(),
         regional: "GOIÁS",
-        filial: "ITUMBIARA-GO",
-        cliente: "COMEXR",
-        origem: "BURITI ALEGRE-GO",
-        coleta: "PAIOLÃO",
-        contato: "Jhonatan (64) 99225-1214",
-        destino: "QUIRINÓPOLIS",
+        filial: "INDIARA",
+        cliente: "CERRADINHO",
+        origem: "INDIARA/GO",
+        coleta: "GOIASCAL",
+        contato: "RAFAEL",
+        destino: "CHAPADÃO DO CÉU/GO",
         uf: "GO",
-        descarga: "CARGILL",
-        volume: 55,
-        valorEmpresa: 55,
-        valorMotorista: 50,
-        km: 219,
-        produto: "",
-        icms: "",
-        pedidoSat: "",
-        qtdPorta: "",
-        qtdTransito: "",
-        status: "SUSPENSO",
-        obs: "AGENDAMENTO ALONGADO",
+        descarga: "USINA CERRADINHO",
+        volume: 5000,
+        valorEmpresa: 95,
+        valorMotorista: 85,
+        km: 396,
+        pedagioEixo: 0,
+        produto: "CALCÁRIO",
+        icms: "ISENTO (CIF)",
+        pedidoSat: 10453,
+        qtdPorta: 0,
+        qtdTransito: 0,
+        status: "LIBERADO",
+        obs: ""
       },
       {
         id: crypto.randomUUID(),
         regional: "GOIÁS",
-        filial: "ANÁPOLIS-GO",
+        filial: "JATAI",
+        cliente: "CARGILL",
+        origem: "JATAI/GO",
+        coleta: "ARMAZ BOA ESPERANÇA",
+        contato: "RONE",
+        destino: "ITUMBIARA/GO",
+        uf: "GO",
+        descarga: "CARAMURU",
+        volume: 0,
+        valorEmpresa: 80,
+        valorMotorista: 73,
+        km: 330,
+        pedagioEixo: 0,
+        produto: "MILHO",
+        icms: "ISENTO (CIF)",
+        pedidoSat: 0,
+        qtdPorta: 2,
+        qtdTransito: 3,
+        status: "LIBERADO",
+        obs: ""
+      },
+      {
+        id: crypto.randomUUID(),
+        regional: "GOIÁS",
+        filial: "ANAPOLIS",
         cliente: "OURO SAFRA",
         origem: "ÁGUA FRIA DE GOIÁS-GO",
         coleta: "FAZ. ARAÇÁ",
-        contato: "Sérgio (64) 99266-9136",
+        contato: "SERGIO",
         destino: "CABECEIRAS",
         uf: "GO",
         descarga: "GRANJA MANTIQUEIRA",
@@ -129,307 +197,376 @@
         valorEmpresa: 75,
         valorMotorista: 60,
         km: 106,
+        pedagioEixo: 0,
         produto: "MILHO",
         icms: "ISENTO (CIF)",
-        pedidoSat: "12245",
-        qtdPorta: 3,
+        pedidoSat: 12245,
+        qtdPorta: 0,
         qtdTransito: 0,
         status: "PARADO",
-        obs: "",
-      },
-      {
-        id: crypto.randomUUID(),
-        regional: "GOIÁS",
-        filial: "CRISTALINA-GO",
-        cliente: "CARGILL",
-        origem: "CRISTALINA-GO",
-        coleta: "COCARIS",
-        contato: "Everaldo (61) 99692-4906",
-        destino: "ANÁPOLIS",
-        uf: "GO",
-        descarga: "CARGILL NOVOS HORIZONTES",
-        volume: 87,
-        valorEmpresa: 87,
-        valorMotorista: 80,
-        km: 200,
-        produto: "SOJA",
-        icms: "ISENTO (CIF)",
-        pedidoSat: "12018",
-        qtdPorta: "",
-        qtdTransito: "",
-        status: "SUSPENSO",
-        obs: "",
-      },
-      {
-        id: crypto.randomUUID(),
-        regional: "GOIÁS",
-        filial: "JATAÍ-GO",
-        cliente: "CARGILL",
-        origem: "JATAÍ",
-        coleta: "ARMAZ BOA ESPERANÇA",
-        contato: "Rone (64) 99626-4511",
-        destino: "ITUMBIARA",
-        uf: "GO",
-        descarga: "CARAMURU",
-        volume: 0,
-        valorEmpresa: 80,
-        valorMotorista: 73,
-        km: 330,
-        produto: "MILHO",
-        icms: "ISENTO (CIF)",
-        pedidoSat: "",
-        qtdPorta: 2,
-        qtdTransito: 3,
-        status: "LIBERADO",
-        obs: "",
-      },
+        obs: ""
+      }
     ];
+  }
+
+  function loadRows() {
+    const hasExample = localStorage.getItem(LS_KEY_EXAMPLE) === "1";
+    const raw = localStorage.getItem(LS_KEY_ROWS);
+    if (!raw) {
+      localStorage.setItem(LS_KEY_EXAMPLE, "1");
+      const ex = exampleRows();
+      localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
+      return ex;
+    }
+    try {
+      const rows = JSON.parse(raw);
+      if (!Array.isArray(rows)) throw new Error("bad");
+      // se não tem nada e ainda quer exemplo
+      if (rows.length === 0 && hasExample) {
+        const ex = exampleRows();
+        localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
+        return ex;
+      }
+      return rows;
+    } catch {
+      const ex = exampleRows();
+      localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
+      localStorage.setItem(LS_KEY_EXAMPLE, "1");
+      return ex;
+    }
+  }
+
+  function saveRows(rows) {
+    localStorage.setItem(LS_KEY_ROWS, JSON.stringify(rows));
+  }
+
+  // ===== UI: selects fixos =====
+  function fillFilialSelect(sel, includeAll) {
+    sel.innerHTML = "";
+    if (includeAll) {
+      const op = document.createElement("option");
+      op.value = "";
+      op.textContent = "Todas";
+      sel.appendChild(op);
+    }
+    FILIAIS_ORDEM.forEach((f) => {
+      const op = document.createElement("option");
+      op.value = f;
+      op.textContent = f;
+      sel.appendChild(op);
+    });
+  }
+
+  function fillContatoSelect(sel) {
+    sel.innerHTML = "";
+    CONTATOS_FIXOS.forEach((c) => {
+      const op = document.createElement("option");
+      op.value = c;
+      op.textContent = c;
+      sel.appendChild(op);
+    });
   }
 
   // ===== Render =====
-  function statusPill(status) {
-    const st = (status || "").toUpperCase();
-    const cls = st === "LIBERADO" ? "stLIBERADO" : st === "PARADO" ? "stPARADO" : "stSUSPENSO";
-    return `<span class="statusPill ${cls}">${st || "-"}</span>`;
+  function matchesSearch(row, q) {
+    if (!q) return true;
+    const blob = [
+      row.regional, row.filial, row.cliente, row.origem, row.coleta, row.contato,
+      row.destino, row.uf, row.descarga, row.produto, row.icms, row.status, row.obs
+    ].join(" ").toLowerCase();
+    return blob.includes(q.toLowerCase());
   }
 
-  function applyFilters(data) {
-    const q = norm($("qSearch").value);
-    const st = ($("qStatus").value || "").toUpperCase();
-    const filial = norm($("qFilial").value);
-    const regional = norm($("qRegional").value);
+  function orderFilialIndex(f) {
+    const i = FILIAIS_ORDEM.indexOf(safeText(f).toUpperCase());
+    return i >= 0 ? i : 9999;
+  }
 
-    return data.filter((r) => {
-      if (st && String(r.status || "").toUpperCase() !== st) return false;
-      if (filial && !norm(r.filial).includes(filial)) return false;
-      if (regional && !norm(r.regional).includes(regional)) return false;
+  function render(rows, weights) {
+    const tbody = $("tbody");
+    const fFilial = $("fFilial").value;
+    const fBusca = $("fBusca").value.trim();
 
-      if (!q) return true;
-      const blob = norm([
-        r.regional, r.filial, r.cliente, r.origem, r.coleta, r.contato,
-        r.destino, r.uf, r.descarga, r.volume, r.valorEmpresa, r.valorMotorista,
-        r.km, r.produto, r.icms, r.pedidoSat, r.qtdPorta, r.qtdTransito, r.status, r.obs
-      ].join(" "));
-      return blob.includes(q);
+    // filtro
+    let list = rows.filter((r) => {
+      if (fFilial && safeText(r.filial).toUpperCase() !== fFilial) return false;
+      if (!matchesSearch(r, fBusca)) return false;
+      return true;
     });
-  }
 
-  function render() {
-    const tbody = $("tblBody");
-    const filtered = applyFilters(rows);
+    // ordena por filial (como planilha)
+    list = list.slice().sort((a, b) => {
+      const ia = orderFilialIndex(a.filial);
+      const ib = orderFilialIndex(b.filial);
+      if (ia !== ib) return ia - ib;
+      // dentro da filial, mantém "mais planilha": destino, cliente
+      const da = safeText(a.destino);
+      const db = safeText(b.destino);
+      if (da !== db) return da.localeCompare(db, "pt-BR");
+      return safeText(a.cliente).localeCompare(safeText(b.cliente), "pt-BR");
+    });
 
-    tbody.innerHTML = filtered.map((r) => {
-      return `
-        <tr data-id="${r.id}">
-          <td>${r.regional ?? ""}</td>
-          <td>${r.filial ?? ""}</td>
-          <td>${r.cliente ?? ""}</td>
-          <td>${r.origem ?? ""}</td>
-          <td>${r.coleta ?? ""}</td>
-          <td>${r.contato ?? ""}</td>
-          <td>${r.destino ?? ""}</td>
-          <td>${r.uf ?? ""}</td>
-          <td>${r.descarga ?? ""}</td>
-          <td class="num">${toBRNumber(r.volume, 2)}</td>
-          <td class="num">${toBRMoney(r.valorEmpresa)}</td>
-          <td class="num">${toBRMoney(r.valorMotorista)}</td>
-          <td class="num">${toBRNumber(r.km, 0)}</td>
-          <td>${r.produto ?? ""}</td>
-          <td>${r.icms ?? ""}</td>
-          <td>${r.pedidoSat ?? ""}</td>
-          <td class="num">${toBRNumber(r.qtdPorta, 0)}</td>
-          <td class="num">${toBRNumber(r.qtdTransito, 0)}</td>
-          <td class="center">${statusPill(r.status)}</td>
-          <td>${r.obs ?? ""}</td>
-        </tr>
-      `;
-    }).join("");
+    tbody.innerHTML = "";
 
-    // Clique para editar
-    tbody.querySelectorAll("tr[data-id]").forEach((tr) => {
-      tr.addEventListener("click", () => {
-        const id = tr.getAttribute("data-id");
-        openEdit(id);
+    // grupos por filial
+    let currentFilial = null;
+    list.forEach((row) => {
+      const filial = safeText(row.filial).toUpperCase();
+
+      if (filial !== currentFilial) {
+        currentFilial = filial;
+        const trG = document.createElement("tr");
+        trG.className = "groupRow";
+        const tdG = document.createElement("td");
+        tdG.colSpan = 27;
+        tdG.textContent = filial || "SEM FILIAL";
+        trG.appendChild(tdG);
+        tbody.appendChild(trG);
+      }
+
+      const perm = calcPerm(row, weights);
+
+      const tr = document.createElement("tr");
+      tr.className = "rowSlim";
+
+      const cells = [
+        safeText(row.regional),
+        safeText(row.filial),
+        safeText(row.cliente),
+        safeText(row.origem),
+        safeText(row.coleta),
+        safeText(row.contato),
+        safeText(row.destino),
+        safeText(row.uf),
+        safeText(row.descarga),
+        { num: true, v: safeText(row.volume) },
+        { num: true, v: formatBRL(row.valorEmpresa) },
+        { num: true, v: formatBRL(row.valorMotorista) },
+        { num: true, v: safeText(row.km) },
+        { num: true, v: safeText(row.pedagioEixo) },
+        { yn: true, v: perm.p5 },
+        { yn: true, v: perm.p6 },
+        { yn: true, v: perm.p7 },
+        { yn: true, v: perm.p4 },
+        { yn: true, v: perm.p9 },
+        safeText(row.produto),
+        safeText(row.icms),
+        { num: true, v: safeText(row.pedidoSat) },
+        { num: true, v: safeText(row.qtdPorta) },
+        { num: true, v: safeText(row.qtdTransito) },
+        { status: true, v: safeText(row.status) },
+        safeText(row.obs),
+        { actions: true }
+      ];
+
+      cells.forEach((c) => {
+        const td = document.createElement("td");
+
+        if (typeof c === "object" && c) {
+          if (c.num) td.classList.add("num");
+          if (c.yn) {
+            const span = document.createElement("span");
+            span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
+            span.textContent = c.v || "";
+            td.classList.add("num");
+            td.appendChild(span);
+          } else if (c.status) {
+            const s = safeText(c.v).toUpperCase() || "SUSPENSO";
+            const span = document.createElement("span");
+            span.className = "statusPill " + statusClass(s);
+            span.textContent = s;
+            td.appendChild(span);
+          } else if (c.actions) {
+            td.classList.add("num");
+            const btnEdit = document.createElement("button");
+            btnEdit.className = "btnSmall";
+            btnEdit.style.padding = "7px 10px";
+            btnEdit.textContent = "Editar";
+            btnEdit.addEventListener("click", () => openModal("edit", row.id));
+
+            const btnDel = document.createElement("button");
+            btnDel.className = "btnSmall";
+            btnDel.style.padding = "7px 10px";
+            btnDel.style.marginLeft = "8px";
+            btnDel.textContent = "Excluir";
+            btnDel.addEventListener("click", () => removeRow(row.id));
+
+            td.appendChild(btnEdit);
+            td.appendChild(btnDel);
+          } else {
+            td.textContent = c.v ?? "";
+          }
+        } else {
+          td.textContent = c ?? "";
+        }
+
+        tr.appendChild(td);
       });
+
+      tbody.appendChild(tr);
     });
   }
 
-  // ===== Modal =====
-  function buildForm() {
-    const grid = $("formGrid");
-    grid.innerHTML = "";
+  // ===== Modal CRUD =====
+  let state = {
+    rows: [],
+    editId: null,
+    weights: { ...DEFAULT_WEIGHTS }
+  };
 
-    FIELDS.forEach((f) => {
-      const div = document.createElement("div");
-      div.className = "field";
+  function openModal(mode, id) {
+    state.editId = mode === "edit" ? id : null;
 
-      const label = document.createElement("label");
-      label.textContent = f.label;
-      label.setAttribute("for", `f_${f.key}`);
+    // reset values
+    const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
 
-      let input;
-      if (f.type === "select") {
-        input = document.createElement("select");
-        input.className = "selectMini";
-        input.innerHTML = `<option value="">Selecione...</option>` + f.options.map(o => `<option value="${o}">${o}</option>`).join("");
-      } else {
-        input = document.createElement("input");
-        input.className = "inputMini";
-        input.type = f.type === "number" ? "number" : "text";
-        if (f.type === "number") input.step = "0.01";
-      }
+    $("mRegional").value = r ? r.regional : "GOIÁS";
+    $("mFilial").value = r ? safeText(r.filial).toUpperCase() : "ITUMBIARA";
+    $("mCliente").value = r ? r.cliente : "";
+    $("mOrigem").value = r ? r.origem : "";
+    $("mColeta").value = r ? r.coleta : "";
+    $("mContato").value = r ? (r.contato || CONTATOS_FIXOS[0]) : CONTATOS_FIXOS[0];
+    $("mDestino").value = r ? r.destino : "";
+    $("mUF").value = r ? r.uf : "GO";
+    $("mDescarga").value = r ? r.descarga : "";
+    $("mProduto").value = r ? r.produto : "";
+    $("mKM").value = r ? r.km : "";
+    $("mPed").value = r ? r.pedagioEixo : 0;
+    $("mVolume").value = r ? r.volume : "";
+    $("mEmpresa").value = r ? r.valorEmpresa : "";
+    $("mMotorista").value = r ? r.valorMotorista : "";
+    $("mICMS").value = r ? r.icms : "";
+    $("mSat").value = r ? r.pedidoSat : "";
+    $("mPorta").value = r ? r.qtdPorta : "";
+    $("mTransito").value = r ? r.qtdTransito : "";
+    $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
+    $("mObs").value = r ? r.obs : "";
 
-      input.id = `f_${f.key}`;
-
-      div.appendChild(label);
-      div.appendChild(input);
-      grid.appendChild(div);
-    });
-  }
-
-  function setFormValues(obj) {
-    FIELDS.forEach((f) => {
-      const el = $(`f_${f.key}`);
-      el.value = obj?.[f.key] ?? "";
-    });
-  }
-
-  function getFormValues() {
-    const out = {};
-    FIELDS.forEach((f) => {
-      const el = $(`f_${f.key}`);
-      let v = el.value;
-
-      if (f.type === "number") {
-        // aceita vazio
-        if (String(v).trim() === "") v = "";
-        else v = Number(String(v).replace(",", "."));
-      } else {
-        v = String(v ?? "").trim();
-      }
-      out[f.key] = v;
-    });
-    // normaliza status
-    if (out.status) out.status = String(out.status).toUpperCase();
-    return out;
-  }
-
-  function openNew() {
-    editingId = null;
-    $("modalTitle").textContent = "+ Novo Frete";
-    $("btnDelete").style.display = "none";
-    setFormValues({
-      status: "LIBERADO",
-      regional: "GOIÁS"
-    });
-    $("modal").classList.add("show");
-  }
-
-  function openEdit(id) {
-    const row = rows.find((r) => r.id === id);
-    if (!row) return;
-    editingId = id;
-    $("modalTitle").textContent = "✏️ Editar Frete";
-    $("btnDelete").style.display = "inline-flex";
-    setFormValues(row);
-    $("modal").classList.add("show");
+    $("modal").style.display = "flex";
   }
 
   function closeModal() {
-    $("modal").classList.remove("show");
+    $("modal").style.display = "none";
+    state.editId = null;
   }
 
-  function saveModal() {
-    const payload = getFormValues();
-
-    // defaults
-    if (!payload.status) payload.status = "LIBERADO";
-
-    if (!editingId) {
-      rows.unshift({ id: crypto.randomUUID(), ...payload });
-    } else {
-      rows = rows.map((r) => (r.id === editingId ? { ...r, ...payload } : r));
-    }
-
-    saveRows();
-    closeModal();
-    render();
+  function collectModal() {
+    return {
+      id: state.editId || crypto.randomUUID(),
+      regional: safeText($("mRegional").value),
+      filial: safeText($("mFilial").value).toUpperCase(),
+      cliente: safeText($("mCliente").value),
+      origem: safeText($("mOrigem").value),
+      coleta: safeText($("mColeta").value),
+      contato: safeText($("mContato").value),
+      destino: safeText($("mDestino").value),
+      uf: safeText($("mUF").value).toUpperCase(),
+      descarga: safeText($("mDescarga").value),
+      volume: num($("mVolume").value),
+      valorEmpresa: num($("mEmpresa").value),
+      valorMotorista: num($("mMotorista").value),
+      km: num($("mKM").value),
+      pedagioEixo: num($("mPed").value),
+      produto: safeText($("mProduto").value),
+      icms: safeText($("mICMS").value),
+      pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
+      qtdPorta: $("mPorta").value === "" ? "" : num($("mPorta").value),
+      qtdTransito: $("mTransito").value === "" ? "" : num($("mTransito").value),
+      status: safeText($("mStatus").value).toUpperCase(),
+      obs: safeText($("mObs").value)
+    };
   }
 
-  function deleteRow() {
-    if (!editingId) return;
-    rows = rows.filter((r) => r.id !== editingId);
-    saveRows();
-    closeModal();
-    render();
+  function upsertRow(row) {
+    const idx = state.rows.findIndex((x) => x.id === row.id);
+    if (idx >= 0) state.rows[idx] = row;
+    else state.rows.unshift(row);
+    saveRows(state.rows);
+    render(state.rows, state.weights);
   }
 
-  // ===== Export CSV =====
-  function exportCSV() {
-    const filtered = applyFilters(rows);
-    const header = FIELDS.map((f) => f.label);
-
-    const lines = [
-      header.join(";"),
-      ...filtered.map((r) => {
-        return FIELDS.map((f) => {
-          const v = r[f.key] ?? "";
-          // evita quebrar CSV
-          const s = String(v).replaceAll("\n", " ").replaceAll(";", ",");
-          return s;
-        }).join(";");
-      }),
-    ];
-
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "fretes.csv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  function removeRow(id) {
+    if (!confirm("Excluir este frete?")) return;
+    state.rows = state.rows.filter((x) => x.id !== id);
+    saveRows(state.rows);
+    render(state.rows, state.weights);
   }
 
   // ===== Init =====
   function init() {
-    buildForm();
+    // selects
+    fillFilialSelect($("fFilial"), true);
+    fillFilialSelect($("mFilial"), false);
+    fillContatoSelect($("mContato"));
 
-    rows = loadRows();
-    if (!rows.length) {
-      // começa vazio (você decide). Se quiser já com exemplo, troque para demoRows().
-      rows = [];
-      saveRows();
-    }
+    // pesos
+    state.weights = loadWeights();
+    $("w9").value = state.weights.w9;
+    $("w4").value = state.weights.w4;
+    $("w7").value = state.weights.w7;
+    $("w6").value = state.weights.w6;
 
-    // Eventos
-    $("btnNovo").addEventListener("click", openNew);
+    $("btnSaveWeights").addEventListener("click", () => {
+      const w = {
+        w9: num($("w9").value) || DEFAULT_WEIGHTS.w9,
+        w4: num($("w4").value) || DEFAULT_WEIGHTS.w4,
+        w7: num($("w7").value) || DEFAULT_WEIGHTS.w7,
+        w6: num($("w6").value) || DEFAULT_WEIGHTS.w6
+      };
+      state.weights = w;
+      saveWeights(w);
+      render(state.rows, state.weights);
+      alert("Pesos salvos ✅");
+    });
+
+    $("btnResetWeights").addEventListener("click", () => {
+      state.weights = { ...DEFAULT_WEIGHTS };
+      $("w9").value = state.weights.w9;
+      $("w4").value = state.weights.w4;
+      $("w7").value = state.weights.w7;
+      $("w6").value = state.weights.w6;
+      saveWeights(state.weights);
+      render(state.rows, state.weights);
+    });
+
+    // rows
+    state.rows = loadRows();
+
+    // filtros
+    $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
+    $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
+
+    // botões
+    $("btnNew").addEventListener("click", () => openModal("new"));
+    $("btnResetExample").addEventListener("click", () => {
+      if (!confirm("Restaurar o exemplo local? Isso substitui sua lista atual.")) return;
+      const ex = exampleRows();
+      state.rows = ex;
+      localStorage.setItem(LS_KEY_EXAMPLE, "1");
+      saveRows(state.rows);
+      render(state.rows, state.weights);
+    });
+
+    // modal events
     $("btnCloseModal").addEventListener("click", closeModal);
-    $("btnSave").addEventListener("click", saveModal);
-    $("btnDelete").addEventListener("click", deleteRow);
-
-    $("modal").addEventListener("click", (e) => {
-      if (e.target && e.target.id === "modal") closeModal();
+    $("btnCancel").addEventListener("click", closeModal);
+    $("btnSave").addEventListener("click", () => {
+      const row = collectModal();
+      if (!row.filial) {
+        alert("Selecione uma filial.");
+        return;
+      }
+      if (!row.contato) {
+        alert("Selecione um contato.");
+        return;
+      }
+      upsertRow(row);
+      closeModal();
     });
 
-    $("btnResetDemo").addEventListener("click", () => {
-      rows = demoRows();
-      saveRows();
-      render();
-    });
-
-    $("btnExport").addEventListener("click", exportCSV);
-
-    ["qSearch", "qStatus", "qFilial", "qRegional"].forEach((id) => {
-      $(id).addEventListener("input", render);
-      $(id).addEventListener("change", render);
-    });
-
-    // Render inicial
-    render();
+    // primeira renderização
+    render(state.rows, state.weights);
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("DOMContentLoaded", init);
 })();

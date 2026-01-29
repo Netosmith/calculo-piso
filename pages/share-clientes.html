@@ -5,7 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Share Clientes | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    /* ===== Densidade + cara de planilha ===== */
+    .container{max-width:1650px}
+    .card{padding:14px; overflow:hidden}
+    .muted2{color: rgba(233,238,252,.72);}
+    .note{font-size:12px; line-height:1.35;}
+    .gridTop{display:grid; grid-template-columns: 1fr; gap:12px; align-items:start;}
+    @media (min-width:1100px){ .gridTop{grid-template-columns: 420px 1fr;} }
+
+    .miniBox{display:flex; flex-direction:column; gap:10px;}
+    .row2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width:720px){ .row2{grid-template-columns:1fr;} }
+
+    label{font-size:11px; font-weight:900; opacity:.9; display:block; margin-bottom:6px;}
+    select,input{
+      width:100%; padding:10px 12px; border-radius:12px;
+      border:1px solid rgba(43,58,114,.85);
+      background:rgba(13,20,48,.70); color:rgba(233,238,252,.95);
+      outline:none;
+    }
+
+    .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+    .btnSmall{
+      padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(58,83,168,.95);
+      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
+      color:rgba(233,238,252,.95); font-weight:900; cursor:pointer;
+    }
+    .btnSmall:hover{filter:brightness(1.06)}
+    .btnSmall.green{border-color:rgba(60,255,160,.45); background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
+
+    /* Resumo KPI */
+    .kpis{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
+    @media (max-width:900px){ .kpis{grid-template-columns:1fr;} }
+    .kpi{
+      background:rgba(13,20,48,.75); border:1px solid rgba(43,58,114,.65);
+      border-radius:14px; padding:12px;
+    }
+    .kpi .t{font-size:11px; opacity:.85; font-weight:900; letter-spacing:.03em; text-transform:uppercase;}
+    .kpi .v{font-size:18px; font-weight:900; margin-top:6px; font-variant-numeric:tabular-nums;}
+
+    /* Logo cliente */
+    .clientLogoWrap{
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(13,20,48,.55); border:1px solid rgba(43,58,114,.55);
+      border-radius:16px; padding:14px; min-height:130px;
+    }
+    .clientLogoWrap img{max-width: 100%; max-height:120px; object-fit:contain; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35));}
+    .clientLogoFallback{
+      font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
+      opacity:.85; text-align:center; padding:18px;
+    }
+
+    /* Corredores */
+    .corrList{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+    .corrItem{
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+      background:rgba(13,20,48,.70); border:1px solid rgba(43,58,114,.55);
+      border-radius:12px; padding:10px 12px;
+      font-variant-numeric:tabular-nums;
+    }
+    .corrItem .name{font-weight:900}
+    .corrItem .qty{opacity:.9; font-weight:900}
+
+    /* Tabela */
+    .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(43,58,114,.65);
+      border-radius:14px;
+      height: calc(100vh - 360px);
+      min-height: 420px;
+      background:rgba(10,16,40,.25);
+    }
+    @media (max-width:1100px){
+      .tableWrap{height:auto; min-height: 360px;}
+    }
+    table{width:100%; border-collapse:collapse; min-width:1400px;}
+    th,td{
+      padding:6px 10px;
+      border-bottom:1px solid rgba(31,43,85,.55);
+      font-size:12px;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+    thead th{
+      position:sticky; top:0; z-index:3;
+      background:rgba(13,20,48,.96);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      opacity:.95;
+    }
+    td.num, th.num{text-align:right}
+    tr:hover td{background:rgba(91,124,250,.06);}
+    .statusPill{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 10px; border-radius:999px; font-weight:1000; font-size:11px;
+      border:1px solid rgba(233,238,252,.18);
+    }
+    .statusPill.liberado{background:rgba(60,255,160,.14); border-color:rgba(60,255,160,.45);}
+    .statusPill.suspenso{background:rgba(255,120,120,.14); border-color:rgba(255,120,120,.55);}
+    .chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(91,124,250,.14); border:1px solid rgba(91,124,250,.35);
+      font-weight:900; font-size:11px;
+    }
+
+    /* Para print: esconde topbar */
+    body.printMode .topbar{display:none !important;}
+    body.printMode .container{padding-top:10px !important;}
+  </style>
 </head>
+
 <body>
   <div class="topbar">
     <div class="topbar-inner">
@@ -14,21 +129,139 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
       <div class="actions">
-        <div class="icon-btn" title="Sair" data-logout>👤</div>
+        <div class="icon-btn" title="Sair" data-logout>ð¤</div>
       </div>
     </div>
   </div>
 
-  <div class="container" style="padding-top:18px;">
-    <div class="card" style="padding:18px;">
-      <div style="font-weight:900; font-size:22px;">📤 Share Clientes</div>
-      <div style="color: rgba(233,238,252,.75); margin-top:6px;">
-        Próximo passo: seletor de cliente + logo automática + lista filtrada pronta para print.
+  <div class="container nfWide" style="padding-top:18px;" id="pageShare">
+    <div class="card">
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:1000; font-size:20px;">ð¤ Share Clientes</div>
+          <div class="muted2 note" style="margin-top:6px;">
+            Painel gerado a partir da base <b>Fretes</b>. Filtre por cliente e tire um print para enviar.
+          </div>
+        </div>
+
+        <div class="btnRow">
+          <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">Atualizar</button>
+          <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">Gerar Print</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <div class="gridTop">
+      <!-- ESQUERDA: Cliente + KPIs + Corredores -->
+      <div class="card">
+        <div class="miniBox">
+          <div>
+            <label for="selCliente">Cliente</label>
+            <select id="selCliente"></select>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi"><div class="t">Total de lotes</div><div class="v" id="kLotes">0</div></div>
+            <div class="kpi"><div class="t">Total de caminhÃ£o</div><div class="v" id="kCaminhao">0</div></div>
+            <div class="kpi"><div class="t">ProjeÃ§Ã£o volume</div><div class="v" id="kVolume">0</div></div>
+          </div>
+
+          <div>
+            <div style="font-weight:1000; font-size:14px;">ð§­ Quantidade por corredor</div>
+            <div class="muted2 note" style="margin-top:6px;">Agrupado por <b>Destino</b> (mesma lÃ³gica da planilha).</div>
+            <div class="corrList" id="corrList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIREITA: Logo + Filtros -->
+      <div class="card">
+        <div class="row2" style="align-items:start;">
+          <div>
+            <div style="font-weight:1000; font-size:14px;">ð· Logo do cliente</div>
+            <div class="muted2 note" style="margin-top:6px;">Mostra a logo conforme o cliente selecionado.</div>
+            <div class="clientLogoWrap" style="margin-top:10px;">
+              <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
+              <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
+            </div>
+            <div class="muted2 note" style="margin-top:10px;">
+              Dica: coloque as imagens em <span class="chip">/assets/img/clientes/</span> e mantenha o nome igual ao cliente (ex: <b>CARGILL.png</b>).
+            </div>
+          </div>
+
+          <div>
+            <div style="font-weight:1000; font-size:14px;">ð Filtros</div>
+            <div class="muted2 note" style="margin-top:6px;">Busca em origem, coleta, destino, descarga, produto e observaÃ§Ã£o.</div>
+
+            <div style="margin-top:10px;">
+              <label for="inpBusca">Busca</label>
+              <input id="inpBusca" placeholder="Digite para filtrar..." />
+            </div>
+
+            <div class="row2" style="margin-top:10px;">
+              <div>
+                <label for="selStatus">Status</label>
+                <select id="selStatus">
+                  <option value="">Todos</option>
+                  <option value="LIBERADO">LIBERADO</option>
+                  <option value="SUSPENSO">SUSPENSO</option>
+                </select>
+              </div>
+              <div>
+                <label for="selDestino">Destino</label>
+                <select id="selDestino">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="muted2 note" style="margin-top:10px;">
+              <b>CMHâs</b> Local/Trans sÃ£o lidos do Fretes e ficam <b>travados</b> aqui (sem ediÃ§Ã£o).
+              <br/>O <b>Total Geral</b> Ã© calculado: <b>Local + Trans</b>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <!-- TABELA -->
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="font-weight:1000; font-size:14px;">ð Pontos abertos do cliente</div>
+        <div class="muted2 note">Fonte: base local <span class="chip">nf_fretes_rows_v1</span></div>
+      </div>
+
+      <div style="height:10px;"></div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Origem</th>
+              <th>Coleta</th>
+              <th>Destino</th>
+              <th>Descarga</th>
+              <th class="num">Frete Empresa</th>
+              <th>Produto</th>
+              <th class="num">CMH's Local</th>
+              <th class="num">CMH's Trans</th>
+              <th class="num">Total Geral</th>
+              <th>Status</th>
+              <th>ObservaÃ§Ã£o</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyShare"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/share-clientes.js"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

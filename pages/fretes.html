@@ -4,191 +4,222 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fretes | NOVA FROTA</title>
+
   <link rel="stylesheet" href="../assets/css/app.css" />
 
-  <!-- CSS “override” só desta página (compacto + tabela full) -->
   <style>
-    /* deixa o conteúdo mais “planilha”: mais colunas/linhas na tela */
-    .container{
-      max-width: 100% !important;
-      width: 100% !important;
-      padding-left: 14px !important;
-      padding-right: 14px !important;
-    }
+    /* Tela toda, igual “planilha” */
+    body{ overflow:hidden; }
 
-    .card{
-      padding: 14px !important;
-    }
-
-    /* cabeçalho mais baixo */
-    .topbar{ height: 56px; }
-    .topbar-inner{ height: 56px; }
-
-    /* blocos do topo mais “baixos” */
-    .fretesHeaderTitle{
-      font-weight: 900;
-      font-size: 20px;
-      line-height: 1.1;
-    }
-    .fretesHeaderSub{
-      margin-top: 6px;
-      color: rgba(233,238,252,.75);
-      font-size: 12px;
-    }
-
-    /* layout geral: header + pesos + tabela ocupando o resto da tela */
     .fretesWrap{
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      min-height: calc(100vh - 56px);
+      height: calc(100vh - 64px);
+      padding: 14px 14px 18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
 
-    .weightsCard .weightsGrid{
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      gap: 14px;
-      align-items: start;
-    }
-    @media (max-width: 860px){
-      .weightsCard .weightsGrid{ grid-template-columns: 1fr; }
+    .fretesHeader{
+      padding:14px 16px;
     }
 
-    .weightsInputs{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 12px;
-      max-width: 520px;
-    }
-
-    .weightsInputs label{
-      font-size: 12px;
-      opacity: .9;
-      display:block;
-      margin-bottom: 6px;
-    }
-
-    .weightsInputs input{
-      height: 34px;
-      padding: 6px 10px;
-      font-size: 13px;
-      border-radius: 10px;
-    }
-
-    .hintSmall{
-      font-size: 12px;
-      opacity: .78;
-      margin-top: 4px;
-      line-height: 1.35;
-    }
-
-    /* TABELA: ocupar o máximo possível */
-    .tableCard{
-      flex: 1 1 auto;              /* pega o resto da tela */
-      min-height: 320px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .tableHeadRow{
+    .fretesHeaderTop{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
+      gap:12px;
+      flex-wrap:wrap;
     }
 
-    .tableActions{
+    .fretesTitle{
+      font-weight:900;
+      font-size:20px;
       display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      align-items:center;
+      gap:10px;
+    }
+
+    .fretesSub{
+      color: rgba(233,238,252,.75);
+      margin-top:6px;
+      font-size:13px;
+      line-height:1.35;
+    }
+
+    .fretesActions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
       justify-content:flex-end;
     }
 
     .btnMini{
-      cursor:pointer;
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-weight: 900;
-      font-size: 12px;
-      border: 1px solid rgba(58,83,168,.95);
+      border:1px solid rgba(58,83,168,.95);
       background: linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color: rgba(233,238,252,.95);
+      color:#e9eefc;
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .btnMini:hover{ filter:brightness(1.08); }
+
+    .btnMini.green{
+      border-color: rgba(60,255,160,.45);
+      background: linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85));
     }
 
-    .tableWrap{
-      flex: 1 1 auto;
-      overflow: auto;
-      border-radius: 12px;
+    .filtersRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .inputMini, .selectMini{
+      background: rgba(13,20,48,.70);
       border: 1px solid rgba(43,58,114,.95);
-      background: rgba(13,20,48,.30);
+      color:#e9eefc;
+      border-radius:12px;
+      padding:10px 12px;
+      outline:none;
+      min-width: 220px;
+      font-weight:700;
+      font-size:13px;
+    }
+    .selectMini{ min-width: 180px; }
+
+    /* Card da tabela ocupa o resto da tela */
+    .tableCard{
+      flex:1;
+      min-height: 240px;
+      padding: 12px 12px 10px;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    /* Área rolável tipo Sheets */
+    .tableScroller{
+      flex:1;
+      overflow:auto;
+      border: 1px solid rgba(43,58,114,.95);
+      border-radius: 12px;
+      background: rgba(13,20,48,.45);
     }
 
     table{
-      width: 100%;
+      width: max-content;          /* permite muitas colunas */
+      min-width: 100%;             /* mas preenche a tela */
       border-collapse: collapse;
-      min-width: 1080px; /* para caber colunas igual planilha */
     }
 
-    th{
+    thead th{
       position: sticky;
       top: 0;
       z-index: 2;
       background: rgba(13,20,48,.96);
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      font-size: 11px;
-      padding: 8px 10px;      /* menor */
       border-bottom: 1px solid rgba(31,43,85,.85);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 10px 10px;
       white-space: nowrap;
     }
 
-    td{
-      padding: 6px 10px;      /* menor: mais linhas */
-      font-size: 12px;
+    tbody td{
       border-bottom: 1px solid rgba(31,43,85,.55);
+      padding: 6px 10px;           /* ✅ linhas mais baixas */
+      font-size: 12.5px;
       white-space: nowrap;
-      vertical-align: middle;
     }
 
-    td input.cell{
-      width: 100%;
-      height: 28px;           /* menor */
-      padding: 4px 8px;
-      border-radius: 10px;
-      font-size: 12px;
-    }
+    tbody tr:hover{ background: rgba(91,124,250,.10); }
 
     .num{ text-align:right; font-variant-numeric: tabular-nums; }
+    .center{ text-align:center; }
 
-    /* “S/N” com bolinha (bem planilha) */
-    .pillSN{
+    /* Status estilo “pílula” */
+    .statusPill{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      width: 28px;
-      height: 28px;
+      padding: 4px 10px;
       border-radius: 999px;
       font-weight: 900;
-      font-size: 12px;
-      border: 1px solid rgba(91,124,250,.45);
-      background: rgba(91,124,250,.10);
+      font-size: 11px;
+      letter-spacing:.02em;
+      border: 1px solid rgba(255,255,255,.18);
+      min-width: 110px;
     }
-    .pillSN.S{
-      border-color: rgba(60,255,160,.55);
-      background: rgba(60,255,160,.14);
-      color: rgba(200,255,230,.95);
+    .stLIBERADO{ background: rgba(60,255,160,.14); border-color: rgba(60,255,160,.45); }
+    .stPARADO{ background: rgba(255,196,0,.14); border-color: rgba(255,196,0,.45); }
+    .stSUSPENSO{ background: rgba(255,120,120,.14); border-color: rgba(255,120,120,.45); }
+
+    /* Modal */
+    .modal{
+      position:fixed; inset:0;
+      display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      padding: 18px;
+      z-index: 9999;
     }
-    .pillSN.N{
-      border-color: rgba(255,120,120,.55);
-      background: rgba(255,120,120,.10);
-      color: rgba(255,190,190,.95);
+    .modal.show{ display:flex; }
+
+    .modalCard{
+      width: min(980px, 100%);
+      max-height: min(86vh, 900px);
+      overflow:auto;
+      background: linear-gradient(180deg, rgba(17,26,51,.92), rgba(13,20,48,.88));
+      border: 1px solid rgba(34,48,94,.95);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+    }
+
+    .modalHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+    .modalTitle{ font-weight: 900; font-size: 16px; margin:0; }
+
+    .formGrid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 980px){
+      .formGrid{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    }
+    @media (max-width: 560px){
+      .formGrid{ grid-template-columns: 1fr; }
+      .inputMini, .selectMini{ min-width: 100%; width: 100%; }
+    }
+
+    .field label{
+      display:block;
+      font-size: 11px;
+      opacity:.86;
+      margin: 6px 0 6px;
+      font-weight: 800;
+      letter-spacing:.02em;
+      text-transform: uppercase;
+    }
+
+    .modalFooter{
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+      margin-top: 12px;
     }
   </style>
 </head>
 
 <body>
+  <!-- Topbar do seu sistema -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
@@ -201,80 +232,91 @@
     </div>
   </div>
 
-  <div class="container" style="padding-top:18px;">
-    <div class="fretesWrap">
-      <!-- HEADER -->
-      <div class="card">
-        <div class="fretesHeaderTitle">🚚 Fretes (Operacional)</div>
-        <div class="fretesHeaderSub">
-          Permissão Frete Mínimo: identifica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+  <div class="fretesWrap">
+    <div class="card fretesHeader">
+      <div class="fretesHeaderTop">
+        <div>
+          <div class="fretesTitle">📋 Fretes (Operacional)</div>
+          <div class="fretesSub">
+            Estrutura igual à planilha: colunas completas e status.<br>
+            (Permissão Frete Mínimo entra no passo 3, aqui é a base operacional.)
+          </div>
+        </div>
+
+        <div class="fretesActions">
+          <button class="btnMini green" id="btnNovo">+ Novo Frete</button>
+          <button class="btnMini" id="btnExport">Exportar CSV</button>
+          <button class="btnMini" id="btnResetDemo" title="Carrega exemplos para visualizar o layout">Resetar Exemplo</button>
         </div>
       </div>
 
-      <!-- PESOS -->
-      <div class="card weightsCard">
-        <div class="weightsGrid">
-          <div>
-            <div style="font-weight:900;">⚖️ Peso médio (referência ANTT)</div>
-            <div class="hintSmall">
-              Dica: esses pesos ficam salvos no navegador (por usuário) e recalculam as permissões automaticamente.
-            </div>
-          </div>
+      <div class="filtersRow">
+        <input class="inputMini" id="qSearch" placeholder="Buscar (cliente, origem, destino, produto, obs...)" />
+        <select class="selectMini" id="qStatus">
+          <option value="">Status: Todos</option>
+          <option value="LIBERADO">LIBERADO</option>
+          <option value="PARADO">PARADO</option>
+          <option value="SUSPENSO">SUSPENSO</option>
+        </select>
+        <input class="inputMini" id="qFilial" placeholder="Filtrar por Filial (opcional)" />
+        <input class="inputMini" id="qRegional" placeholder="Filtrar por Regional (opcional)" />
+      </div>
+    </div>
 
-          <div class="weightsInputs">
-            <div>
-              <label for="w9">9 eixos</label>
-              <input id="w9" type="number" step="0.01" value="47" />
-            </div>
-            <div>
-              <label for="w4">4º eixo</label>
-              <input id="w4" type="number" step="0.01" value="39" />
-            </div>
-            <div>
-              <label for="w7">7 eixos</label>
-              <input id="w7" type="number" step="0.01" value="36" />
-            </div>
-            <div>
-              <label for="w6">6 eixos</label>
-              <input id="w6" type="number" step="0.01" value="31" />
-            </div>
-          </div>
-        </div>
+    <div class="card tableCard">
+      <div style="font-weight:900; margin-bottom:10px;">🧾 Tabela de Fretes</div>
+
+      <div class="tableScroller" id="tableScroller">
+        <table>
+          <thead>
+            <tr>
+              <th>Regional</th>
+              <th>Filial</th>
+              <th>Cliente</th>
+              <th>Origem</th>
+              <th>Coleta</th>
+              <th>Contato de embarque</th>
+              <th>Destino</th>
+              <th>UF</th>
+              <th>Descarga</th>
+              <th class="num">Volume</th>
+              <th class="num">Valor Empresa</th>
+              <th class="num">Valor Motorista</th>
+              <th class="num">KM</th>
+              <th>Produto</th>
+              <th>ICMS</th>
+              <th>Pedido SAT</th>
+              <th class="num">Qtd Porta</th>
+              <th class="num">Qtd Trânsito</th>
+              <th class="center">Status</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="tblBody"></tbody>
+        </table>
       </div>
 
-      <!-- TABELA -->
-      <div class="card tableCard">
-        <div class="tableHeadRow">
-          <div style="font-weight:900;">🧾 Tabela de Fretes</div>
-          <div class="tableActions">
-            <button class="btnMini" id="btnAdd">+ Novo Frete</button>
-            <button class="btnMini" id="btnReset">Resetar Exemplo</button>
-          </div>
-        </div>
+      <div style="margin-top:10px; color: rgba(233,238,252,.72); font-size:12px;">
+        Dica: rolagem horizontal funciona como planilha. Linhas estão compactas para caber mais na tela.
+      </div>
+    </div>
+  </div>
 
-        <div class="hintSmall" style="margin-bottom:10px;">
-          Colunas 5E/6E/7E/4E/9E mostram “S” ou “N” conforme o piso mínimo ANTT para o embarque.
-        </div>
+  <!-- MODAL NOVO/EDITAR -->
+  <div class="modal" id="modal">
+    <div class="modalCard">
+      <div class="modalHead">
+        <p class="modalTitle" id="modalTitle">+ Novo Frete</p>
+        <button class="btnMini" id="btnCloseModal">Fechar</button>
+      </div>
 
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Origem</th>
-                <th>Destino</th>
-                <th class="num">KM</th>
-                <th class="num">Pedágio/Eixo</th>
-                <th class="num">Frete Motorista</th>
-                <th class="num">5E</th>
-                <th class="num">6E</th>
-                <th class="num">7E</th>
-                <th class="num">4E</th>
-                <th class="num">9E</th>
-              </tr>
-            </thead>
-            <tbody id="tbodyFretes"></tbody>
-          </table>
-        </div>
+      <div class="formGrid" id="formGrid">
+        <!-- campos entram via JS -->
+      </div>
+
+      <div class="modalFooter">
+        <button class="btnMini" id="btnDelete" style="display:none;">Excluir</button>
+        <button class="btnMini green" id="btnSave">Salvar</button>
       </div>
     </div>
   </div>
@@ -285,7 +327,7 @@
     bindLogoutButton();
   </script>
 
-  <!-- seu JS desta página -->
+  <!-- ✅ seu JS da tela -->
   <script src="../assets/js/fretes.js"></script>
 </body>
 </html>

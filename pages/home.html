@@ -1,1 +1,102 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Home | NOVA FROTA</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="burger" title="Menu"><div></div></div>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
 
+      <div class="actions">
+        <div class="icon-btn" title="Notificações">🔔</div>
+        <div class="icon-btn" title="Mensagens">✉️ <span class="badge">3</span></div>
+        <div class="icon-btn" title="Arquivos">📁</div>
+        <div class="icon-btn" title="Configurações">⚙️</div>
+        <div class="icon-btn" title="Sair" data-logout>👤</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-title">Bem-vindo ao <b>Sistema Operacional</b></div>
+      <div class="hero-sub">Escolha uma das opções abaixo para continuar</div>
+
+      <div class="grid">
+        <a class="card theme-blue" href="./calculo-piso.html">
+          <div class="card-left">
+            <div class="tile" style="font-size:38px;">🧾📈</div>
+          </div>
+          <div class="card-right">
+            <h3>Cálculo de Piso ANTT</h3>
+            <p>Faça o cálculo do piso mínimo de frete</p>
+          </div>
+        </a>
+
+        <a class="card theme-green" href="./fretes.html">
+          <div class="card-left">
+            <div class="tile" style="font-size:44px;">🚛</div>
+          </div>
+          <div class="card-right">
+            <h3>Fretes (Operacional)</h3>
+            <p>Gerencie e atualize os fretes diários</p>
+          </div>
+        </a>
+
+        <a class="card theme-purple" href="./share-clientes.html">
+          <div class="card-left">
+            <div class="tile" style="font-size:44px;">👥</div>
+          </div>
+          <div class="card-right">
+            <h3>Share Clientes</h3>
+            <p>Compartilhe informações com clientes</p>
+          </div>
+        </a>
+
+        <a class="card theme-slate" href="#" onclick="alert('Em breve 🙂'); return false;">
+          <div class="card-left">
+            <div class="tile" style="font-size:42px;">📊</div>
+          </div>
+          <div class="card-right">
+            <h3>Filial x Cliente</h3>
+            <p>Analise o desempenho por filial</p>
+          </div>
+        </a>
+
+        <a class="card theme-gold" href="#" onclick="alert('Em breve 🙂'); return false;">
+          <div class="card-left">
+            <div class="tile" style="font-size:42px;">📣</div>
+          </div>
+          <div class="card-right">
+            <h3>Divulgação</h3>
+            <p>Ferramentas para comunicação e marketing</p>
+          </div>
+        </a>
+
+        <a class="card theme-navy" href="#" onclick="alert('Em breve 🙂'); return false;">
+          <div class="card-left">
+            <div class="tile" style="font-size:44px;">➕</div>
+          </div>
+          <div class="card-right">
+            <h3>Cálculo Completo</h3>
+            <p>Outras ferramentas de cálculo de frete</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
+</body>
+</html>

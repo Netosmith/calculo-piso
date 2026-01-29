@@ -5,7 +5,189 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fretes | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
+
+  <!-- CSS “override” só desta página (compacto + tabela full) -->
+  <style>
+    /* deixa o conteúdo mais “planilha”: mais colunas/linhas na tela */
+    .container{
+      max-width: 100% !important;
+      width: 100% !important;
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+
+    .card{
+      padding: 14px !important;
+    }
+
+    /* cabeçalho mais baixo */
+    .topbar{ height: 56px; }
+    .topbar-inner{ height: 56px; }
+
+    /* blocos do topo mais “baixos” */
+    .fretesHeaderTitle{
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1.1;
+    }
+    .fretesHeaderSub{
+      margin-top: 6px;
+      color: rgba(233,238,252,.75);
+      font-size: 12px;
+    }
+
+    /* layout geral: header + pesos + tabela ocupando o resto da tela */
+    .fretesWrap{
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: calc(100vh - 56px);
+    }
+
+    .weightsCard .weightsGrid{
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 860px){
+      .weightsCard .weightsGrid{ grid-template-columns: 1fr; }
+    }
+
+    .weightsInputs{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+      max-width: 520px;
+    }
+
+    .weightsInputs label{
+      font-size: 12px;
+      opacity: .9;
+      display:block;
+      margin-bottom: 6px;
+    }
+
+    .weightsInputs input{
+      height: 34px;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 10px;
+    }
+
+    .hintSmall{
+      font-size: 12px;
+      opacity: .78;
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    /* TABELA: ocupar o máximo possível */
+    .tableCard{
+      flex: 1 1 auto;              /* pega o resto da tela */
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tableHeadRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .tableActions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+
+    .btnMini{
+      cursor:pointer;
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-weight: 900;
+      font-size: 12px;
+      border: 1px solid rgba(58,83,168,.95);
+      background: linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
+      color: rgba(233,238,252,.95);
+    }
+
+    .tableWrap{
+      flex: 1 1 auto;
+      overflow: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(43,58,114,.95);
+      background: rgba(13,20,48,.30);
+    }
+
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1080px; /* para caber colunas igual planilha */
+    }
+
+    th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(13,20,48,.96);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-size: 11px;
+      padding: 8px 10px;      /* menor */
+      border-bottom: 1px solid rgba(31,43,85,.85);
+      white-space: nowrap;
+    }
+
+    td{
+      padding: 6px 10px;      /* menor: mais linhas */
+      font-size: 12px;
+      border-bottom: 1px solid rgba(31,43,85,.55);
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    td input.cell{
+      width: 100%;
+      height: 28px;           /* menor */
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    .num{ text-align:right; font-variant-numeric: tabular-nums; }
+
+    /* “S/N” com bolinha (bem planilha) */
+    .pillSN{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      border: 1px solid rgba(91,124,250,.45);
+      background: rgba(91,124,250,.10);
+    }
+    .pillSN.S{
+      border-color: rgba(60,255,160,.55);
+      background: rgba(60,255,160,.14);
+      color: rgba(200,255,230,.95);
+    }
+    .pillSN.N{
+      border-color: rgba(255,120,120,.55);
+      background: rgba(255,120,120,.10);
+      color: rgba(255,190,190,.95);
+    }
+  </style>
 </head>
+
 <body>
   <div class="topbar">
     <div class="topbar-inner">
@@ -19,100 +201,91 @@
     </div>
   </div>
 
-  <div class="container" style="padding-top:18px; padding-bottom:22px;">
+  <div class="container" style="padding-top:18px;">
+    <div class="fretesWrap">
+      <!-- HEADER -->
+      <div class="card">
+        <div class="fretesHeaderTitle">🚚 Fretes (Operacional)</div>
+        <div class="fretesHeaderSub">
+          Permissão Frete Mínimo: identifica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+        </div>
+      </div>
 
-    <!-- Cabeçalho -->
-    <div class="card" style="padding:18px; margin-bottom:14px;">
-      <div style="font-weight:900; font-size:22px;">🚚 Fretes (Operacional)</div>
-      <div style="color: rgba(233,238,252,.75); margin-top:6px;">
-        Permissão Frete Mínimo: identifica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+      <!-- PESOS -->
+      <div class="card weightsCard">
+        <div class="weightsGrid">
+          <div>
+            <div style="font-weight:900;">⚖️ Peso médio (referência ANTT)</div>
+            <div class="hintSmall">
+              Dica: esses pesos ficam salvos no navegador (por usuário) e recalculam as permissões automaticamente.
+            </div>
+          </div>
+
+          <div class="weightsInputs">
+            <div>
+              <label for="w9">9 eixos</label>
+              <input id="w9" type="number" step="0.01" value="47" />
+            </div>
+            <div>
+              <label for="w4">4º eixo</label>
+              <input id="w4" type="number" step="0.01" value="39" />
+            </div>
+            <div>
+              <label for="w7">7 eixos</label>
+              <input id="w7" type="number" step="0.01" value="36" />
+            </div>
+            <div>
+              <label for="w6">6 eixos</label>
+              <input id="w6" type="number" step="0.01" value="31" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA -->
+      <div class="card tableCard">
+        <div class="tableHeadRow">
+          <div style="font-weight:900;">🧾 Tabela de Fretes</div>
+          <div class="tableActions">
+            <button class="btnMini" id="btnAdd">+ Novo Frete</button>
+            <button class="btnMini" id="btnReset">Resetar Exemplo</button>
+          </div>
+        </div>
+
+        <div class="hintSmall" style="margin-bottom:10px;">
+          Colunas 5E/6E/7E/4E/9E mostram “S” ou “N” conforme o piso mínimo ANTT para o embarque.
+        </div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Origem</th>
+                <th>Destino</th>
+                <th class="num">KM</th>
+                <th class="num">Pedágio/Eixo</th>
+                <th class="num">Frete Motorista</th>
+                <th class="num">5E</th>
+                <th class="num">6E</th>
+                <th class="num">7E</th>
+                <th class="num">4E</th>
+                <th class="num">9E</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyFretes"></tbody>
+          </table>
+        </div>
       </div>
     </div>
-
-    <!-- Pesos médios (editáveis) -->
-    <div class="card" style="padding:18px; margin-bottom:14px;">
-      <div style="font-weight:900; margin-bottom:10px;">⚖️ Peso médio (referência ANTT)</div>
-
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; max-width:520px;">
-        <div>
-          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">9 eixos</label>
-          <input id="pesoRef9" type="number" step="0.001" value="47" />
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">4º eixo</label>
-          <input id="pesoRef4" type="number" step="0.001" value="39" />
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">7 eixos</label>
-          <input id="pesoRef7" type="number" step="0.001" value="36" />
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; opacity:.85; margin-bottom:6px;">6 eixos</label>
-          <input id="pesoRef6" type="number" step="0.001" value="31" />
-        </div>
-      </div>
-
-      <div style="margin-top:10px; font-size:12px; opacity:.75;">
-        Dica: esses pesos ficam salvos no navegador (por usuário) e recalculam as permissões automaticamente.
-      </div>
-    </div>
-
-    <!-- Tabela de Fretes -->
-    <div class="card" style="padding:18px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div style="font-weight:900;">📋 Tabela de Fretes</div>
-
-        <!-- Botões (o JS pode usar depois) -->
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="btnNovoFrete" class="btn" style="margin:0; padding:10px 12px; border-radius:12px; font-weight:900;">
-            + Novo Frete
-          </button>
-        </div>
-      </div>
-
-      <div style="margin-top:12px; overflow:auto; border-radius:12px; border:1px solid rgba(43,58,114,.95);">
-        <table style="width:100%; border-collapse:collapse;">
-          <thead>
-            <tr>
-              <th style="text-align:left; padding:10px;">Origem</th>
-              <th style="text-align:left; padding:10px;">Destino</th>
-              <th style="text-align:right; padding:10px;">KM</th>
-              <th style="text-align:right; padding:10px;">Pedágio/Eixo</th>
-              <th style="text-align:right; padding:10px;">Frete Motorista</th>
-
-              <!-- Permissão Frete Mínimo -->
-              <th style="text-align:right; padding:10px;">5E</th>
-              <th style="text-align:right; padding:10px;">6E</th>
-              <th style="text-align:right; padding:10px;">7E</th>
-              <th style="text-align:right; padding:10px;">4E</th>
-              <th style="text-align:right; padding:10px;">9E</th>
-            </tr>
-          </thead>
-
-          <tbody id="tblFretes">
-            <!-- O fretes.js vai renderizar as linhas aqui -->
-          </tbody>
-        </table>
-      </div>
-
-      <div style="margin-top:10px; font-size:12px; opacity:.75;">
-        Colunas 5E/6E/7E/4E/9E mostram “S” ou “N” conforme o piso mínimo ANTT para o embarque.
-      </div>
-    </div>
-
   </div>
 
-  <!-- Auth -->
   <script src="../assets/js/auth.js"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
   </script>
 
-  <!-- Fretes (lógica da tabela + permissões) -->
+  <!-- seu JS desta página -->
   <script src="../assets/js/fretes.js"></script>
 </body>
 </html>

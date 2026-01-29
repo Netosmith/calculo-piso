@@ -4,222 +4,76 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fretes | NOVA FROTA</title>
-
   <link rel="stylesheet" href="../assets/css/app.css" />
 
+  <!-- Ajustes pontuais para "cara de planilha": mais linhas na tela + tabela ocupando tudo -->
   <style>
-    /* Tela toda, igual “planilha” */
-    body{ overflow:hidden; }
-
-    .fretesWrap{
-      height: calc(100vh - 64px);
-      padding: 14px 14px 18px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
+    .container{max-width:1400px}
+    .card{padding:14px}
+    .tableWrap{overflow:auto; border:1px solid rgba(43,58,114,.65); border-radius:14px; max-height: calc(100vh - 300px);}
+    @media (max-width:900px){
+      .tableWrap{max-height: calc(100vh - 340px);}
     }
-
-    .fretesHeader{
-      padding:14px 16px;
+    table{width:100%; border-collapse:collapse; min-width:1400px;}
+    th,td{padding:8px 10px; border-bottom:1px solid rgba(31,43,85,.55); font-size:12px; vertical-align:middle; white-space:nowrap;}
+    thead th{position:sticky; top:0; z-index:3; background:rgba(13,20,48,.96);}
+    .rowSlim td{padding-top:6px; padding-bottom:6px;}
+    .groupRow td{
+      position:sticky; top:38px; z-index:2;
+      background:rgba(12,18,42,.98);
+      font-weight:900; letter-spacing:.04em;
+      border-bottom:1px solid rgba(60,255,160,.18);
     }
-
-    .fretesHeaderTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
+    .pillYN{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:28px; height:22px; border-radius:999px; font-weight:900; font-size:12px;
+      border:1px solid rgba(233,238,252,.22);
     }
-
-    .fretesTitle{
-      font-weight:900;
-      font-size:20px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
-    .fretesSub{
-      color: rgba(233,238,252,.75);
-      margin-top:6px;
-      font-size:13px;
-      line-height:1.35;
-    }
-
-    .fretesActions{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-
-    .btnMini{
-      border:1px solid rgba(58,83,168,.95);
-      background: linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color:#e9eefc;
-      padding:10px 12px;
-      border-radius:14px;
-      font-weight:900;
-      cursor:pointer;
-      font-size:13px;
-      white-space:nowrap;
-    }
-    .btnMini:hover{ filter:brightness(1.08); }
-
-    .btnMini.green{
-      border-color: rgba(60,255,160,.45);
-      background: linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85));
-    }
-
-    .filtersRow{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-
-    .inputMini, .selectMini{
-      background: rgba(13,20,48,.70);
-      border: 1px solid rgba(43,58,114,.95);
-      color:#e9eefc;
-      border-radius:12px;
-      padding:10px 12px;
-      outline:none;
-      min-width: 220px;
-      font-weight:700;
-      font-size:13px;
-    }
-    .selectMini{ min-width: 180px; }
-
-    /* Card da tabela ocupa o resto da tela */
-    .tableCard{
-      flex:1;
-      min-height: 240px;
-      padding: 12px 12px 10px;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-
-    /* Área rolável tipo Sheets */
-    .tableScroller{
-      flex:1;
-      overflow:auto;
-      border: 1px solid rgba(43,58,114,.95);
-      border-radius: 12px;
-      background: rgba(13,20,48,.45);
-    }
-
-    table{
-      width: max-content;          /* permite muitas colunas */
-      min-width: 100%;             /* mas preenche a tela */
-      border-collapse: collapse;
-    }
-
-    thead th{
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: rgba(13,20,48,.96);
-      border-bottom: 1px solid rgba(31,43,85,.85);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      padding: 10px 10px;
-      white-space: nowrap;
-    }
-
-    tbody td{
-      border-bottom: 1px solid rgba(31,43,85,.55);
-      padding: 6px 10px;           /* ✅ linhas mais baixas */
-      font-size: 12.5px;
-      white-space: nowrap;
-    }
-
-    tbody tr:hover{ background: rgba(91,124,250,.10); }
-
-    .num{ text-align:right; font-variant-numeric: tabular-nums; }
-    .center{ text-align:center; }
-
-    /* Status estilo “pílula” */
+    .pillYN.yes{background:rgba(60,255,160,.16); border-color:rgba(60,255,160,.55); color:rgba(220,255,242,.96);}
+    .pillYN.no{background:rgba(255,120,120,.14); border-color:rgba(255,120,120,.55); color:rgba(255,210,210,.96);}
     .statusPill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 11px;
-      letter-spacing:.02em;
-      border: 1px solid rgba(255,255,255,.18);
-      min-width: 110px;
+      display:inline-flex; align-items:center; gap:8px;
+      padding:4px 10px; border-radius:999px; font-weight:900; font-size:11px;
+      border:1px solid rgba(233,238,252,.18);
     }
-    .stLIBERADO{ background: rgba(60,255,160,.14); border-color: rgba(60,255,160,.45); }
-    .stPARADO{ background: rgba(255,196,0,.14); border-color: rgba(255,196,0,.45); }
-    .stSUSPENSO{ background: rgba(255,120,120,.14); border-color: rgba(255,120,120,.45); }
-
-    /* Modal */
-    .modal{
-      position:fixed; inset:0;
-      display:none; align-items:center; justify-content:center;
-      background: rgba(0,0,0,.55);
-      backdrop-filter: blur(6px);
-      padding: 18px;
-      z-index: 9999;
+    .statusPill.liberado{background:rgba(60,255,160,.14); border-color:rgba(60,255,160,.45);}
+    .statusPill.parado{background:rgba(255,190,80,.14); border-color:rgba(255,190,80,.45);}
+    .statusPill.suspenso{background:rgba(255,120,120,.14); border-color:rgba(255,120,120,.45);}
+    .muted2{color: rgba(233,238,252,.72);}
+    .grid2{display:grid; grid-template-columns:1fr; gap:12px;}
+    @media (min-width:1100px){ .grid2{grid-template-columns: 420px 1fr;} }
+    .miniInputs{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
+    .miniInputs label{font-size:12px; font-weight:800;}
+    .miniInputs input{
+      width:100%; padding:10px 12px; border-radius:12px;
+      border:1px solid rgba(43,58,114,.85);
+      background:rgba(13,20,48,.70); color:rgba(233,238,252,.95);
+      outline:none;
     }
-    .modal.show{ display:flex; }
-
-    .modalCard{
-      width: min(980px, 100%);
-      max-height: min(86vh, 900px);
-      overflow:auto;
-      background: linear-gradient(180deg, rgba(17,26,51,.92), rgba(13,20,48,.88));
-      border: 1px solid rgba(34,48,94,.95);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+    .toolbar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+    .toolbar .left{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+    .btnSmall{
+      padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(58,83,168,.95);
+      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
+      color:rgba(233,238,252,.95);
+      font-weight:900; cursor:pointer;
     }
-
-    .modalHead{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-      margin-bottom: 10px;
+    .btnSmall:hover{filter:brightness(1.06)}
+    .btnSmall.green{border-color:rgba(60,255,160,.45); background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
+    .filters{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+    @media (max-width:700px){ .filters{grid-template-columns:1fr;} }
+    .filters input,.filters select{
+      width:100%; padding:10px 12px; border-radius:12px;
+      border:1px solid rgba(43,58,114,.85);
+      background:rgba(13,20,48,.70); color:rgba(233,238,252,.95);
+      outline:none;
     }
-    .modalTitle{ font-weight: 900; font-size: 16px; margin:0; }
-
-    .formGrid{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(160px, 1fr));
-      gap: 10px;
-    }
-    @media (max-width: 980px){
-      .formGrid{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
-    }
-    @media (max-width: 560px){
-      .formGrid{ grid-template-columns: 1fr; }
-      .inputMini, .selectMini{ min-width: 100%; width: 100%; }
-    }
-
-    .field label{
-      display:block;
-      font-size: 11px;
-      opacity:.86;
-      margin: 6px 0 6px;
-      font-weight: 800;
-      letter-spacing:.02em;
-      text-transform: uppercase;
-    }
-
-    .modalFooter{
-      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
-      margin-top: 12px;
-    }
+    .filters label{font-size:11px; font-weight:900; opacity:.9;}
+    .note{font-size:12px; line-height:1.35;}
   </style>
 </head>
-
 <body>
-  <!-- Topbar do seu sistema -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
@@ -232,102 +86,193 @@
     </div>
   </div>
 
-  <div class="fretesWrap">
-    <div class="card fretesHeader">
-      <div class="fretesHeaderTop">
-        <div>
-          <div class="fretesTitle">📋 Fretes (Operacional)</div>
-          <div class="fretesSub">
-            Estrutura igual à planilha: colunas completas e status.<br>
-            (Permissão Frete Mínimo entra no passo 3, aqui é a base operacional.)
-          </div>
-        </div>
-
-        <div class="fretesActions">
-          <button class="btnMini green" id="btnNovo">+ Novo Frete</button>
-          <button class="btnMini" id="btnExport">Exportar CSV</button>
-          <button class="btnMini" id="btnResetDemo" title="Carrega exemplos para visualizar o layout">Resetar Exemplo</button>
-        </div>
-      </div>
-
-      <div class="filtersRow">
-        <input class="inputMini" id="qSearch" placeholder="Buscar (cliente, origem, destino, produto, obs...)" />
-        <select class="selectMini" id="qStatus">
-          <option value="">Status: Todos</option>
-          <option value="LIBERADO">LIBERADO</option>
-          <option value="PARADO">PARADO</option>
-          <option value="SUSPENSO">SUSPENSO</option>
-        </select>
-        <input class="inputMini" id="qFilial" placeholder="Filtrar por Filial (opcional)" />
-        <input class="inputMini" id="qRegional" placeholder="Filtrar por Regional (opcional)" />
+  <div class="container" style="padding-top:18px;">
+    <div class="card">
+      <div style="font-weight:900; font-size:22px;">📋 Fretes (Operacional)</div>
+      <div class="muted2" style="margin-top:6px;">
+        Permissão Frete Mínimo: mostra quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
       </div>
     </div>
 
-    <div class="card tableCard">
-      <div style="font-weight:900; margin-bottom:10px;">🧾 Tabela de Fretes</div>
+    <div style="height:12px;"></div>
 
-      <div class="tableScroller" id="tableScroller">
-        <table>
-          <thead>
-            <tr>
-              <th>Regional</th>
-              <th>Filial</th>
-              <th>Cliente</th>
-              <th>Origem</th>
-              <th>Coleta</th>
-              <th>Contato de embarque</th>
-              <th>Destino</th>
-              <th>UF</th>
-              <th>Descarga</th>
-              <th class="num">Volume</th>
-              <th class="num">Valor Empresa</th>
-              <th class="num">Valor Motorista</th>
-              <th class="num">KM</th>
-              <th>Produto</th>
-              <th>ICMS</th>
-              <th>Pedido SAT</th>
-              <th class="num">Qtd Porta</th>
-              <th class="num">Qtd Trânsito</th>
-              <th class="center">Status</th>
-              <th>Observações</th>
-            </tr>
-          </thead>
-          <tbody id="tblBody"></tbody>
-        </table>
+    <div class="grid2">
+      <!-- PESOS (REFERÊNCIA) -->
+      <div class="card">
+        <div style="font-weight:900; font-size:16px;">⚖️ Peso médio (referência ANTT)</div>
+        <div class="muted2 note" style="margin-top:6px;">
+          Esses pesos ficam salvos no navegador (por usuário) e recalculam automaticamente as permissões.
+        </div>
+
+        <div class="miniInputs">
+          <div>
+            <label for="w9">9 eixos</label>
+            <input id="w9" type="number" step="0.01" value="47" />
+          </div>
+          <div>
+            <label for="w4">4º eixo</label>
+            <input id="w4" type="number" step="0.01" value="39" />
+          </div>
+          <div>
+            <label for="w7">7 eixos</label>
+            <input id="w7" type="number" step="0.01" value="36" />
+          </div>
+          <div>
+            <label for="w6">6 eixos</label>
+            <input id="w6" type="number" step="0.01" value="31" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+          <button class="btnSmall" id="btnSaveWeights">Salvar pesos</button>
+          <button class="btnSmall" id="btnResetWeights">Resetar</button>
+        </div>
+
+        <div class="muted2 note" style="margin-top:10px;">
+          Fórmulas usadas (mesma lógica do Sheets):<br>
+          <b>5E</b> = (((KM×6,0301)+(Ped×5)+615,26)/26) &lt; Frete Mot<br>
+          <b>6E</b> = (((KM×6,7408)+(Ped×6)+663,07)/Peso6) &lt; Frete Mot<br>
+          <b>7E</b> = (((KM×7,313)+(Ped×7)+753,88)/Peso7) &lt; Frete Mot<br>
+          <b>4E</b> = (((KM×7,313)+(Ped×7)+753,88)/Peso4) &lt; Frete Mot<br>
+          <b>9E</b> = (((KM×8,242)+(Ped×9)+808,17)/Peso9) &lt; Frete Mot
+        </div>
       </div>
 
-      <div style="margin-top:10px; color: rgba(233,238,252,.72); font-size:12px;">
-        Dica: rolagem horizontal funciona como planilha. Linhas estão compactas para caber mais na tela.
+      <!-- TABELA -->
+      <div class="card">
+        <div class="toolbar">
+          <div class="left">
+            <div style="font-weight:900; font-size:16px;">🧾 Tabela de Fretes</div>
+            <div class="muted2 note">Colunas 5E/6E/7E/4E/9E mostram “S” ou “N” conforme o piso mínimo ANTT.</div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btnSmall green" id="btnNew">+ Novo Frete</button>
+            <button class="btnSmall" id="btnResetExample" title="Restaura o exemplo local">Resetar Exemplo</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div>
+            <label for="fFilial">Filial</label>
+            <select id="fFilial"></select>
+          </div>
+          <div>
+            <label for="fBusca">Busca (cliente, origem, destino, produto, contato)</label>
+            <input id="fBusca" placeholder="Digite para filtrar..." />
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Regional</th>
+                <th>Filial</th>
+                <th>Cliente</th>
+                <th>Origem</th>
+                <th>Coleta</th>
+                <th>Contato</th>
+                <th>Destino</th>
+                <th>UF</th>
+                <th>Descarga</th>
+                <th class="num">Volume</th>
+                <th class="num">Valor Empresa</th>
+                <th class="num">Valor Motorista</th>
+                <th class="num">KM</th>
+                <th class="num">Pedágio/Eixo</th>
+
+                <th class="num">5E</th>
+                <th class="num">6E</th>
+                <th class="num">7E</th>
+                <th class="num">4E</th>
+                <th class="num">9E</th>
+
+                <th>Produto</th>
+                <th>ICMS</th>
+                <th class="num">Pedido SAT</th>
+                <th class="num">Qtd Porta</th>
+                <th class="num">Qtd Trânsito</th>
+                <th>Status</th>
+                <th>Observações</th>
+                <th class="num">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL NOVO/EDITAR -->
-  <div class="modal" id="modal">
-    <div class="modalCard">
-      <div class="modalHead">
-        <p class="modalTitle" id="modalTitle">+ Novo Frete</p>
-        <button class="btnMini" id="btnCloseModal">Fechar</button>
+  <!-- Modal simples (novo/editar) -->
+  <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); z-index:9999; padding:18px; align-items:center; justify-content:center;">
+    <div class="card" style="width:min(980px, 100%); max-height: calc(100vh - 40px); overflow:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="font-weight:900; font-size:16px;">✍️ Frete</div>
+        <button class="btnSmall" id="btnCloseModal">Fechar</button>
       </div>
 
-      <div class="formGrid" id="formGrid">
-        <!-- campos entram via JS -->
+      <div class="muted2 note" style="margin-top:8px;">
+        Dica: o campo <b>Contato</b> é um seletor fixo (igual sua planilha).
       </div>
 
-      <div class="modalFooter">
-        <button class="btnMini" id="btnDelete" style="display:none;">Excluir</button>
-        <button class="btnMini green" id="btnSave">Salvar</button>
+      <div class="filters" style="margin-top:12px;">
+        <div><label>Regional</label><input id="mRegional" placeholder="Ex: GOIÁS" /></div>
+        <div><label>Filial</label><select id="mFilial"></select></div>
+
+        <div><label>Cliente</label><input id="mCliente" placeholder="Ex: CARGILL" /></div>
+        <div><label>Origem</label><input id="mOrigem" placeholder="Ex: RIO VERDE-GO" /></div>
+
+        <div><label>Coleta</label><input id="mColeta" placeholder="Ex: FAZ SANTANA" /></div>
+        <div><label>Contato de embarque</label><select id="mContato"></select></div>
+
+        <div><label>Destino</label><input id="mDestino" placeholder="Ex: SANTOS/SP" /></div>
+        <div><label>UF</label><input id="mUF" placeholder="Ex: GO" /></div>
+
+        <div><label>Descarga</label><input id="mDescarga" placeholder="Ex: CARGILL" /></div>
+        <div><label>Produto</label><input id="mProduto" placeholder="Ex: SOJA" /></div>
+
+        <div><label>KM</label><input id="mKM" type="number" step="0.1" /></div>
+        <div><label>Pedágio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
+
+        <div><label>Volume</label><input id="mVolume" type="number" step="0.01" /></div>
+        <div><label>Valor Empresa</label><input id="mEmpresa" type="number" step="0.01" /></div>
+
+        <div><label>Valor Motorista</label><input id="mMotorista" type="number" step="0.01" /></div>
+        <div><label>ICMS</label><input id="mICMS" placeholder="Ex: ISENTO (CIF)" /></div>
+
+        <div><label>Pedido SAT</label><input id="mSat" type="number" step="1" /></div>
+        <div><label>Qtd Porta</label><input id="mPorta" type="number" step="1" /></div>
+
+        <div><label>Qtd Trânsito</label><input id="mTransito" type="number" step="1" /></div>
+        <div><label>Status</label>
+          <select id="mStatus">
+            <option value="LIBERADO">LIBERADO</option>
+            <option value="PARADO">PARADO</option>
+            <option value="SUSPENSO">SUSPENSO</option>
+          </select>
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label>Observações</label>
+          <input id="mObs" placeholder="Ex: AGENDAMENTO ALONGADO" />
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+        <button class="btnSmall green" id="btnSave">Salvar</button>
+        <button class="btnSmall" id="btnCancel">Cancelar</button>
       </div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/fretes.js"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
   </script>
-
-  <!-- ✅ seu JS da tela -->
-  <script src="../assets/js/fretes.js"></script>
 </body>
 </html>

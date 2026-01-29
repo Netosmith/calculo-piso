@@ -1,1 +1,37 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Share Clientes | NOVA FROTA</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
+      <div class="actions">
+        <div class="icon-btn" title="Sair" data-logout>👤</div>
+      </div>
+    </div>
+  </div>
 
+  <div class="container" style="padding-top:18px;">
+    <div class="card" style="padding:18px;">
+      <div style="font-weight:900; font-size:22px;">📤 Share Clientes</div>
+      <div style="color: rgba(233,238,252,.75); margin-top:6px;">
+        Próximo passo: seletor de cliente + logo automática + lista filtrada pronta para print.
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
+</body>
+</html>

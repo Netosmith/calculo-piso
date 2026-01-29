@@ -73,60 +73,155 @@
     .note{font-size:12px; line-height:1.35;}
 
     /* ====== AJUSTES DE TELA (layout / densidade) ====== */
-    /* deixa o conteúdo mais "planilha": cabe mais na tela */
     .container.nfWide{max-width: 1650px;}
     .grid2{align-items:start;}
     @media (min-width:1100px){
       .grid2{grid-template-columns: 520px 1fr;}
     }
-    /* garante que os inputs não "encolham" em telas menores */
     .miniInputs{grid-template-columns: repeat(2, minmax(180px,1fr));}
     .miniInputs > div{min-width:180px;}
     .miniInputs input{min-height:40px;}
-    /* tabela: mais densa */
     table th, table td{padding-top:6px; padding-bottom:6px;}
     .rowSlim td{padding-top:5px; padding-bottom:5px;}
-    /* faz a tabela ocupar mais altura útil */
     .tableWrap{height: calc(100vh - 340px); min-height: 420px;}
     @media (max-width:1100px){
       .tableWrap{height:auto; min-height: 360px;}
     }
-    /* melhora o scroll horizontal e evita "sobras" */
     .tableWrap{overflow:auto; border-radius:14px;}
     .card{overflow:hidden;}
-    /* campos e filtros alinhados e compactos */
     .filters{grid-template-columns: 240px 1fr;}
     @media (max-width:700px){ .filters{grid-template-columns:1fr;} }
-  
-/* ===== AJUSTE DE LAYOUT (TOP + TABELA EM TELA INTEIRA) ===== */
-.container.pageFretes{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  min-height:calc(100vh - 72px);
-  padding-bottom:18px;
-}
-.container.pageFretes .grid2{flex:0 0 auto}
-.card.tableFull{
-  flex:1 1 auto;
-  display:flex;
-  flex-direction:column;
-  min-height:380px;
-}
-.card.tableFull .tableWrap{
-  flex:1 1 auto;
-  max-height:none !important;
-  height:auto !important;
-}
-.card.tableFull th, .card.tableFull td{padding:8px 10px}
-.card.tableFull th{font-size:11px}
-.cellInput{
-  padding:6px 8px !important;
-  height:34px;
-  border-radius:10px !important;
-}
 
-</style>
+    /* ===== AJUSTE DE LAYOUT (TOP + TABELA EM TELA INTEIRA) ===== */
+    .container.pageFretes{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-height:calc(100vh - 72px);
+      padding-bottom:18px;
+    }
+    .container.pageFretes .grid2{flex:0 0 auto}
+    .card.tableFull{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      min-height:380px;
+    }
+    .card.tableFull .tableWrap{
+      flex:1 1 auto;
+      max-height:none !important;
+      height:auto !important;
+    }
+    .card.tableFull th, .card.tableFull td{padding:8px 10px}
+    .card.tableFull th{font-size:11px}
+    .cellInput{
+      padding:6px 8px !important;
+      height:34px;
+      border-radius:10px !important;
+    }
+
+    /* ====== TOP BAR COMPACTA (MINIMALISTA) ====== */
+    .fretes-top{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:12px 14px;
+    }
+    .fretes-top .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .fretes-top .title h1{
+      margin:0;
+      font-size:18px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .fretes-top .title .sub{
+      font-size:12px;
+      color: rgba(233,238,252,.72);
+      max-width: 900px;
+    }
+
+    .fretes-toolbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(43,58,114,.65);
+      background:linear-gradient(180deg, rgba(17,26,51,.70), rgba(13,20,48,.55));
+      backdrop-filter: blur(8px);
+    }
+    .ft-block{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .ft-spacer{flex:1 1 auto; min-width:10px}
+    .ft-label{
+      font-size:11px;
+      font-weight:900;
+      opacity:.85;
+      margin-right:2px;
+    }
+    .ft-mini{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      font-weight:900;
+      opacity:.9;
+    }
+    .ft-mini input{
+      width:66px;
+      height:32px;
+      padding:6px 8px;
+      border-radius:10px;
+      border:1px solid rgba(43,58,114,.85);
+      background:rgba(13,20,48,.70);
+      color:rgba(233,238,252,.95);
+      outline:none;
+    }
+    .ft-mini input:focus{
+      border-color:rgba(91,124,250,.95);
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+    .ft-select, .ft-search{
+      height:32px;
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid rgba(43,58,114,.85);
+      background:rgba(13,20,48,.70);
+      color:rgba(233,238,252,.95);
+      outline:none;
+    }
+    .ft-select{width:200px}
+    .ft-search{width:min(360px, 55vw)}
+    @media (max-width:700px){
+      .ft-select,.ft-search{width:100%}
+    }
+    .btnTiny{
+      height:32px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(58,83,168,.95);
+      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
+      color:rgba(233,238,252,.95);
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btnTiny:hover{filter:brightness(1.06)}
+    .btnTiny.green{border-color:rgba(60,255,160,.45); background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
+    .btnTiny.ghost{background:transparent}
+
+  </style>
 </head>
 <body>
   <div class="topbar">
@@ -136,150 +231,105 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
       <div class="actions">
-        <div class="icon-btn" title="Sair" data-logout>👤</div>
+        <div class="icon-btn" title="Sair" data-logout>ð¤</div>
       </div>
     </div>
   </div>
 
-  <div class="container nfWide" style="padding-top:18px;">
-    <div class="card">
-      <div style="font-weight:900; font-size:22px;">📋 Fretes (Operacional)</div>
-      <div class="muted2" style="margin-top:6px;">
-        Permissão Frete Mínimo: mostra quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+  <div class="container nfWide pageFretes" style="padding-top:18px;">
+    <!-- TÃTULO (MINIMAL) -->
+    <div class="card fretes-top">
+      <div class="title">
+        <h1>ð Fretes</h1>
+        <div class="sub">PermissÃ£o Frete MÃ­nimo: indica quais tipos (eixos) atendem o piso mÃ­nimo ANTT por embarque.</div>
       </div>
     </div>
 
-    <div style="height:12px;"></div>
+    <!-- BARRA COMPACTA (substitui a Ã¡rea em vermelho) -->
+    <div class="fretes-toolbar">
+      <div class="ft-block">
+        <span class="ft-label">Pesos:</span>
 
-    <div class="grid2">
-      <!-- PESOS (REFERÊNCIA) -->
-      <div class="card">
-        <div style="font-weight:900; font-size:16px;">⚖️ Peso médio (referência ANTT)</div>
-        <div class="muted2 note" style="margin-top:6px;">
-          Esses pesos ficam salvos no navegador (por usuário) e recalculam automaticamente as permissões.
-        </div>
+        <div class="ft-mini"><span>9E</span><input id="w9" type="number" step="0.01" value="47" /></div>
+        <div class="ft-mini"><span>4E</span><input id="w4" type="number" step="0.01" value="39" /></div>
+        <div class="ft-mini"><span>7E</span><input id="w7" type="number" step="0.01" value="36" /></div>
+        <div class="ft-mini"><span>6E</span><input id="w6" type="number" step="0.01" value="31" /></div>
 
-        <div class="miniInputs">
-          <div>
-            <label for="w9">9 eixos</label>
-            <input id="w9" type="number" step="0.01" value="47" />
-          </div>
-          <div>
-            <label for="w4">4º eixo</label>
-            <input id="w4" type="number" step="0.01" value="39" />
-          </div>
-          <div>
-            <label for="w7">7 eixos</label>
-            <input id="w7" type="number" step="0.01" value="36" />
-          </div>
-          <div>
-            <label for="w6">6 eixos</label>
-            <input id="w6" type="number" step="0.01" value="31" />
-          </div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
-          <button class="btnSmall" id="btnSaveWeights">Salvar pesos</button>
-          <button class="btnSmall" id="btnResetWeights">Resetar</button>
-        </div>
-
-        <div class="muted2 note" style="margin-top:10px;">
-          Fórmulas usadas (mesma lógica do Sheets):<br>
-          <b>5E</b> = (((KM×6,0301)+(Ped×5)+615,26)/26) &lt; Frete Mot<br>
-          <b>6E</b> = (((KM×6,7408)+(Ped×6)+663,07)/Peso6) &lt; Frete Mot<br>
-          <b>7E</b> = (((KM×7,313)+(Ped×7)+753,88)/Peso7) &lt; Frete Mot<br>
-          <b>4E</b> = (((KM×7,313)+(Ped×7)+753,88)/Peso4) &lt; Frete Mot<br>
-          <b>9E</b> = (((KM×8,242)+(Ped×9)+808,17)/Peso9) &lt; Frete Mot
-        </div>
+        <button class="btnTiny" id="btnSaveWeights">Salvar</button>
+        <button class="btnTiny ghost" id="btnResetWeights">Reset</button>
       </div>
 
-      <!-- TABELA -->
-      <div class="card">
-        <div class="toolbar">
-          <div class="left">
-            <div style="font-weight:900; font-size:16px;">🧾 Tabela de Fretes</div>
-            <div class="muted2 note">Colunas 5E/6E/7E/4E/9E mostram “S” ou “N” conforme o piso mínimo ANTT.</div>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btnSmall green" id="btnNew">+ Novo Frete</button>
-            <button class="btnSmall" id="btnResetExample" title="Restaura o exemplo local">Resetar Exemplo</button>
-          </div>
-        </div>
+      <div class="ft-spacer"></div>
 
-        <div class="filters">
-          <div>
-            <label for="fFilial">Filial</label>
-            <select id="fFilial"></select>
-          </div>
-          <div>
-            <label for="fBusca">Busca (cliente, origem, destino, produto, contato)</label>
-            <input id="fBusca" placeholder="Digite para filtrar..." />
-          </div>
-        </div>
+      <div class="ft-block">
+        <select class="ft-select" id="fFilial" title="Filial"></select>
+        <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
+        <button class="btnTiny green" id="btnNew">+ Novo</button>
+        <button class="btnTiny" id="btnResetExample" title="Restaura o exemplo local">Exemplo</button>
+      </div>
+    </div>
 
-        <div style="height:10px;"></div>
+    <!-- TABELA EM TELA INTEIRA -->
+    <div class="card tableFull">
+      <div class="muted" style="margin:2px 0 10px;">
+        Colunas <b>5E/6E/7E/4E/9E</b> mostram âSâ ou âNâ conforme o piso mÃ­nimo ANTT.
+      </div>
 
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Regional</th>
+              <th>Filial</th>
+              <th>Cliente</th>
+              <th>Origem</th>
+              <th>Coleta</th>
+              <th>Contato</th>
+              <th>Destino</th>
+              <th>UF</th>
+              <th>Descarga</th>
+              <th class="num">Volume</th>
+              <th class="num">Valor Empresa</th>
+              <th class="num">Valor Motorista</th>
+              <th class="num">KM</th>
+              <th class="num">PedÃ¡gio/Eixo</th>
+
+              <th class="num">5E</th>
+              <th class="num">6E</th>
+              <th class="num">7E</th>
+              <th class="num">4E</th>
+              <th class="num">9E</th>
+
+              <th>Produto</th>
+              <th>ICMS</th>
+              <th class="num">Pedido SAT</th>
+              <th class="num">Qtd Porta</th>
+              <th class="num">Qtd TrÃ¢nsito</th>
+              <th>Status</th>
+              <th>ObservaÃ§Ãµes</th>
+              <th class="num">AÃ§Ãµes</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
-      <div class="card tableFull">
-        <div class="pill">📋 Fretes (tela inteira)</div>
-        <div class="muted" style="margin-top:6px;">A tabela abaixo ocupa toda a parte de baixo da tela. Use os filtros acima para refinar.</div>
-<div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Regional</th>
-                <th>Filial</th>
-                <th>Cliente</th>
-                <th>Origem</th>
-                <th>Coleta</th>
-                <th>Contato</th>
-                <th>Destino</th>
-                <th>UF</th>
-                <th>Descarga</th>
-                <th class="num">Volume</th>
-                <th class="num">Valor Empresa</th>
-                <th class="num">Valor Motorista</th>
-                <th class="num">KM</th>
-                <th class="num">Pedágio/Eixo</th>
-
-                <th class="num">5E</th>
-                <th class="num">6E</th>
-                <th class="num">7E</th>
-                <th class="num">4E</th>
-                <th class="num">9E</th>
-
-                <th>Produto</th>
-                <th>ICMS</th>
-                <th class="num">Pedido SAT</th>
-                <th class="num">Qtd Porta</th>
-                <th class="num">Qtd Trânsito</th>
-                <th>Status</th>
-                <th>Observações</th>
-                <th class="num">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-          </table>
-        </div
-      </div>
-
 
   <!-- Modal simples (novo/editar) -->
   <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); z-index:9999; padding:18px; align-items:center; justify-content:center;">
     <div class="card" style="width:min(980px, 100%); max-height: calc(100vh - 40px); overflow:auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-        <div style="font-weight:900; font-size:16px;">✍️ Frete</div>
+        <div style="font-weight:900; font-size:16px;">âï¸ Frete</div>
         <button class="btnSmall" id="btnCloseModal">Fechar</button>
       </div>
 
       <div class="muted2 note" style="margin-top:8px;">
-        Dica: o campo <b>Contato</b> é um seletor fixo (igual sua planilha).
+        Dica: o campo <b>Contato</b> Ã© um seletor fixo (igual sua planilha).
       </div>
 
       <div class="filters" style="margin-top:12px;">
-        <div><label>Regional</label><input id="mRegional" placeholder="Ex: GOIÁS" /></div>
+        <div><label>Regional</label><input id="mRegional" placeholder="Ex: GOIÃS" /></div>
         <div><label>Filial</label><select id="mFilial"></select></div>
 
         <div><label>Cliente</label><input id="mCliente" placeholder="Ex: CARGILL" /></div>
@@ -295,7 +345,7 @@
         <div><label>Produto</label><input id="mProduto" placeholder="Ex: SOJA" /></div>
 
         <div><label>KM</label><input id="mKM" type="number" step="0.1" /></div>
-        <div><label>Pedágio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
+        <div><label>PedÃ¡gio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
 
         <div><label>Volume</label><input id="mVolume" type="number" step="0.01" /></div>
         <div><label>Valor Empresa</label><input id="mEmpresa" type="number" step="0.01" /></div>
@@ -306,7 +356,7 @@
         <div><label>Pedido SAT</label><input id="mSat" type="number" step="1" /></div>
         <div><label>Qtd Porta</label><input id="mPorta" type="number" step="1" /></div>
 
-        <div><label>Qtd Trânsito</label><input id="mTransito" type="number" step="1" /></div>
+        <div><label>Qtd TrÃ¢nsito</label><input id="mTransito" type="number" step="1" /></div>
         <div><label>Status</label>
           <select id="mStatus">
             <option value="LIBERADO">LIBERADO</option>
@@ -316,7 +366,7 @@
         </div>
 
         <div style="grid-column:1/-1;">
-          <label>Observações</label>
+          <label>ObservaÃ§Ãµes</label>
           <input id="mObs" placeholder="Ex: AGENDAMENTO ALONGADO" />
         </div>
       </div>

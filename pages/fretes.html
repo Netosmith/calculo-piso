@@ -292,7 +292,6 @@
               <th class="num">Vlr Motorista</th>
               <th class="num">KM</th>
               <th class="num">Pedagio/Eixo</th>
-              <th class="num">%</th>
 
               <th class="num">5E</th>
               <th class="num">6E</th>
@@ -304,9 +303,9 @@
               <th>ICMS</th>
               <th class="num">Pedido SAT</th>
               <th class="num">Qtd Porta</th>
-              <th class="num">Qtd TrÃ¢nsito</th>
+              <th class="num">Qtd Transito</th>
               <th>Status</th>
-              <th>ObservaÃ§Ãµes</th>
+              <th>Observações</th>
               <th class="num">AÃ§Ãµes</th>
             </tr>
           </thead>
@@ -320,12 +319,12 @@
   <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); z-index:9999; padding:18px; align-items:center; justify-content:center;">
     <div class="card" style="width:min(980px, 100%); max-height: calc(100vh - 40px); overflow:auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-        <div style="font-weight:900; font-size:16px;">âï¸ Frete</div>
+        <div style="font-weight:900; font-size:16px;">Operacional Frete</div>
         <button class="btnSmall" id="btnCloseModal">Fechar</button>
       </div>
 
       <div class="muted2 note" style="margin-top:8px;">
-        Dica: o campo <b>Contato</b> Ã© um seletor fixo (igual sua planilha).
+        Dica: o campo <b>Contato</b> Selec um seletor fixo (igual sua planilha).
       </div>
 
       <div class="filters" style="margin-top:12px;">
@@ -345,7 +344,7 @@
         <div><label>Produto</label><input id="mProduto" placeholder="Ex: SOJA" /></div>
 
         <div><label>KM</label><input id="mKM" type="number" step="0.1" /></div>
-        <div><label>PedÃ¡gio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
+        <div><label>Pedagio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
 
         <div><label>Volume</label><input id="mVolume" type="number" step="0.01" /></div>
         <div><label>Valor Empresa</label><input id="mEmpresa" type="number" step="0.01" /></div>
@@ -356,7 +355,7 @@
         <div><label>Pedido SAT</label><input id="mSat" type="number" step="1" /></div>
         <div><label>Qtd Porta</label><input id="mPorta" type="number" step="1" /></div>
 
-        <div><label>Qtd TrÃ¢nsito</label><input id="mTransito" type="number" step="1" /></div>
+        <div><label>Qtd Transito</label><input id="mTransito" type="number" step="1" /></div>
         <div><label>Status</label>
           <select id="mStatus">
             <option value="LIBERADO">LIBERADO</option>

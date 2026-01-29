@@ -7,13 +7,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  <!-- ✅ ADICIONADO: trava do LOGIN 1 (HOME) -->
-  <!-- IMPORTANTE: como este arquivo fica em /pages, o caminho é ../assets/js/auth.js -->
+  <!-- ✅ TRAVA DO LOGIN 1 (HOME)
+       Este arquivo está em /pages, então o caminho é ../assets/js/auth.js -->
   <script src="../assets/js/auth.js"></script>
-  <script>
-    // Exige que o usuário tenha passado pelo Login 1 do sistema
-    requireHomeAuth();
-  </script>
 
   <style>
     :root{
@@ -164,7 +160,7 @@
 </head>
 <body>
 
-  <!-- LOGIN -->
+  <!-- LOGIN (CALCULADORA) -->
   <div class="lock" id="lock">
     <div class="lockCard">
       <p class="lockTitle">🔒 CÁLCULO ANTT - PISO MÍNIMO</p>
@@ -278,11 +274,13 @@
       <div class="card">
         <div class="pill">Entrada</div>
 
+        <!-- NORMAL (fora do modo cotação) -->
         <div class="normalEntrada">
           <label for="tipo">Tipo</label>
           <select id="tipo"></select>
         </div>
 
+        <!-- COTAÇÃO RÁPIDA (sem Tipo) -->
         <div class="quoteEntrada" style="display:none;">
           <div class="muted">Modo cotação: selecione o <b>Tipo</b> clicando direto na tabela.</div>
         </div>
@@ -371,26 +369,33 @@
     </div>
   </div>
 
-  <script>
-    /* ... SEU JS ORIGINAL CONTINUA AQUI SEM ALTERAÇÃO ... */
+<script>
+/* ================== HOME AUTH (LOGIN 1) ==================
+   - Se auth.js existir, ele deve expor requireHomeAuth().
+   - Chamamos no DOMContentLoaded para não quebrar a tela caso o script falhe ao carregar. */
+function enforceHomeAuth(){
+  try{
+    if (typeof requireHomeAuth === "function"){
+      requireHomeAuth();
+    } else {
+      // Se você quiser que SEMPRE bloqueie quando auth.js não carrega,
+      // troque o console.warn por um redirect forçado.
+      console.warn("[HomeAuth] auth.js não carregou ou requireHomeAuth() não existe.");
+    }
+  }catch(err){
+    console.warn("[HomeAuth] erro ao validar Login 1:", err);
+  }
+}
 
-    /* ✅ ADICIONADO (opcional, mas recomendado):
-       quando clicar no "Sair" do SEU cálculo, também derruba o Login 1 do sistema,
-       e manda o usuário para o login geral. */
-    window.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("btnLogout");
-      if (btn) {
-        btn.addEventListener("click", () => {
-          // derruba login geral do sistema
-          localStorage.removeItem("nf_auth_home");
-          // e volta para o login geral
-          window.location.href = "./login.html";
-        });
-      }
-    });
-  </script>
+function logoutAll(){
+  // Logout do login interno da calculadora
+  try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+  // Logout do Login 1 (HOME) do sistema
+  try{ localStorage.removeItem("nf_auth_home"); }catch(e){}
+  // Volta para o login geral (ajuste se seu arquivo tiver outro nome)
+  window.location.href = "./login.html";
+}
 
-  <script>
 /* ================== USERS (ADMIN) ================== */
 const ADMIN_USER = "LUZIANO";
 const USERS_DEFAULT = {
@@ -433,7 +438,7 @@ function applyQuoteModeUI(){
   if (t){ t.classList.toggle("on", on); t.setAttribute("aria-checked", on?"true":"false"); }
 }
 
-/* ================== AUTH ================== */
+/* ================== AUTH (CALCULADORA) ================== */
 function getAuthUser(){
   const u = localStorage.getItem(AUTH_KEY);
   return u && USERS[u] ? u : null;
@@ -501,11 +506,10 @@ function initAuth(){
   btn.addEventListener("click", tryLogin);
   pass.addEventListener("keydown",(e)=>{ if (e.key==="Enter") tryLogin(); });
 
-  document.getElementById("btnLogout").addEventListener("click", ()=>{
-    setAuthUser(null);
-    updateUserBadge();
-    showLock(true);
-    document.body.classList.remove("quoteMode");
+  // ✅ AJUSTADO: "Sair" agora derruba também o Login 1 e volta para login geral
+  document.getElementById("btnLogout").addEventListener("click", (e)=>{
+    e.preventDefault();
+    logoutAll();
   });
 
   updateUserBadge();
@@ -860,81 +864,86 @@ function toastAdmin(txt, ok){
 }
 
 /* ================== INIT ================== */
-initAuth();
-fillTipos();
+document.addEventListener("DOMContentLoaded", ()=>{
+  // 1) valida Login 1 (HOME)
+  enforceHomeAuth();
 
-const btnReset=$("btnResetPesos");
-if(btnReset) btnReset.addEventListener("click", resetPesos);
-
-const btnCalc=$("btnCalc");
-if(btnCalc) btnCalc.addEventListener("click", ()=>calc());
-
-$("tipo").addEventListener("change", ()=>calc());
-["km","pedagio","margem","icms"].forEach(id=>$(id).addEventListener("input", ()=>calc()));
-
-["km","pedagio","margem","icms","tipo","lockPass","lockUser","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
-
-$("btnExportCSV").addEventListener("click", exportCSV);
-$("btnExportJPG").addEventListener("click", exportJPG);
-
-/* Toggle cotação */
-const tgl=$("toggleQuote");
-function toggleQuote(){
-  if(!getAuthUser()) return;
-  const next=!isQuoteMode();
-  setQuoteMode(next);
-  applyQuoteModeUI();
-  calc();
-}
-tgl.addEventListener("click", toggleQuote);
-tgl.addEventListener("keydown",(e)=>{
-  if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleQuote(); }
-});
-
-/* Admin bind */
-$("btnAdminClose").addEventListener("click", ()=>showAdmin(false));
-$("adminModal").addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
-
-$("btnAdmin").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-  showAdmin(true);
-});
-
-$("btnAdminSaveUser").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-  let u = String($("admUserName").value||"").trim().toUpperCase();
-  const p = String($("admUserPass").value||"").trim();
-  if(!u) return toastAdmin("Informe o nome do usuário.", false);
-  if(!p) return toastAdmin("Informe a senha.", false);
-  // sanitiza
-  u = u.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
-  USERS = loadUsers();
-  USERS[u]=p;
-  if(!USERS[ADMIN_USER]) USERS[ADMIN_USER]=USERS_DEFAULT[ADMIN_USER]||"1993";
-  saveUsers(USERS);
+  // 2) init calculadora
   initAuth();
-  renderAdminUsers();
-  $("admUserName").value=""; $("admUserPass").value="";
-  toastAdmin("Usuário salvo/atualizado.", true);
-});
+  fillTipos();
 
-$("btnAdminResetAllPesos").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-  if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
-    resetAllPesos();
-    pesosCustom = loadPesosCustom();
+  const btnReset=$("btnResetPesos");
+  if(btnReset) btnReset.addEventListener("click", resetPesos);
+
+  const btnCalc=$("btnCalc");
+  if(btnCalc) btnCalc.addEventListener("click", ()=>calc());
+
+  $("tipo").addEventListener("change", ()=>calc());
+  ["km","pedagio","margem","icms"].forEach(id=>$(id).addEventListener("input", ()=>calc()));
+
+  ["km","pedagio","margem","icms","tipo","lockPass","lockUser","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
+
+  $("btnExportCSV").addEventListener("click", exportCSV);
+  $("btnExportJPG").addEventListener("click", exportJPG);
+
+  /* Toggle cotação */
+  const tgl=$("toggleQuote");
+  function toggleQuote(){
+    if(!getAuthUser()) return;
+    const next=!isQuoteMode();
+    setQuoteMode(next);
+    applyQuoteModeUI();
     calc();
-    toastAdmin("Pesos resetados (todos).", true);
+  }
+  tgl.addEventListener("click", toggleQuote);
+  tgl.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleQuote(); }
+  });
+
+  /* Admin bind */
+  $("btnAdminClose").addEventListener("click", ()=>showAdmin(false));
+  $("adminModal").addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
+
+  $("btnAdmin").addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    showAdmin(true);
+  });
+
+  $("btnAdminSaveUser").addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    let u = String($("admUserName").value||"").trim().toUpperCase();
+    const p = String($("admUserPass").value||"").trim();
+    if(!u) return toastAdmin("Informe o nome do usuário.", false);
+    if(!p) return toastAdmin("Informe a senha.", false);
+    // sanitiza
+    u = u.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
+    USERS = loadUsers();
+    USERS[u]=p;
+    if(!USERS[ADMIN_USER]) USERS[ADMIN_USER]=USERS_DEFAULT[ADMIN_USER]||"1993";
+    saveUsers(USERS);
+    initAuth();
+    renderAdminUsers();
+    $("admUserName").value=""; $("admUserPass").value="";
+    toastAdmin("Usuário salvo/atualizado.", true);
+  });
+
+  $("btnAdminResetAllPesos").addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
+      resetAllPesos();
+      pesosCustom = loadPesosCustom();
+      calc();
+      toastAdmin("Pesos resetados (todos).", true);
+    }
+  });
+
+  /* boot */
+  if(getAuthUser()){
+    pesosCustom=loadPesosCustom();
+    applyQuoteModeUI();
+    calc();
   }
 });
-
-/* boot */
-if(getAuthUser()){
-  pesosCustom=loadPesosCustom();
-  applyQuoteModeUI();
-  calc();
-}
 </script>
-
 </body>
 </html>

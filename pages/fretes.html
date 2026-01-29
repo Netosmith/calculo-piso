@@ -6,121 +6,102 @@
   <title>Fretes | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
 
-  <!-- Ajustes pontuais para "cara de planilha": mais linhas na tela + tabela ocupando tudo -->
+  <!-- Fretes: layout mais "planilha" + tema claro somente nesta página -->
   <style>
+    /* ====== BASE (densidade / planilha) ====== */
     .container{max-width:1400px}
-    .card{padding:14px}
-    .tableWrap{overflow:auto; border:1px solid rgba(43,58,114,.65); border-radius:14px; max-height: calc(100vh - 300px);}
-    @media (max-width:900px){
-      .tableWrap{max-height: calc(100vh - 340px);}
+    .card{padding:14px; overflow:hidden}
+    .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(43,58,114,.35);
+      border-radius:14px;
+      height: calc(100vh - 300px);
+      min-height: 420px;
+      background:#fff;
     }
-    table{width:100%; border-collapse:collapse; min-width:1400px;}
-    th,td{padding:8px 10px; border-bottom:1px solid rgba(31,43,85,.55); font-size:12px; vertical-align:middle; white-space:nowrap;}
-    thead th{position:sticky; top:0; z-index:3; background:rgba(13,20,48,.96);}
-    .rowSlim td{padding-top:6px; padding-bottom:6px;}
+    @media (max-width:1100px){
+      .tableWrap{height:auto; min-height:360px;}
+    }
+    table{width:100%; border-collapse:collapse; min-width:1400px; background:#fff;}
+    th,td{
+      padding:6px 10px;
+      border-bottom:1px solid #D1D5DB;
+      font-size:12px;
+      vertical-align:middle;
+      white-space:nowrap;
+      color:#111827;
+    }
+    thead th{
+      position:sticky; top:0; z-index:3;
+      background:#0F172A;
+      color:#fff;
+      border-bottom:1px solid #0B1220;
+      font-size:11px;
+      letter-spacing:.02em;
+    }
+    tbody tr:nth-child(even){background:#F1F4F9;}
+    tbody tr:hover{background:#E8EDFF;}
+    .rowSlim td{padding-top:5px; padding-bottom:5px;}
+
     .groupRow td{
-      position:sticky; top:38px; z-index:2;
-      background:rgba(12,18,42,.98);
-      font-weight:900; letter-spacing:.04em;
+      position:sticky; top:34px; z-index:2;
+      background:#0B1220;
+      color:#fff;
+      font-weight:900;
+      letter-spacing:.04em;
       border-bottom:1px solid rgba(60,255,160,.18);
     }
+
+    /* pills */
     .pillYN{
       display:inline-flex; align-items:center; justify-content:center;
       width:28px; height:22px; border-radius:999px; font-weight:900; font-size:12px;
-      border:1px solid rgba(233,238,252,.22);
+      border:1px solid rgba(17,24,39,.18);
     }
-    .pillYN.yes{background:rgba(60,255,160,.16); border-color:rgba(60,255,160,.55); color:rgba(220,255,242,.96);}
-    .pillYN.no{background:rgba(255,120,120,.14); border-color:rgba(255,120,120,.55); color:rgba(255,210,210,.96);}
+    .pillYN.yes{background:#DCFCE7; border-color:#86EFAC; color:#166534;}
+    .pillYN.no{background:#FEE2E2; border-color:#FCA5A5; color:#7F1D1D;}
+
     .statusPill{
-      display:inline-flex; align-items:center; gap:8px;
+      display:inline-flex; align-items:center;
       padding:4px 10px; border-radius:999px; font-weight:900; font-size:11px;
-      border:1px solid rgba(233,238,252,.18);
+      border:1px solid rgba(17,24,39,.18);
+      color:#111827;
     }
-    .statusPill.liberado{background:rgba(60,255,160,.14); border-color:rgba(60,255,160,.45);}
-    .statusPill.parado{background:rgba(255,190,80,.14); border-color:rgba(255,190,80,.45);}
-    .statusPill.suspenso{background:rgba(255,120,120,.14); border-color:rgba(255,120,120,.45);}
-    .muted2{color: rgba(233,238,252,.72);}
-    .grid2{display:grid; grid-template-columns:1fr; gap:12px;}
-    @media (min-width:1100px){ .grid2{grid-template-columns: 420px 1fr;} }
-    .miniInputs{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
-    .miniInputs label{font-size:12px; font-weight:800;}
-    .miniInputs input{
-      width:100%; padding:10px 12px; border-radius:12px;
-      border:1px solid rgba(43,58,114,.85);
-      background:rgba(13,20,48,.70); color:rgba(233,238,252,.95);
-      outline:none;
-    }
-    .toolbar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-    .toolbar .left{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-    .btnSmall{
-      padding:10px 12px; border-radius:14px;
-      border:1px solid rgba(58,83,168,.95);
-      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color:rgba(233,238,252,.95);
-      font-weight:900; cursor:pointer;
-    }
-    .btnSmall:hover{filter:brightness(1.06)}
-    .btnSmall.green{border-color:rgba(60,255,160,.45); background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
-    .filters{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
-    @media (max-width:700px){ .filters{grid-template-columns:1fr;} }
-    .filters input,.filters select{
-      width:100%; padding:10px 12px; border-radius:12px;
-      border:1px solid rgba(43,58,114,.85);
-      background:rgba(13,20,48,.70); color:rgba(233,238,252,.95);
-      outline:none;
-    }
-    .filters label{font-size:11px; font-weight:900; opacity:.9;}
+    .statusPill.liberado{background:#E6F6ED; border-color:#A7F3D0; color:#067647;}
+    .statusPill.parado{background:#FFF4E5; border-color:#FCD34D; color:#92400E;}
+    .statusPill.suspenso{background:#FDECEC; border-color:#FCA5A5; color:#991B1B;}
+
+    .muted2{color: rgba(17,24,39,.70);}
     .note{font-size:12px; line-height:1.35;}
 
-    /* ====== AJUSTES DE TELA (layout / densidade) ====== */
+    /* ====== LAYOUT (top + tabela em tela inteira) ====== */
     .container.nfWide{max-width: 1650px;}
-    .grid2{align-items:start;}
-    @media (min-width:1100px){
-      .grid2{grid-template-columns: 520px 1fr;}
-    }
-    .miniInputs{grid-template-columns: repeat(2, minmax(180px,1fr));}
-    .miniInputs > div{min-width:180px;}
-    .miniInputs input{min-height:40px;}
-    table th, table td{padding-top:6px; padding-bottom:6px;}
-    .rowSlim td{padding-top:5px; padding-bottom:5px;}
-    .tableWrap{height: calc(100vh - 340px); min-height: 420px;}
-    @media (max-width:1100px){
-      .tableWrap{height:auto; min-height: 360px;}
-    }
-    .tableWrap{overflow:auto; border-radius:14px;}
-    .card{overflow:hidden;}
-    .filters{grid-template-columns: 240px 1fr;}
-    @media (max-width:700px){ .filters{grid-template-columns:1fr;} }
-
-    /* ===== AJUSTE DE LAYOUT (TOP + TABELA EM TELA INTEIRA) ===== */
     .container.pageFretes{
       display:flex;
       flex-direction:column;
-      gap:14px;
+      gap:12px;
       min-height:calc(100vh - 72px);
       padding-bottom:18px;
+      background:#F5F7FA;
     }
-    .container.pageFretes .grid2{flex:0 0 auto}
+
     .card.tableFull{
       flex:1 1 auto;
       display:flex;
       flex-direction:column;
       min-height:380px;
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      border-radius:18px;
     }
     .card.tableFull .tableWrap{
       flex:1 1 auto;
       max-height:none !important;
       height:auto !important;
     }
-    .card.tableFull th, .card.tableFull td{padding:8px 10px}
-    .card.tableFull th{font-size:11px}
-    .cellInput{
-      padding:6px 8px !important;
-      height:34px;
-      border-radius:10px !important;
-    }
 
-    /* ====== TOP BAR COMPACTA (MINIMALISTA) ====== */
+    /* ====== TOP minimalista ====== */
     .fretes-top{
       display:flex;
       align-items:flex-end;
@@ -128,46 +109,44 @@
       gap:10px;
       flex-wrap:wrap;
       padding:12px 14px;
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
     }
-    .fretes-top .title{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-    }
+    .fretes-top .title{display:flex; flex-direction:column; gap:4px;}
     .fretes-top .title h1{
       margin:0;
       font-size:18px;
       font-weight:900;
       letter-spacing:.2px;
+      color:#0F172A;
     }
     .fretes-top .title .sub{
       font-size:12px;
-      color: rgba(233,238,252,.72);
-      max-width: 900px;
+      color: rgba(17,24,39,.70);
+      max-width: 980px;
     }
 
+    /* ====== toolbar compacta ====== */
     .fretes-toolbar{
       display:flex;
       align-items:center;
       gap:10px;
       flex-wrap:wrap;
       padding:10px 12px;
-      border-radius:16px;
-      border:1px solid rgba(43,58,114,.65);
-      background:linear-gradient(180deg, rgba(17,26,51,.70), rgba(13,20,48,.55));
-      backdrop-filter: blur(8px);
+      border-radius:18px;
+      border:1px solid #E5E7EB;
+      background:#FFFFFF;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
     }
-    .ft-block{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
+    .ft-block{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
     .ft-spacer{flex:1 1 auto; min-width:10px}
     .ft-label{
       font-size:11px;
       font-weight:900;
-      opacity:.85;
+      opacity:.9;
+      color:#0F172A;
       margin-right:2px;
     }
     .ft-mini{
@@ -176,51 +155,59 @@
       gap:6px;
       font-size:11px;
       font-weight:900;
-      opacity:.9;
+      color:#0F172A;
+      opacity:.95;
     }
     .ft-mini input{
       width:66px;
       height:32px;
       padding:6px 8px;
       border-radius:10px;
-      border:1px solid rgba(43,58,114,.85);
-      background:rgba(13,20,48,.70);
-      color:rgba(233,238,252,.95);
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
       outline:none;
     }
     .ft-mini input:focus{
-      border-color:rgba(91,124,250,.95);
+      border-color:#5B7CFA;
       box-shadow:0 0 0 3px rgba(91,124,250,.18);
     }
     .ft-select, .ft-search{
       height:32px;
       padding:6px 10px;
       border-radius:10px;
-      border:1px solid rgba(43,58,114,.85);
-      background:rgba(13,20,48,.70);
-      color:rgba(233,238,252,.95);
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
       outline:none;
     }
     .ft-select{width:200px}
-    .ft-search{width:min(360px, 55vw)}
+    .ft-search{width:min(380px, 55vw)}
     @media (max-width:700px){
       .ft-select,.ft-search{width:100%}
     }
+
     .btnTiny{
       height:32px;
       padding:0 12px;
       border-radius:12px;
-      border:1px solid rgba(58,83,168,.95);
-      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color:rgba(233,238,252,.95);
+      border:1px solid rgba(15,23,42,.14);
+      background:#0F172A;
+      color:#FFFFFF;
       font-weight:900;
       cursor:pointer;
       white-space:nowrap;
     }
     .btnTiny:hover{filter:brightness(1.06)}
-    .btnTiny.green{border-color:rgba(60,255,160,.45); background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
-    .btnTiny.ghost{background:transparent}
+    .btnTiny.green{background:#0B3B2E; border-color:rgba(6,118,71,.25)}
+    .btnTiny.ghost{
+      background:#FFFFFF;
+      color:#0F172A;
+      border:1px solid #D1D5DB;
+    }
 
+    /* util */
+    .num{text-align:right;}
   </style>
 </head>
 <body>
@@ -231,21 +218,22 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
       <div class="actions">
-        <div class="icon-btn" title="Sair" data-logout>SAIR</div>
+        <div class="icon-btn" title="Sair" data-logout>👤</div>
       </div>
     </div>
   </div>
 
+  <!-- OBS: fundo claro apenas aqui -->
   <div class="container nfWide pageFretes" style="padding-top:18px;">
-    <!-- TÃTULO (MINIMAL) -->
+    <!-- TÍTULO (minimal) -->
     <div class="card fretes-top">
       <div class="title">
-        <h1>Operacional Fretes</h1>
-        <div class="sub">Permissão Frete Mi­nimo: indica quais tipos (eixos) atendem o piso minimo ANTT por embarque.</div>
+        <h1>Fretes (Operacional)</h1>
+        <div class="sub">Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.</div>
       </div>
     </div>
 
-    <!-- BARRA COMPACTA (substitui a Ã¡rea em vermelho) -->
+    <!-- BARRA COMPACTA -->
     <div class="fretes-toolbar">
       <div class="ft-block">
         <span class="ft-label">Pesos:</span>
@@ -265,15 +253,12 @@
         <select class="ft-select" id="fFilial" title="Filial"></select>
         <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
         <button class="btnTiny green" id="btnNew">+ Novo</button>
-        <button class="btnTiny" id="btnResetExample" title="Restaura o exemplo local">Exemplo</button>
+        <button class="btnTiny ghost" id="btnResetExample" title="Restaura o exemplo local">Exemplo</button>
       </div>
     </div>
 
-    <!-- TABELA EM TELA INTEIRA -->
+    <!-- TABELA -->
     <div class="card tableFull">
-      <div class="muted" style="margin:2px 0 10px;">
-      </div>
-
       <div class="tableWrap">
         <table>
           <thead>
@@ -291,7 +276,7 @@
               <th class="num">Vlr Empresa</th>
               <th class="num">Vlr Motorista</th>
               <th class="num">KM</th>
-              <th class="num">Pedagio/Eixo</th>
+              <th class="num">Pedágio/Eixo</th>
 
               <th class="num">5E</th>
               <th class="num">6E</th>
@@ -303,7 +288,7 @@
               <th>ICMS</th>
               <th class="num">Pedido SAT</th>
               <th class="num">Qtd Porta</th>
-              <th class="num">Qtd Transito</th>
+              <th class="num">Qtd Trânsito</th>
               <th>Status</th>
               <th>Observações</th>
               <th class="num">Ações</th>
@@ -317,18 +302,18 @@
 
   <!-- Modal simples (novo/editar) -->
   <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); z-index:9999; padding:18px; align-items:center; justify-content:center;">
-    <div class="card" style="width:min(980px, 100%); max-height: calc(100vh - 40px); overflow:auto;">
+    <div class="card" style="width:min(980px, 100%); max-height: calc(100vh - 40px); overflow:auto; background:#fff; border:1px solid #E5E7EB; border-radius:18px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-        <div style="font-weight:900; font-size:16px;">Operacional Frete</div>
-        <button class="btnSmall" id="btnCloseModal">Fechar</button>
+        <div style="font-weight:900; font-size:16px; color:#0F172A;">Frete</div>
+        <button class="btnTiny ghost" id="btnCloseModal">Fechar</button>
       </div>
 
-      <div class="muted2 note" style="margin-top:8px;">
-        Dica: o campo <b>Contato</b> Selec um seletor fixo (igual sua planilha).
+      <div class="note" style="margin-top:8px; color:rgba(17,24,39,.72);">
+        Dica: o campo <b>Contato</b> é um seletor fixo (igual sua planilha).
       </div>
 
-      <div class="filters" style="margin-top:12px;">
-        <div><label>Regional</label><input id="mRegional" placeholder="Ex: GOIÃS" /></div>
+      <div class="filters" style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div><label>Regional</label><input id="mRegional" placeholder="Ex: GOIÁS" /></div>
         <div><label>Filial</label><select id="mFilial"></select></div>
 
         <div><label>Cliente</label><input id="mCliente" placeholder="Ex: CARGILL" /></div>
@@ -344,7 +329,7 @@
         <div><label>Produto</label><input id="mProduto" placeholder="Ex: SOJA" /></div>
 
         <div><label>KM</label><input id="mKM" type="number" step="0.1" /></div>
-        <div><label>Pedagio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
+        <div><label>Pedágio por eixo (R$)</label><input id="mPed" type="number" step="0.01" /></div>
 
         <div><label>Volume</label><input id="mVolume" type="number" step="0.01" /></div>
         <div><label>Valor Empresa</label><input id="mEmpresa" type="number" step="0.01" /></div>
@@ -355,7 +340,7 @@
         <div><label>Pedido SAT</label><input id="mSat" type="number" step="1" /></div>
         <div><label>Qtd Porta</label><input id="mPorta" type="number" step="1" /></div>
 
-        <div><label>Qtd Transito</label><input id="mTransito" type="number" step="1" /></div>
+        <div><label>Qtd Trânsito</label><input id="mTransito" type="number" step="1" /></div>
         <div><label>Status</label>
           <select id="mStatus">
             <option value="LIBERADO">LIBERADO</option>
@@ -371,8 +356,8 @@
       </div>
 
       <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
-        <button class="btnSmall green" id="btnSave">Salvar</button>
-        <button class="btnSmall" id="btnCancel">Cancelar</button>
+        <button class="btnTiny green" id="btnSave">Salvar</button>
+        <button class="btnTiny ghost" id="btnCancel">Cancelar</button>
       </div>
     </div>
   </div>

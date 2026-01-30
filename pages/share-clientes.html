@@ -8,8 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ====== TEMA CLARO (SOMENTE NESTA PÁGINA) ======
-       Não altera o app.css global. Tudo fica escopado em body.shareLight. */
+    /* =========================
+       SHARE-CLIENTES (ORGANIZADO)
+       - Tema claro somente aqui (body.shareLight)
+       - Melhor alinhamento / espaçamento / hierarquia
+       ========================= */
+
+    /* ====== TEMA CLARO (SOMENTE NESTA PÁGINA) ====== */
     body.shareLight{
       background:#f4f6fb !important;
       color:#111827 !important;
@@ -26,31 +31,102 @@
       color:#111827 !important;
     }
 
-    /* Cards / containers */
+    /* ====== CONTAINER / LAYOUT ====== */
     body.shareLight .container{max-width:1650px}
+    .pageShare{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:calc(100vh - 72px);
+      padding-bottom:18px;
+    }
+
     body.shareLight .card{
       padding:14px;
       overflow:hidden;
       background:#ffffff !important;
       border:1px solid rgba(15,23,42,.10) !important;
       box-shadow:0 10px 26px rgba(15,23,42,.06) !important;
+      border-radius:18px;
     }
+
     body.shareLight .muted2{color: rgba(17,24,39,.68) !important;}
     body.shareLight .note{font-size:12px; line-height:1.35;}
+    .divider{height:1px; background:rgba(15,23,42,.08); margin:10px 0;}
 
-    /* Layout topo */
+    /* Header compacto */
+    .shareTop{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .shareTop .titleBlock{display:flex; flex-direction:column; gap:6px;}
+    .shareTop h1{
+      margin:0;
+      font-size:18px;
+      font-weight:1000;
+      letter-spacing:.2px;
+      color:#111827;
+    }
+
+    /* Botões menores e alinhados */
+    .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+    body.shareLight .btnSmall{
+      height:34px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:linear-gradient(180deg, #ffffff, #f3f4f6);
+      color:#111827;
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    body.shareLight .btnSmall:hover{filter:brightness(1.02)}
+    body.shareLight .btnSmall.green{
+      border-color:rgba(34,197,94,.35);
+      background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
+    }
+
+    /* ====== GRID TOPO ====== */
     .gridTop{display:grid; grid-template-columns: 1fr; gap:12px; align-items:start;}
     @media (min-width:1100px){ .gridTop{grid-template-columns: 420px 1fr;} }
 
-    .miniBox{display:flex; flex-direction:column; gap:10px;}
-    .row2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    .miniBox{display:flex; flex-direction:column; gap:12px;}
+    .row2{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
     @media (max-width:720px){ .row2{grid-template-columns:1fr;} }
 
-    /* Inputs */
-    body.shareLight label{font-size:11px; font-weight:900; opacity:.9; display:block; margin-bottom:6px; color:rgba(17,24,39,.85);}
+    /* ====== TIPOGRAFIA / TITULOS ====== */
+    .sectionTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .sectionTitle .h2{
+      margin:0;
+      font-size:14px;
+      font-weight:1000;
+      color:#111827;
+    }
+
+    /* ====== INPUTS ====== */
+    body.shareLight label{
+      font-size:11px;
+      font-weight:900;
+      opacity:.9;
+      display:block;
+      margin-bottom:6px;
+      color:rgba(17,24,39,.85);
+    }
     body.shareLight select,
     body.shareLight input{
-      width:100%; padding:10px 12px; border-radius:12px;
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
       background:#ffffff;
       color:#111827;
@@ -62,74 +138,87 @@
       box-shadow:0 0 0 3px rgba(59,130,246,.18);
     }
 
-    /* Botões */
-    .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
-    body.shareLight .btnSmall{
-      padding:10px 12px; border-radius:14px;
-      border:1px solid rgba(15,23,42,.14);
-      background:linear-gradient(180deg, #ffffff, #f3f4f6);
-      color:#111827; font-weight:900; cursor:pointer;
-    }
-    body.shareLight .btnSmall:hover{filter:brightness(1.02)}
-    body.shareLight .btnSmall.green{
-      border-color:rgba(34,197,94,.35);
-      background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
-    }
-
-    /* KPIs */
+    /* ====== KPIs ====== */
     .kpis{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
     @media (max-width:900px){ .kpis{grid-template-columns:1fr;} }
     body.shareLight .kpi{
       background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
-      border-radius:14px; padding:12px;
+      border-radius:14px;
+      padding:12px;
     }
     body.shareLight .kpi .t{
-      font-size:11px; opacity:.75; font-weight:900; letter-spacing:.03em; text-transform:uppercase;
+      font-size:11px;
+      opacity:.75;
+      font-weight:900;
+      letter-spacing:.03em;
+      text-transform:uppercase;
       color:rgba(17,24,39,.75);
     }
-    body.shareLight .kpi .v{font-size:18px; font-weight:900; margin-top:6px; font-variant-numeric:tabular-nums; color:#111827;}
+    body.shareLight .kpi .v{
+      font-size:18px;
+      font-weight:1000;
+      margin-top:6px;
+      font-variant-numeric:tabular-nums;
+      color:#111827;
+    }
 
-    /* Logo cliente */
+    /* ====== LOGO CLIENTE ====== */
     body.shareLight .clientLogoWrap{
-      display:flex; align-items:center; justify-content:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
-      border-radius:16px; padding:14px; min-height:130px;
+      border-radius:16px;
+      padding:14px;
+      min-height:140px;
     }
     body.shareLight .clientLogoWrap img{
-      max-width: 100%; max-height:120px; object-fit:contain;
+      max-width: 100%;
+      max-height:120px;
+      object-fit:contain;
       filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
     }
     body.shareLight .clientLogoFallback{
-      font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
-      opacity:.75; text-align:center; padding:18px; color:rgba(17,24,39,.75);
+      font-weight:1000;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.75;
+      text-align:center;
+      padding:18px;
+      color:rgba(17,24,39,.75);
     }
 
-    /* Corredores */
-    .corrList{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+    /* ====== CORREDORES ====== */
+    .corrList{display:flex; flex-direction:column; gap:8px;}
     body.shareLight .corrItem{
-      display:flex; justify-content:space-between; gap:10px; align-items:center;
-      background:#ffffff; border:1px solid rgba(15,23,42,.10);
-      border-radius:12px; padding:10px 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      background:#ffffff;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:12px;
+      padding:10px 12px;
       font-variant-numeric:tabular-nums;
     }
-    body.shareLight .corrItem .name{font-weight:900; color:#111827}
-    body.shareLight .corrItem .qty{opacity:.9; font-weight:900; color:rgba(17,24,39,.78)}
+    body.shareLight .corrItem .name{font-weight:1000; color:#111827}
+    body.shareLight .corrItem .qty{opacity:.9; font-weight:1000; color:rgba(17,24,39,.78)}
 
-    /* Tabela */
+    /* ====== TABELA ====== */
     body.shareLight .tableWrap{
       overflow:auto;
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
-      height: calc(100vh - 360px);
+      height: calc(100vh - 380px);
       min-height: 420px;
       background:#ffffff;
     }
     @media (max-width:1100px){
       body.shareLight .tableWrap{height:auto; min-height: 360px;}
     }
-    body.shareLight table{width:100%; border-collapse:collapse; min-width:1400px;}
+    body.shareLight table{width:100%; border-collapse:collapse; min-width:1200px;}
     body.shareLight th,
     body.shareLight td{
       padding:6px 10px;
@@ -145,7 +234,6 @@
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:.04em;
-      opacity:1;
       color:rgba(17,24,39,.75);
       border-bottom:1px solid rgba(15,23,42,.10);
     }
@@ -171,19 +259,9 @@
       color:#111827;
     }
 
-    /* Para print: esconde topbar */
+    /* Print: esconde topbar */
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
-
-    /* Pequena padronização de títulos */
-    body.shareLight .hTitle{
-      font-weight:1000; font-size:18px; margin:0;
-      color:#111827;
-    }
-    body.shareLight .hSub{
-      margin-top:6px;
-      color:rgba(17,24,39,.65);
-    }
   </style>
 </head>
 
@@ -200,12 +278,13 @@
     </div>
   </div>
 
-  <div class="container nfWide" style="padding-top:18px;" id="pageShare">
+  <div class="container nfWide pageShare" style="padding-top:18px;" id="pageShare">
+    <!-- TOPO -->
     <div class="card">
-      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-        <div>
-          <div class="hTitle">Share Clientes</div>
-          <div class="muted2 note hSub">
+      <div class="shareTop">
+        <div class="titleBlock">
+          <h1>Share Clientes</h1>
+          <div class="muted2 note">
             Painel gerado a partir da base <b>Fretes</b>. Filtre por cliente e gere um print para enviar.
           </div>
         </div>
@@ -217,15 +296,18 @@
       </div>
     </div>
 
-    <div style="height:12px;"></div>
-
+    <!-- GRID -->
     <div class="gridTop">
-      <!-- ESQUERDA: Cliente + KPIs + Corredores -->
+      <!-- ESQUERDA -->
       <div class="card">
         <div class="miniBox">
+          <div class="sectionTitle">
+            <p class="h2">Cliente e KPIs</p>
+          </div>
+
           <div>
             <label for="selCliente">Cliente</label>
-            <select id="selCliente"></select>
+            <select id="selCliente" aria-label="Selecione o cliente"></select>
           </div>
 
           <div class="kpis">
@@ -234,31 +316,43 @@
             <div class="kpi"><div class="t">Projeção volume</div><div class="v" id="kVolume">0</div></div>
           </div>
 
+          <div class="divider"></div>
+
           <div>
-            <div style="font-weight:1000; font-size:14px;">Quantidade por corredor</div>
+            <div class="sectionTitle">
+              <p class="h2">Quantidade por corredor</p>
+            </div>
             <div class="muted2 note" style="margin-top:6px;">Agrupado por <b>Destino</b> (mesma lógica da planilha).</div>
-            <div class="corrList" id="corrList"></div>
+            <div class="corrList" id="corrList" style="margin-top:10px;"></div>
           </div>
         </div>
       </div>
 
-      <!-- DIREITA: Logo + Filtros -->
+      <!-- DIREITA -->
       <div class="card">
         <div class="row2" style="align-items:start;">
+          <!-- Logo -->
           <div>
-            <div style="font-weight:1000; font-size:14px;">Logo do cliente</div>
+            <div class="sectionTitle">
+              <p class="h2">Logo do cliente</p>
+            </div>
             <div class="muted2 note" style="margin-top:6px;">Mostra a logo conforme o cliente selecionado.</div>
+
             <div class="clientLogoWrap" style="margin-top:10px;">
               <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
               <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
             </div>
+
             <div class="muted2 note" style="margin-top:10px;">
               Dica: coloque as imagens em <span class="chip">/assets/img/clientes/</span> e mantenha o nome igual ao cliente (ex: <b>CARGILL.png</b>).
             </div>
           </div>
 
+          <!-- Filtros -->
           <div>
-            <div style="font-weight:1000; font-size:14px;">Filtros</div>
+            <div class="sectionTitle">
+              <p class="h2">Filtros</p>
+            </div>
             <div class="muted2 note" style="margin-top:6px;">Busca em origem, coleta, destino, descarga, produto e observação.</div>
 
             <div style="margin-top:10px;">
@@ -266,7 +360,7 @@
               <input id="inpBusca" placeholder="Digite para filtrar..." />
             </div>
 
-            <div class="row2" style="margin-top:10px;">
+            <div class="row2" style="margin-top:12px;">
               <div>
                 <label for="selStatus">Status</label>
                 <select id="selStatus">
@@ -283,7 +377,9 @@
               </div>
             </div>
 
-            <div class="muted2 note" style="margin-top:10px;">
+            <div class="divider"></div>
+
+            <div class="muted2 note">
               <b>CMH's</b> Local/Trans são lidos do Fretes e ficam <b>travados</b> aqui (sem edição).
               <br/>O <b>Total Geral</b> é calculado: <b>Local + Trans</b>.
             </div>
@@ -292,12 +388,10 @@
       </div>
     </div>
 
-    <div style="height:12px;"></div>
-
     <!-- TABELA -->
     <div class="card">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div style="font-weight:1000; font-size:14px;">Pontos abertos do cliente</div>
+      <div class="sectionTitle">
+        <p class="h2">Pontos abertos do cliente</p>
         <div class="muted2 note">Fonte: base local <span class="chip">nf_fretes_rows_v1</span></div>
       </div>
 

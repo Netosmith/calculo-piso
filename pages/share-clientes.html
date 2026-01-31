@@ -8,7 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ====== TEMA CLARO (SOMENTE NESTA PÁGINA) ====== */
+    /* ====== TEMA CLARO (SOMENTE NESTA PÁGINA) ======
+       Não altera o app.css global. Tudo fica escopado em body.shareLight. */
     body.shareLight{
       background:#f4f6fb !important;
       color:#111827 !important;
@@ -25,11 +26,10 @@
       color:#111827 !important;
     }
 
+    /* Cards / containers */
     body.shareLight .container{max-width:1650px}
-
-    /* Cards / blocos */
     body.shareLight .card{
-      padding:12px;
+      padding:14px;
       overflow:hidden;
       background:#ffffff !important;
       border:1px solid rgba(15,23,42,.10) !important;
@@ -39,45 +39,19 @@
     body.shareLight .muted2{color: rgba(17,24,39,.68) !important;}
     body.shareLight .note{font-size:12px; line-height:1.35;}
 
-    /* TOPO: título + botões (menor) */
-    body.shareLight .hTitle{
-      font-weight:1000; font-size:18px; margin:0;
-      color:#111827;
-    }
-    body.shareLight .hSub{
-      margin-top:6px;
-      color:rgba(17,24,39,.65);
-    }
+    /* Layout topo (base antiga - mantida para compatibilidade) */
+    .gridTop{display:grid; grid-template-columns: 1fr; gap:12px; align-items:start;}
+    @media (min-width:1100px){ .gridTop{grid-template-columns: 420px 1fr;} }
 
-    .btnRow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
-    body.shareLight .btnSmall{
-      height:30px;
-      padding:0 10px;
-      border-radius:12px;
-      border:1px solid rgba(15,23,42,.14);
-      background:linear-gradient(180deg, #ffffff, #f3f4f6);
-      color:#111827;
-      font-weight:900;
-      font-size:12px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    body.shareLight .btnSmall:hover{filter:brightness(1.02)}
-    body.shareLight .btnSmall.green{
-      border-color:rgba(34,197,94,.35);
-      background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
-    }
+    .miniBox{display:flex; flex-direction:column; gap:10px;}
+    .row2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width:720px){ .row2{grid-template-columns:1fr;} }
 
     /* Inputs */
-    body.shareLight label{
-      font-size:11px; font-weight:900; opacity:.9;
-      display:block; margin-bottom:6px; color:rgba(17,24,39,.85);
-    }
+    body.shareLight label{font-size:11px; font-weight:900; opacity:.9; display:block; margin-bottom:6px; color:rgba(17,24,39,.85);}
     body.shareLight select,
     body.shareLight input{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
+      width:100%; padding:10px 12px; border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
       background:#ffffff;
       color:#111827;
@@ -89,244 +63,211 @@
       box-shadow:0 0 0 3px rgba(59,130,246,.18);
     }
 
-    /* ====== LAYOUT "PLANILHA" DO TOPO (3 colunas) ====== */
-    .sheetTop{
-      display:grid;
-      grid-template-columns: 420px 1fr 520px; /* (Cliente/KPIs) (Corredores) (Logo/Filtros) */
-      gap:12px;
-      align-items:stretch;
+    /* Botões (compactar um pouco) */
+    .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+    body.shareLight .btnSmall{
+      height:34px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:linear-gradient(180deg, #ffffff, #f3f4f6);
+      color:#111827; font-weight:900; cursor:pointer;
+      white-space:nowrap;
     }
-    @media (max-width:1200px){
-      .sheetTop{grid-template-columns: 1fr;}
-    }
-
-    /* Bloco: Cliente/KPIs */
-    .clientBlock .nfLogoLine{
-      height:10px;
-      background:#0F2A5F;
-      border-radius:999px;
-      margin:8px 0 10px;
-      opacity:.95;
+    body.shareLight .btnSmall:hover{filter:brightness(1.02)}
+    body.shareLight .btnSmall.green{
+      border-color:rgba(34,197,94,.35);
+      background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    .kpisRow{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:8px;
-      margin-top:10px;
+    /* KPIs */
+    .kpis{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
+    @media (max-width:900px){ .kpis{grid-template-columns:1fr;} }
+    body.shareLight .kpi{
+      background:#ffffff;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:14px; padding:12px;
     }
-    @media (max-width:900px){
-      .kpisRow{grid-template-columns:1fr;}
+    body.shareLight .kpi .t{
+      font-size:11px; opacity:.75; font-weight:900; letter-spacing:.03em; text-transform:uppercase;
+      color:rgba(17,24,39,.75);
     }
-    .kpiMini{
-      border:1px solid rgba(15,23,42,.12);
-      border-radius:14px;
-      padding:10px;
-      background:#fff;
+    body.shareLight .kpi .v{font-size:18px; font-weight:900; margin-top:6px; font-variant-numeric:tabular-nums; color:#111827;}
+
+    /* Logo cliente */
+    body.shareLight .clientLogoWrap{
+      display:flex; align-items:center; justify-content:center;
+      background:#ffffff;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:16px; padding:14px; min-height:130px;
     }
-    .kpiMini .t{
-      font-size:10px;
-      font-weight:1000;
-      text-transform:uppercase;
-      color:rgba(17,24,39,.70);
-      letter-spacing:.02em;
+    body.shareLight .clientLogoWrap img{
+      max-width: 100%; max-height:120px; object-fit:contain;
+      filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
     }
-    .kpiMini .v{
-      margin-top:6px;
-      font-size:16px;
-      font-weight:1000;
+    body.shareLight .clientLogoFallback{
+      font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
+      opacity:.75; text-align:center; padding:18px; color:rgba(17,24,39,.75);
+    }
+
+    /* Corredores */
+    .corrList{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+    body.shareLight .corrItem{
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+      background:#ffffff; border:1px solid rgba(15,23,42,.10);
+      border-radius:12px; padding:10px 12px;
       font-variant-numeric:tabular-nums;
+    }
+    body.shareLight .corrItem .name{font-weight:900; color:#111827}
+    body.shareLight .corrItem .qty{opacity:.9; font-weight:900; color:rgba(17,24,39,.78)}
+
+    /* Tabela */
+    body.shareLight .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:14px;
+      height: calc(100vh - 360px);
+      min-height: 420px;
+      background:#ffffff;
+    }
+    @media (max-width:1100px){
+      body.shareLight .tableWrap{height:auto; min-height: 360px;}
+    }
+    body.shareLight table{width:100%; border-collapse:collapse; min-width:1400px;}
+    body.shareLight th,
+    body.shareLight td{
+      padding:6px 10px;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      font-size:12px;
+      vertical-align:middle;
+      white-space:nowrap;
+      color:#111827;
+    }
+    body.shareLight thead th{
+      position:sticky; top:0; z-index:3;
+      background:#f8fafc;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      opacity:1;
+      color:rgba(17,24,39,.75);
+      border-bottom:1px solid rgba(15,23,42,.10);
+    }
+    td.num, th.num{text-align:right}
+    body.shareLight tr:hover td{background:rgba(59,130,246,.06);}
+
+    /* Status / chips */
+    body.shareLight .statusPill{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 10px; border-radius:999px; font-weight:1000; font-size:11px;
+      border:1px solid rgba(15,23,42,.12);
+      color:#111827;
+    }
+    body.shareLight .statusPill.liberado{background:rgba(34,197,94,.14); border-color:rgba(34,197,94,.30);}
+    body.shareLight .statusPill.suspenso{background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.28);}
+    body.shareLight .statusPill.parado{background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.28);}
+
+    body.shareLight .chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(59,130,246,.10);
+      border:1px solid rgba(59,130,246,.22);
+      font-weight:900; font-size:11px;
       color:#111827;
     }
 
-    /* Bloco: Corredores (estilo tabela) */
-    .corrBlock .corrHead{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:8px 10px;
-      border-radius:12px;
-      background:#1A7F3C; /* verde da barra */
-      color:#fff;
-      font-weight:1000;
-      font-size:12px;
-      letter-spacing:.04em;
-      text-transform:uppercase;
+    /* Para print: esconde topbar */
+    body.printMode .topbar{display:none !important;}
+    body.printMode .container{padding-top:10px !important;}
+
+    /* Pequena padronização de títulos */
+    body.shareLight .hTitle{
+      font-weight:1000; font-size:18px; margin:0;
+      color:#111827;
     }
-    .corrTable{
-      margin-top:10px;
-      border:1px solid rgba(15,23,42,.12);
+    body.shareLight .hSub{
+      margin-top:6px;
+      color:rgba(17,24,39,.65);
+    }
+
+    /* =========================================================
+       TOPO "ESTILO PLANILHA" (3 COLUNAS) + AJUSTES DE COMPACTAÇÃO
+       - Esquerda: Cliente + KPIs
+       - Centro: Corredores (largo) com header verde fino
+       - Direita: Logo grande + Filtros alinhados
+       ========================================================= */
+    .topSheet{
+      display:grid;
+      grid-template-columns: 360px 1fr 520px;
+      gap:12px;
+      align-items:stretch;
+    }
+    @media (max-width:1100px){
+      .topSheet{grid-template-columns:1fr;}
+    }
+
+    /* cards do topo mais “baixos” */
+    .topSheet .card{ padding:12px !important; }
+
+    /* bloco cliente/kpis compacto */
+    .clientBlock select{height:38px; padding:8px 12px; border-radius:10px;}
+    .kpis{gap:8px;}
+    body.shareLight .kpi{padding:10px; border-radius:12px;}
+    body.shareLight .kpi .t{font-size:10px;}
+    body.shareLight .kpi .v{font-size:16px;}
+
+    /* corredor: header verde FINO + lista “linha de planilha” */
+    .corrBox{
+      border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
       overflow:hidden;
       background:#fff;
     }
-
-    /* Seu JS hoje preenche #corrList com divs.
-       Eu estilizo QUALQUER filho de #corrList como "linha". */
-    #corrList{
-      display:flex;
-      flex-direction:column;
-    }
-    #corrList > *{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:10px 12px;
-      border-bottom:1px dashed rgba(15,23,42,.18);
-      font-variant-numeric: tabular-nums;
-      background:#fff;
-    }
-    #corrList > *:last-child{border-bottom:none;}
-    #corrList .name,
-    #corrList .corrName{
-      font-weight:1000;
-      color:#111827;
-    }
-    #corrList .qty,
-    #corrList .corrQty{
-      font-weight:1000;
-      min-width:34px;
-      height:26px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-      background:rgba(15,42,95,.10);
-      border:1px solid rgba(15,42,95,.18);
-      color:#0F2A5F;
-    }
-
-    /* Caso seu JS esteja criando .corrItem/.name/.qty (como antes), também funciona */
-    #corrList .corrItem{display:flex; align-items:center; justify-content:space-between; width:100%;}
-    #corrList .corrItem .name{font-weight:1000;}
-    #corrList .corrItem .qty{font-weight:1000;}
-
-    /* Bloco: Logo + Filtros */
-    .logoBlock .logoWrap{
-      border:1px solid rgba(15,23,42,.12);
-      border-radius:14px;
-      padding:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height:150px;
-      background:#fff;
-    }
-    .logoBlock .logoWrap img{
-      max-width:100%;
-      max-height:140px;
-      object-fit:contain;
-      filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
-    }
-    .logoBlock .logoFallback{
-      font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
-      opacity:.7; text-align:center; color:rgba(17,24,39,.75);
-    }
-
-    .filtersCompact{
-      margin-top:10px;
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:10px;
-    }
-    .filtersRow2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width:720px){
-      .filtersRow2{grid-template-columns:1fr;}
-    }
-
-    /* ====== TABELA (full width + cabeçalho azul escuro) ====== */
-    .tableCard{padding:0;} /* tabela encosta igual planilha */
-    .tableWrap{
-      overflow:auto;
-      border-radius:18px;
-      background:#fff;
-    }
-
-    body.shareLight table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:1400px;
-      background:#fff;
-    }
-    body.shareLight thead th{
-      position:sticky; top:0; z-index:3;
-      background:#0F2A5F;     /* azul escuro */
+    .corrBoxHead{
+      background:#15803D;
       color:#fff;
-      font-size:11px;
-      letter-spacing:.04em;
-      text-transform:uppercase;
-      border-bottom:1px solid rgba(255,255,255,.20);
-      padding:10px 10px;
-      white-space:nowrap;
-    }
-    body.shareLight td{
-      padding:10px 10px;
-      font-size:12px;
-      border-bottom:1px solid rgba(15,23,42,.08);
-      white-space:nowrap;
-      color:#111827;
-      vertical-align:middle;
-    }
-    td.num, th.num{text-align:right}
-
-    /* “Grid” mais parecido com planilha */
-    body.shareLight td, body.shareLight th{
-      border-right:1px solid rgba(15,23,42,.06);
-    }
-    body.shareLight tr td:last-child, body.shareLight tr th:last-child{
-      border-right:none;
-    }
-
-    /* Hover leve */
-    body.shareLight tbody tr:hover td{
-      background:rgba(59,130,246,.06);
-    }
-
-    /* ====== STATUS (colorido) ====== */
-    .statusPill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:5px 10px;
-      border-radius:999px;
       font-weight:1000;
-      font-size:11px;
-      border:1px solid rgba(15,23,42,.12);
-      color:#111827;
-      background:#fff;
+      font-size:12px;
+      padding:8px 12px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
     }
-    .statusPill.liberado{
-      background:rgba(34,197,94,.18);
-      border-color:rgba(34,197,94,.35);
-      color:#0B3B2E;
+    .corrBoxBody{padding:10px 12px;}
+    .corrList{margin-top:0 !important; gap:0 !important;}
+    body.shareLight .corrItem{
+      border:none !important;
+      border-bottom:1px dashed rgba(15,23,42,.18) !important;
+      border-radius:0 !important;
+      padding:10px 0 !important;
+      background:transparent !important;
     }
-    .statusPill.parado{
-      background:rgba(245,158,11,.18);
-      border-color:rgba(245,158,11,.35);
-      color:#7C2D12;
+    body.shareLight .corrItem:last-child{border-bottom:none !important;}
+    body.shareLight .corrItem .qty{min-width:36px; text-align:right; font-weight:1000;}
+
+    /* logo + filtros alinhados */
+    .logoFilters{
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap:12px;
+      align-items:start;
     }
-    .statusPill.suspenso{
-      background:rgba(239,68,68,.16);
-      border-color:rgba(239,68,68,.32);
-      color:#7F1D1D;
+    @media (max-width:1100px){
+      .logoFilters{grid-template-columns:1fr;}
+    }
+    body.shareLight .clientLogoWrap{min-height:220px !important;}
+    body.shareLight .clientLogoWrap img{max-height:180px !important;}
+
+    /* filtros mais compactos */
+    body.shareLight input, body.shareLight select{
+      padding:9px 12px;
+      border-radius:10px;
     }
 
-    /* Se o JS colocar status como TEXTO simples dentro do TD, ainda fica colorido */
-    td[data-status="LIBERADO"]{color:#0B3B2E; font-weight:1000;}
-    td[data-status="PARADO"]{color:#7C2D12; font-weight:1000;}
-    td[data-status="SUSPENSO"]{color:#7F1D1D; font-weight:1000;}
-
-    /* Print */
-    body.printMode .topbar{display:none !important;}
-    body.printMode .container{padding-top:10px !important;}
-
-    /* Espaçamento geral da página */
-    .gap12{height:12px;}
+    /* =========================================================
+       OCULTAR cabeçalho "Pontos abertos do cliente"
+       (se existir no HTML, ele some e sobra espaço)
+       ========================================================= */
+    .hideTableHeader{display:none !important;}
   </style>
 </head>
 
@@ -344,7 +285,7 @@
   </div>
 
   <div class="container nfWide" style="padding-top:18px;" id="pageShare">
-    <!-- TOPO: título + botões -->
+    <!-- TOPO -->
     <div class="card">
       <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <div>
@@ -361,101 +302,103 @@
       </div>
     </div>
 
-    <div class="gap12"></div>
+    <div style="height:12px;"></div>
 
-    <!-- TOPO "PLANILHA": Cliente/KPIs | Corredores | Logo+Filtros -->
-    <div class="sheetTop">
-      <!-- ESQUERDA -->
+    <!-- TOPO ESTILO PLANILHA -->
+    <div class="topSheet">
+      <!-- ESQUERDA: Cliente + KPIs -->
       <div class="card clientBlock">
-        <div style="font-weight:1000; font-size:12px; color:#0F2A5F; letter-spacing:.02em;">CLIENTE</div>
-        <div class="nfLogoLine"></div>
+        <div>
+          <label for="selCliente">Cliente</label>
+          <select id="selCliente"></select>
+        </div>
 
-        <label for="selCliente" style="margin-top:2px;">Cliente</label>
-        <select id="selCliente"></select>
+        <div style="height:10px;"></div>
 
-        <div class="kpisRow">
-          <div class="kpiMini">
-            <div class="t">Total de lotes</div>
-            <div class="v" id="kLotes">0</div>
-          </div>
-          <div class="kpiMini">
-            <div class="t">Total de caminhão</div>
-            <div class="v" id="kCaminhao">0</div>
-          </div>
-          <div class="kpiMini">
-            <div class="t">Projeção volume</div>
-            <div class="v" id="kVolume">0</div>
+        <div class="kpis">
+          <div class="kpi"><div class="t">Total de lotes</div><div class="v" id="kLotes">0</div></div>
+          <div class="kpi"><div class="t">Total de caminhão</div><div class="v" id="kCaminhao">0</div></div>
+          <div class="kpi"><div class="t">Projeção volume</div><div class="v" id="kVolume">0</div></div>
+        </div>
+      </div>
+
+      <!-- CENTRO: Corredores (LARGO) -->
+      <div class="card">
+        <div class="corrBox">
+          <div class="corrBoxHead">Quantidade por corredor</div>
+          <div class="corrBoxBody">
+            <div class="corrList" id="corrList"></div>
           </div>
         </div>
       </div>
 
-      <!-- MEIO: CORREDORES -->
-      <div class="card corrBlock">
-        <div class="corrHead">Quantidade por corredor</div>
-        <div class="corrTable">
-          <!-- Mantido ID: seu JS preenche aqui -->
-          <div id="corrList">
-            <!-- preenchido via JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- DIREITA: LOGO + FILTROS -->
-      <div class="card logoBlock">
-        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <!-- DIREITA: Logo grande + Filtros -->
+      <div class="card">
+        <div class="logoFilters">
+          <!-- Logo -->
           <div>
             <div style="font-weight:1000; font-size:14px;">Logo do cliente</div>
             <div class="muted2 note" style="margin-top:6px;">Mostra a logo conforme o cliente selecionado.</div>
+
+            <div class="clientLogoWrap" style="margin-top:10px;">
+              <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
+              <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
+            </div>
+
+            <div class="muted2 note" style="margin-top:10px;">
+              Dica: coloque as imagens em <span class="chip">/assets/img/clientes/</span> e mantenha o nome igual ao cliente (ex: <b>CARGILL.png</b>).
+            </div>
           </div>
-        </div>
 
-        <div class="logoWrap" style="margin-top:10px;">
-          <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
-          <div id="logoFallback" class="logoFallback" style="display:none;">SEM LOGO</div>
-        </div>
-
-        <div class="muted2 note" style="margin-top:8px;">
-          Dica: coloque as imagens em <span class="chip">/assets/img/clientes/</span> e mantenha o nome igual ao cliente (ex: <b>CARGILL.png</b>).
-        </div>
-
-        <div class="filtersCompact">
-          <div style="font-weight:1000; font-size:14px; margin-top:2px;">Filtros</div>
-
+          <!-- Filtros -->
           <div>
-            <label for="inpBusca">Busca</label>
-            <input id="inpBusca" placeholder="Digite para filtrar..." />
-          </div>
+            <div style="font-weight:1000; font-size:14px;">Filtros</div>
+            <div class="muted2 note" style="margin-top:6px;">Busca em origem, coleta, destino, descarga, produto e observação.</div>
 
-          <div class="filtersRow2">
-            <div>
-              <label for="selStatus">Status</label>
-              <select id="selStatus">
-                <option value="">Todos</option>
-                <option value="LIBERADO">LIBERADO</option>
-                <option value="PARADO">PARADO</option>
-                <option value="SUSPENSO">SUSPENSO</option>
-              </select>
+            <div style="margin-top:10px;">
+              <label for="inpBusca">Busca</label>
+              <input id="inpBusca" placeholder="Digite para filtrar..." />
             </div>
-            <div>
-              <label for="selDestino">Destino</label>
-              <select id="selDestino">
-                <option value="">Todos</option>
-              </select>
-            </div>
-          </div>
 
-          <div class="muted2 note">
-            <b>CMH's</b> Local/Trans são lidos do Fretes e ficam <b>travados</b> aqui (sem edição).
-            <br/>O <b>Total Geral</b> é calculado: <b>Local + Trans</b>.
+            <div class="row2" style="margin-top:10px;">
+              <div>
+                <label for="selStatus">Status</label>
+                <select id="selStatus">
+                  <option value="">Todos</option>
+                  <option value="LIBERADO">LIBERADO</option>
+                  <option value="SUSPENSO">SUSPENSO</option>
+                  <option value="PARADO">PARADO</option>
+                </select>
+              </div>
+              <div>
+                <label for="selDestino">Destino</label>
+                <select id="selDestino">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="muted2 note" style="margin-top:10px;">
+              <b>CMH's</b> Local/Trans são lidos do Fretes e ficam <b>travados</b> aqui (sem edição).
+              <br/>O <b>Total Geral</b> é calculado: <b>Local + Trans</b>.
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="gap12"></div>
+    <div style="height:12px;"></div>
 
-    <!-- TABELA (SEM CABEÇALHO "Pontos abertos do cliente") -->
-    <div class="card tableCard">
+    <!-- (Cabeçalho removido/ocultado para sobrar espaço) -->
+    <div class="card hideTableHeader" aria-hidden="true">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="font-weight:1000; font-size:14px;">Pontos abertos do cliente</div>
+        <div class="muted2 note">Fonte: base local <span class="chip">nf_fretes_rows_v1</span></div>
+      </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="card">
       <div class="tableWrap">
         <table>
           <thead>

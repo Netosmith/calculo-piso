@@ -11,9 +11,9 @@
   <style>
     /* ==========================================
        SHARE-CLIENTES (PADRÃO DO SEU EXEMPLO)
-       - Foco total na tabela (pontos de embarque)
-       - Topo fino
-       - 3 cards no topo: Cliente/Status | Corredor | Logo
+       - Mantém layout aprovado
+       - Reintroduz elementos que o JS espera (ocultos)
+       - Grade na tabela + grade no Status Cliente
        ========================================== */
 
     body.shareLight{
@@ -33,10 +33,8 @@
       color:#111827 !important;
     }
 
-    /* Container */
     body.shareLight .container{max-width:1650px}
 
-    /* Cards */
     body.shareLight .card{
       padding:12px;
       overflow:hidden;
@@ -49,7 +47,7 @@
     body.shareLight .muted2{color: rgba(17,24,39,.68) !important;}
     body.shareLight .note{font-size:12px; line-height:1.35;}
 
-    /* Topo (bem baixo, horizontal) */
+    /* Header (baixo, horizontal) */
     .shareHeader{
       display:flex;
       align-items:center;
@@ -93,7 +91,7 @@
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    /* Linha superior (3 cards) */
+    /* Top row (3 cards) */
     .topRow{
       display:grid;
       grid-template-columns: 340px 1fr 460px;
@@ -156,6 +154,8 @@
       letter-spacing:.04em;
       text-transform:uppercase;
     }
+
+    /* ✅ Grade no Status Cliente */
     .statusTable{
       width:100%;
       border-collapse:collapse;
@@ -163,11 +163,11 @@
     }
     .statusTable td{
       padding:8px 10px;
-      border-bottom:1px solid rgba(15,23,42,.10);
+      border:1px solid rgba(15,23,42,.14);
       vertical-align:middle;
       white-space:nowrap;
+      background:#fff;
     }
-    .statusTable tr:last-child td{border-bottom:none;}
     .statusTable td:first-child{
       font-weight:900;
       color:rgba(17,24,39,.80);
@@ -200,8 +200,6 @@
       letter-spacing:.04em;
       text-transform:uppercase;
     }
-
-    /* Lista em colunas (como seu exemplo) */
     .corrGrid{
       display:grid;
       grid-template-columns: repeat(3, minmax(180px, 1fr));
@@ -215,7 +213,6 @@
     @media (max-width:700px){
       .corrGrid{grid-template-columns: 1fr;}
     }
-
     .corrItem{
       display:flex;
       align-items:center;
@@ -245,7 +242,6 @@
       gap:10px;
       height:100%;
     }
-
     .clientLogoWrap{
       display:flex;
       align-items:center;
@@ -279,7 +275,6 @@
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
       background:#ffffff;
-      /* mais agressivo para dar espaço à tabela */
       height: calc(100vh - 260px);
       min-height: 560px;
     }
@@ -292,17 +287,20 @@
 
     body.shareLight table{
       width:100%;
-      border-collapse:collapse;
+      border-collapse:collapse; /* essencial pra grade */
       min-width:1400px;
     }
+
+    /* ✅ Grade nos pontos de embarque (linhas e colunas) */
     body.shareLight th,
     body.shareLight td{
       padding:8px 10px;
-      border-bottom:1px solid rgba(15,23,42,.08);
       font-size:12px;
       vertical-align:middle;
       white-space:nowrap;
       color:#111827;
+      border:1px solid rgba(15,23,42,.10);
+      background:#fff;
     }
     body.shareLight thead th{
       position:sticky; top:0; z-index:3;
@@ -311,7 +309,6 @@
       text-transform:uppercase;
       letter-spacing:.04em;
       color:rgba(17,24,39,.75);
-      border-bottom:1px solid rgba(15,23,42,.10);
     }
     td.num, th.num{text-align:right}
     body.shareLight tr:hover td{background:rgba(59,130,246,.06);}
@@ -343,6 +340,17 @@
       color:#5a3a00;
     }
 
+    /* ✅ Filtros ocultos (mantém IDs que o share-clientes.js usa, mas você não vê) */
+    .ghostFilters{
+      display:none !important;
+      visibility:hidden !important;
+      height:0 !important;
+      overflow:hidden !important;
+      padding:0 !important;
+      margin:0 !important;
+      border:0 !important;
+    }
+
     /* Print: esconde topbar */
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
@@ -364,7 +372,7 @@
 
   <div class="container nfWide" style="padding-top:12px;" id="pageShare">
 
-    <!-- HEADER (baixo, horizontal) -->
+    <!-- HEADER -->
     <div class="card">
       <div class="shareHeader">
         <div class="titleBox">
@@ -412,20 +420,15 @@
         </div>
       </div>
 
-      <!-- 2) Quantidade por Corredor (com colunas) -->
+      <!-- 2) Quantidade por Corredor -->
       <div class="card">
         <div class="corrBox">
           <div class="corrHead">Quantidade por Corredor</div>
-
-          <!-- IMPORTANTE: mantém o ID corrList (seu JS usa) -->
-          <div class="corrGrid" id="corrList">
-            <!-- Itens serão injetados pelo JS no formato atual.
-                 Se seu JS cria <div class="corrItem">...</div>, já vai pegar o estilo. -->
-          </div>
+          <div class="corrGrid" id="corrList"></div>
         </div>
       </div>
 
-      <!-- 3) Logo grande -->
+      <!-- 3) Logo -->
       <div class="card">
         <div class="logoCardInner">
           <div class="clientLogoWrap">
@@ -439,7 +442,21 @@
 
     <div style="height:12px;"></div>
 
-    <!-- TABELA (FOCO PRINCIPAL) -->
+    <!-- ✅ Filtros ocultos (para não quebrar o share-clientes.js) -->
+    <div class="ghostFilters">
+      <input id="inpBusca" value="" />
+      <select id="selStatus">
+        <option value="">Todos</option>
+        <option value="LIBERADO">LIBERADO</option>
+        <option value="SUSPENSO">SUSPENSO</option>
+        <option value="PARADO">PARADO</option>
+      </select>
+      <select id="selDestino">
+        <option value="">Todos</option>
+      </select>
+    </div>
+
+    <!-- TABELA (FOCO) -->
     <div class="card">
       <div class="tableWrap">
         <table>

@@ -186,7 +186,7 @@
       color:rgba(17,24,39,.65);
     }
 
-    /* Cabeçalho da tabela (compacto) */
+    /* ====== NOVO: Cabeçalho da tabela (fica no lugar do “azul”) ====== */
     .tableHeaderCard{
       display:flex;
       align-items:center;
@@ -198,6 +198,20 @@
       font-weight:1000;
       font-size:14px;
       color:#111827;
+    }
+
+    /* ====== NOVO: TABELA FULL WIDTH NO DESKTOP (ocupa a tela toda) ====== */
+    .tableFullWidth{
+      width:100%;
+    }
+    @media (min-width:1100px){
+      .tableFullWidth{
+        grid-column: 1 / -1;
+      }
+    }
+    .tableFullWidth .tableWrap{
+      width:100%;
+      min-width:100%;
     }
   </style>
 </head>
@@ -298,16 +312,28 @@
               </div>
             </div>
 
-            <div class="muted2 note" style="margin-top:10px;">   
+            <div class="muted2 note" style="margin-top:10px;">
+              <b>CMH's</b> Local/Trans são lidos do Fretes e ficam <b>travados</b> aqui (sem edição).
+              <br/>O <b>Total Geral</b> é calculado: <b>Local + Trans</b>.
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div style="height:12px;"></di>
+    <div style="height:12px;"></div>
 
-    <!-- TABELA -->
+    <!-- CABEÇALHO DA TABELA (bem visível) -->
     <div class="card">
+      <div class="tableHeaderCard">
+        <div class="tTitle">Pontos abertos do cliente</div>
+        <!-- Se quiser ocultar esta linha no futuro: apague o bloco abaixo -->
+        <div class="muted2 note">Fonte: base local <span class="chip">nf_fretes_rows_v1</span></div>
+      </div>
+    </div>
+
+    <!-- TABELA FULL WIDTH (desktop e mobile) -->
+    <div class="card tableFullWidth">
       <div class="tableWrap">
         <table>
           <thead>

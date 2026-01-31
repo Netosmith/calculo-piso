@@ -65,7 +65,7 @@
       box-shadow:0 0 0 3px rgba(59,130,246,.18);
     }
 
-    /* Botões (mais compactos para sobrar tela pros pontos) */
+    /* Botões (compactos) */
     .btnRow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
     body.shareLight .btnSmall{
       height:32px;
@@ -85,7 +85,7 @@
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    /* ====== CABEÇALHO (HORIZONTAL, SEM TOMAR TELA) ====== */
+    /* ====== CABEÇALHO FINO ====== */
     .headerStrip{
       display:flex;
       align-items:center;
@@ -133,24 +133,34 @@
       font-variant-numeric:tabular-nums; color:#111827;
     }
 
-    /* ====== TOPO “FOCO EM PONTOS” ======
-       - 3 colunas: Cliente/KPIs | Corredores (largo) | Logo grande
-       - Sem filtros (ocultos) */
+    /* ====== TOPO FOCO (AJUSTE DO “VERMELHO” PARA NÃO FICAR ALTO) ======
+       - NÃO esticar altura: alinhamento no topo
+       - Corredores com altura máxima e scroll
+       - Logo com altura controlada
+    */
     .topFocus{
       display:grid;
       grid-template-columns: 360px 1fr 420px;
       gap:12px;
-      align-items:stretch;
+      align-items:start;             /* <<< evita esticar e criar “vazio” */
     }
     @media (max-width:1100px){
       .topFocus{grid-template-columns:1fr;}
     }
-    .topFocus .card{padding:12px !important;}
+    .topFocus .card{
+      padding:12px !important;
+      height:auto;                  /* <<< garante “fit-content” */
+      align-self:start;             /* <<< cada card só no seu tamanho */
+    }
 
     /* Cliente */
-    .clientBlock select{height:38px; padding:8px 12px; border-radius:10px;}
+    .clientBlock select{
+      height:38px;
+      padding:8px 12px;
+      border-radius:10px;
+    }
 
-    /* Corredores: header verde fino + lista “planilha” */
+    /* Corredores (estilo planilha) */
     .corrBox{
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
@@ -166,7 +176,11 @@
       text-transform:uppercase;
       letter-spacing:.04em;
     }
-    .corrBoxBody{padding:10px 12px;}
+    .corrBoxBody{
+      padding:10px 12px;
+      max-height:220px;            /* <<< limita altura (ajuste do vermelho) */
+      overflow:auto;               /* <<< scroll se tiver muitos corredores */
+    }
     .corrList{display:flex; flex-direction:column; gap:0; margin-top:0;}
     body.shareLight .corrItem{
       display:flex; justify-content:space-between; gap:10px; align-items:center;
@@ -184,16 +198,19 @@
       min-width:36px; text-align:right;
     }
 
-    /* Logo cliente (maior) */
+    /* Logo cliente (controlar altura para não “estourar” o bloco) */
     body.shareLight .clientLogoWrap{
       display:flex; align-items:center; justify-content:center;
       background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
-      border-radius:16px; padding:14px; min-height:210px;
+      border-radius:16px;
+      padding:12px;
+      min-height:170px;            /* <<< menor que antes */
+      max-height:170px;            /* <<< trava altura */
     }
     body.shareLight .clientLogoWrap img{
-      max-width: 100%;
-      max-height:180px;
+      max-width:100%;
+      max-height:140px;            /* <<< encaixa dentro */
       object-fit:contain;
       filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
     }
@@ -202,8 +219,8 @@
       opacity:.75; text-align:center; padding:18px; color:rgba(17,24,39,.75);
     }
 
-    /* Dica da logo (mais compacta) */
-    .logoTip{margin-top:8px;}
+    /* Remover a dica do /assets/img/clientes (conforme seu X vermelho) */
+    .logoTip{display:none !important;}
 
     /* ====== Remover/ocultar filtros no Share (mas manter no DOM p/ JS não quebrar) ====== */
     .filtersHidden{
@@ -219,8 +236,8 @@
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
       background:#ffffff;
-      height: calc(100vh - 280px); /* MAIS espaço pra tabela */
-      min-height: 520px;
+      height: calc(100vh - 250px); /* <<< mais espaço pra tabela */
+      min-height: 560px;
     }
     @media (max-width:1100px){
       body.shareLight .tableWrap{
@@ -251,7 +268,7 @@
     td.num, th.num{text-align:right}
     body.shareLight tr:hover td{background:rgba(59,130,246,.06);}
 
-    /* Status / chips (mais “planilha”: cores visíveis) */
+    /* Status / chips */
     body.shareLight .statusPill{
       display:inline-flex; align-items:center; justify-content:center;
       padding:4px 10px; border-radius:999px; font-weight:1000; font-size:11px;
@@ -291,7 +308,7 @@
   </div>
 
   <div class="container nfWide" style="padding-top:14px;" id="pageShare">
-    <!-- CABEÇALHO FINO (não rouba tela dos pontos) -->
+    <!-- CABEÇALHO FINO -->
     <div class="card headerStrip">
       <div class="left">
         <div class="pageTitle">
@@ -310,7 +327,7 @@
 
     <div style="height:10px;"></div>
 
-    <!-- TOPO FOCO (sem filtros) -->
+    <!-- TOPO FOCO (altura controlada) -->
     <div class="topFocus">
       <!-- ESQUERDA: Cliente + KPIs -->
       <div class="card clientBlock">
@@ -338,7 +355,7 @@
         </div>
       </div>
 
-      <!-- DIREITA: Logo grande -->
+      <!-- DIREITA: Logo (sem dica e sem filtros) -->
       <div class="card">
         <div style="font-weight:1000; font-size:14px;">Logo do cliente</div>
         <div class="muted2 note" style="margin-top:6px;">Mostra a logo conforme o cliente selecionado.</div>
@@ -348,6 +365,7 @@
           <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
         </div>
 
+        <!-- dica removida -->
         <div class="muted2 note logoTip">
           Dica: imagens em <span class="chip">/assets/img/clientes/</span> com o nome do cliente (ex: <b>CARGILL.png</b>).
         </div>
@@ -373,7 +391,7 @@
 
     <div style="height:10px;"></div>
 
-    <!-- TABELA (principal: pontos de embarque) -->
+    <!-- TABELA (principal) -->
     <div class="card">
       <div class="tableWrap">
         <table>

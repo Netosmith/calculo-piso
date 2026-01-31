@@ -28,7 +28,7 @@
     /* Cards / containers */
     body.shareLight .container{max-width:1650px}
     body.shareLight .card{
-      padding:14px;
+      padding:12px; /* mais compacto */
       overflow:hidden;
       background:#ffffff !important;
       border:1px solid rgba(15,23,42,.10) !important;
@@ -40,86 +40,225 @@
 
     /* Layout topo */
     .gridTop{display:grid; grid-template-columns: 1fr; gap:12px; align-items:start;}
-    @media (min-width:1100px){ .gridTop{grid-template-columns: 420px 1fr;} }
+    @media (min-width:1100px){
+      /* esquerda um pouco menor para abrir espaço visual */
+      .gridTop{grid-template-columns: 360px 1fr;}
+    }
 
     .miniBox{display:flex; flex-direction:column; gap:10px;}
     .row2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
     @media (max-width:720px){ .row2{grid-template-columns:1fr;} }
 
     /* Inputs */
-    body.shareLight label{font-size:11px; font-weight:900; margin-bottom:6px; display:block;}
+    body.shareLight label{
+      font-size:11px; font-weight:900; opacity:.9;
+      display:block; margin-bottom:6px; color:rgba(17,24,39,.85);
+    }
     body.shareLight select,
     body.shareLight input{
-      width:100%; padding:10px 12px; border-radius:12px;
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
       background:#ffffff;
+      color:#111827;
+      outline:none;
+    }
+    body.shareLight select:focus,
+    body.shareLight input:focus{
+      border-color:rgba(59,130,246,.55);
+      box-shadow:0 0 0 3px rgba(59,130,246,.18);
     }
 
-    /* Botões */
-    .btnRow{display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;}
+    /* Botões (MENOR - conforme seu print) */
+    .btnRow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
     body.shareLight .btnSmall{
-      padding:10px 12px; border-radius:14px;
+      height:30px;
+      padding:0 10px;
+      border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
       background:linear-gradient(180deg, #ffffff, #f3f4f6);
+      color:#111827;
       font-weight:900;
+      font-size:12px;
       cursor:pointer;
+      white-space:nowrap;
     }
+    body.shareLight .btnSmall:hover{filter:brightness(1.02)}
     body.shareLight .btnSmall.green{
       border-color:rgba(34,197,94,.35);
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    /* KPIs */
-    .kpis{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
+    /* KPIs (mais compacto) */
+    .kpis{display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;}
     @media (max-width:900px){ .kpis{grid-template-columns:1fr;} }
     body.shareLight .kpi{
+      background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
-      padding:12px;
+      padding:10px;
     }
-    body.shareLight .kpi .t{font-size:11px; font-weight:900; opacity:.75;}
-    body.shareLight .kpi .v{font-size:18px; font-weight:1000;}
+    body.shareLight .kpi .t{
+      font-size:10px; opacity:.75; font-weight:1000; letter-spacing:.02em;
+      text-transform:uppercase; color:rgba(17,24,39,.75);
+    }
+    body.shareLight .kpi .v{
+      font-size:16px; font-weight:1000; margin-top:6px;
+      font-variant-numeric:tabular-nums; color:#111827;
+    }
 
     /* Logo cliente */
     body.shareLight .clientLogoWrap{
       display:flex; align-items:center; justify-content:center;
+      background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
       border-radius:16px;
-      padding:14px;
+      padding:12px;
       min-height:130px;
     }
-    body.shareLight .clientLogoWrap img{max-height:120px;}
-
-    /* Corredores */
-    .corrList{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
-    body.shareLight .corrItem{
-      display:flex; justify-content:space-between;
-      border:1px solid rgba(15,23,42,.10);
-      border-radius:12px;
-      padding:10px 12px;
-      font-weight:900;
+    body.shareLight .clientLogoWrap img{
+      max-width:100%;
+      max-height:110px;
+      object-fit:contain;
+      filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
+    }
+    body.shareLight .clientLogoFallback{
+      font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
+      opacity:.75; text-align:center; padding:18px; color:rgba(17,24,39,.75);
     }
 
-    /* Tabela */
+    /* Chips */
+    body.shareLight .chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(59,130,246,.10);
+      border:1px solid rgba(59,130,246,.22);
+      font-weight:900; font-size:11px;
+      color:#111827;
+    }
+
+    /* ====== NOVO: CORREDORES HORIZONTAIS (NO “MEIO”) ====== */
+    .corrBar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .corrBar .title{
+      font-weight:1000;
+      font-size:13px;
+      color:#111827;
+      margin:0;
+      white-space:nowrap;
+    }
+    .corrGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap:10px;
+      width:100%;
+      margin-top:10px;
+    }
+    .corrItem{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.10);
+      background:#fff;
+      font-variant-numeric:tabular-nums;
+    }
+    .corrItem .name{font-weight:1000; color:#0F172A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .corrItem .qty{
+      font-weight:1000;
+      min-width:32px;
+      height:26px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background:rgba(59,130,246,.10);
+      border:1px solid rgba(59,130,246,.22);
+      color:#0F172A;
+    }
+
+    /* ====== TABELA (mais espaço para pontos de embarque) ====== */
     body.shareLight .tableWrap{
       overflow:auto;
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
-      min-height:420px;
+      height: calc(100vh - 280px); /* mais alto */
+      min-height: 520px;          /* mais alto */
+      background:#ffffff;
     }
+    @media (max-width:1100px){
+      body.shareLight .tableWrap{
+        height:auto;
+        min-height: 420px;
+      }
+    }
+
     body.shareLight table{width:100%; border-collapse:collapse; min-width:1400px;}
-    body.shareLight th, body.shareLight td{
-      padding:6px 10px;
+    body.shareLight th,
+    body.shareLight td{
+      padding:8px 10px;
       border-bottom:1px solid rgba(15,23,42,.08);
       font-size:12px;
+      vertical-align:middle;
       white-space:nowrap;
+      color:#111827;
     }
     body.shareLight thead th{
-      position:sticky; top:0;
+      position:sticky; top:0; z-index:3;
       background:#f8fafc;
       font-size:11px;
-      font-weight:900;
       text-transform:uppercase;
+      letter-spacing:.04em;
+      color:rgba(17,24,39,.75);
+      border-bottom:1px solid rgba(15,23,42,.10);
+    }
+    td.num, th.num{text-align:right}
+    body.shareLight tbody tr:hover td{background:rgba(59,130,246,.06);}
+
+    /* ====== STATUS COLORIDO (LIBERADO verde etc) ====== */
+    .statusPill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-weight:1000;
+      font-size:11px;
+      border:1px solid rgba(15,23,42,.12);
+      color:#111827;
+      background:#fff;
+    }
+    .statusPill.liberado{
+      background:rgba(34,197,94,.16);
+      border-color:rgba(34,197,94,.30);
+      color:#0B3B2E;
+    }
+    .statusPill.suspenso{
+      background:rgba(239,68,68,.14);
+      border-color:rgba(239,68,68,.28);
+      color:#7F1D1D;
+    }
+
+    /* Para print: esconde topbar */
+    body.printMode .topbar{display:none !important;}
+    body.printMode .container{padding-top:10px !important;}
+
+    /* Título topo */
+    body.shareLight .hTitle{
+      font-weight:1000; font-size:18px; margin:0;
+      color:#111827;
+    }
+    body.shareLight .hSub{
+      margin-top:6px;
+      color:rgba(17,24,39,.65);
     }
   </style>
 </head>
@@ -128,77 +267,120 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <a class="burger" href="./home.html"><div></div></a>
+        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
       <div class="actions">
-        <div class="icon-btn" data-logout>SAIR</div>
+        <div class="icon-btn" title="Sair" data-logout>SAIR</div>
       </div>
     </div>
   </div>
 
-  <div class="container nfWide" style="padding-top:18px;">
+  <div class="container nfWide" style="padding-top:18px;" id="pageShare">
     <!-- TOPO -->
     <div class="card">
-      <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <div>
           <div class="hTitle">Share Clientes</div>
-          <div class="muted2 note">Painel gerado a partir da base <b>Fretes</b>.</div>
+          <div class="muted2 note hSub">
+            Painel gerado a partir da base <b>Fretes</b>. Filtre por cliente e gere um print para enviar.
+          </div>
         </div>
+
         <div class="btnRow">
-          <button class="btnSmall" id="btnReload">Atualizar</button>
-          <button class="btnSmall green" id="btnPrint">Gerar Print</button>
+          <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">Atualizar</button>
+          <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">Gerar Print</button>
         </div>
       </div>
     </div>
 
-    <div style="height:12px"></div>
+    <div style="height:12px;"></div>
 
-    <!-- GRID SUPERIOR -->
     <div class="gridTop">
+      <!-- ESQUERDA: Cliente + KPIs (sem corredores aqui) -->
       <div class="card">
         <div class="miniBox">
-          <label>Cliente</label>
-          <select id="selCliente"></select>
+          <div>
+            <label for="selCliente">Cliente</label>
+            <select id="selCliente"></select>
+          </div>
 
           <div class="kpis">
             <div class="kpi"><div class="t">Total de lotes</div><div class="v" id="kLotes">0</div></div>
-            <div class="kpi"><div class="t">Total caminhão</div><div class="v" id="kCaminhao">0</div></div>
-            <div class="kpi"><div class="t">Projeção</div><div class="v" id="kVolume">0</div></div>
-          </div>
-
-          <div>
-            <div style="font-weight:1000">Quantidade por corredor</div>
-            <div class="corrList" id="corrList"></div>
+            <div class="kpi"><div class="t">Total de caminhão</div><div class="v" id="kCaminhao">0</div></div>
+            <div class="kpi"><div class="t">Projeção volume</div><div class="v" id="kVolume">0</div></div>
           </div>
         </div>
       </div>
 
+      <!-- DIREITA: Logo + Filtros -->
       <div class="card">
-        <div class="row2">
+        <div class="row2" style="align-items:start;">
           <div>
-            <div style="font-weight:1000">Logo do cliente</div>
-            <div class="clientLogoWrap">
-              <img id="imgLogo" style="display:none" />
-              <div id="logoFallback" style="display:none">SEM LOGO</div>
+            <div style="font-weight:1000; font-size:14px;">Logo do cliente</div>
+            <div class="muted2 note" style="margin-top:6px;">Mostra a logo conforme o cliente selecionado.</div>
+            <div class="clientLogoWrap" style="margin-top:10px;">
+              <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
+              <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
+            </div>
+            <div class="muted2 note" style="margin-top:10px;">
+              Dica: coloque as imagens em <span class="chip">/assets/img/clientes/</span> e mantenha o nome igual ao cliente (ex: <b>CARGILL.png</b>).
             </div>
           </div>
 
           <div>
-            <div style="font-weight:1000">Filtros</div>
-            <input id="inpBusca" placeholder="Digite para filtrar..." />
-            <div class="row2" style="margin-top:10px">
-              <select id="selStatus"><option value="">Todos</option></select>
-              <select id="selDestino"><option value="">Todos</option></select>
+            <div style="font-weight:1000; font-size:14px;">Filtros</div>
+            <div class="muted2 note" style="margin-top:6px;">Busca em origem, coleta, destino, descarga, produto e observação.</div>
+
+            <div style="margin-top:10px;">
+              <label for="inpBusca">Busca</label>
+              <input id="inpBusca" placeholder="Digite para filtrar..." />
+            </div>
+
+            <div class="row2" style="margin-top:10px;">
+              <div>
+                <label for="selStatus">Status</label>
+                <select id="selStatus">
+                  <option value="">Todos</option>
+                  <option value="LIBERADO">LIBERADO</option>
+                  <option value="SUSPENSO">SUSPENSO</option>
+                </select>
+              </div>
+              <div>
+                <label for="selDestino">Destino</label>
+                <select id="selDestino">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="muted2 note" style="margin-top:10px;">
+              <b>CMH's</b> Local/Trans são lidos do Fretes e ficam <b>travados</b> aqui (sem edição).
+              <br/>O <b>Total Geral</b> é calculado: <b>Local + Trans</b>.
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div style="height:12px"></div>
+    <!-- ✅ CORREDORES NO “MEIO”, HORIZONTAL -->
+    <div style="height:12px;"></div>
 
-    <!-- ✅ TABELA FULL WIDTH (SEM CABEÇALHO) -->
+    <div class="card">
+      <div class="corrBar">
+        <div>
+          <div class="title">Quantidade por corredor</div>
+          <div class="muted2 note" style="margin-top:4px;">Agrupado por <b>Destino</b> (mesma lógica da planilha).</div>
+        </div>
+      </div>
+
+      <!-- IMPORTANTE: mantive o ID corrList para seu JS continuar preenchendo -->
+      <div class="corrGrid" id="corrList"></div>
+    </div>
+
+    <!-- TABELA (full width) -->
+    <div style="height:12px;"></div>
+
     <div class="card">
       <div class="tableWrap">
         <table>
@@ -208,11 +390,11 @@
               <th>Coleta</th>
               <th>Destino</th>
               <th>Descarga</th>
-              <th>Frete Empresa</th>
+              <th class="num">Frete Empresa</th>
               <th>Produto</th>
-              <th>CMH's Local</th>
-              <th>CMH's Trans</th>
-              <th>Total Geral</th>
+              <th class="num">CMH's Local</th>
+              <th class="num">CMH's Trans</th>
+              <th class="num">Total Geral</th>
               <th>Status</th>
               <th>Observação</th>
             </tr>

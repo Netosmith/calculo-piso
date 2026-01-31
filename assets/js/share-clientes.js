@@ -28,7 +28,7 @@
     "CARAMURU",
     "COFCO",
     "MOSAIC",
-    "OUROSAFRA",
+    "OURO SAFRA",
     "CERRADINHO",
     "MMV GRÃOS",
     "CONCEITO AGRÃCOLA",

@@ -9,18 +9,17 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ==========================================
-       SHARE-CLIENTES (PADRÃO DO SEU EXEMPLO)
-       - Mantém layout aprovado
-       - Reintroduz elementos que o JS espera (ocultos)
-       - Grade na tabela + grade no Status Cliente
-       ========================================== */
+    /* ==========================================================
+       SHARE CLIENTES - PADRÃO FINAL (FOCO: PONTOS DE EMBARQUE)
+       - Topo compacto
+       - 3 cards horizontais: Cliente/Status | Corredores | Logo
+       - Grade estilo sheets (row 24px) nos pontos de embarque
+       ========================================================== */
 
     body.shareLight{
       background:#f4f6fb !important;
       color:#111827 !important;
     }
-
     body.shareLight .topbar{
       background:rgba(255,255,255,.88) !important;
       border-bottom:1px solid rgba(15,23,42,.10) !important;
@@ -33,41 +32,36 @@
       color:#111827 !important;
     }
 
+    /* Container */
     body.shareLight .container{max-width:1650px}
-
     body.shareLight .card{
-      padding:12px;
+      padding:14px;
       overflow:hidden;
       background:#ffffff !important;
       border:1px solid rgba(15,23,42,.10) !important;
       box-shadow:0 10px 26px rgba(15,23,42,.06) !important;
       border-radius:18px;
     }
-
     body.shareLight .muted2{color: rgba(17,24,39,.68) !important;}
     body.shareLight .note{font-size:12px; line-height:1.35;}
 
-    /* Header (baixo, horizontal) */
+    /* Header (mais horizontal e compacto) */
     .shareHeader{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
-      padding:4px 2px;
     }
-    .shareHeader .titleBox{
+    .shareHeader .left{
       display:flex;
       flex-direction:column;
       gap:4px;
-      min-width:260px;
+      min-width:240px;
     }
     body.shareLight .hTitle{
-      font-weight:1000;
-      font-size:18px;
-      margin:0;
+      font-weight:1000; font-size:18px; margin:0;
       color:#111827;
-      line-height:1.1;
     }
     body.shareLight .hSub{
       margin:0;
@@ -91,42 +85,14 @@
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    /* Top row (3 cards) */
-    .topRow{
-      display:grid;
-      grid-template-columns: 340px 1fr 460px;
-      gap:12px;
-      align-items:stretch;
-    }
-    @media (max-width:1200px){
-      .topRow{grid-template-columns: 1fr;}
-    }
-
-    /* ===== Card 1: Cliente + Status ===== */
-    .clientRow{
-      display:grid;
-      grid-template-columns: 120px 1fr;
-      gap:10px;
-      align-items:start;
-    }
-    @media (max-width:1200px){
-      .clientRow{grid-template-columns: 1fr;}
-    }
-
+    /* Inputs */
     body.shareLight label{
-      font-size:11px;
-      font-weight:900;
-      opacity:.9;
-      display:block;
-      margin-bottom:6px;
+      font-size:11px; font-weight:900; opacity:.9; display:block; margin-bottom:6px;
       color:rgba(17,24,39,.85);
     }
-
     body.shareLight select,
     body.shareLight input{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
+      width:100%; padding:10px 12px; border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
       background:#ffffff;
       color:#111827;
@@ -138,128 +104,151 @@
       box-shadow:0 0 0 3px rgba(59,130,246,.18);
     }
 
+    /* Layout topo (3 colunas no desktop, 1 no mobile) */
+    .topGrid{
+      display:grid;
+      grid-template-columns: 380px 1fr 360px;
+      gap:12px;
+      align-items:stretch;
+    }
+    @media (max-width:1100px){
+      .topGrid{grid-template-columns:1fr; }
+    }
+
+    /* Card cliente + status cliente */
+    .clienteWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .clienteHead{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    /* Status Cliente (com grade) */
     .statusBox{
       border:1px solid rgba(15,23,42,.12);
-      border-radius:12px;
+      border-radius:14px;
       overflow:hidden;
       background:#fff;
     }
-    .statusBox .statusHead{
-      background:#15803D;
+    .statusBox .title{
+      background:#167a3a;
       color:#fff;
       font-weight:1000;
-      text-align:center;
-      padding:8px 10px;
-      font-size:12px;
       letter-spacing:.04em;
       text-transform:uppercase;
+      font-size:12px;
+      padding:8px 10px;
+      text-align:center;
     }
-
-    /* ✅ Grade no Status Cliente */
     .statusTable{
       width:100%;
       border-collapse:collapse;
-      font-size:12px;
     }
     .statusTable td{
-      padding:8px 10px;
-      border:1px solid rgba(15,23,42,.14);
-      vertical-align:middle;
+      border-top:1px solid rgba(15,23,42,.10);
+      padding:6px 10px;
+      font-size:12px;
+      height:24px;           /* igual Sheets */
+      line-height:24px;      /* igual Sheets */
       white-space:nowrap;
-      background:#fff;
     }
     .statusTable td:first-child{
       font-weight:900;
-      color:rgba(17,24,39,.80);
+      color:#0f172a;
+      width:60%;
     }
     .statusTable td:last-child{
       text-align:right;
       font-weight:1000;
-      font-variant-numeric:tabular-nums;
-      color:#111827;
+      font-variant-numeric: tabular-nums;
+      width:40%;
     }
 
-    /* ===== Card 2: Corredores ===== */
-    .corrBox{
+    /* Corredores (estilo planilha, grade mais fina) */
+    .corrCard{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      height:100%;
+    }
+    .corrTitle{
+      background:#167a3a;
+      color:#fff;
+      font-weight:1000;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:14px;
+      text-align:center;
+    }
+    .corrWrap{
       border:1px solid rgba(15,23,42,.12);
-      border-radius:12px;
+      border-radius:14px;
       overflow:hidden;
       background:#fff;
       height:100%;
-      display:flex;
-      flex-direction:column;
-      min-height:110px;
-    }
-    .corrBox .corrHead{
-      background:#15803D;
-      color:#fff;
-      font-weight:1000;
-      text-align:center;
-      padding:8px 10px;
-      font-size:12px;
-      letter-spacing:.04em;
-      text-transform:uppercase;
     }
     .corrGrid{
       display:grid;
-      grid-template-columns: repeat(3, minmax(180px, 1fr));
-      gap:6px 20px;
-      padding:10px 12px;
-      align-content:start;
+      grid-template-columns: repeat(3, 1fr);
     }
-    @media (max-width:1200px){
-      .corrGrid{grid-template-columns: repeat(2, minmax(160px, 1fr));}
+    @media (max-width:1100px){
+      .corrGrid{grid-template-columns: repeat(2, 1fr);}
     }
-    @media (max-width:700px){
+    @media (max-width:560px){
       .corrGrid{grid-template-columns: 1fr;}
     }
-    .corrItem{
+    .corrCell{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:2px 0;
-      border-bottom:1px dotted rgba(15,23,42,.14);
-      font-variant-numeric:tabular-nums;
-    }
-    .corrItem:last-child{border-bottom:none;}
-    .corrItem .name{
-      font-weight:1000;
-      color:#111827;
-      text-transform:uppercase;
+      padding:0 10px;
+      height:24px;          /* igual Sheets */
+      line-height:24px;
       font-size:12px;
+      border-top:1px solid rgba(15,23,42,.10);
+      border-right:1px solid rgba(15,23,42,.10);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
     }
-    .corrItem .qty{
-      font-weight:1000;
-      color:#111827;
-      font-size:12px;
+    .corrCell:nth-child(-n + 3){
+      border-top:none;
     }
+    .corrName{font-weight:900; color:#0f172a; overflow:hidden; text-overflow:ellipsis;}
+    .corrQty{font-weight:1000; color:#0f172a;}
 
-    /* ===== Card 3: Logo grande ===== */
-    .logoCardInner{
-      display:grid;
-      grid-template-columns: 1fr;
+    /* Logo maior */
+    .logoBox{
+      display:flex;
+      flex-direction:column;
       gap:10px;
       height:100%;
     }
-    .clientLogoWrap{
+    body.shareLight .clientLogoWrap{
       display:flex;
       align-items:center;
       justify-content:center;
       background:#ffffff;
-      border:1px solid rgba(15,23,42,.10);
+      border:1px solid rgba(15,23,42,.12);
       border-radius:16px;
       padding:14px;
-      min-height:120px;
+      min-height:160px; /* maior */
       height:100%;
     }
-    .clientLogoWrap img{
-      max-width: 100%;
-      max-height:140px;
+    body.shareLight .clientLogoWrap img{
+      max-width:100%;
+      max-height:170px; /* maior */
       object-fit:contain;
       filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
     }
-    .clientLogoFallback{
+    body.shareLight .clientLogoFallback{
       font-weight:1000;
       letter-spacing:.08em;
       text-transform:uppercase;
@@ -269,89 +258,79 @@
       color:rgba(17,24,39,.75);
     }
 
-    /* ===== TABELA PRINCIPAL (FOCO) ===== */
+    /* =========================
+       TABELA - PONTOS DE EMBARQUE
+       - grade fina + row height 24
+       ========================= */
     body.shareLight .tableWrap{
       overflow:auto;
       border:1px solid rgba(15,23,42,.10);
       border-radius:14px;
       background:#ffffff;
-      height: calc(100vh - 260px);
-      min-height: 560px;
+      height: calc(100vh - 360px);
+      min-height: 420px;
     }
-    @media (max-width:1200px){
-      body.shareLight .tableWrap{
-        height:auto;
-        min-height:520px;
-      }
+    @media (max-width:1100px){
+      body.shareLight .tableWrap{height:auto; min-height: 360px;}
     }
 
     body.shareLight table{
       width:100%;
-      border-collapse:collapse; /* essencial pra grade */
-      min-width:1400px;
+      border-collapse:collapse;
+      min-width:1200px;
+      table-layout:fixed;
     }
 
-    /* ✅ Grade nos pontos de embarque (linhas e colunas) */
-    body.shareLight th,
-    body.shareLight td{
-      padding:8px 10px;
-      font-size:12px;
-      vertical-align:middle;
-      white-space:nowrap;
-      color:#111827;
-      border:1px solid rgba(15,23,42,.10);
-      background:#fff;
-    }
     body.shareLight thead th{
       position:sticky; top:0; z-index:3;
-      background:#f8fafc;
+      background:#0b2a5b; /* azul escuro tipo planilha */
+      color:#ffffff;
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:.04em;
-      color:rgba(17,24,39,.75);
+      padding:0 10px;
+      height:28px;
+      line-height:28px;
+      border-bottom:1px solid rgba(255,255,255,.18);
+      border-right:1px solid rgba(255,255,255,.14);
+      white-space:nowrap;
     }
-    td.num, th.num{text-align:right}
-    body.shareLight tr:hover td{background:rgba(59,130,246,.06);}
 
-    /* Status “colorido” */
+    body.shareLight td{
+      font-size:12px;
+      padding:0 10px;
+      height:24px;       /* ✅ igual Sheets */
+      line-height:24px;  /* ✅ igual Sheets */
+      border-bottom:1px solid rgba(15,23,42,.10); /* grade fina */
+      border-right:1px solid rgba(15,23,42,.08);  /* grade fina */
+      vertical-align:middle;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color:#0f172a;
+    }
+
+    body.shareLight tbody tr:hover td{background:rgba(59,130,246,.06);}
+    td.num, th.num{text-align:right}
+
+    /* Chips Status (colorido) */
     body.shareLight .statusPill{
       display:inline-flex; align-items:center; justify-content:center;
-      padding:5px 12px;
+      padding:0 10px;
       border-radius:999px;
       font-weight:1000;
       font-size:11px;
+      height:22px;
+      line-height:22px;
       border:1px solid rgba(15,23,42,.12);
-      color:#111827;
-      text-transform:uppercase;
+      color:#0f172a;
+      white-space:nowrap;
     }
-    body.shareLight .statusPill.liberado{
-      background:rgba(34,197,94,.18);
-      border-color:rgba(34,197,94,.35);
-      color:#0f3d22;
-    }
-    body.shareLight .statusPill.suspenso{
-      background:rgba(239,68,68,.14);
-      border-color:rgba(239,68,68,.30);
-      color:#5b1010;
-    }
-    body.shareLight .statusPill.parado{
-      background:rgba(245,158,11,.18);
-      border-color:rgba(245,158,11,.35);
-      color:#5a3a00;
-    }
+    body.shareLight .statusPill.liberado{background:rgba(34,197,94,.16); border-color:rgba(34,197,94,.32);}
+    body.shareLight .statusPill.suspenso{background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.30);}
+    body.shareLight .statusPill.parado{background:rgba(245,158,11,.16); border-color:rgba(245,158,11,.34);}
 
-    /* ✅ Filtros ocultos (mantém IDs que o share-clientes.js usa, mas você não vê) */
-    .ghostFilters{
-      display:none !important;
-      visibility:hidden !important;
-      height:0 !important;
-      overflow:hidden !important;
-      padding:0 !important;
-      margin:0 !important;
-      border:0 !important;
-    }
-
-    /* Print: esconde topbar */
+    /* Print */
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
   </style>
@@ -370,14 +349,14 @@
     </div>
   </div>
 
-  <div class="container nfWide" style="padding-top:12px;" id="pageShare">
+  <div class="container nfWide" style="padding-top:14px;" id="pageShare">
 
-    <!-- HEADER -->
+    <!-- HEADER (compacto) -->
     <div class="card">
       <div class="shareHeader">
-        <div class="titleBox">
+        <div class="left">
           <div class="hTitle">Share Clientes</div>
-          <div class="muted2 note hSub">Painel da base <b>Fretes</b>. Foco nos <b>pontos de embarque</b> abaixo.</div>
+          <div class="muted2 note hSub">Painel da base <b>Fretes</b>. Foque nos <b>pontos de embarque</b> abaixo.</div>
         </div>
 
         <div class="btnRow">
@@ -389,19 +368,20 @@
 
     <div style="height:12px;"></div>
 
-    <!-- TOP ROW (3 cards) -->
-    <div class="topRow">
+    <!-- TOPO: Cliente/Status | Corredores | Logo -->
+    <div class="topGrid">
 
-      <!-- 1) Cliente + Status Cliente -->
+      <!-- Cliente + Status -->
       <div class="card">
-        <div class="clientRow">
+        <div class="clienteWrap">
           <div>
             <label for="selCliente">Cliente</label>
             <select id="selCliente"></select>
           </div>
 
+          <!-- Status Cliente (contabiliza números) -->
           <div class="statusBox">
-            <div class="statusHead">Status Cliente</div>
+            <div class="title">STATUS CLIENTE</div>
             <table class="statusTable">
               <tr>
                 <td>Total de Lotes</td>
@@ -420,21 +400,19 @@
         </div>
       </div>
 
-      <!-- 2) Quantidade por Corredor -->
-      <div class="card">
-        <div class="corrBox">
-          <div class="corrHead">Quantidade por Corredor</div>
+      <!-- Corredores -->
+      <div class="card corrCard">
+        <div class="corrTitle">QUANTIDADE POR CORREDOR</div>
+        <div class="corrWrap">
           <div class="corrGrid" id="corrList"></div>
         </div>
       </div>
 
-      <!-- 3) Logo -->
-      <div class="card">
-        <div class="logoCardInner">
-          <div class="clientLogoWrap">
-            <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
-            <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
-          </div>
+      <!-- Logo -->
+      <div class="card logoBox">
+        <div class="clientLogoWrap">
+          <img id="imgLogo" alt="Logo do cliente" style="display:none;" />
+          <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
         </div>
       </div>
 
@@ -442,21 +420,7 @@
 
     <div style="height:12px;"></div>
 
-    <!-- ✅ Filtros ocultos (para não quebrar o share-clientes.js) -->
-    <div class="ghostFilters">
-      <input id="inpBusca" value="" />
-      <select id="selStatus">
-        <option value="">Todos</option>
-        <option value="LIBERADO">LIBERADO</option>
-        <option value="SUSPENSO">SUSPENSO</option>
-        <option value="PARADO">PARADO</option>
-      </select>
-      <select id="selDestino">
-        <option value="">Todos</option>
-      </select>
-    </div>
-
-    <!-- TABELA (FOCO) -->
+    <!-- TABELA: Pontos de embarque -->
     <div class="card">
       <div class="tableWrap">
         <table>
@@ -479,11 +443,231 @@
         </table>
       </div>
     </div>
-
   </div>
 
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/share-clientes.js"></script>
+
+  <!-- ==========================================================
+       PATCH: corrige CMH local/trans/total + conta status cliente
+       + renderiza corredores como grade e status colorido
+       ========================================================== -->
+  <script>
+  (function(){
+    const STORAGE_KEY = 'nf_fretes_rows_v1';
+
+    function norm(s){
+      return String(s ?? '').trim().toLowerCase();
+    }
+    function toNum(v){
+      if (v === null || v === undefined) return 0;
+      const s = String(v).replace(/\./g,'').replace(',','.');
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function pick(obj, candidates){
+      if (!obj) return '';
+      const keys = Object.keys(obj);
+      for (const cand of candidates){
+        const c = norm(cand);
+        const exact = keys.find(k => norm(k) === c);
+        if (exact) return obj[exact];
+        const inc = keys.find(k => norm(k).includes(c));
+        if (inc) return obj[inc];
+      }
+      return '';
+    }
+
+    function readRowsFromStorage(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const data = JSON.parse(raw);
+        return Array.isArray(data) ? data : [];
+      }catch(e){
+        return [];
+      }
+    }
+
+    function getSelectedClient(){
+      const sel = document.getElementById('selCliente');
+      return sel ? (sel.value || '') : '';
+    }
+
+    function applyStatusPill(cell, statusTxt){
+      const stRaw = String(statusTxt ?? '').trim();
+      const st = stRaw.toUpperCase();
+
+      const pill = document.createElement('span');
+      pill.className = 'statusPill';
+      pill.textContent = st || '—';
+
+      if (st.includes('LIBER')) pill.classList.add('liberado');
+      else if (st.includes('SUSP')) pill.classList.add('suspenso');
+      else if (st.includes('PARAD')) pill.classList.add('parado');
+
+      cell.innerHTML = '';
+      cell.appendChild(pill);
+    }
+
+    function setKpisFromVisibleRows(){
+      const tbody = document.getElementById('tbodyShare');
+      if (!tbody) return;
+
+      const trs = Array.from(tbody.querySelectorAll('tr'));
+      const visible = trs.filter(tr => tr.offsetParent !== null);
+
+      const lotes = visible.length;
+      const cam = visible.length;
+
+      const elL = document.getElementById('kLotes');
+      const elC = document.getElementById('kCaminhao');
+      const elV = document.getElementById('kVolume');
+
+      if (elL) elL.textContent = String(lotes);
+      if (elC) elC.textContent = String(cam);
+
+      // se teu JS já calcula volume, mantém. Senão: 0
+      if (elV && !String(elV.textContent).trim()) elV.textContent = '0';
+    }
+
+    function renderCorridorsAsGrid(){
+      const corrList = document.getElementById('corrList');
+      if (!corrList) return;
+
+      // seu share-clientes.js provavelmente monta corrList diferente
+      // então: se já tiver elementos .corrCell, não mexe
+      if (corrList.querySelector('.corrCell')) return;
+
+      // tenta ler do HTML antigo (#corrList) se vier em divs
+      // Se estiver vazio, não faz nada
+      if (!corrList.children.length) return;
+
+      // Caso o JS antigo injete itens (ex: div corrItem), converte para grid
+      const items = Array.from(corrList.children).map(el => {
+        const txt = el.textContent || '';
+        // tenta separar nome/quantidade pelo último número
+        const m = txt.trim().match(/^(.*?)(\d+)\s*$/);
+        return {
+          name: (m ? m[1] : txt).trim(),
+          qty: (m ? m[2] : '').trim()
+        };
+      }).filter(x => x.name);
+
+      corrList.innerHTML = '';
+      items.forEach(it => {
+        const cell = document.createElement('div');
+        cell.className = 'corrCell';
+        const name = document.createElement('div');
+        name.className = 'corrName';
+        name.textContent = it.name;
+        const qty = document.createElement('div');
+        qty.className = 'corrQty';
+        qty.textContent = it.qty || '';
+        cell.appendChild(name);
+        cell.appendChild(qty);
+        corrList.appendChild(cell);
+      });
+    }
+
+    function patchCMHsAndTotal(){
+      const tbody = document.getElementById('tbodyShare');
+      if (!tbody) return;
+
+      const all = readRowsFromStorage();
+      if (!all.length) return;
+
+      const clienteSel = norm(getSelectedClient());
+
+      const filtered = all.filter(r => {
+        const cli = norm(pick(r, ['cliente','client','nome cliente','cliente/cliente','cliente_nome','nome']));
+        return clienteSel ? cli === clienteSel : true;
+      });
+
+      const trs = Array.from(tbody.querySelectorAll('tr'));
+      if (!trs.length) return;
+
+      trs.forEach(tr => {
+        const tds = Array.from(tr.querySelectorAll('td'));
+        if (tds.length < 10) return;
+
+        const origemTxt   = norm(tds[0].textContent);
+        const coletaTxt   = norm(tds[1].textContent);
+        const destinoTxt  = norm(tds[2].textContent);
+        const descargaTxt = norm(tds[3].textContent);
+        const freteTxt    = norm(tds[4].textContent);
+        const prodTxt     = norm(tds[5].textContent);
+
+        // match robusto
+        const found = filtered.find(r => {
+          const o  = norm(pick(r, ['origem']));
+          const c  = norm(pick(r, ['coleta']));
+          const d  = norm(pick(r, ['destino']));
+          const de = norm(pick(r, ['descarga']));
+          const p  = norm(pick(r, ['produto']));
+          const f  = norm(pick(r, ['frete empresa','frete','valor','frete_empresa','freteempresa']));
+
+          const okCore = (o === origemTxt && c === coletaTxt && d === destinoTxt && de === descargaTxt && p === prodTxt);
+          if (!okCore) return false;
+
+          // frete pode vir com R$ e formato diferente, então não trava demais
+          if (!f || !freteTxt) return true;
+          return f === freteTxt;
+        });
+
+        // ✅ candidatas MAIS completas (pra pegar qualquer variação)
+        const cmhLocal = toNum(pick(found, [
+          "cmh's local","cmh´s local","cmh local","cmhs local","cmh_local","cmhs_local","cmh local r$","cmh local (r$)",
+          "local cmh","cmh local valor","cmh local (valor)","cmhlocal","cmhslocal"
+        ]));
+        const cmhTrans = toNum(pick(found, [
+          "cmh's trans","cmh´s trans","cmh trans","cmhs trans","cmh_trans","cmhs_trans","cmh trans r$","cmh trans (r$)",
+          "trans cmh","cmh trans valor","cmh trans (valor)","cmhtrans","cmhstrans"
+        ]));
+
+        // Preenche se estiver vazio
+        if (!String(tds[6].textContent).trim()) tds[6].textContent = cmhLocal ? String(cmhLocal).replace('.',',') : '';
+        if (!String(tds[7].textContent).trim()) tds[7].textContent = cmhTrans ? String(cmhTrans).replace('.',',') : '';
+
+        const localNow = cmhLocal || toNum(tds[6].textContent);
+        const transNow = cmhTrans || toNum(tds[7].textContent);
+
+        const total = localNow + transNow;
+        if (!String(tds[8].textContent).trim()) tds[8].textContent = total ? String(total).replace('.',',') : '';
+
+        // Status pill
+        const statusCell = tds[9];
+        const rawStatus = statusCell.textContent;
+        if (!statusCell.querySelector('.statusPill')) applyStatusPill(statusCell, rawStatus);
+      });
+    }
+
+    function runAll(){
+      setKpisFromVisibleRows();
+      patchCMHsAndTotal();
+      renderCorridorsAsGrid();
+    }
+
+    // Observa mudanças na tabela
+    const tbody = document.getElementById('tbodyShare');
+    if (tbody){
+      const obs = new MutationObserver(() => runAll());
+      obs.observe(tbody, { childList:true, subtree:true });
+    }
+
+    // Em mudança de cliente
+    const selCliente = document.getElementById('selCliente');
+    if (selCliente) selCliente.addEventListener('change', () => setTimeout(runAll, 80));
+
+    // Em atualizar
+    const btnReload = document.getElementById('btnReload');
+    if (btnReload) btnReload.addEventListener('click', () => setTimeout(runAll, 350));
+
+    // Primeira execução
+    setTimeout(runAll, 350);
+  })();
+  </script>
+
   <script>
     requireHomeAuth();
     bindLogoutButton();

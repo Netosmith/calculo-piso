@@ -288,22 +288,21 @@
 
     body.shareLight table{
       width:100%;
-      border-collapse:collapse; /* essencial pra grade */
+      border-collapse:collapse;
       min-width:1400px;
     }
 
     /* ✅ Grade nos pontos de embarque (linhas e colunas) + ALTURA 24 */
     body.shareLight th,
     body.shareLight td{
-      height:24px;               /* ✅ igual Sheets */
-      line-height:24px;          /* ✅ igual Sheets */
-      padding:0 8px;             /* ✅ mais estreito p/ caber mais */
+      height:24px;
+      line-height:24px;
+      padding:0 8px;
       font-size:12px;
       vertical-align:middle;
       white-space:nowrap;
       color:#111827;
-
-      border:1px solid rgba(15,23,42,.10); /* grade */
+      border:1px solid rgba(15,23,42,.10);
       background:#fff;
     }
     body.shareLight thead th{
@@ -345,7 +344,7 @@
       color:#5a3a00;
     }
 
-    /* ✅ Filtros ocultos (mantém IDs que o share-clientes.js usa, mas você não vê) */
+    /* ✅ Filtros ocultos */
     .ghostFilters{
       display:none !important;
       visibility:hidden !important;
@@ -408,18 +407,14 @@
           <div class="statusBox">
             <div class="statusHead">Status Cliente</div>
             <table class="statusTable">
-              <tr>
-                <td>Total de Lotes</td>
-                <td id="kLotes">0</td>
-              </tr>
-              <tr>
-                <td>Total de Caminhões</td>
-                <td id="kCaminhao">0</td>
-              </tr>
-              <tr>
-                <td>Projeção de Volume</td>
-                <td id="kVolume">0</td>
-              </tr>
+              <tr><td>Total de Lotes</td><td id="kLotes">0</td></tr>
+              <tr><td>Total de Caminhões</td><td id="kCaminhao">0</td></tr>
+              <tr><td>Projeção de Volume</td><td id="kVolume">0</td></tr>
+
+              <!-- ✅ contagem por status -->
+              <tr><td>Liberados</td><td id="kLiberado">0</td></tr>
+              <tr><td>Suspensos</td><td id="kSuspenso">0</td></tr>
+              <tr><td>Parados</td><td id="kParado">0</td></tr>
             </table>
           </div>
         </div>
@@ -490,13 +485,12 @@
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/share-clientes.js"></script>
 
-  <!-- ✅ PATCH ROBUSTO: garante clientes + CMH + Total Geral + contagem status (sem quebrar seu layout) -->
+  <!-- ✅ PATCH: compatível com seus campos reais (cliente/origem etc) -->
   <script>
     requireHomeAuth();
     bindLogoutButton();
 
     (function(){
-      // roda depois que tudo carregou (inclusive o share-clientes.js)
       function onReady(fn){
         if(document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
         else document.addEventListener('DOMContentLoaded', fn);
@@ -514,7 +508,6 @@
           const k = map.get(norm(c));
           if(k) return k;
         }
-        // fallback por "contém"
         for(const c of candidates){
           const nc = norm(c);
           for(const [nk, orig] of map.entries()){
@@ -565,14 +558,8 @@
         }
         const src = base + name + '.png';
         img.src = src;
-        img.onload = () => {
-          fb.style.display = 'none';
-          img.style.display = 'block';
-        };
-        img.onerror = () => {
-          img.style.display = 'none';
-          fb.style.display = 'block';
-        };
+        img.onload = () => { fb.style.display = 'none'; img.style.display = 'block'; };
+        img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; };
       }
 
       function makeStatusPillHTML(st){
@@ -593,31 +580,29 @@
         if(!selCliente || !corrList || !tbody) return;
 
         let BASE = readBase();
-        if(BASE.length === 0){
-          // sem base ainda: não força nada
-          return;
-        }
+        if(BASE.length === 0) return;
 
+        // ✅ detector de chaves com MAIS variações (principalmente cmh_*)
         const COLS = (function(sample){
           return {
-            cliente: pickKey(sample, ['CLIENTE','Cliente','cliente_nome','NOME CLIENTE','CLIENTE NOME']),
-            origem:  pickKey(sample, ['ORIGEM','Origem']),
-            coleta:  pickKey(sample, ['COLETA','Coleta']),
-            destino: pickKey(sample, ['DESTINO','Destino']),
-            descarga:pickKey(sample, ['DESCARGA','Descarga']),
-            frete:   pickKey(sample, ['FRETE EMPRESA','Frete Empresa','FRETE','FRETE_EMPRESA','VALOR FRETE','VALOR']),
-            produto: pickKey(sample, ['PRODUTO','Produto']),
-            cmhLocal:pickKey(sample, ["CMH'S LOCAL","CMH LOCAL","CMH_LOCAL","CMHLOCAL","CMH LOCAIS","CMH LOCAL R$"]),
-            cmhTrans:pickKey(sample, ["CMH'S TRANS","CMH TRANS","CMH_TRANS","CMHTRANS","CMH TRANS R$"]),
-            status:  pickKey(sample, ['STATUS','Status','SITUACAO','SITUAÇÃO']),
-            obs:     pickKey(sample, ['OBSERVACAO','OBSERVAÇÃO','Observação','OBS','Observacao']),
-            placa:   pickKey(sample, ['PLACA','CAVALO','VEICULO','VEÍCULO','TRUCK','CARRETA']),
-            volume:  pickKey(sample, ['VOLUME','VOLUME (T)','VOLUME_T','TON','TONELADAS','PESO','PESO (T)','QTDE','QUANTIDADE']),
+            cliente: pickKey(sample, ['cliente','CLIENTE','Cliente','nome_cliente','cliente_nome','NOME CLIENTE']),
+            origem:  pickKey(sample, ['origem','ORIGEM','Origem']),
+            coleta:  pickKey(sample, ['coleta','COLETA','Coleta']),
+            destino: pickKey(sample, ['destino','DESTINO','Destino']),
+            descarga:pickKey(sample, ['descarga','DESCARGA','Descarga']),
+            frete:   pickKey(sample, ['frete_empresa','frete','FRETE EMPRESA','Frete Empresa','valor_frete','valor']),
+            produto: pickKey(sample, ['produto','PRODUTO','Produto']),
+            // ✅ aqui é o ponto crítico no seu caso:
+            cmhLocal:pickKey(sample, ['cmh_local',"cmh's_local","cmhs_local","cmh local","CMH LOCAL","CMH'S LOCAL","cmhlocal"]),
+            cmhTrans:pickKey(sample, ['cmh_trans',"cmh's_trans","cmhs_trans","cmh trans","CMH TRANS","CMH'S TRANS","cmhtrans"]),
+            status:  pickKey(sample, ['status','STATUS','Status','situacao','situação']),
+            obs:     pickKey(sample, ['observacao','observação','OBSERVACAO','OBSERVAÇÃO','obs','OBS']),
+            placa:   pickKey(sample, ['placa','PLACA','veiculo','veículo','cavalo']),
+            volume:  pickKey(sample, ['volume','VOLUME','ton','toneladas','peso','qtde','quantidade']),
           };
         })(BASE[0]);
 
         function fillClientsIfEmpty(){
-          // se o share-clientes.js não populou, populamos aqui
           if(selCliente.options.length > 0 && selCliente.value) return;
 
           const ck = COLS.cliente;
@@ -648,7 +633,7 @@
           setText('kCaminhao', String(caminhao));
           setText('kVolume', vol ? vol.toLocaleString('pt-BR') : '0');
 
-          // contagem status
+          // ✅ contagem status
           const sk = COLS.status;
           let cLib=0, cSus=0, cPar=0;
           rows.forEach(r=>{
@@ -683,7 +668,7 @@
             `;
           }).join('');
 
-          // tabela (CMH + Total Geral)
+          // ✅ tabela (CMH + Total Geral)
           const ok = COLS.origem, cl = COLS.coleta, de = COLS.destino, ds = COLS.descarga;
           const fk = COLS.frete, pr = COLS.produto, lk = COLS.cmhLocal, tk = COLS.cmhTrans, ob = COLS.obs;
 
@@ -722,7 +707,6 @@
           if(cliente) renderForClient(cliente);
         }
 
-        // Eventos
         selCliente.addEventListener('change', hydrate);
 
         if(btnReload){
@@ -731,7 +715,6 @@
           });
         }
 
-        // Primeira carga
         hydrate();
       });
     })();

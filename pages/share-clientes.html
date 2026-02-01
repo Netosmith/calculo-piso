@@ -162,7 +162,6 @@
       min-width:1400px;
     }
 
-    /* ✅ Grade + altura 24 (Sheets) + linhas mais estreitas */
     body.shareLight th,
     body.shareLight td{
       height:24px;
@@ -263,9 +262,6 @@
               <tr><td>Total de Lotes</td><td id="kLotes">0</td></tr>
               <tr><td>Total de Caminhões</td><td id="kCaminhao">0</td></tr>
               <tr><td>Projeção de Volume</td><td id="kVolume">0</td></tr>
-              <tr><td>Liberados</td><td id="kLiberado">0</td></tr>
-              <tr><td>Suspensos</td><td id="kSuspenso">0</td></tr>
-              <tr><td>Parados</td><td id="kParado">0</td></tr>
             </table>
           </div>
         </div>
@@ -403,9 +399,6 @@
 
         let BASE = readBase();
 
-        // Debug rápido (se quiser ver no console)
-        console.log('[share-clientes] rows:', BASE.length, 'sample keys:', BASE[0] ? Object.keys(BASE[0]) : []);
-
         function fillClients(){
           const clients = Array.from(new Set(
             BASE.map(r => normalizeKey(r.cliente)).filter(Boolean)
@@ -420,7 +413,7 @@
           const rows = BASE.filter(r => normalizeKey(r.cliente) === c);
 
           const lotes = rows.length;
-          const caminhao = lotes; // se quiser outra regra, me diga qual campo usar
+          const caminhao = lotes;
           const vol = rows.reduce((acc,r)=>acc + num(r.volume), 0);
 
           setText('kLotes', String(lotes));
@@ -440,26 +433,31 @@
 
           setLogo(c);
 
-          // corredores por destino
+          // ✅✅✅ CORREDORES POR DESTINO (SOMA DO TOTAL CMH = qtdPorta + qtdTransito)
           const map = new Map();
           rows.forEach(r=>{
-            const d = normalizeKey(r.destino);
-            if(!d) return;
-            map.set(d, (map.get(d)||0)+1);
-          });
-          const corredores = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
+            const destino = normalizeKey(r.destino).toUpperCase();
+            if(!destino) return;
 
-          corrList.innerHTML = corredores.map(([name,qty])=>`
+            const cmhLocal = int(r.qtdPorta);
+            const cmhTrans = int(r.qtdTransito);
+            const total    = cmhLocal + cmhTrans; // <<< aqui é o que você queria
+
+            map.set(destino, (map.get(destino) || 0) + total);
+          });
+
+          // ordena por maior total (opcional)
+          const corredores = Array.from(map.entries())
+            .sort((a,b)=>b[1]-a[1]);
+
+          corrList.innerHTML = corredores.map(([name,total])=>`
             <div class="corrItem" title="${name}">
               <span class="name">${name}</span>
-              <span class="qty">${qty}</span>
+              <span class="qty">${total}</span>
             </div>
           `).join('');
 
-          // ✅ CMH real:
-          // CMH Local = qtdPorta
-          // CMH Trans = qtdTransito
-          // Total Geral = qtdPorta + qtdTransito
+          // CMH real na tabela
           tbody.innerHTML = rows.map(r=>{
             const frete = num(r.valorEmpresa);
             const cmhL  = int(r.qtdPorta);
@@ -487,7 +485,6 @@
         function hydrate(){
           BASE = readBase();
           if(BASE.length === 0){
-            console.warn('[share-clientes] nf_fretes_rows_v1 vazio no localStorage');
             selCliente.innerHTML = '';
             corrList.innerHTML = '';
             tbody.innerHTML = '';

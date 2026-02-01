@@ -83,39 +83,30 @@
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
-    /* ✅✅✅ STATUS CLIENTE (coluna de valor garantida) */
-    .statusTable{
-      width:100%;
-      border-collapse:collapse;
-      font-size:12px;
-      table-layout:fixed;
-    }
-    .statusTable td{
-      padding:6px 10px;
-      border:1px solid rgba(15,23,42,.14);
-      vertical-align:middle;
+    /* ✅✅✅ STATUS CLIENTE SEM TABELA (não colapsa nunca) */
+    .statusList{ display:flex; flex-direction:column; }
+    .statusLine{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-top:1px solid rgba(15,23,42,.14);
       background:#fff;
     }
-    .statusTable td:first-child{
-      width:70%;
+    .statusLine:first-child{ border-top:none; }
+    .statusLabel{
       font-weight:900;
       color:rgba(17,24,39,.80);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .statusTable td.statusValue{
-      width:30%;
-      min-width:90px;
-      text-align:right !important;
-      font-weight:1000 !important;
-      font-variant-numeric:tabular-nums !important;
+    .statusValue{
+      font-weight:1000;
+      font-variant-numeric:tabular-nums;
       color:#111827 !important;
-      white-space:nowrap !important;
-      display:table-cell !important;
-      opacity:1 !important;
-      visibility:visible !important;
-      -webkit-text-fill-color:#111827 !important;
+      white-space:nowrap;
+      min-width:88px;
+      text-align:right;
     }
 
     .corrBox{
@@ -248,12 +239,24 @@
 
           <div class="statusBox">
             <div class="statusHead">Status Cliente</div>
-            <table class="statusTable">
-              <tr><td>Total de Lotes</td><td class="statusValue" id="kLotes">0</td></tr>
-              <tr><td>Total de Caminhões</td><td class="statusValue" id="kCaminhao">0</td></tr>
-              <tr><td>Projeção de Volume</td><td class="statusValue" id="kVolume">0</td></tr>
-            </table>
+
+            <!-- ✅✅✅ substitui a tabela por linhas flex -->
+            <div class="statusList">
+              <div class="statusLine">
+                <div class="statusLabel">Total de Lotes</div>
+                <div class="statusValue" id="kLotes">0</div>
+              </div>
+              <div class="statusLine">
+                <div class="statusLabel">Total de Caminhões</div>
+                <div class="statusValue" id="kCaminhao">0</div>
+              </div>
+              <div class="statusLine">
+                <div class="statusLabel">Projeção de Volume</div>
+                <div class="statusValue" id="kVolume">0</div>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
 
@@ -319,7 +322,6 @@
         const n = parseFloat(s);
         return isFinite(n) ? n : 0;
       }
-
       function int(v){
         const n = num(v);
         return isFinite(n) ? Math.round(n) : 0;
@@ -353,12 +355,10 @@
       function getField(row, names){
         if(!row) return undefined;
 
-        // 1) tenta direto (nomes exatos)
         for(const n of names){
           if(row[n] !== undefined && row[n] !== null && row[n] !== '') return row[n];
         }
 
-        // 2) tenta varrer chaves ignorando maiúsculas/minúsculas e símbolos
         const keys = Object.keys(row);
         const norm = (s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
         const wanted = names.map(norm);
@@ -367,7 +367,6 @@
           const nk = norm(k);
           if(wanted.includes(nk)) return row[k];
         }
-
         return undefined;
       }
 
@@ -377,20 +376,17 @@
           'qtdLocal','cmhLocal','cmhsLocal'
         ]);
       }
-
       function getQtdTransito(row){
         return getField(row, [
           'qtdTransito',"Qtd Trânsito",'qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito',
-          'qtdTrans','cmhTrans','cmhsTrans'
+          'cmhTrans','cmhsTrans'
         ]);
       }
-
       function getValorEmpresa(row){
         return getField(row, [
           'valorEmpresa','Vlr Empresa','vlrEmpresa','empresa','valor_empresa','vlr_empresa'
         ]);
       }
-
       function getObs(row){
         return getField(row, [
           'obs','Observações','observacao','observação','observacoes','observações'
@@ -433,7 +429,7 @@
         if(!selCliente || !corrList || !tbody) return;
 
         let BASE = readBase();
-        let clientIndex = new Map(); // canon -> display
+        let clientIndex = new Map();
 
         function buildClientIndex(){
           clientIndex.clear();
@@ -460,9 +456,7 @@
           const displayName = clientIndex.get(key) || key;
           const rows = BASE.filter(r => canon(r.cliente) === key);
 
-          // ✅ STATUS CLIENTE
           const totalLotes = rows.length;
-
           const totalCaminhoes = rows.reduce((acc, r) => {
             const cmhL = int(getQtdPorta(r));
             const cmhT = int(getQtdTransito(r));
@@ -477,12 +471,10 @@
 
           setLogo(displayName);
 
-          // ✅ Corredores por destino (soma do total CMH)
           const map = new Map();
           rows.forEach(r=>{
             const destinoKey = canon(r.destino);
             if(!destinoKey) return;
-
             const total = int(getQtdPorta(r)) + int(getQtdTransito(r));
             map.set(destinoKey, (map.get(destinoKey) || 0) + total);
           });
@@ -495,7 +487,6 @@
             </div>
           `).join('');
 
-          // ✅ Tabela
           tbody.innerHTML = rows.map(r=>{
             const frete = num(getValorEmpresa(r));
             const cmhL  = int(getQtdPorta(r));

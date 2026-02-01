@@ -242,3 +242,42 @@ a{ color: inherit; text-decoration: none; }
   font-size: 12px;
   color: rgba(141,173,255,.95);
 }
+
+/* =========================================================
+   PATCH SHARE-CLIENTES (NÃO QUEBRA O RESTO DO SITE)
+   - Garante coluna de valores no STATUS CLIENTE
+   - Regras “neutras” pra tabela sem interferir em outras telas
+   ========================================================= */
+
+/* Base neutra de tabela (não altera cor/tema, só evita bugs de layout) */
+table{ border-spacing: 0; }
+td, th{ vertical-align: middle; }
+
+/* ✅ Status Cliente: evita a coluna da direita sumir */
+.statusTable{
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* essencial pra dividir espaço corretamente */
+}
+
+.statusTable td:first-child{
+  width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusTable td.statusValue{
+  width: 30%;
+  min-width: 64px;       /* impede “coluna 0px” */
+  text-align: right !important;
+  font-weight: 1000 !important;
+  white-space: nowrap !important;
+}
+
+/* Se em algum navegador o texto “desaparecer” por render, força preenchimento */
+.statusTable td.statusValue,
+.statusTable td.statusValue *{
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}

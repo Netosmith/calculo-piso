@@ -347,8 +347,8 @@
               <th>Descarga</th>
               <th class="num">Frete Empresa</th>
               <th>Produto</th>
-              <th class="num">CMH's Local</th>
-              <th class="num">CMH's Trans</th>
+              <th class="num">CMHs Local</th>
+              <th class="num">CMHs Trans</th>
               <th class="num">Total Geral</th>
               <th>Status</th>
               <th>Observação</th>
@@ -459,8 +459,8 @@
           descarga: 'descarga',
           freteEmpresa: 'valorEmpresa',
           produto: 'produto',
-          cmhLocal: 'qtdPorta',
-          cmhTrans: 'qtdTransito',
+          cmhsLocal: 'qtdPorta',
+          cmhsTrans: 'qtdTransito',
           status: 'status',
           obs: 'obs',
           volume: 'volume'
@@ -524,8 +524,8 @@
           // ✅ Tabela (CMH + Total Geral)
           tbody.innerHTML = rows.map(r=>{
             const frete = num(r[COLS.freteEmpresa]);
-            const cmhL  = int(r[COLS.cmhLocal]);    // qtdPorta
-            const cmhT  = int(r[COLS.cmhTrans]);    // qtdTransito
+            const cmhL  = int(r[COLS.cmhsLocal]);    // qtdPorta
+            const cmhT  = int(r[COLS.cmhsTrans]);    // qtdTransito
             const total = cmhL + cmhT;
 
             return `

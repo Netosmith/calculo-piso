@@ -336,8 +336,17 @@
         return isFinite(n) ? Math.round(n) : 0;
       }
 
+      function fmtInt(n){
+        return (Number(n) || 0).toLocaleString('pt-BR');
+      }
+
+      function fmtTon(n){
+        // toneladas (sem casas decimais, mas pode mudar se quiser)
+        return (Number(n) || 0).toLocaleString('pt-BR') + ' t';
+      }
+
       function moneyBR(n){
-        return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        return (Number(n) || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
       }
 
       function readBase(){
@@ -411,24 +420,29 @@
           const c = normalizeKey(cliente);
           const rows = BASE.filter(r => normalizeKey(r.cliente) === c);
 
-          // ✅ Status Cliente (nova regra)
+          // =========================
+          // ✅ STATUS CLIENTE (REGRA FINAL)
+          // 1) Total de lotes = quantidade de linhas (lotes)
+          // 2) Total de caminhões = soma do TOTAL GERAL (qtdPorta + qtdTransito)
+          // 3) Projeção de volume = total caminhões * 38 (t)
+          // =========================
           const totalLotes = rows.length;
 
           const totalCaminhoes = rows.reduce((acc, r) => {
             const cmhL = int(r.qtdPorta);
             const cmhT = int(r.qtdTransito);
-            return acc + (cmhL + cmhT); // TOTAL GERAL somado
+            return acc + (cmhL + cmhT);
           }, 0);
 
-          const projTon = totalCaminhoes * 38; // 38t por caminhão
+          const projTon = totalCaminhoes * 38;
 
-          setText('kLotes', totalLotes.toLocaleString('pt-BR'));
-          setText('kCaminhao', totalCaminhoes.toLocaleString('pt-BR'));
-          setText('kVolume', projTon.toLocaleString('pt-BR') + ' t');
+          setText('kLotes', fmtInt(totalLotes));
+          setText('kCaminhao', fmtInt(totalCaminhoes));
+          setText('kVolume', fmtTon(projTon));
 
           setLogo(c);
 
-          // ✅✅✅ CORREDORES POR DESTINO (SOMA DO TOTAL CMH = qtdPorta + qtdTransito)
+          // ✅ CORREDORES POR DESTINO (SOMA DO TOTAL CMH)
           const map = new Map();
           rows.forEach(r=>{
             const destino = normalizeKey(r.destino).toUpperCase();
@@ -446,7 +460,7 @@
           corrList.innerHTML = corredores.map(([name,total])=>`
             <div class="corrItem" title="${name}">
               <span class="name">${name}</span>
-              <span class="qty">${total}</span>
+              <span class="qty">${fmtInt(total)}</span>
             </div>
           `).join('');
 
@@ -465,9 +479,9 @@
                 <td>${r.descarga ?? ''}</td>
                 <td class="num">${moneyBR(frete)}</td>
                 <td>${r.produto ?? ''}</td>
-                <td class="num">${(cmhL || cmhL === 0) ? (cmhL ? cmhL : '') : ''}</td>
-                <td class="num">${(cmhT || cmhT === 0) ? (cmhT ? cmhT : '') : ''}</td>
-                <td class="num">${(cmhL || cmhT) ? total : ''}</td>
+                <td class="num">${cmhL ? fmtInt(cmhL) : ''}</td>
+                <td class="num">${cmhT ? fmtInt(cmhT) : ''}</td>
+                <td class="num">${(cmhL || cmhT) ? fmtInt(total) : ''}</td>
                 <td>${makeStatusPillHTML(r.status)}</td>
                 <td>${r.obs ?? ''}</td>
               </tr>

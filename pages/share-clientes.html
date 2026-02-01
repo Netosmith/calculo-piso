@@ -83,23 +83,35 @@
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
-    /* ✅ Status table */
-    .statusTable{ width:100%; border-collapse:collapse; font-size:12px; }
+    /* ✅✅✅ STATUS CLIENTE (corrigido: coluna de valores não some) */
+    .statusTable{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      table-layout:fixed;            /* ESSENCIAL */
+    }
     .statusTable td{
       padding:6px 10px;
       border:1px solid rgba(15,23,42,.14);
-      vertical-align:middle; white-space:nowrap; background:#fff;
+      vertical-align:middle;
+      background:#fff;
     }
-    .statusTable td:first-child{ font-weight:900; color:rgba(17,24,39,.80); }
-
-    /* ✅ Força o valor a aparecer mesmo com CSS global (app.css) */
+    .statusTable td:first-child{
+      width:70%;
+      font-weight:900;
+      color:rgba(17,24,39,.80);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .statusTable td.statusValue{
+      width:30%;
+      min-width:90px;                /* garante espaço real */
       text-align:right !important;
       font-weight:1000 !important;
       font-variant-numeric:tabular-nums !important;
       color:#111827 !important;
-      font-size:12px !important;
-      line-height:1.2 !important;
+      white-space:nowrap !important;
       display:table-cell !important;
       opacity:1 !important;
       visibility:visible !important;
@@ -400,7 +412,7 @@
           const displayName = clientIndex.get(key) || key;
           const rows = BASE.filter(r => canon(r.cliente) === key);
 
-          // ✅ STATUS CLIENTE (contabiliza valores)
+          // ✅ STATUS CLIENTE
           const totalLotes = rows.length;
 
           const totalCaminhoes = rows.reduce((acc, r) => {

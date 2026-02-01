@@ -411,24 +411,20 @@
           const c = normalizeKey(cliente);
           const rows = BASE.filter(r => normalizeKey(r.cliente) === c);
 
-          const lotes = rows.length;
-          const caminhao = lotes;
-          const vol = rows.reduce((acc,r)=>acc + num(r.volume), 0);
+          // ✅ Status Cliente (nova regra)
+          const totalLotes = rows.length;
 
-          setText('kLotes', String(lotes));
-          setText('kCaminhao', String(caminhao));
-          setText('kVolume', vol ? vol.toLocaleString('pt-BR') : '0');
+          const totalCaminhoes = rows.reduce((acc, r) => {
+            const cmhL = int(r.qtdPorta);
+            const cmhT = int(r.qtdTransito);
+            return acc + (cmhL + cmhT); // TOTAL GERAL somado
+          }, 0);
 
-          let cLib=0, cSus=0, cPar=0;
-          rows.forEach(r=>{
-            const st = String(r.status ?? '').toUpperCase();
-            if(st.includes('LIBER')) cLib++;
-            else if(st.includes('SUSP')) cSus++;
-            else if(st.includes('PARAD')) cPar++;
-          });
-          setText('kLiberado', String(cLib));
-          setText('kSuspenso', String(cSus));
-          setText('kParado', String(cPar));
+          const projTon = totalCaminhoes * 38; // 38t por caminhão
+
+          setText('kLotes', totalLotes.toLocaleString('pt-BR'));
+          setText('kCaminhao', totalCaminhoes.toLocaleString('pt-BR'));
+          setText('kVolume', projTon.toLocaleString('pt-BR') + ' t');
 
           setLogo(c);
 
@@ -440,14 +436,12 @@
 
             const cmhLocal = int(r.qtdPorta);
             const cmhTrans = int(r.qtdTransito);
-            const total    = cmhLocal + cmhTrans; // <<< aqui é o que você queria
+            const total    = cmhLocal + cmhTrans;
 
             map.set(destino, (map.get(destino) || 0) + total);
           });
 
-          // ordena por maior total (opcional)
-          const corredores = Array.from(map.entries())
-            .sort((a,b)=>b[1]-a[1]);
+          const corredores = Array.from(map.entries()).sort((a,b)=>b[1]-a[1]);
 
           corrList.innerHTML = corredores.map(([name,total])=>`
             <div class="corrItem" title="${name}">
@@ -456,7 +450,7 @@
             </div>
           `).join('');
 
-          // CMH real na tabela
+          // ✅ Tabela principal
           tbody.innerHTML = rows.map(r=>{
             const frete = num(r.valorEmpresa);
             const cmhL  = int(r.qtdPorta);
@@ -488,8 +482,9 @@
             corrList.innerHTML = '';
             tbody.innerHTML = '';
             setLogo('');
-            setText('kLotes','0'); setText('kCaminhao','0'); setText('kVolume','0');
-            setText('kLiberado','0'); setText('kSuspenso','0'); setText('kParado','0');
+            setText('kLotes','0');
+            setText('kCaminhao','0');
+            setText('kVolume','0');
             return;
           }
 

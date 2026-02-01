@@ -9,13 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ==========================================
-       SHARE-CLIENTES (PADRÃO DO SEU EXEMPLO)
-       - Mantém layout aprovado
-       - Grade na tabela + grade no Status Cliente
-       - Linhas mais estreitas + altura 24 (Sheets)
-       ========================================== */
-
     body.shareLight{ background:#f4f6fb !important; color:#111827 !important; }
 
     body.shareLight .topbar{
@@ -44,7 +37,6 @@
     body.shareLight .muted2{color: rgba(17,24,39,.68) !important;}
     body.shareLight .note{font-size:12px; line-height:1.35;}
 
-    /* Header (baixo, horizontal) */
     .shareHeader{
       display:flex; align-items:center; justify-content:space-between;
       gap:12px; flex-wrap:wrap; padding:4px 2px;
@@ -53,7 +45,6 @@
     body.shareLight .hTitle{font-weight:1000; font-size:18px; margin:0; color:#111827; line-height:1.1;}
     body.shareLight .hSub{margin:0; color:rgba(17,24,39,.65);}
 
-    /* Botões menores */
     .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
     body.shareLight .btnSmall{
       height:34px; padding:0 12px; border-radius:12px;
@@ -67,7 +58,6 @@
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    /* Top row (3 cards) */
     .topRow{
       display:grid;
       grid-template-columns: 340px 1fr 460px;
@@ -75,7 +65,6 @@
     }
     @media (max-width:1200px){ .topRow{grid-template-columns: 1fr;} }
 
-    /* ===== Card 1: Cliente + Status ===== */
     .clientRow{
       display:grid;
       grid-template-columns: 120px 1fr;
@@ -102,7 +91,6 @@
       background:#15803D; color:#fff; font-weight:1000; text-align:center;
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
-    /* ✅ Grade no Status Cliente */
     .statusTable{ width:100%; border-collapse:collapse; font-size:12px; }
     .statusTable td{
       padding:6px 10px;
@@ -114,7 +102,6 @@
       text-align:right; font-weight:1000; font-variant-numeric:tabular-nums; color:#111827;
     }
 
-    /* ===== Card 2: Corredores ===== */
     .corrBox{
       border:1px solid rgba(15,23,42,.12);
       border-radius:12px; overflow:hidden; background:#fff;
@@ -142,7 +129,6 @@
     .corrItem .name{ font-weight:1000; color:#111827; text-transform:uppercase; font-size:12px; }
     .corrItem .qty{ font-weight:1000; color:#111827; font-size:12px; }
 
-    /* ===== Card 3: Logo grande ===== */
     .logoCardInner{ display:grid; grid-template-columns: 1fr; gap:10px; height:100%; }
     .clientLogoWrap{
       display:flex; align-items:center; justify-content:center;
@@ -159,7 +145,6 @@
       opacity:.75; text-align:center; padding:18px; color:rgba(17,24,39,.75);
     }
 
-    /* ===== TABELA PRINCIPAL (FOCO) ===== */
     body.shareLight .tableWrap{
       overflow:auto;
       border:1px solid rgba(15,23,42,.10);
@@ -177,7 +162,7 @@
       min-width:1400px;
     }
 
-    /* ✅ Grade + altura 24 */
+    /* ✅ Grade + altura 24 (Sheets) + linhas mais estreitas */
     body.shareLight th,
     body.shareLight td{
       height:24px;
@@ -201,7 +186,6 @@
     td.num, th.num{text-align:right}
     body.shareLight tr:hover td{background:rgba(59,130,246,.06);}
 
-    /* Status colorido */
     body.shareLight .statusPill{
       display:inline-flex; align-items:center; justify-content:center;
       padding:4px 12px;
@@ -228,17 +212,6 @@
       color:#5a3a00;
     }
 
-    /* Filtros ocultos */
-    .ghostFilters{
-      display:none !important;
-      visibility:hidden !important;
-      height:0 !important;
-      overflow:hidden !important;
-      padding:0 !important;
-      margin:0 !important;
-      border:0 !important;
-    }
-
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
   </style>
@@ -259,7 +232,6 @@
 
   <div class="container nfWide" style="padding-top:12px;" id="pageShare">
 
-    <!-- HEADER -->
     <div class="card">
       <div class="shareHeader">
         <div class="titleBox">
@@ -276,10 +248,8 @@
 
     <div style="height:12px;"></div>
 
-    <!-- TOP ROW -->
     <div class="topRow">
 
-      <!-- Cliente + Status Cliente -->
       <div class="card">
         <div class="clientRow">
           <div>
@@ -301,7 +271,6 @@
         </div>
       </div>
 
-      <!-- Corredores -->
       <div class="card">
         <div class="corrBox">
           <div class="corrHead">Quantidade por Corredor</div>
@@ -309,7 +278,6 @@
         </div>
       </div>
 
-      <!-- Logo -->
       <div class="card">
         <div class="logoCardInner">
           <div class="clientLogoWrap">
@@ -323,19 +291,6 @@
 
     <div style="height:12px;"></div>
 
-    <!-- Filtros ocultos -->
-    <div class="ghostFilters">
-      <input id="inpBusca" value="" />
-      <select id="selStatus">
-        <option value="">Todos</option>
-        <option value="LIBERADO">LIBERADO</option>
-        <option value="SUSPENSO">SUSPENSO</option>
-        <option value="PARADO">PARADO</option>
-      </select>
-      <select id="selDestino"><option value="">Todos</option></select>
-    </div>
-
-    <!-- TABELA (FOCO) -->
     <div class="card">
       <div class="tableWrap">
         <table>
@@ -347,8 +302,8 @@
               <th>Descarga</th>
               <th class="num">Frete Empresa</th>
               <th>Produto</th>
-              <th class="num">CMHs Local</th>
-              <th class="num">CMHs Trans</th>
+              <th class="num">CMH's Local</th>
+              <th class="num">CMH's Trans</th>
               <th class="num">Total Geral</th>
               <th>Status</th>
               <th>Observação</th>
@@ -362,14 +317,7 @@
   </div>
 
   <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/share-clientes.js"></script>
 
-  <!-- ✅ PATCH: usando suas chaves reais:
-       Frete Empresa = valorEmpresa
-       CMH Local = qtdPorta
-       CMH Trans = qtdTransito
-       Total Geral = qtdPorta + qtdTransito
-  -->
   <script>
     requireHomeAuth();
     bindLogoutButton();
@@ -439,36 +387,28 @@
         return `<span class="statusPill ${cls}">${s || '—'}</span>`;
       }
 
+      function normalizeKey(s){
+        return String(s || '').trim();
+      }
+
       onReady(function(){
         const selCliente = document.getElementById('selCliente');
         const corrList   = document.getElementById('corrList');
         const tbody      = document.getElementById('tbodyShare');
         const btnReload  = document.getElementById('btnReload');
+        const btnPrint   = document.getElementById('btnPrint');
+        const pageShare  = document.getElementById('pageShare');
 
         if(!selCliente || !corrList || !tbody) return;
 
         let BASE = readBase();
-        if(BASE.length === 0) return;
 
-        // ✅ suas colunas reais
-        const COLS = {
-          cliente: 'cliente',
-          origem: 'origem',
-          coleta: 'coleta',
-          destino: 'destino',
-          descarga: 'descarga',
-          freteEmpresa: 'valorEmpresa',
-          produto: 'produto',
-          cmhsLocal: 'qtdPorta',
-          cmhsTrans: 'qtdTransito',
-          status: 'status',
-          obs: 'obs',
-          volume: 'volume'
-        };
+        // Debug rápido (se quiser ver no console)
+        console.log('[share-clientes] rows:', BASE.length, 'sample keys:', BASE[0] ? Object.keys(BASE[0]) : []);
 
         function fillClients(){
           const clients = Array.from(new Set(
-            BASE.map(r => String(r[COLS.cliente] ?? '').trim()).filter(Boolean)
+            BASE.map(r => normalizeKey(r.cliente)).filter(Boolean)
           )).sort((a,b)=>a.localeCompare(b,'pt-BR'));
 
           selCliente.innerHTML = clients.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -476,24 +416,20 @@
         }
 
         function renderForClient(cliente){
-          const rows = BASE.filter(r => String(r[COLS.cliente] ?? '').trim() === String(cliente||'').trim());
+          const c = normalizeKey(cliente);
+          const rows = BASE.filter(r => normalizeKey(r.cliente) === c);
 
-          // KPIs
           const lotes = rows.length;
-
-          // se você quiser outra lógica pra caminhões, me diga qual campo representa o veículo
-          const caminhao = lotes;
-
-          const vol = rows.reduce((acc,r)=>acc+num(r[COLS.volume]),0);
+          const caminhao = lotes; // se quiser outra regra, me diga qual campo usar
+          const vol = rows.reduce((acc,r)=>acc + num(r.volume), 0);
 
           setText('kLotes', String(lotes));
           setText('kCaminhao', String(caminhao));
           setText('kVolume', vol ? vol.toLocaleString('pt-BR') : '0');
 
-          // ✅ contagem status
           let cLib=0, cSus=0, cPar=0;
           rows.forEach(r=>{
-            const st = String(r[COLS.status] ?? '').toUpperCase();
+            const st = String(r.status ?? '').toUpperCase();
             if(st.includes('LIBER')) cLib++;
             else if(st.includes('SUSP')) cSus++;
             else if(st.includes('PARAD')) cPar++;
@@ -502,13 +438,12 @@
           setText('kSuspenso', String(cSus));
           setText('kParado', String(cPar));
 
-          // Logo
-          setLogo(cliente);
+          setLogo(c);
 
-          // Corredores por destino
+          // corredores por destino
           const map = new Map();
           rows.forEach(r=>{
-            const d = String(r[COLS.destino] ?? '').trim();
+            const d = normalizeKey(r.destino);
             if(!d) return;
             map.set(d, (map.get(d)||0)+1);
           });
@@ -521,26 +456,29 @@
             </div>
           `).join('');
 
-          // ✅ Tabela (CMH + Total Geral)
+          // ✅ CMH real:
+          // CMH Local = qtdPorta
+          // CMH Trans = qtdTransito
+          // Total Geral = qtdPorta + qtdTransito
           tbody.innerHTML = rows.map(r=>{
-            const frete = num(r[COLS.freteEmpresa]);
-            const cmhL  = int(r[COLS.cmhsLocal]);    // qtdPorta
-            const cmhT  = int(r[COLS.cmhsTrans]);    // qtdTransito
+            const frete = num(r.valorEmpresa);
+            const cmhL  = int(r.qtdPorta);
+            const cmhT  = int(r.qtdTransito);
             const total = cmhL + cmhT;
 
             return `
               <tr>
-                <td>${r[COLS.origem] ?? ''}</td>
-                <td>${r[COLS.coleta] ?? ''}</td>
-                <td>${r[COLS.destino] ?? ''}</td>
-                <td>${r[COLS.descarga] ?? ''}</td>
+                <td>${r.origem ?? ''}</td>
+                <td>${r.coleta ?? ''}</td>
+                <td>${r.destino ?? ''}</td>
+                <td>${r.descarga ?? ''}</td>
                 <td class="num">${moneyBR(frete)}</td>
-                <td>${r[COLS.produto] ?? ''}</td>
-                <td class="num">${cmhL ? cmhL : ''}</td>
-                <td class="num">${cmhT ? cmhT : ''}</td>
+                <td>${r.produto ?? ''}</td>
+                <td class="num">${(cmhL || cmhL === 0) ? (cmhL ? cmhL : '') : ''}</td>
+                <td class="num">${(cmhT || cmhT === 0) ? (cmhT ? cmhT : '') : ''}</td>
                 <td class="num">${(cmhL || cmhT) ? total : ''}</td>
-                <td>${makeStatusPillHTML(r[COLS.status])}</td>
-                <td>${r[COLS.obs] ?? ''}</td>
+                <td>${makeStatusPillHTML(r.status)}</td>
+                <td>${r.obs ?? ''}</td>
               </tr>
             `;
           }).join('');
@@ -548,9 +486,17 @@
 
         function hydrate(){
           BASE = readBase();
-          if(BASE.length === 0) return;
+          if(BASE.length === 0){
+            console.warn('[share-clientes] nf_fretes_rows_v1 vazio no localStorage');
+            selCliente.innerHTML = '';
+            corrList.innerHTML = '';
+            tbody.innerHTML = '';
+            setLogo('');
+            setText('kLotes','0'); setText('kCaminhao','0'); setText('kVolume','0');
+            setText('kLiberado','0'); setText('kSuspenso','0'); setText('kParado','0');
+            return;
+          }
 
-          // se já tiver clientes preenchidos, não recria do zero
           if(selCliente.options.length === 0) fillClients();
 
           const cliente = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
@@ -562,6 +508,31 @@
         if(btnReload){
           btnReload.addEventListener('click', function(){
             hydrate();
+          });
+        }
+
+        if(btnPrint && pageShare){
+          btnPrint.addEventListener('click', async function(){
+            try{
+              document.body.classList.add('printMode');
+              await new Promise(r=>setTimeout(r,120));
+
+              const canvas = await html2canvas(pageShare, {
+                scale: 2,
+                backgroundColor: '#f4f6fb',
+                useCORS: true
+              });
+
+              const link = document.createElement('a');
+              link.download = 'share-clientes.png';
+              link.href = canvas.toDataURL('image/png');
+              link.click();
+            }catch(e){
+              console.error(e);
+              alert('Não foi possível gerar o print. Veja o console.');
+            }finally{
+              document.body.classList.remove('printMode');
+            }
           });
         }
 

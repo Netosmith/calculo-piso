@@ -12,15 +12,11 @@
     /* ==========================================
        SHARE-CLIENTES (PADRÃO DO SEU EXEMPLO)
        - Mantém layout aprovado
-       - Reintroduz elementos que o JS espera (ocultos)
        - Grade na tabela + grade no Status Cliente
        - Linhas mais estreitas + altura 24 (Sheets)
        ========================================== */
 
-    body.shareLight{
-      background:#f4f6fb !important;
-      color:#111827 !important;
-    }
+    body.shareLight{ background:#f4f6fb !important; color:#111827 !important; }
 
     body.shareLight .topbar{
       background:rgba(255,255,255,.88) !important;
@@ -50,41 +46,20 @@
 
     /* Header (baixo, horizontal) */
     .shareHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-      padding:4px 2px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap; padding:4px 2px;
     }
-    .shareHeader .titleBox{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width:260px;
-    }
-    body.shareLight .hTitle{
-      font-weight:1000;
-      font-size:18px;
-      margin:0;
-      color:#111827;
-      line-height:1.1;
-    }
-    body.shareLight .hSub{
-      margin:0;
-      color:rgba(17,24,39,.65);
-    }
+    .shareHeader .titleBox{display:flex; flex-direction:column; gap:4px; min-width:260px;}
+    body.shareLight .hTitle{font-weight:1000; font-size:18px; margin:0; color:#111827; line-height:1.1;}
+    body.shareLight .hSub{margin:0; color:rgba(17,24,39,.65);}
 
     /* Botões menores */
     .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
     body.shareLight .btnSmall{
-      height:34px;
-      padding:0 12px;
-      border-radius:12px;
+      height:34px; padding:0 12px; border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
       background:linear-gradient(180deg, #ffffff, #f3f4f6);
-      color:#111827; font-weight:900; cursor:pointer;
-      white-space:nowrap;
+      color:#111827; font-weight:900; cursor:pointer; white-space:nowrap;
     }
     body.shareLight .btnSmall:hover{filter:brightness(1.02)}
     body.shareLight .btnSmall.green{
@@ -96,178 +71,92 @@
     .topRow{
       display:grid;
       grid-template-columns: 340px 1fr 460px;
-      gap:12px;
-      align-items:stretch;
+      gap:12px; align-items:stretch;
     }
-    @media (max-width:1200px){
-      .topRow{grid-template-columns: 1fr;}
-    }
+    @media (max-width:1200px){ .topRow{grid-template-columns: 1fr;} }
 
     /* ===== Card 1: Cliente + Status ===== */
     .clientRow{
       display:grid;
       grid-template-columns: 120px 1fr;
-      gap:10px;
-      align-items:start;
+      gap:10px; align-items:start;
     }
-    @media (max-width:1200px){
-      .clientRow{grid-template-columns: 1fr;}
-    }
+    @media (max-width:1200px){ .clientRow{grid-template-columns: 1fr;} }
 
     body.shareLight label{
-      font-size:11px;
-      font-weight:900;
-      opacity:.9;
-      display:block;
-      margin-bottom:6px;
-      color:rgba(17,24,39,.85);
+      font-size:11px; font-weight:900; opacity:.9;
+      display:block; margin-bottom:6px; color:rgba(17,24,39,.85);
     }
-
-    body.shareLight select,
-    body.shareLight input{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
+    body.shareLight select, body.shareLight input{
+      width:100%; padding:10px 12px; border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
-      background:#ffffff;
-      color:#111827;
-      outline:none;
+      background:#ffffff; color:#111827; outline:none;
     }
-    body.shareLight select:focus,
-    body.shareLight input:focus{
+    body.shareLight select:focus, body.shareLight input:focus{
       border-color:rgba(59,130,246,.55);
       box-shadow:0 0 0 3px rgba(59,130,246,.18);
     }
 
-    .statusBox{
-      border:1px solid rgba(15,23,42,.12);
-      border-radius:12px;
-      overflow:hidden;
-      background:#fff;
-    }
+    .statusBox{ border:1px solid rgba(15,23,42,.12); border-radius:12px; overflow:hidden; background:#fff; }
     .statusBox .statusHead{
-      background:#15803D;
-      color:#fff;
-      font-weight:1000;
-      text-align:center;
-      padding:8px 10px;
-      font-size:12px;
-      letter-spacing:.04em;
-      text-transform:uppercase;
+      background:#15803D; color:#fff; font-weight:1000; text-align:center;
+      padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
-
     /* ✅ Grade no Status Cliente */
-    .statusTable{
-      width:100%;
-      border-collapse:collapse;
-      font-size:12px;
-    }
+    .statusTable{ width:100%; border-collapse:collapse; font-size:12px; }
     .statusTable td{
       padding:6px 10px;
       border:1px solid rgba(15,23,42,.14);
-      vertical-align:middle;
-      white-space:nowrap;
-      background:#fff;
+      vertical-align:middle; white-space:nowrap; background:#fff;
     }
-    .statusTable td:first-child{
-      font-weight:900;
-      color:rgba(17,24,39,.80);
-    }
+    .statusTable td:first-child{ font-weight:900; color:rgba(17,24,39,.80); }
     .statusTable td:last-child{
-      text-align:right;
-      font-weight:1000;
-      font-variant-numeric:tabular-nums;
-      color:#111827;
+      text-align:right; font-weight:1000; font-variant-numeric:tabular-nums; color:#111827;
     }
 
     /* ===== Card 2: Corredores ===== */
     .corrBox{
       border:1px solid rgba(15,23,42,.12);
-      border-radius:12px;
-      overflow:hidden;
-      background:#fff;
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      min-height:110px;
+      border-radius:12px; overflow:hidden; background:#fff;
+      height:100%; display:flex; flex-direction:column; min-height:110px;
     }
     .corrBox .corrHead{
-      background:#15803D;
-      color:#fff;
-      font-weight:1000;
-      text-align:center;
-      padding:8px 10px;
-      font-size:12px;
-      letter-spacing:.04em;
-      text-transform:uppercase;
+      background:#15803D; color:#fff; font-weight:1000; text-align:center;
+      padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
     .corrGrid{
       display:grid;
       grid-template-columns: repeat(3, minmax(180px, 1fr));
-      gap:6px 20px;
-      padding:10px 12px;
-      align-content:start;
+      gap:6px 20px; padding:10px 12px; align-content:start;
     }
-    @media (max-width:1200px){
-      .corrGrid{grid-template-columns: repeat(2, minmax(160px, 1fr));}
-    }
-    @media (max-width:700px){
-      .corrGrid{grid-template-columns: 1fr;}
-    }
+    @media (max-width:1200px){ .corrGrid{grid-template-columns: repeat(2, minmax(160px, 1fr));} }
+    @media (max-width:700px){ .corrGrid{grid-template-columns: 1fr;} }
+
     .corrItem{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:2px 0;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:2px 0;
       border-bottom:1px dotted rgba(15,23,42,.14);
       font-variant-numeric:tabular-nums;
     }
     .corrItem:last-child{border-bottom:none;}
-    .corrItem .name{
-      font-weight:1000;
-      color:#111827;
-      text-transform:uppercase;
-      font-size:12px;
-    }
-    .corrItem .qty{
-      font-weight:1000;
-      color:#111827;
-      font-size:12px;
-    }
+    .corrItem .name{ font-weight:1000; color:#111827; text-transform:uppercase; font-size:12px; }
+    .corrItem .qty{ font-weight:1000; color:#111827; font-size:12px; }
 
     /* ===== Card 3: Logo grande ===== */
-    .logoCardInner{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:10px;
-      height:100%;
-    }
+    .logoCardInner{ display:grid; grid-template-columns: 1fr; gap:10px; height:100%; }
     .clientLogoWrap{
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display:flex; align-items:center; justify-content:center;
       background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
-      border-radius:16px;
-      padding:14px;
-      min-height:120px;
-      height:100%;
+      border-radius:16px; padding:14px; min-height:120px; height:100%;
     }
     .clientLogoWrap img{
-      max-width: 100%;
-      max-height:140px;
-      object-fit:contain;
+      max-width: 100%; max-height:140px; object-fit:contain;
       filter: drop-shadow(0 10px 18px rgba(15,23,42,.12));
     }
     .clientLogoFallback{
-      font-weight:1000;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      opacity:.75;
-      text-align:center;
-      padding:18px;
-      color:rgba(17,24,39,.75);
+      font-weight:1000; letter-spacing:.08em; text-transform:uppercase;
+      opacity:.75; text-align:center; padding:18px; color:rgba(17,24,39,.75);
     }
 
     /* ===== TABELA PRINCIPAL (FOCO) ===== */
@@ -280,19 +169,15 @@
       min-height: 560px;
     }
     @media (max-width:1200px){
-      body.shareLight .tableWrap{
-        height:auto;
-        min-height:520px;
-      }
+      body.shareLight .tableWrap{ height:auto; min-height:520px; }
     }
-
     body.shareLight table{
       width:100%;
       border-collapse:collapse;
       min-width:1400px;
     }
 
-    /* ✅ Grade nos pontos de embarque (linhas e colunas) + ALTURA 24 */
+    /* ✅ Grade + altura 24 */
     body.shareLight th,
     body.shareLight td{
       height:24px;
@@ -316,7 +201,7 @@
     td.num, th.num{text-align:right}
     body.shareLight tr:hover td{background:rgba(59,130,246,.06);}
 
-    /* Status “colorido” */
+    /* Status colorido */
     body.shareLight .statusPill{
       display:inline-flex; align-items:center; justify-content:center;
       padding:4px 12px;
@@ -324,7 +209,6 @@
       font-weight:1000;
       font-size:11px;
       border:1px solid rgba(15,23,42,.12);
-      color:#111827;
       text-transform:uppercase;
       line-height:1;
     }
@@ -344,7 +228,7 @@
       color:#5a3a00;
     }
 
-    /* ✅ Filtros ocultos */
+    /* Filtros ocultos */
     .ghostFilters{
       display:none !important;
       visibility:hidden !important;
@@ -355,7 +239,6 @@
       border:0 !important;
     }
 
-    /* Print: esconde topbar */
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
   </style>
@@ -393,10 +276,10 @@
 
     <div style="height:12px;"></div>
 
-    <!-- TOP ROW (3 cards) -->
+    <!-- TOP ROW -->
     <div class="topRow">
 
-      <!-- 1) Cliente + Status Cliente -->
+      <!-- Cliente + Status Cliente -->
       <div class="card">
         <div class="clientRow">
           <div>
@@ -410,8 +293,6 @@
               <tr><td>Total de Lotes</td><td id="kLotes">0</td></tr>
               <tr><td>Total de Caminhões</td><td id="kCaminhao">0</td></tr>
               <tr><td>Projeção de Volume</td><td id="kVolume">0</td></tr>
-
-              <!-- ✅ contagem por status -->
               <tr><td>Liberados</td><td id="kLiberado">0</td></tr>
               <tr><td>Suspensos</td><td id="kSuspenso">0</td></tr>
               <tr><td>Parados</td><td id="kParado">0</td></tr>
@@ -420,7 +301,7 @@
         </div>
       </div>
 
-      <!-- 2) Quantidade por Corredor -->
+      <!-- Corredores -->
       <div class="card">
         <div class="corrBox">
           <div class="corrHead">Quantidade por Corredor</div>
@@ -428,7 +309,7 @@
         </div>
       </div>
 
-      <!-- 3) Logo -->
+      <!-- Logo -->
       <div class="card">
         <div class="logoCardInner">
           <div class="clientLogoWrap">
@@ -442,7 +323,7 @@
 
     <div style="height:12px;"></div>
 
-    <!-- ✅ Filtros ocultos (para não quebrar o share-clientes.js) -->
+    <!-- Filtros ocultos -->
     <div class="ghostFilters">
       <input id="inpBusca" value="" />
       <select id="selStatus">
@@ -451,9 +332,7 @@
         <option value="SUSPENSO">SUSPENSO</option>
         <option value="PARADO">PARADO</option>
       </select>
-      <select id="selDestino">
-        <option value="">Todos</option>
-      </select>
+      <select id="selDestino"><option value="">Todos</option></select>
     </div>
 
     <!-- TABELA (FOCO) -->
@@ -485,7 +364,12 @@
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/share-clientes.js"></script>
 
-  <!-- ✅ PATCH: compatível com seus campos reais (cliente/origem etc) -->
+  <!-- ✅ PATCH: usando suas chaves reais:
+       Frete Empresa = valorEmpresa
+       CMH Local = qtdPorta
+       CMH Trans = qtdTransito
+       Total Geral = qtdPorta + qtdTransito
+  -->
   <script>
     requireHomeAuth();
     bindLogoutButton();
@@ -496,33 +380,17 @@
         else document.addEventListener('DOMContentLoaded', fn);
       }
 
-      const norm = (s) => String(s ?? '')
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-        .toLowerCase().replace(/[^a-z0-9]+/g,'');
-
-      function pickKey(obj, candidates){
-        if(!obj) return null;
-        const keys = Object.keys(obj);
-        const map = new Map(keys.map(k => [norm(k), k]));
-        for(const c of candidates){
-          const k = map.get(norm(c));
-          if(k) return k;
-        }
-        for(const c of candidates){
-          const nc = norm(c);
-          for(const [nk, orig] of map.entries()){
-            if(nk.includes(nc)) return orig;
-          }
-        }
-        return null;
-      }
-
       function num(v){
         if(v == null) return 0;
         if(typeof v === 'number') return isFinite(v) ? v : 0;
         const s = String(v).replace(/\./g,'').replace(',','.').replace(/[^\d.-]/g,'');
         const n = parseFloat(s);
         return isFinite(n) ? n : 0;
+      }
+
+      function int(v){
+        const n = num(v);
+        return isFinite(n) ? Math.round(n) : 0;
       }
 
       function moneyBR(n){
@@ -582,32 +450,25 @@
         let BASE = readBase();
         if(BASE.length === 0) return;
 
-        // ✅ detector de chaves com MAIS variações (principalmente cmh_*)
-        const COLS = (function(sample){
-          return {
-            cliente: pickKey(sample, ['cliente','CLIENTE','Cliente','nome_cliente','cliente_nome','NOME CLIENTE']),
-            origem:  pickKey(sample, ['origem','ORIGEM','Origem']),
-            coleta:  pickKey(sample, ['coleta','COLETA','Coleta']),
-            destino: pickKey(sample, ['destino','DESTINO','Destino']),
-            descarga:pickKey(sample, ['descarga','DESCARGA','Descarga']),
-            frete:   pickKey(sample, ['frete_empresa','frete','FRETE EMPRESA','Frete Empresa','valor_frete','valor']),
-            produto: pickKey(sample, ['produto','PRODUTO','Produto']),
-            // ✅ aqui é o ponto crítico no seu caso:
-            cmhLocal:pickKey(sample, ['cmh_local',"cmh's_local","cmhs_local","cmh local","CMH LOCAL","CMH'S LOCAL","cmhlocal"]),
-            cmhTrans:pickKey(sample, ['cmh_trans',"cmh's_trans","cmhs_trans","cmh trans","CMH TRANS","CMH'S TRANS","cmhtrans"]),
-            status:  pickKey(sample, ['status','STATUS','Status','situacao','situação']),
-            obs:     pickKey(sample, ['observacao','observação','OBSERVACAO','OBSERVAÇÃO','obs','OBS']),
-            placa:   pickKey(sample, ['placa','PLACA','veiculo','veículo','cavalo']),
-            volume:  pickKey(sample, ['volume','VOLUME','ton','toneladas','peso','qtde','quantidade']),
-          };
-        })(BASE[0]);
+        // ✅ suas colunas reais
+        const COLS = {
+          cliente: 'cliente',
+          origem: 'origem',
+          coleta: 'coleta',
+          destino: 'destino',
+          descarga: 'descarga',
+          freteEmpresa: 'valorEmpresa',
+          produto: 'produto',
+          cmhLocal: 'qtdPorta',
+          cmhTrans: 'qtdTransito',
+          status: 'status',
+          obs: 'obs',
+          volume: 'volume'
+        };
 
-        function fillClientsIfEmpty(){
-          if(selCliente.options.length > 0 && selCliente.value) return;
-
-          const ck = COLS.cliente;
+        function fillClients(){
           const clients = Array.from(new Set(
-            BASE.map(r => String(ck ? r[ck] : '').trim()).filter(Boolean)
+            BASE.map(r => String(r[COLS.cliente] ?? '').trim()).filter(Boolean)
           )).sort((a,b)=>a.localeCompare(b,'pt-BR'));
 
           selCliente.innerHTML = clients.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -615,29 +476,24 @@
         }
 
         function renderForClient(cliente){
-          const ck = COLS.cliente;
-          const rows = BASE.filter(r => String(ck ? r[ck] : '').trim() === String(cliente||'').trim());
+          const rows = BASE.filter(r => String(r[COLS.cliente] ?? '').trim() === String(cliente||'').trim());
 
           // KPIs
           const lotes = rows.length;
 
-          const pk = COLS.placa;
-          const caminhao = pk
-            ? (new Set(rows.map(r => String(r[pk]||'').trim()).filter(Boolean)).size || lotes)
-            : lotes;
+          // se você quiser outra lógica pra caminhões, me diga qual campo representa o veículo
+          const caminhao = lotes;
 
-          const vk = COLS.volume;
-          const vol = vk ? rows.reduce((acc,r)=>acc+num(r[vk]),0) : 0;
+          const vol = rows.reduce((acc,r)=>acc+num(r[COLS.volume]),0);
 
           setText('kLotes', String(lotes));
           setText('kCaminhao', String(caminhao));
           setText('kVolume', vol ? vol.toLocaleString('pt-BR') : '0');
 
           // ✅ contagem status
-          const sk = COLS.status;
           let cLib=0, cSus=0, cPar=0;
           rows.forEach(r=>{
-            const st = String(sk ? r[sk] : '').toUpperCase();
+            const st = String(r[COLS.status] ?? '').toUpperCase();
             if(st.includes('LIBER')) cLib++;
             else if(st.includes('SUSP')) cSus++;
             else if(st.includes('PARAD')) cPar++;
@@ -646,53 +502,45 @@
           setText('kSuspenso', String(cSus));
           setText('kParado', String(cPar));
 
-          // logo
+          // Logo
           setLogo(cliente);
 
-          // corredores por destino
-          const dk = COLS.destino;
+          // Corredores por destino
           const map = new Map();
           rows.forEach(r=>{
-            const d = String(dk ? r[dk] : '').trim();
+            const d = String(r[COLS.destino] ?? '').trim();
             if(!d) return;
             map.set(d, (map.get(d)||0)+1);
           });
           const corredores = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
 
-          corrList.innerHTML = corredores.map(([name,qty])=>{
-            return `
-              <div class="corrItem" title="${name}">
-                <span class="name">${name}</span>
-                <span class="qty">${qty}</span>
-              </div>
-            `;
-          }).join('');
+          corrList.innerHTML = corredores.map(([name,qty])=>`
+            <div class="corrItem" title="${name}">
+              <span class="name">${name}</span>
+              <span class="qty">${qty}</span>
+            </div>
+          `).join('');
 
-          // ✅ tabela (CMH + Total Geral)
-          const ok = COLS.origem, cl = COLS.coleta, de = COLS.destino, ds = COLS.descarga;
-          const fk = COLS.frete, pr = COLS.produto, lk = COLS.cmhLocal, tk = COLS.cmhTrans, ob = COLS.obs;
-
+          // ✅ Tabela (CMH + Total Geral)
           tbody.innerHTML = rows.map(r=>{
-            const frete = fk ? num(r[fk]) : 0;
-            const cmhL  = lk ? num(r[lk]) : 0;
-            const cmhT  = tk ? num(r[tk]) : 0;
+            const frete = num(r[COLS.freteEmpresa]);
+            const cmhL  = int(r[COLS.cmhLocal]);    // qtdPorta
+            const cmhT  = int(r[COLS.cmhTrans]);    // qtdTransito
             const total = cmhL + cmhT;
-
-            const statusTxt = sk ? r[sk] : '';
 
             return `
               <tr>
-                <td>${ok ? (r[ok] ?? '') : ''}</td>
-                <td>${cl ? (r[cl] ?? '') : ''}</td>
-                <td>${de ? (r[de] ?? '') : ''}</td>
-                <td>${ds ? (r[ds] ?? '') : ''}</td>
+                <td>${r[COLS.origem] ?? ''}</td>
+                <td>${r[COLS.coleta] ?? ''}</td>
+                <td>${r[COLS.destino] ?? ''}</td>
+                <td>${r[COLS.descarga] ?? ''}</td>
                 <td class="num">${moneyBR(frete)}</td>
-                <td>${pr ? (r[pr] ?? '') : ''}</td>
-                <td class="num">${(cmhL ? moneyBR(cmhL) : '')}</td>
-                <td class="num">${(cmhT ? moneyBR(cmhT) : '')}</td>
-                <td class="num">${((cmhL || cmhT) ? moneyBR(total) : '')}</td>
-                <td>${makeStatusPillHTML(statusTxt)}</td>
-                <td>${ob ? (r[ob] ?? '') : ''}</td>
+                <td>${r[COLS.produto] ?? ''}</td>
+                <td class="num">${cmhL ? cmhL : ''}</td>
+                <td class="num">${cmhT ? cmhT : ''}</td>
+                <td class="num">${(cmhL || cmhT) ? total : ''}</td>
+                <td>${makeStatusPillHTML(r[COLS.status])}</td>
+                <td>${r[COLS.obs] ?? ''}</td>
               </tr>
             `;
           }).join('');
@@ -702,7 +550,9 @@
           BASE = readBase();
           if(BASE.length === 0) return;
 
-          fillClientsIfEmpty();
+          // se já tiver clientes preenchidos, não recria do zero
+          if(selCliente.options.length === 0) fillClients();
+
           const cliente = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
           if(cliente) renderForClient(cliente);
         }
@@ -715,6 +565,7 @@
           });
         }
 
+        fillClients();
         hydrate();
       });
     })();

@@ -336,14 +336,8 @@
         return isFinite(n) ? Math.round(n) : 0;
       }
 
-      function fmtInt(n){
-        return (Number(n) || 0).toLocaleString('pt-BR');
-      }
-
-      function fmtTon(n){
-        // toneladas (sem casas decimais, mas pode mudar se quiser)
-        return (Number(n) || 0).toLocaleString('pt-BR') + ' t';
-      }
+      function fmtInt(n){ return (Number(n) || 0).toLocaleString('pt-BR'); }
+      function fmtTon(n){ return (Number(n) || 0).toLocaleString('pt-BR') + ' t'; }
 
       function moneyBR(n){
         return (Number(n) || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -364,18 +358,23 @@
         if(el) el.textContent = value;
       }
 
-      function setLogo(cliente){
+      function canon(s){
+        return String(s || '').trim().toUpperCase();
+      }
+
+      function setLogo(displayName){
         const img = document.getElementById('imgLogo');
         const fb  = document.getElementById('logoFallback');
         if(!img || !fb) return;
 
         const base = '../assets/img/clientes/';
-        const name = String(cliente || '').trim();
+        const name = String(displayName || '').trim();
         if(!name){
           img.style.display = 'none';
           fb.style.display = 'block';
           return;
         }
+
         const src = base + name + '.png';
         img.src = src;
         img.onload = () => { fb.style.display = 'none'; img.style.display = 'block'; };
@@ -391,10 +390,6 @@
         return `<span class="statusPill ${cls}">${s || '—'}</span>`;
       }
 
-      function normalizeKey(s){
-        return String(s || '').trim();
-      }
-
       onReady(function(){
         const selCliente = document.getElementById('selCliente');
         const corrList   = document.getElementById('corrList');
@@ -406,26 +401,37 @@
         if(!selCliente || !corrList || !tbody) return;
 
         let BASE = readBase();
+        let clientIndex = new Map(); // canon -> display
 
-        function fillClients(){
-          const clients = Array.from(new Set(
-            BASE.map(r => normalizeKey(r.cliente)).filter(Boolean)
-          )).sort((a,b)=>a.localeCompare(b,'pt-BR'));
-
-          selCliente.innerHTML = clients.map(c => `<option value="${c}">${c}</option>`).join('');
-          if(clients[0]) selCliente.value = clients[0];
+        function buildClientIndex(){
+          clientIndex.clear();
+          BASE.forEach(r=>{
+            const display = String(r.cliente || '').trim();
+            const key = canon(display);
+            if(!key) return;
+            if(!clientIndex.has(key)) clientIndex.set(key, display);
+          });
         }
 
-        function renderForClient(cliente){
-          const c = normalizeKey(cliente);
-          const rows = BASE.filter(r => normalizeKey(r.cliente) === c);
+        function fillClients(){
+          buildClientIndex();
+          const keys = Array.from(clientIndex.keys()).sort((a,b)=>a.localeCompare(b,'pt-BR'));
 
-          // =========================
+          selCliente.innerHTML = keys.map(k=>{
+            const display = clientIndex.get(k) || k;
+            return `<option value="${k}">${display}</option>`;
+          }).join('');
+
+          if(keys[0]) selCliente.value = keys[0];
+        }
+
+        function renderForClient(clientKey){
+          const key = canon(clientKey);
+          const displayName = clientIndex.get(key) || key;
+
+          const rows = BASE.filter(r => canon(r.cliente) === key);
+
           // ✅ STATUS CLIENTE (REGRA FINAL)
-          // 1) Total de lotes = quantidade de linhas (lotes)
-          // 2) Total de caminhões = soma do TOTAL GERAL (qtdPorta + qtdTransito)
-          // 3) Projeção de volume = total caminhões * 38 (t)
-          // =========================
           const totalLotes = rows.length;
 
           const totalCaminhoes = rows.reduce((acc, r) => {
@@ -440,19 +446,19 @@
           setText('kCaminhao', fmtInt(totalCaminhoes));
           setText('kVolume', fmtTon(projTon));
 
-          setLogo(c);
+          setLogo(displayName);
 
           // ✅ CORREDORES POR DESTINO (SOMA DO TOTAL CMH)
           const map = new Map();
           rows.forEach(r=>{
-            const destino = normalizeKey(r.destino).toUpperCase();
-            if(!destino) return;
+            const destinoKey = canon(r.destino);
+            if(!destinoKey) return;
 
             const cmhLocal = int(r.qtdPorta);
             const cmhTrans = int(r.qtdTransito);
             const total    = cmhLocal + cmhTrans;
 
-            map.set(destino, (map.get(destino) || 0) + total);
+            map.set(destinoKey, (map.get(destinoKey) || 0) + total);
           });
 
           const corredores = Array.from(map.entries()).sort((a,b)=>b[1]-a[1]);
@@ -491,6 +497,7 @@
 
         function hydrate(){
           BASE = readBase();
+
           if(BASE.length === 0){
             selCliente.innerHTML = '';
             corrList.innerHTML = '';
@@ -503,17 +510,16 @@
           }
 
           if(selCliente.options.length === 0) fillClients();
+          else buildClientIndex();
 
-          const cliente = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
-          if(cliente) renderForClient(cliente);
+          const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
+          if(key) renderForClient(key);
         }
 
         selCliente.addEventListener('change', hydrate);
 
         if(btnReload){
-          btnReload.addEventListener('click', function(){
-            hydrate();
-          });
+          btnReload.addEventListener('click', hydrate);
         }
 
         if(btnPrint && pageShare){

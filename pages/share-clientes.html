@@ -53,16 +53,21 @@
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
+    /* ✅✅✅ AJUSTE DE LAYOUT DO TOPO
+       - STATUS CLIENTE mais largo
+       - CORREDORES ocupa mais espaço (lado direito da seta)
+       - LOGO um pouco mais compacta, mas ainda confortável */
     .topRow{
       display:grid;
-      grid-template-columns: 340px 1fr 460px;
-      gap:12px; align-items:stretch;
+      grid-template-columns: 420px 1.55fr 420px; /* era 340px 1fr 460px */
+      gap:12px;
+      align-items:stretch;
     }
     @media (max-width:1200px){ .topRow{grid-template-columns: 1fr;} }
 
     .clientRow{
       display:grid;
-      grid-template-columns: 120px 1fr;
+      grid-template-columns: 130px 1fr; /* leve aumento pra não esmagar */
       gap:10px; align-items:start;
     }
     @media (max-width:1200px){ .clientRow{grid-template-columns: 1fr;} }
@@ -83,11 +88,14 @@
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
-    /* ✅✅✅ STATUS CLIENTE SEM TABELA (não colapsa nunca) */
+    /* ✅✅✅ STATUS CLIENTE (ajuste pedido)
+       - diminui fonte
+       - mostra nomes por inteiro (sem cortar)
+       - dá mais “ar” nas linhas */
     .statusList{ display:flex; flex-direction:column; }
     .statusLine{
       display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
+      gap:12px;
       padding:10px 12px;
       border-top:1px solid rgba(15,23,42,.14);
       background:#fff;
@@ -96,37 +104,50 @@
     .statusLabel{
       font-weight:900;
       color:rgba(17,24,39,.80);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      font-size:12px;          /* ↓ menor */
+      line-height:1.2;
+      white-space:normal;      /* ✅ permite quebrar linha se precisar */
+      overflow:visible;        /* ✅ não corta */
+      text-overflow:unset;
     }
     .statusValue{
       font-weight:1000;
       font-variant-numeric:tabular-nums;
       color:#111827 !important;
+      font-size:12px;          /* ↓ menor */
       white-space:nowrap;
-      min-width:88px;
+      min-width:96px;          /* mais espaço pro número */
       text-align:right;
     }
 
     .corrBox{
       border:1px solid rgba(15,23,42,.12);
       border-radius:12px; overflow:hidden; background:#fff;
-      height:100%; display:flex; flex-direction:column; min-height:110px;
+      height:100%; display:flex; flex-direction:column;
+      min-height:150px; /* ✅ mais alto pra ficar mais organizado */
     }
     .corrBox .corrHead{
       background:#15803D; color:#fff; font-weight:1000; text-align:center;
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
+
+    /* ✅✅✅ CORREDORES (ajuste pedido)
+       - ocupa mais espaço
+       - colunas mais largas
+       - espaçamento melhor */
     .corrGrid{
       display:grid;
-      grid-template-columns: repeat(3, minmax(180px, 1fr));
-      gap:6px 20px; padding:10px 12px; align-content:start;
+      grid-template-columns: repeat(3, minmax(220px, 1fr)); /* mais largo */
+      gap:8px 26px;
+      padding:12px 14px;
+      align-content:start;
     }
+    @media (max-width:1200px){ .corrGrid{grid-template-columns: repeat(2, minmax(200px, 1fr));} }
+    @media (max-width:700px){ .corrGrid{grid-template-columns: 1fr;} }
 
     .corrItem{
       display:flex; align-items:center; justify-content:space-between;
-      gap:10px; padding:2px 0;
+      gap:10px; padding:4px 0; /* mais “respiro” */
       border-bottom:1px dotted rgba(15,23,42,.14);
       font-variant-numeric:tabular-nums;
     }
@@ -137,9 +158,12 @@
       display:flex; align-items:center; justify-content:center;
       background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
-      border-radius:16px; padding:14px; min-height:120px; height:100%;
+      border-radius:16px;
+      padding:14px;
+      min-height:150px; /* acompanha o corredor/status */
+      height:100%;
     }
-    .clientLogoWrap img{ max-width: 100%; max-height:140px; object-fit:contain; }
+    .clientLogoWrap img{ max-width: 100%; max-height:160px; object-fit:contain; }
 
     body.shareLight .tableWrap{
       overflow:auto;
@@ -240,7 +264,6 @@
           <div class="statusBox">
             <div class="statusHead">Status Cliente</div>
 
-            <!-- ✅✅✅ substitui a tabela por linhas flex -->
             <div class="statusList">
               <div class="statusLine">
                 <div class="statusLabel">Total de Lotes</div>
@@ -351,7 +374,6 @@
 
       function canon(s){ return String(s || '').trim().toUpperCase(); }
 
-      // ✅ pega campo por vários nomes possíveis + busca case-insensitive
       function getField(row, names){
         if(!row) return undefined;
 

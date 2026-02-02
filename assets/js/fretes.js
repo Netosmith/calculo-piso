@@ -3,6 +3,7 @@
    - Contatos fixos (select)
    - Separação por filial (linhas "grupo" como na planilha)
    - Pesos editáveis salvos por usuário (localStorage)
+   - ✅ Botão WhatsApp na coluna Contato (abre wa.me)
 */
 (function () {
   "use strict";
@@ -43,7 +44,6 @@
   const LS_KEY_USER = "nf_auth_user"; // opcional: se seu auth.js não setar, cai no "default"
 
   function getUserKey() {
-    // tenta reaproveitar qualquer badge/armazenamento existente
     const u = localStorage.getItem(LS_KEY_USER) || localStorage.getItem("nf_user") || "default";
     return String(u).trim().toUpperCase() || "default";
   }
@@ -68,6 +68,55 @@
     if (s === "LIBERADO") return "liberado";
     if (s === "PARADO") return "parado";
     return "suspenso";
+  }
+
+  // ===== ✅ WhatsApp helpers =====
+  function onlyDigits(s) {
+    return safeText(s).replace(/\D+/g, "");
+  }
+
+  // Extrai número BR do texto.
+  // - Se vier "55" + DDD + celular (13 dígitos) mantém.
+  // - Se vier DDD + número (10 ou 11) adiciona "55".
+  // - Se vier com 0 na frente (ex: 064...), remove o 0 e adiciona 55.
+  function extractBRPhone(contatoText) {
+    const d = onlyDigits(contatoText);
+
+    if (d.length === 13 && d.startsWith("55")) return d;
+
+    if (d.length === 10 || d.length === 11) return "55" + d;
+
+    if ((d.length === 11 || d.length === 12) && d.startsWith("0")) {
+      const cut = d.slice(1);
+      if (cut.length === 10 || cut.length === 11) return "55" + cut;
+    }
+
+    return "";
+  }
+
+  function makeWhatsLink(phoneE164, contatoNome) {
+    if (!phoneE164) return "";
+    const msg = `Olá ${contatoNome ? contatoNome + ", " : ""}tudo bem?`;
+    return `https://wa.me/${phoneE164}?text=${encodeURIComponent(msg)}`;
+  }
+
+  // HTML da célula de contato com botão do Whats (se tiver número)
+  function contatoCellHTML(rawContato) {
+    const label = safeText(rawContato);
+    const phone = extractBRPhone(label);
+    const nome = label.split(/\d/)[0].trim(); // texto antes do primeiro número
+
+    if (!phone) {
+      return `<div class="contatoCell"><span>${label}</span></div>`;
+    }
+
+    const link = makeWhatsLink(phone, nome);
+    return `
+      <div class="contatoCell">
+        <span>${label}</span>
+        <a class="btnWhats" href="${link}" target="_blank" rel="noopener" title="Chamar no WhatsApp">💬</a>
+      </div>
+    `;
   }
 
   // ===== Pesos (editáveis) =====
@@ -101,24 +150,18 @@
   }
 
   function calcPerm(row, weights) {
-    // Base: Frete motorista = L ; Pedágio/Eixo = M ; KM = N ; Pesos (R) (no site = weights)
     const km = num(row.km);
     const ped = num(row.pedagioEixo);
     const mot = num(row.valorMotorista);
 
-    if (!km || km <= 0 || !isFinite(km) || (row.km === "")) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!km || km <= 0 || !isFinite(km) || row.km === "") return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
 
-    // 5 eixos (divide por 26 fixo)
     const t5 = ((km * 6.0301) + (ped * 5) + 615.26) / 26;
-    // 6 eixos (divide pelo Peso6)
     const t6 = ((km * 6.7408) + (ped * 6) + 663.07) / Math.max(1, num(weights.w6));
-    // 7 eixos (divide pelo Peso7)
     const t7 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w7));
-    // 4º eixo (mesma base que você enviou, divide pelo Peso4)
     const t4 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w4));
-    // 9 eixos (divide pelo Peso9)
     const t9 = ((km * 8.242) + (ped * 9) + 808.17) / Math.max(1, num(weights.w9));
 
     return {
@@ -132,7 +175,6 @@
 
   // ===== Dados (local) =====
   function exampleRows() {
-    // exemplo curto para demonstrar
     return [
       {
         id: crypto.randomUUID(),
@@ -221,7 +263,6 @@
     try {
       const rows = JSON.parse(raw);
       if (!Array.isArray(rows)) throw new Error("bad");
-      // se não tem nada e ainda quer exemplo
       if (rows.length === 0 && hasExample) {
         const ex = exampleRows();
         localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
@@ -287,19 +328,16 @@
     const fFilial = $("fFilial").value;
     const fBusca = $("fBusca").value.trim();
 
-    // filtro
     let list = rows.filter((r) => {
       if (fFilial && safeText(r.filial).toUpperCase() !== fFilial) return false;
       if (!matchesSearch(r, fBusca)) return false;
       return true;
     });
 
-    // ordena por filial (como planilha)
     list = list.slice().sort((a, b) => {
       const ia = orderFilialIndex(a.filial);
       const ib = orderFilialIndex(b.filial);
       if (ia !== ib) return ia - ib;
-      // dentro da filial, mantém "mais planilha": destino, cliente
       const da = safeText(a.destino);
       const db = safeText(b.destino);
       if (da !== db) return da.localeCompare(db, "pt-BR");
@@ -308,7 +346,6 @@
 
     tbody.innerHTML = "";
 
-    // grupos por filial
     let currentFilial = null;
     list.forEach((row) => {
       const filial = safeText(row.filial).toUpperCase();
@@ -335,7 +372,10 @@
         safeText(row.cliente),
         safeText(row.origem),
         safeText(row.coleta),
-        safeText(row.contato),
+
+        // ✅ Contato com botão Whats
+        { html: true, v: contatoCellHTML(row.contato) },
+
         safeText(row.destino),
         safeText(row.uf),
         safeText(row.descarga),
@@ -364,6 +404,7 @@
 
         if (typeof c === "object" && c) {
           if (c.num) td.classList.add("num");
+
           if (c.yn) {
             const span = document.createElement("span");
             span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
@@ -393,6 +434,8 @@
 
             td.appendChild(btnEdit);
             td.appendChild(btnDel);
+          } else if (c.html) {
+            td.innerHTML = c.v || "";
           } else {
             td.textContent = c.v ?? "";
           }
@@ -417,7 +460,6 @@
   function openModal(mode, id) {
     state.editId = mode === "edit" ? id : null;
 
-    // reset values
     const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
 
     $("mRegional").value = r ? r.regional : "GOIÁS";
@@ -494,12 +536,10 @@
 
   // ===== Init =====
   function init() {
-    // selects
     fillFilialSelect($("fFilial"), true);
     fillFilialSelect($("mFilial"), false);
     fillContatoSelect($("mContato"));
 
-    // pesos
     state.weights = loadWeights();
     $("w9").value = state.weights.w9;
     $("w4").value = state.weights.w4;
@@ -529,14 +569,11 @@
       render(state.rows, state.weights);
     });
 
-    // rows
     state.rows = loadRows();
 
-    // filtros
     $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
     $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
 
-    // botões
     $("btnNew").addEventListener("click", () => openModal("new"));
     $("btnResetExample").addEventListener("click", () => {
       if (!confirm("Restaurar o exemplo local? Isso substitui sua lista atual.")) return;
@@ -547,7 +584,6 @@
       render(state.rows, state.weights);
     });
 
-    // modal events
     $("btnCloseModal").addEventListener("click", closeModal);
     $("btnCancel").addEventListener("click", closeModal);
     $("btnSave").addEventListener("click", () => {
@@ -564,7 +600,6 @@
       closeModal();
     });
 
-    // primeira renderização
     render(state.rows, state.weights);
   }
 

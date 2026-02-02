@@ -245,39 +245,94 @@ a{ color: inherit; text-decoration: none; }
 
 /* =========================================================
    PATCH SHARE-CLIENTES (NÃO QUEBRA O RESTO DO SITE)
-   - Garante coluna de valores no STATUS CLIENTE
-   - Regras “neutras” pra tabela sem interferir em outras telas
+   - Evita bugs de tabela
+   - Suporta Status Cliente em FLEX (statusList)
+   - Mantém compatibilidade com statusTable (caso use)
    ========================================================= */
 
-/* Base neutra de tabela (não altera cor/tema, só evita bugs de layout) */
+/* Base neutra de tabela (não altera tema, só evita bugs de layout) */
 table{ border-spacing: 0; }
 td, th{ vertical-align: middle; }
 
-/* ✅ Status Cliente: evita a coluna da direita sumir */
+/* =========================
+   STATUS CLIENTE (FLEX) ✅
+   ========================= */
+.statusList{ display:flex; flex-direction:column; width:100%; }
+
+.statusLine{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+}
+
+.statusLabel{
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.statusValue{
+  font-weight:1000;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  text-align:right;
+  min-width:88px; /* impede colapsar */
+}
+
+/* =========================
+   STATUS CLIENTE (TABELA) ✅
+   Mantém caso algum dia use
+   ========================= */
 .statusTable{
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* essencial pra dividir espaço corretamente */
+  table-layout: fixed;
 }
-
 .statusTable td:first-child{
   width: 70%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .statusTable td.statusValue{
   width: 30%;
-  min-width: 64px;       /* impede “coluna 0px” */
+  min-width: 64px;
   text-align: right !important;
   font-weight: 1000 !important;
   white-space: nowrap !important;
 }
-
-/* Se em algum navegador o texto “desaparecer” por render, força preenchimento */
 .statusTable td.statusValue,
 .statusTable td.statusValue *{
   color: inherit;
   -webkit-text-fill-color: currentColor;
+}
+
+/* =========================
+   BOTÃO WHATS (para a tabela Fretes) ✅
+   ========================= */
+.contatoCell{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.btnWhats{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  border-radius:999px;
+  background:#25D366;
+  color:#fff !important;
+  font-size:14px;
+  text-decoration:none;
+  flex:0 0 auto;
+}
+.btnWhats:hover{
+  filter: brightness(1.05);
+  transform: scale(1.06);
 }

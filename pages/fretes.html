@@ -548,5 +548,109 @@
     requireHomeAuth();
     bindLogoutButton();
   </script>
+  <script>
+/* =========================================================
+   RESET DIÁRIO (19:00) - ZERA QTD PORTA / QTD TRÂNSITO
+   Base: localStorage "nf_fretes_rows_v1"
+   ========================================================= */
+(function(){
+  const STORAGE_KEY = 'nf_fretes_rows_v1';
+  const RESET_MARK  = 'nf_qtd_reset_ymd'; // evita rodar 2x no mesmo dia
+  const RESET_HOUR  = 19; // 19:00
+
+  function ymd(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function safeParseJSON(raw){
+    try{
+      const data = raw ? JSON.parse(raw) : [];
+      return Array.isArray(data) ? data : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  // aceita variações de nomes (caso seu fretes.js use outro padrão)
+  function wipeRowQtd(row){
+    if(!row || typeof row !== 'object') return row;
+
+    const candidatesPorta = ['qtdPorta','Qtd Porta','qtd_porta','porta','qtdPortas','qtdporta'];
+    const candidatesTrans = ['qtdTransito','Qtd Trânsito','qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito'];
+
+    // limpa (igual ao clearContent do Sheets -> fica vazio)
+    candidatesPorta.forEach(k => { if(k in row) row[k] = ''; });
+    candidatesTrans.forEach(k => { if(k in row) row[k] = ''; });
+
+    // também tenta achar chaves parecidas (case-insensitive)
+    const norm = (s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const keys = Object.keys(row);
+
+    keys.forEach(k=>{
+      const nk = norm(k);
+      if(['qtdporta','qtdportas','porta'].includes(nk)) row[k] = '';
+      if(['qtdtransito','qtdtrans','transito','qtdtrnsito'].includes(nk)) row[k] = '';
+    });
+
+    return row;
+  }
+
+  function doDailyReset(){
+    const today = ymd(new Date());
+    const already = localStorage.getItem(RESET_MARK);
+
+    if(already === today) return false; // já rodou hoje
+
+    const rows = safeParseJSON(localStorage.getItem(STORAGE_KEY));
+    if(!rows.length){
+      localStorage.setItem(RESET_MARK, today);
+      return true;
+    }
+
+    const newRows = rows.map(r => wipeRowQtd({ ...r }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newRows));
+    localStorage.setItem(RESET_MARK, today);
+
+    // Recarrega pra refletir na tabela (sem depender do fretes.js ter uma função pública)
+    location.reload();
+    return true;
+  }
+
+  function scheduleNextRun(){
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(RESET_HOUR, 0, 0, 0);
+
+    // se já passou das 19:00 hoje, agenda para amanhã
+    if(next.getTime() <= now.getTime()){
+      next.setDate(next.getDate() + 1);
+    }
+
+    const ms = next.getTime() - now.getTime();
+    setTimeout(function(){
+      doDailyReset();
+      scheduleNextRun(); // agenda o próximo dia
+    }, ms);
+  }
+
+  // 1) Se abriu depois das 19h e ainda não rodou hoje -> roda
+  (function runIfNeededOnLoad(){
+    const now = new Date();
+    const today = ymd(now);
+    const already = localStorage.getItem(RESET_MARK);
+
+    if(now.getHours() >= RESET_HOUR && already !== today){
+      doDailyReset();
+      return;
+    }
+  })();
+
+  // 2) Agenda o reset para a próxima 19h enquanto a página estiver aberta
+  scheduleNextRun();
+})();
+</script>
 </body>
 </html>

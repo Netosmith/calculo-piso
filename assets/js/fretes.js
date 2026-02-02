@@ -27,7 +27,7 @@
 
   const CONTATOS_FIXOS = [
     "ARIEL 64 99227-7537",
-    "JHONATAN",
+    "JHONATAN 64 99252-8879",
     "NARCISO",
     "SERGIO",
     "ELTON",

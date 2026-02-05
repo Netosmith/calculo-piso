@@ -474,7 +474,9 @@ async function readBase(){
 
         if(!selCliente || !corrList || !tbody) return;
 
-        let BASE = readBase();
+        let BASE = [];
+...
+BASE = await readBase();
         let clientIndex = new Map();
 
         function buildClientIndex(){

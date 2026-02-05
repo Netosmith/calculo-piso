@@ -1,20 +1,20 @@
 /* fretes.js | NOVA FROTA
    - Google Sheets (compartilhado) via Apps Script (FETCH JSON, sem JSONP)
-   - Mantém pesos por usuário no localStorage
-   - CRUD via API: list / upsert / delete
+   - Pesos por usuário ficam local (localStorage)
+   - CRUD no Sheets: list / upsert / delete
 */
 (function () {
   "use strict";
 
   // ===== CONFIG =====
-  const API_URL = "https://script.google.com/macros/s/AKfycbw8LJvZ53PM73nEDXl8i2L6EVXtaPMH9jm64jhx3TinlBHXyd6CRP-D64wsd_-rs5a8/exec"; // exemplo: https://script.google.com/macros/s/XXXX/exec
+  const API_URL = "https://script.google.com/macros/s/AKfycbwGiiI4-_jZHCnZzObKCGmu5geJB7WSADjnH7e-vlkRwXWnrC9uCWfhKWnCWH3vrsSg/exec";
 
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);
 
   const FILIAIS_ORDEM = [
-    "ITUMBIARA", "ANAPOLIS", "RIO VERDE", "CRISTALINA", "BOM JESUS", "JATAI",
-    "CATALÃO", "INDIARA", "MINEIROS", "MONTIVIDIU", "CHAP CÉU"
+    "ITUMBIARA","ANAPOLIS","RIO VERDE","CRISTALINA","BOM JESUS","JATAI",
+    "CATALÃO","INDIARA","MINEIROS","MONTIVIDIU","CHAP CÉU"
   ];
 
   const CONTATOS_FIXOS = [
@@ -52,7 +52,7 @@
     return "suspenso";
   }
 
-  // ===== Pesos (editáveis) =====
+  // ===== Pesos =====
   const DEFAULT_WEIGHTS = { w9: 47, w4: 39, w7: 36, w6: 31 };
 
   function loadWeights() {
@@ -77,7 +77,7 @@
     localStorage.setItem(key, JSON.stringify(weights));
   }
 
-  // ===== Permissão (mesma lógica do Sheets) =====
+  // ===== Permissão =====
   function permYN(isOk) { return isOk ? "S" : "N"; }
 
   function calcPerm(row, weights) {
@@ -104,15 +104,30 @@
     };
   }
 
-  // ===== API =====
+  // ===== API (JSON) =====
   async function apiList() {
     const url = API_URL + "?action=list&t=" + Date.now();
-    const res = await fetch(url, { method: "GET" });
+
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store"
+    });
+
+    // Se o Apps Script responder HTML (login/erro), o .json() quebra.
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("Resposta não é JSON. Provavelmente permissão/implantação.", text.slice(0, 400));
+      throw new Error("Resposta não é JSON (verifique publicação/permissão do Apps Script).");
+    }
+
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    // Se vier {ok:false,...}
     if (data && data.ok === false) throw new Error(data.error || "Erro API");
-    return data;
+
+    // Seu list retorna Array direto
+    return Array.isArray(data) ? data : [];
   }
 
   async function apiPost(payload) {
@@ -121,21 +136,26 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("POST não retornou JSON.", text.slice(0, 400));
+      throw new Error("POST não retornou JSON (verifique permissão do Apps Script).");
+    }
+
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
     if (data && data.ok === false) throw new Error(data.error || "Erro API");
+
     return data;
   }
 
-  async function apiUpsertRow(row) {
-    return apiPost({ action: "upsert", row });
-  }
+  async function apiUpsertRow(row) { return apiPost({ action: "upsert", row }); }
+  async function apiDeleteRow(id) { return apiPost({ action: "delete", id }); }
 
-  async function apiDeleteRow(id) {
-    return apiPost({ action: "delete", id });
-  }
-
-  // ===== UI: selects fixos =====
+  // ===== UI =====
   function fillFilialSelect(sel, includeAll) {
     sel.innerHTML = "";
     if (includeAll) {
@@ -256,18 +276,21 @@
 
         if (typeof c === "object" && c) {
           if (c.num) td.classList.add("num");
+
           if (c.yn) {
             const span = document.createElement("span");
             span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
             span.textContent = c.v || "";
             td.classList.add("num");
             td.appendChild(span);
+
           } else if (c.status) {
             const s = safeText(c.v).toUpperCase() || "SUSPENSO";
             const span = document.createElement("span");
             span.className = "statusPill " + statusClass(s);
             span.textContent = s;
             td.appendChild(span);
+
           } else if (c.actions) {
             td.classList.add("num");
 
@@ -301,15 +324,10 @@
   }
 
   // ===== Modal CRUD =====
-  let state = {
-    rows: [],
-    editId: null,
-    weights: { ...DEFAULT_WEIGHTS }
-  };
+  let state = { rows: [], editId: null, weights: { ...DEFAULT_WEIGHTS } };
 
   function openModal(mode, id) {
     state.editId = mode === "edit" ? id : null;
-
     const r = mode === "edit" ? state.rows.find((x) => String(x.id) === String(id)) : null;
 
     $("mRegional").value = r ? r.regional : "GOIÁS";
@@ -333,7 +351,6 @@
     $("mTransito").value = r ? r.qtdTransito : "";
     $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
     $("mObs").value = r ? r.obs : "";
-    $("mId").value = r ? (r.id || "") : ""; // se você tiver input hidden mId, ótimo
 
     $("modal").style.display = "flex";
   }
@@ -344,10 +361,8 @@
   }
 
   function collectModal() {
-    const idFromHidden = $("mId") ? safeText($("mId").value) : "";
     return {
-      id: state.editId || idFromHidden || "",
-
+      id: state.editId || "",
       regional: safeText($("mRegional").value),
       filial: safeText($("mFilial").value).toUpperCase(),
       cliente: safeText($("mCliente").value),
@@ -357,20 +372,16 @@
       destino: safeText($("mDestino").value),
       uf: safeText($("mUF").value).toUpperCase(),
       descarga: safeText($("mDescarga").value),
-
       volume: num($("mVolume").value),
       valorEmpresa: num($("mEmpresa").value),
       valorMotorista: num($("mMotorista").value),
       km: num($("mKM").value),
       pedagioEixo: num($("mPed").value),
-
       produto: safeText($("mProduto").value),
       icms: safeText($("mICMS").value),
       pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
-
       qtdPorta: $("mPorta").value === "" ? "" : num($("mPorta").value),
       qtdTransito: $("mTransito").value === "" ? "" : num($("mTransito").value),
-
       status: safeText($("mStatus").value).toUpperCase(),
       obs: safeText($("mObs").value)
     };
@@ -378,17 +389,11 @@
 
   async function reloadFromServer(showAlertOnFail = true) {
     try {
-      const data = await apiList();
-
-      // Se você estiver usando cabeçalho da planilha com nomes diferentes,
-      // precisa bater com os nomes do front. O ideal é manter os mesmos nomes.
-      // Aqui assumimos que a planilha tem colunas: id, regional, filial, cliente, origem, coleta, contato, destino, uf, descarga, volume, valorEmpresa, valorMotorista, km, pedagioEixo, produto, icms, pedidoSat, qtdPorta, qtdTransito, status, obs
-
-      state.rows = Array.isArray(data) ? data : [];
+      state.rows = await apiList();
       render(state.rows, state.weights);
       return true;
     } catch (err) {
-      console.error(err);
+      console.error("Falha ao carregar do Sheets:", err);
       if (showAlertOnFail) alert("Falha ao carregar dados do Google Sheets. Veja o console.");
       return false;
     }
@@ -399,7 +404,7 @@
       await apiUpsertRow(row);
       await reloadFromServer(false);
     } catch (err) {
-      console.error(err);
+      console.error("Falha ao salvar:", err);
       alert("Falha ao salvar no Google Sheets. Veja o console.");
     }
   }
@@ -410,19 +415,17 @@
       await apiDeleteRow(id);
       await reloadFromServer(false);
     } catch (err) {
-      console.error(err);
+      console.error("Falha ao excluir:", err);
       alert("Falha ao excluir no Google Sheets. Veja o console.");
     }
   }
 
   // ===== Init =====
   async function init() {
-    // selects
     fillFilialSelect($("fFilial"), true);
     fillFilialSelect($("mFilial"), false);
     fillContatoSelect($("mContato"));
 
-    // pesos
     state.weights = loadWeights();
     $("w9").value = state.weights.w9;
     $("w4").value = state.weights.w4;
@@ -452,32 +455,26 @@
       render(state.rows, state.weights);
     });
 
-    // filtros
     $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
     $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
 
-    // botões
     $("btnNew").addEventListener("click", () => openModal("new"));
 
-    // Se você quiser ocultar o botão Exemplo, pode remover esse listener também:
+    // oculta "Exemplo" se existir
     const btnExample = $("btnResetExample");
-    if (btnExample) {
-      btnExample.style.display = "none"; // esconde no Fretes
-    }
+    if (btnExample) btnExample.style.display = "none";
 
-    // modal events
     $("btnCloseModal").addEventListener("click", closeModal);
     $("btnCancel").addEventListener("click", closeModal);
+
     $("btnSave").addEventListener("click", async () => {
       const row = collectModal();
       if (!row.filial) return alert("Selecione uma filial.");
       if (!row.contato) return alert("Selecione um contato.");
-
       await upsertRow(row);
       closeModal();
     });
 
-    // primeira carga (Sheets)
     await reloadFromServer(true);
   }
 

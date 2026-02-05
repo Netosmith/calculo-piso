@@ -7,7 +7,7 @@
   "use strict";
 
   // ===== CONFIG =====
-  const API_URL = "COLE_AQUI_SUA_URL_DO_APPS_SCRIPT_EXEC"; // exemplo: https://script.google.com/macros/s/XXXX/exec
+  const API_URL = "https://script.google.com/macros/s/AKfycbw8LJvZ53PM73nEDXl8i2L6EVXtaPMH9jm64jhx3TinlBHXyd6CRP-D64wsd_-rs5a8/exec"; // exemplo: https://script.google.com/macros/s/XXXX/exec
 
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);

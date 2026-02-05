@@ -7,7 +7,7 @@
   "use strict";
 
   // ===== CONFIG =====
-  const API_URL = "https://script.google.com/macros/s/AKfycbwGiiI4-_jZHCnZzObKCGmu5geJB7WSADjnH7e-vlkRwXWnrC9uCWfhKWnCWH3vrsSg/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyXRsJ7VhnpUTulzreMtTHiScKo-zXSbtlenLoEcLx_8v8BLjGRsuFvtniPz7KSZwJV/exec";
 
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);

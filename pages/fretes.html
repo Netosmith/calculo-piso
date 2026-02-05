@@ -1,660 +1,638 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fretes | NOVA FROTA</title>
-  <link rel="stylesheet" href="../assets/css/app.css" />
+/* fretes.js | NOVA FROTA (Google Sheets Shared)
+   - Dados compartilhados via Apps Script (JSONP, sem CORS)
+   - CRUD completo: listar, salvar, excluir
+   - Zerar Qtd Porta/Trânsito (API reset) se quiser disparar manual
+   - Botão Share Clientes
+   - Botão WhatsApp no modal de contato
+*/
+(function () {
+  "use strict";
 
-  <!-- Fretes: layout mais "planilha" + tema claro somente nesta página -->
-  <style>
-    /* ====== BASE (densidade / planilha) ====== */
-    .container{max-width:1400px}
-    .card{padding:14px; overflow:hidden}
-    .tableWrap{
-      overflow:auto;
-      border:1px solid rgba(43,58,114,.35);
-      border-radius:14px;
-      height: calc(100vh - 300px);
-      min-height: 420px;
-      background:#fff;
-    }
-    @media (max-width:1100px){
-      .tableWrap{height:auto; min-height:360px;}
-    }
-    table{width:100%; border-collapse:collapse; min-width:1400px; background:#fff;}
-    th,td{
-      padding:6px 10px;
-      border-bottom:1px solid #D1D5DB;
-      font-size:12px;
-      vertical-align:middle;
-      white-space:nowrap;
-      color:#111827;
-    }
-    thead th{
-      position:sticky; top:0; z-index:3;
-      background:#0F172A;
-      color:#fff;
-      border-bottom:1px solid #0B1220;
-      font-size:11px;
-      letter-spacing:.02em;
-    }
-    tbody tr:nth-child(even){background:#F1F4F9;}
-    tbody tr:hover{background:#E8EDFF;}
-    .rowSlim td{padding-top:5px; padding-bottom:5px;}
+  // ===== CONFIG =====
+  const API_URL = "https://script.google.com/macros/s/AKfycbzvsPglqBxyiUByazFPi_5ihhBc3L_-xhnuR5H90RUwAfDj9t4HKMWZPwyiNunmfZ5W/exec";
 
-    .groupRow td{
-      position:sticky; top:34px; z-index:2;
-      background:#0B1220;
-      color:#fff;
-      font-weight:900;
-      letter-spacing:.04em;
-      border-bottom:1px solid rgba(60,255,160,.18);
-    }
+  // ===== Helpers =====
+  const $ = (id) => document.getElementById(id);
 
-    /* pills */
-    .pillYN{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:28px; height:22px; border-radius:999px; font-weight:900; font-size:12px;
-      border:1px solid rgba(17,24,39,.18);
-    }
-    .pillYN.yes{background:#DCFCE7; border-color:#86EFAC; color:#166534;}
-    .pillYN.no{background:#FEE2E2; border-color:#FCA5A5; color:#7F1D1D;}
+  // JSONP (para GitHub Pages sem CORS)
+  function jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cb = "__nfcb_" + Math.random().toString(36).slice(2);
+      const s = document.createElement("script");
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timeout JSONP"));
+      }, 20000);
 
-    .statusPill{
-      display:inline-flex; align-items:center;
-      padding:4px 10px; border-radius:999px; font-weight:900; font-size:11px;
-      border:1px solid rgba(17,24,39,.18);
-      color:#111827;
-    }
-    .statusPill.liberado{background:#E6F6ED; border-color:#A7F3D0; color:#067647;}
-    .statusPill.parado{background:#FFF4E5; border-color:#FCD34D; color:#92400E;}
-    .statusPill.suspenso{background:#FDECEC; border-color:#FCA5A5; color:#991B1B;}
+      function cleanup() {
+        clearTimeout(timer);
+        if (window[cb]) delete window[cb];
+        if (s && s.parentNode) s.parentNode.removeChild(s);
+      }
 
-    .muted2{color: rgba(17,24,39,.70);}
-    .note{font-size:12px; line-height:1.35;}
+      window[cb] = (data) => {
+        cleanup();
+        resolve(data);
+      };
 
-    /* ====== LAYOUT (top + tabela em tela inteira) ====== */
-    .container.nfWide{max-width: 1650px;}
-    .container.pageFretes{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      min-height:calc(100vh - 72px);
-      padding-bottom:18px;
-      background:#F5F7FA;
-    }
-
-    .card.tableFull{
-      flex:1 1 auto;
-      display:flex;
-      flex-direction:column;
-      min-height:380px;
-      background:#FFFFFF;
-      border:1px solid #E5E7EB;
-      box-shadow:0 4px 12px rgba(0,0,0,.04);
-      border-radius:18px;
-    }
-    .card.tableFull .tableWrap{
-      flex:1 1 auto;
-      max-height:none !important;
-      height:auto !important;
-    }
-
-    /* ====== TOP minimalista ====== */
-    .fretes-top{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      padding:12px 14px;
-      background:#FFFFFF;
-      border:1px solid #E5E7EB;
-      border-radius:18px;
-      box-shadow:0 4px 12px rgba(0,0,0,.04);
-    }
-    .fretes-top .title{display:flex; flex-direction:column; gap:4px;}
-    .fretes-top .title h1{
-      margin:0;
-      font-size:18px;
-      font-weight:900;
-      letter-spacing:.2px;
-      color:#0F172A;
-    }
-    .fretes-top .title .sub{
-      font-size:12px;
-      color: rgba(17,24,39,.70);
-      max-width: 980px;
-    }
-
-    /* ====== toolbar compacta ====== */
-    .fretes-toolbar{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      padding:10px 12px;
-      border-radius:18px;
-      border:1px solid #E5E7EB;
-      background:#FFFFFF;
-      box-shadow:0 4px 12px rgba(0,0,0,.04);
-    }
-    .ft-block{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-    .ft-spacer{flex:1 1 auto; min-width:10px}
-    .ft-label{
-      font-size:11px;
-      font-weight:900;
-      opacity:.9;
-      color:#0F172A;
-      margin-right:2px;
-    }
-    .ft-mini{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      font-size:11px;
-      font-weight:900;
-      color:#0F172A;
-      opacity:.95;
-    }
-    .ft-mini input{
-      width:66px;
-      height:32px;
-      padding:6px 8px;
-      border-radius:10px;
-      border:1px solid #D1D5DB;
-      background:#FFFFFF;
-      color:#111827;
-      outline:none;
-    }
-    .ft-mini input:focus{
-      border-color:#5B7CFA;
-      box-shadow:0 0 0 3px rgba(91,124,250,.18);
-    }
-    .ft-select, .ft-search{
-      height:32px;
-      padding:6px 10px;
-      border-radius:10px;
-      border:1px solid #D1D5DB;
-      background:#FFFFFF;
-      color:#111827;
-      outline:none;
-    }
-    .ft-select{width:200px}
-    .ft-search{width:min(380px, 55vw)}
-    @media (max-width:700px){
-      .ft-select,.ft-search{width:100%}
-    }
-
-    .btnTiny{
-      height:32px;
-      padding:0 12px;
-      border-radius:12px;
-      border:1px solid rgba(15,23,42,.14);
-      background:#0F172A;
-      color:#FFFFFF;
-      font-weight:900;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .btnTiny:hover{filter:brightness(1.06)}
-    .btnTiny.green{background:#0B3B2E; border-color:rgba(6,118,71,.25)}
-    .btnTiny.ghost{
-      background:#FFFFFF;
-      color:#0F172A;
-      border:1px solid #D1D5DB;
-    }
-
-    /* util */
-    .num{text-align:right;}
-
-    /* ====== MODAL (minimalista + alinhado) ====== */
-    .modalOverlay{
-      display:none;
-      position:fixed;
-      inset:0;
-      background:rgba(15,23,42,.45);
-      backdrop-filter: blur(6px);
-      z-index:9999;
-      padding:18px;
-      align-items:center;
-      justify-content:center;
-    }
-    .modalCard{
-      width:min(920px, 100%);
-      max-height: calc(100vh - 40px);
-      overflow:auto;
-      background:#fff;
-      border:1px solid #E5E7EB;
-      border-radius:18px;
-      box-shadow:0 14px 40px rgba(0,0,0,.18);
-    }
-    .modalHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:14px 14px 10px;
-      border-bottom:1px solid #EEF2F7;
-      position:sticky;
-      top:0;
-      background:#fff;
-      z-index:2;
-    }
-    .modalHeader .hTitle{display:flex; flex-direction:column; gap:2px;}
-    .modalHeader .hTitle .t{font-weight:950; font-size:15px; color:#0F172A;}
-    .modalHeader .hTitle .s{font-size:12px; color:rgba(17,24,39,.65);}
-
-    .modalBody{padding:12px 14px 14px;}
-    .sectionRow{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin:10px 0 8px;
-    }
-    .sectionRow .sec{
-      font-size:11px;
-      font-weight:950;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:#0F172A;
-      opacity:.9;
-    }
-    .divider{height:1px; background:#EEF2F7; margin:10px 0;}
-
-    .formGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width:820px){
-      .formGrid{grid-template-columns:1fr;}
-    }
-    .formGroup label{
-      display:block;
-      font-size:11px;
-      font-weight:900;
-      color:rgba(15,23,42,.88);
-      margin:0 0 6px;
-    }
-    .formGroup input, .formGroup select{
-      width:100%;
-      height:36px;
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid #D1D5DB;
-      background:#fff;
-      color:#111827;
-      outline:none;
-    }
-    .formGroup input:focus, .formGroup select:focus{
-      border-color:#5B7CFA;
-      box-shadow:0 0 0 3px rgba(91,124,250,.18);
-    }
-    .formGroup .hint{
-      margin-top:6px;
-      font-size:11px;
-      color:rgba(17,24,39,.62);
-      line-height:1.25;
-    }
-    .span2{grid-column:1/-1;}
-
-    .modalFooter{
-      display:flex;
-      gap:10px;
-      padding:12px 14px 14px;
-      border-top:1px solid #EEF2F7;
-      position:sticky;
-      bottom:0;
-      background:#fff;
-    }
-    .modalFooter .sp{flex:1 1 auto;}
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
-        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
-      </div>
-      <div class="actions">
-        <div class="icon-btn" title="Sair" data-logout>👤</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- OBS: fundo claro apenas aqui -->
-  <div class="container nfWide pageFretes" style="padding-top:18px;">
-    <!-- TÍTULO (minimal) -->
-    <div class="card fretes-top">
-      <div class="title">
-        <h1>Fretes (Operacional)</h1>
-        <div class="sub">Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.</div>
-      </div>
-    </div>
-
-    <!-- BARRA COMPACTA -->
-    <div class="fretes-toolbar">
-      <div class="ft-block">
-        <span class="ft-label">Pesos:</span>
-
-        <div class="ft-mini"><span>9E</span><input id="w9" type="number" step="0.01" value="47" /></div>
-        <div class="ft-mini"><span>4E</span><input id="w4" type="number" step="0.01" value="39" /></div>
-        <div class="ft-mini"><span>7E</span><input id="w7" type="number" step="0.01" value="36" /></div>
-        <div class="ft-mini"><span>6E</span><input id="w6" type="number" step="0.01" value="31" /></div>
-
-        <button class="btnTiny" id="btnSaveWeights">Salvar</button>
-        <button class="btnTiny ghost" id="btnResetWeights">Reset</button>
-        <button
-  type="button"
-  class="btnTiny ghost"
-  onclick="window.location.href='./share-clientes.html'">
-  Share Clientes
-</button>
-
-      </div>
-
-      <div class="ft-spacer"></div>
-
-      <div class="ft-block">
-        <select class="ft-select" id="fFilial" title="Filial"></select>
-        <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
-        <button class="btnTiny green" id="btnNew">+ Novo</button>
-        <button class="btnTiny red" id="btnResetExample"title="Restaura o exemplo local">Exemplo</button>
-        </div>
-    </div>
-
-    <!-- TABELA -->
-    <div class="card tableFull">
-      <div class="tableWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Regional</th>
-              <th>Filial</th>
-              <th>Cliente</th>
-              <th>Origem</th>
-              <th>Coleta</th>
-              <th>Contato</th>
-              <th>Destino</th>
-              <th>UF</th>
-              <th>Descarga</th>
-              <th class="num">Volume</th>
-              <th class="num">Vlr Empresa</th>
-              <th class="num">Vlr Motorista</th>
-              <th class="num">KM</th>
-              <th class="num">Pedágio/Eixo</th>
-
-              <th class="num">5E</th>
-              <th class="num">6E</th>
-              <th class="num">7E</th>
-              <th class="num">4E</th>
-              <th class="num">9E</th>
-
-              <th>Produto</th>
-              <th>ICMS</th>
-              <th class="num">Pedido SAT</th>
-              <th class="num">Qtd Porta</th>
-              <th class="num">Qtd Trânsito</th>
-              <th>Status</th>
-              <th>Observações</th>
-              <th class="num">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal (novo/editar) - minimal, alinhado e menor -->
-  <div id="modal" class="modalOverlay" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modalHeader">
-        <div class="hTitle">
-          <div class="t" id="modalTitle">Frete</div>
-          <div class="s">Preencha os dados do embarque. <b>Contato</b> é fixo (igual planilha).</div>
-        </div>
-        <button class="btnTiny ghost" id="btnCloseModal">Fechar</button>
-      </div>
-
-      <div class="modalBody">
-        <div class="sectionRow"><div class="sec">Identificação</div></div>
-        <div class="formGrid">
-          <div class="formGroup">
-            <label for="mRegional">Regional</label>
-            <input id="mRegional" placeholder="Ex: GOIÁS" />
-          </div>
-          <div class="formGroup">
-            <label for="mFilial">Filial</label>
-            <select id="mFilial"></select>
-          </div>
-
-          <div class="formGroup">
-            <label for="mCliente">Cliente</label>
-            <input id="mCliente" placeholder="Ex: CARGILL" />
-          </div>
-          <div class="formGroup">
-            <label for="mContato">Contato de embarque</label>
-            <select id="mContato"></select>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="sectionRow"><div class="sec">Rota</div></div>
-        <div class="formGrid">
-          <div class="formGroup">
-            <label for="mOrigem">Origem</label>
-            <input id="mOrigem" placeholder="Ex: RIO VERDE-GO" />
-          </div>
-          <div class="formGroup">
-            <label for="mColeta">Coleta</label>
-            <input id="mColeta" placeholder="Ex: FAZ SANTANA" />
-          </div>
-
-          <div class="formGroup">
-            <label for="mDestino">Destino</label>
-            <input id="mDestino" placeholder="Ex: SANTOS/SP" />
-          </div>
-          <div class="formGroup">
-            <label for="mUF">UF</label>
-            <input id="mUF" placeholder="Ex: GO" />
-          </div>
-
-          <div class="formGroup span2">
-            <label for="mDescarga">Descarga</label>
-            <input id="mDescarga" placeholder="Ex: CARGILL" />
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="sectionRow"><div class="sec">Valores e parâmetros</div></div>
-        <div class="formGrid">
-          <div class="formGroup">
-            <label for="mKM">KM</label>
-            <input id="mKM" type="number" step="0.1" placeholder="Ex: 330" />
-          </div>
-          <div class="formGroup">
-            <label for="mPed">Pedágio por eixo (R$)</label>
-            <input id="mPed" type="number" step="0.01" placeholder="Ex: 7.40" />
-            <div class="hint">Usado no cálculo da Permissão Frete Mínimo (5E/6E/7E/4E/9E).</div>
-          </div>
-
-          <div class="formGroup">
-            <label for="mVolume">Volume</label>
-            <input id="mVolume" type="number" step="0.01" placeholder="Ex: 75" />
-          </div>
-          <div class="formGroup">
-            <label for="mEmpresa">Valor Empresa (R$)</label>
-            <input id="mEmpresa" type="number" step="0.01" placeholder="Ex: 87" />
-          </div>
-
-          <div class="formGroup">
-            <label for="mMotorista">Valor Motorista (R$)</label>
-            <input id="mMotorista" type="number" step="0.01" placeholder="Ex: 80" />
-          </div>
-          <div class="formGroup">
-            <label for="mProduto">Produto</label>
-            <input id="mProduto" placeholder="Ex: SOJA" />
-          </div>
-
-          <div class="formGroup">
-            <label for="mICMS">ICMS</label>
-            <input id="mICMS" placeholder="Ex: ISENTO (CIF)" />
-          </div>
-          <div class="formGroup">
-            <label for="mSat">Pedido SAT</label>
-            <input id="mSat" type="number" step="1" placeholder="Ex: 12245" />
-          </div>
-
-          <div class="formGroup">
-            <label for="mPorta">Qtd Porta</label>
-            <input id="mPorta" type="number" step="1" placeholder="Ex: 2" />
-          </div>
-          <div class="formGroup">
-            <label for="mTransito">Qtd Trânsito</label>
-            <input id="mTransito" type="number" step="1" placeholder="Ex: 3" />
-          </div>
-
-          <div class="formGroup">
-            <label for="mStatus">Status</label>
-            <select id="mStatus">
-              <option value="LIBERADO">LIBERADO</option>
-              <option value="PARADO">PARADO</option>
-              <option value="SUSPENSO">SUSPENSO</option>
-            </select>
-          </div>
-
-          <div class="formGroup span2">
-            <label for="mObs">Observações</label>
-            <input id="mObs" placeholder="Ex: AGENDAMENTO ALONGADO" />
-          </div>
-        </div>
-      </div>
-
-      <div class="modalFooter">
-        <button class="btnTiny green" id="btnSave">Salvar</button>
-        <button class="btnTiny ghost" id="btnCancel">Cancelar</button>
-        <div class="sp"></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/fretes.js"></script>
-  <script>
-  const btn = document.getElementById('btnResetExample');
-  if (btn) btn.style.display = 'none';
-</script>
-  <script>
-    requireHomeAuth();
-    bindLogoutButton();
-  </script>
-  <script>
-/* =========================================================
-   RESET DIÁRIO (19:00) - ZERA QTD PORTA / QTD TRÂNSITO
-   Base: localStorage "nf_fretes_rows_v1"
-   ========================================================= */
-(function(){
-  const STORAGE_KEY = 'nf_fretes_rows_v1';
-  const RESET_MARK  = 'nf_qtd_reset_ymd'; // evita rodar 2x no mesmo dia
-  const RESET_HOUR  = 19; // 19:00
-
-  function ymd(d){
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-
-  function safeParseJSON(raw){
-    try{
-      const data = raw ? JSON.parse(raw) : [];
-      return Array.isArray(data) ? data : [];
-    }catch(e){
-      return [];
-    }
-  }
-
-  // aceita variações de nomes (caso seu fretes.js use outro padrão)
-  function wipeRowQtd(row){
-    if(!row || typeof row !== 'object') return row;
-
-    const candidatesPorta = ['qtdPorta','Qtd Porta','qtd_porta','porta','qtdPortas','qtdporta'];
-    const candidatesTrans = ['qtdTransito','Qtd Trânsito','qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito'];
-
-    // limpa (igual ao clearContent do Sheets -> fica vazio)
-    candidatesPorta.forEach(k => { if(k in row) row[k] = ''; });
-    candidatesTrans.forEach(k => { if(k in row) row[k] = ''; });
-
-    // também tenta achar chaves parecidas (case-insensitive)
-    const norm = (s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-    const keys = Object.keys(row);
-
-    keys.forEach(k=>{
-      const nk = norm(k);
-      if(['qtdporta','qtdportas','porta'].includes(nk)) row[k] = '';
-      if(['qtdtransito','qtdtrans','transito','qtdtrnsito'].includes(nk)) row[k] = '';
+      const join = url.includes("?") ? "&" : "?";
+      s.src = url + join + "callback=" + encodeURIComponent(cb);
+      s.onerror = () => {
+        cleanup();
+        reject(new Error("Falha ao carregar JSONP"));
+      };
+      document.head.appendChild(s);
     });
-
-    return row;
   }
 
-  function doDailyReset(){
-    const today = ymd(new Date());
-    const already = localStorage.getItem(RESET_MARK);
+  async function apiList() {
+    const res = await jsonp(API_URL + "?action=list");
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em list");
+    return res.data || [];
+  }
 
-    if(already === today) return false; // já rodou hoje
+  async function apiContacts() {
+    const res = await jsonp(API_URL + "?action=contacts");
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em contacts");
+    return res.data || [];
+  }
 
-    const rows = safeParseJSON(localStorage.getItem(STORAGE_KEY));
-    if(!rows.length){
-      localStorage.setItem(RESET_MARK, today);
-      return true;
+  async function apiSave(row) {
+    const data = encodeURIComponent(JSON.stringify(row));
+    const res = await jsonp(API_URL + "?action=save&data=" + data);
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em save");
+    return res.data;
+  }
+
+  async function apiDelete(id) {
+    const res = await jsonp(API_URL + "?action=delete&id=" + encodeURIComponent(id));
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em delete");
+    return res.data;
+  }
+
+  async function apiResetQtd() {
+    const res = await jsonp(API_URL + "?action=reset");
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em reset");
+    return res.data;
+  }
+
+  const FILIAIS_ORDEM = [
+    "ITUMBIARA",
+    "ANAPOLIS",
+    "RIO VERDE",
+    "CRISTALINA",
+    "BOM JESUS",
+    "JATAI",
+    "CATALÃO",
+    "INDIARA",
+    "MINEIROS",
+    "MONTIVIDIU",
+    "CHAP CÉU"
+  ];
+
+  const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";
+  const LS_KEY_USER = "nf_auth_user";
+
+  function getUserKey() {
+    const u = localStorage.getItem(LS_KEY_USER) || localStorage.getItem("nf_user") || "default";
+    return String(u).trim().toUpperCase() || "default";
+  }
+
+  function formatBRL(v) {
+    const n = Number(v);
+    if (!isFinite(n)) return "";
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+
+  function num(v) {
+    if (v === "" || v == null) return 0;
+    const n = Number(String(v).replace(",", "."));
+    return isFinite(n) ? n : 0;
+  }
+
+  function safeText(v) {
+    return (v ?? "").toString().trim();
+  }
+
+  function statusClass(st) {
+    const s = safeText(st).toUpperCase();
+    if (s === "LIBERADO") return "liberado";
+    if (s === "PARADO") return "parado";
+    return "suspenso";
+  }
+
+  // ===== Pesos (editáveis) =====
+  const DEFAULT_WEIGHTS = { w9: 47, w4: 39, w7: 36, w6: 31 };
+
+  function loadWeights() {
+    const key = LS_KEY_WEIGHTS_PREFIX + getUserKey();
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return { ...DEFAULT_WEIGHTS };
+      const obj = JSON.parse(raw);
+      return {
+        w9: isFinite(Number(obj.w9)) ? Number(obj.w9) : DEFAULT_WEIGHTS.w9,
+        w4: isFinite(Number(obj.w4)) ? Number(obj.w4) : DEFAULT_WEIGHTS.w4,
+        w7: isFinite(Number(obj.w7)) ? Number(obj.w7) : DEFAULT_WEIGHTS.w7,
+        w6: isFinite(Number(obj.w6)) ? Number(obj.w6) : DEFAULT_WEIGHTS.w6
+      };
+    } catch {
+      return { ...DEFAULT_WEIGHTS };
     }
-
-    const newRows = rows.map(r => wipeRowQtd({ ...r }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newRows));
-    localStorage.setItem(RESET_MARK, today);
-
-    // Recarrega pra refletir na tabela (sem depender do fretes.js ter uma função pública)
-    location.reload();
-    return true;
   }
 
-  function scheduleNextRun(){
-    const now = new Date();
-    const next = new Date(now);
-    next.setHours(RESET_HOUR, 0, 0, 0);
+  function saveWeights(weights) {
+    const key = LS_KEY_WEIGHTS_PREFIX + getUserKey();
+    localStorage.setItem(key, JSON.stringify(weights));
+  }
 
-    // se já passou das 19:00 hoje, agenda para amanhã
-    if(next.getTime() <= now.getTime()){
-      next.setDate(next.getDate() + 1);
+  // ===== Permissão =====
+  function permYN(isOk) {
+    return isOk ? "S" : "N";
+  }
+
+  function calcPerm(row, weights) {
+    const km = num(row.km);
+    const ped = num(row.pedagioEixo);
+    const mot = num(row.valorMotorista);
+
+    if (!km || km <= 0 || !isFinite(km) || (row.km === "")) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+
+    const t5 = ((km * 6.0301) + (ped * 5) + 615.26) / 26;
+    const t6 = ((km * 6.7408) + (ped * 6) + 663.07) / Math.max(1, num(weights.w6));
+    const t7 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w7));
+    const t4 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w4));
+    const t9 = ((km * 8.242) + (ped * 9) + 808.17) / Math.max(1, num(weights.w9));
+
+    return {
+      p5: permYN(t5 < mot),
+      p6: permYN(t6 < mot),
+      p7: permYN(t7 < mot),
+      p4: permYN(t4 < mot),
+      p9: permYN(t9 < mot)
+    };
+  }
+
+  // ===== UI: selects =====
+  function fillFilialSelect(sel, includeAll) {
+    sel.innerHTML = "";
+    if (includeAll) {
+      const op = document.createElement("option");
+      op.value = "";
+      op.textContent = "Todas";
+      sel.appendChild(op);
     }
-
-    const ms = next.getTime() - now.getTime();
-    setTimeout(function(){
-      doDailyReset();
-      scheduleNextRun(); // agenda o próximo dia
-    }, ms);
+    FILIAIS_ORDEM.forEach((f) => {
+      const op = document.createElement("option");
+      op.value = f;
+      op.textContent = f;
+      sel.appendChild(op);
+    });
   }
 
-  // 1) Se abriu depois das 19h e ainda não rodou hoje -> roda
-  (function runIfNeededOnLoad(){
-    const now = new Date();
-    const today = ymd(now);
-    const already = localStorage.getItem(RESET_MARK);
+  // contatos dinâmicos do Sheets
+  let CONTACTS = []; // {nome, telefone}
 
-    if(now.getHours() >= RESET_HOUR && already !== today){
-      doDailyReset();
+  function contactLabel(c) {
+    if (!c) return "";
+    const phone = safeText(c.telefone);
+    return phone ? `${c.nome} ${formatPhonePretty(phone)}` : `${c.nome}`;
+  }
+
+  function formatPhonePretty(digits) {
+    const p = String(digits || "").replace(/\D/g, "");
+    // não força formato perfeito, só uma “cara” melhor
+    if (p.length === 11) return `(${p.slice(0,2)}) ${p.slice(2,7)}-${p.slice(7)}`;
+    if (p.length === 10) return `(${p.slice(0,2)}) ${p.slice(2,6)}-${p.slice(6)}`;
+    return p;
+  }
+
+  function fillContatoSelect(sel) {
+    sel.innerHTML = "";
+    CONTACTS.forEach((c) => {
+      const op = document.createElement("option");
+      op.value = c.nome; // grava só o nome
+      op.textContent = contactLabel(c);
+      sel.appendChild(op);
+    });
+  }
+
+  function getContactByName(name) {
+    const key = safeText(name).toUpperCase();
+    return CONTACTS.find(c => safeText(c.nome).toUpperCase() === key) || null;
+  }
+
+  function openWhatsAppForContactName(name) {
+    const c = getContactByName(name);
+    const phone = c ? safeText(c.telefone).replace(/\D/g, "") : "";
+    if (!phone) {
+      alert("Esse contato ainda não tem telefone cadastrado no Apps Script.");
       return;
     }
-  })();
+    // Brasil: 55 + DDD + número
+    const url = `https://wa.me/55${phone}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 
-  // 2) Agenda o reset para a próxima 19h enquanto a página estiver aberta
-  scheduleNextRun();
+  // ===== Render =====
+  function matchesSearch(row, q) {
+    if (!q) return true;
+    const blob = [
+      row.regional, row.filial, row.cliente, row.origem, row.coleta, row.contato,
+      row.destino, row.uf, row.descarga, row.produto, row.icms, row.status, row.obs
+    ].join(" ").toLowerCase();
+    return blob.includes(q.toLowerCase());
+  }
+
+  function orderFilialIndex(f) {
+    const i = FILIAIS_ORDEM.indexOf(safeText(f).toUpperCase());
+    return i >= 0 ? i : 9999;
+  }
+
+  function render(rows, weights) {
+    const tbody = $("tbody");
+    const fFilial = $("fFilial").value;
+    const fBusca = $("fBusca").value.trim();
+
+    let list = rows.filter((r) => {
+      if (fFilial && safeText(r.filial).toUpperCase() !== fFilial) return false;
+      if (!matchesSearch(r, fBusca)) return false;
+      return true;
+    });
+
+    list = list.slice().sort((a, b) => {
+      const ia = orderFilialIndex(a.filial);
+      const ib = orderFilialIndex(b.filial);
+      if (ia !== ib) return ia - ib;
+      const da = safeText(a.destino);
+      const db = safeText(b.destino);
+      if (da !== db) return da.localeCompare(db, "pt-BR");
+      return safeText(a.cliente).localeCompare(safeText(b.cliente), "pt-BR");
+    });
+
+    tbody.innerHTML = "";
+
+    let currentFilial = null;
+    list.forEach((row) => {
+      const filial = safeText(row.filial).toUpperCase();
+
+      if (filial !== currentFilial) {
+        currentFilial = filial;
+        const trG = document.createElement("tr");
+        trG.className = "groupRow";
+        const tdG = document.createElement("td");
+        tdG.colSpan = 27;
+        tdG.textContent = filial || "SEM FILIAL";
+        trG.appendChild(tdG);
+        tbody.appendChild(trG);
+      }
+
+      const perm = calcPerm(row, weights);
+
+      const tr = document.createElement("tr");
+      tr.className = "rowSlim";
+
+      // contato com botão WhatsApp na tabela (opcional)
+      const contatoNome = safeText(row.contato);
+      const contatoObj = getContactByName(contatoNome);
+      const hasPhone = contatoObj && safeText(contatoObj.telefone).replace(/\D/g, "").length >= 10;
+
+      const contatoCellHTML = hasPhone
+        ? `<span style="font-weight:900">${contatoNome}</span>
+           <a href="https://wa.me/55${safeText(contatoObj.telefone).replace(/\D/g,"")}"
+              target="_blank" rel="noopener noreferrer"
+              title="Chamar no WhatsApp"
+              style="margin-left:8px; display:inline-flex; align-items:center; justify-content:center;
+                     width:26px; height:26px; border-radius:10px; border:1px solid #D1D5DB;
+                     text-decoration:none; font-weight:900;">
+              WA
+           </a>`
+        : contatoNome;
+
+      const cells = [
+        safeText(row.regional),
+        safeText(row.filial),
+        safeText(row.cliente),
+        safeText(row.origem),
+        safeText(row.coleta),
+        { html: true, v: contatoCellHTML },
+        safeText(row.destino),
+        safeText(row.uf),
+        safeText(row.descarga),
+        { num: true, v: safeText(row.volume) },
+        { num: true, v: formatBRL(row.valorEmpresa) },
+        { num: true, v: formatBRL(row.valorMotorista) },
+        { num: true, v: safeText(row.km) },
+        { num: true, v: safeText(row.pedagioEixo) },
+        { yn: true, v: perm.p5 },
+        { yn: true, v: perm.p6 },
+        { yn: true, v: perm.p7 },
+        { yn: true, v: perm.p4 },
+        { yn: true, v: perm.p9 },
+        safeText(row.produto),
+        safeText(row.icms),
+        { num: true, v: safeText(row.pedidoSat) },
+        { num: true, v: safeText(row.qtdPorta) },
+        { num: true, v: safeText(row.qtdTransito) },
+        { status: true, v: safeText(row.status) },
+        safeText(row.obs),
+        { actions: true }
+      ];
+
+      cells.forEach((c) => {
+        const td = document.createElement("td");
+
+        if (typeof c === "object" && c) {
+          if (c.num) td.classList.add("num");
+
+          if (c.html) {
+            td.innerHTML = c.v || "";
+          }
+          else if (c.yn) {
+            const span = document.createElement("span");
+            span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
+            span.textContent = c.v || "";
+            td.classList.add("num");
+            td.appendChild(span);
+          } else if (c.status) {
+            const s = safeText(c.v).toUpperCase() || "SUSPENSO";
+            const span = document.createElement("span");
+            span.className = "statusPill " + statusClass(s);
+            span.textContent = s;
+            td.appendChild(span);
+          } else if (c.actions) {
+            td.classList.add("num");
+
+            const btnEdit = document.createElement("button");
+            btnEdit.className = "btnSmall";
+            btnEdit.style.padding = "7px 10px";
+            btnEdit.textContent = "Editar";
+            btnEdit.addEventListener("click", () => openModal("edit", row.id));
+
+            const btnDel = document.createElement("button");
+            btnDel.className = "btnSmall";
+            btnDel.style.padding = "7px 10px";
+            btnDel.style.marginLeft = "8px";
+            btnDel.textContent = "Excluir";
+            btnDel.addEventListener("click", () => removeRow(row.id));
+
+            td.appendChild(btnEdit);
+            td.appendChild(btnDel);
+          } else {
+            td.textContent = c.v ?? "";
+          }
+        } else {
+          td.textContent = c ?? "";
+        }
+
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ===== Modal CRUD =====
+  let state = {
+    rows: [],
+    editId: null,
+    weights: { ...DEFAULT_WEIGHTS }
+  };
+
+  function openModal(mode, id) {
+    state.editId = mode === "edit" ? id : null;
+    const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
+
+    $("mRegional").value = r ? r.regional : "GOIÁS";
+    $("mFilial").value = r ? safeText(r.filial).toUpperCase() : "ITUMBIARA";
+    $("mCliente").value = r ? r.cliente : "";
+    $("mOrigem").value = r ? r.origem : "";
+    $("mColeta").value = r ? r.coleta : "";
+    $("mContato").value = r ? (r.contato || (CONTACTS[0] ? CONTACTS[0].nome : "")) : (CONTACTS[0] ? CONTACTS[0].nome : "");
+    $("mDestino").value = r ? r.destino : "";
+    $("mUF").value = r ? r.uf : "GO";
+    $("mDescarga").value = r ? r.descarga : "";
+    $("mProduto").value = r ? r.produto : "";
+    $("mKM").value = r ? r.km : "";
+    $("mPed").value = r ? r.pedagioEixo : 0;
+    $("mVolume").value = r ? r.volume : "";
+    $("mEmpresa").value = r ? r.valorEmpresa : "";
+    $("mMotorista").value = r ? r.valorMotorista : "";
+    $("mICMS").value = r ? r.icms : "";
+    $("mSat").value = r ? r.pedidoSat : "";
+    $("mPorta").value = (r && r.qtdPorta !== 0) ? r.qtdPorta : "";
+    $("mTransito").value = (r && r.qtdTransito !== 0) ? r.qtdTransito : "";
+    $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
+    $("mObs").value = r ? r.obs : "";
+
+    syncWhatsAppBtnState();
+
+    $("modal").style.display = "flex";
+  }
+
+  function closeModal() {
+    $("modal").style.display = "none";
+    state.editId = null;
+  }
+
+  function collectModal() {
+    return {
+      id: state.editId || crypto.randomUUID(),
+      regional: safeText($("mRegional").value),
+      filial: safeText($("mFilial").value).toUpperCase(),
+      cliente: safeText($("mCliente").value),
+      origem: safeText($("mOrigem").value),
+      coleta: safeText($("mColeta").value),
+      contato: safeText($("mContato").value),
+      destino: safeText($("mDestino").value),
+      uf: safeText($("mUF").value).toUpperCase(),
+      descarga: safeText($("mDescarga").value),
+      volume: num($("mVolume").value),
+      valorEmpresa: num($("mEmpresa").value),
+      valorMotorista: num($("mMotorista").value),
+      km: num($("mKM").value),
+      pedagioEixo: num($("mPed").value),
+      produto: safeText($("mProduto").value),
+      icms: safeText($("mICMS").value),
+      pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
+      qtdPorta: $("mPorta").value === "" ? "" : num($("mPorta").value),
+      qtdTransito: $("mTransito").value === "" ? "" : num($("mTransito").value),
+      status: safeText($("mStatus").value).toUpperCase(),
+      obs: safeText($("mObs").value)
+    };
+  }
+
+  async function upsertRow(row) {
+    // salva no Sheets
+    await apiSave(row);
+
+    // recarrega lista (garante sincronismo)
+    state.rows = await apiList();
+    render(state.rows, state.weights);
+  }
+
+  async function removeRow(id) {
+    if (!confirm("Excluir este frete?")) return;
+    await apiDelete(id);
+    state.rows = await apiList();
+    render(state.rows, state.weights);
+  }
+
+  // ===== WhatsApp no modal (botão ao lado do select contato) =====
+  function ensureWhatsAppButtonInModal() {
+    const sel = $("mContato");
+    if (!sel) return;
+
+    // já existe?
+    if ($("btnWhatsContato")) return;
+
+    const wrap = sel.parentElement;
+    if (!wrap) return;
+
+    // cria uma mini linha com select + botão
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "8px";
+    row.style.alignItems = "center";
+
+    // move select pra dentro
+    wrap.appendChild(row);
+    row.appendChild(sel);
+
+    // botão WhatsApp
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "btnWhatsContato";
+    btn.className = "btnTiny ghost";
+    btn.style.height = "36px";
+    btn.style.padding = "0 12px";
+    btn.textContent = "WhatsApp";
+    btn.title = "Chamar contato no WhatsApp";
+
+    btn.addEventListener("click", () => {
+      openWhatsAppForContactName(sel.value);
+    });
+
+    row.appendChild(btn);
+
+    sel.addEventListener("change", syncWhatsAppBtnState);
+  }
+
+  function syncWhatsAppBtnState() {
+    const btn = $("btnWhatsContato");
+    const sel = $("mContato");
+    if (!btn || !sel) return;
+
+    const c = getContactByName(sel.value);
+    const hasPhone = c && safeText(c.telefone).replace(/\D/g, "").length >= 10;
+
+    btn.disabled = !hasPhone;
+    btn.style.opacity = hasPhone ? "1" : "0.5";
+    btn.style.cursor = hasPhone ? "pointer" : "not-allowed";
+  }
+
+  // ===== Init =====
+  async function init() {
+    // selects
+    fillFilialSelect($("fFilial"), true);
+    fillFilialSelect($("mFilial"), false);
+
+    // contatos do Sheets
+    try {
+      CONTACTS = await apiContacts();
+    } catch (e) {
+      console.error(e);
+      CONTACTS = [];
+    }
+    fillContatoSelect($("mContato"));
+    ensureWhatsAppButtonInModal();
+
+    // pesos
+    state.weights = loadWeights();
+    $("w9").value = state.weights.w9;
+    $("w4").value = state.weights.w4;
+    $("w7").value = state.weights.w7;
+    $("w6").value = state.weights.w6;
+
+    $("btnSaveWeights").addEventListener("click", () => {
+      const w = {
+        w9: num($("w9").value) || DEFAULT_WEIGHTS.w9,
+        w4: num($("w4").value) || DEFAULT_WEIGHTS.w4,
+        w7: num($("w7").value) || DEFAULT_WEIGHTS.w7,
+        w6: num($("w6").value) || DEFAULT_WEIGHTS.w6
+      };
+      state.weights = w;
+      saveWeights(w);
+      render(state.rows, state.weights);
+      alert("Pesos salvos ✅");
+    });
+
+    $("btnResetWeights").addEventListener("click", () => {
+      state.weights = { ...DEFAULT_WEIGHTS };
+      $("w9").value = state.weights.w9;
+      $("w4").value = state.weights.w4;
+      $("w7").value = state.weights.w7;
+      $("w6").value = state.weights.w6;
+      saveWeights(state.weights);
+      render(state.rows, state.weights);
+    });
+
+    // carrega do Sheets (compartilhado)
+    state.rows = await apiList();
+
+    // filtros
+    $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
+    $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
+
+    // botões
+    $("btnNew").addEventListener("click", () => openModal("new"));
+
+    // se você quer ocultar o Exemplo: deixa o botão no HTML mas escondido via CSS (ou remove do HTML)
+    const btnExample = $("btnResetExample");
+    if (btnExample) {
+      // recomendado: esconder
+      btnExample.style.display = "none";
+    }
+
+    // botão Share Clientes (se existir no HTML)
+    const btnShare = $("btnShareClientes");
+    if (btnShare) {
+      btnShare.addEventListener("click", () => {
+        window.location.href = "./share-clientes.html";
+      });
+    }
+
+    // modal events
+    $("btnCloseModal").addEventListener("click", closeModal);
+    $("btnCancel").addEventListener("click", closeModal);
+
+    $("btnSave").addEventListener("click", async () => {
+      const row = collectModal();
+      if (!row.filial) return alert("Selecione uma filial.");
+      if (!row.contato) return alert("Selecione um contato.");
+
+      try {
+        await upsertRow(row);
+        closeModal();
+      } catch (e) {
+        console.error(e);
+        alert("Erro ao salvar no Google Sheets. Veja o console.");
+      }
+    });
+
+    // primeira renderização
+    render(state.rows, state.weights);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    init().catch((e) => {
+      console.error(e);
+      alert("Falha ao carregar dados do Google Sheets. Veja o console.");
+    });
+  });
+
+  // (Opcional) Se quiser testar reset manual:
+  // window.__resetQtd = () => apiResetQtd().then(()=>apiList()).then(r=>{state.rows=r; render(state.rows,state.weights);});
 })();
-</script>
-</body>
-</html>

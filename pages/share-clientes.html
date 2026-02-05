@@ -53,21 +53,17 @@
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
 
-    /* ✅✅✅ AJUSTE DE LAYOUT DO TOPO
-       - STATUS CLIENTE mais largo
-       - CORREDORES ocupa mais espaço (lado direito da seta)
-       - LOGO um pouco mais compacta, mas ainda confortável */
+    /* ✅ Ajuste: dá um pouco mais de espaço pro meio (Corredor) e pro Status */
     .topRow{
       display:grid;
-      grid-template-columns: 420px 1.55fr 420px; /* era 340px 1fr 460px */
-      gap:12px;
-      align-items:stretch;
+      grid-template-columns: 420px 1fr 420px; /* antes: 340 / 460 */
+      gap:12px; align-items:stretch;
     }
     @media (max-width:1200px){ .topRow{grid-template-columns: 1fr;} }
 
     .clientRow{
       display:grid;
-      grid-template-columns: 130px 1fr; /* leve aumento pra não esmagar */
+      grid-template-columns: 140px 1fr; /* antes: 120 */
       gap:10px; align-items:start;
     }
     @media (max-width:1200px){ .clientRow{grid-template-columns: 1fr;} }
@@ -88,14 +84,11 @@
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
-    /* ✅✅✅ STATUS CLIENTE (ajuste pedido)
-       - diminui fonte
-       - mostra nomes por inteiro (sem cortar)
-       - dá mais “ar” nas linhas */
+    /* ✅ STATUS CLIENTE (fonte menor + cabe tudo) */
     .statusList{ display:flex; flex-direction:column; }
     .statusLine{
       display:flex; align-items:center; justify-content:space-between;
-      gap:12px;
+      gap:10px;
       padding:10px 12px;
       border-top:1px solid rgba(15,23,42,.14);
       background:#fff;
@@ -104,66 +97,68 @@
     .statusLabel{
       font-weight:900;
       color:rgba(17,24,39,.80);
-      font-size:12px;          /* ↓ menor */
-      line-height:1.2;
-      white-space:normal;      /* ✅ permite quebrar linha se precisar */
-      overflow:visible;        /* ✅ não corta */
-      text-overflow:unset;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:13px;            /* ✅ menor */
+      max-width: 240px;          /* ✅ força caber e não empurrar valor */
     }
     .statusValue{
       font-weight:1000;
       font-variant-numeric:tabular-nums;
       color:#111827 !important;
-      font-size:12px;          /* ↓ menor */
       white-space:nowrap;
-      min-width:96px;          /* mais espaço pro número */
+      min-width:96px;
       text-align:right;
+      font-size:13px;            /* ✅ menor */
     }
 
     .corrBox{
       border:1px solid rgba(15,23,42,.12);
       border-radius:12px; overflow:hidden; background:#fff;
-      height:100%; display:flex; flex-direction:column;
-      min-height:150px; /* ✅ mais alto pra ficar mais organizado */
+      height:100%; display:flex; flex-direction:column; min-height:110px;
     }
     .corrBox .corrHead{
       background:#15803D; color:#fff; font-weight:1000; text-align:center;
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
-    /* ✅✅✅ CORREDORES (ajuste pedido)
-       - ocupa mais espaço
-       - colunas mais largas
-       - espaçamento melhor */
+    /* ✅ Ajuste pedido: colunas mais próximas e sem “cortar” na direita */
     .corrGrid{
-  display:grid;
-  grid-template-columns: repeat(3, minmax(200px, 1fr)); /* ↓ aproxima as colunas */
-  gap:5px 12px;                                       /* ↓ diminui espaço entre colunas */
-  padding:12px 14px;
-  align-content:start;
-}
-    @media (max-width:1200px){ .corrGrid{grid-template-columns: repeat(2, minmax(200px, 1fr));} }
-    @media (max-width:700px){ .corrGrid{grid-template-columns: 1fr;} }
+      display:grid;
+      grid-template-columns: repeat(3, minmax(140px, 1fr)); /* antes: 180px */
+      gap:6px 14px;              /* ✅ aproxima */
+      padding:10px 12px;
+      align-content:start;
+    }
+    @media (max-width:1400px){
+      .corrGrid{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    }
+    @media (max-width:900px){
+      .corrGrid{ grid-template-columns: 1fr; }
+    }
 
     .corrItem{
       display:flex; align-items:center; justify-content:space-between;
-      gap:10px; padding:4px 0; /* mais “respiro” */
+      gap:10px; padding:2px 0;
       border-bottom:1px dotted rgba(15,23,42,.14);
       font-variant-numeric:tabular-nums;
+      min-width:0;
     }
-    .corrItem .name{ font-weight:1000; color:#111827; text-transform:uppercase; font-size:12px; }
-    .corrItem .qty{ font-weight:1000; color:#111827; font-size:12px; }
+    .corrItem .name{
+      font-weight:1000; color:#111827; text-transform:uppercase; font-size:12px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      min-width:0;
+    }
+    .corrItem .qty{ font-weight:1000; color:#111827; font-size:12px; white-space:nowrap; }
 
     .clientLogoWrap{
       display:flex; align-items:center; justify-content:center;
       background:#ffffff;
       border:1px solid rgba(15,23,42,.10);
-      border-radius:16px;
-      padding:14px;
-      min-height:150px; /* acompanha o corredor/status */
-      height:100%;
+      border-radius:16px; padding:14px; min-height:120px; height:100%;
     }
-    .clientLogoWrap img{ max-width: 100%; max-height:160px; object-fit:contain; }
+    .clientLogoWrap img{ max-width: 100%; max-height:140px; object-fit:contain; }
 
     body.shareLight .tableWrap{
       overflow:auto;
@@ -236,7 +231,6 @@
   </div>
 
   <div class="container nfWide" style="padding-top:12px;" id="pageShare">
-
     <div class="card">
       <div class="shareHeader">
         <div class="titleBox">
@@ -246,12 +240,6 @@
         <div class="btnRow">
           <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">Atualizar</button>
           <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">Gerar Print</button>
-          <button
-  type="button"
-  class="btnSmall green"
-  onclick="window.location.href='./fretes.html'">
-  Fretes
-</button>
         </div>
       </div>
     </div>
@@ -259,7 +247,6 @@
     <div style="height:12px;"></div>
 
     <div class="topRow">
-
       <div class="card">
         <div class="clientRow">
           <div>
@@ -269,7 +256,6 @@
 
           <div class="statusBox">
             <div class="statusHead">Status Cliente</div>
-
             <div class="statusList">
               <div class="statusLine">
                 <div class="statusLabel">Total de Lotes</div>
@@ -302,7 +288,6 @@
           <div id="logoFallback" class="clientLogoFallback" style="display:none;">SEM LOGO</div>
         </div>
       </div>
-
     </div>
 
     <div style="height:12px;"></div>
@@ -329,7 +314,6 @@
         </table>
       </div>
     </div>
-
   </div>
 
   <script src="../assets/js/auth.js"></script>
@@ -339,6 +323,9 @@
     bindLogoutButton();
 
     (function(){
+      // ✅ URL do seu Web App (Google Apps Script)
+      const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbywORAu4XWVjVQZrhL5hC3uyNxIeOZtCqV_Qo7urpYrhHIc--lxn8yKOzHB6NX5E_fK/exec";
+
       function onReady(fn){
         if(document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
         else document.addEventListener('DOMContentLoaded', fn);
@@ -351,53 +338,21 @@
         const n = parseFloat(s);
         return isFinite(n) ? n : 0;
       }
-      function int(v){
-        const n = num(v);
-        return isFinite(n) ? Math.round(n) : 0;
-      }
+      function int(v){ const n = num(v); return isFinite(n) ? Math.round(n) : 0; }
 
       function fmtInt(n){ return (Number(n) || 0).toLocaleString('pt-BR'); }
       function fmtTon(n){ return (Number(n) || 0).toLocaleString('pt-BR') + ' t'; }
-
       function moneyBR(n){
         return (Number(n) || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-      }
-
-      const API_URL = "https://script.google.com/macros/s/AKfycbzvsPglqBxyiUByazFPi_5ihhBc3L_-xhnuR5H90RUwAfDj9t4HKMWZPwyiNunmfZ5W/exec";
-
-function jsonp(url){
-  return new Promise((resolve, reject)=>{
-    const cb="__nfcb_"+Math.random().toString(36).slice(2);
-    const s=document.createElement("script");
-    const t=setTimeout(()=>{cleanup(); reject(new Error("Timeout JSONP"));},20000);
-    function cleanup(){
-      clearTimeout(t);
-      if(window[cb]) delete window[cb];
-      if(s && s.parentNode) s.parentNode.removeChild(s);
-    }
-    window[cb]=(data)=>{cleanup(); resolve(data);};
-    const join=url.includes("?")?"&":"?";
-    s.src=url+join+"callback="+encodeURIComponent(cb);
-    s.onerror=()=>{cleanup(); reject(new Error("Falha JSONP"));};
-    document.head.appendChild(s);
-  });
-}
-
-async function readBase(){
-  const res = await jsonp(API_URL + "?action=list");
-  if(!res || !res.ok) return [];
-  return Array.isArray(res.data) ? res.data : [];
-}
-
       }
 
       function setText(id, value){
         const el = document.getElementById(id);
         if(el) el.textContent = value;
       }
-
       function canon(s){ return String(s || '').trim().toUpperCase(); }
 
+      // ✅ pega campo por vários nomes possíveis + busca case-insensitive
       function getField(row, names){
         if(!row) return undefined;
 
@@ -416,28 +371,10 @@ async function readBase(){
         return undefined;
       }
 
-      function getQtdPorta(row){
-        return getField(row, [
-          'qtdPorta','Qtd Porta','qtd_porta','porta','qtdPortas','qtdporta',
-          'qtdLocal','cmhLocal','cmhsLocal'
-        ]);
-      }
-      function getQtdTransito(row){
-        return getField(row, [
-          'qtdTransito',"Qtd Trânsito",'qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito',
-          'cmhTrans','cmhsTrans'
-        ]);
-      }
-      function getValorEmpresa(row){
-        return getField(row, [
-          'valorEmpresa','Vlr Empresa','vlrEmpresa','empresa','valor_empresa','vlr_empresa'
-        ]);
-      }
-      function getObs(row){
-        return getField(row, [
-          'obs','Observações','observacao','observação','observacoes','observações'
-        ]);
-      }
+      function getQtdPorta(row){ return getField(row, ['qtdPorta','Qtd Porta','qtd_porta','porta','qtdPortas','qtdporta','qtdLocal','cmhLocal','cmhsLocal']); }
+      function getQtdTransito(row){ return getField(row, ['qtdTransito',"Qtd Trânsito",'qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito','cmhTrans','cmhsTrans']); }
+      function getValorEmpresa(row){ return getField(row, ['valorEmpresa','Vlr Empresa','vlrEmpresa','empresa','valor_empresa','vlr_empresa']); }
+      function getObs(row){ return getField(row, ['obs','Observações','observacao','observação','observacoes','observações']); }
 
       function setLogo(displayName){
         const img = document.getElementById('imgLogo');
@@ -464,6 +401,23 @@ async function readBase(){
         return `<span class="statusPill ${cls}">${s || '—'}</span>`;
       }
 
+      // ✅ Carrega do Google Sheets (Web App)
+      async function loadFromSheets(){
+        const url = SHEETS_API_URL + "?t=" + Date.now(); // cache-buster
+        const res = await fetch(url, { method: "GET" });
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+
+        const rows =
+          Array.isArray(data) ? data :
+          Array.isArray(data.rows) ? data.rows :
+          Array.isArray(data.data) ? data.data :
+          Array.isArray(data.items) ? data.items : [];
+
+        if(!Array.isArray(rows)) return [];
+        return rows;
+      }
+
       onReady(function(){
         const selCliente = document.getElementById('selCliente');
         const corrList   = document.getElementById('corrList');
@@ -475,8 +429,6 @@ async function readBase(){
         if(!selCliente || !corrList || !tbody) return;
 
         let BASE = [];
-...
-BASE = await readBase();
         let clientIndex = new Map();
 
         function buildClientIndex(){
@@ -559,27 +511,38 @@ BASE = await readBase();
           }).join('');
         }
 
-        function hydrate(){
-          BASE = readBase();
-          if(BASE.length === 0){
-            selCliente.innerHTML = '';
-            corrList.innerHTML = '';
-            tbody.innerHTML = '';
-            setLogo('');
-            setText('kLotes','0');
-            setText('kCaminhao','0');
-            setText('kVolume','0');
-            return;
+        async function hydrate(){
+          try{
+            BASE = await loadFromSheets();
+
+            if(!Array.isArray(BASE) || BASE.length === 0){
+              selCliente.innerHTML = '';
+              corrList.innerHTML = '';
+              tbody.innerHTML = '';
+              setLogo('');
+              setText('kLotes','0');
+              setText('kCaminhao','0');
+              setText('kVolume','0');
+              return;
+            }
+
+            if(selCliente.options.length === 0) fillClients();
+            else buildClientIndex();
+
+            const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
+            if(key) renderForClient(key);
+
+          }catch(err){
+            console.error("Erro ao carregar Share Clientes:", err);
+            alert("Falha ao carregar dados do Google Sheets. Veja o console.");
           }
-
-          if(selCliente.options.length === 0) fillClients();
-          else buildClientIndex();
-
-          const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
-          if(key) renderForClient(key);
         }
 
-        selCliente.addEventListener('change', hydrate);
+        selCliente.addEventListener('change', () => {
+          const key = selCliente.value;
+          if(key) renderForClient(key);
+        });
+
         if(btnReload) btnReload.addEventListener('click', hydrate);
 
         if(btnPrint && pageShare){
@@ -607,7 +570,6 @@ BASE = await readBase();
           });
         }
 
-        fillClients();
         hydrate();
       });
     })();

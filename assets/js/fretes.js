@@ -1,15 +1,80 @@
-/* fretes.js | NOVA FROTA
-   - Tabela Operacional + Permissão Frete Mínimo (5E/6E/7E/4E/9E)
-   - Contatos fixos (select)
-   - Separação por filial (linhas "grupo" como na planilha)
-   - Pesos editáveis salvos por usuário (localStorage)
-   - ✅ Botão WhatsApp na coluna Contato (abre wa.me)
+/* fretes.js | NOVA FROTA (Google Sheets Shared)
+   - Dados compartilhados via Apps Script (JSONP, sem CORS)
+   - CRUD completo: listar, salvar, excluir
+   - Zerar Qtd Porta/Trânsito (API reset) se quiser disparar manual
+   - Botão Share Clientes
+   - Botão WhatsApp no modal de contato
 */
 (function () {
   "use strict";
 
+  // ===== CONFIG =====
+  const API_URL = "https://script.google.com/macros/s/AKfycbzvsPglqBxyiUByazFPi_5ihhBc3L_-xhnuR5H90RUwAfDj9t4HKMWZPwyiNunmfZ5W/exec";
+
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);
+
+  // JSONP (para GitHub Pages sem CORS)
+  function jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cb = "__nfcb_" + Math.random().toString(36).slice(2);
+      const s = document.createElement("script");
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timeout JSONP"));
+      }, 20000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        if (window[cb]) delete window[cb];
+        if (s && s.parentNode) s.parentNode.removeChild(s);
+      }
+
+      window[cb] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+
+      const join = url.includes("?") ? "&" : "?";
+      s.src = url + join + "callback=" + encodeURIComponent(cb);
+      s.onerror = () => {
+        cleanup();
+        reject(new Error("Falha ao carregar JSONP"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function apiList() {
+    const res = await jsonp(API_URL + "?action=list");
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em list");
+    return res.data || [];
+  }
+
+  async function apiContacts() {
+    const res = await jsonp(API_URL + "?action=contacts");
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em contacts");
+    return res.data || [];
+  }
+
+  async function apiSave(row) {
+    const data = encodeURIComponent(JSON.stringify(row));
+    const res = await jsonp(API_URL + "?action=save&data=" + data);
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em save");
+    return res.data;
+  }
+
+  async function apiDelete(id) {
+    const res = await jsonp(API_URL + "?action=delete&id=" + encodeURIComponent(id));
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em delete");
+    return res.data;
+  }
+
+  async function apiResetQtd() {
+    const res = await jsonp(API_URL + "?action=reset");
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em reset");
+    return res.data;
+  }
 
   const FILIAIS_ORDEM = [
     "ITUMBIARA",
@@ -25,23 +90,8 @@
     "CHAP CÉU"
   ];
 
-  const CONTATOS_FIXOS = [
-    "ARIEL 64 99227-7537",
-    "JHONATAN 64 99252-8879",
-    "NARCISO",
-    "SERGIO",
-    "ELTON",
-    "EVERALDO",
-    "RONE",
-    "RAFAEL",
-    "KIEWERSON",
-    "PIRULITO"
-  ];
-
-  const LS_KEY_ROWS = "nf_fretes_rows_v1";
-  const LS_KEY_EXAMPLE = "nf_fretes_example_v1";
   const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";
-  const LS_KEY_USER = "nf_auth_user"; // opcional: se seu auth.js não setar, cai no "default"
+  const LS_KEY_USER = "nf_auth_user";
 
   function getUserKey() {
     const u = localStorage.getItem(LS_KEY_USER) || localStorage.getItem("nf_user") || "default";
@@ -55,6 +105,7 @@
   }
 
   function num(v) {
+    if (v === "" || v == null) return 0;
     const n = Number(String(v).replace(",", "."));
     return isFinite(n) ? n : 0;
   }
@@ -68,55 +119,6 @@
     if (s === "LIBERADO") return "liberado";
     if (s === "PARADO") return "parado";
     return "suspenso";
-  }
-
-  // ===== ✅ WhatsApp helpers =====
-  function onlyDigits(s) {
-    return safeText(s).replace(/\D+/g, "");
-  }
-
-  // Extrai número BR do texto.
-  // - Se vier "55" + DDD + celular (13 dígitos) mantém.
-  // - Se vier DDD + número (10 ou 11) adiciona "55".
-  // - Se vier com 0 na frente (ex: 064...), remove o 0 e adiciona 55.
-  function extractBRPhone(contatoText) {
-    const d = onlyDigits(contatoText);
-
-    if (d.length === 13 && d.startsWith("55")) return d;
-
-    if (d.length === 10 || d.length === 11) return "55" + d;
-
-    if ((d.length === 11 || d.length === 12) && d.startsWith("0")) {
-      const cut = d.slice(1);
-      if (cut.length === 10 || cut.length === 11) return "55" + cut;
-    }
-
-    return "";
-  }
-
-  function makeWhatsLink(phoneE164, contatoNome) {
-    if (!phoneE164) return "";
-    const msg = `Olá ${contatoNome ? contatoNome + ", " : ""}tudo bem?`;
-    return `https://wa.me/${phoneE164}?text=${encodeURIComponent(msg)}`;
-  }
-
-  // HTML da célula de contato com botão do Whats (se tiver número)
-  function contatoCellHTML(rawContato) {
-    const label = safeText(rawContato);
-    const phone = extractBRPhone(label);
-    const nome = label.split(/\d/)[0].trim(); // texto antes do primeiro número
-
-    if (!phone) {
-      return `<div class="contatoCell"><span>${label}</span></div>`;
-    }
-
-    const link = makeWhatsLink(phone, nome);
-    return `
-      <div class="contatoCell">
-        <span>${label}</span>
-        <a class="btnWhats" href="${link}" target="_blank" rel="noopener" title="Chamar no WhatsApp">💬</a>
-      </div>
-    `;
   }
 
   // ===== Pesos (editáveis) =====
@@ -144,7 +146,7 @@
     localStorage.setItem(key, JSON.stringify(weights));
   }
 
-  // ===== Permissão (mesma lógica do Sheets) =====
+  // ===== Permissão =====
   function permYN(isOk) {
     return isOk ? "S" : "N";
   }
@@ -154,7 +156,7 @@
     const ped = num(row.pedagioEixo);
     const mot = num(row.valorMotorista);
 
-    if (!km || km <= 0 || !isFinite(km) || row.km === "") return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!km || km <= 0 || !isFinite(km) || (row.km === "")) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
 
@@ -173,115 +175,7 @@
     };
   }
 
-  // ===== Dados (local) =====
-  function exampleRows() {
-    return [
-      {
-        id: crypto.randomUUID(),
-        regional: "GOIÁS",
-        filial: "INDIARA",
-        cliente: "CERRADINHO",
-        origem: "INDIARA/GO",
-        coleta: "GOIASCAL",
-        contato: "RAFAEL",
-        destino: "CHAPADÃO DO CÉU/GO",
-        uf: "GO",
-        descarga: "USINA CERRADINHO",
-        volume: 5000,
-        valorEmpresa: 95,
-        valorMotorista: 85,
-        km: 396,
-        pedagioEixo: 0,
-        produto: "CALCÁRIO",
-        icms: "ISENTO (CIF)",
-        pedidoSat: 10453,
-        qtdPorta: 0,
-        qtdTransito: 0,
-        status: "LIBERADO",
-        obs: ""
-      },
-      {
-        id: crypto.randomUUID(),
-        regional: "GOIÁS",
-        filial: "JATAI",
-        cliente: "CARGILL",
-        origem: "JATAI/GO",
-        coleta: "ARMAZ BOA ESPERANÇA",
-        contato: "RONE",
-        destino: "ITUMBIARA/GO",
-        uf: "GO",
-        descarga: "CARAMURU",
-        volume: 0,
-        valorEmpresa: 80,
-        valorMotorista: 73,
-        km: 330,
-        pedagioEixo: 0,
-        produto: "MILHO",
-        icms: "ISENTO (CIF)",
-        pedidoSat: 0,
-        qtdPorta: 2,
-        qtdTransito: 3,
-        status: "LIBERADO",
-        obs: ""
-      },
-      {
-        id: crypto.randomUUID(),
-        regional: "GOIÁS",
-        filial: "ANAPOLIS",
-        cliente: "OURO SAFRA",
-        origem: "ÁGUA FRIA DE GOIÁS-GO",
-        coleta: "FAZ. ARAÇÁ",
-        contato: "SERGIO",
-        destino: "CABECEIRAS",
-        uf: "GO",
-        descarga: "GRANJA MANTIQUEIRA",
-        volume: 75,
-        valorEmpresa: 75,
-        valorMotorista: 60,
-        km: 106,
-        pedagioEixo: 0,
-        produto: "MILHO",
-        icms: "ISENTO (CIF)",
-        pedidoSat: 12245,
-        qtdPorta: 0,
-        qtdTransito: 0,
-        status: "PARADO",
-        obs: ""
-      }
-    ];
-  }
-
-  function loadRows() {
-    const hasExample = localStorage.getItem(LS_KEY_EXAMPLE) === "1";
-    const raw = localStorage.getItem(LS_KEY_ROWS);
-    if (!raw) {
-      localStorage.setItem(LS_KEY_EXAMPLE, "1");
-      const ex = exampleRows();
-      localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
-      return ex;
-    }
-    try {
-      const rows = JSON.parse(raw);
-      if (!Array.isArray(rows)) throw new Error("bad");
-      if (rows.length === 0 && hasExample) {
-        const ex = exampleRows();
-        localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
-        return ex;
-      }
-      return rows;
-    } catch {
-      const ex = exampleRows();
-      localStorage.setItem(LS_KEY_ROWS, JSON.stringify(ex));
-      localStorage.setItem(LS_KEY_EXAMPLE, "1");
-      return ex;
-    }
-  }
-
-  function saveRows(rows) {
-    localStorage.setItem(LS_KEY_ROWS, JSON.stringify(rows));
-  }
-
-  // ===== UI: selects fixos =====
+  // ===== UI: selects =====
   function fillFilialSelect(sel, includeAll) {
     sel.innerHTML = "";
     if (includeAll) {
@@ -298,14 +192,48 @@
     });
   }
 
+  // contatos dinâmicos do Sheets
+  let CONTACTS = []; // {nome, telefone}
+
+  function contactLabel(c) {
+    if (!c) return "";
+    const phone = safeText(c.telefone);
+    return phone ? `${c.nome} ${formatPhonePretty(phone)}` : `${c.nome}`;
+  }
+
+  function formatPhonePretty(digits) {
+    const p = String(digits || "").replace(/\D/g, "");
+    // não força formato perfeito, só uma “cara” melhor
+    if (p.length === 11) return `(${p.slice(0,2)}) ${p.slice(2,7)}-${p.slice(7)}`;
+    if (p.length === 10) return `(${p.slice(0,2)}) ${p.slice(2,6)}-${p.slice(6)}`;
+    return p;
+  }
+
   function fillContatoSelect(sel) {
     sel.innerHTML = "";
-    CONTATOS_FIXOS.forEach((c) => {
+    CONTACTS.forEach((c) => {
       const op = document.createElement("option");
-      op.value = c;
-      op.textContent = c;
+      op.value = c.nome; // grava só o nome
+      op.textContent = contactLabel(c);
       sel.appendChild(op);
     });
+  }
+
+  function getContactByName(name) {
+    const key = safeText(name).toUpperCase();
+    return CONTACTS.find(c => safeText(c.nome).toUpperCase() === key) || null;
+  }
+
+  function openWhatsAppForContactName(name) {
+    const c = getContactByName(name);
+    const phone = c ? safeText(c.telefone).replace(/\D/g, "") : "";
+    if (!phone) {
+      alert("Esse contato ainda não tem telefone cadastrado no Apps Script.");
+      return;
+    }
+    // Brasil: 55 + DDD + número
+    const url = `https://wa.me/55${phone}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   // ===== Render =====
@@ -366,16 +294,30 @@
       const tr = document.createElement("tr");
       tr.className = "rowSlim";
 
+      // contato com botão WhatsApp na tabela (opcional)
+      const contatoNome = safeText(row.contato);
+      const contatoObj = getContactByName(contatoNome);
+      const hasPhone = contatoObj && safeText(contatoObj.telefone).replace(/\D/g, "").length >= 10;
+
+      const contatoCellHTML = hasPhone
+        ? `<span style="font-weight:900">${contatoNome}</span>
+           <a href="https://wa.me/55${safeText(contatoObj.telefone).replace(/\D/g,"")}"
+              target="_blank" rel="noopener noreferrer"
+              title="Chamar no WhatsApp"
+              style="margin-left:8px; display:inline-flex; align-items:center; justify-content:center;
+                     width:26px; height:26px; border-radius:10px; border:1px solid #D1D5DB;
+                     text-decoration:none; font-weight:900;">
+              WA
+           </a>`
+        : contatoNome;
+
       const cells = [
         safeText(row.regional),
         safeText(row.filial),
         safeText(row.cliente),
         safeText(row.origem),
         safeText(row.coleta),
-
-        // ✅ Contato com botão Whats
-        { html: true, v: contatoCellHTML(row.contato) },
-
+        { html: true, v: contatoCellHTML },
         safeText(row.destino),
         safeText(row.uf),
         safeText(row.descarga),
@@ -405,7 +347,10 @@
         if (typeof c === "object" && c) {
           if (c.num) td.classList.add("num");
 
-          if (c.yn) {
+          if (c.html) {
+            td.innerHTML = c.v || "";
+          }
+          else if (c.yn) {
             const span = document.createElement("span");
             span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
             span.textContent = c.v || "";
@@ -419,6 +364,7 @@
             td.appendChild(span);
           } else if (c.actions) {
             td.classList.add("num");
+
             const btnEdit = document.createElement("button");
             btnEdit.className = "btnSmall";
             btnEdit.style.padding = "7px 10px";
@@ -434,8 +380,6 @@
 
             td.appendChild(btnEdit);
             td.appendChild(btnDel);
-          } else if (c.html) {
-            td.innerHTML = c.v || "";
           } else {
             td.textContent = c.v ?? "";
           }
@@ -459,7 +403,6 @@
 
   function openModal(mode, id) {
     state.editId = mode === "edit" ? id : null;
-
     const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
 
     $("mRegional").value = r ? r.regional : "GOIÁS";
@@ -467,7 +410,7 @@
     $("mCliente").value = r ? r.cliente : "";
     $("mOrigem").value = r ? r.origem : "";
     $("mColeta").value = r ? r.coleta : "";
-    $("mContato").value = r ? (r.contato || CONTATOS_FIXOS[0]) : CONTATOS_FIXOS[0];
+    $("mContato").value = r ? (r.contato || (CONTACTS[0] ? CONTACTS[0].nome : "")) : (CONTACTS[0] ? CONTACTS[0].nome : "");
     $("mDestino").value = r ? r.destino : "";
     $("mUF").value = r ? r.uf : "GO";
     $("mDescarga").value = r ? r.descarga : "";
@@ -479,10 +422,12 @@
     $("mMotorista").value = r ? r.valorMotorista : "";
     $("mICMS").value = r ? r.icms : "";
     $("mSat").value = r ? r.pedidoSat : "";
-    $("mPorta").value = r ? r.qtdPorta : "";
-    $("mTransito").value = r ? r.qtdTransito : "";
+    $("mPorta").value = (r && r.qtdPorta !== 0) ? r.qtdPorta : "";
+    $("mTransito").value = (r && r.qtdTransito !== 0) ? r.qtdTransito : "";
     $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
     $("mObs").value = r ? r.obs : "";
+
+    syncWhatsAppBtnState();
 
     $("modal").style.display = "flex";
   }
@@ -519,27 +464,92 @@
     };
   }
 
-  function upsertRow(row) {
-    const idx = state.rows.findIndex((x) => x.id === row.id);
-    if (idx >= 0) state.rows[idx] = row;
-    else state.rows.unshift(row);
-    saveRows(state.rows);
+  async function upsertRow(row) {
+    // salva no Sheets
+    await apiSave(row);
+
+    // recarrega lista (garante sincronismo)
+    state.rows = await apiList();
     render(state.rows, state.weights);
   }
 
-  function removeRow(id) {
+  async function removeRow(id) {
     if (!confirm("Excluir este frete?")) return;
-    state.rows = state.rows.filter((x) => x.id !== id);
-    saveRows(state.rows);
+    await apiDelete(id);
+    state.rows = await apiList();
     render(state.rows, state.weights);
+  }
+
+  // ===== WhatsApp no modal (botão ao lado do select contato) =====
+  function ensureWhatsAppButtonInModal() {
+    const sel = $("mContato");
+    if (!sel) return;
+
+    // já existe?
+    if ($("btnWhatsContato")) return;
+
+    const wrap = sel.parentElement;
+    if (!wrap) return;
+
+    // cria uma mini linha com select + botão
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "8px";
+    row.style.alignItems = "center";
+
+    // move select pra dentro
+    wrap.appendChild(row);
+    row.appendChild(sel);
+
+    // botão WhatsApp
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "btnWhatsContato";
+    btn.className = "btnTiny ghost";
+    btn.style.height = "36px";
+    btn.style.padding = "0 12px";
+    btn.textContent = "WhatsApp";
+    btn.title = "Chamar contato no WhatsApp";
+
+    btn.addEventListener("click", () => {
+      openWhatsAppForContactName(sel.value);
+    });
+
+    row.appendChild(btn);
+
+    sel.addEventListener("change", syncWhatsAppBtnState);
+  }
+
+  function syncWhatsAppBtnState() {
+    const btn = $("btnWhatsContato");
+    const sel = $("mContato");
+    if (!btn || !sel) return;
+
+    const c = getContactByName(sel.value);
+    const hasPhone = c && safeText(c.telefone).replace(/\D/g, "").length >= 10;
+
+    btn.disabled = !hasPhone;
+    btn.style.opacity = hasPhone ? "1" : "0.5";
+    btn.style.cursor = hasPhone ? "pointer" : "not-allowed";
   }
 
   // ===== Init =====
-  function init() {
+  async function init() {
+    // selects
     fillFilialSelect($("fFilial"), true);
     fillFilialSelect($("mFilial"), false);
-    fillContatoSelect($("mContato"));
 
+    // contatos do Sheets
+    try {
+      CONTACTS = await apiContacts();
+    } catch (e) {
+      console.error(e);
+      CONTACTS = [];
+    }
+    fillContatoSelect($("mContato"));
+    ensureWhatsAppButtonInModal();
+
+    // pesos
     state.weights = loadWeights();
     $("w9").value = state.weights.w9;
     $("w4").value = state.weights.w4;
@@ -569,39 +579,60 @@
       render(state.rows, state.weights);
     });
 
-    state.rows = loadRows();
+    // carrega do Sheets (compartilhado)
+    state.rows = await apiList();
 
+    // filtros
     $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
     $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
 
+    // botões
     $("btnNew").addEventListener("click", () => openModal("new"));
-    $("btnResetExample").addEventListener("click", () => {
-      if (!confirm("Restaurar o exemplo local? Isso substitui sua lista atual.")) return;
-      const ex = exampleRows();
-      state.rows = ex;
-      localStorage.setItem(LS_KEY_EXAMPLE, "1");
-      saveRows(state.rows);
-      render(state.rows, state.weights);
-    });
 
+    // se você quer ocultar o Exemplo: deixa o botão no HTML mas escondido via CSS (ou remove do HTML)
+    const btnExample = $("btnResetExample");
+    if (btnExample) {
+      // recomendado: esconder
+      btnExample.style.display = "none";
+    }
+
+    // botão Share Clientes (se existir no HTML)
+    const btnShare = $("btnShareClientes");
+    if (btnShare) {
+      btnShare.addEventListener("click", () => {
+        window.location.href = "./share-clientes.html";
+      });
+    }
+
+    // modal events
     $("btnCloseModal").addEventListener("click", closeModal);
     $("btnCancel").addEventListener("click", closeModal);
-    $("btnSave").addEventListener("click", () => {
+
+    $("btnSave").addEventListener("click", async () => {
       const row = collectModal();
-      if (!row.filial) {
-        alert("Selecione uma filial.");
-        return;
+      if (!row.filial) return alert("Selecione uma filial.");
+      if (!row.contato) return alert("Selecione um contato.");
+
+      try {
+        await upsertRow(row);
+        closeModal();
+      } catch (e) {
+        console.error(e);
+        alert("Erro ao salvar no Google Sheets. Veja o console.");
       }
-      if (!row.contato) {
-        alert("Selecione um contato.");
-        return;
-      }
-      upsertRow(row);
-      closeModal();
     });
 
+    // primeira renderização
     render(state.rows, state.weights);
   }
 
-  window.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("DOMContentLoaded", () => {
+    init().catch((e) => {
+      console.error(e);
+      alert("Falha ao carregar dados do Google Sheets. Veja o console.");
+    });
+  });
+
+  // (Opcional) Se quiser testar reset manual:
+  // window.__resetQtd = () => apiResetQtd().then(()=>apiList()).then(r=>{state.rows=r; render(state.rows,state.weights);});
 })();

@@ -363,14 +363,32 @@
         return (Number(n) || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
       }
 
-      function readBase(){
-        try{
-          const raw = localStorage.getItem('nf_fretes_rows_v1');
-          const data = raw ? JSON.parse(raw) : [];
-          return Array.isArray(data) ? data : [];
-        }catch(e){
-          return [];
-        }
+      const API_URL = "https://script.google.com/macros/s/AKfycbzvsPglqBxyiUByazFPi_5ihhBc3L_-xhnuR5H90RUwAfDj9t4HKMWZPwyiNunmfZ5W/exec";
+
+function jsonp(url){
+  return new Promise((resolve, reject)=>{
+    const cb="__nfcb_"+Math.random().toString(36).slice(2);
+    const s=document.createElement("script");
+    const t=setTimeout(()=>{cleanup(); reject(new Error("Timeout JSONP"));},20000);
+    function cleanup(){
+      clearTimeout(t);
+      if(window[cb]) delete window[cb];
+      if(s && s.parentNode) s.parentNode.removeChild(s);
+    }
+    window[cb]=(data)=>{cleanup(); resolve(data);};
+    const join=url.includes("?")?"&":"?";
+    s.src=url+join+"callback="+encodeURIComponent(cb);
+    s.onerror=()=>{cleanup(); reject(new Error("Falha JSONP"));};
+    document.head.appendChild(s);
+  });
+}
+
+async function readBase(){
+  const res = await jsonp(API_URL + "?action=list");
+  if(!res || !res.ok) return [];
+  return Array.isArray(res.data) ? res.data : [];
+}
+
       }
 
       function setText(id, value){

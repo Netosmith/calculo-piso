@@ -1,93 +1,25 @@
-/* fretes.js | NOVA FROTA (Google Sheets Shared)
-   - Dados compartilhados via Apps Script (JSONP, sem CORS)
-   - CRUD completo: listar, salvar, excluir
-   - Zerar Qtd Porta/Trânsito (API reset) se quiser disparar manual
-   - Botão Share Clientes
-   - Botão WhatsApp no modal de contato
+/* fretes.js | NOVA FROTA
+   - Google Sheets (compartilhado) via Apps Script (FETCH JSON, sem JSONP)
+   - Mantém pesos por usuário no localStorage
+   - CRUD via API: list / upsert / delete
 */
 (function () {
   "use strict";
 
   // ===== CONFIG =====
-  const API_URL = "https://script.google.com/macros/s/AKfycbzvsPglqBxyiUByazFPi_5ihhBc3L_-xhnuR5H90RUwAfDj9t4HKMWZPwyiNunmfZ5W/exec";
+  const API_URL = "COLE_AQUI_SUA_URL_DO_APPS_SCRIPT_EXEC"; // exemplo: https://script.google.com/macros/s/XXXX/exec
 
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);
 
-  // JSONP (para GitHub Pages sem CORS)
-  function jsonp(url) {
-    return new Promise((resolve, reject) => {
-      const cb = "__nfcb_" + Math.random().toString(36).slice(2);
-      const s = document.createElement("script");
-      const timer = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout JSONP"));
-      }, 20000);
-
-      function cleanup() {
-        clearTimeout(timer);
-        if (window[cb]) delete window[cb];
-        if (s && s.parentNode) s.parentNode.removeChild(s);
-      }
-
-      window[cb] = (data) => {
-        cleanup();
-        resolve(data);
-      };
-
-      const join = url.includes("?") ? "&" : "?";
-      s.src = url + join + "callback=" + encodeURIComponent(cb);
-      s.onerror = () => {
-        cleanup();
-        reject(new Error("Falha ao carregar JSONP"));
-      };
-      document.head.appendChild(s);
-    });
-  }
-
-  async function apiList() {
-    const res = await jsonp(API_URL + "?action=list");
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em list");
-    return res.data || [];
-  }
-
-  async function apiContacts() {
-    const res = await jsonp(API_URL + "?action=contacts");
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em contacts");
-    return res.data || [];
-  }
-
-  async function apiSave(row) {
-    const data = encodeURIComponent(JSON.stringify(row));
-    const res = await jsonp(API_URL + "?action=save&data=" + data);
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em save");
-    return res.data;
-  }
-
-  async function apiDelete(id) {
-    const res = await jsonp(API_URL + "?action=delete&id=" + encodeURIComponent(id));
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em delete");
-    return res.data;
-  }
-
-  async function apiResetQtd() {
-    const res = await jsonp(API_URL + "?action=reset");
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : "Erro em reset");
-    return res.data;
-  }
-
   const FILIAIS_ORDEM = [
-    "ITUMBIARA",
-    "ANAPOLIS",
-    "RIO VERDE",
-    "CRISTALINA",
-    "BOM JESUS",
-    "JATAI",
-    "CATALÃO",
-    "INDIARA",
-    "MINEIROS",
-    "MONTIVIDIU",
-    "CHAP CÉU"
+    "ITUMBIARA", "ANAPOLIS", "RIO VERDE", "CRISTALINA", "BOM JESUS", "JATAI",
+    "CATALÃO", "INDIARA", "MINEIROS", "MONTIVIDIU", "CHAP CÉU"
+  ];
+
+  const CONTATOS_FIXOS = [
+    "ARIEL 64 99227-7537","JHONATAN","NARCISO","SERGIO","ELTON","EVERALDO",
+    "RONE","RAFAEL","KIEWERSON","PIRULITO"
   ];
 
   const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";
@@ -105,8 +37,7 @@
   }
 
   function num(v) {
-    if (v === "" || v == null) return 0;
-    const n = Number(String(v).replace(",", "."));
+    const n = Number(String(v ?? "").replace(",", "."));
     return isFinite(n) ? n : 0;
   }
 
@@ -146,17 +77,15 @@
     localStorage.setItem(key, JSON.stringify(weights));
   }
 
-  // ===== Permissão =====
-  function permYN(isOk) {
-    return isOk ? "S" : "N";
-  }
+  // ===== Permissão (mesma lógica do Sheets) =====
+  function permYN(isOk) { return isOk ? "S" : "N"; }
 
   function calcPerm(row, weights) {
     const km = num(row.km);
     const ped = num(row.pedagioEixo);
     const mot = num(row.valorMotorista);
 
-    if (!km || km <= 0 || !isFinite(km) || (row.km === "")) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!km || km <= 0 || !isFinite(km)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
 
@@ -175,7 +104,38 @@
     };
   }
 
-  // ===== UI: selects =====
+  // ===== API =====
+  async function apiList() {
+    const url = API_URL + "?action=list&t=" + Date.now();
+    const res = await fetch(url, { method: "GET" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    // Se vier {ok:false,...}
+    if (data && data.ok === false) throw new Error(data.error || "Erro API");
+    return data;
+  }
+
+  async function apiPost(payload) {
+    const res = await fetch(API_URL + "?t=" + Date.now(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (data && data.ok === false) throw new Error(data.error || "Erro API");
+    return data;
+  }
+
+  async function apiUpsertRow(row) {
+    return apiPost({ action: "upsert", row });
+  }
+
+  async function apiDeleteRow(id) {
+    return apiPost({ action: "delete", id });
+  }
+
+  // ===== UI: selects fixos =====
   function fillFilialSelect(sel, includeAll) {
     sel.innerHTML = "";
     if (includeAll) {
@@ -192,48 +152,14 @@
     });
   }
 
-  // contatos dinâmicos do Sheets
-  let CONTACTS = []; // {nome, telefone}
-
-  function contactLabel(c) {
-    if (!c) return "";
-    const phone = safeText(c.telefone);
-    return phone ? `${c.nome} ${formatPhonePretty(phone)}` : `${c.nome}`;
-  }
-
-  function formatPhonePretty(digits) {
-    const p = String(digits || "").replace(/\D/g, "");
-    // não força formato perfeito, só uma “cara” melhor
-    if (p.length === 11) return `(${p.slice(0,2)}) ${p.slice(2,7)}-${p.slice(7)}`;
-    if (p.length === 10) return `(${p.slice(0,2)}) ${p.slice(2,6)}-${p.slice(6)}`;
-    return p;
-  }
-
   function fillContatoSelect(sel) {
     sel.innerHTML = "";
-    CONTACTS.forEach((c) => {
+    CONTATOS_FIXOS.forEach((c) => {
       const op = document.createElement("option");
-      op.value = c.nome; // grava só o nome
-      op.textContent = contactLabel(c);
+      op.value = c;
+      op.textContent = c;
       sel.appendChild(op);
     });
-  }
-
-  function getContactByName(name) {
-    const key = safeText(name).toUpperCase();
-    return CONTACTS.find(c => safeText(c.nome).toUpperCase() === key) || null;
-  }
-
-  function openWhatsAppForContactName(name) {
-    const c = getContactByName(name);
-    const phone = c ? safeText(c.telefone).replace(/\D/g, "") : "";
-    if (!phone) {
-      alert("Esse contato ainda não tem telefone cadastrado no Apps Script.");
-      return;
-    }
-    // Brasil: 55 + DDD + número
-    const url = `https://wa.me/55${phone}`;
-    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   // ===== Render =====
@@ -266,6 +192,7 @@
       const ia = orderFilialIndex(a.filial);
       const ib = orderFilialIndex(b.filial);
       if (ia !== ib) return ia - ib;
+
       const da = safeText(a.destino);
       const db = safeText(b.destino);
       if (da !== db) return da.localeCompare(db, "pt-BR");
@@ -294,30 +221,13 @@
       const tr = document.createElement("tr");
       tr.className = "rowSlim";
 
-      // contato com botão WhatsApp na tabela (opcional)
-      const contatoNome = safeText(row.contato);
-      const contatoObj = getContactByName(contatoNome);
-      const hasPhone = contatoObj && safeText(contatoObj.telefone).replace(/\D/g, "").length >= 10;
-
-      const contatoCellHTML = hasPhone
-        ? `<span style="font-weight:900">${contatoNome}</span>
-           <a href="https://wa.me/55${safeText(contatoObj.telefone).replace(/\D/g,"")}"
-              target="_blank" rel="noopener noreferrer"
-              title="Chamar no WhatsApp"
-              style="margin-left:8px; display:inline-flex; align-items:center; justify-content:center;
-                     width:26px; height:26px; border-radius:10px; border:1px solid #D1D5DB;
-                     text-decoration:none; font-weight:900;">
-              WA
-           </a>`
-        : contatoNome;
-
       const cells = [
         safeText(row.regional),
         safeText(row.filial),
         safeText(row.cliente),
         safeText(row.origem),
         safeText(row.coleta),
-        { html: true, v: contatoCellHTML },
+        safeText(row.contato),
         safeText(row.destino),
         safeText(row.uf),
         safeText(row.descarga),
@@ -346,11 +256,7 @@
 
         if (typeof c === "object" && c) {
           if (c.num) td.classList.add("num");
-
-          if (c.html) {
-            td.innerHTML = c.v || "";
-          }
-          else if (c.yn) {
+          if (c.yn) {
             const span = document.createElement("span");
             span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
             span.textContent = c.v || "";
@@ -403,14 +309,15 @@
 
   function openModal(mode, id) {
     state.editId = mode === "edit" ? id : null;
-    const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
+
+    const r = mode === "edit" ? state.rows.find((x) => String(x.id) === String(id)) : null;
 
     $("mRegional").value = r ? r.regional : "GOIÁS";
     $("mFilial").value = r ? safeText(r.filial).toUpperCase() : "ITUMBIARA";
     $("mCliente").value = r ? r.cliente : "";
     $("mOrigem").value = r ? r.origem : "";
     $("mColeta").value = r ? r.coleta : "";
-    $("mContato").value = r ? (r.contato || (CONTACTS[0] ? CONTACTS[0].nome : "")) : (CONTACTS[0] ? CONTACTS[0].nome : "");
+    $("mContato").value = r ? (r.contato || CONTATOS_FIXOS[0]) : CONTATOS_FIXOS[0];
     $("mDestino").value = r ? r.destino : "";
     $("mUF").value = r ? r.uf : "GO";
     $("mDescarga").value = r ? r.descarga : "";
@@ -422,12 +329,11 @@
     $("mMotorista").value = r ? r.valorMotorista : "";
     $("mICMS").value = r ? r.icms : "";
     $("mSat").value = r ? r.pedidoSat : "";
-    $("mPorta").value = (r && r.qtdPorta !== 0) ? r.qtdPorta : "";
-    $("mTransito").value = (r && r.qtdTransito !== 0) ? r.qtdTransito : "";
+    $("mPorta").value = r ? r.qtdPorta : "";
+    $("mTransito").value = r ? r.qtdTransito : "";
     $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
     $("mObs").value = r ? r.obs : "";
-
-    syncWhatsAppBtnState();
+    $("mId").value = r ? (r.id || "") : ""; // se você tiver input hidden mId, ótimo
 
     $("modal").style.display = "flex";
   }
@@ -438,8 +344,10 @@
   }
 
   function collectModal() {
+    const idFromHidden = $("mId") ? safeText($("mId").value) : "";
     return {
-      id: state.editId || crypto.randomUUID(),
+      id: state.editId || idFromHidden || "",
+
       regional: safeText($("mRegional").value),
       filial: safeText($("mFilial").value).toUpperCase(),
       cliente: safeText($("mCliente").value),
@@ -449,88 +357,62 @@
       destino: safeText($("mDestino").value),
       uf: safeText($("mUF").value).toUpperCase(),
       descarga: safeText($("mDescarga").value),
+
       volume: num($("mVolume").value),
       valorEmpresa: num($("mEmpresa").value),
       valorMotorista: num($("mMotorista").value),
       km: num($("mKM").value),
       pedagioEixo: num($("mPed").value),
+
       produto: safeText($("mProduto").value),
       icms: safeText($("mICMS").value),
       pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
+
       qtdPorta: $("mPorta").value === "" ? "" : num($("mPorta").value),
       qtdTransito: $("mTransito").value === "" ? "" : num($("mTransito").value),
+
       status: safeText($("mStatus").value).toUpperCase(),
       obs: safeText($("mObs").value)
     };
   }
 
-  async function upsertRow(row) {
-    // salva no Sheets
-    await apiSave(row);
+  async function reloadFromServer(showAlertOnFail = true) {
+    try {
+      const data = await apiList();
 
-    // recarrega lista (garante sincronismo)
-    state.rows = await apiList();
-    render(state.rows, state.weights);
+      // Se você estiver usando cabeçalho da planilha com nomes diferentes,
+      // precisa bater com os nomes do front. O ideal é manter os mesmos nomes.
+      // Aqui assumimos que a planilha tem colunas: id, regional, filial, cliente, origem, coleta, contato, destino, uf, descarga, volume, valorEmpresa, valorMotorista, km, pedagioEixo, produto, icms, pedidoSat, qtdPorta, qtdTransito, status, obs
+
+      state.rows = Array.isArray(data) ? data : [];
+      render(state.rows, state.weights);
+      return true;
+    } catch (err) {
+      console.error(err);
+      if (showAlertOnFail) alert("Falha ao carregar dados do Google Sheets. Veja o console.");
+      return false;
+    }
+  }
+
+  async function upsertRow(row) {
+    try {
+      await apiUpsertRow(row);
+      await reloadFromServer(false);
+    } catch (err) {
+      console.error(err);
+      alert("Falha ao salvar no Google Sheets. Veja o console.");
+    }
   }
 
   async function removeRow(id) {
     if (!confirm("Excluir este frete?")) return;
-    await apiDelete(id);
-    state.rows = await apiList();
-    render(state.rows, state.weights);
-  }
-
-  // ===== WhatsApp no modal (botão ao lado do select contato) =====
-  function ensureWhatsAppButtonInModal() {
-    const sel = $("mContato");
-    if (!sel) return;
-
-    // já existe?
-    if ($("btnWhatsContato")) return;
-
-    const wrap = sel.parentElement;
-    if (!wrap) return;
-
-    // cria uma mini linha com select + botão
-    const row = document.createElement("div");
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.alignItems = "center";
-
-    // move select pra dentro
-    wrap.appendChild(row);
-    row.appendChild(sel);
-
-    // botão WhatsApp
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "btnWhatsContato";
-    btn.className = "btnTiny ghost";
-    btn.style.height = "36px";
-    btn.style.padding = "0 12px";
-    btn.textContent = "WhatsApp";
-    btn.title = "Chamar contato no WhatsApp";
-
-    btn.addEventListener("click", () => {
-      openWhatsAppForContactName(sel.value);
-    });
-
-    row.appendChild(btn);
-
-    sel.addEventListener("change", syncWhatsAppBtnState);
-  }
-
-  function syncWhatsAppBtnState() {
-    const btn = $("btnWhatsContato");
-    const sel = $("mContato");
-    if (!btn || !sel) return;
-
-    const c = getContactByName(sel.value);
-    const hasPhone = c && safeText(c.telefone).replace(/\D/g, "").length >= 10;
-
-    btn.disabled = !hasPhone;
-    btn.style.opacity = hasPhone ? "1" : "0.5";
-    btn.style.cursor = hasPhone ? "pointer" : "not-allowed";
+    try {
+      await apiDeleteRow(id);
+      await reloadFromServer(false);
+    } catch (err) {
+      console.error(err);
+      alert("Falha ao excluir no Google Sheets. Veja o console.");
+    }
   }
 
   // ===== Init =====
@@ -538,16 +420,7 @@
     // selects
     fillFilialSelect($("fFilial"), true);
     fillFilialSelect($("mFilial"), false);
-
-    // contatos do Sheets
-    try {
-      CONTACTS = await apiContacts();
-    } catch (e) {
-      console.error(e);
-      CONTACTS = [];
-    }
     fillContatoSelect($("mContato"));
-    ensureWhatsAppButtonInModal();
 
     // pesos
     state.weights = loadWeights();
@@ -579,9 +452,6 @@
       render(state.rows, state.weights);
     });
 
-    // carrega do Sheets (compartilhado)
-    state.rows = await apiList();
-
     // filtros
     $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
     $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
@@ -589,50 +459,27 @@
     // botões
     $("btnNew").addEventListener("click", () => openModal("new"));
 
-    // se você quer ocultar o Exemplo: deixa o botão no HTML mas escondido via CSS (ou remove do HTML)
+    // Se você quiser ocultar o botão Exemplo, pode remover esse listener também:
     const btnExample = $("btnResetExample");
     if (btnExample) {
-      // recomendado: esconder
-      btnExample.style.display = "none";
-    }
-
-    // botão Share Clientes (se existir no HTML)
-    const btnShare = $("btnShareClientes");
-    if (btnShare) {
-      btnShare.addEventListener("click", () => {
-        window.location.href = "./share-clientes.html";
-      });
+      btnExample.style.display = "none"; // esconde no Fretes
     }
 
     // modal events
     $("btnCloseModal").addEventListener("click", closeModal);
     $("btnCancel").addEventListener("click", closeModal);
-
     $("btnSave").addEventListener("click", async () => {
       const row = collectModal();
       if (!row.filial) return alert("Selecione uma filial.");
       if (!row.contato) return alert("Selecione um contato.");
 
-      try {
-        await upsertRow(row);
-        closeModal();
-      } catch (e) {
-        console.error(e);
-        alert("Erro ao salvar no Google Sheets. Veja o console.");
-      }
+      await upsertRow(row);
+      closeModal();
     });
 
-    // primeira renderização
-    render(state.rows, state.weights);
+    // primeira carga (Sheets)
+    await reloadFromServer(true);
   }
 
-  window.addEventListener("DOMContentLoaded", () => {
-    init().catch((e) => {
-      console.error(e);
-      alert("Falha ao carregar dados do Google Sheets. Veja o console.");
-    });
-  });
-
-  // (Opcional) Se quiser testar reset manual:
-  // window.__resetQtd = () => apiResetQtd().then(()=>apiList()).then(r=>{state.rows=r; render(state.rows,state.weights);});
+  window.addEventListener("DOMContentLoaded", init);
 })();

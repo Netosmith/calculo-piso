@@ -13,7 +13,7 @@
   /********************
    * CONFIG
    ********************/
-  const API_URL = "https://script.google.com/macros/s/AKfycbxmmp5Uqs-OJ14sMoCWPNi560OkjwUKkqHETvseIYJ9yvSGUrFBLaK0zgnxIpr29pvt/exec"; // ex: https://script.google.com/macros/s/XXXX/exec
+  const API_URL = "https://script.google.com/macros/s/AKfycbz05hQfNPztgZm24gzE7jgODmCU1nQqAxpCJbmJs9j_g8pR86xVRqEWQS_zUXqKogG2/exec";
 
   const LS_KEY_ROWS = "nf_fretes_rows_v1";
   const LS_KEY_EXAMPLE = "nf_fretes_example_v1";
@@ -77,6 +77,23 @@
     if (s === "LIBERADO") return "liberado";
     if (s === "PARADO") return "parado";
     return "suspenso";
+  }
+
+  // 🔥 Status de sincronização
+  function updateSyncStatus(status, message) {
+    const el = $("syncStatus");
+    if (!el) return;
+    
+    if (status === 'loading') {
+      el.textContent = '🔄 ' + (message || 'Carregando...');
+      el.style.color = '#5B7CFA';
+    } else if (status === 'success') {
+      el.textContent = '✅ ' + (message || 'Sincronizado');
+      el.style.color = '#067647';
+    } else if (status === 'error') {
+      el.textContent = '❌ ' + (message || 'Erro');
+      el.style.color = '#991B1B';
+    }
   }
 
   // Extrai telefone do contato (ex: "ARIEL 64 99227-7537")
@@ -192,7 +209,7 @@
   }
 
   /********************
-   * STORAGE
+   * STORAGE (LOCAL + SHEETS SYNC)
    ********************/
   function saveRows(rows) {
     localStorage.setItem(LS_KEY_ROWS, JSON.stringify(rows));
@@ -207,6 +224,38 @@
     } catch {
       return [];
     }
+  }
+
+  // 🔥 Salvar linha no Sheets (CREATE/UPDATE)
+  async function saveRowToSheets(row) {
+    const params = new URLSearchParams();
+    params.append('action', 'save');
+    params.append('data', JSON.stringify(row));
+    
+    const url = `${API_URL}?${params.toString()}`;
+    const result = await jsonp(url);
+    
+    if (result.status !== 'success') {
+      throw new Error(result.message || 'Erro ao salvar no Sheets');
+    }
+    
+    return result;
+  }
+
+  // 🔥 Deletar linha no Sheets
+  async function deleteRowFromSheets(id) {
+    const params = new URLSearchParams();
+    params.append('action', 'delete');
+    params.append('id', id);
+    
+    const url = `${API_URL}?${params.toString()}`;
+    const result = await jsonp(url);
+    
+    if (result.status !== 'success') {
+      throw new Error(result.message || 'Erro ao deletar no Sheets');
+    }
+    
+    return result;
   }
 
   /********************
@@ -241,15 +290,24 @@
   }
 
   async function reloadFromServer() {
-    // usa action=list do Apps Script
-    const data = await jsonp(API_URL + "?action=list");
-    const rows = normalizeFromSheets(data);
+    updateSyncStatus('loading', 'Carregando do Sheets...');
+    
+    try {
+      // usa action=list do Apps Script
+      const data = await jsonp(API_URL + "?action=list");
+      const rows = normalizeFromSheets(data);
 
-    // salva e renderiza
-    state.rows = rows;
-    localStorage.setItem(LS_KEY_EXAMPLE, "0");
-    saveRows(state.rows);
-    render(state.rows, state.weights);
+      // salva e renderiza
+      state.rows = rows;
+      localStorage.setItem(LS_KEY_EXAMPLE, "0");
+      saveRows(state.rows);
+      render(state.rows, state.weights);
+      
+      updateSyncStatus('success', `Sincronizado (${rows.length} fretes)`);
+    } catch (e) {
+      updateSyncStatus('error', 'Falha ao carregar');
+      throw e;
+    }
   }
 
   /********************
@@ -533,19 +591,44 @@
     };
   }
 
-  function upsertRow(row) {
-    const idx = state.rows.findIndex((x) => x.id === row.id);
-    if (idx >= 0) state.rows[idx] = row;
-    else state.rows.unshift(row);
-    saveRows(state.rows);
-    render(state.rows, state.weights);
+  async function upsertRow(row) {
+    try {
+      // 🔥 Salva no Sheets primeiro
+      await saveRowToSheets(row);
+      
+      // Atualiza local
+      const idx = state.rows.findIndex((x) => x.id === row.id);
+      if (idx >= 0) state.rows[idx] = row;
+      else state.rows.unshift(row);
+      
+      saveRows(state.rows);
+      render(state.rows, state.weights);
+      
+      return true;
+    } catch (e) {
+      console.error('Erro ao salvar:', e);
+      alert('❌ Erro ao salvar no Google Sheets: ' + e.message);
+      return false;
+    }
   }
 
-  function removeRow(id) {
+  async function removeRow(id) {
     if (!confirm("Excluir este frete?")) return;
-    state.rows = state.rows.filter((x) => x.id !== id);
-    saveRows(state.rows);
-    render(state.rows, state.weights);
+    
+    try {
+      // 🔥 Deleta no Sheets primeiro
+      await deleteRowFromSheets(id);
+      
+      // Remove local
+      state.rows = state.rows.filter((x) => x.id !== id);
+      saveRows(state.rows);
+      render(state.rows, state.weights);
+      
+      alert('✅ Frete excluído com sucesso!');
+    } catch (e) {
+      console.error('Erro ao excluir:', e);
+      alert('❌ Erro ao excluir do Google Sheets: ' + e.message);
+    }
   }
 
   /********************
@@ -607,12 +690,26 @@
     // modal
     $("btnCloseModal").addEventListener("click", closeModal);
     $("btnCancel").addEventListener("click", closeModal);
-    $("btnSave").addEventListener("click", () => {
+    $("btnSave").addEventListener("click", async () => {
       const row = collectModal();
       if (!row.filial) return alert("Selecione uma filial.");
       if (!row.contato) return alert("Selecione um contato.");
-      upsertRow(row);
-      closeModal();
+      
+      // 🔥 Desabilita botão durante o salvamento
+      const btnSave = $("btnSave");
+      const originalText = btnSave.textContent;
+      btnSave.disabled = true;
+      btnSave.textContent = "Salvando...";
+      
+      const success = await upsertRow(row);
+      
+      btnSave.disabled = false;
+      btnSave.textContent = originalText;
+      
+      if (success) {
+        alert('✅ Frete salvo com sucesso!');
+        closeModal();
+      }
     });
 
     // ✅ Botão Share Clientes (se existir no HTML)
@@ -648,12 +745,16 @@
       await reloadFromServer();
     } catch (e) {
       console.warn("Sheets falhou, usando localStorage:", e);
+      updateSyncStatus('error', 'Offline - dados locais');
       state.rows = loadRowsLocal();
       render(state.rows, state.weights);
     }
 
     // primeira renderização garantida (caso sem dados)
     if (!Array.isArray(state.rows)) state.rows = [];
+    if (state.rows.length === 0) {
+      updateSyncStatus('success', 'Nenhum frete cadastrado');
+    }
     render(state.rows, state.weights);
   }
 

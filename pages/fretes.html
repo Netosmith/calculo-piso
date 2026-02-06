@@ -334,8 +334,8 @@
     <!-- TÍTULO -->
     <div class="card fretes-top">
       <div class="title">
-        <h1>Fretes (Operacional)</h1>
-        <div class="sub">Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.</div>
+        <h1>Fretes (Operacional) <span id="syncStatus" style="font-size:12px; opacity:0.7; margin-left:10px;">🔄 Carregando...</span></h1>
+        <div class="sub">Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque. <b>Dados sincronizados com Google Sheets em tempo real.</b></div>
       </div>
     </div>
 
@@ -358,6 +358,9 @@
       <div class="ft-block">
         <select class="ft-select" id="fFilial" title="Filial"></select>
         <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
+
+        <!-- ✅ BOTÃO ATUALIZAR SHEETS -->
+        <button class="btnTiny" id="btnReloadFromSheets" title="Atualizar dados do Google Sheets">🔄 Atualizar</button>
 
         <!-- ✅ BOTÃO SHARE CLIENTES -->
         <button class="btnTiny blue" id="btnShareClientes" title="Abrir Share Clientes">Share Clientes</button>

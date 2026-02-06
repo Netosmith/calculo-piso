@@ -13,7 +13,7 @@
   /********************
    * CONFIG
    ********************/
-  const API_URL = "COLE_AQUI_SUA_URL_DO_APPS_SCRIPT_EXEC"; // ex: https://script.google.com/macros/s/XXXX/exec
+  const API_URL = "https://script.google.com/macros/s/AKfycbxmmp5Uqs-OJ14sMoCWPNi560OkjwUKkqHETvseIYJ9yvSGUrFBLaK0zgnxIpr29pvt/exec"; // ex: https://script.google.com/macros/s/XXXX/exec
 
   const LS_KEY_ROWS = "nf_fretes_rows_v1";
   const LS_KEY_EXAMPLE = "nf_fretes_example_v1";

@@ -1,11 +1,11 @@
 /* fretes.js | NOVA FROTA
-   - Operacional + Permissão Frete Mínimo (5E/6E/7E/4E/9E)
+   - Operacional + Permissão Frete Mínimo
    - Contatos fixos
    - Separação por filial
-   - Pesos por usuário (localStorage)
-   - ✅ Sync com Google Sheets via JSONP (resolve CORS no GitHub Pages)
-   - ✅ Botão "Share Clientes"
-   - ✅ Botão WhatsApp na coluna Contato (quando existir telefone)
+   - Pesos por usuário
+   - Sync com Google Sheets via JSONP
+   - Botão Share Clientes
+   - Botão WhatsApp no Contato (se tiver número)
 */
 (function () {
   "use strict";
@@ -16,22 +16,12 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbwQ112ziO1C5EtJn8n4opmE1QSBp2p2tqtilkXqqCNwBLhBzHEle9baLmzGndXxovzN/exec";
 
   const LS_KEY_ROWS = "nf_fretes_rows_v1";
-  const LS_KEY_EXAMPLE = "nf_fretes_example_v1";
   const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";
   const LS_KEY_USER = "nf_auth_user";
 
   const FILIAIS_ORDEM = [
-    "ITUMBIARA",
-    "ANAPOLIS",
-    "RIO VERDE",
-    "CRISTALINA",
-    "BOM JESUS",
-    "JATAI",
-    "CATALÃO",
-    "INDIARA",
-    "MINEIROS",
-    "MONTIVIDIU",
-    "CHAP CÉU"
+    "ITUMBIARA", "ANAPOLIS", "RIO VERDE", "CRISTALINA", "BOM JESUS", "JATAI",
+    "CATALÃO", "INDIARA", "MINEIROS", "MONTIVIDIU", "CHAP CÉU"
   ];
 
   const CONTATOS_FIXOS = [
@@ -57,9 +47,7 @@
     return String(u).trim().toUpperCase() || "default";
   }
 
-  function safeText(v) {
-    return (v ?? "").toString().trim();
-  }
+  function safeText(v) { return (v ?? "").toString().trim(); }
 
   function num(v) {
     const n = Number(String(v).replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, ""));
@@ -79,20 +67,19 @@
     return "suspenso";
   }
 
-  // 🔥 Status de sincronização
   function updateSyncStatus(status, message) {
     const el = $("syncStatus");
     if (!el) return;
-    
-    if (status === 'loading') {
-      el.textContent = '🔄 ' + (message || 'Carregando...');
-      el.style.color = '#5B7CFA';
-    } else if (status === 'success') {
-      el.textContent = '✅ ' + (message || 'Sincronizado');
-      el.style.color = '#067647';
-    } else if (status === 'error') {
-      el.textContent = '❌ ' + (message || 'Erro');
-      el.style.color = '#991B1B';
+
+    if (status === "loading") {
+      el.textContent = "🔄 " + (message || "Carregando...");
+      el.style.color = "#5B7CFA";
+    } else if (status === "success") {
+      el.textContent = "✅ " + (message || "Sincronizado");
+      el.style.color = "#067647";
+    } else if (status === "error") {
+      el.textContent = "❌ " + (message || "Falha ao carregar");
+      el.style.color = "#991B1B";
     }
   }
 
@@ -100,33 +87,30 @@
   function extractPhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
-    // pega tudo que parece número
     let digits = s.replace(/\D/g, "");
-    // Se vier com 11 dígitos (DDD + 9 + 8), ok
-    // Se vier com 10, ok também
-    if (digits.length === 11) return "55" + digits;
-    if (digits.length === 10) return "55" + digits;
-    // Se já vier com 55...
     if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) return digits;
+    if (digits.length === 10 || digits.length === 11) return "55" + digits;
     return "";
   }
 
   function whatsappLinkFromContato(contato) {
     const phone = extractPhoneBR(contato);
-    if (!phone) return "";
-    return "https://wa.me/" + phone;
+    return phone ? ("https://wa.me/" + phone) : "";
   }
 
-  // JSONP (resolve CORS)
+  // JSONP (resolve CORS no GitHub Pages)
   function jsonp(url, timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
       const s = document.createElement("script");
       const sep = url.includes("?") ? "&" : "?";
+      let done = false;
 
       const t = setTimeout(() => {
+        if (done) return;
+        done = true;
         cleanup();
-        reject(new Error("Timeout JSONP"));
+        reject(new Error("Timeout JSONP: servidor não chamou callback (deploy/permissão/erro no script)."));
       }, timeoutMs);
 
       function cleanup() {
@@ -136,14 +120,18 @@
       }
 
       window[cb] = (data) => {
+        if (done) return;
+        done = true;
         cleanup();
         resolve(data);
       };
 
       s.src = url + sep + "callback=" + encodeURIComponent(cb);
       s.onerror = () => {
+        if (done) return;
+        done = true;
         cleanup();
-        reject(new Error("Falha JSONP"));
+        reject(new Error("Falha JSONP: não foi possível carregar o script remoto."));
       };
 
       document.head.appendChild(s);
@@ -180,16 +168,14 @@
   /********************
    * PERMISSÃO
    ********************/
-  function permYN(isOk) {
-    return isOk ? "S" : "N";
-  }
+  function permYN(isOk) { return isOk ? "S" : "N"; }
 
   function calcPerm(row, weights) {
     const km = num(row.km);
     const ped = num(row.pedagioEixo);
     const mot = num(row.valorMotorista);
 
-    if (!km || km <= 0 || !isFinite(km) || (row.km === "")) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!km || km <= 0 || !isFinite(km) || row.km === "") return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
     if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
 
@@ -209,11 +195,9 @@
   }
 
   /********************
-   * STORAGE (LOCAL + SHEETS SYNC)
+   * STORAGE
    ********************/
-  function saveRows(rows) {
-    localStorage.setItem(LS_KEY_ROWS, JSON.stringify(rows));
-  }
+  function saveRowsLocal(rows) { localStorage.setItem(LS_KEY_ROWS, JSON.stringify(rows)); }
 
   function loadRowsLocal() {
     const raw = localStorage.getItem(LS_KEY_ROWS);
@@ -226,44 +210,31 @@
     }
   }
 
-  // 🔥 Salvar linha no Sheets (CREATE/UPDATE)
-  async function saveRowToSheets(row) {
-    const params = new URLSearchParams();
-    params.append('action', 'save');
-    params.append('data', JSON.stringify(row));
-    
-    const url = `${API_URL}?${params.toString()}`;
-    const result = await jsonp(url);
-    
-    if (result.status !== 'success') {
-      throw new Error(result.message || 'Erro ao salvar no Sheets');
-    }
-    
-    return result;
-  }
-
-  // 🔥 Deletar linha no Sheets
-  async function deleteRowFromSheets(id) {
-    const params = new URLSearchParams();
-    params.append('action', 'delete');
-    params.append('id', id);
-    
-    const url = `${API_URL}?${params.toString()}`;
-    const result = await jsonp(url);
-    
-    if (result.status !== 'success') {
-      throw new Error(result.message || 'Erro ao deletar no Sheets');
-    }
-    
-    return result;
-  }
-
   /********************
-   * SHEETS SYNC
+   * SHEETS SYNC (ROBUSTO)
    ********************/
-  function normalizeFromSheets(rows) {
-    // Garante campos usados pelo seu site
-    return (rows || []).map((r) => ({
+  function normalizeFromSheets(payload) {
+    // ✅ Aceita:
+    // 1) Array direto: [ {...}, {...} ]
+    // 2) Wrapper: {rows:[...]} ou {data:[...]} ou {ok:true, rows:[...]}
+    // 3) Erro: {ok:false, error:"..."}  -> lança erro real
+    let rows = payload;
+
+    if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+      if (payload.ok === false) throw new Error(payload.error || "Apps Script retornou ok:false");
+      if (Array.isArray(payload.rows)) rows = payload.rows;
+      else if (Array.isArray(payload.data)) rows = payload.data;
+      else {
+        // caso venha algum objeto inesperado
+        throw new Error("Resposta do Sheets não é lista. Recebido: " + JSON.stringify(payload).slice(0, 200));
+      }
+    }
+
+    if (!Array.isArray(rows)) {
+      throw new Error("Resposta do Sheets não é array. Tipo: " + (typeof rows));
+    }
+
+    return rows.map((r) => ({
       id: safeText(r.id) || crypto.randomUUID(),
       regional: safeText(r.regional),
       filial: safeText(r.filial).toUpperCase(),
@@ -274,44 +245,63 @@
       destino: safeText(r.destino),
       uf: safeText(r.uf).toUpperCase(),
       descarga: safeText(r.descarga),
+
       volume: r.volume === "" ? "" : num(r.volume),
       valorEmpresa: r.valorEmpresa === "" ? "" : num(r.valorEmpresa),
       valorMotorista: r.valorMotorista === "" ? "" : num(r.valorMotorista),
       pedagioEixo: r.pedagioEixo === "" ? "" : num(r.pedagioEixo),
       km: r.km === "" ? "" : num(r.km),
+
       produto: safeText(r.produto),
       icms: safeText(r.icms),
+
       pedidoSat: r.pedidoSat === "" ? "" : num(r.pedidoSat),
       qtdPorta: r.qtdPorta === "" ? "" : num(r.qtdPorta),
       qtdTransito: r.qtdTransito === "" ? "" : num(r.qtdTransito),
+
       status: safeText(r.status).toUpperCase(),
-      obs: safeText(r.obs || r.observacao || r.observações || "")
+      obs: safeText(r.obs || "")
     }));
   }
 
   async function reloadFromServer() {
-    updateSyncStatus('loading', 'Carregando do Sheets...');
-    
-    try {
-      // usa action=list do Apps Script
-      const data = await jsonp(API_URL + "?action=list");
-      const rows = normalizeFromSheets(data);
+    updateSyncStatus("loading", "Carregando do Sheets...");
+    const payload = await jsonp(API_URL + "?action=list");
+    const rows = normalizeFromSheets(payload);
 
-      // salva e renderiza
-      state.rows = rows;
-      localStorage.setItem(LS_KEY_EXAMPLE, "0");
-      saveRows(state.rows);
-      render(state.rows, state.weights);
-      
-      updateSyncStatus('success', `Sincronizado (${rows.length} fretes)`);
-    } catch (e) {
-      updateSyncStatus('error', 'Falha ao carregar');
-      throw e;
+    state.rows = rows;
+    saveRowsLocal(rows);
+    render(state.rows, state.weights);
+
+    updateSyncStatus("success", `Sincronizado (${rows.length} fretes)`);
+  }
+
+  async function saveRowToSheets(row) {
+    const params = new URLSearchParams();
+    params.append("action", "save");
+    params.append("data", JSON.stringify(row));
+    const result = await jsonp(`${API_URL}?${params.toString()}`);
+
+    if (!result || result.ok === false || result.status !== "success") {
+      throw new Error((result && (result.error || result.message)) || "Erro ao salvar no Sheets");
     }
+    return result;
+  }
+
+  async function deleteRowFromSheets(id) {
+    const params = new URLSearchParams();
+    params.append("action", "delete");
+    params.append("id", id);
+    const result = await jsonp(`${API_URL}?${params.toString()}`);
+
+    if (!result || result.ok === false || result.status !== "success") {
+      throw new Error((result && (result.error || result.message)) || "Erro ao deletar no Sheets");
+    }
+    return result;
   }
 
   /********************
-   * UI: selects
+   * UI: SELECTS
    ********************/
   function fillFilialSelect(sel, includeAll) {
     sel.innerHTML = "";
@@ -378,7 +368,6 @@
     });
 
     tbody.innerHTML = "";
-
     let currentFilial = null;
 
     list.forEach((row) => {
@@ -396,41 +385,10 @@
       }
 
       const perm = calcPerm(row, weights);
-
       const tr = document.createElement("tr");
       tr.className = "rowSlim";
 
-      // ✅ Contato com botão WhatsApp (se tiver número)
       const wpp = whatsappLinkFromContato(row.contato);
-      const contatoCell = wpp
-        ? (() => {
-            const wrap = document.createElement("div");
-            wrap.style.display = "flex";
-            wrap.style.alignItems = "center";
-            wrap.style.justifyContent = "space-between";
-            wrap.style.gap = "8px";
-
-            const span = document.createElement("span");
-            span.textContent = safeText(row.contato);
-            span.style.overflow = "hidden";
-            span.style.textOverflow = "ellipsis";
-            span.style.whiteSpace = "nowrap";
-
-            const a = document.createElement("a");
-            a.href = wpp;
-            a.target = "_blank";
-            a.rel = "noopener";
-            a.title = "Chamar no WhatsApp";
-            a.textContent = "WhatsApp";
-            a.className = "btnTiny green"; // usa seu css existente
-            a.style.padding = "6px 10px";
-            a.style.whiteSpace = "nowrap";
-
-            wrap.appendChild(span);
-            wrap.appendChild(a);
-            return wrap;
-          })()
-        : null;
 
       const cells = [
         safeText(row.regional),
@@ -439,8 +397,12 @@
         safeText(row.origem),
         safeText(row.coleta),
 
-        // contato (com botão wpp)
-        { customNode: contatoCell, v: safeText(row.contato) },
+        // contato + botão whatsapp
+        {
+          contact: true,
+          v: safeText(row.contato),
+          wpp
+        },
 
         safeText(row.destino),
         safeText(row.uf),
@@ -475,8 +437,35 @@
         if (typeof c === "object" && c) {
           if (c.num) td.classList.add("num");
 
-          if (c.customNode) {
-            td.appendChild(c.customNode);
+          if (c.contact) {
+            const wrap = document.createElement("div");
+            wrap.style.display = "flex";
+            wrap.style.alignItems = "center";
+            wrap.style.justifyContent = "space-between";
+            wrap.style.gap = "8px";
+
+            const span = document.createElement("span");
+            span.textContent = c.v || "";
+            span.style.overflow = "hidden";
+            span.style.textOverflow = "ellipsis";
+            span.style.whiteSpace = "nowrap";
+
+            wrap.appendChild(span);
+
+            if (c.wpp) {
+              const a = document.createElement("a");
+              a.href = c.wpp;
+              a.target = "_blank";
+              a.rel = "noopener";
+              a.title = "Chamar no WhatsApp";
+              a.textContent = "WhatsApp";
+              a.className = "btnTiny green";
+              a.style.padding = "6px 10px";
+              a.style.whiteSpace = "nowrap";
+              wrap.appendChild(a);
+            }
+
+            td.appendChild(wrap);
           } else if (c.yn) {
             const span = document.createElement("span");
             span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
@@ -522,13 +511,9 @@
   }
 
   /********************
-   * MODAL CRUD (LOCAL)
+   * MODAL CRUD
    ********************/
-  let state = {
-    rows: [],
-    editId: null,
-    weights: { ...DEFAULT_WEIGHTS }
-  };
+  let state = { rows: [], editId: null, weights: { ...DEFAULT_WEIGHTS } };
 
   function openModal(mode, id) {
     state.editId = mode === "edit" ? id : null;
@@ -566,7 +551,7 @@
 
   function collectModal() {
     return {
-      id: state.editId || crypto.randomUUID(),
+      id: state.editId || "", // se vazio, Apps Script cria no final
       regional: safeText($("mRegional").value),
       filial: safeText($("mFilial").value).toUpperCase(),
       cliente: safeText($("mCliente").value),
@@ -576,11 +561,13 @@
       destino: safeText($("mDestino").value),
       uf: safeText($("mUF").value).toUpperCase(),
       descarga: safeText($("mDescarga").value),
+
       volume: $("mVolume").value === "" ? "" : num($("mVolume").value),
       valorEmpresa: $("mEmpresa").value === "" ? "" : num($("mEmpresa").value),
       valorMotorista: $("mMotorista").value === "" ? "" : num($("mMotorista").value),
       km: $("mKM").value === "" ? "" : num($("mKM").value),
       pedagioEixo: $("mPed").value === "" ? "" : num($("mPed").value),
+
       produto: safeText($("mProduto").value),
       icms: safeText($("mICMS").value),
       pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
@@ -592,55 +579,24 @@
   }
 
   async function upsertRow(row) {
-    try {
-      // 🔥 Salva no Sheets primeiro
-      await saveRowToSheets(row);
-      
-      // Atualiza local
-      const idx = state.rows.findIndex((x) => x.id === row.id);
-      if (idx >= 0) state.rows[idx] = row;
-      else state.rows.unshift(row);
-      
-      saveRows(state.rows);
-      render(state.rows, state.weights);
-      
-      return true;
-    } catch (e) {
-      console.error('Erro ao salvar:', e);
-      alert('❌ Erro ao salvar no Google Sheets: ' + e.message);
-      return false;
-    }
+    await saveRowToSheets(row);
+    await reloadFromServer(); // garante que pega o id/linha real do Sheets
   }
 
   async function removeRow(id) {
     if (!confirm("Excluir este frete?")) return;
-    
-    try {
-      // 🔥 Deleta no Sheets primeiro
-      await deleteRowFromSheets(id);
-      
-      // Remove local
-      state.rows = state.rows.filter((x) => x.id !== id);
-      saveRows(state.rows);
-      render(state.rows, state.weights);
-      
-      alert('✅ Frete excluído com sucesso!');
-    } catch (e) {
-      console.error('Erro ao excluir:', e);
-      alert('❌ Erro ao excluir do Google Sheets: ' + e.message);
-    }
+    await deleteRowFromSheets(id);
+    await reloadFromServer();
   }
 
   /********************
    * INIT
    ********************/
   async function init() {
-    // selects
     fillFilialSelect($("fFilial"), true);
     fillFilialSelect($("mFilial"), false);
     fillContatoSelect($("mContato"));
 
-    // pesos
     state.weights = loadWeights();
     $("w9").value = state.weights.w9;
     $("w4").value = state.weights.w4;
@@ -670,92 +626,66 @@
       render(state.rows, state.weights);
     });
 
-    // filtros
     $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
     $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
 
-    // botões CRUD
     $("btnNew").addEventListener("click", () => openModal("new"));
 
-    // se existir botão de exemplo, você pode esconder pelo CSS ou remover
-    const btnExample = $("btnResetExample");
-    if (btnExample) {
-      btnExample.addEventListener("click", () => {
-        if (!confirm("Restaurar o exemplo local? Isso substitui sua lista atual.")) return;
-        // mantém local só se você quiser, mas agora o ideal é usar Sheets
-        alert("Use o botão Atualizar (Sheets). Exemplo local desativado.");
-      });
-    }
-
-    // modal
     $("btnCloseModal").addEventListener("click", closeModal);
     $("btnCancel").addEventListener("click", closeModal);
+
     $("btnSave").addEventListener("click", async () => {
       const row = collectModal();
       if (!row.filial) return alert("Selecione uma filial.");
       if (!row.contato) return alert("Selecione um contato.");
-      
-      // 🔥 Desabilita botão durante o salvamento
-      const btnSave = $("btnSave");
-      const originalText = btnSave.textContent;
-      btnSave.disabled = true;
-      btnSave.textContent = "Salvando...";
-      
-      const success = await upsertRow(row);
-      
-      btnSave.disabled = false;
-      btnSave.textContent = originalText;
-      
-      if (success) {
-        alert('✅ Frete salvo com sucesso!');
+
+      const btn = $("btnSave");
+      const txt = btn.textContent;
+      btn.disabled = true; btn.textContent = "Salvando...";
+
+      try {
+        await upsertRow(row);
         closeModal();
+        alert("✅ Salvo no Google Sheets!");
+      } catch (e) {
+        console.error(e);
+        alert("❌ Erro ao salvar: " + e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = txt;
       }
     });
 
-    // ✅ Botão Share Clientes (se existir no HTML)
     const btnShare = $("btnShareClientes");
-    if (btnShare) {
-      btnShare.addEventListener("click", () => {
-        window.location.href = "./share-clientes.html";
-      });
-    }
+    if (btnShare) btnShare.addEventListener("click", () => (window.location.href = "./share-clientes.html"));
 
-    // ✅ Botão Atualizar do Sheets (se existir)
     const btnReload = $("btnReloadFromSheets");
     if (btnReload) {
       btnReload.addEventListener("click", async () => {
+        const old = btnReload.textContent;
+        btnReload.disabled = true;
+        btnReload.textContent = "Carregando...";
         try {
-          btnReload.disabled = true;
-          btnReload.textContent = "Carregando...";
           await reloadFromServer();
-          alert("Dados atualizados do Google Sheets ✅");
+          alert("✅ Atualizado do Google Sheets!");
         } catch (e) {
-          console.error(e);
-          alert("Falha ao carregar dados do Google Sheets. Veja o console.");
+          console.error("ERRO SHEETS (detalhado):", e);
+          alert("Falha ao carregar do Google Sheets. Veja o console (F12).");
         } finally {
           btnReload.disabled = false;
-          btnReload.textContent = "Atualizar (Sheets)";
+          btnReload.textContent = old;
         }
       });
     }
 
-    // ✅ Carrega inicial:
-    // tenta Sheets primeiro, se falhar cai no localStorage
+    // carga inicial: Sheets -> fallback local
     try {
       await reloadFromServer();
     } catch (e) {
       console.warn("Sheets falhou, usando localStorage:", e);
-      updateSyncStatus('error', 'Offline - dados locais');
+      updateSyncStatus("error", "Offline - dados locais");
       state.rows = loadRowsLocal();
       render(state.rows, state.weights);
     }
-
-    // primeira renderização garantida (caso sem dados)
-    if (!Array.isArray(state.rows)) state.rows = [];
-    if (state.rows.length === 0) {
-      updateSyncStatus('success', 'Nenhum frete cadastrado');
-    }
-    render(state.rows, state.weights);
   }
 
   window.addEventListener("DOMContentLoaded", init);

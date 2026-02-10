@@ -311,12 +311,27 @@
   }
 
   async function saveRowToSheets(row) {
+    console.log("🚀 saveRowToSheets - ANTES de enviar:");
+    console.log("  - row completo:", JSON.stringify(row, null, 2));
+    console.log("  - qtPorta:", row.qtPorta, "(tipo:", typeof row.qtPorta, ")");
+    console.log("  - qtdTransito:", row.qtdTransito, "(tipo:", typeof row.qtdTransito, ")");
+    
     const params = new URLSearchParams();
     params.append("action", "save");
-    params.append("data", JSON.stringify(row));
-    const result = await jsonp(`${API_URL}?${params.toString()}`);
+    
+    const jsonData = JSON.stringify(row);
+    console.log("📦 JSON enviado:", jsonData);
+    params.append("data", jsonData);
+    
+    const fullUrl = `${API_URL}?${params.toString()}`;
+    console.log("🌐 URL completa:", fullUrl);
+    
+    const result = await jsonp(fullUrl);
+    
+    console.log("✅ Resposta do servidor:", result);
 
     if (!result || result.ok === false || result.status !== "success") {
+      console.error("❌ ERRO na resposta:", result);
       throw new Error((result && (result.error || result.message)) || "Erro ao salvar no Sheets");
     }
     return result;
@@ -584,6 +599,19 @@
   }
 
   function collectModal() {
+    const mPortaValue = $("mPorta").value;
+    const mTransitoValue = $("mTransito").value;
+    
+    console.log("📝 collectModal - Lendo campos do formulário:");
+    console.log("  - Campo mPorta.value:", mPortaValue, "(tipo:", typeof mPortaValue, ")");
+    console.log("  - Campo mTransito.value:", mTransitoValue, "(tipo:", typeof mTransitoValue, ")");
+    
+    const qtdPortaFinal = mPortaValue === "" ? "" : num(mPortaValue);
+    const qtdTransitoFinal = mTransitoValue === "" ? "" : num(mTransitoValue);
+    
+    console.log("  - qtdPorta após num():", qtdPortaFinal, "(tipo:", typeof qtdPortaFinal, ")");
+    console.log("  - qtdTransito após num():", qtdTransitoFinal, "(tipo:", typeof qtdTransitoFinal, ")");
+    
     return {
       id: state.editId || "", // se vazio, Apps Script cria no final
       regional: safeText($("mRegional").value),
@@ -605,14 +633,18 @@
       produto: safeText($("mProduto").value),
       icms: safeText($("mICMS").value),
       pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
-      qtdPorta: $("mPorta").value === "" ? "" : num($("mPorta").value),
-      qtdTransito: $("mTransito").value === "" ? "" : num($("mTransito").value),
+      qtdPorta: qtdPortaFinal,
+      qtdTransito: qtdTransitoFinal,
       status: safeText($("mStatus").value).toUpperCase(),
       obs: safeText($("mObs").value)
     };
   }
 
   async function upsertRow(row) {
+    console.log("🔄 upsertRow - Objeto recebido do collectModal:");
+    console.log("  - qtdPorta:", row.qtdPorta, "(tipo:", typeof row.qtdPorta, ")");
+    console.log("  - qtdTransito:", row.qtdTransito, "(tipo:", typeof row.qtdTransito, ")");
+    
     // 🔧 Mapeia qtdPorta para qtPorta (nome usado no Google Sheets)
     const mappedRow = {
       ...row,
@@ -620,9 +652,10 @@
     };
     delete mappedRow.qtdPorta;  // Remove o nome antigo
     
-    console.log("💾 Salvando no Sheets:", mappedRow);
-    console.log("  - qtPorta:", mappedRow.qtPorta);
-    console.log("  - qtdTransito:", mappedRow.qtdTransito);
+    console.log("🗺️ upsertRow - Após mapeamento:");
+    console.log("  - qtPorta:", mappedRow.qtPorta, "(tipo:", typeof mappedRow.qtPorta, ")");
+    console.log("  - qtdTransito:", mappedRow.qtdTransito, "(tipo:", typeof mappedRow.qtdTransito, ")");
+    console.log("  - Objeto completo:", JSON.stringify(mappedRow, null, 2));
     
     await saveRowToSheets(mappedRow);
     await reloadFromServer(); // garante que pega o id/linha real do Sheets

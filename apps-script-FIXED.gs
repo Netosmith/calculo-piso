@@ -18,7 +18,7 @@ const SHEET_NAME = 'Fretes';
 const HEADERS = [
   'id', 'regional', 'filial', 'cliente', 'origem', 'coleta', 'contato',
   'destino', 'uf', 'descarga', 'volume', 'valorEmpresa', 'valorMotorista',
-  'km', 'pedagioEixo', 'produto', 'icms', 'pedidoSat', 'qtdPorta',
+  'km', 'pedagioEixo', 'produto', 'icms', 'pedidoSat', 'qtPorta',
   'qtdTransito', 'status', 'obs'
 ];
 

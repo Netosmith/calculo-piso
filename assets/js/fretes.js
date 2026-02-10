@@ -279,7 +279,7 @@
         })(),
         
         qtdPorta: (() => {
-          const val = getFieldValue(r, ["qtdPorta", "Qtd Porta", "qtd_porta", "porta", "qtdLocal", "Qtd Local"]);
+          const val = getFieldValue(r, ["qtdPorta", "qtPorta", "Qtd Porta", "qtd_porta", "porta", "qtdLocal", "Qtd Local"]);
           const n = num(val);
           console.log(`🔍 qtdPorta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
           return (val && n > 0) ? n : "";
@@ -613,7 +613,14 @@
   }
 
   async function upsertRow(row) {
-    await saveRowToSheets(row);
+    // 🔧 Mapeia qtdPorta para qtPorta (nome usado no Google Sheets)
+    const mappedRow = {
+      ...row,
+      qtPorta: row.qtdPorta,  // Mapeia para o nome correto
+    };
+    delete mappedRow.qtdPorta;  // Remove o nome antigo
+    
+    await saveRowToSheets(mappedRow);
     await reloadFromServer(); // garante que pega o id/linha real do Sheets
   }
 

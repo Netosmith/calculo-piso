@@ -651,20 +651,10 @@
     console.log("🔄 upsertRow - Objeto recebido do collectModal:");
     console.log("  - porta:", row.porta, "(tipo:", typeof row.porta, ")");
     console.log("  - transito:", row.transito, "(tipo:", typeof row.transito, ")");
+    console.log("  - Objeto completo:", JSON.stringify(row, null, 2));
     
-    // 🔧 Mapeia porta para porta (nome usado no Google Sheets)
-    const mappedRow = {
-      ...row,
-      porta: row.porta,  // Mapeia para o nome correto
-    };
-    delete mappedRow.porta;  // Remove o nome antigo
-    
-    console.log("🗺️ upsertRow - Após mapeamento:");
-    console.log("  - porta:", mappedRow.porta, "(tipo:", typeof mappedRow.porta, ")");
-    console.log("  - transito:", mappedRow.transito, "(tipo:", typeof mappedRow.transito, ")");
-    console.log("  - Objeto completo:", JSON.stringify(mappedRow, null, 2));
-    
-    await saveRowToSheets(mappedRow);
+    // ✅ Não precisa mais mapear, os nomes já estão corretos!
+    await saveRowToSheets(row);
     await reloadFromServer(); // garante que pega o id/linha real do Sheets
   }
 

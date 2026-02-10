@@ -234,12 +234,12 @@
     <div class="card">
       <div class="shareHeader">
         <div class="titleBox">
-          <div class="hTitle">Share Clientes</div>
+          <div class="hTitle">Share Clientes <span id="syncStatus" style="font-size:12px; opacity:0.7; margin-left:10px;">🔄 Carregando...</span></div>
         </div>
 
         <div class="btnRow">
-          <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">Atualizar</button>
-          <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">Gerar Print</button>
+          <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">🔄 Atualizar</button>
+          <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">🖼️ Gerar Print</button>
         </div>
       </div>
     </div>
@@ -323,8 +323,8 @@
     bindLogoutButton();
 
     (function(){
-      // ✅ URL do seu Web App (Google Apps Script)
-      const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbywORAu4XWVjVQZrhL5hC3uyNxIeOZtCqV_Qo7urpYrhHIc--lxn8yKOzHB6NX5E_fK/exec";
+      // ✅ URL do Apps Script (mesma da aba fretes)
+      const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbz05hQfNPztgZm24gzE7jgODmCU1nQqAxpCJbmJs9j_g8pR86xVRqEWQS_zUXqKogG2/exec";
 
       function onReady(fn){
         if(document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
@@ -350,6 +350,23 @@
         const el = document.getElementById(id);
         if(el) el.textContent = value;
       }
+      
+      function updateSyncStatus(status, message) {
+        const el = document.getElementById('syncStatus');
+        if (!el) return;
+        
+        if (status === 'loading') {
+          el.textContent = '🔄 ' + (message || 'Carregando...');
+          el.style.color = '#5B7CFA';
+        } else if (status === 'success') {
+          el.textContent = '✅ ' + (message || 'Sincronizado');
+          el.style.color = '#067647';
+        } else if (status === 'error') {
+          el.textContent = '❌ ' + (message || 'Erro');
+          el.style.color = '#991B1B';
+        }
+      }
+      
       function canon(s){ return String(s || '').trim().toUpperCase(); }
 
       // ✅ pega campo por vários nomes possíveis + busca case-insensitive
@@ -401,21 +418,77 @@
         return `<span class="statusPill ${cls}">${s || '—'}</span>`;
       }
 
-      // ✅ Carrega do Google Sheets (Web App)
+      // ✅ JSONP (igual ao fretes.js)
+      function jsonp(url, timeoutMs = 30000) {
+        return new Promise((resolve, reject) => {
+          const cb = "cb_" + Math.random().toString(36).slice(2);
+          const s = document.createElement("script");
+          const sep = url.includes("?") ? "&" : "?";
+
+          const t = setTimeout(() => {
+            cleanup();
+            console.error("⏰ JSONP Timeout após " + (timeoutMs/1000) + "s");
+            reject(new Error("Timeout ao carregar dados (30s)"));
+          }, timeoutMs);
+
+          function cleanup() {
+            clearTimeout(t);
+            try { delete window[cb]; } catch {}
+            s.remove();
+          }
+
+          window[cb] = (data) => {
+            console.log("✅ JSONP recebido:", data);
+            cleanup();
+            resolve(data);
+          };
+
+          console.log("🔄 JSONP request:", url + sep + "callback=" + cb);
+          s.src = url + sep + "callback=" + encodeURIComponent(cb);
+          
+          s.onerror = (e) => {
+            cleanup();
+            console.error("❌ JSONP erro:", e);
+            reject(new Error("Erro ao carregar script do Google Sheets"));
+          };
+
+          document.head.appendChild(s);
+        });
+      }
+
+      // ✅ Carrega fretes do Google Sheets (action=list)
       async function loadFromSheets(){
-        const url = SHEETS_API_URL + "?t=" + Date.now(); // cache-buster
-        const res = await fetch(url, { method: "GET" });
-        if(!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
-
-        const rows =
-          Array.isArray(data) ? data :
-          Array.isArray(data.rows) ? data.rows :
-          Array.isArray(data.data) ? data.data :
-          Array.isArray(data.items) ? data.items : [];
-
-        if(!Array.isArray(rows)) return [];
-        return rows;
+        try {
+          console.log("📡 Carregando fretes do Google Sheets...");
+          const response = await jsonp(SHEETS_API_URL + "?action=list");
+          
+          console.log("📦 Resposta recebida:", response);
+          
+          // Verifica se houve erro
+          if (response.ok === false) {
+            throw new Error(response.error || 'Erro no Apps Script');
+          }
+          
+          // Pega os dados (pode vir em response.data ou direto)
+          let data = response.data || response;
+          
+          // Se ainda não for array, tenta outras propriedades
+          if (!Array.isArray(data)) {
+            data = data.rows || data.fretes || data.items || [];
+          }
+          
+          if (!Array.isArray(data)) {
+            console.error("❌ Resposta não é um array:", response);
+            return [];
+          }
+          
+          console.log("✅ Total de fretes carregados:", data.length);
+          return data;
+          
+        } catch (err) {
+          console.error("💥 Erro ao carregar Share Clientes:", err);
+          throw err;
+        }
       }
 
       onReady(function(){
@@ -513,28 +586,45 @@
 
         async function hydrate(){
           try{
+            updateSyncStatus('loading', 'Carregando...');
+            console.log("🔄 Atualizando dados do Share Clientes...");
             BASE = await loadFromSheets();
 
             if(!Array.isArray(BASE) || BASE.length === 0){
-              selCliente.innerHTML = '';
-              corrList.innerHTML = '';
-              tbody.innerHTML = '';
+              console.warn("⚠️ Nenhum frete encontrado");
+              updateSyncStatus('success', 'Nenhum frete cadastrado');
+              selCliente.innerHTML = '<option value="">Nenhum cliente encontrado</option>';
+              corrList.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Nenhum dado disponível</div>';
+              tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;">Nenhum frete cadastrado</td></tr>';
               setLogo('');
               setText('kLotes','0');
               setText('kCaminhao','0');
-              setText('kVolume','0');
+              setText('kVolume','0 t');
               return;
             }
+
+            console.log("✅ Dados carregados:", BASE.length, "fretes");
 
             if(selCliente.options.length === 0) fillClients();
             else buildClientIndex();
 
             const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
             if(key) renderForClient(key);
+            
+            // Conta clientes únicos
+            const clientesUnicos = new Set(BASE.map(r => canon(r.cliente)).filter(Boolean));
+            updateSyncStatus('success', `${BASE.length} fretes | ${clientesUnicos.size} clientes`);
 
           }catch(err){
-            console.error("Erro ao carregar Share Clientes:", err);
-            alert("Falha ao carregar dados do Google Sheets. Veja o console.");
+            console.error("💥 Erro ao carregar Share Clientes:", err);
+            updateSyncStatus('error', 'Falha ao carregar');
+            alert("❌ Falha ao carregar dados do Google Sheets.\n\n" +
+                  "Erro: " + err.message + "\n\n" +
+                  "Verifique:\n" +
+                  "1. A URL do Apps Script está correta?\n" +
+                  "2. O Apps Script está publicado como 'Anyone'?\n" +
+                  "3. Há dados na aba 'Fretes'?\n\n" +
+                  "Veja o console (F12) para mais detalhes.");
           }
         }
 

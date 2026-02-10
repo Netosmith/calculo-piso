@@ -255,9 +255,10 @@
       produto: safeText(r.produto),
       icms: safeText(r.icms),
 
-      pedidoSat: r.pedidoSat === "" ? "" : num(r.pedidoSat),
-      qtdPorta: r.qtdPorta === "" ? "" : num(r.qtdPorta),
-      qtdTransito: r.qtdTransito === "" ? "" : num(r.qtdTransito),
+      // ✅ Tratamento especial para quantidades: aceita valores > 0, senão deixa vazio
+      pedidoSat: (r.pedidoSat && num(r.pedidoSat) > 0) ? num(r.pedidoSat) : "",
+      qtdPorta: (r.qtdPorta && num(r.qtdPorta) > 0) ? num(r.qtdPorta) : "",
+      qtdTransito: (r.qtdTransito && num(r.qtdTransito) > 0) ? num(r.qtdTransito) : "",
 
       status: safeText(r.status).toUpperCase(),
       obs: safeText(r.obs || "")
@@ -423,9 +424,9 @@
 
         safeText(row.produto),
         safeText(row.icms),
-        { num: true, v: safeText(row.pedidoSat) },
-        { num: true, v: safeText(row.qtdPorta) },
-        { num: true, v: safeText(row.qtdTransito) },
+        { num: true, v: row.pedidoSat ? safeText(row.pedidoSat) : "" },
+        { num: true, v: row.qtdPorta ? safeText(row.qtdPorta) : "" },
+        { num: true, v: row.qtdTransito ? safeText(row.qtdTransito) : "" },
         { status: true, v: safeText(row.status) },
         safeText(row.obs),
         { actions: true }

@@ -213,6 +213,16 @@
   /********************
    * SHEETS SYNC (ROBUSTO)
    ********************/
+  // Helper para pegar campo com vários nomes possíveis
+  function getFieldValue(row, possibleNames) {
+    for (const name of possibleNames) {
+      if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
+        return row[name];
+      }
+    }
+    return "";
+  }
+
   function normalizeFromSheets(payload) {
     // ✅ Aceita:
     // 1) Array direto: [ {...}, {...} ]
@@ -234,35 +244,58 @@
       throw new Error("Resposta do Sheets não é array. Tipo: " + (typeof rows));
     }
 
-    return rows.map((r) => ({
-      id: safeText(r.id) || crypto.randomUUID(),
-      regional: safeText(r.regional),
-      filial: safeText(r.filial).toUpperCase(),
-      cliente: safeText(r.cliente),
-      origem: safeText(r.origem),
-      coleta: safeText(r.coleta),
-      contato: safeText(r.contato),
-      destino: safeText(r.destino),
-      uf: safeText(r.uf).toUpperCase(),
-      descarga: safeText(r.descarga),
+    return rows.map((r) => {
+      // 🔍 Log para debug - vamos ver o que está vindo do Sheets
+      if (rows.indexOf(r) === 0) {
+        console.log("📋 Primeira linha do Sheets (debug):", r);
+        console.log("📋 Chaves disponíveis:", Object.keys(r));
+      }
 
-      volume: r.volume === "" ? "" : num(r.volume),
-      valorEmpresa: r.valorEmpresa === "" ? "" : num(r.valorEmpresa),
-      valorMotorista: r.valorMotorista === "" ? "" : num(r.valorMotorista),
-      pedagioEixo: r.pedagioEixo === "" ? "" : num(r.pedagioEixo),
-      km: r.km === "" ? "" : num(r.km),
+      return {
+        id: safeText(r.id) || crypto.randomUUID(),
+        regional: safeText(r.regional),
+        filial: safeText(r.filial).toUpperCase(),
+        cliente: safeText(r.cliente),
+        origem: safeText(r.origem),
+        coleta: safeText(r.coleta),
+        contato: safeText(r.contato),
+        destino: safeText(r.destino),
+        uf: safeText(r.uf).toUpperCase(),
+        descarga: safeText(r.descarga),
 
-      produto: safeText(r.produto),
-      icms: safeText(r.icms),
+        volume: r.volume === "" ? "" : num(r.volume),
+        valorEmpresa: r.valorEmpresa === "" ? "" : num(r.valorEmpresa),
+        valorMotorista: r.valorMotorista === "" ? "" : num(r.valorMotorista),
+        pedagioEixo: r.pedagioEixo === "" ? "" : num(r.pedagioEixo),
+        km: r.km === "" ? "" : num(r.km),
 
-      // ✅ Tratamento especial para quantidades: aceita valores > 0, senão deixa vazio
-      pedidoSat: (r.pedidoSat && num(r.pedidoSat) > 0) ? num(r.pedidoSat) : "",
-      qtdPorta: (r.qtdPorta && num(r.qtdPorta) > 0) ? num(r.qtdPorta) : "",
-      qtdTransito: (r.qtdTransito && num(r.qtdTransito) > 0) ? num(r.qtdTransito) : "",
+        produto: safeText(r.produto),
+        icms: safeText(r.icms),
 
-      status: safeText(r.status).toUpperCase(),
-      obs: safeText(r.obs || "")
-    }));
+        // ✅ Aceita vários nomes possíveis para as colunas de quantidade
+        pedidoSat: (() => {
+          const val = getFieldValue(r, ["pedidoSat", "Pedido SAT", "pedido_sat", "sat"]);
+          return (val && num(val) > 0) ? num(val) : "";
+        })(),
+        
+        qtdPorta: (() => {
+          const val = getFieldValue(r, ["qtdPorta", "Qtd Porta", "qtd_porta", "porta", "qtdLocal", "Qtd Local"]);
+          const n = num(val);
+          console.log(`🔍 qtdPorta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
+          return (val && n > 0) ? n : "";
+        })(),
+        
+        qtdTransito: (() => {
+          const val = getFieldValue(r, ["qtdTransito", "Qtd Trânsito", "Qtd Transito", "qtd_transito", "transito"]);
+          const n = num(val);
+          console.log(`🔍 qtdTransito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
+          return (val && n > 0) ? n : "";
+        })(),
+
+        status: safeText(r.status).toUpperCase(),
+        obs: safeText(r.obs || "")
+      };
+    });
   }
 
   async function reloadFromServer() {

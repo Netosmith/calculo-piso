@@ -13,7 +13,7 @@
   /********************
    * CONFIG
    ********************/
-  const API_URL = "https://script.google.com/macros/s/AKfycbw2kZd_eo0pXX0FXIBcwLFc-kw48U_ABPNv0FO6J0ElIUKCvxT-5vfRQT5S6m_geocg/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
 
   const LS_KEY_ROWS = "nf_fretes_rows_v1";
   const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";

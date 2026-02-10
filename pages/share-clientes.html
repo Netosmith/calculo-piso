@@ -464,9 +464,29 @@
           
           console.log("📦 Resposta recebida:", response);
           
-          // Verifica se houve erro
+          // Verifica se houve erro no Apps Script
           if (response.ok === false) {
-            throw new Error(response.error || 'Erro no Apps Script');
+            const errorMsg = response.error || 'Erro desconhecido no Apps Script';
+            
+            // Se for erro de openById, dá uma mensagem específica
+            if (errorMsg.includes('openById')) {
+              throw new Error(
+                "⚠️ ERRO NO APPS SCRIPT: O código está usando 'openById' que não funciona.\n\n" +
+                "SOLUÇÃO:\n" +
+                "1. Abra sua planilha Google Sheets\n" +
+                "2. Vá em Extensions > Apps Script\n" +
+                "3. DELETE TODO o código antigo\n" +
+                "4. Cole o código do arquivo 'apps-script-FIXED.gs'\n" +
+                "5. Salve (Ctrl+S)\n" +
+                "6. Deploy > New deployment\n" +
+                "7. Execute as: Me\n" +
+                "8. Who has access: Anyone\n" +
+                "9. Deploy e atualize a URL se mudou\n\n" +
+                "Arquivo: apps-script-FIXED.gs está no repositório GitHub"
+              );
+            }
+            
+            throw new Error(errorMsg);
           }
           
           // Pega os dados (pode vir em response.data ou direto)

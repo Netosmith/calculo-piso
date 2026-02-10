@@ -572,8 +572,24 @@
   let state = { rows: [], editId: null, weights: { ...DEFAULT_WEIGHTS } };
 
   function openModal(mode, id) {
+    console.log("🔧 openModal chamado:");
+    console.log("  - mode:", mode);
+    console.log("  - id:", id);
+    
     state.editId = mode === "edit" ? id : null;
     const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
+    
+    if (r) {
+      console.log("✏️ EDIÇÃO - Frete encontrado:");
+      console.log("  - id:", r.id);
+      console.log("  - cliente:", r.cliente);
+      console.log("  - porta ATUAL:", r.porta);
+      console.log("  - transito ATUAL:", r.transito);
+    } else if (mode === "edit") {
+      console.error("❌ ERRO: Modo EDIT mas frete não encontrado! ID:", id);
+    } else {
+      console.log("➕ CRIAÇÃO - Novo frete");
+    }
 
     $("mRegional").value = r ? r.regional : "GOIÁS";
     $("mFilial").value = r ? safeText(r.filial).toUpperCase() : "ITUMBIARA";
@@ -609,17 +625,18 @@
     const mPortaValue = $("mPorta").value;
     const mTransitoValue = $("mTransito").value;
     
-    console.log("📝 collectModal - Lendo campos do formulário:");
+    console.log("📝 collectModal - Coletando dados do formulário:");
+    console.log("  - state.editId:", state.editId, "(É edição:", state.editId !== null, ")");
     console.log("  - Campo mPorta.value:", mPortaValue, "(tipo:", typeof mPortaValue, ")");
     console.log("  - Campo mTransito.value:", mTransitoValue, "(tipo:", typeof mTransitoValue, ")");
     
     const portaFinal = mPortaValue === "" ? "" : num(mPortaValue);
     const transitoFinal = mTransitoValue === "" ? "" : num(mTransitoValue);
     
-    console.log("  - porta após num():", portaFinal, "(tipo:", typeof portaFinal, ")");
-    console.log("  - transito após num():", transitoFinal, "(tipo:", typeof transitoFinal, ")");
+    console.log("  - porta após conversão:", portaFinal, "(tipo:", typeof portaFinal, ")");
+    console.log("  - transito após conversão:", transitoFinal, "(tipo:", typeof transitoFinal, ")");
     
-    return {
+    const collected = {
       id: state.editId || "", // se vazio, Apps Script cria no final
       regional: safeText($("mRegional").value),
       filial: safeText($("mFilial").value).toUpperCase(),
@@ -645,6 +662,14 @@
       status: safeText($("mStatus").value).toUpperCase(),
       obs: safeText($("mObs").value)
     };
+    
+    console.log("📦 Objeto coletado (ANTES de retornar):");
+    console.log("  - id:", collected.id);
+    console.log("  - cliente:", collected.cliente);
+    console.log("  - porta:", collected.porta);
+    console.log("  - transito:", collected.transito);
+    
+    return collected;
   }
 
   async function upsertRow(row) {

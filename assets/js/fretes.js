@@ -279,14 +279,14 @@
         })(),
         
         porta: (() => {
-          const val = getFieldValue(r, ["porta", "porta", "Qtd Porta", "qtd_porta", "porta", "qtdLocal", "Qtd Local"]);
+          const val = r.porta || "";
           const n = num(val);
           console.log(`🔍 porta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
           return (val && n > 0) ? n : "";
         })(),
         
         transito: (() => {
-          const val = getFieldValue(r, ["transito", "Qtd Trânsito", "Qtd Transito", "qtd_transito", "transito"]);
+          const val = r.transito || "";
           const n = num(val);
           console.log(`🔍 transito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
           return (val && n > 0) ? n : "";

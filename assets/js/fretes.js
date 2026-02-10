@@ -278,17 +278,17 @@
           return (val && num(val) > 0) ? num(val) : "";
         })(),
         
-        qtdPorta: (() => {
-          const val = getFieldValue(r, ["qtdPorta", "qtPorta", "Qtd Porta", "qtd_porta", "porta", "qtdLocal", "Qtd Local"]);
+        porta: (() => {
+          const val = getFieldValue(r, ["porta", "porta", "Qtd Porta", "qtd_porta", "porta", "qtdLocal", "Qtd Local"]);
           const n = num(val);
-          console.log(`🔍 qtdPorta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
+          console.log(`🔍 porta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
           return (val && n > 0) ? n : "";
         })(),
         
-        qtdTransito: (() => {
-          const val = getFieldValue(r, ["qtdTransito", "Qtd Trânsito", "Qtd Transito", "qtd_transito", "transito"]);
+        transito: (() => {
+          const val = getFieldValue(r, ["transito", "Qtd Trânsito", "Qtd Transito", "qtd_transito", "transito"]);
           const n = num(val);
-          console.log(`🔍 qtdTransito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
+          console.log(`🔍 transito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
           return (val && n > 0) ? n : "";
         })(),
 
@@ -313,8 +313,8 @@
   async function saveRowToSheets(row) {
     console.log("🚀 saveRowToSheets - ANTES de enviar:");
     console.log("  - row completo:", JSON.stringify(row, null, 2));
-    console.log("  - qtPorta:", row.qtPorta, "(tipo:", typeof row.qtPorta, ")");
-    console.log("  - qtdTransito:", row.qtdTransito, "(tipo:", typeof row.qtdTransito, ")");
+    console.log("  - porta:", row.porta, "(tipo:", typeof row.porta, ")");
+    console.log("  - transito:", row.transito, "(tipo:", typeof row.transito, ")");
     
     const params = new URLSearchParams();
     params.append("action", "save");
@@ -480,8 +480,8 @@
         safeText(row.produto),
         safeText(row.icms),
         { num: true, v: row.pedidoSat ? safeText(row.pedidoSat) : "" },
-        { num: true, v: row.qtdPorta ? safeText(row.qtdPorta) : "" },
-        { num: true, v: row.qtdTransito ? safeText(row.qtdTransito) : "" },
+        { num: true, v: row.porta ? safeText(row.porta) : "" },
+        { num: true, v: row.transito ? safeText(row.transito) : "" },
         { status: true, v: safeText(row.status) },
         safeText(row.obs),
         { actions: true }
@@ -592,8 +592,8 @@
     $("mMotorista").value = r ? r.valorMotorista : "";
     $("mICMS").value = r ? r.icms : "";
     $("mSat").value = r ? r.pedidoSat : "";
-    $("mPorta").value = r ? r.qtdPorta : "";
-    $("mTransito").value = r ? r.qtdTransito : "";
+    $("mPorta").value = r ? r.porta : "";
+    $("mTransito").value = r ? r.transito : "";
     $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
     $("mObs").value = r ? r.obs : "";
 
@@ -613,11 +613,11 @@
     console.log("  - Campo mPorta.value:", mPortaValue, "(tipo:", typeof mPortaValue, ")");
     console.log("  - Campo mTransito.value:", mTransitoValue, "(tipo:", typeof mTransitoValue, ")");
     
-    const qtdPortaFinal = mPortaValue === "" ? "" : num(mPortaValue);
-    const qtdTransitoFinal = mTransitoValue === "" ? "" : num(mTransitoValue);
+    const portaFinal = mPortaValue === "" ? "" : num(mPortaValue);
+    const transitoFinal = mTransitoValue === "" ? "" : num(mTransitoValue);
     
-    console.log("  - qtdPorta após num():", qtdPortaFinal, "(tipo:", typeof qtdPortaFinal, ")");
-    console.log("  - qtdTransito após num():", qtdTransitoFinal, "(tipo:", typeof qtdTransitoFinal, ")");
+    console.log("  - porta após num():", portaFinal, "(tipo:", typeof portaFinal, ")");
+    console.log("  - transito após num():", transitoFinal, "(tipo:", typeof transitoFinal, ")");
     
     return {
       id: state.editId || "", // se vazio, Apps Script cria no final
@@ -640,8 +640,8 @@
       produto: safeText($("mProduto").value),
       icms: safeText($("mICMS").value),
       pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
-      qtdPorta: qtdPortaFinal,
-      qtdTransito: qtdTransitoFinal,
+      porta: portaFinal,
+      transito: transitoFinal,
       status: safeText($("mStatus").value).toUpperCase(),
       obs: safeText($("mObs").value)
     };
@@ -649,19 +649,19 @@
 
   async function upsertRow(row) {
     console.log("🔄 upsertRow - Objeto recebido do collectModal:");
-    console.log("  - qtdPorta:", row.qtdPorta, "(tipo:", typeof row.qtdPorta, ")");
-    console.log("  - qtdTransito:", row.qtdTransito, "(tipo:", typeof row.qtdTransito, ")");
+    console.log("  - porta:", row.porta, "(tipo:", typeof row.porta, ")");
+    console.log("  - transito:", row.transito, "(tipo:", typeof row.transito, ")");
     
-    // 🔧 Mapeia qtdPorta para qtPorta (nome usado no Google Sheets)
+    // 🔧 Mapeia porta para porta (nome usado no Google Sheets)
     const mappedRow = {
       ...row,
-      qtPorta: row.qtdPorta,  // Mapeia para o nome correto
+      porta: row.porta,  // Mapeia para o nome correto
     };
-    delete mappedRow.qtdPorta;  // Remove o nome antigo
+    delete mappedRow.porta;  // Remove o nome antigo
     
     console.log("🗺️ upsertRow - Após mapeamento:");
-    console.log("  - qtPorta:", mappedRow.qtPorta, "(tipo:", typeof mappedRow.qtPorta, ")");
-    console.log("  - qtdTransito:", mappedRow.qtdTransito, "(tipo:", typeof mappedRow.qtdTransito, ")");
+    console.log("  - porta:", mappedRow.porta, "(tipo:", typeof mappedRow.porta, ")");
+    console.log("  - transito:", mappedRow.transito, "(tipo:", typeof mappedRow.transito, ")");
     console.log("  - Objeto completo:", JSON.stringify(mappedRow, null, 2));
     
     await saveRowToSheets(mappedRow);

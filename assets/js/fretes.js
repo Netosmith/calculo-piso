@@ -620,6 +620,10 @@
     };
     delete mappedRow.qtdPorta;  // Remove o nome antigo
     
+    console.log("💾 Salvando no Sheets:", mappedRow);
+    console.log("  - qtPorta:", mappedRow.qtPorta);
+    console.log("  - qtdTransito:", mappedRow.qtdTransito);
+    
     await saveRowToSheets(mappedRow);
     await reloadFromServer(); // garante que pega o id/linha real do Sheets
   }

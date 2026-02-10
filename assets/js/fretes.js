@@ -321,6 +321,13 @@
     
     const jsonData = JSON.stringify(row);
     console.log("📦 JSON enviado:", jsonData);
+    
+    // 🧪 TESTE: Copie esta URL e cole no navegador para testar
+    const testUrl = `${API_URL}?action=save&data=${encodeURIComponent(jsonData)}&callback=teste`;
+    console.log("🧪 TESTE: Cole esta URL no navegador:");
+    console.log(testUrl);
+    console.log("");
+    
     params.append("data", jsonData);
     
     const fullUrl = `${API_URL}?${params.toString()}`;

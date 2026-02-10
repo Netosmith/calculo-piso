@@ -388,8 +388,8 @@
         return undefined;
       }
 
-      function getQtdPorta(row){ return getField(row, ['qtdPorta','Qtd Porta','qtd_porta','porta','qtdPortas','qtdporta','qtdLocal','cmhLocal','cmhsLocal']); }
-      function getQtdTransito(row){ return getField(row, ['qtdTransito',"Qtd Trânsito",'qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito','cmhTrans','cmhsTrans']); }
+      function getQtdPorta(row){ return getField(row, ['qtdPorta','qtPorta','Qtd Porta','qtd_porta','porta','qtdPortas','qtdporta','qtdLocal','cmhLocal','cmhsLocal']); }
+      function getQtdTransito(row){ return getField(row, ['qtdTransito','Qtd Trânsito','qtd_transito','transito','qtdTrans','qtdtrânsito','qtdtransito','cmhTrans','cmhsTrans']); }
       function getValorEmpresa(row){ return getField(row, ['valorEmpresa','Vlr Empresa','vlrEmpresa','empresa','valor_empresa','vlr_empresa']); }
       function getObs(row){ return getField(row, ['obs','Observações','observacao','observação','observacoes','observações']); }
 
@@ -549,10 +549,13 @@
           const displayName = clientIndex.get(key) || key;
           const rows = BASE.filter(r => canon(r.cliente) === key);
 
+          console.log(`🔍 Share Clientes - Renderizando para ${displayName}:`, rows);
+
           const totalLotes = rows.length;
           const totalCaminhoes = rows.reduce((acc, r) => {
             const cmhL = int(getQtdPorta(r));
             const cmhT = int(getQtdTransito(r));
+            console.log(`  📦 Frete: cmhLocal=${cmhL}, cmhTrans=${cmhT}, total=${cmhL+cmhT}`);
             return acc + (cmhL + cmhT);
           }, 0);
 

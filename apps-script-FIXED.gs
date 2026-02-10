@@ -73,29 +73,36 @@ function doGet(e) {
  * Lista todos os fretes da planilha
  */
 function listFretes() {
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  
-  // Se não houver dados além do cabeçalho
-  if (data.length <= 1) {
-    return [];
-  }
-  
-  const headers = data[0];
-  const rows = data.slice(1); // Pula cabeçalho
-  
-  // Converte array de arrays para array de objetos
-  const fretes = rows
-    .filter(row => row[0]) // Ignora linhas vazias
-    .map(row => {
-      let obj = {};
-      headers.forEach((header, index) => {
-        obj[header] = row[index];
+  try {
+    const sheet = getSheet();
+    const lastRow = sheet.getLastRow();
+    
+    // Se não houver dados além do cabeçalho
+    if (lastRow <= 1) {
+      return [];
+    }
+    
+    // ✅ Usa HEADERS fixo, não lê cabeçalhos da planilha
+    const numCols = HEADERS.length;
+    const dataRange = sheet.getRange(2, 1, lastRow - 1, numCols); // Pula linha 1 (cabeçalho)
+    const rows = dataRange.getValues();
+    
+    // Converte array de arrays para array de objetos usando HEADERS
+    const fretes = rows
+      .filter(row => row[0]) // Ignora linhas vazias (sem ID)
+      .map(row => {
+        let obj = {};
+        HEADERS.forEach((header, index) => {
+          obj[header] = row[index] !== undefined ? row[index] : "";
+        });
+        return obj;
       });
-      return obj;
-    });
-  
-  return fretes;
+    
+    return fretes;
+    
+  } catch (error) {
+    throw new Error('Erro ao listar fretes: ' + error.toString());
+  }
 }
 
 /**

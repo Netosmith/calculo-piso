@@ -54,6 +54,12 @@
     return isFinite(n) ? n : 0;
   }
 
+  function normalizeSheetNumber(v) {
+    if (v === "" || v === null || v === undefined) return "";
+    const n = num(v);
+    return isFinite(n) ? String(n) : safeText(v);
+  }
+
   function formatBRL(v) {
     const n = Number(v);
     if (!isFinite(n)) return "";
@@ -275,21 +281,25 @@
         // ✅ Aceita vários nomes possíveis para as colunas de quantidade
         pedidoSat: (() => {
           const val = getFieldValue(r, ["pedidoSat", "Pedido SAT", "pedido_sat", "sat"]);
-          return (val && num(val) > 0) ? num(val) : "";
+          if (val === "" || val === null || val === undefined) return "";
+          const n = num(val);
+          return isFinite(n) ? n : "";
         })(),
         
         porta: (() => {
-          const val = r.porta || "";
+          const val = getFieldValue(r, ["porta", "qtdPorta", "qtPorta", "qtd_porta", "Qtd Porta", "QtdPorta"]);
+          if (val === "" || val === null || val === undefined) return "";
           const n = num(val);
-          console.log(`🔍 porta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
-          return (val && n > 0) ? n : "";
+          console.log(`🔍 porta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${isFinite(n) ? n : ""}`);
+          return isFinite(n) ? n : "";
         })(),
         
         transito: (() => {
-          const val = r.transito || "";
+          const val = getFieldValue(r, ["transito", "qtdTransito", "qtd_transito", "Qtd Trânsito", "QtdTransito"]);
+          if (val === "" || val === null || val === undefined) return "";
           const n = num(val);
-          console.log(`🔍 transito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${(val && n > 0) ? n : ""}`);
-          return (val && n > 0) ? n : "";
+          console.log(`🔍 transito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${isFinite(n) ? n : ""}`);
+          return isFinite(n) ? n : "";
         })(),
 
         status: safeText(r.status).toUpperCase(),
@@ -318,8 +328,26 @@
     
     const params = new URLSearchParams();
     params.append("action", "save");
+
+    const portaParam = row.porta ?? row.qtPorta ?? row.qtdPorta ?? "";
+    const transitoParam = row.transito ?? row.qtTransito ?? row.qtdTransito ?? "";
+
+    params.append("porta", portaParam);
+    params.append("transito", transitoParam);
+    params.append("qtPorta", portaParam);
+    params.append("qtdPorta", portaParam);
+    params.append("qtTransito", transitoParam);
+    params.append("qtdTransito", transitoParam);
     
-    const jsonData = JSON.stringify(row);
+    const jsonData = JSON.stringify({
+      ...row,
+      porta: portaParam,
+      transito: transitoParam,
+      qtPorta: portaParam,
+      qtdPorta: portaParam,
+      qtTransito: transitoParam,
+      qtdTransito: transitoParam
+    });
     console.log("📦 JSON enviado:", jsonData);
     
     // 🧪 TESTE: Copie esta URL e cole no navegador para testar
@@ -479,9 +507,9 @@
 
         safeText(row.produto),
         safeText(row.icms),
-        { num: true, v: row.pedidoSat ? safeText(row.pedidoSat) : "" },
-        { num: true, v: row.porta ? safeText(row.porta) : "" },
-        { num: true, v: row.transito ? safeText(row.transito) : "" },
+        { num: true, v: row.pedidoSat !== "" && row.pedidoSat !== null && row.pedidoSat !== undefined ? safeText(row.pedidoSat) : "" },
+        { num: true, v: row.porta !== "" && row.porta !== null && row.porta !== undefined ? safeText(row.porta) : "" },
+        { num: true, v: row.transito !== "" && row.transito !== null && row.transito !== undefined ? safeText(row.transito) : "" },
         { status: true, v: safeText(row.status) },
         safeText(row.obs),
         { actions: true }
@@ -607,9 +635,9 @@
     $("mEmpresa").value = r ? r.valorEmpresa : "";
     $("mMotorista").value = r ? r.valorMotorista : "";
     $("mICMS").value = r ? r.icms : "";
-    $("mSat").value = r ? r.pedidoSat : "";
-    $("mPorta").value = r ? r.porta : "";
-    $("mTransito").value = r ? r.transito : "";
+    $("mSat").value = r ? (r.pedidoSat ?? "") : "";
+    $("mPorta").value = r ? (r.porta ?? "") : "";
+    $("mTransito").value = r ? (r.transito ?? "") : "";
     $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
     $("mObs").value = r ? r.obs : "";
 
@@ -624,14 +652,22 @@
   function collectModal() {
     const mPortaValue = $("mPorta").value;
     const mTransitoValue = $("mTransito").value;
+    const existing = state.editId ? state.rows.find((x) => x.id === state.editId) : null;
     
     console.log("📝 collectModal - Coletando dados do formulário:");
     console.log("  - state.editId:", state.editId, "(É edição:", state.editId !== null, ")");
     console.log("  - Campo mPorta.value:", mPortaValue, "(tipo:", typeof mPortaValue, ")");
     console.log("  - Campo mTransito.value:", mTransitoValue, "(tipo:", typeof mTransitoValue, ")");
     
-    const portaFinal = mPortaValue === "" ? "" : num(mPortaValue);
-    const transitoFinal = mTransitoValue === "" ? "" : num(mTransitoValue);
+    const portaRaw = (mPortaValue === "" && existing && existing.porta !== "" && existing.porta !== null && existing.porta !== undefined)
+      ? existing.porta
+      : mPortaValue;
+    const transitoRaw = (mTransitoValue === "" && existing && existing.transito !== "" && existing.transito !== null && existing.transito !== undefined)
+      ? existing.transito
+      : mTransitoValue;
+
+    const portaFinal = (portaRaw === "" || portaRaw === null || portaRaw === undefined) ? "" : num(portaRaw);
+    const transitoFinal = (transitoRaw === "" || transitoRaw === null || transitoRaw === undefined) ? "" : num(transitoRaw);
     
     console.log("  - porta após conversão:", portaFinal, "(tipo:", typeof portaFinal, ")");
     console.log("  - transito após conversão:", transitoFinal, "(tipo:", typeof transitoFinal, ")");
@@ -659,6 +695,9 @@
       pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
       porta: portaFinal,
       transito: transitoFinal,
+      qtdPorta: portaFinal,
+      qtPorta: portaFinal,
+      qtdTransito: transitoFinal,
       status: safeText($("mStatus").value).toUpperCase(),
       obs: safeText($("mObs").value)
     };
@@ -678,8 +717,19 @@
     console.log("  - transito:", row.transito, "(tipo:", typeof row.transito, ")");
     console.log("  - Objeto completo:", JSON.stringify(row, null, 2));
     
-    // ✅ Não precisa mais mapear, os nomes já estão corretos!
-    await saveRowToSheets(row);
+    const portaForSheet = normalizeSheetNumber(row.porta);
+    const transitoForSheet = normalizeSheetNumber(row.transito);
+
+    const payload = {
+      ...row,
+      porta: portaForSheet,
+      transito: transitoForSheet,
+      qtdPorta: row.qtdPorta !== undefined ? row.qtdPorta : portaForSheet,
+      qtPorta: row.qtPorta !== undefined ? row.qtPorta : (row.qtdPorta !== undefined ? row.qtdPorta : portaForSheet),
+      qtdTransito: row.qtdTransito !== undefined ? row.qtdTransito : transitoForSheet
+    };
+
+    await saveRowToSheets(payload);
     await reloadFromServer(); // garante que pega o id/linha real do Sheets
   }
 

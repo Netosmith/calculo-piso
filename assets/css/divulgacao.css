@@ -98,6 +98,12 @@
   background: linear-gradient(145deg, #0b0b0b, #1f2937 60%, #0b0b0b);
 }
 
+.templatePreview {
+  background:
+    linear-gradient(145deg, rgba(15,23,42,0.92), rgba(11,42,63,0.85)),
+    url("../img/novafrota5.png") center/cover no-repeat;
+}
+
 .templatePreview--light {
   background: linear-gradient(150deg, #e2f2e8, #ffffff 70%);
   color: #0f172a;

@@ -85,10 +85,7 @@
   padding: 24px;
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top right, rgba(34, 211, 238, 0.35), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.28), transparent 55%),
-    linear-gradient(145deg, #06111f, #0a1a2f 45%, #050c18);
+  background: url("../img/planofundo.png") center/cover no-repeat;
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -104,100 +101,63 @@
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(120deg, rgba(34, 211, 238, 0.12), transparent 60%),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 12px);
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-.templatePreview::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: url("../img/logo-novafrota.png") center 24% / 70% no-repeat;
-  opacity: 0.12;
-  mix-blend-mode: screen;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.75) 0%, rgba(2, 6, 23, 0.2) 50%, rgba(2, 6, 23, 0.75) 100%);
   pointer-events: none;
 }
 
 .templatePreview--dark {
-  background:
-    radial-gradient(circle at top right, rgba(14, 116, 144, 0.35), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(22, 163, 74, 0.25), transparent 55%),
-    linear-gradient(145deg, #050505, #111827 55%, #050505);
+  background: url("../img/planofundo.png") center/cover no-repeat;
 }
 
-.templatePreview--dark::after {
-  opacity: 0.1;
+.templatePreview--dark::before {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.82) 100%);
 }
 
 .templatePreview--light {
-  background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.18), transparent 55%),
-    linear-gradient(150deg, #e6f2ff, #ffffff 70%);
-  color: #0f172a;
-  border-color: rgba(15, 23, 42, 0.18);
+  background: url("../img/planofundo.png") center/cover no-repeat;
+  color: #ffffff;
 }
 
-.templatePreview--light::after {
-  opacity: 0.08;
+.templatePreview--light::before {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.2) 50%, rgba(15, 23, 42, 0.6) 100%);
 }
 
-.previewLogo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+.previewTag,
+.previewValue,
+.previewSmall,
+.previewProduct,
+.previewPrice,
+.previewNote,
+.previewRoute,
+.previewSeparator,
+.previewBlock,
+.previewHighlight {
   z-index: 1;
-}
-
-.previewLogo img {
-  width: 170px;
-  height: auto;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
-}
-
-.previewLogo span {
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.templatePreview--light .previewLogo span {
-  color: rgba(15, 23, 42, 0.55);
 }
 
 .previewTag {
   padding: 6px 16px;
   border-radius: 999px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
   color: #0f172a;
   font-weight: 800;
   font-size: 12px;
-  z-index: 1;
 }
 
 .previewValue {
   font-size: 20px;
   font-weight: 800;
-  z-index: 1;
 }
 
 .previewSmall {
   font-size: 12px;
-  opacity: 0.8;
-  z-index: 1;
+  opacity: 0.85;
 }
 
 .previewProduct {
   font-size: 16px;
   font-weight: 700;
   color: #facc15;
-  z-index: 1;
 }
 
 .previewPrice {
@@ -207,13 +167,11 @@
   color: #0f172a;
   padding: 10px 18px;
   border-radius: 18px;
-  z-index: 1;
 }
 
 .previewNote {
   font-size: 11px;
   opacity: 0.85;
-  z-index: 1;
 }
 
 .previewRoute {
@@ -221,18 +179,16 @@
   flex-direction: column;
   gap: 6px;
   align-items: center;
-  z-index: 1;
 }
 
 .previewSeparator {
   font-size: 16px;
   font-weight: 800;
   margin: 6px 0;
-  z-index: 1;
 }
 
 .previewBlock {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
   color: #0f172a;
   padding: 10px 14px;
   border-radius: 14px;
@@ -241,7 +197,6 @@
   flex-direction: column;
   gap: 6px;
   text-align: center;
-  z-index: 1;
 }
 
 .previewBlock span {
@@ -253,8 +208,7 @@
 .previewHighlight {
   font-size: 18px;
   font-weight: 800;
-  color: #16a34a;
-  z-index: 1;
+  color: #22c55e;
 }
 
 .templateActions {
@@ -270,15 +224,5 @@
 .previewHighlight:empty::before,
 .previewBlock strong:empty::before {
   content: attr(data-placeholder);
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.templatePreview--light .previewValue:empty::before,
-.templatePreview--light .previewSmall:empty::before,
-.templatePreview--light .previewProduct:empty::before,
-.templatePreview--light .previewPrice:empty::before,
-.templatePreview--light .previewNote:empty::before,
-.templatePreview--light .previewHighlight:empty::before,
-.templatePreview--light .previewBlock strong:empty::before {
-  color: rgba(15, 23, 42, 0.5);
+  color: rgba(255, 255, 255, 0.7);
 }

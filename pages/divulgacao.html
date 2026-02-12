@@ -29,6 +29,11 @@
       <a class="btnTiny ghost" href="./home.html">Voltar</a>
     </header>
 
+    <!-- =========================
+         MODELO 1 (igual suas imagens)
+         LOCAL DE COLETA: -CIDADE\nLOCAL
+         LOCAL DE DESCARGA: -CIDADE\nLOCAL
+    ========================== -->
     <section class="templateCard" data-template="1">
       <div class="templateHeader">
         <h2>Modelo 1 - Coleta x Descarga</h2>
@@ -37,22 +42,22 @@
 
       <div class="templateBody">
         <div class="templateForm">
-          <label>Local de coleta</label>
-          <input data-template="1" data-field="coleta" placeholder="Ex: Indiara-GO" />
+          <label>Local de coleta (Cidade-UF)</label>
+          <input data-template="1" data-field="coletaCidade" placeholder="Ex: INDIARA-GO" />
 
-          <label>Cliente/Origem</label>
-          <input data-template="1" data-field="origem" placeholder="Ex: Ouro Branco" />
+          <label>Local de coleta (Detalhe)</label>
+          <input data-template="1" data-field="coletaLocal" placeholder="Ex: Faz Ouro Branco" />
+
+          <label>Local de descarga (Cidade-UF)</label>
+          <input data-template="1" data-field="descargaCidade" placeholder="Ex: RIO VERDE-GO" />
+
+          <label>Local de descarga (Detalhe)</label>
+          <input data-template="1" data-field="descargaLocal" placeholder="Ex: Terminal Rumo" />
 
           <label>Produto</label>
-          <input data-template="1" data-field="produto" placeholder="Ex: Soja" />
+          <input data-template="1" data-field="produto" placeholder="Ex: Soja / Milho / Açúcar / Calcário" />
 
-          <label>Descarga</label>
-          <input data-template="1" data-field="descarga" placeholder="Ex: Rio Verde-GO" />
-
-          <label>Destino/Terminal</label>
-          <input data-template="1" data-field="destino" placeholder="Ex: Rumo" />
-
-          <label>Valor</label>
+          <label>Valor por tonelada</label>
           <input data-template="1" data-field="valor" placeholder="Ex: R$ 43,00" />
 
           <label>Observações</label>
@@ -60,16 +65,19 @@
         </div>
 
         <div class="templatePreview" data-template-preview="1">
-          <div class="previewTag">LOCAL DE COLETA</div>
-          <div class="previewValue" data-bind="coleta" data-placeholder="Local de coleta"></div>
-          <div class="previewSmall" data-bind="origem" data-placeholder="Origem"></div>
+          <!-- ✅ FUNDO DO MODELO -->
+          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
-          <div class="previewTag">DESCARGA</div>
-          <div class="previewValue" data-bind="descarga" data-placeholder="Descarga"></div>
-          <div class="previewSmall" data-bind="destino" data-placeholder="Destino"></div>
+          <div class="previewTag">LOCAL DE COLETA</div>
+          <!-- ✅ duas linhas: -CIDADE-UF + Local -->
+          <div class="previewValue" data-bind="coletaFinal" data-placeholder="-CIDADE-UF&#10;Local"></div>
+
+          <div class="previewTag">LOCAL DE DESCARGA</div>
+          <!-- ✅ duas linhas: -CIDADE-UF + Local -->
+          <div class="previewValue" data-bind="descargaFinal" data-placeholder="-CIDADE-UF&#10;Local"></div>
 
           <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
-          <div class="previewPrice" data-bind="valor" data-placeholder="Valor"></div>
+          <div class="previewPrice" data-bind="valor" data-placeholder="Valor por tonelada"></div>
           <div class="previewNote" data-bind="obs" data-placeholder="Observações"></div>
         </div>
       </div>
@@ -80,6 +88,9 @@
       </div>
     </section>
 
+    <!-- =========================
+         MODELO 2
+    ========================== -->
     <section class="templateCard" data-template="2">
       <div class="templateHeader">
         <h2>Modelo 2 - Rota e valor</h2>
@@ -101,7 +112,7 @@
           <input data-template="2" data-field="detalheDestino" placeholder="Ex: TIUB" />
 
           <label>Produto</label>
-          <input data-template="2" data-field="produto" placeholder="Ex: Soja" />
+          <input data-template="2" data-field="produto" placeholder="Ex: Soja / Milho / Açúcar / Calcário" />
 
           <label>Valor</label>
           <input data-template="2" data-field="valor" placeholder="Ex: R$ 139,00" />
@@ -111,6 +122,9 @@
         </div>
 
         <div class="templatePreview templatePreview--dark" data-template-preview="2">
+          <!-- ✅ FUNDO DO MODELO -->
+          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
+
           <div class="previewRoute">
             <div class="previewValue" data-bind="origem" data-placeholder="Origem"></div>
             <div class="previewSmall" data-bind="detalheOrigem" data-placeholder="Detalhe origem"></div>
@@ -130,6 +144,9 @@
       </div>
     </section>
 
+    <!-- =========================
+         MODELO 3
+    ========================== -->
     <section class="templateCard" data-template="3">
       <div class="templateHeader">
         <h2>Modelo 3 - Chamada rápida</h2>
@@ -145,7 +162,7 @@
           <input data-template="3" data-field="descarga" placeholder="Ex: Santos-SP" />
 
           <label>Produto</label>
-          <input data-template="3" data-field="produto" placeholder="Ex: Milho" />
+          <input data-template="3" data-field="produto" placeholder="Ex: Milho / Soja / Açúcar / Calcário" />
 
           <label>Valor</label>
           <input data-template="3" data-field="valor" placeholder="Ex: R$ 120,00" />
@@ -155,6 +172,9 @@
         </div>
 
         <div class="templatePreview templatePreview--light" data-template-preview="3">
+          <!-- ✅ FUNDO DO MODELO -->
+          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
+
           <div class="previewBlock">
             <span>COLETA</span>
             <strong data-bind="coleta" data-placeholder="Coleta"></strong>

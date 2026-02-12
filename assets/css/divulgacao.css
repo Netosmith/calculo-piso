@@ -1,9 +1,17 @@
+/* ==============================
+   PÁGINA
+============================== */
+
 .divulgacao-page {
   padding: 24px 0 48px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
+
+/* ==============================
+   HEADER
+============================== */
 
 .page-header {
   display: flex;
@@ -26,14 +34,18 @@
   opacity: 0.85;
 }
 
+/* ==============================
+   CARD DO MODELO
+============================== */
+
 .templateCard {
   background: #fff;
   border-radius: 18px;
-  padding: 18px;
+  padding: 20px;
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .templateHeader h2 {
@@ -46,10 +58,14 @@
   color: #64748b;
 }
 
+/* ==============================
+   GRID
+============================== */
+
 .templateBody {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(300px, 420px);
-  gap: 18px;
+  grid-template-columns: minmax(260px, 1fr) minmax(360px, 420px);
+  gap: 22px;
 }
 
 @media (max-width: 960px) {
@@ -58,10 +74,14 @@
   }
 }
 
+/* ==============================
+   FORM
+============================== */
+
 .templateForm {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .templateForm label {
@@ -71,38 +91,43 @@
 }
 
 .templateForm input {
-  height: 36px;
+  height: 38px;
   border: 1px solid #cbd5f5;
-  border-radius: 10px;
-  padding: 8px 12px;
+  border-radius: 12px;
+  padding: 8px 14px;
   font-size: 13px;
+  transition: all 0.2s ease;
 }
 
-/* ==========================================================
-   PREVIEW (AGORA NO PADRÃO DOS MODELOS QUE VOCÊ ENVIOU)
-   - usa IMG como fundo (previewBg)
-   - conteúdo desce abaixo da logo (previewContent padding-top)
-   ========================================================== */
+.templateForm input:focus {
+  border-color: #22c55e;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* ==============================
+   PREVIEW (ARTE)
+============================== */
 
 .templatePreview {
-  width: 360px;
-  height: 640px;
-  border-radius: 22px;
-  padding: 0;                 /* importante: quem controla é o previewContent */
+  width: 380px;
+  height: 680px;
+  border-radius: 26px;
   position: relative;
   overflow: hidden;
   color: #fff;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
   text-align: center;
   border: 1px solid rgba(56, 189, 248, 0.25);
   box-shadow: 0 18px 35px rgba(15, 23, 42, 0.5);
-  background: #000;           /* fallback */
+  padding: 150px 28px 40px; /* 🔥 desce os textos abaixo da logo */
+  gap: 16px;
 }
 
-/* fundo em imagem (troca via JS) */
+/* Fundo dinâmico */
 .previewBg {
   position: absolute;
   inset: 0;
@@ -112,57 +137,21 @@
   z-index: 0;
 }
 
-/* camada escura em cima (pra manter legibilidade) */
+/* Overlay escuro para contraste */
 .templatePreview::before {
   content: "";
   position: absolute;
   inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.2) 40%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
   z-index: 1;
-  background: linear-gradient(
-    180deg,
-    rgba(2, 6, 23, 0.65) 0%,
-    rgba(2, 6, 23, 0.18) 50%,
-    rgba(2, 6, 23, 0.70) 100%
-  );
-  pointer-events: none;
 }
 
-/* (mantive classes dark/light para você usar se quiser) */
-.templatePreview--dark::before {
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.74) 0%,
-    rgba(0, 0, 0, 0.22) 52%,
-    rgba(0, 0, 0, 0.78) 100%
-  );
-}
-
-.templatePreview--light {
-  color: #ffffff;
-}
-
-.templatePreview--light::before {
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.48) 0%,
-    rgba(15, 23, 42, 0.16) 50%,
-    rgba(15, 23, 42, 0.56) 100%
-  );
-}
-
-/* conteúdo que fica por cima do fundo */
-.previewContent {
-  position: relative;
-  z-index: 2;
-  padding: 150px 24px 36px;  /* ✅ aqui você controla o “abaixar textos” */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-/* garante que tudo da preview esteja acima do overlay */
+/* Garante que textos fiquem acima */
 .previewTag,
 .previewValue,
 .previewSmall,
@@ -172,14 +161,17 @@
 .previewRoute,
 .previewSeparator,
 .previewBlock,
-.previewHighlight,
-.previewLogo {
+.previewHighlight {
+  position: relative;
   z-index: 2;
 }
 
-/* TAGS */
+/* ==============================
+   ELEMENTOS DA ARTE
+============================== */
+
 .previewTag {
-  padding: 6px 16px;
+  padding: 6px 20px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.95);
   color: #0f172a;
@@ -187,63 +179,55 @@
   font-size: 12px;
 }
 
-/* cidade (ex: -INDIARA-GO) */
 .previewValue {
   font-size: 20px;
   font-weight: 900;
-  letter-spacing: 0.2px;
+  white-space: pre-line; /* 🔥 permite quebra de linha automática */
 }
 
-/* local (ex: Faz Ouro Branco) */
 .previewSmall {
-  font-size: 12px;
-  opacity: 0.88;
+  font-size: 13px;
+  opacity: 0.85;
 }
 
-/* produto */
 .previewProduct {
-  font-size: 16px;
-  font-weight: 900;
+  font-size: 18px;
+  font-weight: 800;
   color: #facc15;
-  text-transform: uppercase;
 }
 
-/* preço */
 .previewPrice {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
-  background: rgba(255, 255, 255, 0.95);
+  background: #ffffff;
   color: #0f172a;
-  padding: 10px 18px;
-  border-radius: 18px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.20);
+  padding: 10px 20px;
+  border-radius: 20px;
 }
 
-/* observação */
 .previewNote {
-  font-size: 11px;
-  opacity: 0.88;
+  font-size: 12px;
+  opacity: 0.85;
+  max-width: 90%;
 }
 
-/* blocos rota */
 .previewRoute {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
 .previewSeparator {
-  font-size: 16px;
-  font-weight: 900;
-  margin: 6px 0;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .previewBlock {
   background: rgba(255, 255, 255, 0.95);
   color: #0f172a;
-  padding: 10px 14px;
-  border-radius: 14px;
+  padding: 12px 18px;
+  border-radius: 16px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -258,17 +242,24 @@
 }
 
 .previewHighlight {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
   color: #22c55e;
 }
+
+/* ==============================
+   BOTÕES
+============================== */
 
 .templateActions {
   display: flex;
   gap: 10px;
 }
 
-/* placeholders quando vazio */
+/* ==============================
+   PLACEHOLDERS
+============================== */
+
 .previewValue:empty::before,
 .previewSmall:empty::before,
 .previewProduct:empty::before,
@@ -277,10 +268,5 @@
 .previewHighlight:empty::before,
 .previewBlock strong:empty::before {
   content: attr(data-placeholder);
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* logo (se você usar img de logo no HTML) */
-.previewLogo {
-  margin-bottom: 0; /* não empurra mais tudo sozinho */
+  color: rgba(255, 255, 255, 0.6);
 }

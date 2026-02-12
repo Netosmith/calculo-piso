@@ -226,6 +226,11 @@
   content: attr(data-placeholder);
   color: rgba(255, 255, 255, 0.7);
 }
+
 .previewLogo {
   margin-bottom: 40px;
+}
+
+.templatePreview {
+  padding-top: 90px;
 }

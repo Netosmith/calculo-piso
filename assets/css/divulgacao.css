@@ -201,7 +201,7 @@
 /* BLOCO DESCARGA */
 .templatePreview[data-template-preview="1"] .previewDescarga {
   position: absolute;
-  top: 285px;
+  top: 265px;
   left: 24px;
   right: 24px;
   text-align: center;
@@ -223,7 +223,7 @@
 /* PRODUTO */
 .templatePreview[data-template-preview="1"] .previewProduct {
   position: absolute;
-  top: 380px;
+  top: 360px;
   left: 24px;
   right: 24px;
   text-align: center;

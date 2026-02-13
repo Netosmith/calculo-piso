@@ -164,3 +164,79 @@
 
   window.addEventListener("DOMContentLoaded", bindActions);
 })();
+
+/* ====== FUNDO VIA <img class="previewBg"> ====== */
+.templatePreview{
+  position: relative;
+}
+
+.previewBg{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* Se ainda tiver o ::before escurecendo, deixe bem fraco ou desligue */
+.templatePreview::before{
+  /* opção 1: desligar totalmente */
+  /* display: none; */
+
+  /* opção 2: deixar quase nada (recomendado pra manter contraste) */
+  content:"";
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.08);
+  z-index: 1;
+  pointer-events:none;
+}
+
+/* tudo que for texto fica acima do fundo */
+.previewTag,
+.previewValue,
+.previewSmall,
+.previewProduct,
+.previewPrice,
+.previewNote,
+.previewRoute,
+.previewSeparator,
+.previewBlock,
+.previewHighlight,
+.previewContacts,
+.previewContactLine{
+  position: relative;
+  z-index: 2;
+}
+
+/* ====== CONTATOS (4 LINHAS) ====== */
+.previewContacts{
+  position: absolute;
+  /* ajuste fino pra cair em cima do “CONTATOS” da imagem */
+  left: 70px;
+  right: 40px;
+  bottom: 165px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  text-align: left;
+}
+
+.previewContactLine{
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0,0,0,.75);
+  line-height: 1.1;
+  min-height: 16px; /* garante “linha” mesmo vazia */
+}
+
+/* placeholder pros contatos (igual você já faz nos outros) */
+.previewContactLine:empty::before{
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,0.45);
+  font-weight: 800;
+}

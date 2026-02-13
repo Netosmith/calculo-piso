@@ -223,10 +223,10 @@
 /* PRODUTO */
 .templatePreview[data-template-preview="1"] .previewProduct {
   position: absolute;
-  top: 340px;
+  top: 345px;
   left: 15px;
   right: 24px;
-  text-align: center;
+  text-align: left;
   font-size: 18px;
   font-weight: 900;
   color: #facc15;
@@ -236,7 +236,7 @@
 /* VALOR */
 .templatePreview[data-template-preview="1"] .previewPrice {
   position: absolute;
-  top: 380px;
+  top: 383px;
   left: 15px;
   right: 24px;
   text-align: center;

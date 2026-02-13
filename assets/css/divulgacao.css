@@ -224,9 +224,9 @@
 .templatePreview[data-template-preview="1"] .previewProduct {
   position: absolute;
   top: 345px;
-  left: 70px;
+  left: -100px;
   right: 24px;
-  text-align: left;
+  text-align: center;
   font-size: 18px;
   font-weight: 900;
   color: #facc15;
@@ -237,7 +237,7 @@
 .templatePreview[data-template-preview="1"] .previewPrice {
   position: absolute;
   top: 383px;
-  left: 55px;
+  left: -100px;
   right: 24px;
   text-align: center;
   font-size: 26px;

@@ -214,7 +214,7 @@
 }
 
 .templatePreview[data-template-preview="1"] .previewDescarga .previewSmall {
-  margin-top: 3px;
+  margin-top: 4px;
   font-size: 13px;
   font-weight: 800;
   opacity: 0.9;
@@ -237,7 +237,7 @@
 .templatePreview[data-template-preview="1"] .previewPrice {
   position: absolute;
   top: 383px;
-  left: 70px;
+  left: 55px;
   right: 24px;
   text-align: left;
   font-size: 26px;
@@ -262,7 +262,7 @@
 /* CONTATOS (4 linhas) */
 .templatePreview[data-template-preview="1"] .previewContacts {
   position: absolute;
-  left: 60px;
+  left: 50px;
   right: 40px;
   bottom: 180px;
   display: flex;

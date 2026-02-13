@@ -99,6 +99,15 @@
   transition: all 0.2s ease;
 }
 
+.templateForm select {
+  height: 36px;
+  border: 1px solid #cbd5f5;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: #fff;
+}
+
 .templateForm input:focus {
   border-color: #22c55e;
   outline: none;

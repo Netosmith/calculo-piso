@@ -267,7 +267,7 @@
   bottom: 155px;      /* 👈 DESCE os contatos (antes 180) */
   display: flex;
   flex-direction: column;
-  gap: 5px;            /* 👈 APROXIMA as linhas (antes 10) */
+  gap: 4px;            /* 👈 APROXIMA as linhas (antes 10) */
   text-align: left;
 }
 
@@ -276,7 +276,7 @@
   font-weight: 900;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0,0,0,.75);
-  line-height: 1.0;    /* 👈 MAIS “colado” (antes 1.1) */
+  line-height: 0.9;    /* 👈 MAIS “colado” (antes 1.1) */
   min-height: 14px;    /* 👈 acompanha o novo tamanho */
 }
 

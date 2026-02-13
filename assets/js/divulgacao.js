@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  // Mapa do seletor Produto -> imagem de fundo
+  // Produto -> imagem de fundo
   const PRODUCT_BG_MAP = {
     SOJA: "../assets/img/SOJATESTE.png",
     MILHO: "../assets/img/MILHOTESTE.png",
@@ -22,19 +22,17 @@
     return preview.querySelector(".previewBg");
   }
 
-  function normalizeProductKey(v) {
+  function normalizeKey(v) {
     return String(v || "")
       .trim()
       .toUpperCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, ""); // remove acentos (AÇÚCAR -> ACUCAR)
+      .replace(/[\u0300-\u036f]/g, "");
   }
 
   function productToImage(productValue) {
     const raw = String(productValue || "").trim().toUpperCase();
-    const noAccent = normalizeProductKey(productValue);
-
-    // tenta nas 2 formas
+    const noAccent = normalizeKey(productValue);
     return PRODUCT_BG_MAP[raw] || PRODUCT_BG_MAP[noAccent] || "";
   }
 
@@ -44,14 +42,14 @@
 
     const img = productToImage(productValue) || DEFAULT_BG;
 
-    // ✅ Seu HTML usa <img class="previewBg">, então troca o SRC
+    // Preferência: trocar o SRC do <img class="previewBg">
     const bgImg = getBgImgEl(preview);
     if (bgImg) {
       bgImg.src = img;
       return;
     }
 
-    // fallback: se algum template não tiver <img>, usa background CSS
+    // Fallback: background-image
     preview.style.backgroundImage = `url("${img}")`;
   }
 
@@ -75,10 +73,10 @@
 
     const value = (el.value || "").trim();
 
-    // Atualiza texto no preview (inclui contatos 1..4)
+    // Atualiza texto no preview
     updatePreview(templateId, field, value);
 
-    // Troca fundo quando mexer no produto (template 1, 2 e 3 se quiser)
+    // Troca fundo se mexer no produto
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
@@ -88,20 +86,18 @@
     const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
     if (!card) return;
 
-    // limpa inputs e selects
     card.querySelectorAll("input, select").forEach((el) => {
       if (el.tagName === "SELECT") {
         el.selectedIndex = 0;
+        // força update no preview também
+        handleInput({ target: el });
       } else {
         el.value = "";
-      }
-
-      if (el.dataset.field) {
-        updatePreview(templateId, el.dataset.field, "");
+        if (el.dataset.field) updatePreview(templateId, el.dataset.field, "");
       }
     });
 
-    // volta fundo padrão
+    // Fundo padrão
     setPreviewBackgroundByProduct(templateId, "SOJA");
   }
 
@@ -124,30 +120,28 @@
   }
 
   function initDefaults() {
-    // fundo inicial para todos os previews que tiverem produto
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.getAttribute("data-template-preview");
 
-      // tenta achar o campo produto no formulário
       const produtoEl = document.querySelector(
         `[data-template="${templateId}"][data-field="produto"]`
       );
 
-      const produtoVal = produtoEl ? (produtoEl.value || "SOJA").trim() : "SOJA";
-      setPreviewBackgroundByProduct(templateId, produtoVal);
+      // Só troca o fundo padrão (SOJA). Não força escrever "SOJA" no texto se estiver vazio.
+      const produtoVal = produtoEl ? (produtoEl.value || "").trim() : "";
+      setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
 
-      // garante atualização do preview do produto (se existir bind)
-      updatePreview(templateId, "produto", produtoVal);
+      // Se o usuário já tinha algo no produto, reflete no preview.
+      if (produtoVal) updatePreview(templateId, "produto", produtoVal);
     });
   }
 
   function bindActions() {
-    // inputs e selects com data-template + data-field
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const evt = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(evt, handleInput);
 
-      // já atualiza preview na carga
+      // aplica no load (para preencher o que já tiver)
       handleInput({ target: el });
     });
 
@@ -164,79 +158,3 @@
 
   window.addEventListener("DOMContentLoaded", bindActions);
 })();
-
-/* ====== FUNDO VIA <img class="previewBg"> ====== */
-.templatePreview{
-  position: relative;
-}
-
-.previewBg{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
-}
-
-/* Se ainda tiver o ::before escurecendo, deixe bem fraco ou desligue */
-.templatePreview::before{
-  /* opção 1: desligar totalmente */
-  /* display: none; */
-
-  /* opção 2: deixar quase nada (recomendado pra manter contraste) */
-  content:"";
-  position:absolute;
-  inset:0;
-  background: rgba(0,0,0,0.08);
-  z-index: 1;
-  pointer-events:none;
-}
-
-/* tudo que for texto fica acima do fundo */
-.previewTag,
-.previewValue,
-.previewSmall,
-.previewProduct,
-.previewPrice,
-.previewNote,
-.previewRoute,
-.previewSeparator,
-.previewBlock,
-.previewHighlight,
-.previewContacts,
-.previewContactLine{
-  position: relative;
-  z-index: 2;
-}
-
-/* ====== CONTATOS (4 LINHAS) ====== */
-.previewContacts{
-  position: absolute;
-  /* ajuste fino pra cair em cima do “CONTATOS” da imagem */
-  left: 70px;
-  right: 40px;
-  bottom: 165px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  text-align: left;
-}
-
-.previewContactLine{
-  font-size: 14px;
-  font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 2px 6px rgba(0,0,0,.75);
-  line-height: 1.1;
-  min-height: 16px; /* garante “linha” mesmo vazia */
-}
-
-/* placeholder pros contatos (igual você já faz nos outros) */
-.previewContactLine:empty::before{
-  content: attr(data-placeholder);
-  color: rgba(255,255,255,0.45);
-  font-weight: 800;
-}

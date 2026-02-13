@@ -13,13 +13,13 @@
 
   // Filial -> contatos (4 linhas)
 const FILIAIS_CONTATOS = {
-  MATRIZ: [
+  RIOVERDE: [
     "LUZIANO (64) 9xxxx-xxxx",
     "ARIEL (64) 9xxxx-xxxx",
     "NETO (64) 9xxxx-xxxx",
     "MARCIO (64) 9xxxx-xxxx"
   ],
-  RIO_VERDE: [
+  MONTIVIDIU: [
     "CONTATO 1 RV",
     "CONTATO 2 RV",
     "CONTATO 3 RV",

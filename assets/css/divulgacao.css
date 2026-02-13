@@ -257,6 +257,9 @@
   color: #ff4d4f;  /* 🔥 TEXTO VERMELHO */
   max-width: 92%;
   margin: 0 auto;
+  text-shadow:
+  0 2px 6px rgba(0,0,0,0.85),
+  0 0 8px rgba(255,0,0,0.45);
 }
 
 /* CONTATOS (4 linhas) */

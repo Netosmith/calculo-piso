@@ -264,7 +264,7 @@
   position: absolute;
   left: 50px;
   right: 40px;
-  bottom: 155px;      /* 👈 DESCE os contatos (antes 180) */
+  bottom: 160px;      /* 👈 DESCE os contatos (antes 180) */
   display: flex;
   flex-direction: column;
   gap: 4px;            /* 👈 APROXIMA as linhas (antes 10) */

@@ -11,6 +11,27 @@
     CALCARIO: "../assets/img/CALCARIOTESTE.png"
   };
 
+  // Filial -> contatos (4 linhas)
+const FILIAIS_CONTATOS = {
+  MATRIZ: [
+    "LUZIANO (64) 9xxxx-xxxx",
+    "ARIEL (64) 9xxxx-xxxx",
+    "NETO (64) 9xxxx-xxxx",
+    "MARCIO (64) 9xxxx-xxxx"
+  ],
+  RIO_VERDE: [
+    "CONTATO 1 RV",
+    "CONTATO 2 RV",
+    "CONTATO 3 RV",
+    "CONTATO 4 RV"
+  ],
+  JATAI: [
+    "CONTATO 1 JT",
+    "CONTATO 2 JT",
+    "CONTATO 3 JT",
+    "CONTATO 4 JT"
+  ]
+};
   const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
 
   function getPreview(templateId) {
@@ -79,8 +100,21 @@
     // Troca fundo se mexer no produto
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
-    }
-  }
+
+      // Se escolher a filial, autopreenche contatos do template 1
+if (String(templateId) === "1" && field === "filial") {
+  const lista = FILIAIS_CONTATOS[value] || ["", "", "", ""];
+
+  // Preenche inputs
+  ["contato1", "contato2", "contato3", "contato4"].forEach((cField, idx) => {
+    const input = document.querySelector(
+      `[data-template="1"][data-field="${cField}"]`
+    );
+    if (input) input.value = lista[idx] || "";
+
+    // Atualiza preview
+    updatePreview("1", cField, lista[idx] || "");
+  });
 
   function resetTemplate(templateId) {
     const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);

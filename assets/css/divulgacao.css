@@ -179,7 +179,7 @@
 /* BLOCO COLETA */
 .templatePreview[data-template-preview="1"] .previewColeta {
   position: absolute;
-  top: 170px;
+  top: 180px;
   left: 20px;
   right: 20px;
   text-align: center;

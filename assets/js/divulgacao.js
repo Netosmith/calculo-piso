@@ -11,8 +11,48 @@
     CALCARIO: "../assets/img/CALCARIOTESTE.png"
   };
 
+  const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
+
   function getPreview(templateId) {
     return document.querySelector(`[data-template-preview="${templateId}"]`);
+  }
+
+  function getBgImgEl(preview) {
+    if (!preview) return null;
+    return preview.querySelector(".previewBg");
+  }
+
+  function normalizeProductKey(v) {
+    return String(v || "")
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, ""); // remove acentos (AÇÚCAR -> ACUCAR)
+  }
+
+  function productToImage(productValue) {
+    const raw = String(productValue || "").trim().toUpperCase();
+    const noAccent = normalizeProductKey(productValue);
+
+    // tenta nas 2 formas
+    return PRODUCT_BG_MAP[raw] || PRODUCT_BG_MAP[noAccent] || "";
+  }
+
+  function setPreviewBackgroundByProduct(templateId, productValue) {
+    const preview = getPreview(templateId);
+    if (!preview) return;
+
+    const img = productToImage(productValue) || DEFAULT_BG;
+
+    // ✅ Seu HTML usa <img class="previewBg">, então troca o SRC
+    const bgImg = getBgImgEl(preview);
+    if (bgImg) {
+      bgImg.src = img;
+      return;
+    }
+
+    // fallback: se algum template não tiver <img>, usa background CSS
+    preview.style.backgroundImage = `url("${img}")`;
   }
 
   function updatePreview(templateId, field, value) {
@@ -25,32 +65,21 @@
     target.textContent = value;
   }
 
-  function setPreviewBackgroundByProduct(templateId, productValue) {
-    const preview = getPreview(templateId);
-    if (!preview) return;
-
-    const key = String(productValue || "").trim().toUpperCase();
-    const img = PRODUCT_BG_MAP[key];
-
-    // Se não bater com nenhum item do mapa, não altera o fundo
-    if (!img) return;
-
-    preview.style.backgroundImage = `url("${img}")`;
-  }
-
   function handleInput(event) {
-    const el = event.target;
+    const el = event && event.target ? event.target : null;
+    if (!el) return;
+
     const templateId = el.dataset.template;
     const field = el.dataset.field;
     if (!templateId || !field) return;
 
     const value = (el.value || "").trim();
 
-    // Atualiza texto no preview
+    // Atualiza texto no preview (inclui contatos 1..4)
     updatePreview(templateId, field, value);
 
-    // Se for o campo produto do template 1: troca o fundo
-    if (String(templateId) === "1" && field === "produto") {
+    // Troca fundo quando mexer no produto (template 1, 2 e 3 se quiser)
+    if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
   }
@@ -63,30 +92,28 @@
     card.querySelectorAll("input, select").forEach((el) => {
       if (el.tagName === "SELECT") {
         el.selectedIndex = 0;
-        // dispara atualização (pra refletir no preview e trocar fundo)
-        handleInput({ target: el });
       } else {
         el.value = "";
-        if (el.dataset.field) updatePreview(templateId, el.dataset.field, "");
+      }
+
+      if (el.dataset.field) {
+        updatePreview(templateId, el.dataset.field, "");
       }
     });
 
-    // Se for template 1, volta para fundo padrão (SOJA)
-    if (String(templateId) === "1") {
-      const preview = getPreview(templateId);
-      if (preview) preview.style.backgroundImage = `url("${PRODUCT_BG_MAP.SOJA}")`;
-    }
+    // volta fundo padrão
+    setPreviewBackgroundByProduct(templateId, "SOJA");
   }
 
   async function saveTemplate(templateId) {
     const preview = getPreview(templateId);
     if (!preview) return;
 
-    // html2canvas pega o elemento já com background inline (ou CSS)
     const canvas = await html2canvas(preview, {
-      backgroundColor: null, // mantém transparência/visual do preview
+      backgroundColor: null,
       scale: 2,
-      useCORS: true
+      useCORS: true,
+      allowTaint: true
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
@@ -96,20 +123,22 @@
     link.click();
   }
 
-  function initTemplate1Defaults() {
-    // Seta fundo inicial do modelo 1 como SOJA
-    const preview1 = getPreview("1");
-    if (preview1) {
-      preview1.style.backgroundImage = `url("${PRODUCT_BG_MAP.SOJA}")`;
-    }
+  function initDefaults() {
+    // fundo inicial para todos os previews que tiverem produto
+    document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
+      const templateId = preview.getAttribute("data-template-preview");
 
-    // Se o select de produto existir, garante o evento e o fundo inicial coerente
-    const sel = document.querySelector(`select[data-template="1"][data-field="produto"]`);
-    if (sel) {
-      const val = (sel.value || "SOJA").trim();
-      setPreviewBackgroundByProduct("1", val);
-      updatePreview("1", "produto", val);
-    }
+      // tenta achar o campo produto no formulário
+      const produtoEl = document.querySelector(
+        `[data-template="${templateId}"][data-field="produto"]`
+      );
+
+      const produtoVal = produtoEl ? (produtoEl.value || "SOJA").trim() : "SOJA";
+      setPreviewBackgroundByProduct(templateId, produtoVal);
+
+      // garante atualização do preview do produto (se existir bind)
+      updatePreview(templateId, "produto", produtoVal);
+    });
   }
 
   function bindActions() {
@@ -118,7 +147,7 @@
       const evt = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(evt, handleInput);
 
-      // já atualiza preview na carga (útil pra selects)
+      // já atualiza preview na carga
       handleInput({ target: el });
     });
 
@@ -130,7 +159,7 @@
       button.addEventListener("click", () => saveTemplate(button.dataset.template));
     });
 
-    initTemplate1Defaults();
+    initDefaults();
   }
 
   window.addEventListener("DOMContentLoaded", bindActions);

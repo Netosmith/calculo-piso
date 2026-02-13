@@ -31,8 +31,9 @@
 
     <!-- =========================
          MODELO 1 (igual suas imagens)
-         LOCAL DE COLETA: -CIDADE\nLOCAL
-         LOCAL DE DESCARGA: -CIDADE\nLOCAL
+         - Não mostra "LOCAL DE COLETA/DESCARGA" (já tem na imagem)
+         - Coleta/Descarga em 2 linhas (Cidade-UF + Detalhe)
+         - 4 linhas de contato
     ========================== -->
     <section class="templateCard" data-template="1">
       <div class="templateHeader">
@@ -64,38 +65,47 @@
           <input data-template="1" data-field="obs" placeholder="Ex: Pagamento PIX ou cheque" />
 
           <label>Contatos (linha 1)</label>
-<input data-template="1" data-field="contato1" placeholder="Ex: (64) 9xxxx-xxxx" />
+          <input data-template="1" data-field="contato1" placeholder="Ex: (64) 9xxxx-xxxx" />
 
-<label>Contatos (linha 2)</label>
-<input data-template="1" data-field="contato2" placeholder="Ex: (64) 9xxxx-xxxx" />
+          <label>Contatos (linha 2)</label>
+          <input data-template="1" data-field="contato2" placeholder="Ex: (64) 9xxxx-xxxx" />
 
-<label>Contatos (linha 3)</label>
-<input data-template="1" data-field="contato3" placeholder="Ex: (64) 9xxxx-xxxx" />
+          <label>Contatos (linha 3)</label>
+          <input data-template="1" data-field="contato3" placeholder="Ex: (64) 9xxxx-xxxx" />
 
-<label>Contatos (linha 4)</label>
-<input data-template="1" data-field="contato4" placeholder="Ex: (64) 9xxxx-xxxx" />
-</div>
-        
+          <label>Contatos (linha 4)</label>
+          <input data-template="1" data-field="contato4" placeholder="Ex: (64) 9xxxx-xxxx" />
+        </div>
+
         <div class="templatePreview" data-template-preview="1">
-          <!-- ✅ FUNDO DO MODELO -->
+          <!-- FUNDO DO MODELO -->
           <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
-          <!-- ✅ duas linhas: -CIDADE-UF + Local -->
-          <div class="previewValue" data-bind="coletaFinal" data-placeholder="-CIDADE-UF&#10;Local"></div>
+          <!-- COLETA (2 linhas) -->
+          <div class="previewColeta">
+            <div class="previewValue" data-bind="coletaCidade" data-placeholder="-CIDADE-UF"></div>
+            <div class="previewSmall" data-bind="coletaLocal" data-placeholder="Local"></div>
+          </div>
 
-          <!-- ✅ duas linhas: -CIDADE-UF + Local -->
-          <div class="previewValue" data-bind="descargaFinal" data-placeholder="-CIDADE-UF&#10;Local"></div>
+          <!-- DESCARGA (2 linhas) -->
+          <div class="previewDescarga">
+            <div class="previewValue" data-bind="descargaCidade" data-placeholder="-CIDADE-UF"></div>
+            <div class="previewSmall" data-bind="descargaLocal" data-placeholder="Local"></div>
+          </div>
 
           <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
           <div class="previewPrice" data-bind="valor" data-placeholder="Valor por tonelada"></div>
           <div class="previewNote" data-bind="obs" data-placeholder="Observações"></div>
+
+          <!-- CONTATOS (4 linhas) -->
           <div class="previewContacts">
-  <div class="previewContactLine" data-bind="contato1" data-placeholder="Contato 1"></div>
-  <div class="previewContactLine" data-bind="contato2" data-placeholder="Contato 2"></div>
-  <div class="previewContactLine" data-bind="contato3" data-placeholder="Contato 3"></div>
-  <div class="previewContactLine" data-bind="contato4" data-placeholder="Contato 4"></div>
-</div>
-</div>
+            <div class="previewContactLine" data-bind="contato1" data-placeholder="Contato 1"></div>
+            <div class="previewContactLine" data-bind="contato2" data-placeholder="Contato 2"></div>
+            <div class="previewContactLine" data-bind="contato3" data-placeholder="Contato 3"></div>
+            <div class="previewContactLine" data-bind="contato4" data-placeholder="Contato 4"></div>
+          </div>
+        </div>
+      </div>
 
       <div class="templateActions">
         <button class="btnTiny green" data-action="save" data-template="1">Salvar JPG</button>
@@ -137,7 +147,6 @@
         </div>
 
         <div class="templatePreview templatePreview--dark" data-template-preview="2">
-          <!-- ✅ FUNDO DO MODELO -->
           <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
           <div class="previewRoute">
@@ -147,6 +156,7 @@
             <div class="previewValue" data-bind="destino" data-placeholder="Destino"></div>
             <div class="previewSmall" data-bind="detalheDestino" data-placeholder="Detalhe destino"></div>
           </div>
+
           <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
           <div class="previewPrice" data-bind="valor" data-placeholder="Valor"></div>
           <div class="previewNote" data-bind="contato" data-placeholder="Contato"></div>
@@ -187,7 +197,6 @@
         </div>
 
         <div class="templatePreview templatePreview--light" data-template-preview="3">
-          <!-- ✅ FUNDO DO MODELO -->
           <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
           <div class="previewBlock">

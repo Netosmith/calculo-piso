@@ -180,7 +180,7 @@
 .templatePreview[data-template-preview="1"] .previewColeta {
   position: absolute;
   top: 180px;
-  left: 30px;
+  left: 200px;
   right: 20px;
   text-align: center;
 }
@@ -192,7 +192,7 @@
 }
 
 .templatePreview[data-template-preview="1"] .previewColeta .previewSmall {
-  margin-top: 2px;
+  margin-top: 0px;
   font-size: 13px;
   font-weight: 800;
   opacity: 0.9;

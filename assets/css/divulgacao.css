@@ -179,9 +179,9 @@
 /* BLOCO COLETA */
 .templatePreview[data-template-preview="1"] .previewColeta {
   position: absolute;
-  top: 165px;
-  left: 24px;
-  right: 24px;
+  top: 170px;
+  left: 20px;
+  right: 20px;
   text-align: center;
 }
 

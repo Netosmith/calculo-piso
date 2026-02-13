@@ -180,7 +180,7 @@
 .templatePreview[data-template-preview="1"] .previewColeta {
   position: absolute;
   top: 180px;
-  left: 60px;
+  left: 100px;
   right: 20px;
   text-align: center;
 }
@@ -202,7 +202,7 @@
 .templatePreview[data-template-preview="1"] .previewDescarga {
   position: absolute;
   top: 258px;
-  left: 60px;
+  left: 100px;
   right: 24px;
   text-align: center;
 }

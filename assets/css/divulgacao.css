@@ -236,7 +236,7 @@
 /* VALOR */
 .templatePreview[data-template-preview="1"] .previewPrice {
   position: absolute;
-  top: 400px;
+  top: 380px;
   left: 24px;
   right: 24px;
   text-align: center;

@@ -1,192 +1,90 @@
 (function () {
   "use strict";
 
-  /***********************
-   * CONFIG (imagens do GitHub)
-   ***********************/
-  const BG_BY_PRODUCT = {
+  // Mapa do seletor Produto -> imagem de fundo
+  const PRODUCT_BG_MAP = {
     SOJA: "../assets/img/SOJATESTE.png",
     MILHO: "../assets/img/MILHOTESTE.png",
+    "AÇÚCAR": "../assets/img/ACUCARTESTE.png",
     ACUCAR: "../assets/img/ACUCARTESTE.png",
-    AÇÚCAR: "../assets/img/ACUCARTESTE.png",
-    CALCARIO: "../assets/img/CALCARIOTESTE.png",
-    CALCÁRIO: "../assets/img/CALCARIOTESTE.png"
+    CALCÁRIO: "../assets/img/CALCARIOTESTE.png",
+    CALCARIO: "../assets/img/CALCARIOTESTE.png"
   };
 
-  const DEFAULT_BG = "../assets/img/SOJATESTE.png";
-
-  /***********************
-   * HELPERS
-   ***********************/
-  function qs(sel, root = document) {
-    return root.querySelector(sel);
+  function getPreview(templateId) {
+    return document.querySelector(`[data-template-preview="${templateId}"]`);
   }
 
-  function qsa(sel, root = document) {
-    return Array.from(root.querySelectorAll(sel));
-  }
-
-  function safeText(v) {
-    return (v ?? "").toString().trim();
-  }
-
-  // permite \n virar quebra de linha no preview
-  function setTextWithBreaks(el, text) {
-    const v = safeText(text);
-    // mantém placeholder se estiver vazio (se seu CSS usa :empty::before)
-    if (!v) {
-      el.textContent = "";
-      return;
-    }
-    // quebra de linha real
-    if (v.includes("\n")) {
-      el.innerHTML = "";
-      v.split("\n").forEach((line, i) => {
-        if (i > 0) el.appendChild(document.createElement("br"));
-        el.appendChild(document.createTextNode(line));
-      });
-    } else {
-      el.textContent = v;
-    }
-  }
-
-  function normalizeKey(text) {
-    return safeText(text)
-      .toUpperCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, ""); // remove acentos
-  }
-
-  /***********************
-   * PREVIEW BIND
-   ***********************/
   function updatePreview(templateId, field, value) {
-    const preview = qs(`[data-template-preview="${templateId}"]`);
+    const preview = getPreview(templateId);
     if (!preview) return;
 
-    const target = qs(`[data-bind="${field}"]`, preview);
+    const target = preview.querySelector(`[data-bind="${field}"]`);
     if (!target) return;
 
-    setTextWithBreaks(target, value);
+    target.textContent = value;
   }
 
-  function setPreviewBackground(templateId, productValue) {
-    const preview = qs(`[data-template-preview="${templateId}"]`);
+  function setPreviewBackgroundByProduct(templateId, productValue) {
+    const preview = getPreview(templateId);
     if (!preview) return;
 
-    const img = qs(".previewBg", preview);
+    const key = String(productValue || "").trim().toUpperCase();
+    const img = PRODUCT_BG_MAP[key];
+
+    // Se não bater com nenhum item do mapa, não altera o fundo
     if (!img) return;
 
-    const key = normalizeKey(productValue);
-    const url = BG_BY_PRODUCT[key] || DEFAULT_BG;
-
-    // troca a imagem do modelo
-    img.src = url;
+    preview.style.backgroundImage = `url("${img}")`;
   }
 
-  /***********************
-   * INPUT HANDLING
-   ***********************/
   function handleInput(event) {
-    const input = event.target;
-
-    const templateId = input.dataset.template;
-    const field = input.dataset.field;
+    const el = event.target;
+    const templateId = el.dataset.template;
+    const field = el.dataset.field;
     if (!templateId || !field) return;
 
-    const value = safeText(input.value);
+    const value = (el.value || "").trim();
 
-    // Se o campo for "produto", já troca o fundo
-    if (normalizeKey(field) === "PRODUTO") {
-      setPreviewBackground(templateId, value);
-    }
-
-    // Atualiza o bind padrão
+    // Atualiza texto no preview
     updatePreview(templateId, field, value);
 
-    // ✅ Opcional: se você tiver campos separados para Coleta:
-    // cidadeColeta + localColeta -> monta:
-    // "-INDIARA-GO\nFaz Ouro Branco"
-    // Basta usar data-field="coletaCidade" e data-field="coletaLocal"
-    // e no preview usar data-bind="coletaFinal"
-    const f = normalizeKey(field);
-    if (f === "COLETACIDADE" || f === "COLETALOCAL") {
-      applyComposite(templateId, "COLETA");
-    }
-    if (f === "DESCARGACIDADE" || f === "DESCARGALOCAL") {
-      applyComposite(templateId, "DESCARGA");
+    // Se for o campo produto do template 1: troca o fundo
+    if (String(templateId) === "1" && field === "produto") {
+      setPreviewBackgroundByProduct(templateId, value);
     }
   }
 
-  function applyComposite(templateId, type) {
-    // lê inputs do card
-    const card = qs(`.templateCard[data-template="${templateId}"]`);
-    if (!card) return;
-
-    if (type === "COLETA") {
-      const cidade = safeText(qs(`input[data-template="${templateId}"][data-field="coletaCidade"]`, card)?.value);
-      const local = safeText(qs(`input[data-template="${templateId}"][data-field="coletaLocal"]`, card)?.value);
-
-      const composed = [
-        cidade ? `-${cidade}` : "",
-        local ? `${local}` : ""
-      ].filter(Boolean).join("\n");
-
-      updatePreview(templateId, "coletaFinal", composed);
-    }
-
-    if (type === "DESCARGA") {
-      const cidade = safeText(qs(`input[data-template="${templateId}"][data-field="descargaCidade"]`, card)?.value);
-      const local = safeText(qs(`input[data-template="${templateId}"][data-field="descargaLocal"]`, card)?.value);
-
-      const composed = [
-        cidade ? `-${cidade}` : "",
-        local ? `${local}` : ""
-      ].filter(Boolean).join("\n");
-
-      updatePreview(templateId, "descargaFinal", composed);
-    }
-  }
-
-  /***********************
-   * RESET / SAVE
-   ***********************/
   function resetTemplate(templateId) {
-    const card = qs(`.templateCard[data-template="${templateId}"]`);
+    const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
     if (!card) return;
 
-    // limpa inputs
-    qsa("input[data-template][data-field]", card).forEach((input) => {
-      input.value = "";
-      if (input.dataset.field) {
-        updatePreview(templateId, input.dataset.field, "");
+    // limpa inputs e selects
+    card.querySelectorAll("input, select").forEach((el) => {
+      if (el.tagName === "SELECT") {
+        el.selectedIndex = 0;
+        // dispara atualização (pra refletir no preview e trocar fundo)
+        handleInput({ target: el });
+      } else {
+        el.value = "";
+        if (el.dataset.field) updatePreview(templateId, el.dataset.field, "");
       }
     });
 
-    // limpa binds compostos se existirem
-    updatePreview(templateId, "coletaFinal", "");
-    updatePreview(templateId, "descargaFinal", "");
-
-    // volta fundo default
-    setPreviewBackground(templateId, "");
+    // Se for template 1, volta para fundo padrão (SOJA)
+    if (String(templateId) === "1") {
+      const preview = getPreview(templateId);
+      if (preview) preview.style.backgroundImage = `url("${PRODUCT_BG_MAP.SOJA}")`;
+    }
   }
 
   async function saveTemplate(templateId) {
-    const preview = qs(`[data-template-preview="${templateId}"]`);
+    const preview = getPreview(templateId);
     if (!preview) return;
 
-    // dica: se o preview tiver imagem, garante que carregou
-    const bgImg = qs(".previewBg", preview);
-    if (bgImg && !bgImg.complete) {
-      await new Promise((res) => {
-        bgImg.addEventListener("load", res, { once: true });
-        bgImg.addEventListener("error", res, { once: true });
-      });
-    }
-
-    // captura com o fundo do modelo (não forçar branco)
+    // html2canvas pega o elemento já com background inline (ou CSS)
     const canvas = await html2canvas(preview, {
-      backgroundColor: null,
+      backgroundColor: null, // mantém transparência/visual do preview
       scale: 2,
       useCORS: true
     });
@@ -198,30 +96,41 @@
     link.click();
   }
 
-  /***********************
-   * BIND
-   ***********************/
+  function initTemplate1Defaults() {
+    // Seta fundo inicial do modelo 1 como SOJA
+    const preview1 = getPreview("1");
+    if (preview1) {
+      preview1.style.backgroundImage = `url("${PRODUCT_BG_MAP.SOJA}")`;
+    }
+
+    // Se o select de produto existir, garante o evento e o fundo inicial coerente
+    const sel = document.querySelector(`select[data-template="1"][data-field="produto"]`);
+    if (sel) {
+      const val = (sel.value || "SOJA").trim();
+      setPreviewBackgroundByProduct("1", val);
+      updatePreview("1", "produto", val);
+    }
+  }
+
   function bindActions() {
-    // inputs que atualizam preview
-    qsa("input[data-template][data-field]").forEach((input) => {
-      input.addEventListener("input", handleInput);
+    // inputs e selects com data-template + data-field
+    document.querySelectorAll("[data-template][data-field]").forEach((el) => {
+      const evt = el.tagName === "SELECT" ? "change" : "input";
+      el.addEventListener(evt, handleInput);
+
+      // já atualiza preview na carga (útil pra selects)
+      handleInput({ target: el });
     });
 
-    // reset
-    qsa("[data-action='reset']").forEach((button) => {
+    document.querySelectorAll("[data-action='reset']").forEach((button) => {
       button.addEventListener("click", () => resetTemplate(button.dataset.template));
     });
 
-    // save
-    qsa("[data-action='save']").forEach((button) => {
+    document.querySelectorAll("[data-action='save']").forEach((button) => {
       button.addEventListener("click", () => saveTemplate(button.dataset.template));
     });
 
-    // inicializa fundo default em todos previews
-    qsa("[data-template-preview]").forEach((pv) => {
-      const templateId = pv.getAttribute("data-template-preview");
-      setPreviewBackground(templateId, "");
-    });
+    initTemplate1Defaults();
   }
 
   window.addEventListener("DOMContentLoaded", bindActions);

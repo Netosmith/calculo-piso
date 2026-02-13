@@ -182,7 +182,7 @@
   top: 180px;
   left: 60px;
   right: 20px;
-  text-align: left;
+  text-align: center;
 }
 
 .templatePreview[data-template-preview="1"] .previewColeta .previewValue {
@@ -204,7 +204,7 @@
   top: 258px;
   left: 60px;
   right: 24px;
-  text-align: left;
+  text-align: center;
 }
 
 .templatePreview[data-template-preview="1"] .previewDescarga .previewValue {
@@ -239,7 +239,7 @@
   top: 383px;
   left: 55px;
   right: 24px;
-  text-align: left;
+  text-align: center;
   font-size: 26px;
   font-weight: 900;
   color: #fff;

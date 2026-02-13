@@ -180,9 +180,9 @@
 .templatePreview[data-template-preview="1"] .previewColeta {
   position: absolute;
   top: 180px;
-  left: 15px;
+  left: 70px;
   right: 20px;
-  text-align: center;
+  text-align: left;
 }
 
 .templatePreview[data-template-preview="1"] .previewColeta .previewValue {
@@ -202,9 +202,9 @@
 .templatePreview[data-template-preview="1"] .previewDescarga {
   position: absolute;
   top: 258px;
-  left: 15px;
+  left: 70px;
   right: 24px;
-  text-align: center;
+  text-align: left;
 }
 
 .templatePreview[data-template-preview="1"] .previewDescarga .previewValue {
@@ -224,7 +224,7 @@
 .templatePreview[data-template-preview="1"] .previewProduct {
   position: absolute;
   top: 345px;
-  left: 40px;
+  left: 70px;
   right: 24px;
   text-align: left;
   font-size: 18px;
@@ -237,9 +237,9 @@
 .templatePreview[data-template-preview="1"] .previewPrice {
   position: absolute;
   top: 383px;
-  left: 15px;
+  left: 70px;
   right: 24px;
-  text-align: center;
+  text-align: left;
   font-size: 26px;
   font-weight: 900;
   color: #fff;
@@ -262,7 +262,7 @@
 /* CONTATOS (4 linhas) */
 .templatePreview[data-template-preview="1"] .previewContacts {
   position: absolute;
-  left: 70px;
+  left: 60px;
   right: 40px;
   bottom: 180px;
   display: flex;

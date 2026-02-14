@@ -8,13 +8,12 @@
     SOJA: "../assets/img/SOJATESTE.png",
     MILHO: "../assets/img/MILHOTESTE.png",
     ACUCAR: "../assets/img/ACUCARTESTE.png",
-    CALCARIO: "../assets/img/CALCARIOTESTE.png"
+    CALCARIO: "../assets/img/CALCARIOTESTE.png",
     FARELODESOJA: "../assets/img/FARELODESOJA.png"
   };
 
   /* =========================================
      FILIAL -> CONTATOS (4 linhas)
-     (chaves SEM acento/SEM espaço)
   ========================================= */
   const FILIAIS_CONTATOS = {
     RIOVERDE: [
@@ -97,7 +96,8 @@
     ]
   };
 
-  const DEFAULT_BG = PRODUCT_BG_MAP.;
+  // ✅ fundo padrão
+  const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
 
   /* =========================================
      HELPERS
@@ -130,7 +130,7 @@
      FUNDO PELO PRODUTO
   ========================================= */
   function productToImage(productValue) {
-    const key = normalizeKey(productValue); // SOJA / MILHO / ACUCAR / CALCARIO / FARELODESOJA
+    const key = normalizeKey(productValue); // SOJA/MILHO/ACUCAR/CALCARIO/FARELODESOJA
     return PRODUCT_BG_MAP[key] || DEFAULT_BG;
   }
 
@@ -174,15 +174,12 @@
 
     const value = (el.value || "").trim();
 
-    // sempre atualiza o que foi digitado
     updatePreview(templateId, field, value);
 
-    // produto troca fundo
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
 
-    // filial preenche contatos (template 1)
     if (templateId === "1" && field === "filial") {
       preencherContatosFilial(templateId, value);
     }
@@ -212,7 +209,6 @@
     const preview = getPreview(templateId);
     if (!preview) return;
 
-    // garante que a imagem de fundo carregou antes do print
     const bgImg = getBgImgEl(preview);
     if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
       await new Promise((resolve) => {
@@ -240,13 +236,20 @@
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
 
-      // fundo inicial
       setPreviewBackgroundByProduct(templateId, "SOJA");
 
-      // se já houver filial selecionada no template 1, já preenche
+      // se já tiver filial selecionada (template 1), já preenche
       if (templateId === "1") {
         const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
         if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
+      }
+
+      // se já tiver produto preenchido, aplica fundo correto
+      const produtoEl = document.querySelector(
+        `[data-template="${templateId}"][data-field="produto"]`
+      );
+      if (produtoEl && produtoEl.value) {
+        setPreviewBackgroundByProduct(templateId, produtoEl.value);
       }
     });
   }

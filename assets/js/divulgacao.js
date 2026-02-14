@@ -157,6 +157,9 @@
 
   async function saveTemplate(templateId) {
     const preview = getPreview(templateId);
+    
+    preview.style.transform = "translateZ(0)";
+    preview.style.webkitFontSmoothing = "antialiased";
 
     const canvas = await html2canvas(preview, {
       backgroundColor: null,

@@ -2,18 +2,20 @@
   "use strict";
 
   /* =========================================
-     PRODUTO -> IMAGEM
+     PRODUTO -> IMAGEM (arquivos)
   ========================================= */
   const PRODUCT_BG_MAP = {
     SOJA: "../assets/img/SOJATESTE.png",
     MILHO: "../assets/img/MILHOTESTE.png",
     ACUCAR: "../assets/img/ACUCARTESTE.png",
     CALCARIO: "../assets/img/CALCARIOTESTE.png",
-    FARELODESOJA: "../assets/img/FARELODESOJA.png"
+    FARELODESOJA: "../assets/img/FARELODESOJA.png",
+    SORGO: "../assets/img/SORGOTESTE.png"
   };
 
   /* =========================================
      FILIAL -> CONTATOS (4 linhas)
+     (chaves SEM acento/SEM espaço)
   ========================================= */
   const FILIAIS_CONTATOS = {
     RIOVERDE: [
@@ -96,7 +98,6 @@
     ]
   };
 
-  // ✅ fundo padrão
   const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
 
   /* =========================================
@@ -110,13 +111,14 @@
     return preview ? preview.querySelector(".previewBg") : null;
   }
 
+  // Normaliza: remove acento, espaço, pontuação, vira UPPER
   function normalizeKey(v) {
     return String(v || "")
       .trim()
       .toUpperCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "") // remove acentos
-      .replace(/\s+/g, ""); // remove espaços
+      .replace(/[^A-Z0-9]/g, "");     // remove espaços e símbolos (/, -, etc)
   }
 
   function updatePreview(templateId, field, value) {
@@ -127,11 +129,69 @@
   }
 
   /* =========================================
-     FUNDO PELO PRODUTO
+     PRODUTO: TODAS AS VARIAÇÕES -> IMAGEM
+     (calcario/calcário, soja em graos, açucar granel, etc)
   ========================================= */
+
+  // Aliases diretos (quando o texto "vira exatamente" isso após normalizeKey)
+  const PRODUCT_ALIAS = {
+    // SOJA
+    SOJA: "SOJA",
+    SOJAEMGRAOS: "SOJA",
+    SOJAEMGRAO: "SOJA",
+    SOJAGRAOS: "SOJA",
+    SOJAGRAO: "SOJA",
+    SOJAGRANEL: "SOJA",
+
+    // MILHO
+    MILHO: "MILHO",
+    MILHOEMGRAOS: "MILHO",
+    MILHOEMGRAO: "MILHO",
+    MILHOGRAOS: "MILHO",
+    MILHOGRAO: "MILHO",
+    MILHOGRANEL: "MILHO",
+
+    // AÇÚCAR
+    ACUCAR: "ACUCAR",
+    ACUCARGRANEL: "ACUCAR",
+    ACUCAREMGRAOS: "ACUCAR",
+    ACUCAREMGRAO: "ACUCAR",
+
+    // CALCÁRIO
+    CALCARIO: "CALCARIO",
+    CALCARIOGRANEL: "CALCARIO",
+
+    // SORGO
+    SORGO: "SORGO",
+    SORGOGRANEL: "SORGO",
+    SORGOEMGRAOS: "SORGO",
+    SORGOEMGRAO: "SORGO"
+  };
+
+  // Fallback inteligente: se o usuário digitar “SOJA SAFRA 24”, “ACUCAR VHP”, etc.
+  function inferProductFamily(normalized) {
+    if (normalized.includes("FARELODESOJA") || normalized.includes("FARELOSOJA")) return "FARELODESOJA";
+    if (normalized.includes("SOJA")) return "SOJA";
+    if (normalized.includes("MILHO")) return "MILHO";
+    if (normalized.includes("ACUCAR")) return "ACUCAR";
+    if (normalized.includes("CALCARIO")) return "CALCARIO";
+    if (normalized.includes("SORGO")) return "SORGO";
+    return "";
+  }
+
   function productToImage(productValue) {
-    const key = normalizeKey(productValue); // SOJA/MILHO/ACUCAR/CALCARIO/FARELODESOJA
-    return PRODUCT_BG_MAP[key] || DEFAULT_BG;
+    const n = normalizeKey(productValue);
+
+    // 1) tenta alias exato
+    const aliased = PRODUCT_ALIAS[n];
+    if (aliased && PRODUCT_BG_MAP[aliased]) return PRODUCT_BG_MAP[aliased];
+
+    // 2) tenta inferência por "contém"
+    const family = inferProductFamily(n);
+    if (family && PRODUCT_BG_MAP[family]) return PRODUCT_BG_MAP[family];
+
+    // 3) fallback
+    return DEFAULT_BG;
   }
 
   function setPreviewBackgroundByProduct(templateId, productValue) {
@@ -149,7 +209,7 @@
      AUTOPREENCHER CONTATOS (FILIAL)
   ========================================= */
   function preencherContatosFilial(templateId, filialValue) {
-    const key = normalizeKey(filialValue);
+    const key = normalizeKey(filialValue); // já remove espaço/acentos
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
 
     ["contato1", "contato2", "contato3", "contato4"].forEach((campo, i) => {
@@ -174,12 +234,15 @@
 
     const value = (el.value || "").trim();
 
+    // Atualiza o que foi digitado/selecionado
     updatePreview(templateId, field, value);
 
+    // produto troca fundo
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
 
+    // filial preenche contatos (template 1)
     if (templateId === "1" && field === "filial") {
       preencherContatosFilial(templateId, value);
     }
@@ -209,6 +272,7 @@
     const preview = getPreview(templateId);
     if (!preview) return;
 
+    // garante que a imagem carregou
     const bgImg = getBgImgEl(preview);
     if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
       await new Promise((resolve) => {
@@ -236,20 +300,13 @@
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
 
+      // fundo inicial soja
       setPreviewBackgroundByProduct(templateId, "SOJA");
 
-      // se já tiver filial selecionada (template 1), já preenche
+      // se já houver filial selecionada no template 1, já preenche
       if (templateId === "1") {
         const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
         if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
-      }
-
-      // se já tiver produto preenchido, aplica fundo correto
-      const produtoEl = document.querySelector(
-        `[data-template="${templateId}"][data-field="produto"]`
-      );
-      if (produtoEl && produtoEl.value) {
-        setPreviewBackgroundByProduct(templateId, produtoEl.value);
       }
     });
   }

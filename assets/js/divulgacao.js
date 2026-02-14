@@ -10,7 +10,8 @@
     ACUCAR: "../assets/img/ACUCARTESTE.png",
     CALCARIO: "../assets/img/CALCARIOTESTE.png",
     FARELODESOJA: "../assets/img/FARELODESOJA.png",
-    SORGO: "../assets/img/SORGOTESTE.png"
+    SORGO: "../assets/img/SORGOTESTE.png",
+    FERTILIZANTE: "../assets/img/SORGOTESTE.png"
   };
 
   /* =========================================
@@ -160,6 +161,11 @@
     // CALCÁRIO
     CALCARIO: "CALCARIO",
     CALCARIOGRANEL: "CALCARIO",
+
+    // FERTILIZANTE
+    ADUBO: "FERTILIZANTE",
+    FERTILIZANTES: "FERTILIZANTE",
+    FERTILIZANTE: "FERTILIZANTE",
 
     // SORGO
     SORGO: "SORGO",

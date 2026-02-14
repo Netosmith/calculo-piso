@@ -97,7 +97,7 @@
     ]
   };
 
-  const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
+  const DEFAULT_BG = PRODUCT_BG_MAP.;
 
   /* =========================================
      HELPERS

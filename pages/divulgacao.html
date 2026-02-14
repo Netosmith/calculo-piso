@@ -1,332 +1,219 @@
-(function () {
-  "use strict";
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Divulgação | NOVA FROTA</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/divulgacao.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
+      <div class="actions">
+        <div class="icon-btn" title="Sair" data-logout>👤</div>
+      </div>
+    </div>
+  </div>
 
-  /* =========================================
-     PRODUTO -> IMAGEM (arquivos)
-  ========================================= */
-  const PRODUCT_BG_MAP = {
-    SOJA: "../assets/img/SOJATESTE.png",
-    MILHO: "../assets/img/MILHOTESTE.png",
-    ACUCAR: "../assets/img/ACUCARTESTE.png",
-    CALCARIO: "../assets/img/CALCARIOTESTE.png",
-    FARELODESOJA: "../assets/img/FARELODESOJA.png",
-    SORGO: "../assets/img/SORGOTESTE.png"
-  };
+  <main class="container divulgacao-page">
+    <header class="page-header">
+      <div>
+        <h1>Divulgação</h1>
+        <p>Escolha um modelo, preencha os campos e salve a imagem em JPG.</p>
+      </div>
+      <a class="btnTiny ghost" href="./home.html">Voltar</a>
+    </header>
 
-  /* =========================================
-     FILIAL -> CONTATOS (4 linhas)
-     (chaves SEM acento/SEM espaço)
-  ========================================= */
-  const FILIAIS_CONTATOS = {
-    RIOVERDE: [
-      "LUIS.G (64) 99277-4293",
-      "MARÇAL (64) 99929-3431",
-      "MARCIO (64) 99345-7740",
-      "ARIEL (64) 99227-7537"
-    ],
-    MONTIVIDIU: [
-      "ROBSON (64) 99962-8005",
-      "MARCELO (64) 99653-2847",
-      "--------------------",
-      "--------------------"
-    ],
-    MINEIROS: [
-      "KIEWERSON (64) 99979-4586",
-      "VINICIUS (64) 99939-9946",
-      "--------------------",
-      "--------------------"
-    ],
-    INDIARA: [
-      "RAFAEL P (64) 99910-8790",
-      "RAFAEL (64) 99937-0131",
-      "--------------------",
-      "--------------------"
-    ],
-    FORMOSA: [
-      "FABIOLA (62) 99601-7658",
-      "JOAMAR (61) 99628-1922",
-      "--------------------",
-      "--------------------"
-    ],
-    CRISTALINA: [
-      "EVERALDO (61) 99692-4906",
-      "--------------------",
-      "--------------------",
-      "--------------------"
-    ],
-    CATALAO: [
-      "EVERALDO JR (64) 99237-3735",
-      "--------------------",
-      "--------------------",
-      "--------------------"
-    ],
-    ANAPOLIS: [
-      "SERGIO (64) 99266-9136",
-      "ANDRE (64) 99995-0112",
-      "LUCAS (62) 99318-9816",
-      "--------------------"
-    ],
-    URUACU: [
-      "GUILHERME (62) 9697-8707",
-      "--------------------",
-      "--------------------",
-      "--------------------"
-    ],
-    ITUMBIARA: [
-      "JEFERSON (64) 99263-5363",
-      "NATAL (64) 99322-6440",
-      "GUILHERME (64) 99217-7636",
-      "MAYKON (64) 99254-4094"
-    ],
-    VIANOPOLIS: [
-      "FHELLIPE (62) 99930-7778",
-      "--------------------",
-      "--------------------",
-      "--------------------"
-    ],
-    CHAPEU: [
-      "RICARDO (64) 99991-3512",
-      "JONAS (64) 99607-2391",
-      "--------------------",
-      "--------------------"
-    ],
-    JATAI: [
-      "TRIPA (64) 99982-9980",
-      "HUDSON (64) 99906-2674",
-      "PAULO (64) 99228-4439",
-      "NATANAEL (64) 99333-6454"
-    ]
-  };
+    <!-- MODELO 1 -->
+    <section class="templateCard" data-template="1">
+      <div class="templateHeader">
+        <h2>Modelo 1 - Coleta x Descarga</h2>
+        <p>Layout direto para anúncios rápidos.</p>
+      </div>
 
-  const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
+      <div class="templateBody">
+        <div class="templateForm">
+          <label>Local de coleta (Cidade-UF)</label>
+          <input data-template="1" data-field="coletaCidade" placeholder="Ex: INDIARA-GO" />
 
-  /* =========================================
-     HELPERS
-  ========================================= */
-  function getPreview(templateId) {
-    return document.querySelector(`[data-template-preview="${templateId}"]`);
-  }
+          <label>Local de coleta (Detalhe)</label>
+          <input data-template="1" data-field="coletaLocal" placeholder="Ex: Faz Ouro Branco" />
 
-  function getBgImgEl(preview) {
-    return preview ? preview.querySelector(".previewBg") : null;
-  }
+          <label>Local de descarga (Cidade-UF)</label>
+          <input data-template="1" data-field="descargaCidade" placeholder="Ex: RIO VERDE-GO" />
 
-  // Normaliza: remove acento, espaço, pontuação, vira UPPER
-  function normalizeKey(v) {
-    return String(v || "")
-      .trim()
-      .toUpperCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // remove acentos
-      .replace(/[^A-Z0-9]/g, "");     // remove espaços e símbolos (/, -, etc)
-  }
+          <label>Local de descarga (Detalhe)</label>
+          <input data-template="1" data-field="descargaLocal" placeholder="Ex: Terminal Rumo" />
 
-  function updatePreview(templateId, field, value) {
-    const preview = getPreview(templateId);
-    if (!preview) return;
-    const target = preview.querySelector(`[data-bind="${field}"]`);
-    if (target) target.textContent = value;
-  }
+          <label>Produto</label>
+          <input data-template="1" data-field="produto" placeholder="Ex: Soja / Milho / Açúcar / Calcário" />
 
-  /* =========================================
-     PRODUTO: TODAS AS VARIAÇÕES -> IMAGEM
-     (calcario/calcário, soja em graos, açucar granel, etc)
-  ========================================= */
+          <label>Valor por tonelada</label>
+          <input data-template="1" data-field="valor" placeholder="Ex: R$ 43,00" />
 
-  // Aliases diretos (quando o texto "vira exatamente" isso após normalizeKey)
-  const PRODUCT_ALIAS = {
-    // SOJA
-    SOJA: "SOJA",
-    SOJAEMGRAOS: "SOJA",
-    SOJAEMGRAO: "SOJA",
-    SOJAGRAOS: "SOJA",
-    SOJAGRAO: "SOJA",
-    SOJAGRANEL: "SOJA",
+          <label>Observações</label>
+          <input data-template="1" data-field="obs" placeholder="Ex: Pagamento PIX ou cheque" />
 
-    // MILHO
-    MILHO: "MILHO",
-    MILHOEMGRAOS: "MILHO",
-    MILHOEMGRAO: "MILHO",
-    MILHOGRAOS: "MILHO",
-    MILHOGRAO: "MILHO",
-    MILHOGRANEL: "MILHO",
+          <label>Contatos (linha 1)</label>
+          <input data-template="1" data-field="contato1" placeholder="Ex: (64) 9xxxx-xxxx" />
 
-    // AÇÚCAR
-    ACUCAR: "ACUCAR",
-    ACUCARGRANEL: "ACUCAR",
-    ACUCAREMGRAOS: "ACUCAR",
-    ACUCAREMGRAO: "ACUCAR",
+          <label>Contatos (linha 2)</label>
+          <input data-template="1" data-field="contato2" placeholder="Ex: (64) 9xxxx-xxxx" />
 
-    // CALCÁRIO
-    CALCARIO: "CALCARIO",
-    CALCARIOGRANEL: "CALCARIO",
+          <label>Contatos (linha 3)</label>
+          <input data-template="1" data-field="contato3" placeholder="Ex: (64) 9xxxx-xxxx" />
 
-    // SORGO
-    SORGO: "SORGO",
-    SORGOGRANEL: "SORGO",
-    SORGOEMGRAOS: "SORGO",
-    SORGOEMGRAO: "SORGO"
-  };
+          <label>Contatos (linha 4)</label>
+          <input data-template="1" data-field="contato4" placeholder="Ex: (64) 9xxxx-xxxx" />
+        </div>
 
-  // Fallback inteligente: se o usuário digitar “SOJA SAFRA 24”, “ACUCAR VHP”, etc.
-  function inferProductFamily(normalized) {
-    if (normalized.includes("FARELODESOJA") || normalized.includes("FARELOSOJA")) return "FARELODESOJA";
-    if (normalized.includes("SOJA")) return "SOJA";
-    if (normalized.includes("MILHO")) return "MILHO";
-    if (normalized.includes("ACUCAR")) return "ACUCAR";
-    if (normalized.includes("CALCARIO")) return "CALCARIO";
-    if (normalized.includes("SORGO")) return "SORGO";
-    return "";
-  }
+        <div class="templatePreview" data-template-preview="1">
+          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
-  function productToImage(productValue) {
-    const n = normalizeKey(productValue);
+          <div class="previewColeta">
+            <div class="previewValue" data-bind="coletaCidade" data-placeholder="-CIDADE-UF"></div>
+            <div class="previewSmall" data-bind="coletaLocal" data-placeholder="Local"></div>
+          </div>
 
-    // 1) tenta alias exato
-    const aliased = PRODUCT_ALIAS[n];
-    if (aliased && PRODUCT_BG_MAP[aliased]) return PRODUCT_BG_MAP[aliased];
+          <div class="previewDescarga">
+            <div class="previewValue" data-bind="descargaCidade" data-placeholder="-CIDADE-UF"></div>
+            <div class="previewSmall" data-bind="descargaLocal" data-placeholder="Local"></div>
+          </div>
 
-    // 2) tenta inferência por "contém"
-    const family = inferProductFamily(n);
-    if (family && PRODUCT_BG_MAP[family]) return PRODUCT_BG_MAP[family];
+          <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
+          <div class="previewPrice" data-bind="valor" data-placeholder="Valor por tonelada"></div>
+          <div class="previewNote" data-bind="obs" data-placeholder="Observações"></div>
 
-    // 3) fallback
-    return DEFAULT_BG;
-  }
+          <div class="previewContacts">
+            <div class="previewContactLine" data-bind="contato1" data-placeholder="Contato 1"></div>
+            <div class="previewContactLine" data-bind="contato2" data-placeholder="Contato 2"></div>
+            <div class="previewContactLine" data-bind="contato3" data-placeholder="Contato 3"></div>
+            <div class="previewContactLine" data-bind="contato4" data-placeholder="Contato 4"></div>
+          </div>
+        </div>
+      </div>
 
-  function setPreviewBackgroundByProduct(templateId, productValue) {
-    const preview = getPreview(templateId);
-    if (!preview) return;
+      <div class="templateActions">
+        <button class="btnTiny green" data-action="save" data-template="1">Salvar JPG</button>
+        <button class="btnTiny ghost" data-action="reset" data-template="1">Resetar</button>
+      </div>
+    </section>
 
-    const img = productToImage(productValue);
-    const bgImg = getBgImgEl(preview);
+    <!-- MODELO 2 -->
+    <section class="templateCard" data-template="2">
+      <div class="templateHeader">
+        <h2>Modelo 2 - Rota e valor</h2>
+        <p>Modelo com foco em rota e valor principal.</p>
+      </div>
 
-    if (bgImg) bgImg.src = img;
-    else preview.style.backgroundImage = `url("${img}")`;
-  }
+      <div class="templateBody">
+        <div class="templateForm">
+          <label>Origem</label>
+          <input data-template="2" data-field="origem" placeholder="Ex: Bonfinópolis-MG" />
 
-  /* =========================================
-     AUTOPREENCHER CONTATOS (FILIAL)
-  ========================================= */
-  function preencherContatosFilial(templateId, filialValue) {
-    const key = normalizeKey(filialValue); // já remove espaço/acentos
-    const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
+          <label>Detalhe origem</label>
+          <input data-template="2" data-field="detalheOrigem" placeholder="Ex: Faz. Liberdade" />
 
-    ["contato1", "contato2", "contato3", "contato4"].forEach((campo, i) => {
-      const input = document.querySelector(
-        `[data-template="${templateId}"][data-field="${campo}"]`
-      );
+          <label>Destino</label>
+          <input data-template="2" data-field="destino" placeholder="Ex: Uberaba-MG" />
 
-      const valor = lista[i] || "";
-      if (input) input.value = valor;
-      updatePreview(templateId, campo, valor);
-    });
-  }
+          <label>Detalhe destino</label>
+          <input data-template="2" data-field="detalheDestino" placeholder="Ex: TIUB" />
 
-  /* =========================================
-     INPUT HANDLER
-  ========================================= */
-  function handleInput(event) {
-    const el = event.target;
-    const templateId = el.dataset.template;
-    const field = el.dataset.field;
-    if (!templateId || !field) return;
+          <label>Produto</label>
+          <input data-template="2" data-field="produto" placeholder="Ex: Soja / Milho / Açúcar / Calcário" />
 
-    const value = (el.value || "").trim();
+          <label>Valor</label>
+          <input data-template="2" data-field="valor" placeholder="Ex: R$ 139,00" />
 
-    // Atualiza o que foi digitado/selecionado
-    updatePreview(templateId, field, value);
+          <label>Contato</label>
+          <input data-template="2" data-field="contato" placeholder="Ex: Filial Formosa-GO" />
+        </div>
 
-    // produto troca fundo
-    if (field === "produto") {
-      setPreviewBackgroundByProduct(templateId, value);
-    }
+        <div class="templatePreview templatePreview--dark" data-template-preview="2">
+          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
-    // filial preenche contatos (template 1)
-    if (templateId === "1" && field === "filial") {
-      preencherContatosFilial(templateId, value);
-    }
-  }
+          <div class="previewRoute">
+            <div class="previewValue" data-bind="origem" data-placeholder="Origem"></div>
+            <div class="previewSmall" data-bind="detalheOrigem" data-placeholder="Detalhe origem"></div>
+            <div class="previewSeparator">x</div>
+            <div class="previewValue" data-bind="destino" data-placeholder="Destino"></div>
+            <div class="previewSmall" data-bind="detalheDestino" data-placeholder="Detalhe destino"></div>
+          </div>
 
-  /* =========================================
-     RESET
-  ========================================= */
-  function resetTemplate(templateId) {
-    const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
-    if (!card) return;
+          <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
+          <div class="previewPrice" data-bind="valor" data-placeholder="Valor"></div>
+          <div class="previewNote" data-bind="contato" data-placeholder="Contato"></div>
+        </div>
+      </div>
 
-    card.querySelectorAll("input, select").forEach((el) => {
-      if (el.tagName === "SELECT") el.selectedIndex = 0;
-      else el.value = "";
+      <div class="templateActions">
+        <button class="btnTiny green" data-action="save" data-template="2">Salvar JPG</button>
+        <button class="btnTiny ghost" data-action="reset" data-template="2">Resetar</button>
+      </div>
+    </section>
 
-      if (el.dataset.field) updatePreview(templateId, el.dataset.field, "");
-    });
+    <!-- MODELO 3 -->
+    <section class="templateCard" data-template="3">
+      <div class="templateHeader">
+        <h2>Modelo 3 - Chamada rápida</h2>
+        <p>Modelo compacto com três destaques principais.</p>
+      </div>
 
-    setPreviewBackgroundByProduct(templateId, "SOJA");
-  }
+      <div class="templateBody">
+        <div class="templateForm">
+          <label>Coleta</label>
+          <input data-template="3" data-field="coleta" placeholder="Ex: Cristalina-GO" />
 
-  /* =========================================
-     SALVAR JPG
-  ========================================= */
-  async function saveTemplate(templateId) {
-    const preview = getPreview(templateId);
-    if (!preview) return;
+          <label>Descarga</label>
+          <input data-template="3" data-field="descarga" placeholder="Ex: Santos-SP" />
 
-    // garante que a imagem carregou
-    const bgImg = getBgImgEl(preview);
-    if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
-      await new Promise((resolve) => {
-        bgImg.addEventListener("load", resolve, { once: true });
-        bgImg.addEventListener("error", resolve, { once: true });
-      });
-    }
+          <label>Produto</label>
+          <input data-template="3" data-field="produto" placeholder="Ex: Milho / Soja / Açúcar / Calcário" />
 
-    const canvas = await html2canvas(preview, {
-      backgroundColor: null,
-      scale: 2,
-      useCORS: true
-    });
+          <label>Valor</label>
+          <input data-template="3" data-field="valor" placeholder="Ex: R$ 120,00" />
 
-    const link = document.createElement("a");
-    link.download = `divulgacao-modelo-${templateId}.jpg`;
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
-  }
+          <label>Contato</label>
+          <input data-template="3" data-field="contato" placeholder="Ex: (64) 99999-0000" />
+        </div>
 
-  /* =========================================
-     INIT
-  ========================================= */
-  function initDefaults() {
-    document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
-      const templateId = preview.dataset.templatePreview;
+        <div class="templatePreview templatePreview--light" data-template-preview="3">
+          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
 
-      // fundo inicial soja
-      setPreviewBackgroundByProduct(templateId, "SOJA");
+          <div class="previewBlock">
+            <span>COLETA</span>
+            <strong data-bind="coleta" data-placeholder="Coleta"></strong>
+          </div>
+          <div class="previewBlock">
+            <span>DESCARGA</span>
+            <strong data-bind="descarga" data-placeholder="Descarga"></strong>
+          </div>
 
-      // se já houver filial selecionada no template 1, já preenche
-      if (templateId === "1") {
-        const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
-        if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
-      }
-    });
-  }
+          <div class="previewHighlight" data-bind="produto" data-placeholder="Produto"></div>
+          <div class="previewPrice" data-bind="valor" data-placeholder="Valor"></div>
+          <div class="previewNote" data-bind="contato" data-placeholder="Contato"></div>
+        </div>
+      </div>
 
-  function bindActions() {
-    document.querySelectorAll("[data-template][data-field]").forEach((el) => {
-      const evt = el.tagName === "SELECT" ? "change" : "input";
-      el.addEventListener(evt, handleInput);
-    });
+      <div class="templateActions">
+        <button class="btnTiny green" data-action="save" data-template="3">Salvar JPG</button>
+        <button class="btnTiny ghost" data-action="reset" data-template="3">Resetar</button>
+      </div>
+    </section>
+  </main>
 
-    document.querySelectorAll("[data-action='reset']").forEach((btn) => {
-      btn.addEventListener("click", () => resetTemplate(btn.dataset.template));
-    });
-
-    document.querySelectorAll("[data-action='save']").forEach((btn) => {
-      btn.addEventListener("click", () => saveTemplate(btn.dataset.template));
-    });
-
-    initDefaults();
-  }
-
-  window.addEventListener("DOMContentLoaded", bindActions);
-})();
+  <script src="../assets/js/auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="../assets/js/divulgacao.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
+</body>
+</html>

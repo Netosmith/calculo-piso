@@ -9,6 +9,7 @@
     MILHO: "../assets/img/MILHOTESTE.png",
     ACUCAR: "../assets/img/ACUCARTESTE.png",
     CALCARIO: "../assets/img/CALCARIOTESTE.png"
+    FARELODESOJA: "../assets/img/FARELODESOJA.png"
   };
 
   /* =========================================
@@ -129,7 +130,7 @@
      FUNDO PELO PRODUTO
   ========================================= */
   function productToImage(productValue) {
-    const key = normalizeKey(productValue); // SOJA / MILHO / ACUCAR / CALCARIO
+    const key = normalizeKey(productValue); // SOJA / MILHO / ACUCAR / CALCARIO / FARELODESOJA
     return PRODUCT_BG_MAP[key] || DEFAULT_BG;
   }
 

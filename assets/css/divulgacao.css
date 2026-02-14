@@ -265,7 +265,7 @@
 /* CONTATOS (4 linhas) */
 .templatePreview[data-template-preview="1"] .previewContacts {
   position: absolute;
-  left: 52px;
+  left: 80px;
   right: 40px;
   bottom: 160px;      /* 👈 DESCE os contatos (antes 180) */
   display: flex;

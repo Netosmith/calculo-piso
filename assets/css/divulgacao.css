@@ -265,18 +265,18 @@
 /* CONTATOS (4 linhas) */
 .templatePreview[data-template-preview="1"] .previewContacts {
   position: absolute;
-  left: -200px;
+  left: 52px;
   right: 40px;
   bottom: 160px;      /* 👈 DESCE os contatos (antes 180) */
   display: flex;
   flex-direction: column;
   gap: 4px;            /* 👈 APROXIMA as linhas (antes 10) */
-  text-align: center;
+  text-align: left;
 }
 
 .templatePreview[data-template-preview="1"] .previewContactLine {
   font-size: 11px;     /* 👈 CABE melhor (antes 14) */
-  font-weight: 850;
+  font-weight: 800;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0,0,0,.75);
   line-height: 0.9;    /* 👈 MAIS “colado” (antes 1.1) */

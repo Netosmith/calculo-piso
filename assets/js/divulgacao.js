@@ -7,14 +7,13 @@
   const PRODUCT_BG_MAP = {
     SOJA: "../assets/img/SOJATESTE.png",
     MILHO: "../assets/img/MILHOTESTE.png",
-    "AÇÚCAR": "../assets/img/ACUCARTESTE.png",
     ACUCAR: "../assets/img/ACUCARTESTE.png",
-    CALCÁRIO: "../assets/img/CALCARIOTESTE.png",
     CALCARIO: "../assets/img/CALCARIOTESTE.png"
   };
 
   /* =========================================
-     FILIAL -> CONTATOS
+     FILIAL -> CONTATOS (4 linhas)
+     (chaves SEM acento/SEM espaço)
   ========================================= */
   const FILIAIS_CONTATOS = {
     RIOVERDE: [
@@ -24,58 +23,58 @@
       "ARIEL (64) 99227-7537"
     ],
     MONTIVIDIU: [
-      "ROBSON 64 99962-8005",
-      "MARCELO 64 99653-2847",
+      "ROBSON (64) 99962-8005",
+      "MARCELO (64) 99653-2847",
       "--------------------",
       "--------------------"
-      ],
+    ],
     MINEIROS: [
-      "KIEWERSON 64 99979-4586",
-      "VINICIUS 64 99939-9946",
+      "KIEWERSON (64) 99979-4586",
+      "VINICIUS (64) 99939-9946",
       "--------------------",
       "--------------------"
-      ],
+    ],
     INDIARA: [
-      "RAFAEL P 64 99910-8790",
-      "RAFAEL 64 99937-0131",
+      "RAFAEL P (64) 99910-8790",
+      "RAFAEL (64) 99937-0131",
       "--------------------",
       "--------------------"
-      ],
+    ],
     ANAPOLIS: [
-      "SERGIO 64 99266-9136",
-      "ANDRE 64 99995-0112",
-      "LUCAS 62 99318-9816 ",
+      "SERGIO (64) 99266-9136",
+      "ANDRE (64) 99995-0112",
+      "LUCAS (62) 99318-9816",
       "--------------------"
-      ],
+    ],
     URUACU: [
-      "GUILHERME 62 9697-8707",
-      ""-------------------",
+      "GUILHERME (62) 9697-8707",
+      "--------------------",
       "--------------------",
       "--------------------"
-      ],
+    ],
     ITUMBIARA: [
-      "JEFERSON 64 99263-5363",
-      "NATAL 64 99322-6440",
-      "GUILHERME 64 99217-7636",
-      "MAYKON 64 99254-4094"
-      ],
+      "JEFERSON (64) 99263-5363",
+      "NATAL (64) 99322-6440",
+      "GUILHERME (64) 99217-7636",
+      "MAYKON (64) 99254-4094"
+    ],
     VIANOPOLIS: [
-      "FHELLIPE 62 99930-7778",
+      "FHELLIPE (62) 99930-7778",
       "--------------------",
       "--------------------",
       "--------------------"
-      ],
-    CHAPCEU: [
-      "RICARDO 64 99991-3512",
-      "JONAS 64 99607-2391",
+    ],
+    CHAPEU: [
+      "RICARDO (64) 99991-3512",
+      "JONAS (64) 99607-2391",
       "--------------------",
       "--------------------"
     ],
     JATAI: [
-      "TRIPA 64 99982-9980",
-      "HUDSON 64 99906-2674",
-      "PAULO 64 99228-4439",
-      "NATANAEL 64 99333-6454"
+      "TRIPA (64) 99982-9980",
+      "HUDSON (64) 99906-2674",
+      "PAULO (64) 99228-4439",
+      "NATANAEL (64) 99333-6454"
     ]
   };
 
@@ -84,7 +83,6 @@
   /* =========================================
      HELPERS
   ========================================= */
-
   function getPreview(templateId) {
     return document.querySelector(`[data-template-preview="${templateId}"]`);
   }
@@ -98,14 +96,13 @@
       .trim()
       .toUpperCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "");
+      .replace(/[\u0300-\u036f]/g, "") // remove acentos
+      .replace(/\s+/g, ""); // remove espaços
   }
 
   function updatePreview(templateId, field, value) {
     const preview = getPreview(templateId);
     if (!preview) return;
-
     const target = preview.querySelector(`[data-bind="${field}"]`);
     if (target) target.textContent = value;
   }
@@ -113,10 +110,9 @@
   /* =========================================
      FUNDO PELO PRODUTO
   ========================================= */
-
   function productToImage(productValue) {
-    const raw = normalizeKey(productValue);
-    return PRODUCT_BG_MAP[raw] || DEFAULT_BG;
+    const key = normalizeKey(productValue); // SOJA / MILHO / ACUCAR / CALCARIO
+    return PRODUCT_BG_MAP[key] || DEFAULT_BG;
   }
 
   function setPreviewBackgroundByProduct(templateId, productValue) {
@@ -124,16 +120,15 @@
     if (!preview) return;
 
     const img = productToImage(productValue);
-
     const bgImg = getBgImgEl(preview);
+
     if (bgImg) bgImg.src = img;
     else preview.style.backgroundImage = `url("${img}")`;
   }
 
   /* =========================================
-     AUTOPREENCHER CONTATOS
+     AUTOPREENCHER CONTATOS (FILIAL)
   ========================================= */
-
   function preencherContatosFilial(templateId, filialValue) {
     const key = normalizeKey(filialValue);
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
@@ -144,9 +139,7 @@
       );
 
       const valor = lista[i] || "";
-
       if (input) input.value = valor;
-
       updatePreview(templateId, campo, valor);
     });
   }
@@ -154,23 +147,23 @@
   /* =========================================
      INPUT HANDLER
   ========================================= */
-
   function handleInput(event) {
     const el = event.target;
-
     const templateId = el.dataset.template;
     const field = el.dataset.field;
-
     if (!templateId || !field) return;
 
-    const value = el.value.trim();
+    const value = (el.value || "").trim();
 
+    // sempre atualiza o que foi digitado
     updatePreview(templateId, field, value);
 
+    // produto troca fundo
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
 
+    // filial preenche contatos (template 1)
     if (templateId === "1" && field === "filial") {
       preencherContatosFilial(templateId, value);
     }
@@ -179,9 +172,9 @@
   /* =========================================
      RESET
   ========================================= */
-
   function resetTemplate(templateId) {
     const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
+    if (!card) return;
 
     card.querySelectorAll("input, select").forEach((el) => {
       if (el.tagName === "SELECT") el.selectedIndex = 0;
@@ -196,12 +189,18 @@
   /* =========================================
      SALVAR JPG
   ========================================= */
-
   async function saveTemplate(templateId) {
     const preview = getPreview(templateId);
-    
-    preview.style.transform = "translateZ(0)";
-    preview.style.webkitFontSmoothing = "antialiased";
+    if (!preview) return;
+
+    // garante que a imagem de fundo carregou antes do print
+    const bgImg = getBgImgEl(preview);
+    if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
+      await new Promise((resolve) => {
+        bgImg.addEventListener("load", resolve, { once: true });
+        bgImg.addEventListener("error", resolve, { once: true });
+      });
+    }
 
     const canvas = await html2canvas(preview, {
       backgroundColor: null,
@@ -218,11 +217,18 @@
   /* =========================================
      INIT
   ========================================= */
-
   function initDefaults() {
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
+
+      // fundo inicial
       setPreviewBackgroundByProduct(templateId, "SOJA");
+
+      // se já houver filial selecionada no template 1, já preenche
+      if (templateId === "1") {
+        const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
+        if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
+      }
     });
   }
 
@@ -244,5 +250,4 @@
   }
 
   window.addEventListener("DOMContentLoaded", bindActions);
-
 })();

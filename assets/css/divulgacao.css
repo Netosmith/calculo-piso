@@ -275,8 +275,8 @@
 }
 
 .templatePreview[data-template-preview="1"] .previewContactLine {
-  font-size: 12px;     /* 👈 CABE melhor (antes 14) */
-  font-weight: 900;
+  font-size: 11px;     /* 👈 CABE melhor (antes 14) */
+  font-weight: 850;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0,0,0,.75);
   line-height: 0.9;    /* 👈 MAIS “colado” (antes 1.1) */

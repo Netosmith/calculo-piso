@@ -11,7 +11,7 @@
     CALCARIO: "../assets/img/CALCARIOTESTE.png",
     FARELODESOJA: "../assets/img/FARELODESOJA.png",
     SORGO: "../assets/img/SORGOTESTE.png",
-    FERTILIZANTE: "../assets/img/SORGOTESTE.png"
+    FERTILIZANTE: "../assets/img/FERTILIZANTE.png"
   };
 
   /* =========================================

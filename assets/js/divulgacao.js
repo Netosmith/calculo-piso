@@ -2,7 +2,7 @@
   "use strict";
 
   /* =========================================
-     PRODUTO -> IMAGEM (arquivos)
+     PRODUTO 
   ========================================= */
   const PRODUCT_BG_MAP = {
     SOJA: "../assets/img/SOJATESTE.png",
@@ -15,8 +15,8 @@
   };
 
   /* =========================================
-     FILIAL -> CONTATOS (4 linhas)
-     (chaves SEM acento/SEM espaço)
+     FILIAL -> CONTATOS 
+     
   ========================================= */
   const FILIAIS_CONTATOS = {
     RIOVERDE: [
@@ -130,11 +130,48 @@
   }
 
   /* =========================================
-     PRODUTO: TODAS AS VARIAÇÕES -> IMAGEM
-     (calcario/calcário, soja em graos, açucar granel, etc)
+     MOEDA (R$)
+     5    -> R$ 5,00
+     50   -> R$ 50,00
+     500  -> R$ 500,00
+     5,50 -> R$ 5,50
   ========================================= */
+  function formatarMoedaBR(valor) {
+    if (!valor) return "";
 
-  // Aliases diretos (quando o texto "vira exatamente" isso após normalizeKey)
+    let v = String(valor);
+
+    // remove "R$" e espaços
+    v = v.replace(/R\$\s?/gi, "");
+
+    // troca ponto por vírgula (se usuário digitar 5.50)
+    v = v.replace(/\./g, ",");
+
+    // mantém apenas números e vírgula
+    v = v.replace(/[^\d,]/g, "");
+
+    const partes = v.split(",");
+    let reais = partes[0] || "0";
+    let centavos = partes[1] || "";
+
+    // limita centavos em 2
+    centavos = centavos.substring(0, 2);
+
+    // completa centavos
+    while (centavos.length < 2) centavos += "0";
+
+    // remove zeros à esquerda
+    reais = reais.replace(/^0+(?=\d)/, "");
+
+    // separador de milhar
+    reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    return `R$ ${reais || "0"},${centavos}`;
+  }
+
+  /* =========================================
+     PRODUTO: TODAS AS VARIAÇÕES -> IMAGEM
+  ========================================= */
   const PRODUCT_ALIAS = {
     // SOJA
     SOJA: "SOJA",
@@ -155,48 +192,55 @@
     // AÇÚCAR
     ACUCAR: "ACUCAR",
     ACUCARGRANEL: "ACUCAR",
-    ACUCAREMGRAOS: "ACUCAR",
-    ACUCAREMGRAO: "ACUCAR",
+    ACUCARVHP: "ACUCAR",
+    ACUCARCRISTAL: "ACUCAR",
 
     // CALCÁRIO
     CALCARIO: "CALCARIO",
     CALCARIOGRANEL: "CALCARIO",
 
-    // FERTILIZANTE
-    ADUBO: "FERTILIZANTE",
-    FERTILIZANTES: "FERTILIZANTE",
-    FERTILIZANTE: "FERTILIZANTE",
+    // FARELO DE SOJA
+    FARELODESOJA: "FARELODESOJA",
+    FARELOSOJA: "FARELODESOJA",
+    FARELODE_SOJA: "FARELODESOJA",
 
     // SORGO
     SORGO: "SORGO",
     SORGOGRANEL: "SORGO",
     SORGOEMGRAOS: "SORGO",
-    SORGOEMGRAO: "SORGO"
+    SORGOEMGRAO: "SORGO",
+
+    // FERTILIZANTE
+    ADUBO: "FERTILIZANTE",
+    ADUBOGRANEL: "FERTILIZANTE",
+    FERTILIZANTE: "FERTILIZANTE",
+    FERTILIZANTES: "FERTILIZANTE",
+    FERT: "FERTILIZANTE"
   };
 
-  // Fallback inteligente: se o usuário digitar “SOJA SAFRA 24”, “ACUCAR VHP”, etc.
   function inferProductFamily(normalized) {
-    if (normalized.includes("FARELODESOJA") || normalized.includes("FARELOSOJA")) return "FARELODESOJA";
+    if (normalized.includes("FARELO") && normalized.includes("SOJA")) return "FARELODESOJA";
+    if (normalized.includes("FARELODESOJA")) return "FARELODESOJA";
     if (normalized.includes("SOJA")) return "SOJA";
     if (normalized.includes("MILHO")) return "MILHO";
     if (normalized.includes("ACUCAR")) return "ACUCAR";
     if (normalized.includes("CALCARIO")) return "CALCARIO";
     if (normalized.includes("SORGO")) return "SORGO";
+    if (normalized.includes("FERT") || normalized.includes("ADUBO")) return "FERTILIZANTE";
     return "";
   }
 
   function productToImage(productValue) {
     const n = normalizeKey(productValue);
 
-    // 1) tenta alias exato
+    // alias exato
     const aliased = PRODUCT_ALIAS[n];
     if (aliased && PRODUCT_BG_MAP[aliased]) return PRODUCT_BG_MAP[aliased];
 
-    // 2) tenta inferência por "contém"
+    // inferência por "contém"
     const family = inferProductFamily(n);
     if (family && PRODUCT_BG_MAP[family]) return PRODUCT_BG_MAP[family];
 
-    // 3) fallback
     return DEFAULT_BG;
   }
 
@@ -215,7 +259,7 @@
      AUTOPREENCHER CONTATOS (FILIAL)
   ========================================= */
   function preencherContatosFilial(templateId, filialValue) {
-    const key = normalizeKey(filialValue); // já remove espaço/acentos
+    const key = normalizeKey(filialValue);
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
 
     ["contato1", "contato2", "contato3", "contato4"].forEach((campo, i) => {
@@ -225,6 +269,7 @@
 
       const valor = lista[i] || "";
       if (input) input.value = valor;
+
       updatePreview(templateId, campo, valor);
     });
   }
@@ -238,17 +283,23 @@
     const field = el.dataset.field;
     if (!templateId || !field) return;
 
-    const value = (el.value || "").trim();
+    let value = (el.value || "").trim();
 
-    // Atualiza o que foi digitado/selecionado
+    // ✅ moeda no campo valor
+    if (field === "valor") {
+      value = formatarMoedaBR(value);
+      el.value = value;
+    }
+
+    // Atualiza texto no preview
     updatePreview(templateId, field, value);
 
-    // produto troca fundo
+    // Produto troca fundo
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
 
-    // filial preenche contatos (template 1)
+    // Filial preenche contatos (template 1)
     if (templateId === "1" && field === "filial") {
       preencherContatosFilial(templateId, value);
     }
@@ -306,23 +357,39 @@
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
 
-      // fundo inicial soja
-      setPreviewBackgroundByProduct(templateId, "SOJA");
+      // fundo inicial baseado no que já estiver no campo produto
+      const produtoEl = document.querySelector(
+        `[data-template="${templateId}"][data-field="produto"]`
+      );
+      const produtoVal = produtoEl ? (produtoEl.value || "").trim() : "";
+      setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
 
-      // se já houver filial selecionada no template 1, já preenche
+      // se já houver filial selecionada no template 1, já preenche contatos
       if (templateId === "1") {
         const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
         if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
+      }
+
+      // formata valor se já tiver algo preenchido
+      const valorEl = document.querySelector(
+        `[data-template="${templateId}"][data-field="valor"]`
+      );
+      if (valorEl && valorEl.value) {
+        const v = formatarMoedaBR(valorEl.value);
+        valorEl.value = v;
+        updatePreview(templateId, "valor", v);
       }
     });
   }
 
   function bindActions() {
+    // listeners
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const evt = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(evt, handleInput);
     });
 
+    // botões
     document.querySelectorAll("[data-action='reset']").forEach((btn) => {
       btn.addEventListener("click", () => resetTemplate(btn.dataset.template));
     });
@@ -331,7 +398,13 @@
       btn.addEventListener("click", () => saveTemplate(btn.dataset.template));
     });
 
+    // ✅ sincroniza tudo ao carregar
     initDefaults();
+
+    // ✅ aplica preview inicial (caso tenha valores já digitados)
+    document.querySelectorAll("[data-template][data-field]").forEach((el) => {
+      handleInput({ target: el });
+    });
   }
 
   window.addEventListener("DOMContentLoaded", bindActions);

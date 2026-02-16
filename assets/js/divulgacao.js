@@ -1,9 +1,6 @@
 (function () {
   "use strict";
 
-  /* =========================================
-     PRODUTO 
-  ========================================= */
   const PRODUCT_BG_MAP = {
     SOJA: "../assets/img/SOJATESTE.png",
     MILHO: "../assets/img/MILHOTESTE.png",
@@ -14,10 +11,6 @@
     FERTILIZANTE: "../assets/img/FERTILIZANTE.png"
   };
 
-  /* =========================================
-     FILIAL -> CONTATOS 
-     
-  ========================================= */
   const FILIAIS_CONTATOS = {
     RIOVERDE: [
       "LUIS.G (64) 99277-4293",
@@ -101,9 +94,6 @@
 
   const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
 
-  /* =========================================
-     HELPERS
-  ========================================= */
   function getPreview(templateId) {
     return document.querySelector(`[data-template-preview="${templateId}"]`);
   }
@@ -112,14 +102,13 @@
     return preview ? preview.querySelector(".previewBg") : null;
   }
 
-  // Normaliza: remove acento, espaço, pontuação, vira UPPER
   function normalizeKey(v) {
     return String(v || "")
       .trim()
       .toUpperCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // remove acentos
-      .replace(/[^A-Z0-9]/g, "");     // remove espaços e símbolos (/, -, etc)
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9]/g, "");
   }
 
   function updatePreview(templateId, field, value) {
@@ -129,90 +118,73 @@
     if (target) target.textContent = value;
   }
 
-  /* =========================================
-     MOEDA (R$)
-     5    -> R$ 5,00
-     50   -> R$ 50,00
-     500  -> R$ 500,00
-     5,50 -> R$ 5,50
-  ========================================= */
+  /* ===== moeda ===== */
   function formatarMoedaBR(valor) {
     if (!valor) return "";
 
     let v = String(valor);
 
-    // remove "R$" e espaços
     v = v.replace(/R\$\s?/gi, "");
-
-    // troca ponto por vírgula (se usuário digitar 5.50)
     v = v.replace(/\./g, ",");
-
-    // mantém apenas números e vírgula
     v = v.replace(/[^\d,]/g, "");
 
     const partes = v.split(",");
     let reais = partes[0] || "0";
     let centavos = partes[1] || "";
 
-    // limita centavos em 2
     centavos = centavos.substring(0, 2);
-
-    // completa centavos
     while (centavos.length < 2) centavos += "0";
 
-    // remove zeros à esquerda
     reais = reais.replace(/^0+(?=\d)/, "");
-
-    // separador de milhar
     reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
     return `R$ ${reais || "0"},${centavos}`;
   }
 
-  /* =========================================
-     PRODUTO: TODAS AS VARIAÇÕES -> IMAGEM
-  ========================================= */
+  // enquanto digita: deixa só números + vírgula (não força R$)
+  function limparDigitacaoMoeda(valor) {
+    if (valor == null) return "";
+    let v = String(valor);
+    v = v.replace(/R\$\s?/gi, "");
+    v = v.replace(/[^\d,]/g, "");
+    // evita mais de uma vírgula
+    const firstComma = v.indexOf(",");
+    if (firstComma !== -1) {
+      v = v.slice(0, firstComma + 1) + v.slice(firstComma + 1).replace(/,/g, "");
+    }
+    return v;
+  }
+
+  /* ===== produtos: aliases ===== */
   const PRODUCT_ALIAS = {
-    // SOJA
     SOJA: "SOJA",
     SOJAEMGRAOS: "SOJA",
     SOJAEMGRAO: "SOJA",
     SOJAGRAOS: "SOJA",
-    SOJAGRAO: "SOJA",
     SOJAGRANEL: "SOJA",
 
-    // MILHO
     MILHO: "MILHO",
     MILHOEMGRAOS: "MILHO",
     MILHOEMGRAO: "MILHO",
     MILHOGRAOS: "MILHO",
-    MILHOGRAO: "MILHO",
     MILHOGRANEL: "MILHO",
 
-    // AÇÚCAR
     ACUCAR: "ACUCAR",
     ACUCARGRANEL: "ACUCAR",
     ACUCARVHP: "ACUCAR",
     ACUCARCRISTAL: "ACUCAR",
 
-    // CALCÁRIO
     CALCARIO: "CALCARIO",
     CALCARIOGRANEL: "CALCARIO",
 
-    // FARELO DE SOJA
     FARELODESOJA: "FARELODESOJA",
     FARELOSOJA: "FARELODESOJA",
-    FARELODE_SOJA: "FARELODESOJA",
 
-    // SORGO
     SORGO: "SORGO",
-    SORGOGRANEL: "SORGO",
     SORGOEMGRAOS: "SORGO",
-    SORGOEMGRAO: "SORGO",
+    SORGOGRANEL: "SORGO",
 
-    // FERTILIZANTE
     ADUBO: "FERTILIZANTE",
-    ADUBOGRANEL: "FERTILIZANTE",
     FERTILIZANTE: "FERTILIZANTE",
     FERTILIZANTES: "FERTILIZANTE",
     FERT: "FERTILIZANTE"
@@ -220,7 +192,6 @@
 
   function inferProductFamily(normalized) {
     if (normalized.includes("FARELO") && normalized.includes("SOJA")) return "FARELODESOJA";
-    if (normalized.includes("FARELODESOJA")) return "FARELODESOJA";
     if (normalized.includes("SOJA")) return "SOJA";
     if (normalized.includes("MILHO")) return "MILHO";
     if (normalized.includes("ACUCAR")) return "ACUCAR";
@@ -232,12 +203,9 @@
 
   function productToImage(productValue) {
     const n = normalizeKey(productValue);
-
-    // alias exato
     const aliased = PRODUCT_ALIAS[n];
     if (aliased && PRODUCT_BG_MAP[aliased]) return PRODUCT_BG_MAP[aliased];
 
-    // inferência por "contém"
     const family = inferProductFamily(n);
     if (family && PRODUCT_BG_MAP[family]) return PRODUCT_BG_MAP[family];
 
@@ -255,9 +223,6 @@
     else preview.style.backgroundImage = `url("${img}")`;
   }
 
-  /* =========================================
-     AUTOPREENCHER CONTATOS (FILIAL)
-  ========================================= */
   function preencherContatosFilial(templateId, filialValue) {
     const key = normalizeKey(filialValue);
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
@@ -266,48 +231,52 @@
       const input = document.querySelector(
         `[data-template="${templateId}"][data-field="${campo}"]`
       );
-
       const valor = lista[i] || "";
       if (input) input.value = valor;
-
       updatePreview(templateId, campo, valor);
     });
   }
 
-  /* =========================================
-     INPUT HANDLER
-  ========================================= */
   function handleInput(event) {
     const el = event.target;
     const templateId = el.dataset.template;
     const field = el.dataset.field;
     if (!templateId || !field) return;
 
-    let value = (el.value || "").trim();
+    let value = (el.value || "");
 
-    // ✅ moeda no campo valor
+    // ✅ enquanto digita no valor: NÃO formatar em R$, só limpa
     if (field === "valor") {
-      value = formatarMoedaBR(value);
+      value = limparDigitacaoMoeda(value);
       el.value = value;
+      updatePreview(templateId, field, value); // preview mostra "cru" enquanto digita
+      return;
     }
 
-    // Atualiza texto no preview
+    value = value.trim();
     updatePreview(templateId, field, value);
 
-    // Produto troca fundo
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
     }
 
-    // Filial preenche contatos (template 1)
     if (templateId === "1" && field === "filial") {
       preencherContatosFilial(templateId, value);
     }
   }
 
-  /* =========================================
-     RESET
-  ========================================= */
+  // ✅ quando sair do campo valor, aí sim vira moeda
+  function handleBlur(event) {
+    const el = event.target;
+    const templateId = el.dataset.template;
+    const field = el.dataset.field;
+    if (!templateId || field !== "valor") return;
+
+    const value = formatarMoedaBR(el.value || "");
+    el.value = value;
+    updatePreview(templateId, "valor", value);
+  }
+
   function resetTemplate(templateId) {
     const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
     if (!card) return;
@@ -322,14 +291,10 @@
     setPreviewBackgroundByProduct(templateId, "SOJA");
   }
 
-  /* =========================================
-     SALVAR JPG
-  ========================================= */
   async function saveTemplate(templateId) {
     const preview = getPreview(templateId);
     if (!preview) return;
 
-    // garante que a imagem carregou
     const bgImg = getBgImgEl(preview);
     if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
       await new Promise((resolve) => {
@@ -350,27 +315,21 @@
     link.click();
   }
 
-  /* =========================================
-     INIT
-  ========================================= */
   function initDefaults() {
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
 
-      // fundo inicial baseado no que já estiver no campo produto
       const produtoEl = document.querySelector(
         `[data-template="${templateId}"][data-field="produto"]`
       );
       const produtoVal = produtoEl ? (produtoEl.value || "").trim() : "";
       setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
 
-      // se já houver filial selecionada no template 1, já preenche contatos
       if (templateId === "1") {
         const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
         if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
       }
 
-      // formata valor se já tiver algo preenchido
       const valorEl = document.querySelector(
         `[data-template="${templateId}"][data-field="valor"]`
       );
@@ -383,13 +342,16 @@
   }
 
   function bindActions() {
-    // listeners
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const evt = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(evt, handleInput);
+
+      // ✅ só o valor recebe blur para formatar
+      if (el.dataset.field === "valor") {
+        el.addEventListener("blur", handleBlur);
+      }
     });
 
-    // botões
     document.querySelectorAll("[data-action='reset']").forEach((btn) => {
       btn.addEventListener("click", () => resetTemplate(btn.dataset.template));
     });
@@ -398,12 +360,12 @@
       btn.addEventListener("click", () => saveTemplate(btn.dataset.template));
     });
 
-    // ✅ sincroniza tudo ao carregar
     initDefaults();
 
-    // ✅ aplica preview inicial (caso tenha valores já digitados)
+    // sincroniza previews com valores já existentes
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       handleInput({ target: el });
+      if (el.dataset.field === "valor") handleBlur({ target: el });
     });
   }
 

@@ -313,6 +313,33 @@
       background:#fff;
     }
     .modalFooter .sp{flex:1 1 auto;}
+
+    /* ======================================================
+       ✅ WhatsApp: trocar texto grande por ÍCONE (HTML pronto)
+       O fretes.js deve renderizar o link com class="waIcon"
+    ======================================================= */
+    .waIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:28px;
+      height:28px;
+      border-radius:10px;
+      border:1px solid rgba(17,24,39,.12);
+      background:#fff;
+      padding:0;
+      line-height:1;
+    }
+    .waIcon:hover{
+      filter:brightness(1.03);
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+    }
+    .waIcon img{
+      width:18px;
+      height:18px;
+      display:block;
+    }
+    .waIcon .waText{display:none;}
   </style>
 </head>
 

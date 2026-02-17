@@ -315,8 +315,8 @@
     .modalFooter .sp{flex:1 1 auto;}
 
     /* ======================================================
-       ✅ WhatsApp: trocar texto grande por ÍCONE (HTML pronto)
-       O fretes.js deve renderizar o link com class="waIcon"
+       ✅ WhatsApp: trocar texto grande por ÍCONE
+       (se o fretes.js usar class="waIcon")
     ======================================================= */
     .waIcon{
       display:inline-flex;
@@ -361,8 +361,15 @@
     <!-- TÍTULO -->
     <div class="card fretes-top">
       <div class="title">
-        <h1>Fretes (Operacional) <span id="syncStatus" style="font-size:12px; opacity:0.7; margin-left:10px;">🔄 Carregando...</span></h1>
-        <div class="sub">Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque. <b>Dados sincronizados com Google Sheets em tempo real.</b></div>
+        <h1>
+          Fretes (Operacional)
+          <!-- ✅ Duas formas pro JS atualizar (id + data-attr) -->
+          <span id="syncStatus" data-sync-status style="font-size:12px; opacity:0.7; margin-left:10px;">🔄 Carregando...</span>
+        </h1>
+        <div class="sub">
+          Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+          <b>Dados sincronizados com Google Sheets em tempo real.</b>
+        </div>
       </div>
     </div>
 
@@ -376,26 +383,35 @@
         <div class="ft-mini"><span>7E</span><input id="w7" type="number" step="0.01" value="36" /></div>
         <div class="ft-mini"><span>6E</span><input id="w6" type="number" step="0.01" value="31" /></div>
 
-        <button class="btnTiny" id="btnSaveWeights">Salvar</button>
-        <button class="btnTiny ghost" id="btnResetWeights">Reset</button>
+        <button class="btnTiny" id="btnSaveWeights" type="button">Salvar</button>
+        <button class="btnTiny ghost" id="btnResetWeights" type="button">Reset</button>
       </div>
 
       <div class="ft-spacer"></div>
 
       <div class="ft-block">
-        <select class="ft-select" id="fFilial" title="Filial"></select>
+        <!-- ✅ Mantém seu ID -->
+        <select class="ft-select" id="fFilial" title="Filial">
+          <!-- JS pode preencher, mas deixa uma opção default pra não vir vazio -->
+          <option value="">Todas as filiais</option>
+        </select>
+
         <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
 
-        <!-- ✅ BOTÃO ATUALIZAR SHEETS -->
-        <button class="btnTiny" id="btnReloadFromSheets" title="Atualizar dados do Google Sheets">🔄 Atualizar</button>
+        <!-- ✅ IDs + data-action (compatibilidade) -->
+        <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button" title="Atualizar dados do Google Sheets">
+          🔄 Atualizar
+        </button>
 
-        <!-- ✅ BOTÃO SHARE CLIENTES -->
-        <button class="btnTiny blue" id="btnShareClientes" title="Abrir Share Clientes">Share Clientes</button>
+        <button class="btnTiny blue" id="btnShareClientes" type="button" title="Abrir Share Clientes">
+          Share Clientes
+        </button>
 
-        <button class="btnTiny green" id="btnNew">+ Novo</button>
+        <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
 
-        <!-- 🔒 Exemplo oculto (se quiser reativar, remova o style="display:none") -->
-        <button class="btnTiny ghost" id="btnResetExample" style="display:none;" title="Restaura o exemplo local">Exemplo</button>
+        <button class="btnTiny ghost" id="btnResetExample" type="button" style="display:none;" title="Restaura o exemplo local">
+          Exemplo
+        </button>
       </div>
     </div>
 
@@ -436,6 +452,8 @@
               <th class="num">Ações</th>
             </tr>
           </thead>
+
+          <!-- ✅ ESSENCIAL pro JS renderizar -->
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -450,7 +468,7 @@
           <div class="t" id="modalTitle">Frete</div>
           <div class="s">Preencha os dados do embarque. <b>Contato</b> é fixo (igual planilha).</div>
         </div>
-        <button class="btnTiny ghost" id="btnCloseModal">Fechar</button>
+        <button class="btnTiny ghost" id="btnCloseModal" type="button">Fechar</button>
       </div>
 
       <div class="modalBody">
@@ -570,8 +588,8 @@
       </div>
 
       <div class="modalFooter">
-        <button class="btnTiny green" id="btnSave">Salvar</button>
-        <button class="btnTiny ghost" id="btnCancel">Cancelar</button>
+        <button class="btnTiny green" id="btnSave" type="button">Salvar</button>
+        <button class="btnTiny ghost" id="btnCancel" type="button">Cancelar</button>
         <div class="sp"></div>
       </div>
     </div>
@@ -584,7 +602,7 @@
     requireHomeAuth();
     bindLogoutButton();
 
-    // ✅ Botão Share Clientes (rota do seu projeto)
+    // ✅ Botão Share Clientes
     window.addEventListener("DOMContentLoaded", () => {
       const btn = document.getElementById("btnShareClientes");
       if(btn){

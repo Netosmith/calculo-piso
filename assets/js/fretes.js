@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbzeVrvWltpM8bJ0qUxkt1sUUi-RrS4XlGXHsFcEyXVFaNmOvGu89sNj0HdVqW0eD2Qa/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbw2kZd_eo0pXX0FXIBcwLFc-kw48U_ABPNv0FO6J0ElIUKCvxT-5vfRQT5S6m_geocg/exec";
 
   const LS_KEY_ROWS = "nf_fretes_rows_v1";
   const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";

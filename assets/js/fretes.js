@@ -5,12 +5,15 @@
   const API_URL =
     "https://script.google.com/macros/s/AKfycbzeVrvWltpM8bJ0qUxkt1sUUi-RrS4XlGXHsFcEyXVFaNmOvGu89sNj0HdVqW0eD2Qa/exec";
 
-  // tenta achar o tbody de forma robusta
+  // ----------------------------
+  // DOM helpers
+  // ----------------------------
+  const $ = (sel) => document.querySelector(sel);
+
   function getTbody() {
     return document.querySelector("#tbody") || document.querySelector("tbody");
   }
 
-  // tenta achar algum “status” na tela (se existir)
   function setStatus(text) {
     const el =
       document.querySelector("[data-sync-status]") ||
@@ -24,6 +27,9 @@
     return (v ?? "").toString().trim();
   }
 
+  // ----------------------------
+  // WhatsApp helper
+  // ----------------------------
   function extractPhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
@@ -48,22 +54,36 @@
     const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
     const ct = (res.headers.get("content-type") || "").toLowerCase();
 
-    let data;
-    if (ct.includes("application/json")) {
-      data = await res.json();
-    } else {
-      // às vezes Apps Script devolve texto JSON
-      const t = await res.text();
-      try {
-        data = JSON.parse(t);
-      } catch {
-        data = { ok: false, raw: t };
-      }
+    const rawText = await res.text().catch(() => "");
+
+    // Detecta HTML (comum quando Apps Script pede login/permissão)
+    const looksHtml =
+      ct.includes("text/html") ||
+      /^\s*<!doctype html/i.test(rawText) ||
+      /^\s*<html/i.test(rawText);
+
+    if (looksHtml) {
+      const err = new Error("API retornou HTML (deploy/permissão do Apps Script).");
+      err.httpStatus = res.status;
+      err.url = url.toString();
+      err.preview = rawText.slice(0, 220);
+      throw err;
+    }
+
+    // Tenta parsear JSON mesmo se vier text/plain
+    let data = null;
+    try {
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch {
+      // se não parseou, retorna bruto
+      data = { ok: false, raw: rawText };
     }
 
     if (!res.ok) {
       const err = new Error("HTTP " + res.status);
+      err.httpStatus = res.status;
       err.data = data;
+      err.url = url.toString();
       throw err;
     }
 
@@ -71,14 +91,22 @@
   }
 
   async function fetchRows() {
-    // Tenta várias ações comuns (porque cada Apps Script usa um nome)
+    // Várias combinações comuns de endpoint/ação
     const tries = [
+      {},
+
+      { action: "rows" },
+      { action: "list" },
       { action: "fretes_list" },
       { action: "list_fretes" },
       { action: "listFretes" },
-      { action: "list" },
+
+      { op: "rows" },
+      { op: "list" },
+      { op: "listFretes" },
+
       { route: "fretes", op: "list" },
-      {}, // sem params (caso seu script liste por padrão)
+      { route: "fretes", action: "list" },
     ];
 
     let lastErr = null;
@@ -100,12 +128,26 @@
           (Array.isArray(data) ? data : null);
 
         if (Array.isArray(rows)) {
-          console.log("[fretes] API ok com params:", p, "rows:", rows.length);
+          console.log("[fretes] API ok params:", p, "rows:", rows.length);
           return rows;
         }
 
-        // se veio algo mas não é array, tenta achar dentro
+        // às vezes vem {ok:true, payload:{rows:[...]}}
         if (data && typeof data === "object") {
+          const deepCandidates = [
+            data?.payload?.rows,
+            data?.payload?.data,
+            data?.payload?.fretes,
+            data?.result?.rows,
+            data?.result?.data,
+          ].filter(Boolean);
+
+          const foundDeep = deepCandidates.find((x) => Array.isArray(x));
+          if (foundDeep) {
+            console.log("[fretes] API ok (deep) params:", p, "rows:", foundDeep.length);
+            return foundDeep;
+          }
+
           // tenta pegar a primeira propriedade array
           const firstArrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
           if (firstArrayKey) {
@@ -113,6 +155,9 @@
             return data[firstArrayKey];
           }
         }
+
+        // se veio ok:false, tenta próxima
+        lastErr = new Error("Resposta sem rows (params: " + JSON.stringify(p) + ")");
       } catch (e) {
         lastErr = e;
       }
@@ -125,8 +170,6 @@
   // ----------------------------
   // RENDER
   // ----------------------------
-
-  // Ordem de colunas (bate com seu cabeçalho)
   const COLS = [
     { key: "regional", label: "Regional" },
     { key: "filial", label: "Filial" },
@@ -134,7 +177,6 @@
     { key: "origem", label: "Origem" },
     { key: "coleta", label: "Coleta" },
 
-    // contato com ícone
     { key: "contato", label: "Contato", isContato: true },
 
     { key: "destino", label: "Destino" },
@@ -156,12 +198,9 @@
     { key: "porta", label: "Porta" },
   ];
 
-  // Se a API vier em ARRAY (linha de planilha), mapeia por índice
-  // Se vier como OBJ, usa as chaves.
   function valueFromRow(row, key, index) {
     if (Array.isArray(row)) return safeText(row[index] ?? "");
     if (row && typeof row === "object") {
-      // variações de nomes comuns
       const map = {
         regional: ["regional"],
         filial: ["filial"],
@@ -221,21 +260,25 @@
       a.target = "_blank";
       a.rel = "noopener";
       a.title = "Chamar no WhatsApp";
+      a.className = "waIcon"; // usa seu CSS do HTML
 
+      // fallback caso CSS não carregue
       a.style.display = "inline-flex";
       a.style.alignItems = "center";
       a.style.justifyContent = "center";
-      a.style.width = "32px";
-      a.style.height = "32px";
+      a.style.width = "28px";
+      a.style.height = "28px";
       a.style.borderRadius = "10px";
-      a.style.border = "1px solid rgba(17,24,39,.14)";
-      a.style.background = "#E6F6ED";
+      a.style.border = "1px solid rgba(17,24,39,.12)";
+      a.style.background = "#fff";
       a.style.flex = "0 0 auto";
 
       const img = document.createElement("img");
       img.src = "../assets/img/whatsapp.png";
+      img.alt = "WhatsApp";
       img.style.width = "18px";
       img.style.height = "18px";
+      img.style.display = "block";
 
       img.onerror = () => {
         a.textContent = "📞";
@@ -278,46 +321,49 @@
   }
 
   // ----------------------------
-  // AÇÕES (Atualizar / etc)
+  // AÇÕES
   // ----------------------------
   async function atualizar() {
     try {
-      setStatus("Carregando...");
+      setStatus("🔄 Carregando...");
       const rows = await fetchRows();
       render(rows);
-      setStatus("Atualizado ✅");
+      setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
-      setStatus("Erro ao sincronizar ❌");
+
+      // Mensagem mais clara quando é HTML/permissão
+      if (String(e?.message || "").includes("retornou HTML")) {
+        setStatus("❌ Erro ao sincronizar (ver deploy/permissão)");
+        console.warn(
+          "[fretes] Provável problema de DEPLOY/PERMISSÃO no Apps Script. Trecho retorno:",
+          e.preview || ""
+        );
+      } else {
+        setStatus("❌ Erro ao sincronizar");
+      }
     }
   }
 
   function bindButtons() {
-    // tenta achar botões de forma flexível
-    const btnAtualizar =
-      document.querySelector("[data-action='refresh']") ||
-      document.querySelector("[data-action='atualizar']") ||
-      document.querySelector("#btnAtualizar") ||
-      document.querySelector("button.btnTiny.blue, button#atualizar");
-
-    const btnNovo =
-      document.querySelector("[data-action='new']") ||
-      document.querySelector("[data-action='novo']") ||
-      document.querySelector("#btnNovo");
+    // IDs reais do seu HTML
+    const btnAtualizar = $("#btnReloadFromSheets");
+    const btnNovo = $("#btnNew");
 
     if (btnAtualizar) btnAtualizar.addEventListener("click", atualizar);
 
-    // se você tiver função real de "novo", conecta aqui (por enquanto só loga)
     if (btnNovo) {
       btnNovo.addEventListener("click", () => {
         console.log("[fretes] clique em NOVO (bind ok)");
+        // aqui você chama sua função de abrir modal, se existir
+        // ex: openModalNew();
       });
     }
   }
 
   function init() {
     bindButtons();
-    atualizar(); // já carrega ao abrir a página
+    atualizar(); // carrega ao abrir
   }
 
   window.addEventListener("DOMContentLoaded", init);

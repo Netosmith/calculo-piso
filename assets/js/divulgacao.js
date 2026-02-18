@@ -89,7 +89,7 @@
       "JONAS (64) 99607-2391",
       "--------------------",
       "--------------------"
-      ],
+    ],
     ARAGUARI: [
       "RAFINHA (34) 99155-9742",
       "GUSTAVO (34) 99959-6731",
@@ -130,14 +130,44 @@
     if (target) target.textContent = value;
   }
 
-  /* ===== moeda ===== */
-  function formatarMoedaBR(valor) {
-    if (!valor) return "";
+  /* =========================
+     VALOR: aceita número OU texto
+     - sempre MAIÚSCULO
+     - se for número -> formata moeda no BLUR
+     - se for texto -> não formata
+  ========================= */
 
+  function hasLetters(s) {
+    return /[A-ZÀ-Ü]/i.test(String(s || ""));
+  }
+
+  function limparDigitacaoNumerica(valor) {
+    if (valor == null) return "";
     let v = String(valor);
+    v = v.replace(/R\$\s?/gi, "");
+    // deixa só números e separadores
+    v = v.replace(/[^\d,\.]/g, "");
+    // se tiver ponto e vírgula, mantém só um separador decimal (preferindo vírgula no final)
+    // regra simples: permite só 1 separador decimal (último separador vira o decimal)
+    const parts = v.split(/[,\.]/);
+    if (parts.length <= 1) return v;
+
+    const dec = parts.pop() || "";
+    const intPart = parts.join(""); // junta o resto como inteiro (remove separadores antigos)
+    return intPart + "," + dec;
+  }
+
+  function formatarMoedaBR(valor) {
+    if (valor == null) return "";
+
+    let v = String(valor).trim();
+    if (!v) return "";
+
+    // se tiver letras, não é moeda
+    if (hasLetters(v)) return v.toUpperCase();
 
     v = v.replace(/R\$\s?/gi, "");
-    v = v.replace(/\./g, ",");
+    v = v.replace(/\./g, "");
     v = v.replace(/[^\d,]/g, "");
 
     const partes = v.split(",");
@@ -153,21 +183,9 @@
     return `R$ ${reais || "0"},${centavos}`;
   }
 
-  // enquanto digita: deixa só números + vírgula (não força R$)
-  function limparDigitacaoMoeda(valor) {
-    if (valor == null) return "";
-    let v = String(valor);
-    v = v.replace(/R\$\s?/gi, "");
-    v = v.replace(/[^\d,]/g, "");
-    // evita mais de uma vírgula
-    const firstComma = v.indexOf(",");
-    if (firstComma !== -1) {
-      v = v.slice(0, firstComma + 1) + v.slice(firstComma + 1).replace(/,/g, "");
-    }
-    return v;
-  }
-
-  /* ===== produtos: aliases ===== */
+  /* =========================
+     PRODUTO: aliases / inferência
+  ========================= */
   const PRODUCT_ALIAS = {
     SOJA: "SOJA",
     SOJAEMGRAOS: "SOJA",
@@ -235,6 +253,9 @@
     else preview.style.backgroundImage = `url("${img}")`;
   }
 
+  /* =========================
+     FILIAL -> CONTATOS
+  ========================= */
   function preencherContatosFilial(templateId, filialValue) {
     const key = normalizeKey(filialValue);
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
@@ -249,23 +270,33 @@
     });
   }
 
+  /* =========================
+     INPUT HANDLER
+  ========================= */
   function handleInput(event) {
     const el = event.target;
     const templateId = el.dataset.template;
     const field = el.dataset.field;
     if (!templateId || !field) return;
 
-    let value = (el.value || "");
+    let value = el.value ?? "";
 
-    // ✅ enquanto digita no valor: NÃO formatar em R$, só limpa
+    // ✅ VALOR: aceita TEXTO também + MAIÚSCULO sempre
     if (field === "valor") {
-      value = limparDigitacaoMoeda(value);
-      el.value = value;
-      updatePreview(templateId, field, value); // preview mostra "cru" enquanto digita
+      let v = String(value).toUpperCase();
+
+      // se for só número/separador, limpa sem formatar moeda (pra digitar livre)
+      if (!hasLetters(v)) {
+        v = limparDigitacaoNumerica(v);
+      }
+
+      el.value = v;
+      updatePreview(templateId, "valor", v);
       return;
     }
 
-    value = value.trim();
+    // Demais campos: só trim e atualiza
+    value = String(value).trim();
     updatePreview(templateId, field, value);
 
     if (field === "produto") {
@@ -277,18 +308,22 @@
     }
   }
 
-  // ✅ quando sair do campo valor, aí sim vira moeda
+  // ✅ Ao sair do campo valor: se for número, vira moeda; se for texto, só mantém maiúsculo
   function handleBlur(event) {
     const el = event.target;
     const templateId = el.dataset.template;
     const field = el.dataset.field;
     if (!templateId || field !== "valor") return;
 
-    const value = formatarMoedaBR(el.value || "");
-    el.value = value;
-    updatePreview(templateId, "valor", value);
+    const raw = String(el.value || "").toUpperCase().trim();
+    const finalValue = formatarMoedaBR(raw); // se tiver letras, não formata
+    el.value = finalValue;
+    updatePreview(templateId, "valor", finalValue);
   }
 
+  /* =========================
+     RESET / SAVE
+  ========================= */
   function resetTemplate(templateId) {
     const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
     if (!card) return;
@@ -327,6 +362,9 @@
     link.click();
   }
 
+  /* =========================
+     INIT
+  ========================= */
   function initDefaults() {
     document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
@@ -346,7 +384,9 @@
         `[data-template="${templateId}"][data-field="valor"]`
       );
       if (valorEl && valorEl.value) {
-        const v = formatarMoedaBR(valorEl.value);
+        // formata só se for número; se for texto, fica maiúsculo
+        const raw = String(valorEl.value || "").toUpperCase().trim();
+        const v = formatarMoedaBR(raw);
         valorEl.value = v;
         updatePreview(templateId, "valor", v);
       }
@@ -358,7 +398,6 @@
       const evt = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(evt, handleInput);
 
-      // ✅ só o valor recebe blur para formatar
       if (el.dataset.field === "valor") {
         el.addEventListener("blur", handleBlur);
       }
@@ -374,7 +413,7 @@
 
     initDefaults();
 
-    // sincroniza previews com valores já existentes
+    // sincroniza preview com o que já estiver preenchido
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       handleInput({ target: el });
       if (el.dataset.field === "valor") handleBlur({ target: el });

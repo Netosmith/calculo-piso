@@ -15,12 +15,6 @@
       </div>
 
       <div class="actions">
-        <!-- ✅ Estado ativo (badge) -->
-        <div class="icon-btn" id="btnEstado" title="Trocar estado" style="gap:8px;">
-          <span style="font-weight:900;">UF:</span>
-          <span id="estadoAtivo" class="badge" style="font-size:12px;">--</span>
-        </div>
-
         <div class="icon-btn" title="Notificações">🔔</div>
         <div class="icon-btn" title="Mensagens">✉️ <span class="badge">3</span></div>
         <div class="icon-btn" title="Arquivos">📁</div>
@@ -33,10 +27,13 @@
   <section class="hero">
     <div class="container hero-content">
       <div class="hero-title">Bem-vindo ao <b>Sistema Operacional</b></div>
-      <div class="hero-sub">Escolha uma das opções abaixo para continuar</div>
+
+      <div class="hero-sub" id="homeSub">
+        Escolha uma das opções abaixo para continuar
+      </div>
 
       <div class="grid">
-        <a class="card theme-blue" href="./calculo-piso.html">
+        <a class="card theme-blue" data-feature="piso" href="./calculo-piso.html">
           <div class="card-left">
             <div class="tile" style="font-size:38px;">🧾📈</div>
           </div>
@@ -46,7 +43,7 @@
           </div>
         </a>
 
-        <a class="card theme-green" href="./fretes.html">
+        <a class="card theme-green" data-feature="fretes" href="./fretes.html">
           <div class="card-left">
             <div class="tile" style="font-size:44px;">🚛</div>
           </div>
@@ -56,7 +53,7 @@
           </div>
         </a>
 
-        <a class="card theme-purple" href="./share-clientes.html">
+        <a class="card theme-purple" data-feature="share" href="./share-clientes.html">
           <div class="card-left">
             <div class="tile" style="font-size:44px;">👥</div>
           </div>
@@ -66,17 +63,8 @@
           </div>
         </a>
 
-        <a class="card theme-slate" href="#" onclick="alert('Em breve 🙂'); return false;">
-          <div class="card-left">
-            <div class="tile" style="font-size:42px;">📊</div>
-          </div>
-          <div class="card-right">
-            <h3>Filial x Cliente</h3>
-            <p>Analise o desempenho por filial</p>
-          </div>
-        </a>
-
-        <a class="card theme-gold" href="./divulgacao.html">
+        <!-- ✅ DIVULGAÇÃO -->
+        <a class="card theme-gold" data-feature="divulgacao" href="./divulgacao.html">
           <div class="card-left">
             <div class="tile" style="font-size:42px;">📣</div>
           </div>
@@ -85,50 +73,31 @@
             <p>Ferramentas para comunicação e marketing</p>
           </div>
         </a>
-
-        <a class="card theme-navy" href="#" onclick="alert('Em breve 🙂'); return false;">
-          <div class="card-left">
-            <div class="tile" style="font-size:44px;">➕</div>
-          </div>
-          <div class="card-right">
-            <h3>Cálculo Completo</h3>
-            <p>Outras ferramentas de cálculo de frete</p>
-          </div>
-        </a>
       </div>
     </div>
   </section>
 
   <script src="../assets/js/auth.js"></script>
   <script>
-    // ✅ mantém seu guard
     requireHomeAuth();
     bindLogoutButton();
 
-    // ✅ mostra UF ativa + permite trocar
-    function refreshEstadoBadge(){
-      const uf = (localStorage.getItem("nf_estado_ativo") || "").toUpperCase() || "--";
-      const el = document.getElementById("estadoAtivo");
-      if(el) el.textContent = uf;
-    }
-
+    // ✅ esconde cards não liberados para o estado
     window.addEventListener("DOMContentLoaded", () => {
-      refreshEstadoBadge();
+      const uf = getSelectedState();
+      const user = getUser();
 
-      const btn = document.getElementById("btnEstado");
-      if(btn){
-        btn.addEventListener("click", () => {
-          // força abrir o seletor novamente:
-          localStorage.removeItem("nf_estado_ativo");
-          // chama o seletor do auth.js
-          if (typeof ensureEstadoSelecionado === "function") {
-            const uf = ensureEstadoSelecionado();
-            if(uf) refreshEstadoBadge();
-          } else {
-            alert("Função ensureEstadoSelecionado não encontrada no auth.js");
-          }
-        });
+      const sub = document.getElementById("homeSub");
+      if(sub){
+        sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
       }
+
+      document.querySelectorAll("[data-feature]").forEach((card) => {
+        const feature = card.getAttribute("data-feature");
+        if(!canAccessFeature(feature)){
+          card.style.display = "none";
+        }
+      });
     });
   </script>
 </body>

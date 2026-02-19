@@ -5,7 +5,123 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
+
+  <style>
+    /* ===== Modal Estado (visual tipo o mock) ===== */
+    .stateOverlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      background: rgba(8, 12, 24, .55);
+      backdrop-filter: blur(10px);
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+    }
+    .stateCard{
+      width: min(520px, 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(10, 16, 34, .70);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .stateHead{
+      padding: 14px 14px 10px;
+      text-align:center;
+      color:#EAF0FF;
+      font-weight:900;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .stateSub{
+      padding: 0 14px 12px;
+      text-align:center;
+      font-size:12px;
+      color: rgba(233,238,252,.75);
+    }
+    .stateGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 12px 14px 14px;
+    }
+    .stateBtn{
+      cursor:pointer;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 14px;
+      padding: 12px 12px;
+      color:#fff;
+      text-align:left;
+      background: rgba(255,255,255,.08);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .stateBtn:hover{ filter: brightness(1.05); }
+    .stateBtn.active{
+      outline: 3px solid rgba(91,124,250,.45);
+      border-color: rgba(91,124,250,.55);
+    }
+    .stateMain{
+      font-weight:950;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .stateUf{
+      font-weight:950;
+      font-size:12px;
+      opacity:.9;
+      padding:6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.12);
+      white-space:nowrap;
+    }
+
+    /* Paletas (cores diferentes + transparência) */
+    .stateTheme-0{ background: rgba(16,185,129,.20); } /* verde */
+    .stateTheme-1{ background: rgba(245,158,11,.20); } /* laranja */
+    .stateTheme-2{ background: rgba(244,63,94,.20); }  /* rosa */
+    .stateTheme-3{ background: rgba(59,130,246,.20); } /* azul */
+    .stateTheme-4{ background: rgba(234,179,8,.20); }  /* amarelo */
+    .stateTheme-5{ background: rgba(168,85,247,.20); } /* roxo */
+    .stateTheme-6{ background: rgba(20,184,166,.20); } /* teal */
+    .stateTheme-7{ background: rgba(99,102,241,.20); } /* índigo */
+    .stateTheme-8{ background: rgba(34,197,94,.20); }  /* verde 2 */
+
+    .stateFooter{
+      padding: 12px 14px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .stateChosen{
+      text-align:center;
+      font-size:12px;
+      color: rgba(233,238,252,.75);
+    }
+    .stateOk{
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.10);
+      color:#fff;
+      font-weight:950;
+      cursor:pointer;
+    }
+    .stateOk:hover{ filter: brightness(1.05); }
+
+    @media (max-width:420px){
+      .stateGrid{ grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
+
 <body>
   <div class="login-wrap">
     <div class="login-card">
@@ -26,44 +142,64 @@
       <button class="btn" id="btnLogin">Entrar</button>
 
       <div class="err" id="err">Usuário ou senha inválidos.</div>
-      <div class="small">Dedicado - para NOVA FROTA ✅</div>
+      <div class="small" id="stateHint">Selecione o estado para continuar.</div>
+    </div>
+  </div>
+
+  <!-- ✅ MODAL: Selecionar Estado -->
+  <div class="stateOverlay" id="stateModal" aria-hidden="true">
+    <div class="stateCard">
+      <div class="stateHead">Selecionar Estado</div>
+      <div class="stateSub">Selecione o estado para acessar</div>
+
+      <div class="stateGrid" id="stateGrid"></div>
+
+      <div class="stateFooter">
+        <div class="stateChosen" id="stateChosen">Selecione um estado para continuar.</div>
+        <button class="stateOk" id="stateOk">OK</button>
+      </div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
   <script>
-    // Se já estiver logado, manda para Home (lá garante UF também)
+    // Se já estiver logado, manda para Home
     if(localStorage.getItem("nf_auth_home") === "1"){
       window.location.href = "./home.html";
     }
 
+    // ✅ Ativa o seletor bonito (bloqueia login sem estado)
+    window.addEventListener("DOMContentLoaded", () => {
+      bindStateSelector({ mustChoose:true, autoOpen:true });
+
+      // Atualiza o texto do rodapé do login com o estado
+      const hint = document.getElementById("stateHint");
+      const uf = localStorage.getItem("nf_auth_state") || "";
+      if(hint){
+        hint.textContent = uf
+          ? ("Dedicado - para NOVA FROTA-" + uf + " ✅")
+          : "Selecione o estado para continuar.";
+      }
+    });
+
     const btn = document.getElementById("btnLogin");
     const err = document.getElementById("err");
 
-    function waitForEstadoThenGoHome(){
-      // se já tem UF, vai direto
-      if(localStorage.getItem("nf_estado_ativo")){
-        window.location.href = "./home.html";
-        return;
-      }
-      // senão, espera o usuário clicar em um estado no modal
-      const t = setInterval(() => {
-        if(localStorage.getItem("nf_estado_ativo")){
-          clearInterval(t);
-          window.location.href = "./home.html";
-        }
-      }, 120);
-    }
-
     function doLogin(){
       err.style.display = "none";
-      const p = document.getElementById("pass").value.trim();
 
+      // ✅ exige estado selecionado
+      const uf = (localStorage.getItem("nf_auth_state") || "").toUpperCase();
+      if(!uf){
+        alert("Selecione o estado para continuar.");
+        if(window.openStateSelector) window.openStateSelector();
+        return;
+      }
+
+      const p = document.getElementById("pass").value.trim();
       if(p === AUTH.HOME_PASSWORD){
-        // ✅ login + abre seletor de estado
-        doHomeLogin();
-        // ✅ só vai pro home depois que escolher UF
-        waitForEstadoThenGoHome();
+        localStorage.setItem("nf_auth_home", "1");
+        window.location.href = "./home.html";
       }else{
         err.style.display = "block";
       }

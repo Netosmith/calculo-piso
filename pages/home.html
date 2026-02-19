@@ -15,6 +15,12 @@
       </div>
 
       <div class="actions">
+        <!-- ✅ Estado ativo (badge) -->
+        <div class="icon-btn" id="btnEstado" title="Trocar estado" style="gap:8px;">
+          <span style="font-weight:900;">UF:</span>
+          <span id="estadoAtivo" class="badge" style="font-size:12px;">--</span>
+        </div>
+
         <div class="icon-btn" title="Notificações">🔔</div>
         <div class="icon-btn" title="Mensagens">✉️ <span class="badge">3</span></div>
         <div class="icon-btn" title="Arquivos">📁</div>
@@ -70,7 +76,6 @@
           </div>
         </a>
 
-        <!-- ✅ DIVULGAÇÃO APONTANDO PARA A NOVA PÁGINA -->
         <a class="card theme-gold" href="./divulgacao.html">
           <div class="card-left">
             <div class="tile" style="font-size:42px;">📣</div>
@@ -96,8 +101,35 @@
 
   <script src="../assets/js/auth.js"></script>
   <script>
+    // ✅ mantém seu guard
     requireHomeAuth();
     bindLogoutButton();
+
+    // ✅ mostra UF ativa + permite trocar
+    function refreshEstadoBadge(){
+      const uf = (localStorage.getItem("nf_estado_ativo") || "").toUpperCase() || "--";
+      const el = document.getElementById("estadoAtivo");
+      if(el) el.textContent = uf;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      refreshEstadoBadge();
+
+      const btn = document.getElementById("btnEstado");
+      if(btn){
+        btn.addEventListener("click", () => {
+          // força abrir o seletor novamente:
+          localStorage.removeItem("nf_estado_ativo");
+          // chama o seletor do auth.js
+          if (typeof ensureEstadoSelecionado === "function") {
+            const uf = ensureEstadoSelecionado();
+            if(uf) refreshEstadoBadge();
+          } else {
+            alert("Função ensureEstadoSelecionado não encontrada no auth.js");
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

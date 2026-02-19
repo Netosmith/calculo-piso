@@ -5,7 +5,7 @@
 
 // ======== USUÁRIOS ========
 const USERS = {
-  LUZIANO: { password: "1234", states: ["GO","SP","MT","MG","MA","BA","PR"] },
+  LUZIANO: { password: "5707", states: ["GO","SP","MT","MG","MA","BA","PR"] },
   ELIEL:   { password: "1234", states: ["GO"] },
   LUIS:    { password: "1234", states: ["GO"] },
   VALDEMI: { password: "1234", states: ["GO"] },
@@ -13,22 +13,26 @@ const USERS = {
   GOIAS:   { password: "1234", states: ["GO"] },
   MATOGROSSO: { password: "1234", states: ["MT"] },
   MINASGERAIS:{ password: "1234", states: ["MG"] },
+  TOCANTINS:{ password: "1234", states: ["TO"] },
+  BAHIA:{ password: "1234", states: ["BA"] },
+  MARANHAO:{ password: "1234", states: ["MA"] },
   PARANA:  { password: "1234", states: ["PR"] }
 };
 
 // ======== SENHA EXTRA DO PISO ========
 const AUTH = {
-  PISO_PASSWORD: "9999"
+  PISO_PASSWORD: "1010"
 };
 
 // ======== PERMISSÕES POR ESTADO ========
 const STATE_FEATURES = {
   GO: ["piso","fretes","share","divulgacao"],
   SP: ["piso","divulgacao"],
-  MG: ["piso"],
+  MG: ["piso","divulgacao"],
   MT: ["piso","divulgacao"],
   BA: ["piso","divulgacao"],
   SC: ["piso","divulgacao"],
+  TO: ["piso","divulgacao"],
   MA: ["piso","divulgacao"]
 };
 

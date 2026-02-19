@@ -1,10 +1,11 @@
 // =====================================================
 // auth.js | NOVA FROTA
 // Login por usuário + seleção de estado + permissões
+// + (compat) senha extra do Piso (requirePisoAuth)
 // =====================================================
 
 // ======== USUÁRIOS (LOGIN) ========
-// ✅ aqui define: senha e quais ESTADOS cada usuário pode acessar
+// ✅ define: senha e quais ESTADOS cada usuário pode acessar
 const USERS = {
   LUZIANO: {
     password: "1234",
@@ -44,26 +45,29 @@ const USERS = {
   }  
 };
 
+// ======== (COMPAT) SENHA EXTRA DO PISO ========
+// ✅ se você quiser uma senha única pro Piso, deixe aqui:
+const AUTH = {
+  PISO_PASSWORD: "9999"
+};
+
 // ======== PERMISSÕES POR ESTADO (HOME) ========
-// ✅ aqui define o que cada ESTADO pode ver na HOME
 // chaves: piso, fretes, share, divulgacao
 const STATE_FEATURES = {
   GO: ["piso", "fretes", "share", "divulgacao"],
   SP: ["piso", "divulgacao"],
   MG: ["piso", "divulgacao"],
-  PR: ["piso", "divulgacao"],
+  MT: ["piso", "divulgacao"],
   BA: ["piso", "divulgacao"],
-  TO: ["piso", "divulgacao"],
   SC: ["piso", "divulgacao"],
-  MA: ["piso", "divulgacao"],
-  MT: ["piso", "divulgacao"] // (se quiser MT diferente, muda aqui)
-  // outros estados: adicione seguindo o padrão
+  MA: ["piso", "divulgacao"]
 };
 
 // ======== KEYS (localStorage) ========
 const KEY_HOME  = "nf_auth_home";
 const KEY_USER  = "nf_auth_user";
 const KEY_STATE = "nf_auth_state";
+const KEY_PISO  = "nf_auth_piso"; // ✅ (compat) trava só do Piso
 
 // ======== HELPERS ========
 function normalizeUpper(v){
@@ -73,7 +77,6 @@ function normalizeUpper(v){
 function setAuthHome(ok=true){
   localStorage.setItem(KEY_HOME, ok ? "1" : "0");
 }
-
 function isAuthedHome(){
   return localStorage.getItem(KEY_HOME) === "1";
 }
@@ -92,10 +95,18 @@ function getSelectedState(){
   return normalizeUpper(localStorage.getItem(KEY_STATE));
 }
 
+function setAuth(key, value=true){
+  localStorage.setItem(key, value ? "1" : "0");
+}
+function isAuthed(key){
+  return localStorage.getItem(key) === "1";
+}
+
 function logoutAll(){
   localStorage.removeItem(KEY_HOME);
   localStorage.removeItem(KEY_USER);
   localStorage.removeItem(KEY_STATE);
+  localStorage.removeItem(KEY_PISO);
 }
 
 // ======== LOGIN CHECK ========
@@ -132,7 +143,7 @@ function canAccessFeature(featureKey){
   return list.includes(featureKey);
 }
 
-// Guard para páginas (opcional usar depois)
+// Guard genérico por feature (opcional usar em páginas)
 function requireFeature(featureKey){
   requireHomeAuth();
   const uf = getSelectedState();
@@ -153,19 +164,48 @@ function requireHomeAuth(){
     return;
   }
 
-  // precisa ter estado escolhido também
   const uf = getSelectedState();
   if(!uf){
     window.location.href = "../pages/login.html";
     return;
   }
 
-  // confere se o estado escolhido é permitido para o usuário logado
   if(!isStateAllowedForUser(uf)){
     alert("Seu usuário não tem acesso a este estado.");
     logoutAll();
     window.location.href = "../pages/login.html";
   }
+}
+
+// ✅ (COMPAT) Guard do Piso: precisa estar logado + estado permitir "piso"
+// e opcionalmente pede a senha extra do Piso
+function requirePisoAuth(){
+  // precisa estar logado
+  requireHomeAuth();
+
+  // precisa que o estado permita o piso
+  if(!canAccessFeature("piso")){
+    alert("Cálculo de Piso não liberado para este estado.");
+    window.location.href = "../pages/home.html";
+    return;
+  }
+
+  // se já validou a senha extra nesta sessão, ok
+  if(isAuthed(KEY_PISO)) return;
+
+  // pede a senha extra
+  const ok = prompt("Acesso restrito: digite a senha do Cálculo de Piso:");
+  if(ok === null){
+    window.location.href = "../pages/home.html";
+    return;
+  }
+  if(String(ok).trim() === AUTH.PISO_PASSWORD){
+    setAuth(KEY_PISO, true);
+    return;
+  }
+
+  alert("Senha do Piso inválida.");
+  window.location.href = "../pages/home.html";
 }
 
 // botão sair (se existir)

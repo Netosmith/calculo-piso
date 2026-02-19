@@ -16,7 +16,7 @@ const USERS = {
   TOCANTINS:{ password: "1234", states: ["TO"] },
   BAHIA:{ password: "1234", states: ["BA"] },
   MARANHAO:{ password: "1234", states: ["MA"] },
-  PARA:{ password: "1234", states: ["PR"] },
+  PARA:{ password: "1234", states: ["PA"] },
   PARANA:  { password: "1234", states: ["PR"] }
 };
 

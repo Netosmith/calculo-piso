@@ -7,8 +7,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  <!-- ✅ TRAVA DO LOGIN 1 (HOME + ESTADO + PERMISSÕES DO PISO)
-       Este arquivo está em /pages, então o caminho é ../assets/js/auth.js -->
+  <!-- ✅ TRAVA DO LOGIN 1 (HOME + ESTADO + PERMISSÕES DO PISO) -->
   <script src="../assets/js/auth.js"></script>
 
   <style>
@@ -274,13 +273,11 @@
       <div class="card">
         <div class="pill">Entrada</div>
 
-        <!-- NORMAL (fora do modo cotação) -->
         <div class="normalEntrada">
           <label for="tipo">Tipo</label>
           <select id="tipo"></select>
         </div>
 
-        <!-- COTAÇÃO RÁPIDA (sem Tipo) -->
         <div class="quoteEntrada" style="display:none;">
           <div class="muted">Modo cotação: selecione o <b>Tipo</b> clicando direto na tabela.</div>
         </div>
@@ -371,16 +368,13 @@
 
 <script>
 /* ==========================================================
-   ✅ CORREÇÃO PRINCIPAL:
-   - Agora valida LOGIN do portal + ESTADO + permissão do PISO
-   - Usando requirePisoAuth() (do auth.js)
+   ✅ Portal Auth (HOME + ESTADO + permissão do Piso)
 ========================================================== */
 function enforcePisoAuth(){
   try{
     if (typeof requirePisoAuth === "function"){
       requirePisoAuth();
     } else if (typeof requireHomeAuth === "function") {
-      // fallback: se ainda não existe requirePisoAuth no seu auth.js
       requireHomeAuth();
       console.warn("[PISO] requirePisoAuth() não existe no auth.js. Usando requireHomeAuth() como fallback.");
     } else {
@@ -392,19 +386,11 @@ function enforcePisoAuth(){
 }
 
 /* ==========================================================
-   ✅ NÃO SOBRESCREVER logoutAll() do auth.js
-   - Aqui usamos outro nome
+   ✅ Não sobrescrever logoutAll() do auth.js
 ========================================================== */
 function logoutAllCalc(){
-  // logout do login interno da calculadora
   try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
-
-  // logout do portal (usa a função do auth.js se existir)
-  try{
-    if (typeof window.logoutAll === "function") window.logoutAll();
-  }catch(e){}
-
-  // volta para login do portal
+  try{ if (typeof window.logoutAll === "function") window.logoutAll(); }catch(e){}
   window.location.href = "./login.html";
 }
 
@@ -441,7 +427,10 @@ let USERS = loadUsers();
 function isAdmin(){ return getAuthUser() === ADMIN_USER; }
 
 /* ================== MODO COTAÇÃO ================== */
-function quoteModeKey(){ const u=getAuthUser()||"DEFAULT"; return `antt_${u}_quote_mode_v1`; }
+function quoteModeKey(){
+  const u = getAuthUser() || "DEFAULT";
+  return `antt_${u}_quote_mode_v1`;
+}
 function isQuoteMode(){ return localStorage.getItem(quoteModeKey())==="1"; }
 function setQuoteMode(on){ localStorage.setItem(quoteModeKey(), on?"1":"0"); }
 function applyQuoteModeUI(){
@@ -487,7 +476,10 @@ function updateUserBadge(){
   const btnAdmin = document.getElementById("btnAdmin");
   if (btnAdmin) btnAdmin.style.display = (u===ADMIN_USER) ? "" : "none";
 }
-function getScopePrefix(){ const u=getAuthUser()||"DEFAULT"; return `antt_${u}_`; }
+function getScopePrefix(){
+  const u = getAuthUser() || "DEFAULT";
+  return `antt_${u}_`;
+}
 
 function initAuth(){
   USERS = loadUsers();
@@ -517,6 +509,8 @@ function initAuth(){
       setAuthUser(user);
       showLock(false);
       updateUserBadge();
+
+      // ao logar, recarrega dados por usuário e recalcula
       pesosCustom = loadPesosCustom();
       applyQuoteModeUI();
       calc();
@@ -526,7 +520,6 @@ function initAuth(){
   if (btn) btn.addEventListener("click", tryLogin);
   if (pass) pass.addEventListener("keydown",(e)=>{ if (e.key==="Enter") tryLogin(); });
 
-  // ✅ AJUSTADO: "Sair" agora chama logoutAllCalc (não briga com auth.js)
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout){
     btnLogout.addEventListener("click", (e)=>{
@@ -576,7 +569,7 @@ function fillTipos(){
     op.value=idx; op.textContent=r.tipo;
     sel.appendChild(op);
   });
-  sel.value="0";
+  if (!sel.value) sel.value="0";
 }
 function extrairEixos(tipo){
   const m=String(tipo).trim().match(/^(\d+)/);
@@ -717,7 +710,7 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
   });
 }
 
-/* ================== EXPORT CSV ================== */
+/* ================== EXPORT CSV/JPEG (bloqueado sem login interno) ================== */
 function csvEscape(v){
   const s=String(v??"");
   if(/[;"\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
@@ -747,7 +740,7 @@ function buildExportRows(){
   });
 }
 function exportCSV(){
-  if(!getAuthUser()) return;
+  if(!getAuthUser()) { alert("Faça login no Piso para exportar."); return; }
   const rows=buildExportRows();
   const headers=Object.keys(rows[0]||{});
   const lines=[];
@@ -781,7 +774,6 @@ function exportCSV(){
   setTimeout(()=>URL.revokeObjectURL(url),1200);
 }
 
-/* ================== EXPORT JPEG ================== */
 function renderShotTable(){
   const tbody=$("shotTable"); if(!tbody) return;
   tbody.innerHTML="";
@@ -797,16 +789,15 @@ function renderShotTable(){
   }
 }
 function exportJPG(){
-  if(!getAuthUser()) return;
-  const shot=$("exportShot");
-  if(!shot) return;
+  if(!getAuthUser()) { alert("Faça login no Piso para exportar."); return; }
+  const shot=$("exportShot"); if(!shot) return;
 
   const {km,pedagioPorEixo,margem,icms}=getInputs();
-  if($("shotKM")) $("shotKM").textContent=km.toLocaleString("pt-BR",{maximumFractionDigits:1});
-  if($("shotPed")) $("shotPed").textContent=pedagioPorEixo.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  if($("shotMargem")) $("shotMargem").textContent=(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  if($("shotICMS")) $("shotICMS").textContent=(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  if($("shotUser")) $("shotUser").textContent=getAuthUser();
+  $("shotKM").textContent=km.toLocaleString("pt-BR",{maximumFractionDigits:1});
+  $("shotPed").textContent=pedagioPorEixo.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("shotMargem").textContent=(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("shotICMS").textContent=(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("shotUser").textContent=getAuthUser();
 
   renderShotTable();
   shot.style.display="block";
@@ -828,26 +819,33 @@ function exportJPG(){
   });
 }
 
-/* ================== CALC ================== */
+/* ================== CALC (✅ agora não bloqueia deslogado) ================== */
 function calc(opts={}){
-  if(!getAuthUser()) return;
   const tipoEl = $("tipo");
   if (!tipoEl) return;
 
-  const row=DATA[Number(tipoEl.value||0)];
+  if (!tipoEl.options || tipoEl.options.length===0){
+    fillTipos();
+  }
+
+  const idx = Number(tipoEl.value || 0);
+  const row = DATA[idx] || DATA[0];
+
   const {km,pedagioPorEixo,margem,icms}=getInputs();
   const {eixos,pesoUsado,freteMotorista,freteEmpresa}=calcFretes(row,km,pedagioPorEixo,margem,icms);
 
-  if($("outRkm")) $("outRkm").textContent="R$ "+numpt(row.rkm,4);
-  if($("outCC")) $("outCC").textContent="R$ "+numpt(row.custoCC,3);
-  if($("outPeso")) $("outPeso").textContent=fmtPeso(pesoUsado);
-  if($("outObs")) $("outObs").textContent=`${row.tipo} | Eixos: ${eixos}`;
-  if($("outMotorista")) $("outMotorista").textContent=money(freteMotorista);
-  if($("outEmpresa")) $("outEmpresa").textContent=Number.isFinite(freteEmpresa)?money(freteEmpresa):"Erro (margem/ICMS 100%)";
+  $("outRkm").textContent="R$ "+numpt(row.rkm,4);
+  $("outCC").textContent="R$ "+numpt(row.custoCC,3);
+  $("outPeso").textContent=fmtPeso(pesoUsado);
+  $("outObs").textContent=`${row.tipo} | Eixos: ${eixos}`;
+  $("outMotorista").textContent=money(freteMotorista);
+  $("outEmpresa").textContent=Number.isFinite(freteEmpresa)?money(freteEmpresa):"Erro (margem/ICMS 100%)";
 
   renderTabela(km,pedagioPorEixo,margem,icms);
 
-  if(!opts.skipPesosRender && !isEditingPeso) renderTabelaPesos();
+  if(!opts.skipPesosRender && !isEditingPeso){
+    renderTabelaPesos();
+  }
 }
 
 /* ================== ADMIN UI ================== */
@@ -899,12 +897,17 @@ function toastAdmin(txt, ok){
 
 /* ================== INIT ================== */
 document.addEventListener("DOMContentLoaded", ()=>{
-  // 1) valida LOGIN do portal + permissão do PISO
+  // 1) trava portal/estado/permissão
   enforcePisoAuth();
 
-  // 2) init calculadora
-  initAuth();
+  // 2) renderiza tudo antes do lock (para não ficar “tela vazia”)
   fillTipos();
+  pesosCustom = loadPesosCustom();
+  applyQuoteModeUI();
+  calc();
+
+  // 3) inicia login interno (vai abrir lock se não estiver logado)
+  initAuth();
 
   const btnReset=$("btnResetPesos");
   if(btnReset) btnReset.addEventListener("click", resetPesos);
@@ -922,16 +925,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   ["km","pedagio","margem","icms","tipo","lockPass","lockUser","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
 
-  const btnCSV=$("btnExportCSV");
-  if(btnCSV) btnCSV.addEventListener("click", exportCSV);
+  $("btnExportCSV")?.addEventListener("click", exportCSV);
+  $("btnExportJPG")?.addEventListener("click", exportJPG);
 
-  const btnJPG=$("btnExportJPG");
-  if(btnJPG) btnJPG.addEventListener("click", exportJPG);
-
-  /* Toggle cotação */
   const tgl=$("toggleQuote");
   function toggleQuote(){
-    if(!getAuthUser()) return;
     const next=!isQuoteMode();
     setQuoteMode(next);
     applyQuoteModeUI();
@@ -944,60 +942,45 @@ document.addEventListener("DOMContentLoaded", ()=>{
     });
   }
 
-  /* Admin bind */
-  const btnAdminClose=$("btnAdminClose");
-  if(btnAdminClose) btnAdminClose.addEventListener("click", ()=>showAdmin(false));
+  $("btnAdminClose")?.addEventListener("click", ()=>showAdmin(false));
+  $("adminModal")?.addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
 
-  const modal=$("adminModal");
-  if(modal){
-    modal.addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
-  }
+  $("btnAdmin")?.addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    showAdmin(true);
+  });
 
-  const btnAdmin=$("btnAdmin");
-  if(btnAdmin){
-    btnAdmin.addEventListener("click", ()=>{
-      if(!isAdmin()) return;
-      showAdmin(true);
-    });
-  }
+  $("btnAdminSaveUser")?.addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    let u = String($("admUserName")?.value||"").trim().toUpperCase();
+    const p = String($("admUserPass")?.value||"").trim();
+    if(!u) return toastAdmin("Informe o nome do usuário.", false);
+    if(!p) return toastAdmin("Informe a senha.", false);
+    u = u.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
+    USERS = loadUsers();
+    USERS[u]=p;
+    if(!USERS[ADMIN_USER]) USERS[ADMIN_USER]=USERS_DEFAULT[ADMIN_USER]||"1993";
+    saveUsers(USERS);
+    initAuth();
+    renderAdminUsers();
+    if($("admUserName")) $("admUserName").value="";
+    if($("admUserPass")) $("admUserPass").value="";
+    toastAdmin("Usuário salvo/atualizado.", true);
+  });
 
-  const btnSaveUser=$("btnAdminSaveUser");
-  if(btnSaveUser){
-    btnSaveUser.addEventListener("click", ()=>{
-      if(!isAdmin()) return;
-      let u = String($("admUserName")?.value||"").trim().toUpperCase();
-      const p = String($("admUserPass")?.value||"").trim();
-      if(!u) return toastAdmin("Informe o nome do usuário.", false);
-      if(!p) return toastAdmin("Informe a senha.", false);
-      u = u.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
-      USERS = loadUsers();
-      USERS[u]=p;
-      if(!USERS[ADMIN_USER]) USERS[ADMIN_USER]=USERS_DEFAULT[ADMIN_USER]||"1993";
-      saveUsers(USERS);
-      initAuth();
-      renderAdminUsers();
-      if($("admUserName")) $("admUserName").value="";
-      if($("admUserPass")) $("admUserPass").value="";
-      toastAdmin("Usuário salvo/atualizado.", true);
-    });
-  }
+  $("btnAdminResetAllPesos")?.addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
+      resetAllPesos();
+      pesosCustom = loadPesosCustom();
+      calc();
+      toastAdmin("Pesos resetados (todos).", true);
+    }
+  });
 
-  const btnResetAll=$("btnAdminResetAllPesos");
-  if(btnResetAll){
-    btnResetAll.addEventListener("click", ()=>{
-      if(!isAdmin()) return;
-      if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
-        resetAllPesos();
-        pesosCustom = loadPesosCustom();
-        calc();
-        toastAdmin("Pesos resetados (todos).", true);
-      }
-    });
-  }
-
-  /* boot */
+  // ✅ se já estava logado, recalcula para refletir usuário e escopos
   if(getAuthUser()){
-    pesosCustom=loadPesosCustom();
+    pesosCustom = loadPesosCustom();
     applyQuoteModeUI();
     calc();
   }

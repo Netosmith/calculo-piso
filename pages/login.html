@@ -26,13 +26,13 @@
       <button class="btn" id="btnLogin">Entrar</button>
 
       <div class="err" id="err">Usuário ou senha inválidos.</div>
-      <div class="small">Dedicado - para NOVA FROTA-GO ✅</div>
+      <div class="small">Dedicado - para NOVA FROTA ✅</div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
   <script>
-    // Se já estiver logado, manda para Home
+    // Se já estiver logado, manda para Home (lá garante UF também)
     if(localStorage.getItem("nf_auth_home") === "1"){
       window.location.href = "./home.html";
     }
@@ -40,12 +40,30 @@
     const btn = document.getElementById("btnLogin");
     const err = document.getElementById("err");
 
+    function waitForEstadoThenGoHome(){
+      // se já tem UF, vai direto
+      if(localStorage.getItem("nf_estado_ativo")){
+        window.location.href = "./home.html";
+        return;
+      }
+      // senão, espera o usuário clicar em um estado no modal
+      const t = setInterval(() => {
+        if(localStorage.getItem("nf_estado_ativo")){
+          clearInterval(t);
+          window.location.href = "./home.html";
+        }
+      }, 120);
+    }
+
     function doLogin(){
       err.style.display = "none";
       const p = document.getElementById("pass").value.trim();
+
       if(p === AUTH.HOME_PASSWORD){
-        localStorage.setItem("nf_auth_home", "1");
-        window.location.href = "./home.html";
+        // ✅ login + abre seletor de estado
+        doHomeLogin();
+        // ✅ só vai pro home depois que escolher UF
+        waitForEstadoThenGoHome();
       }else{
         err.style.display = "block";
       }

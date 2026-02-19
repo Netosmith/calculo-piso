@@ -8,12 +8,40 @@
 const USERS = {
   LUZIANO: {
     password: "1234",
-    states: ["GO", "SP", "MT"]
+    states: ["GO", "SP", "MT", "MG", "MA", "BA","PR"]
   },
   ELIEL: {
     password: "1234",
     states: ["GO"]
-  }
+  },
+  LUIS: {
+    password: "1234",
+    states: ["GO"]
+  },
+  VALDEMI: {
+    password: "1234",
+    states: ["GO"]
+  },
+  ARIEL: {
+    password: "1234",
+    states: ["GO"]
+  },
+  GOIAS: {
+    password: "1234",
+    states: ["GO"]
+  },
+  MATOGROSSO: {
+    password: "1234",
+    states: ["MT"]
+  },
+  MINASGERAIS: {
+    password: "1234",
+    states: ["MG"]
+  },
+  PARANA: {
+    password: "1234",
+    states: ["PR"]
+  }  
 };
 
 // ======== PERMISSÕES POR ESTADO (HOME) ========
@@ -22,7 +50,12 @@ const USERS = {
 const STATE_FEATURES = {
   GO: ["piso", "fretes", "share", "divulgacao"],
   SP: ["piso", "divulgacao"],
-  MG: ["piso"],
+  MG: ["piso", "divulgacao"],
+  PR: ["piso", "divulgacao"],
+  BA: ["piso", "divulgacao"],
+  TO: ["piso", "divulgacao"],
+  SC: ["piso", "divulgacao"],
+  MA: ["piso", "divulgacao"],
   MT: ["piso", "divulgacao"] // (se quiser MT diferente, muda aqui)
   // outros estados: adicione seguindo o padrão
 };

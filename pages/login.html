@@ -7,117 +7,97 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 
   <style>
-    /* ===== Modal Estado (visual tipo o mock) ===== */
+    /* ===== Modal Seletor de Estado ===== */
     .stateOverlay{
-      display:none;
-      position:fixed;
-      inset:0;
-      z-index:9999;
-      background: rgba(8, 12, 24, .55);
-      backdrop-filter: blur(10px);
-      align-items:center;
-      justify-content:center;
-      padding:14px;
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
     }
     .stateCard{
       width: min(520px, 100%);
       border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(10, 16, 34, .70);
-      box-shadow: 0 18px 60px rgba(0,0,0,.35);
-      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(8,12,24,.62);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      overflow: hidden;
     }
     .stateHead{
       padding: 14px 14px 10px;
-      text-align:center;
-      color:#EAF0FF;
-      font-weight:900;
+      color: #EAF0FF;
+      font-weight: 900;
+      text-align: center;
       font-size: 18px;
-      letter-spacing:.2px;
     }
     .stateSub{
-      padding: 0 14px 12px;
-      text-align:center;
-      font-size:12px;
-      color: rgba(233,238,252,.75);
+      margin-top: 4px;
+      font-weight: 600;
+      opacity: .75;
+      font-size: 12px;
     }
+
     .stateGrid{
-      display:grid;
+      display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       padding: 12px 14px 14px;
     }
+    @media (max-width:420px){
+      .stateGrid{ grid-template-columns: 1fr; }
+    }
+
     .stateBtn{
-      cursor:pointer;
-      border: 1px solid rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.18);
       border-radius: 14px;
-      padding: 12px 12px;
-      color:#fff;
-      text-align:left;
+      padding: 14px 12px;
+      color: #fff;
+      font-weight: 950;
+      cursor: pointer;
+      text-align: left;
       background: rgba(255,255,255,.08);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
+      transition: transform .06s ease, filter .12s ease;
+      user-select: none;
     }
     .stateBtn:hover{ filter: brightness(1.05); }
-    .stateBtn.active{
-      outline: 3px solid rgba(91,124,250,.45);
-      border-color: rgba(91,124,250,.55);
-    }
-    .stateMain{
-      font-weight:950;
-      font-size:14px;
-      letter-spacing:.2px;
-    }
-    .stateUf{
-      font-weight:950;
-      font-size:12px;
-      opacity:.9;
-      padding:6px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.22);
-      border: 1px solid rgba(255,255,255,.12);
-      white-space:nowrap;
+    .stateBtn:active{ transform: scale(.99); }
+
+    .stateBtn .uf{
+      font-weight: 800;
+      opacity: .85;
+      font-size: 12px;
+      margin-left: 6px;
     }
 
-    /* Paletas (cores diferentes + transparência) */
-    .stateTheme-0{ background: rgba(16,185,129,.20); } /* verde */
-    .stateTheme-1{ background: rgba(245,158,11,.20); } /* laranja */
-    .stateTheme-2{ background: rgba(244,63,94,.20); }  /* rosa */
-    .stateTheme-3{ background: rgba(59,130,246,.20); } /* azul */
-    .stateTheme-4{ background: rgba(234,179,8,.20); }  /* amarelo */
-    .stateTheme-5{ background: rgba(168,85,247,.20); } /* roxo */
-    .stateTheme-6{ background: rgba(20,184,166,.20); } /* teal */
-    .stateTheme-7{ background: rgba(99,102,241,.20); } /* índigo */
-    .stateTheme-8{ background: rgba(34,197,94,.20); }  /* verde 2 */
+    /* cores/transparência (no padrão que você quer) */
+    .c-go{ background: rgba(28,175,96,.30); }
+    .c-mt{ background: rgba(197,110,45,.30); }
+    .c-mg{ background: rgba(210,64,95,.30); }
+    .c-sp{ background: rgba(62,110,245,.30); }
+    .c-pr{ background: rgba(210,170,40,.30); }
+    .c-sc{ background: rgba(160,90,210,.30); }
+    .c-to{ background: rgba(40,190,190,.30); }
+    .c-ma{ background: rgba(65,90,210,.30); }
+    .c-ba{ background: rgba(40,190,140,.30); }
 
-    .stateFooter{
-      padding: 12px 14px 14px;
-      border-top: 1px solid rgba(255,255,255,.10);
-      display:flex;
-      flex-direction:column;
-      gap:10px;
+    .stateFoot{
+      padding: 0 14px 14px;
+      display: flex;
+      gap: 10px;
     }
-    .stateChosen{
-      text-align:center;
-      font-size:12px;
-      color: rgba(233,238,252,.75);
-    }
-    .stateOk{
-      height: 44px;
+    .stateCancel{
+      width: 100%;
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.10);
-      color:#fff;
-      font-weight:950;
-      cursor:pointer;
-    }
-    .stateOk:hover{ filter: brightness(1.05); }
-
-    @media (max-width:420px){
-      .stateGrid{ grid-template-columns: 1fr; }
+      color: #fff;
+      font-weight: 900;
+      height: 44px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -134,7 +114,7 @@
       </div>
 
       <label class="label" for="user">Usuário</label>
-      <input class="input" id="user" placeholder="Ex.: Luziano" autocomplete="username" />
+      <input class="input" id="user" placeholder="Ex.: LUZIANO" autocomplete="username" />
 
       <label class="label" for="pass">Senha</label>
       <input class="input" id="pass" type="password" placeholder="Digite a senha" autocomplete="current-password" />
@@ -142,67 +122,105 @@
       <button class="btn" id="btnLogin">Entrar</button>
 
       <div class="err" id="err">Usuário ou senha inválidos.</div>
-      <div class="small" id="stateHint">Selecione o estado para continuar.</div>
+      <div class="small">Dedicado - NOVA FROTA ✅</div>
     </div>
   </div>
 
-  <!-- ✅ MODAL: Selecionar Estado -->
-  <div class="stateOverlay" id="stateModal" aria-hidden="true">
+  <!-- ✅ MODAL: Seleção de Estado -->
+  <div class="stateOverlay" id="stateOverlay" aria-hidden="true">
     <div class="stateCard">
-      <div class="stateHead">Selecionar Estado</div>
-      <div class="stateSub">Selecione o estado para acessar</div>
+      <div class="stateHead">
+        Selecionar Estado
+        <div class="stateSub" id="stateSub">Escolha o estado liberado para seu usuário</div>
+      </div>
 
       <div class="stateGrid" id="stateGrid"></div>
 
-      <div class="stateFooter">
-        <div class="stateChosen" id="stateChosen">Selecione um estado para continuar.</div>
-        <button class="stateOk" id="stateOk">OK</button>
+      <div class="stateFoot">
+        <button class="stateCancel" id="btnCancelState">Cancelar</button>
       </div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
   <script>
-    // Se já estiver logado, manda para Home
-    if(localStorage.getItem("nf_auth_home") === "1"){
+    // Se já estiver logado e com estado, manda para Home
+    if(localStorage.getItem("nf_auth_home") === "1" && localStorage.getItem("nf_auth_state")){
       window.location.href = "./home.html";
     }
-
-    // ✅ Ativa o seletor bonito (bloqueia login sem estado)
-    window.addEventListener("DOMContentLoaded", () => {
-      bindStateSelector({ mustChoose:true, autoOpen:true });
-
-      // Atualiza o texto do rodapé do login com o estado
-      const hint = document.getElementById("stateHint");
-      const uf = localStorage.getItem("nf_auth_state") || "";
-      if(hint){
-        hint.textContent = uf
-          ? ("Dedicado - para NOVA FROTA-" + uf + " ✅")
-          : "Selecione o estado para continuar.";
-      }
-    });
 
     const btn = document.getElementById("btnLogin");
     const err = document.getElementById("err");
 
+    const overlay = document.getElementById("stateOverlay");
+    const grid = document.getElementById("stateGrid");
+    const btnCancelState = document.getElementById("btnCancelState");
+
+    // nomes/cores dos estados
+    const STATES_UI = {
+      GO: { name: "Goiás", className: "c-go" },
+      MT: { name: "Mato Grosso", className: "c-mt" },
+      MG: { name: "Minas Gerais", className: "c-mg" },
+      SP: { name: "São Paulo", className: "c-sp" },
+      PR: { name: "Paraná", className: "c-pr" },
+      SC: { name: "Santa Catarina", className: "c-sc" },
+      TO: { name: "Tocantins", className: "c-to" },
+      MA: { name: "Maranhão", className: "c-ma" },
+      BA: { name: "Bahia", className: "c-ba" },
+    };
+
+    function openStateModal(statesAllowed){
+      grid.innerHTML = "";
+
+      statesAllowed.forEach((uf) => {
+        const info = STATES_UI[uf] || { name: uf, className: "" };
+
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "stateBtn " + (info.className || "");
+        b.innerHTML = `${info.name} <span class="uf">${uf}</span>`;
+
+        b.addEventListener("click", () => {
+          setSelectedState(uf);
+          window.location.href = "./home.html";
+        });
+
+        grid.appendChild(b);
+      });
+
+      overlay.style.display = "flex";
+      overlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeStateModal(){
+      overlay.style.display = "none";
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    btnCancelState.addEventListener("click", () => {
+      // se cancelou, desloga tudo
+      logoutAll();
+      closeStateModal();
+    });
+
     function doLogin(){
       err.style.display = "none";
+      const u = document.getElementById("user").value.trim();
+      const p = document.getElementById("pass").value.trim();
 
-      // ✅ exige estado selecionado
-      const uf = (localStorage.getItem("nf_auth_state") || "").toUpperCase();
-      if(!uf){
-        alert("Selecione o estado para continuar.");
-        if(window.openStateSelector) window.openStateSelector();
+      const r = validateLogin(u, p);
+
+      if(!r.ok){
+        err.style.display = "block";
         return;
       }
 
-      const p = document.getElementById("pass").value.trim();
-      if(p === AUTH.HOME_PASSWORD){
-        localStorage.setItem("nf_auth_home", "1");
-        window.location.href = "./home.html";
-      }else{
-        err.style.display = "block";
-      }
+      // ✅ login OK
+      setAuthHome(true);
+      setUser(r.user);
+
+      // abre modal com estados liberados
+      openStateModal(r.states || []);
     }
 
     btn.addEventListener("click", doLogin);

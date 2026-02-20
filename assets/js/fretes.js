@@ -45,7 +45,7 @@
   }
 
   // ----------------------------
-  // API
+  // API (JSON puro)
   // ----------------------------
   async function apiGet(paramsObj) {
     const url = new URL(API_URL);
@@ -53,10 +53,9 @@
 
     const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
     const ct = (res.headers.get("content-type") || "").toLowerCase();
-
     const rawText = await res.text().catch(() => "");
 
-    // Detecta HTML (comum quando Apps Script pede login/permissão)
+    // Detecta HTML (Apps Script pedindo login/permissão)
     const looksHtml =
       ct.includes("text/html") ||
       /^\s*<!doctype html/i.test(rawText) ||
@@ -66,17 +65,18 @@
       const err = new Error("API retornou HTML (deploy/permissão do Apps Script).");
       err.httpStatus = res.status;
       err.url = url.toString();
-      err.preview = rawText.slice(0, 220);
+      err.preview = rawText.slice(0, 260);
       throw err;
     }
 
-    // Tenta parsear JSON mesmo se vier text/plain
     let data = null;
     try {
       data = rawText ? JSON.parse(rawText) : null;
     } catch {
-      // se não parseou, retorna bruto
-      data = { ok: false, raw: rawText };
+      const err = new Error("Falha ao interpretar JSON da API.");
+      err.url = url.toString();
+      err.preview = rawText.slice(0, 260);
+      throw err;
     }
 
     if (!res.ok) {
@@ -91,84 +91,21 @@
   }
 
   async function fetchRows() {
-    // Várias combinações comuns de endpoint/ação
-    const tries = [
-      {},
+    const data = await apiGet({ action: "list" });
+    const rows =
+      data?.data ||
+      data?.rows ||
+      data?.fretes ||
+      (Array.isArray(data) ? data : null);
 
-      { action: "rows" },
-      { action: "list" },
-      { action: "fretes_list" },
-      { action: "list_fretes" },
-      { action: "listFretes" },
-
-      { op: "rows" },
-      { op: "list" },
-      { op: "listFretes" },
-
-      { route: "fretes", op: "list" },
-      { route: "fretes", action: "list" },
-    ];
-
-    let lastErr = null;
-
-    for (const p of tries) {
-      try {
-        const data = await apiGet(p);
-
-        // formatos comuns:
-        // { ok:true, rows:[...] }
-        // { success:true, data:[...] }
-        // { rows:[...] }
-        // { data:[...] }
-        const rows =
-          data?.rows ||
-          data?.data ||
-          data?.fretes ||
-          data?.result ||
-          (Array.isArray(data) ? data : null);
-
-        if (Array.isArray(rows)) {
-          console.log("[fretes] API ok params:", p, "rows:", rows.length);
-          return rows;
-        }
-
-        // às vezes vem {ok:true, payload:{rows:[...]}}
-        if (data && typeof data === "object") {
-          const deepCandidates = [
-            data?.payload?.rows,
-            data?.payload?.data,
-            data?.payload?.fretes,
-            data?.result?.rows,
-            data?.result?.data,
-          ].filter(Boolean);
-
-          const foundDeep = deepCandidates.find((x) => Array.isArray(x));
-          if (foundDeep) {
-            console.log("[fretes] API ok (deep) params:", p, "rows:", foundDeep.length);
-            return foundDeep;
-          }
-
-          // tenta pegar a primeira propriedade array
-          const firstArrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
-          if (firstArrayKey) {
-            console.log("[fretes] API ok (array em)", firstArrayKey, "params:", p);
-            return data[firstArrayKey];
-          }
-        }
-
-        // se veio ok:false, tenta próxima
-        lastErr = new Error("Resposta sem rows (params: " + JSON.stringify(p) + ")");
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-
-    console.error("[fretes] Falhou ao buscar rows", lastErr);
-    throw lastErr || new Error("Falha ao buscar dados.");
+    if (!Array.isArray(rows)) throw new Error("API respondeu sem lista de fretes.");
+    console.log("[fretes] rows:", rows.length);
+    return rows;
   }
 
   // ----------------------------
   // RENDER
+  // (alinhado com seu fretes.html + backend)
   // ----------------------------
   const COLS = [
     { key: "regional", label: "Regional" },
@@ -182,25 +119,39 @@
     { key: "destino", label: "Destino" },
     { key: "uf", label: "UF" },
     { key: "descarga", label: "Descarga" },
+
     { key: "volume", label: "Volume" },
-    { key: "vlrEmpresa", label: "Vlr Empresa" },
-    { key: "vlrMotorista", label: "Vlr Motorista" },
+
+    { key: "valorEmpresa", label: "Vlr Empresa" },
+    { key: "valorMotorista", label: "Vlr Motorista" },
+
     { key: "km", label: "KM" },
     { key: "pedagioEixo", label: "Pedágio/Eixo" },
+
+    // Se você não tiver isso na planilha, vai vir vazio (ok)
     { key: "e5", label: "5E" },
     { key: "e6", label: "6E" },
     { key: "e7", label: "7E" },
     { key: "e4", label: "4E" },
     { key: "e9", label: "9E" },
+
     { key: "produto", label: "Produto" },
     { key: "icms", label: "ICMS" },
-    { key: "pedidoSAT", label: "Pedido SAT" },
+
+    { key: "pedidoSat", label: "Pedido SAT" },
+
     { key: "porta", label: "Porta" },
+    { key: "transito", label: "Trânsito" },
+    { key: "status", label: "Status" },
+    { key: "obs", label: "Observações" },
+
+    { key: "_acoes", label: "Ações", isActions: true },
   ];
 
-  function valueFromRow(row, key, index) {
-    if (Array.isArray(row)) return safeText(row[index] ?? "");
-    if (row && typeof row === "object") {
+  function valueFromRow(row, key) {
+    if (!row) return "";
+
+    if (row && typeof row === "object" && !Array.isArray(row)) {
       const map = {
         regional: ["regional"],
         filial: ["filial"],
@@ -212,26 +163,37 @@
         uf: ["uf", "estado"],
         descarga: ["descarga"],
         volume: ["volume"],
-        vlrEmpresa: ["vlrEmpresa", "valorEmpresa", "empresa"],
-        vlrMotorista: ["vlrMotorista", "valorMotorista", "motorista"],
+
+        valorEmpresa: ["valorEmpresa", "vlrEmpresa", "empresa"],
+        valorMotorista: ["valorMotorista", "vlrMotorista", "motorista"],
+
         km: ["km"],
         pedagioEixo: ["pedagioEixo", "pedagio", "pedagio_por_eixo"],
+
         e5: ["5e", "e5"],
         e6: ["6e", "e6"],
         e7: ["7e", "e7"],
         e4: ["4e", "e4"],
         e9: ["9e", "e9"],
+
         produto: ["produto"],
         icms: ["icms"],
-        pedidoSAT: ["pedidoSAT", "pedido", "sat"],
+        pedidoSat: ["pedidoSat", "pedidoSAT", "pedido", "sat"],
+
         porta: ["porta"],
+        transito: ["transito"],
+        status: ["status"],
+        obs: ["obs", "observacao", "observações"],
       };
 
       const candidates = map[key] || [key];
       for (const c of candidates) {
         if (c in row) return safeText(row[c]);
       }
+      return "";
     }
+
+    // Se um dia vier array, retorna vazio seguro
     return "";
   }
 
@@ -260,25 +222,11 @@
       a.target = "_blank";
       a.rel = "noopener";
       a.title = "Chamar no WhatsApp";
-      a.className = "waIcon"; // usa seu CSS do HTML
-
-      // fallback caso CSS não carregue
-      a.style.display = "inline-flex";
-      a.style.alignItems = "center";
-      a.style.justifyContent = "center";
-      a.style.width = "28px";
-      a.style.height = "28px";
-      a.style.borderRadius = "10px";
-      a.style.border = "1px solid rgba(17,24,39,.12)";
-      a.style.background = "#fff";
-      a.style.flex = "0 0 auto";
+      a.className = "waIcon";
 
       const img = document.createElement("img");
       img.src = "../assets/img/whatsapp.png";
       img.alt = "WhatsApp";
-      img.style.width = "18px";
-      img.style.height = "18px";
-      img.style.display = "block";
 
       img.onerror = () => {
         a.textContent = "📞";
@@ -304,16 +252,26 @@
 
     rows.forEach((row) => {
       const tr = document.createElement("tr");
+      tr.className = "rowSlim";
 
-      COLS.forEach((col, idx) => {
+      COLS.forEach((col) => {
         if (col.isContato) {
-          const contatoText = valueFromRow(row, "contato", idx);
+          const contatoText = valueFromRow(row, "contato");
           tr.appendChild(buildContatoCell(contatoText));
-        } else {
-          const td = document.createElement("td");
-          td.textContent = valueFromRow(row, col.key, idx);
-          tr.appendChild(td);
+          return;
         }
+
+        if (col.isActions) {
+          const td = document.createElement("td");
+          td.className = "num";
+          td.textContent = ""; // (depois você coloca editar/excluir aqui)
+          tr.appendChild(td);
+          return;
+        }
+
+        const td = document.createElement("td");
+        td.textContent = valueFromRow(row, col.key);
+        tr.appendChild(td);
       });
 
       tbody.appendChild(tr);
@@ -332,13 +290,9 @@
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
 
-      // Mensagem mais clara quando é HTML/permissão
       if (String(e?.message || "").includes("retornou HTML")) {
         setStatus("❌ Erro ao sincronizar (ver deploy/permissão)");
-        console.warn(
-          "[fretes] Provável problema de DEPLOY/PERMISSÃO no Apps Script. Trecho retorno:",
-          e.preview || ""
-        );
+        console.warn("[fretes] retorno preview:", e.preview || "");
       } else {
         setStatus("❌ Erro ao sincronizar");
       }
@@ -346,7 +300,6 @@
   }
 
   function bindButtons() {
-    // IDs reais do seu HTML
     const btnAtualizar = $("#btnReloadFromSheets");
     const btnNovo = $("#btnNew");
 

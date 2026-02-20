@@ -7,6 +7,7 @@
 const USERS = {
   LUZIANO: { password: "5707", states: ["GO","SP","MT","MG","MA","BA","PR"] },
   ELIEL:   { password: "1234", states: ["GO"] },
+  OUROSAFRA: { password: "1234", states: ["SP"] },
   LUIS:    { password: "1234", states: ["GO"] },
   VALDEMI: { password: "1234", states: ["GO"] },
   ARIEL:   { password: "1234", states: ["GO"] },
@@ -28,7 +29,7 @@ const AUTH = {
 // ======== PERMISSÕES POR ESTADO ========
 const STATE_FEATURES = {
   GO: ["piso","fretes","share","divulgacao"],
-  SP: ["piso","divulgacao"],
+  SP: ["piso"],
   MG: ["piso","divulgacao"],
   MT: ["piso","divulgacao"],
   BA: ["piso","divulgacao"],

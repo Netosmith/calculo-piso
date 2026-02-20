@@ -1,4 +1,4 @@
-/* fretes.js | NOVA FROTA */
+/* fretes.js | NOVA FROTA (AJUSTADO) */
 (function () {
   "use strict";
 
@@ -34,6 +34,7 @@
     const s = safeText(text);
     if (!s) return "";
     let digits = s.replace(/\D/g, "");
+    if (!digits) return "";
     if (digits.startsWith("55")) return digits;
     if (digits.length === 10 || digits.length === 11) return "55" + digits;
     return "";
@@ -45,7 +46,7 @@
   }
 
   // ----------------------------
-  // API (JSON puro)
+  // API (JSON + JSONP)
   // ----------------------------
   async function apiGet(paramsObj) {
     const url = new URL(API_URL);
@@ -55,7 +56,7 @@
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     const rawText = await res.text().catch(() => "");
 
-    // Detecta HTML (Apps Script pedindo login/permissão)
+    // HTML => geralmente problema de deploy/permissão
     const looksHtml =
       ct.includes("text/html") ||
       /^\s*<!doctype html/i.test(rawText) ||
@@ -69,14 +70,37 @@
       throw err;
     }
 
+    // tenta JSON puro
     let data = null;
     try {
       data = rawText ? JSON.parse(rawText) : null;
     } catch {
-      const err = new Error("Falha ao interpretar JSON da API.");
-      err.url = url.toString();
-      err.preview = rawText.slice(0, 260);
-      throw err;
+      // tenta JSONP: callback({...})
+      const t = String(rawText || "").trim();
+      const p1 = t.indexOf("(");
+      const p2 = t.lastIndexOf(")");
+
+      const looksJsonp =
+        p1 > 0 &&
+        p2 > p1 &&
+        /^[a-zA-Z_$][\w$]*\s*\(/.test(t);
+
+      if (looksJsonp) {
+        const inner = t.slice(p1 + 1, p2).trim();
+        try {
+          data = inner ? JSON.parse(inner) : null;
+        } catch {
+          const err = new Error("Falha ao interpretar JSONP da API.");
+          err.url = url.toString();
+          err.preview = t.slice(0, 260);
+          throw err;
+        }
+      } else {
+        const err = new Error("Falha ao interpretar JSON da API.");
+        err.url = url.toString();
+        err.preview = t.slice(0, 260);
+        throw err;
+      }
     }
 
     if (!res.ok) {
@@ -91,21 +115,40 @@
   }
 
   async function fetchRows() {
-    const data = await apiGet({ action: "list" });
-    const rows =
-      data?.data ||
-      data?.rows ||
-      data?.fretes ||
-      (Array.isArray(data) ? data : null);
+    // Seu Apps Script usa action=list
+    const tries = [
+      { action: "list" },
+      { action: "rows" },
+      {}, // fallback
+    ];
 
-    if (!Array.isArray(rows)) throw new Error("API respondeu sem lista de fretes.");
-    console.log("[fretes] rows:", rows.length);
-    return rows;
+    let lastErr = null;
+
+    for (const p of tries) {
+      try {
+        const data = await apiGet(p);
+
+        // O seu doGet retorna: { ok:true, data: [...] }
+        const rows =
+          data?.data ||
+          data?.rows ||
+          data?.fretes ||
+          data?.result ||
+          (Array.isArray(data) ? data : null);
+
+        if (Array.isArray(rows)) return rows;
+
+        lastErr = new Error("Resposta sem array de linhas (params: " + JSON.stringify(p) + ")");
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    throw lastErr || new Error("Falha ao buscar dados.");
   }
 
   // ----------------------------
-  // RENDER
-  // (alinhado com seu fretes.html + backend)
+  // COLUNAS (na ordem do seu HTML)
   // ----------------------------
   const COLS = [
     { key: "regional", label: "Regional" },
@@ -119,16 +162,17 @@
     { key: "destino", label: "Destino" },
     { key: "uf", label: "UF" },
     { key: "descarga", label: "Descarga" },
-
     { key: "volume", label: "Volume" },
 
+    // IMPORTANTES: seu Apps Script usa valorEmpresa/valorMotorista
     { key: "valorEmpresa", label: "Vlr Empresa" },
     { key: "valorMotorista", label: "Vlr Motorista" },
 
     { key: "km", label: "KM" },
     { key: "pedagioEixo", label: "Pedágio/Eixo" },
 
-    // Se você não tiver isso na planilha, vai vir vazio (ok)
+    // as colunas 5E/6E/7E/4E/9E podem ser calculadas por você depois
+    // se não existir no dado, vai ficar vazio (ok)
     { key: "e5", label: "5E" },
     { key: "e6", label: "6E" },
     { key: "e7", label: "7E" },
@@ -138,6 +182,7 @@
     { key: "produto", label: "Produto" },
     { key: "icms", label: "ICMS" },
 
+    // seu Apps Script usa pedidoSat (não pedidoSAT)
     { key: "pedidoSat", label: "Pedido SAT" },
 
     { key: "porta", label: "Porta" },
@@ -145,13 +190,15 @@
     { key: "status", label: "Status" },
     { key: "obs", label: "Observações" },
 
-    { key: "_acoes", label: "Ações", isActions: true },
+    // Ações (renderizado pelo JS)
+    { key: "__acoes", label: "Ações", isAcoes: true },
   ];
 
-  function valueFromRow(row, key) {
-    if (!row) return "";
+  function valueFromRow(row, key, index) {
+    // se vier array (não é seu caso atual, mas deixo compat)
+    if (Array.isArray(row)) return safeText(row[index] ?? "");
 
-    if (row && typeof row === "object" && !Array.isArray(row)) {
+    if (row && typeof row === "object") {
       const map = {
         regional: ["regional"],
         filial: ["filial"],
@@ -164,36 +211,35 @@
         descarga: ["descarga"],
         volume: ["volume"],
 
+        // aqui o ajuste crucial:
         valorEmpresa: ["valorEmpresa", "vlrEmpresa", "empresa"],
         valorMotorista: ["valorMotorista", "vlrMotorista", "motorista"],
 
         km: ["km"],
         pedagioEixo: ["pedagioEixo", "pedagio", "pedagio_por_eixo"],
 
-        e5: ["5e", "e5"],
-        e6: ["6e", "e6"],
-        e7: ["7e", "e7"],
-        e4: ["4e", "e4"],
-        e9: ["9e", "e9"],
+        e5: ["e5", "5e"],
+        e6: ["e6", "6e"],
+        e7: ["e7", "7e"],
+        e4: ["e4", "4e"],
+        e9: ["e9", "9e"],
 
         produto: ["produto"],
         icms: ["icms"],
+
         pedidoSat: ["pedidoSat", "pedidoSAT", "pedido", "sat"],
 
         porta: ["porta"],
-        transito: ["transito"],
+        transito: ["transito", "trânsito", "transitoDias"],
         status: ["status"],
-        obs: ["obs", "observacao", "observações"],
+        obs: ["obs", "observacao", "observações", "observacoes"],
       };
 
       const candidates = map[key] || [key];
       for (const c of candidates) {
         if (c in row) return safeText(row[c]);
       }
-      return "";
     }
-
-    // Se um dia vier array, retorna vazio seguro
     return "";
   }
 
@@ -227,7 +273,6 @@
       const img = document.createElement("img");
       img.src = "../assets/img/whatsapp.png";
       img.alt = "WhatsApp";
-
       img.onerror = () => {
         a.textContent = "📞";
         a.style.background = "#EEF2F7";
@@ -238,6 +283,53 @@
     }
 
     td.appendChild(wrap);
+    return td;
+  }
+
+  function buildAcoesCell(row) {
+    const td = document.createElement("td");
+    td.className = "num";
+
+    const id = row?.id ? String(row.id) : "";
+
+    const btnEdit = document.createElement("button");
+    btnEdit.type = "button";
+    btnEdit.className = "btnTiny ghost";
+    btnEdit.textContent = "Editar";
+    btnEdit.style.marginRight = "6px";
+    btnEdit.addEventListener("click", () => {
+      console.log("[fretes] editar", id, row);
+      // se você já tiver modal/edit, aqui você chama:
+      // window.openEditModal?.(row);
+    });
+
+    const btnDel = document.createElement("button");
+    btnDel.type = "button";
+    btnDel.className = "btnTiny";
+    btnDel.textContent = "Excluir";
+    btnDel.addEventListener("click", async () => {
+      if (!id) return alert("Sem ID para excluir.");
+      if (!confirm("Excluir este frete?")) return;
+
+      try {
+        setStatus("🗑 Excluindo...");
+        // seu Apps Script: action=delete&id=...
+        const data = await apiGet({ action: "delete", id });
+        if (data?.ok) {
+          setStatus("✅ Excluído");
+          await atualizar();
+        } else {
+          setStatus("❌ Falha ao excluir");
+          alert(data?.error || "Falha ao excluir.");
+        }
+      } catch (e) {
+        console.error("[fretes] erro delete:", e);
+        setStatus("❌ Erro ao excluir");
+      }
+    });
+
+    td.appendChild(btnEdit);
+    td.appendChild(btnDel);
     return td;
   }
 
@@ -254,23 +346,20 @@
       const tr = document.createElement("tr");
       tr.className = "rowSlim";
 
-      COLS.forEach((col) => {
+      COLS.forEach((col, idx) => {
         if (col.isContato) {
-          const contatoText = valueFromRow(row, "contato");
+          const contatoText = valueFromRow(row, "contato", idx);
           tr.appendChild(buildContatoCell(contatoText));
           return;
         }
 
-        if (col.isActions) {
-          const td = document.createElement("td");
-          td.className = "num";
-          td.textContent = ""; // (depois você coloca editar/excluir aqui)
-          tr.appendChild(td);
+        if (col.isAcoes) {
+          tr.appendChild(buildAcoesCell(row));
           return;
         }
 
         const td = document.createElement("td");
-        td.textContent = valueFromRow(row, col.key);
+        td.textContent = valueFromRow(row, col.key, idx);
         tr.appendChild(td);
       });
 
@@ -291,8 +380,8 @@
       console.error("[fretes] erro ao atualizar:", e);
 
       if (String(e?.message || "").includes("retornou HTML")) {
-        setStatus("❌ Erro ao sincronizar (ver deploy/permissão)");
-        console.warn("[fretes] retorno preview:", e.preview || "");
+        setStatus("❌ Erro ao sincronizar (deploy/permissão)");
+        console.warn("[fretes] Trecho retorno:", e.preview || "");
       } else {
         setStatus("❌ Erro ao sincronizar");
       }
@@ -309,7 +398,7 @@
       btnNovo.addEventListener("click", () => {
         console.log("[fretes] clique em NOVO (bind ok)");
         // aqui você chama sua função de abrir modal, se existir
-        // ex: openModalNew();
+        // window.openNewModal?.();
       });
     }
   }

@@ -35,6 +35,7 @@ const STATE_FEATURES = {
   SC: ["piso","divulgacao"],
   TO: ["piso","divulgacao"],
   PR: ["piso","divulgacao"],
+  PA: ["piso","divulgacao"],
   MA: ["piso","divulgacao"]
 };
 

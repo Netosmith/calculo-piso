@@ -1,14 +1,47 @@
-/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N + MODAL + SELECTS) */
+/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N + MODAL + LISTAS LOCAIS) */
 (function () {
   "use strict";
 
   const API_URL =
     "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
 
-  // ----------------------------
+  // ======================================================
+  // ✅ CATÁLOGO LOCAL (GITHUB)
+  // Edite aqui para manter sua lista fixa no repositório
+  // ======================================================
+  const CATALOGO = {
+    regionais: [
+      "ITUMBIARA",
+      "RIO VERDE",
+      "JATAI",
+    ],
+    filiais: {
+      ITUMBIARA: ["ITUMBIARA", "GOIANIA"],
+      "RIO VERDE": ["RIO VERDE", "SANTA HELENA"],
+      JATAI: ["JATAI"],
+    },
+    // Clientes por FILIAL (opcional, pode deixar vazio e usar só sugestão geral)
+    clientesPorFilial: {
+      ITUMBIARA: ["LDC", "CARGILL", "COFCO"],
+      "RIO VERDE": ["CARGILL", "CUTRALE"],
+      JATAI: ["MOSAIC"],
+    },
+    // Contatos por CLIENTE (opcional)
+    contatosPorCliente: {
+      LDC: ["(64) 99999-9999"],
+      CARGILL: ["(64) 98888-8888"],
+    },
+
+    // ✅ Se quiser listas “globais” também:
+    clientesGlobais: ["LDC", "CARGILL", "COFCO", "MOSAIC", "CUTRALE"],
+    contatosGlobais: ["(64) 99999-9999", "(64) 98888-8888"],
+  };
+
+  // ======================================================
   // DOM helpers
-  // ----------------------------
+  // ======================================================
   const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
   function getTbody() {
     return document.querySelector("#tbody") || document.querySelector("tbody");
@@ -27,39 +60,13 @@
     return (v ?? "").toString().trim();
   }
 
-  function upper(v) {
+  function toUpperClean(v) {
     return safeText(v).toUpperCase();
   }
 
-  function uniqSorted(arr) {
-    return Array.from(new Set((arr || []).map((x) => safeText(x)).filter(Boolean))).sort((a, b) =>
-      a.localeCompare(b)
-    );
-  }
-
-  function setSelectOptions(selectEl, items, placeholder = "SELECIONE") {
-    if (!selectEl) return;
-    const cur = selectEl.value;
-    selectEl.innerHTML = "";
-    const op0 = document.createElement("option");
-    op0.value = "";
-    op0.textContent = placeholder;
-    selectEl.appendChild(op0);
-
-    (items || []).forEach((it) => {
-      const op = document.createElement("option");
-      op.value = it;
-      op.textContent = it;
-      selectEl.appendChild(op);
-    });
-
-    // tenta preservar seleção se ainda existir
-    if (cur && items.includes(cur)) selectEl.value = cur;
-  }
-
-  // ----------------------------
+  // ======================================================
   // Parse número pt-BR (ex: "1.234,56" -> 1234.56)
-  // ----------------------------
+  // ======================================================
   function parsePtNumber(value) {
     if (value === null || value === undefined) return NaN;
     if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
@@ -77,9 +84,9 @@
     return Math.ceil(n);
   }
 
-  // ----------------------------
+  // ======================================================
   // WhatsApp helper
-  // ----------------------------
+  // ======================================================
   function extractPhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
@@ -95,9 +102,9 @@
     return phone ? "https://wa.me/" + phone : "";
   }
 
-  // ----------------------------
+  // ======================================================
   // API (JSON + JSONP)
-  // ----------------------------
+  // ======================================================
   async function apiGet(paramsObj) {
     const url = new URL(API_URL);
     Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -107,7 +114,9 @@
     const rawText = await res.text().catch(() => "");
 
     const looksHtml =
-      ct.includes("text/html") || /^\s*<!doctype html/i.test(rawText) || /^\s*<html/i.test(rawText);
+      ct.includes("text/html") ||
+      /^\s*<!doctype html/i.test(rawText) ||
+      /^\s*<html/i.test(rawText);
 
     if (looksHtml) {
       const err = new Error("API retornou HTML (deploy/permissão do Apps Script).");
@@ -126,7 +135,6 @@
       const p2 = t.lastIndexOf(")");
 
       const looksJsonp = p1 > 0 && p2 > p1 && /^[a-zA-Z_$][\w$]*\s*\(/.test(t);
-
       if (looksJsonp) {
         const inner = t.slice(p1 + 1, p2).trim();
         try {
@@ -158,8 +166,8 @@
 
   async function fetchRows() {
     const tries = [{ action: "list" }, { action: "rows" }, {}];
-    let lastErr = null;
 
+    let lastErr = null;
     for (const p of tries) {
       try {
         const data = await apiGet(p);
@@ -176,13 +184,12 @@
         lastErr = e;
       }
     }
-
     throw lastErr || new Error("Falha ao buscar dados.");
   }
 
-  // ----------------------------
+  // ======================================================
   // COLUNAS (na ordem do HTML)
-  // ----------------------------
+  // ======================================================
   const COLS = [
     { key: "regional", label: "Regional" },
     { key: "filial", label: "Filial" },
@@ -203,11 +210,11 @@
     { key: "km", label: "KM" },
     { key: "pedagioEixo", label: "Pedágio/Eixo" },
 
-    { key: "e5", label: "5E" },
-    { key: "e6", label: "6E" },
-    { key: "e7", label: "7E" },
-    { key: "e4", label: "4E" },
-    { key: "e9", label: "9E" },
+    { key: "e5", label: "5E", isSN: true },
+    { key: "e6", label: "6E", isSN: true },
+    { key: "e7", label: "7E", isSN: true },
+    { key: "e4", label: "4E", isSN: true },
+    { key: "e9", label: "9E", isSN: true },
 
     { key: "produto", label: "Produto" },
     { key: "icms", label: "ICMS" },
@@ -312,6 +319,20 @@
     return td;
   }
 
+  function buildSNCell(v) {
+    const td = document.createElement("td");
+    td.className = "num";
+
+    const vv = safeText(v).toUpperCase();
+    const span = document.createElement("span");
+    span.className =
+      "pillSN " + (vv === "S" ? "s" : vv === "N" ? "n" : "empty");
+    span.textContent = vv || "-";
+
+    td.appendChild(span);
+    return td;
+  }
+
   function buildAcoesCell(row) {
     const td = document.createElement("td");
     td.className = "num";
@@ -323,9 +344,7 @@
     btnEdit.className = "btnTiny ghost";
     btnEdit.textContent = "Editar";
     btnEdit.style.marginRight = "6px";
-    btnEdit.addEventListener("click", () => {
-      openModal("edit", row);
-    });
+    btnEdit.addEventListener("click", () => openModal("edit", row));
 
     const btnDel = document.createElement("button");
     btnDel.type = "button";
@@ -357,14 +376,14 @@
   }
 
   // ======================================================
-  // ✅ PISO MÍNIMO (S/N)
+  // ✅ PISO MÍNIMO (S/N) baseado na sua página do piso
   // ======================================================
   const PISO_PARAMS = {
     e9: { eixos: 9, rkm: 8.53, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
-    e4: { eixos: 4, rkm: 7.4505, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
-    e7: { eixos: 7, rkm: 7.4505, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
+    e4: { eixos: 4, rkm: 7.4505, custoCC: 792.30, weightInputId: "w4", defaultPeso: 39 },
+    e7: { eixos: 7, rkm: 7.4505, custoCC: 792.30, weightInputId: "w7", defaultPeso: 36 },
     e6: { eixos: 6, rkm: 6.8058, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
-    e5: { eixos: 5, rkm: 6.1859, custoCC: 642.1, weightInputId: "w5", defaultPeso: 26 },
+    e5: { eixos: 5, rkm: 6.1859, custoCC: 642.10, weightInputId: "w5", defaultPeso: 26 },
   };
 
   function getPesoFromUI(id, fallback) {
@@ -375,7 +394,7 @@
 
   function calcMinRPorTon(param, km, pedagioPorEixo) {
     const peso = getPesoFromUI(param.weightInputId, param.defaultPeso);
-    const numerador = param.rkm * km + param.custoCC + pedagioPorEixo * param.eixos;
+    const numerador = (param.rkm * km) + param.custoCC + (pedagioPorEixo * param.eixos);
     const base = numerador / peso;
     return ceil0(base);
   }
@@ -409,313 +428,387 @@
   }
 
   // ======================================================
-  // ✅ CACHE (para repopular selects sem bater na API toda hora)
+  // ✅ MODAL + LISTAS (autocomplete encadeado)
   // ======================================================
-  let ROWS_CACHE = [];
+  const MODAL = {
+    el: () => document.getElementById("modal"),
+    title: () => document.getElementById("modalTitle"),
+    btnClose: () => document.getElementById("btnCloseModal"),
+    btnCancel: () => document.getElementById("btnCancel"),
+    btnSave: () => document.getElementById("btnSave"),
 
-  // ======================================================
-  // ✅ SELECTS DO MODAL (regional/filial/contato)
-  // ======================================================
-  function getModalEls() {
-    return {
-      modal: document.getElementById("modal"),
-      title: document.getElementById("modalTitle"),
-      btnClose: document.getElementById("btnCloseModal"),
-      btnCancel: document.getElementById("btnCancel"),
-      btnSave: document.getElementById("btnSave"),
+    regional: () => document.getElementById("mRegional"),
+    filial: () => document.getElementById("mFilial"),
+    cliente: () => document.getElementById("mCliente"),
+    contato: () => document.getElementById("mContato"),
 
-      mRegional: document.getElementById("mRegional"),
-      mFilial: document.getElementById("mFilial"),
-      mContato: document.getElementById("mContato"),
+    origem: () => document.getElementById("mOrigem"),
+    coleta: () => document.getElementById("mColeta"),
+    destino: () => document.getElementById("mDestino"),
+    uf: () => document.getElementById("mUF"),
+    descarga: () => document.getElementById("mDescarga"),
+    produto: () => document.getElementById("mProduto"),
+    km: () => document.getElementById("mKM"),
+    ped: () => document.getElementById("mPed"),
+    volume: () => document.getElementById("mVolume"),
+    icms: () => document.getElementById("mICMS"),
+    empresa: () => document.getElementById("mEmpresa"),
+    motorista: () => document.getElementById("mMotorista"),
+    sat: () => document.getElementById("mSat"),
+    porta: () => document.getElementById("mPorta"),
+    transito: () => document.getElementById("mTransito"),
+    status: () => document.getElementById("mStatus"),
+    obs: () => document.getElementById("mObs"),
+  };
 
-      mCliente: document.getElementById("mCliente"),
-      mOrigem: document.getElementById("mOrigem"),
-      mColeta: document.getElementById("mColeta"),
-      mDestino: document.getElementById("mDestino"),
-      mUF: document.getElementById("mUF"),
-      mDescarga: document.getElementById("mDescarga"),
-      mProduto: document.getElementById("mProduto"),
-      mKM: document.getElementById("mKM"),
-      mPed: document.getElementById("mPed"),
-      mVolume: document.getElementById("mVolume"),
-      mICMS: document.getElementById("mICMS"),
-      mEmpresa: document.getElementById("mEmpresa"),
-      mMotorista: document.getElementById("mMotorista"),
-      mSat: document.getElementById("mSat"),
-      mPorta: document.getElementById("mPorta"),
-      mTransito: document.getElementById("mTransito"),
-      mStatus: document.getElementById("mStatus"),
-      mObs: document.getElementById("mObs"),
-    };
+  const DLS = {
+    regional: "dl_mRegional",
+    filial: "dl_mFilial",
+    cliente: "dl_mCliente",
+    contato: "dl_mContato",
+  };
+
+  function ensureDatalist(id) {
+    let dl = document.getElementById(id);
+    if (!dl) {
+      dl = document.createElement("datalist");
+      dl.id = id;
+      document.body.appendChild(dl);
+    }
+    return dl;
   }
 
-  let MODAL_MODE = "new"; // new | edit
-  let EDIT_ID = ""; // id do registro em edição (se existir)
+  function fillDatalist(dlId, items) {
+    const dl = ensureDatalist(dlId);
+    dl.innerHTML = "";
+    (items || [])
+      .map((x) => toUpperClean(x))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        dl.appendChild(opt);
+      });
+  }
 
-  function enforceUppercaseOnInput(el) {
-    if (!el) return;
-    el.addEventListener("input", () => {
-      // não mexe em números
-      if (el.type === "number") return;
-      if (el.tagName === "SELECT") return;
-      const start = el.selectionStart;
-      const end = el.selectionEnd;
-      el.value = upper(el.value);
+  // ✅ extras salvos no navegador (sem mexer no GitHub)
+  const LS_KEY = "nf_fretes_catalogo_extra_v1";
+  function loadExtra() {
+    try {
+      const o = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+      return o && typeof o === "object" ? o : {};
+    } catch {
+      return {};
+    }
+  }
+  function saveExtra(o) {
+    localStorage.setItem(LS_KEY, JSON.stringify(o || {}));
+  }
+  function addExtra(kind, value) {
+    const v = toUpperClean(value);
+    if (!v) return;
+    const extra = loadExtra();
+    extra[kind] = extra[kind] || [];
+    if (!extra[kind].includes(v)) extra[kind].push(v);
+    saveExtra(extra);
+  }
+
+  function mergedList(base, kind) {
+    const extra = loadExtra();
+    const add = Array.isArray(extra[kind]) ? extra[kind] : [];
+    return Array.from(new Set([...(base || []), ...add].map(toUpperClean))).filter(Boolean);
+  }
+
+  function applyUppercaseLive(inputEl) {
+    if (!inputEl) return;
+    inputEl.style.textTransform = "uppercase";
+    inputEl.addEventListener("input", () => {
+      const start = inputEl.selectionStart;
+      const end = inputEl.selectionEnd;
+      inputEl.value = toUpperClean(inputEl.value);
       try {
-        el.setSelectionRange(start, end);
+        inputEl.setSelectionRange(start, end);
       } catch {}
     });
-  }
-
-  function bindUppercaseModal() {
-    const m = getModalEls();
-    [
-      m.mCliente,
-      m.mOrigem,
-      m.mColeta,
-      m.mDestino,
-      m.mUF,
-      m.mDescarga,
-      m.mProduto,
-      m.mSat,
-      m.mPorta,
-      m.mTransito,
-      m.mObs,
-    ].forEach(enforceUppercaseOnInput);
-
-    // também pode forçar uppercase nos selects se você digitar opção manual no futuro
-  }
-
-  function modalShow(show) {
-    const m = getModalEls();
-    if (!m.modal) return;
-    m.modal.style.display = show ? "flex" : "none";
-    m.modal.setAttribute("aria-hidden", show ? "false" : "true");
-  }
-
-  function clearModalFields() {
-    const m = getModalEls();
-    EDIT_ID = "";
-    [
-      m.mCliente,
-      m.mOrigem,
-      m.mColeta,
-      m.mDestino,
-      m.mUF,
-      m.mDescarga,
-      m.mProduto,
-      m.mKM,
-      m.mPed,
-      m.mVolume,
-      m.mICMS,
-      m.mEmpresa,
-      m.mMotorista,
-      m.mSat,
-      m.mPorta,
-      m.mTransito,
-      m.mObs,
-    ].forEach((el) => {
-      if (el) el.value = "";
+    inputEl.addEventListener("blur", () => {
+      inputEl.value = toUpperClean(inputEl.value);
     });
-    if (m.mStatus) m.mStatus.value = "LIBERADO";
   }
 
-  function populateModalSelectsFromRows(rows) {
-    const m = getModalEls();
-    if (!m.mRegional || !m.mFilial || !m.mContato) return;
-
-    const all = rows || [];
-
-    const regionais = uniqSorted(all.map((r) => valueFromRow(r, "regional")));
-    setSelectOptions(m.mRegional, regionais);
-
-    // filial e contato começam vazios até escolher regional
-    setSelectOptions(m.mFilial, []);
-    setSelectOptions(m.mContato, []);
+  function computeFiliaisByRegional(regional) {
+    const r = toUpperClean(regional);
+    const by = CATALOGO.filiais || {};
+    const list = by[r] || [];
+    return mergedList(list, `filiais_${r}`);
   }
 
-  function updateFiliaisByRegional(regional) {
-    const m = getModalEls();
-    if (!m.mFilial) return;
-
-    const reg = safeText(regional);
-    const filiais = uniqSorted(
-      ROWS_CACHE.filter((r) => safeText(valueFromRow(r, "regional")) === reg).map((r) =>
-        valueFromRow(r, "filial")
-      )
-    );
-
-    setSelectOptions(m.mFilial, filiais);
-    setSelectOptions(m.mContato, []);
+  function computeClientesByFilial(filial) {
+    const f = toUpperClean(filial);
+    const by = CATALOGO.clientesPorFilial || {};
+    const list = by[f] || [];
+    const global = CATALOGO.clientesGlobais || [];
+    return mergedList([...global, ...list], `clientes_${f}`);
   }
 
-  function updateContatosByFilial(regional, filial) {
-    const m = getModalEls();
-    if (!m.mContato) return;
+  function computeContatosByCliente(cliente) {
+    const c = toUpperClean(cliente);
+    const by = CATALOGO.contatosPorCliente || {};
+    const list = by[c] || [];
+    const global = CATALOGO.contatosGlobais || [];
+    return mergedList([...global, ...list], `contatos_${c}`);
+  }
 
-    const reg = safeText(regional);
-    const fil = safeText(filial);
+  function setupModalSelectors() {
+    const iReg = MODAL.regional();
+    const iFil = MODAL.filial();
+    const iCli = MODAL.cliente();
+    const iCon = MODAL.contato();
 
-    const contatos = uniqSorted(
-      ROWS_CACHE.filter((r) => {
-        return (
-          safeText(valueFromRow(r, "regional")) === reg &&
-          safeText(valueFromRow(r, "filial")) === fil
-        );
-      }).map((r) => valueFromRow(r, "contato"))
-    );
+    if (iReg) iReg.setAttribute("list", DLS.regional);
+    if (iFil) iFil.setAttribute("list", DLS.filial);
+    if (iCli) iCli.setAttribute("list", DLS.cliente);
+    if (iCon) iCon.setAttribute("list", DLS.contato);
 
-    setSelectOptions(m.mContato, contatos);
+    // uppercase live
+    [iReg, iFil, iCli, iCon].forEach(applyUppercaseLive);
+
+    // inicial
+    fillDatalist(DLS.regional, mergedList(CATALOGO.regionais || [], "regionais"));
+
+    const refreshByReg = () => {
+      const reg = toUpperClean(iReg?.value);
+      fillDatalist(DLS.filial, computeFiliaisByRegional(reg));
+      // quando mudar regional, limpa abaixo para evitar combo incoerente
+      if (iFil) iFil.value = toUpperClean(iFil.value);
+      refreshByFilial();
+    };
+
+    const refreshByFilial = () => {
+      const fil = toUpperClean(iFil?.value);
+      fillDatalist(DLS.cliente, computeClientesByFilial(fil));
+      if (iCli) iCli.value = toUpperClean(iCli.value);
+      refreshByCliente();
+    };
+
+    const refreshByCliente = () => {
+      const cli = toUpperClean(iCli?.value);
+      fillDatalist(DLS.contato, computeContatosByCliente(cli));
+      if (iCon) iCon.value = toUpperClean(iCon.value);
+    };
+
+    iReg?.addEventListener("input", refreshByReg);
+    iFil?.addEventListener("input", refreshByFilial);
+    iCli?.addEventListener("input", refreshByCliente);
+
+    // primeira montagem
+    refreshByReg();
+  }
+
+  let modalMode = "new"; // "new" | "edit"
+  let editingRow = null;
+
+  function showModal(show) {
+    const m = MODAL.el();
+    if (!m) return;
+    m.style.display = show ? "flex" : "none";
+    m.setAttribute("aria-hidden", show ? "false" : "true");
+  }
+
+  function clearModal() {
+    const ids = [
+      "mRegional","mFilial","mCliente","mContato",
+      "mOrigem","mColeta","mDestino","mUF","mDescarga","mProduto",
+      "mKM","mPed","mVolume","mICMS","mEmpresa","mMotorista",
+      "mSat","mPorta","mTransito","mStatus","mObs"
+    ];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === "SELECT") el.value = "LIBERADO";
+      else el.value = "";
+    });
+    // default status
+    const st = MODAL.status();
+    if (st) st.value = "LIBERADO";
+  }
+
+  function fillModalFromRow(row) {
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = toUpperClean(v);
+    };
+
+    set("mRegional", valueFromRow(row, "regional"));
+    set("mFilial", valueFromRow(row, "filial"));
+    set("mCliente", valueFromRow(row, "cliente"));
+    set("mContato", valueFromRow(row, "contato"));
+
+    set("mOrigem", valueFromRow(row, "origem"));
+    set("mColeta", valueFromRow(row, "coleta"));
+    set("mDestino", valueFromRow(row, "destino"));
+    set("mUF", valueFromRow(row, "uf"));
+    set("mDescarga", valueFromRow(row, "descarga"));
+    set("mProduto", valueFromRow(row, "produto"));
+
+    const setRaw = (id, v) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = safeText(v);
+    };
+
+    setRaw("mKM", valueFromRow(row, "km"));
+    setRaw("mPed", valueFromRow(row, "pedagioEixo"));
+    setRaw("mVolume", valueFromRow(row, "volume"));
+    setRaw("mICMS", valueFromRow(row, "icms"));
+    setRaw("mEmpresa", valueFromRow(row, "valorEmpresa"));
+    setRaw("mMotorista", valueFromRow(row, "valorMotorista"));
+
+    set("mSat", valueFromRow(row, "pedidoSat"));
+    set("mPorta", valueFromRow(row, "porta"));
+    setRaw("mTransito", valueFromRow(row, "transito"));
+
+    const st = MODAL.status();
+    if (st) st.value = toUpperClean(valueFromRow(row, "status")) || "LIBERADO";
+
+    const obs = MODAL.obs();
+    if (obs) obs.value = safeText(valueFromRow(row, "obs"));
   }
 
   function openModal(mode, row) {
-    const m = getModalEls();
-    if (!m.modal) return;
+    modalMode = mode === "edit" ? "edit" : "new";
+    editingRow = row || null;
 
-    MODAL_MODE = mode === "edit" ? "edit" : "new";
-    clearModalFields();
+    const title = MODAL.title();
+    if (title) title.textContent = modalMode === "edit" ? "Editar Frete" : "Novo Frete";
 
-    // garante selects populados
-    populateModalSelectsFromRows(ROWS_CACHE);
+    if (modalMode === "new") clearModal();
+    else fillModalFromRow(row);
 
-    if (MODAL_MODE === "new") {
-      if (m.title) m.title.textContent = "Novo Frete";
-    } else {
-      if (m.title) m.title.textContent = "Editar Frete";
-      // preenche campos com base na linha
-      EDIT_ID = row?.id ? String(row.id) : "";
+    // garantir datalists sempre atualizados
+    setupModalSelectors();
 
-      // selects: regional/filial/contato em cascata
-      const reg = safeText(valueFromRow(row, "regional"));
-      const fil = safeText(valueFromRow(row, "filial"));
-      const con = safeText(valueFromRow(row, "contato"));
-
-      if (m.mRegional) m.mRegional.value = reg;
-      updateFiliaisByRegional(reg);
-      if (m.mFilial) m.mFilial.value = fil;
-      updateContatosByFilial(reg, fil);
-      if (m.mContato) m.mContato.value = con;
-
-      if (m.mCliente) m.mCliente.value = upper(valueFromRow(row, "cliente"));
-      if (m.mOrigem) m.mOrigem.value = upper(valueFromRow(row, "origem"));
-      if (m.mColeta) m.mColeta.value = upper(valueFromRow(row, "coleta"));
-      if (m.mDestino) m.mDestino.value = upper(valueFromRow(row, "destino"));
-      if (m.mUF) m.mUF.value = upper(valueFromRow(row, "uf"));
-      if (m.mDescarga) m.mDescarga.value = upper(valueFromRow(row, "descarga"));
-      if (m.mProduto) m.mProduto.value = upper(valueFromRow(row, "produto"));
-
-      if (m.mKM) m.mKM.value = valueFromRow(row, "km");
-      if (m.mPed) m.mPed.value = valueFromRow(row, "pedagioEixo");
-      if (m.mVolume) m.mVolume.value = valueFromRow(row, "volume");
-      if (m.mICMS) m.mICMS.value = valueFromRow(row, "icms");
-      if (m.mEmpresa) m.mEmpresa.value = valueFromRow(row, "valorEmpresa");
-      if (m.mMotorista) m.mMotorista.value = valueFromRow(row, "valorMotorista");
-
-      if (m.mSat) m.mSat.value = upper(valueFromRow(row, "pedidoSat"));
-      if (m.mPorta) m.mPorta.value = upper(valueFromRow(row, "porta"));
-      if (m.mTransito) m.mTransito.value = upper(valueFromRow(row, "transito"));
-
-      if (m.mStatus) m.mStatus.value = upper(valueFromRow(row, "status") || "LIBERADO");
-      if (m.mObs) m.mObs.value = upper(valueFromRow(row, "obs"));
-    }
-
-    modalShow(true);
+    showModal(true);
+    // foco no primeiro campo
+    setTimeout(() => MODAL.regional()?.focus(), 50);
   }
 
   function closeModal() {
-    modalShow(false);
+    showModal(false);
   }
 
-  function modalPayload() {
-    const m = getModalEls();
-
-    // tudo em maiúsculo (exceto números)
+  function readModalPayload() {
+    // upper em campos textuais
     const payload = {
-      id: EDIT_ID || "",
-      regional: upper(m.mRegional?.value),
-      filial: upper(m.mFilial?.value),
-      cliente: upper(m.mCliente?.value),
-      origem: upper(m.mOrigem?.value),
-      coleta: upper(m.mColeta?.value),
-      contato: upper(m.mContato?.value),
-      destino: upper(m.mDestino?.value),
-      uf: upper(m.mUF?.value),
-      descarga: upper(m.mDescarga?.value),
-      volume: safeText(m.mVolume?.value),
-      valorEmpresa: safeText(m.mEmpresa?.value),
-      valorMotorista: safeText(m.mMotorista?.value),
-      km: safeText(m.mKM?.value),
-      pedagioEixo: safeText(m.mPed?.value),
-      produto: upper(m.mProduto?.value),
-      icms: safeText(m.mICMS?.value),
-      pedidoSat: upper(m.mSat?.value),
-      porta: upper(m.mPorta?.value),
-      transito: upper(m.mTransito?.value),
-      status: upper(m.mStatus?.value),
-      obs: upper(m.mObs?.value),
+      regional: toUpperClean(MODAL.regional()?.value),
+      filial: toUpperClean(MODAL.filial()?.value),
+      cliente: toUpperClean(MODAL.cliente()?.value),
+      contato: toUpperClean(MODAL.contato()?.value),
+
+      origem: toUpperClean(MODAL.origem()?.value),
+      coleta: toUpperClean(MODAL.coleta()?.value),
+      destino: toUpperClean(MODAL.destino()?.value),
+      uf: toUpperClean(MODAL.uf()?.value),
+      descarga: toUpperClean(MODAL.descarga()?.value),
+      produto: toUpperClean(MODAL.produto()?.value),
+
+      km: safeText(MODAL.km()?.value),
+      pedagioEixo: safeText(MODAL.ped()?.value),
+      volume: safeText(MODAL.volume()?.value),
+      icms: safeText(MODAL.icms()?.value),
+      valorEmpresa: safeText(MODAL.empresa()?.value),
+      valorMotorista: safeText(MODAL.motorista()?.value),
+
+      pedidoSat: toUpperClean(MODAL.sat()?.value),
+      porta: toUpperClean(MODAL.porta()?.value),
+      transito: safeText(MODAL.transito()?.value),
+      status: toUpperClean(MODAL.status()?.value),
+      obs: safeText(MODAL.obs()?.value),
     };
+
+    // guarda extras no navegador (sugestões)
+    addExtra("regionais", payload.regional);
+    addExtra(`filiais_${payload.regional}`, payload.filial);
+    addExtra(`clientes_${payload.filial}`, payload.cliente);
+    addExtra(`contatos_${payload.cliente}`, payload.contato);
 
     return payload;
   }
 
-  function validatePayload(p) {
-    // mínimos essenciais
-    if (!p.regional) return "Informe a REGIONAL.";
-    if (!p.filial) return "Informe a FILIAL.";
-    if (!p.cliente) return "Informe o CLIENTE.";
-    if (!p.origem) return "Informe a ORIGEM.";
-    if (!p.destino) return "Informe o DESTINO.";
-    if (!p.valorMotorista) return "Informe VLR MOTORISTA.";
-    if (!p.km) return "Informe KM.";
-    return "";
-  }
-
   async function saveModal() {
-    const p = modalPayload();
-    const msg = validatePayload(p);
-    if (msg) return alert(msg);
+    const payload = readModalPayload();
+
+    // validação mínima
+    if (!payload.filial) return alert("Informe a FILIAL.");
+    if (!payload.cliente) return alert("Informe o CLIENTE.");
 
     try {
       setStatus("💾 Salvando...");
-      // tenta upsert, se backend não suportar, tenta create
-      let data = await apiGet({ action: "upsert", ...p }).catch(() => null);
-      if (!data) data = await apiGet({ action: "create", ...p });
 
-      if (data?.ok) {
-        setStatus("✅ Salvo");
-        closeModal();
-        await atualizar();
-      } else {
-        setStatus("❌ Falha ao salvar");
-        alert(data?.error || "Falha ao salvar. Verifique sua API (action upsert/create).");
+      const id = editingRow?.id ? String(editingRow.id) : "";
+
+      // tenta ações comuns no Apps Script (fallback)
+      const tries = modalMode === "edit"
+        ? [
+            { action: "update", id, ...payload },
+            { action: "edit", id, ...payload },
+            { action: "upsert", id, ...payload },
+            { action: "save", id, ...payload },
+          ]
+        : [
+            { action: "create", ...payload },
+            { action: "add", ...payload },
+            { action: "insert", ...payload },
+            { action: "upsert", ...payload },
+            { action: "save", ...payload },
+          ];
+
+      let last = null;
+      for (const p of tries) {
+        try {
+          const data = await apiGet(p);
+          if (data?.ok) {
+            setStatus("✅ Salvo");
+            closeModal();
+            await atualizar();
+            return;
+          }
+          last = data;
+        } catch (e) {
+          last = e;
+        }
       }
+
+      console.error("[fretes] falha save tries:", last);
+      setStatus("❌ Falha ao salvar");
+      alert("Não consegui salvar no Apps Script.\nConfira se seu backend aceita action=create/update (ou me mande o doGet/doPost do Apps Script).");
     } catch (e) {
-      console.error("[fretes] erro save:", e);
+      console.error("[fretes] erro salvar:", e);
       setStatus("❌ Erro ao salvar");
-      alert("Erro ao salvar. Confira o console e a action do Apps Script.");
+      alert("Erro ao salvar. Veja o console (F12).");
     }
   }
 
-  // ======================================================
-  // ✅ RENDER (agrupa por filial, ordena por cliente)
-  // ======================================================
-  function buildSNCell(val) {
-    const td = document.createElement("td");
-    td.className = "num";
-    const v = safeText(val).toUpperCase();
+  function bindModalButtons() {
+    MODAL.btnClose()?.addEventListener("click", closeModal);
+    MODAL.btnCancel()?.addEventListener("click", closeModal);
+    MODAL.btnSave()?.addEventListener("click", saveModal);
 
-    const span = document.createElement("span");
-    span.className = "pillSN " + (v === "S" ? "s" : v === "N" ? "n" : "empty");
-    span.textContent = v || "-";
+    // fecha clicando no fundo
+    MODAL.el()?.addEventListener("click", (e) => {
+      if (e.target && e.target.id === "modal") closeModal();
+    });
 
-    td.appendChild(span);
-    return td;
+    // ESC fecha
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && MODAL.el()?.style.display === "flex") closeModal();
+    });
   }
 
-  function isSNKey(k) {
-    return k === "e5" || k === "e6" || k === "e7" || k === "e4" || k === "e9";
-  }
-
+  // ======================================================
+  // RENDER (agrupa por filial, ordena por cliente)
+  // ======================================================
   function render(rowsRaw) {
     const tbody = getTbody();
     if (!tbody) return;
@@ -770,7 +863,7 @@
           return;
         }
 
-        if (isSNKey(col.key)) {
+        if (col.isSN) {
           tr.appendChild(buildSNCell(valueFromRow(row, col.key, idx)));
           return;
         }
@@ -784,17 +877,14 @@
     });
   }
 
-  // ----------------------------
+  // ======================================================
   // AÇÕES
-  // ----------------------------
+  // ======================================================
   async function atualizar() {
     try {
       setStatus("🔄 Carregando...");
       const rows = await fetchRows();
-      ROWS_CACHE = Array.isArray(rows) ? rows : [];
-      render(ROWS_CACHE);
-      // garante selects do modal atualizados
-      populateModalSelectsFromRows(ROWS_CACHE);
+      render(rows);
       setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
@@ -814,58 +904,29 @@
 
     if (btnAtualizar) btnAtualizar.addEventListener("click", atualizar);
 
-    // ✅ abre modal NOVO
     if (btnNovo) {
       btnNovo.addEventListener("click", () => {
-        openModal("new");
+        openModal("new", null);
       });
     }
 
-    // ✅ modal binds
-    const m = getModalEls();
-
-    if (m.btnClose) m.btnClose.addEventListener("click", closeModal);
-    if (m.btnCancel) m.btnCancel.addEventListener("click", closeModal);
-
-    // fechar clicando fora
-    if (m.modal) {
-      m.modal.addEventListener("click", (ev) => {
-        if (ev.target && ev.target.id === "modal") closeModal();
-      });
-    }
-
-    if (m.btnSave) m.btnSave.addEventListener("click", saveModal);
-
-    // ✅ cascata selects
-    if (m.mRegional) {
-      m.mRegional.addEventListener("change", () => {
-        updateFiliaisByRegional(m.mRegional.value);
-      });
-    }
-    if (m.mFilial) {
-      m.mFilial.addEventListener("change", () => {
-        const reg = getModalEls().mRegional?.value || "";
-        updateContatosByFilial(reg, m.mFilial.value);
-      });
-    }
-
-    // ✅ pesos mudaram -> recalcula S/N (sem dor)
+    // ✅ quando pesos mudarem, recalcula a tabela (S/N)
     ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {
       const el = document.querySelector(sel);
       if (!el) return;
       el.addEventListener("input", () => {
-        // re-render do cache (sem API) se já temos dados
-        if (ROWS_CACHE.length) render(ROWS_CACHE);
-        else atualizar();
+        atualizar();
       });
     });
 
-    // ✅ enforce uppercase nos inputs do modal
-    bindUppercaseModal();
+    // modal
+    bindModalButtons();
   }
 
   function init() {
     bindButtons();
+    // montar datalists uma vez
+    setupModalSelectors();
     atualizar();
   }
 

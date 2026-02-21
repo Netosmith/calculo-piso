@@ -10,8 +10,6 @@
   // - Contato é o RESPONSÁVEL DA FILIAL (nome)
   // - Telefone fica aqui e o ícone do WhatsApp usa isso
   // ======================================================
-  const REGIONAIS = ["GOIAS", "MINAS"];
-
   const FILIAIS = {
     ITUMBIARA: { regional: "GOIAS", responsavel: "ARIEL" },
     "RIO VERDE": { regional: "GOIAS", responsavel: "JHONATAN" },
@@ -21,17 +19,21 @@
 
   const CLIENTES = ["LDC", "COFCO", "OURO SAFRA", "CARGILL"];
 
-  // ✅ aqui você cadastra telefone por NOME do responsável
-  // Pode ser com ou sem DDD, o código normaliza para 55 + número.
   const CONTATOS = {
     ARIEL: "64999999999",
     JHONATAN: "64988888888",
     SERGIO: "64977777777",
   };
 
-  // ======================================================
+  function uniqueRegionaisFromFiliais() {
+    const set = new Set();
+    Object.values(FILIAIS).forEach((v) => set.add(String(v.regional || "").toUpperCase().trim()));
+    return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }
+
+  // ----------------------------
   // DOM helpers
-  // ======================================================
+  // ----------------------------
   const $ = (sel) => document.querySelector(sel);
 
   function getTbody() {
@@ -56,13 +58,12 @@
   }
 
   function onlyLettersUpper(v) {
-    // remove emoji/símbolos e deixa só letras/números/espaço
     return upper(v).replace(/[^\wÀ-ÿ ]/g, "").replace(/\s+/g, " ").trim();
   }
 
-  // ======================================================
-  // Parse número pt-BR (ex: "1.234,56" -> 1234.56)
-  // ======================================================
+  // ----------------------------
+  // Parse número pt-BR
+  // ----------------------------
   function parsePtNumber(value) {
     if (value === null || value === undefined) return NaN;
     if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
@@ -80,9 +81,9 @@
     return Math.ceil(n);
   }
 
-  // ======================================================
-  // WhatsApp helper (agora: por NOME do responsável)
-  // ======================================================
+  // ----------------------------
+  // WhatsApp helper (por nome do responsável)
+  // ----------------------------
   function normalizePhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
@@ -104,9 +105,9 @@
     return phone ? "https://wa.me/" + phone : "";
   }
 
-  // ======================================================
+  // ----------------------------
   // API (JSON + JSONP)
-  // ======================================================
+  // ----------------------------
   async function apiGet(paramsObj) {
     const url = new URL(API_URL);
     Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -135,8 +136,8 @@
       const t = String(rawText || "").trim();
       const p1 = t.indexOf("(");
       const p2 = t.lastIndexOf(")");
-
       const looksJsonp = p1 > 0 && p2 > p1 && /^[a-zA-Z_$][\w$]*\s*\(/.test(t);
+
       if (looksJsonp) {
         const inner = t.slice(p1 + 1, p2).trim();
         data = inner ? JSON.parse(inner) : null;
@@ -182,9 +183,9 @@
     throw lastErr || new Error("Falha ao buscar dados.");
   }
 
-  // ======================================================
-  // COLUNAS (na ordem do HTML)
-  // ======================================================
+  // ----------------------------
+  // COLUNAS
+  // ----------------------------
   const COLS = [
     { key: "regional" },
     { key: "filial" },
@@ -271,9 +272,9 @@
     return "";
   }
 
-  // ======================================================
-  // ✅ Contato: mostra nome + ícone e abre WhatsApp pelo telefone salvo em CONTATOS
-  // ======================================================
+  // ----------------------------
+  // Contato: só o nome (sem emoji) + ícone WhatsApp
+  // ----------------------------
   function buildContatoCell(contatoText) {
     const td = document.createElement("td");
 
@@ -287,7 +288,7 @@
     const name = onlyLettersUpper(contatoText || "");
 
     const span = document.createElement("span");
-    span.textContent = name ? `${name} ` : "";
+    span.textContent = name || "";
     span.style.whiteSpace = "nowrap";
     span.style.overflow = "hidden";
     span.style.textOverflow = "ellipsis";
@@ -419,9 +420,7 @@
   }
 
   // ======================================================
-  // ✅ MODAL (Novo/Editar)
-  // - Regional, Filial, Cliente: escolhe da lista fixa
-  // - Contato: autopreenche pelo responsável da filial
+  // ✅ MODAL (Novo/Editar) agora com SELECT
   // ======================================================
   const MODAL = {
     el: () => document.getElementById("modal"),
@@ -465,72 +464,69 @@
     showModal(false);
   }
 
-  function applyUppercaseLive(inputEl) {
-    if (!inputEl) return;
-    inputEl.style.textTransform = "uppercase";
-    inputEl.addEventListener("input", () => {
-      inputEl.value = upper(inputEl.value);
-    });
-    inputEl.addEventListener("blur", () => {
-      inputEl.value = upper(inputEl.value);
-    });
-  }
+  function fillSelect(sel, items, placeholder) {
+    if (!sel) return;
+    sel.innerHTML = "";
 
-  function ensureDatalist(id) {
-    let dl = document.getElementById(id);
-    if (!dl) {
-      dl = document.createElement("datalist");
-      dl.id = id;
-      document.body.appendChild(dl);
-    }
-    return dl;
-  }
-
-  function fillDatalist(id, items) {
-    const dl = ensureDatalist(id);
-    dl.innerHTML = "";
-    (items || [])
-      .map(upper)
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b))
-      .forEach((v) => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        dl.appendChild(opt);
-      });
-  }
-
-  function setupModalLists() {
-    const reg = MODAL.regional();
-    const fil = MODAL.filial();
-    const cli = MODAL.cliente();
-    const con = MODAL.contato();
-
-    if (reg) reg.setAttribute("list", "dl_regional");
-    if (fil) fil.setAttribute("list", "dl_filial");
-    if (cli) cli.setAttribute("list", "dl_cliente");
-
-    fillDatalist("dl_regional", REGIONAIS);
-    fillDatalist("dl_filial", Object.keys(FILIAIS));
-    fillDatalist("dl_cliente", CLIENTES);
-
-    // Contato é automático pela filial
-    if (con) {
-      con.readOnly = true;
-      con.placeholder = "RESPONSÁVEL DA FILIAL";
+    if (placeholder) {
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = placeholder;
+      sel.appendChild(opt0);
     }
 
-    [reg, fil, cli].forEach(applyUppercaseLive);
+    (items || []).forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = upper(v);
+      opt.textContent = upper(v);
+      sel.appendChild(opt);
+    });
+  }
 
-    // Quando muda filial: seta regional + responsável
-    fil?.addEventListener("input", () => {
-      const filial = upper(fil.value);
+  function filiaisByRegional(regional) {
+    const r = upper(regional);
+    return Object.keys(FILIAIS)
+      .filter((f) => upper(FILIAIS[f]?.regional) === r)
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  function setupModalSelects() {
+    const sReg = MODAL.regional();
+    const sFil = MODAL.filial();
+    const sCli = MODAL.cliente();
+    const sCon = MODAL.contato();
+
+    const regs = uniqueRegionaisFromFiliais();
+    fillSelect(sReg, regs, "Selecione a regional");
+    fillSelect(sCli, CLIENTES.slice().sort((a, b) => a.localeCompare(b)), "Selecione o cliente");
+
+    // contato sempre readonly (disabled)
+    if (sCon) sCon.disabled = true;
+
+    // inicial: se regional vazia, usa primeira
+    const regInit = upper(sReg?.value) || regs[0] || "";
+    if (sReg && regInit) sReg.value = regInit;
+
+    // monta filiais por regional
+    fillSelect(sFil, filiaisByRegional(regInit), "Selecione a filial");
+
+    // quando muda regional => refaz filiais
+    sReg?.addEventListener("change", () => {
+      const r = upper(sReg.value);
+      fillSelect(sFil, filiaisByRegional(r), "Selecione a filial");
+      if (sCon) fillSelect(sCon, [], "");
+    });
+
+    // quando muda filial => seta regional + responsável
+    sFil?.addEventListener("change", () => {
+      const filial = upper(sFil.value);
       const info = FILIAIS[filial];
       if (info) {
-        if (reg) reg.value = info.regional;
-        if (con) con.value = info.responsavel; // salva só o nome
+        if (sReg) sReg.value = upper(info.regional);
+        if (sCon) fillSelect(sCon, [upper(info.responsavel)], "");
+        if (sCon) sCon.value = upper(info.responsavel);
       } else {
-        if (con) con.value = "";
+        if (sCon) fillSelect(sCon, [], "");
       }
     });
   }
@@ -540,31 +536,49 @@
 
   function clearModal() {
     [
-      "mRegional","mFilial","mCliente","mContato","mOrigem","mColeta","mDestino","mUF","mDescarga","mProduto",
-      "mKM","mPed","mVolume","mICMS","mEmpresa","mMotorista","mSat","mPorta","mTransito","mObs"
+      "mOrigem","mColeta","mDestino","mUF","mDescarga","mProduto",
+      "mKM","mPed","mVolume","mICMS","mEmpresa","mMotorista",
+      "mSat","mPorta","mTransito","mObs"
     ].forEach((id) => {
       const el = document.getElementById(id);
-      if (!el) return;
-      el.value = "";
+      if (el) el.value = "";
     });
+
     const st = MODAL.status();
     if (st) st.value = "LIBERADO";
+
+    // selects
+    setupModalSelects();
   }
 
   function fillModalFromRow(row) {
-    const setU = (id, v) => {
-      const el = document.getElementById(id);
-      if (el) el.value = upper(v);
-    };
-    const setR = (id, v) => {
-      const el = document.getElementById(id);
-      if (el) el.value = safeText(v);
-    };
+    setupModalSelects();
 
-    setU("mRegional", valueFromRow(row, "regional"));
-    setU("mFilial", valueFromRow(row, "filial"));
-    setU("mCliente", valueFromRow(row, "cliente"));
-    setU("mContato", valueFromRow(row, "contato"));
+    const sReg = MODAL.regional();
+    const sFil = MODAL.filial();
+    const sCli = MODAL.cliente();
+    const sCon = MODAL.contato();
+
+    const reg = upper(valueFromRow(row, "regional"));
+    const fil = upper(valueFromRow(row, "filial"));
+    const cli = upper(valueFromRow(row, "cliente"));
+    const con = onlyLettersUpper(valueFromRow(row, "contato"));
+
+    if (sReg && reg) sReg.value = reg;
+
+    // refaz filiais conforme regional do registro
+    if (sFil) fillSelect(sFil, filiaisByRegional(reg || uniqueRegionaisFromFiliais()[0] || ""), "Selecione a filial");
+    if (sFil && fil) sFil.value = fil;
+
+    if (sCli && cli) sCli.value = cli;
+
+    if (sCon) {
+      fillSelect(sCon, [con], "");
+      sCon.value = con;
+    }
+
+    const setU = (id, v) => { const el = document.getElementById(id); if (el) el.value = upper(v); };
+    const setR = (id, v) => { const el = document.getElementById(id); if (el) el.value = safeText(v); };
 
     setU("mOrigem", valueFromRow(row, "origem"));
     setU("mColeta", valueFromRow(row, "coleta"));
@@ -598,8 +612,6 @@
     const title = MODAL.title();
     if (title) title.textContent = modalMode === "edit" ? "Editar Frete" : "Novo Frete";
 
-    setupModalLists();
-
     if (modalMode === "new") clearModal();
     else fillModalFromRow(row);
 
@@ -608,11 +620,16 @@
   }
 
   function readModalPayload() {
+    const sReg = MODAL.regional();
+    const sFil = MODAL.filial();
+    const sCli = MODAL.cliente();
+    const sCon = MODAL.contato();
+
     const payload = {
-      regional: upper(MODAL.regional()?.value),
-      filial: upper(MODAL.filial()?.value),
-      cliente: upper(MODAL.cliente()?.value),
-      contato: onlyLettersUpper(MODAL.contato()?.value), // salva só nome
+      regional: upper(sReg?.value),
+      filial: upper(sFil?.value),
+      cliente: upper(sCli?.value),
+      contato: onlyLettersUpper(sCon?.value), // só nome
 
       origem: upper(MODAL.origem()?.value),
       coleta: upper(MODAL.coleta()?.value),
@@ -634,21 +651,23 @@
       status: upper(MODAL.status()?.value),
       obs: safeText(MODAL.obs()?.value),
     };
+
+    // força consistência filial -> regional/contato
+    const info = FILIAIS[payload.filial];
+    if (info) {
+      payload.regional = upper(info.regional);
+      payload.contato = upper(info.responsavel);
+    }
+
     return payload;
   }
 
   async function saveModal() {
     const payload = readModalPayload();
 
-    if (!payload.filial) return alert("Informe a FILIAL.");
-    if (!payload.cliente) return alert("Informe o CLIENTE.");
-
-    // garante que contato bate com filial (se existir no mapa)
-    const info = FILIAIS[payload.filial];
-    if (info) {
-      payload.regional = info.regional;
-      payload.contato = info.responsavel;
-    }
+    if (!payload.regional) return alert("Selecione a REGIONAL.");
+    if (!payload.filial) return alert("Selecione a FILIAL.");
+    if (!payload.cliente) return alert("Selecione o CLIENTE.");
 
     try {
       setStatus("💾 Salvando...");
@@ -710,9 +729,9 @@
     });
   }
 
-  // ======================================================
-  // RENDER (agrupa por filial, ordena por cliente)
-  // ======================================================
+  // ----------------------------
+  // RENDER
+  // ----------------------------
   function render(rowsRaw) {
     const tbody = getTbody();
     if (!tbody) return;
@@ -757,16 +776,13 @@
 
       COLS.forEach((col, idx) => {
         if (col.isContato) {
-          const contatoText = valueFromRow(row, "contato", idx);
-          tr.appendChild(buildContatoCell(contatoText));
+          tr.appendChild(buildContatoCell(valueFromRow(row, "contato", idx)));
           return;
         }
-
         if (col.isAcoes) {
           tr.appendChild(buildAcoesCell(row));
           return;
         }
-
         if (col.isSN) {
           tr.appendChild(buildSNCell(valueFromRow(row, col.key, idx)));
           return;
@@ -781,9 +797,9 @@
     });
   }
 
-  // ======================================================
+  // ----------------------------
   // AÇÕES
-  // ======================================================
+  // ----------------------------
   async function atualizar() {
     try {
       setStatus("🔄 Carregando...");
@@ -807,10 +823,7 @@
     const btnNovo = $("#btnNew");
 
     if (btnAtualizar) btnAtualizar.addEventListener("click", atualizar);
-
-    if (btnNovo) {
-      btnNovo.addEventListener("click", () => openModal("new", null));
-    }
+    if (btnNovo) btnNovo.addEventListener("click", () => openModal("new", null));
 
     ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {
       const el = document.querySelector(sel);

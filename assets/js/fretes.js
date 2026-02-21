@@ -287,7 +287,7 @@
     const name = onlyLettersUpper(contatoText || "");
 
     const span = document.createElement("span");
-    span.textContent = name ? `${name} 📲` : "";
+    span.textContent = name ? `${name} ` : "";
     span.style.whiteSpace = "nowrap";
     span.style.overflow = "hidden";
     span.style.textOverflow = "ellipsis";

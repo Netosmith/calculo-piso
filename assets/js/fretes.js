@@ -1,4 +1,4 @@
-/* fretes.js | NOVA FROTA (AJUSTADO) */
+/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N) */
 (function () {
   "use strict";
 
@@ -25,6 +25,32 @@
 
   function safeText(v) {
     return (v ?? "").toString().trim();
+  }
+
+  // ----------------------------
+  // Parse número pt-BR (ex: "1.234,56" -> 1234.56)
+  // ----------------------------
+  function parsePtNumber(value) {
+    if (value === null || value === undefined) return NaN;
+    if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
+
+    let s = String(value).trim();
+    if (!s) return NaN;
+
+    // remove R$, espaços etc
+    s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+
+    // se tem vírgula, assume decimal pt-BR
+    if (s.includes(",")) {
+      s = s.replace(/\./g, "").replace(",", ".");
+    }
+
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function ceil0(n) {
+    return Math.ceil(n);
   }
 
   // ----------------------------
@@ -56,7 +82,6 @@
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     const rawText = await res.text().catch(() => "");
 
-    // HTML => geralmente problema de deploy/permissão
     const looksHtml =
       ct.includes("text/html") ||
       /^\s*<!doctype html/i.test(rawText) ||
@@ -70,12 +95,11 @@
       throw err;
     }
 
-    // tenta JSON puro
     let data = null;
     try {
       data = rawText ? JSON.parse(rawText) : null;
     } catch {
-      // tenta JSONP: callback({...})
+      // JSONP: callback({...})
       const t = String(rawText || "").trim();
       const p1 = t.indexOf("(");
       const p2 = t.lastIndexOf(")");
@@ -115,20 +139,13 @@
   }
 
   async function fetchRows() {
-    // Seu Apps Script usa action=list
-    const tries = [
-      { action: "list" },
-      { action: "rows" },
-      {}, // fallback
-    ];
+    const tries = [{ action: "list" }, { action: "rows" }, {}];
 
     let lastErr = null;
 
     for (const p of tries) {
       try {
         const data = await apiGet(p);
-
-        // O seu doGet retorna: { ok:true, data: [...] }
         const rows =
           data?.data ||
           data?.rows ||
@@ -148,7 +165,7 @@
   }
 
   // ----------------------------
-  // COLUNAS (na ordem do seu HTML)
+  // COLUNAS (na ordem do HTML)
   // ----------------------------
   const COLS = [
     { key: "regional", label: "Regional" },
@@ -164,15 +181,12 @@
     { key: "descarga", label: "Descarga" },
     { key: "volume", label: "Volume" },
 
-    // IMPORTANTES: seu Apps Script usa valorEmpresa/valorMotorista
     { key: "valorEmpresa", label: "Vlr Empresa" },
     { key: "valorMotorista", label: "Vlr Motorista" },
 
     { key: "km", label: "KM" },
     { key: "pedagioEixo", label: "Pedágio/Eixo" },
 
-    // as colunas 5E/6E/7E/4E/9E podem ser calculadas por você depois
-    // se não existir no dado, vai ficar vazio (ok)
     { key: "e5", label: "5E" },
     { key: "e6", label: "6E" },
     { key: "e7", label: "7E" },
@@ -182,7 +196,6 @@
     { key: "produto", label: "Produto" },
     { key: "icms", label: "ICMS" },
 
-    // seu Apps Script usa pedidoSat (não pedidoSAT)
     { key: "pedidoSat", label: "Pedido SAT" },
 
     { key: "porta", label: "Porta" },
@@ -190,12 +203,10 @@
     { key: "status", label: "Status" },
     { key: "obs", label: "Observações" },
 
-    // Ações (renderizado pelo JS)
     { key: "__acoes", label: "Ações", isAcoes: true },
   ];
 
   function valueFromRow(row, key, index) {
-    // se vier array (não é seu caso atual, mas deixo compat)
     if (Array.isArray(row)) return safeText(row[index] ?? "");
 
     if (row && typeof row === "object") {
@@ -211,7 +222,6 @@
         descarga: ["descarga"],
         volume: ["volume"],
 
-        // aqui o ajuste crucial:
         valorEmpresa: ["valorEmpresa", "vlrEmpresa", "empresa"],
         valorMotorista: ["valorMotorista", "vlrMotorista", "motorista"],
 
@@ -299,7 +309,7 @@
     btnEdit.style.marginRight = "6px";
     btnEdit.addEventListener("click", () => {
       console.log("[fretes] editar", id, row);
-      // se você já tiver modal/edit, aqui você chama:
+      // se você já tiver modal/edit, chame aqui:
       // window.openEditModal?.(row);
     });
 
@@ -313,7 +323,6 @@
 
       try {
         setStatus("🗑 Excluindo...");
-        // seu Apps Script: action=delete&id=...
         const data = await apiGet({ action: "delete", id });
         if (data?.ok) {
           setStatus("✅ Excluído");
@@ -333,63 +342,133 @@
     return td;
   }
 
-  function render(rows) {
-  const tbody = getTbody();
-  if (!tbody) return;
+  // ======================================================
+  // ✅ PISO MÍNIMO (S/N) baseado na sua página do piso
+  // - compara valorMotorista (R$/ton) vs mínimo calculado (R$/ton)
+  // ======================================================
+  const PISO_PARAMS = {
+    e9: { eixos: 9, rkm: 8.53, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
+    e4: { eixos: 4, rkm: 7.4505, custoCC: 792.30, weightInputId: "w4", defaultPeso: 39 },
+    e7: { eixos: 7, rkm: 7.4505, custoCC: 792.30, weightInputId: "w7", defaultPeso: 36 },
+    e6: { eixos: 6, rkm: 6.8058, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
+    // no seu fretes.html não tem input w5, então usamos padrão (e se você criar no futuro, ele pega)
+    e5: { eixos: 5, rkm: 6.1859, custoCC: 642.10, weightInputId: "w5", defaultPeso: 26 },
+  };
 
-  tbody.innerHTML = "";
+  function getPesoFromUI(id, fallback) {
+    const el = document.getElementById(id);
+    const v = parsePtNumber(el?.value);
+    return Number.isFinite(v) && v > 0 ? v : fallback;
+  }
 
-  if (!rows || !rows.length) return;
+  function calcMinRPorTon(param, km, pedagioPorEixo) {
+    const peso = getPesoFromUI(param.weightInputId, param.defaultPeso);
+    const numerador = (param.rkm * km) + param.custoCC + (pedagioPorEixo * param.eixos);
+    const base = numerador / peso;          // R$/ton
+    const minTon = ceil0(base);              // arredonda pra cima (igual seu piso.html)
+    return minTon;
+  }
 
-  // 🔹 ordena: FILIAL → CLIENTE → ORIGEM → DESTINO
-  rows.sort((a, b) => {
-    const filialA = (a.filial || "").localeCompare(b.filial || "");
-    if (filialA !== 0) return filialA;
+  function sn(valueMotoristaTon, minTon) {
+    if (!Number.isFinite(valueMotoristaTon) || !Number.isFinite(minTon)) return "";
+    return valueMotoristaTon >= minTon ? "S" : "N";
+  }
 
-    const clienteA = (a.cliente || "").localeCompare(b.cliente || "");
-    if (clienteA !== 0) return clienteA;
+  function applyPisoSN(rows) {
+    return (rows || []).map((r) => {
+      const km = parsePtNumber(valueFromRow(r, "km")) || 0;
+      const ped = parsePtNumber(valueFromRow(r, "pedagioEixo")) || 0;
+      const vm = parsePtNumber(valueFromRow(r, "valorMotorista")); // R$/ton (da sua planilha)
 
-    const origemA = (a.origem || "").localeCompare(b.origem || "");
-    if (origemA !== 0) return origemA;
+      const min5 = calcMinRPorTon(PISO_PARAMS.e5, km, ped);
+      const min6 = calcMinRPorTon(PISO_PARAMS.e6, km, ped);
+      const min7 = calcMinRPorTon(PISO_PARAMS.e7, km, ped);
+      const min4 = calcMinRPorTon(PISO_PARAMS.e4, km, ped);
+      const min9 = calcMinRPorTon(PISO_PARAMS.e9, km, ped);
 
-    return (a.destino || "").localeCompare(b.destino || "");
-  });
+      return {
+        ...r,
+        e5: sn(vm, min5),
+        e6: sn(vm, min6),
+        e7: sn(vm, min7),
+        e4: sn(vm, min4),
+        e9: sn(vm, min9),
 
-  let filialAtual = "";
+        // opcional (debug): mínimos calculados
+        // _min5: min5, _min6: min6, _min7: min7, _min4: min4, _min9: min9,
+      };
+    });
+  }
 
-  rows.forEach((row) => {
-    // 📌 CABEÇALHO FILIAL
-    if (row.filial !== filialAtual) {
-      filialAtual = row.filial;
+  // ----------------------------
+  // RENDER (agrupa por filial, ordena por cliente)
+  // ----------------------------
+  function render(rowsRaw) {
+    const tbody = getTbody();
+    if (!tbody) return;
 
-      const trGroup = document.createElement("tr");
-      trGroup.className = "groupRow";
+    tbody.innerHTML = "";
+    if (!rowsRaw || !rowsRaw.length) return;
 
-      const td = document.createElement("td");
-      td.colSpan = COLS.length;
-      td.textContent = filialAtual;
+    // ✅ calcula S/N antes de ordenar/renderizar
+    const rows = applyPisoSN(rowsRaw);
 
-      trGroup.appendChild(td);
-      tbody.appendChild(trGroup);
-    }
+    // 🔹 ordena: FILIAL → CLIENTE → ORIGEM → DESTINO
+    rows.sort((a, b) => {
+      const fa = safeText(a?.filial).localeCompare(safeText(b?.filial));
+      if (fa !== 0) return fa;
 
-    // 📌 LINHA NORMAL
-    const tr = document.createElement("tr");
+      const ca = safeText(a?.cliente).localeCompare(safeText(b?.cliente));
+      if (ca !== 0) return ca;
 
-    COLS.forEach((col, idx) => {
-      if (col.isContato) {
-        const contatoText = valueFromRow(row, "contato", idx);
-        tr.appendChild(buildContatoCell(contatoText));
-      } else {
+      const oa = safeText(a?.origem).localeCompare(safeText(b?.origem));
+      if (oa !== 0) return oa;
+
+      return safeText(a?.destino).localeCompare(safeText(b?.destino));
+    });
+
+    let filialAtual = "";
+
+    rows.forEach((row) => {
+      // Cabeçalho de FILIAL
+      const filialRow = safeText(row?.filial);
+      if (filialRow !== filialAtual) {
+        filialAtual = filialRow;
+
+        const trGroup = document.createElement("tr");
+        trGroup.className = "groupRow";
+
+        const td = document.createElement("td");
+        td.colSpan = COLS.length;
+        td.textContent = filialAtual || "SEM FILIAL";
+
+        trGroup.appendChild(td);
+        tbody.appendChild(trGroup);
+      }
+
+      // Linha normal
+      const tr = document.createElement("tr");
+
+      COLS.forEach((col, idx) => {
+        if (col.isContato) {
+          const contatoText = valueFromRow(row, "contato", idx);
+          tr.appendChild(buildContatoCell(contatoText));
+          return;
+        }
+
+        if (col.isAcoes) {
+          tr.appendChild(buildAcoesCell(row));
+          return;
+        }
+
         const td = document.createElement("td");
         td.textContent = valueFromRow(row, col.key, idx);
         tr.appendChild(td);
-      }
-    });
+      });
 
-    tbody.appendChild(tr);
-  });
-}
+      tbody.appendChild(tr);
+    });
+  }
 
   // ----------------------------
   // AÇÕES
@@ -421,15 +500,25 @@
     if (btnNovo) {
       btnNovo.addEventListener("click", () => {
         console.log("[fretes] clique em NOVO (bind ok)");
-        // aqui você chama sua função de abrir modal, se existir
         // window.openNewModal?.();
       });
     }
+
+    // ✅ quando pesos mudarem, recalcula a tabela (S/N)
+    ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      el.addEventListener("input", () => {
+        // não precisa bater na API de novo, só re-render com os dados que já estão na tela
+        // mas como aqui não guardamos cache, chamamos atualizar (simples e confiável)
+        atualizar();
+      });
+    });
   }
 
   function init() {
     bindButtons();
-    atualizar(); // carrega ao abrir
+    atualizar();
   }
 
   window.addEventListener("DOMContentLoaded", init);

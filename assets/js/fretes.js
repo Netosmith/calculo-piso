@@ -1,4 +1,4 @@
-/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N + CONTATO POR FILIAL + WPP POR NOME) */
+/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N + MODAL + SELECTS + MAIÚSCULAS) */
 (function () {
   "use strict";
 
@@ -6,30 +6,42 @@
     "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
 
   // ======================================================
-  // ✅ LISTAS FIXAS (NO GITHUB)
-  // - Contato é o RESPONSÁVEL DA FILIAL (nome)
-  // - Telefone fica aqui e o ícone do WhatsApp usa isso
+  // ✅ CADASTRO LOCAL (dentro do GitHub)
+  // - Aqui você mantém Regional/Filiais/Clientes/Contatos e Telefones
+  // - Contato salva só o NOME (ex: "ARIEL")
+  // - Telefone fica aqui e o WhatsApp usa isso automaticamente
   // ======================================================
-  const FILIAIS = {
-    ITUMBIARA: { regional: "GOIAS", responsavel: "ARIEL" },
-    "RIO VERDE": { regional: "GOIAS", responsavel: "JHONATAN" },
-    MONTIVIDIU: { regional: "GOIAS", responsavel: "SERGIO" },
-    ANAPOLIS: { regional: "GOIAS", responsavel: "ARIEL" }, // exemplo
+  const DIRECTORY = {
+    regionais: ["GOIAS", "MINAS"],
+    filiaisPorRegional: {
+      GOIAS: ["ITUMBIARA", "RIO VERDE", "MONTIVIDIU", "ANAPOLIS"],
+      MINAS: ["UBERLANDIA", "ARAGUARI"],
+    },
+    clientes: ["LDC", "COFCO", "OURO SAFRA", "CARGILL"],
+    // Responsável por FILIAL + telefone separado
+    contatosPorFilial: {
+      ITUMBIARA: [
+        { nome: "ARIEL", fone: "5564992277537" },
+        { nome: "SERGIO", fone: "5564999999999" },
+      ],
+      "RIO VERDE": [{ nome: "JHONATAN", fone: "5564998887777" }],
+      MONTIVIDIU: [{ nome: "SERGIO", fone: "5564988887777" }],
+      ANAPOLIS: [{ nome: "ARIEL", fone: "5564987776666" }],
+      UBERLANDIA: [{ nome: "SERGIO", fone: "5534991112222" }],
+      ARAGUARI: [{ nome: "JHONATAN", fone: "5534993334444" }],
+    },
   };
 
-  const CLIENTES = ["LDC", "COFCO", "OURO SAFRA", "CARGILL"];
-
-  const CONTATOS = {
-    ARIEL: "64999999999",
-    JHONATAN: "64988888888",
-    SERGIO: "64977777777",
-  };
-
-  function uniqueRegionaisFromFiliais() {
-    const set = new Set();
-    Object.values(FILIAIS).forEach((v) => set.add(String(v.regional || "").toUpperCase().trim()));
-    return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
-  }
+  // Mapa rápido: NOME -> TELEFONE (pra WhatsApp)
+  const CONTACT_PHONE = (() => {
+    const map = {};
+    Object.values(DIRECTORY.contatosPorFilial || {}).forEach((arr) => {
+      (arr || []).forEach((c) => {
+        if (c?.nome && c?.fone) map[String(c.nome).toUpperCase().trim()] = String(c.fone).trim();
+      });
+    });
+    return map;
+  })();
 
   // ----------------------------
   // DOM helpers
@@ -53,16 +65,8 @@
     return (v ?? "").toString().trim();
   }
 
-  function upper(v) {
-    return safeText(v).toUpperCase();
-  }
-
-  function onlyLettersUpper(v) {
-    return upper(v).replace(/[^\wÀ-ÿ ]/g, "").replace(/\s+/g, " ").trim();
-  }
-
   // ----------------------------
-  // Parse número pt-BR
+  // Parse número pt-BR (ex: "1.234,56" -> 1234.56)
   // ----------------------------
   function parsePtNumber(value) {
     if (value === null || value === undefined) return NaN;
@@ -82,26 +86,33 @@
   }
 
   // ----------------------------
-  // WhatsApp helper (por nome do responsável)
+  // WhatsApp helper
+  // - se tiver número no texto, usa ele
+  // - se for só nome (ex: "ARIEL"), busca no CONTACT_PHONE
   // ----------------------------
-  function normalizePhoneBR(text) {
+  function extractPhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
+
+    // 1) tenta extrair dígitos do texto
     let digits = s.replace(/\D/g, "");
-    if (!digits) return "";
-    if (digits.startsWith("55")) return digits;
-    if (digits.length === 10 || digits.length === 11) return "55" + digits;
-    return "";
+    if (digits) {
+      if (digits.startsWith("55")) return digits;
+      if (digits.length === 10 || digits.length === 11) return "55" + digits;
+    }
+
+    // 2) fallback: se for nome, busca no mapa local
+    const nameKey = s.toUpperCase().trim();
+    const phone = CONTACT_PHONE[nameKey] || "";
+    if (!phone) return "";
+
+    const p = phone.replace(/\D/g, "");
+    if (!p) return "";
+    return p.startsWith("55") ? p : "55" + p;
   }
 
-  function phoneFromContatoName(contatoName) {
-    const name = onlyLettersUpper(contatoName);
-    const raw = CONTATOS[name] || "";
-    return normalizePhoneBR(raw);
-  }
-
-  function whatsappLinkFromName(contatoName) {
-    const phone = phoneFromContatoName(contatoName);
+  function whatsappLinkFromContato(contato) {
+    const phone = extractPhoneBR(contato);
     return phone ? "https://wa.me/" + phone : "";
   }
 
@@ -140,7 +151,14 @@
 
       if (looksJsonp) {
         const inner = t.slice(p1 + 1, p2).trim();
-        data = inner ? JSON.parse(inner) : null;
+        try {
+          data = inner ? JSON.parse(inner) : null;
+        } catch {
+          const err = new Error("Falha ao interpretar JSONP da API.");
+          err.url = url.toString();
+          err.preview = t.slice(0, 260);
+          throw err;
+        }
       } else {
         const err = new Error("Falha ao interpretar JSON da API.");
         err.url = url.toString();
@@ -180,49 +198,41 @@
         lastErr = e;
       }
     }
+
     throw lastErr || new Error("Falha ao buscar dados.");
   }
 
   // ----------------------------
-  // COLUNAS
+  // COLUNAS (na ordem do HTML)
   // ----------------------------
   const COLS = [
-    { key: "regional" },
-    { key: "filial" },
-    { key: "cliente" },
-    { key: "origem" },
-    { key: "coleta" },
-
-    { key: "contato", isContato: true },
-
-    { key: "destino" },
-    { key: "uf" },
-    { key: "descarga" },
-    { key: "volume" },
-
-    { key: "valorEmpresa" },
-    { key: "valorMotorista" },
-
-    { key: "km" },
-    { key: "pedagioEixo" },
-
-    { key: "e5", isSN: true },
-    { key: "e6", isSN: true },
-    { key: "e7", isSN: true },
-    { key: "e4", isSN: true },
-    { key: "e9", isSN: true },
-
-    { key: "produto" },
-    { key: "icms" },
-
-    { key: "pedidoSat" },
-
-    { key: "porta" },
-    { key: "transito" },
-    { key: "status" },
-    { key: "obs" },
-
-    { key: "__acoes", isAcoes: true },
+    { key: "regional", label: "Regional" },
+    { key: "filial", label: "Filial" },
+    { key: "cliente", label: "Cliente" },
+    { key: "origem", label: "Origem" },
+    { key: "coleta", label: "Coleta" },
+    { key: "contato", label: "Contato", isContato: true },
+    { key: "destino", label: "Destino" },
+    { key: "uf", label: "UF" },
+    { key: "descarga", label: "Descarga" },
+    { key: "volume", label: "Volume" },
+    { key: "valorEmpresa", label: "Vlr Empresa" },
+    { key: "valorMotorista", label: "Vlr Motorista" },
+    { key: "km", label: "KM" },
+    { key: "pedagioEixo", label: "Pedágio/Eixo" },
+    { key: "e5", label: "5E" },
+    { key: "e6", label: "6E" },
+    { key: "e7", label: "7E" },
+    { key: "e4", label: "4E" },
+    { key: "e9", label: "9E" },
+    { key: "produto", label: "Produto" },
+    { key: "icms", label: "ICMS" },
+    { key: "pedidoSat", label: "Pedido SAT" },
+    { key: "porta", label: "Porta" },
+    { key: "transito", label: "Trânsito" },
+    { key: "status", label: "Status" },
+    { key: "obs", label: "Observações" },
+    { key: "__acoes", label: "Ações", isAcoes: true },
   ];
 
   function valueFromRow(row, key, index) {
@@ -240,24 +250,18 @@
         uf: ["uf", "estado"],
         descarga: ["descarga"],
         volume: ["volume"],
-
         valorEmpresa: ["valorEmpresa", "vlrEmpresa", "empresa"],
         valorMotorista: ["valorMotorista", "vlrMotorista", "motorista"],
-
         km: ["km"],
         pedagioEixo: ["pedagioEixo", "pedagio", "pedagio_por_eixo"],
-
         e5: ["e5", "5e"],
         e6: ["e6", "6e"],
         e7: ["e7", "7e"],
         e4: ["e4", "4e"],
         e9: ["e9", "9e"],
-
         produto: ["produto"],
         icms: ["icms"],
-
         pedidoSat: ["pedidoSat", "pedidoSAT", "pedido", "sat"],
-
         porta: ["porta"],
         transito: ["transito", "trânsito", "transitoDias"],
         status: ["status"],
@@ -272,9 +276,6 @@
     return "";
   }
 
-  // ----------------------------
-  // Contato: só o nome (sem emoji) + ícone WhatsApp
-  // ----------------------------
   function buildContatoCell(contatoText) {
     const td = document.createElement("td");
 
@@ -285,17 +286,15 @@
     wrap.style.gap = "6px";
     wrap.style.minWidth = "0";
 
-    const name = onlyLettersUpper(contatoText || "");
-
     const span = document.createElement("span");
-    span.textContent = name || "";
+    span.textContent = contatoText || "";
     span.style.whiteSpace = "nowrap";
     span.style.overflow = "hidden";
     span.style.textOverflow = "ellipsis";
     span.style.minWidth = "0";
     wrap.appendChild(span);
 
-    const wpp = name ? whatsappLinkFromName(name) : "";
+    const wpp = whatsappLinkFromContato(contatoText);
     if (wpp) {
       const a = document.createElement("a");
       a.href = wpp;
@@ -320,17 +319,6 @@
     return td;
   }
 
-  function buildSNCell(v) {
-    const td = document.createElement("td");
-    td.className = "num";
-    const vv = safeText(v).toUpperCase();
-    const span = document.createElement("span");
-    span.className = "pillSN " + (vv === "S" ? "s" : vv === "N" ? "n" : "empty");
-    span.textContent = vv || "-";
-    td.appendChild(span);
-    return td;
-  }
-
   function buildAcoesCell(row) {
     const td = document.createElement("td");
     td.className = "num";
@@ -342,7 +330,10 @@
     btnEdit.className = "btnTiny ghost";
     btnEdit.textContent = "Editar";
     btnEdit.style.marginRight = "6px";
-    btnEdit.addEventListener("click", () => openModal("edit", row));
+    btnEdit.addEventListener("click", () => {
+      console.log("[fretes] editar", id, row);
+      // se quiser, dá pra implementar edição depois (reaproveita o mesmo modal)
+    });
 
     const btnDel = document.createElement("button");
     btnDel.type = "button";
@@ -373,15 +364,28 @@
     return td;
   }
 
+  function buildPillSNCell(val) {
+    const td = document.createElement("td");
+    td.className = "num";
+
+    const v = safeText(val).toUpperCase();
+    const span = document.createElement("span");
+    span.className = "pillSN " + (v === "S" ? "s" : v === "N" ? "n" : "empty");
+    span.textContent = v || "-";
+
+    td.appendChild(span);
+    return td;
+  }
+
   // ======================================================
-  // ✅ PISO MÍNIMO (S/N)
+  // ✅ PISO MÍNIMO (S/N) baseado na sua página do piso
   // ======================================================
   const PISO_PARAMS = {
     e9: { eixos: 9, rkm: 8.53, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
-    e4: { eixos: 4, rkm: 7.4505, custoCC: 792.30, weightInputId: "w4", defaultPeso: 39 },
-    e7: { eixos: 7, rkm: 7.4505, custoCC: 792.30, weightInputId: "w7", defaultPeso: 36 },
+    e4: { eixos: 4, rkm: 7.4505, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
+    e7: { eixos: 7, rkm: 7.4505, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
     e6: { eixos: 6, rkm: 6.8058, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
-    e5: { eixos: 5, rkm: 6.1859, custoCC: 642.10, weightInputId: "w5", defaultPeso: 26 },
+    e5: { eixos: 5, rkm: 6.1859, custoCC: 642.1, weightInputId: "w5", defaultPeso: 26 },
   };
 
   function getPesoFromUI(id, fallback) {
@@ -392,8 +396,8 @@
 
   function calcMinRPorTon(param, km, pedagioPorEixo) {
     const peso = getPesoFromUI(param.weightInputId, param.defaultPeso);
-    const numerador = (param.rkm * km) + param.custoCC + (pedagioPorEixo * param.eixos);
-    const base = numerador / peso;
+    const numerador = param.rkm * km + param.custoCC + pedagioPorEixo * param.eixos;
+    const base = numerador / peso; // R$/ton
     return ceil0(base);
   }
 
@@ -406,29 +410,96 @@
     return (rows || []).map((r) => {
       const km = parsePtNumber(valueFromRow(r, "km")) || 0;
       const ped = parsePtNumber(valueFromRow(r, "pedagioEixo")) || 0;
-      const vm = parsePtNumber(valueFromRow(r, "valorMotorista"));
+      const vm = parsePtNumber(valueFromRow(r, "valorMotorista")); // R$/ton
 
-      return {
-        ...r,
-        e5: sn(vm, calcMinRPorTon(PISO_PARAMS.e5, km, ped)),
-        e6: sn(vm, calcMinRPorTon(PISO_PARAMS.e6, km, ped)),
-        e7: sn(vm, calcMinRPorTon(PISO_PARAMS.e7, km, ped)),
-        e4: sn(vm, calcMinRPorTon(PISO_PARAMS.e4, km, ped)),
-        e9: sn(vm, calcMinRPorTon(PISO_PARAMS.e9, km, ped)),
-      };
+      const min5 = calcMinRPorTon(PISO_PARAMS.e5, km, ped);
+      const min6 = calcMinRPorTon(PISO_PARAMS.e6, km, ped);
+      const min7 = calcMinRPorTon(PISO_PARAMS.e7, km, ped);
+      const min4 = calcMinRPorTon(PISO_PARAMS.e4, km, ped);
+      const min9 = calcMinRPorTon(PISO_PARAMS.e9, km, ped);
+
+      return { ...r, e5: sn(vm, min5), e6: sn(vm, min6), e7: sn(vm, min7), e4: sn(vm, min4), e9: sn(vm, min9) };
     });
   }
 
-  // ======================================================
-  // ✅ MODAL (Novo/Editar) agora com SELECT
-  // ======================================================
+  // ----------------------------
+  // RENDER (agrupa por filial, ordena por cliente)
+  // ----------------------------
+  function render(rowsRaw) {
+    const tbody = getTbody();
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+    if (!rowsRaw || !rowsRaw.length) return;
+
+    const rows = applyPisoSN(rowsRaw);
+
+    rows.sort((a, b) => {
+      const fa = safeText(a?.filial).localeCompare(safeText(b?.filial));
+      if (fa !== 0) return fa;
+      const ca = safeText(a?.cliente).localeCompare(safeText(b?.cliente));
+      if (ca !== 0) return ca;
+      const oa = safeText(a?.origem).localeCompare(safeText(b?.origem));
+      if (oa !== 0) return oa;
+      return safeText(a?.destino).localeCompare(safeText(b?.destino));
+    });
+
+    let filialAtual = "";
+
+    rows.forEach((row) => {
+      const filialRow = safeText(row?.filial);
+      if (filialRow !== filialAtual) {
+        filialAtual = filialRow;
+
+        const trGroup = document.createElement("tr");
+        trGroup.className = "groupRow";
+        const td = document.createElement("td");
+        td.colSpan = COLS.length;
+        td.textContent = filialAtual || "SEM FILIAL";
+        trGroup.appendChild(td);
+        tbody.appendChild(trGroup);
+      }
+
+      const tr = document.createElement("tr");
+
+      COLS.forEach((col, idx) => {
+        if (col.isContato) {
+          const contatoText = valueFromRow(row, "contato", idx);
+          tr.appendChild(buildContatoCell(contatoText));
+          return;
+        }
+
+        if (col.isAcoes) {
+          tr.appendChild(buildAcoesCell(row));
+          return;
+        }
+
+        // ✅ pílulas S/N
+        if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
+          tr.appendChild(buildPillSNCell(valueFromRow(row, col.key, idx)));
+          return;
+        }
+
+        const td = document.createElement("td");
+        td.textContent = valueFromRow(row, col.key, idx);
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ----------------------------
+  // MODAL: utilitários
+  // ----------------------------
   const MODAL = {
-    el: () => document.getElementById("modal"),
+    wrap: () => document.getElementById("modal"),
     title: () => document.getElementById("modalTitle"),
     btnClose: () => document.getElementById("btnCloseModal"),
     btnCancel: () => document.getElementById("btnCancel"),
     btnSave: () => document.getElementById("btnSave"),
 
+    // campos (IDs do seu fretes.html)
     regional: () => document.getElementById("mRegional"),
     filial: () => document.getElementById("mFilial"),
     cliente: () => document.getElementById("mCliente"),
@@ -453,190 +524,166 @@
     obs: () => document.getElementById("mObs"),
   };
 
-  function showModal(show) {
-    const m = MODAL.el();
-    if (!m) return;
-    m.style.display = show ? "flex" : "none";
-    m.setAttribute("aria-hidden", show ? "false" : "true");
+  function modalShow(show) {
+    const el = MODAL.wrap();
+    if (!el) return;
+    el.style.display = show ? "flex" : "none";
+    el.setAttribute("aria-hidden", show ? "false" : "true");
   }
 
-  function closeModal() {
-    showModal(false);
+  function setSelectOptions(selectEl, options, placeholderText) {
+    if (!selectEl) return;
+    const isSelect = selectEl.tagName === "SELECT";
+    if (!isSelect) return;
+
+    selectEl.innerHTML = "";
+    const ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = placeholderText || "SELECIONE...";
+    selectEl.appendChild(ph);
+
+    (options || []).forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = String(opt).toUpperCase().trim();
+      o.textContent = String(opt).toUpperCase().trim();
+      selectEl.appendChild(o);
+    });
   }
 
-  function fillSelect(sel, items, placeholder) {
-    if (!sel) return;
-    sel.innerHTML = "";
+  function forceUppercaseInput(el) {
+    if (!el) return;
+    const tag = el.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") {
+      // não mexe em números
+      const type = (el.getAttribute("type") || "").toLowerCase();
+      const isNumeric = type === "number" || el.inputMode === "decimal" || el.inputMode === "numeric";
+      if (isNumeric) return;
 
-    if (placeholder) {
-      const opt0 = document.createElement("option");
-      opt0.value = "";
-      opt0.textContent = placeholder;
-      sel.appendChild(opt0);
+      el.addEventListener("input", () => {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        el.value = String(el.value || "").toUpperCase();
+        try {
+          el.setSelectionRange(start, end);
+        } catch {}
+      });
+    }
+  }
+
+  function initModalUppercase() {
+    [
+      MODAL.origem(),
+      MODAL.coleta(),
+      MODAL.destino(),
+      MODAL.uf(),
+      MODAL.descarga(),
+      MODAL.produto(),
+      MODAL.sat(),
+      MODAL.porta(),
+      MODAL.obs(),
+    ].forEach(forceUppercaseInput);
+  }
+
+  // ----------------------------
+  // MODAL: popula selects (Regional/Filial/Cliente/Contato)
+  // ----------------------------
+  function fillModalSelectors() {
+    const rSel = MODAL.regional();
+    const fSel = MODAL.filial();
+    const cSel = MODAL.cliente();
+    const ctSel = MODAL.contato();
+
+    setSelectOptions(rSel, DIRECTORY.regionais || [], "SELECIONE A REGIONAL");
+    setSelectOptions(cSel, DIRECTORY.clientes || [], "SELECIONE O CLIENTE");
+
+    // inicial vazio
+    setSelectOptions(fSel, [], "SELECIONE A FILIAL");
+    setSelectOptions(ctSel, [], "SELECIONE O CONTATO");
+
+    if (rSel) {
+      rSel.addEventListener("change", () => {
+        const reg = safeText(rSel.value).toUpperCase();
+        const filiais = (DIRECTORY.filiaisPorRegional?.[reg] || []).map((x) => String(x).toUpperCase());
+        setSelectOptions(fSel, filiais, "SELECIONE A FILIAL");
+
+        // limpa contato ao trocar regional
+        setSelectOptions(ctSel, [], "SELECIONE O CONTATO");
+        if (fSel) fSel.value = "";
+      });
     }
 
-    (items || []).forEach((v) => {
-      const opt = document.createElement("option");
-      opt.value = upper(v);
-      opt.textContent = upper(v);
-      sel.appendChild(opt);
-    });
+    if (fSel) {
+      fSel.addEventListener("change", () => {
+        const filial = safeText(fSel.value).toUpperCase();
+        const contatos = (DIRECTORY.contatosPorFilial?.[filial] || []).map((c) => String(c.nome).toUpperCase());
+        setSelectOptions(ctSel, contatos, "SELECIONE O CONTATO");
+
+        // se só tiver 1 contato, auto-seleciona
+        if (ctSel && contatos.length === 1) ctSel.value = contatos[0];
+      });
+    }
   }
 
-  function filiaisByRegional(regional) {
-    const r = upper(regional);
-    return Object.keys(FILIAIS)
-      .filter((f) => upper(FILIAIS[f]?.regional) === r)
-      .sort((a, b) => a.localeCompare(b));
-  }
-
-  function setupModalSelects() {
-    const sReg = MODAL.regional();
-    const sFil = MODAL.filial();
-    const sCli = MODAL.cliente();
-    const sCon = MODAL.contato();
-
-    const regs = uniqueRegionaisFromFiliais();
-    fillSelect(sReg, regs, "Selecione a regional");
-    fillSelect(sCli, CLIENTES.slice().sort((a, b) => a.localeCompare(b)), "Selecione o cliente");
-
-    // contato sempre readonly (disabled)
-    if (sCon) sCon.disabled = true;
-
-    // inicial: se regional vazia, usa primeira
-    const regInit = upper(sReg?.value) || regs[0] || "";
-    if (sReg && regInit) sReg.value = regInit;
-
-    // monta filiais por regional
-    fillSelect(sFil, filiaisByRegional(regInit), "Selecione a filial");
-
-    // quando muda regional => refaz filiais
-    sReg?.addEventListener("change", () => {
-      const r = upper(sReg.value);
-      fillSelect(sFil, filiaisByRegional(r), "Selecione a filial");
-      if (sCon) fillSelect(sCon, [], "");
+  function clearModalFields() {
+    const fields = [
+      MODAL.origem(),
+      MODAL.coleta(),
+      MODAL.destino(),
+      MODAL.uf(),
+      MODAL.descarga(),
+      MODAL.produto(),
+      MODAL.km(),
+      MODAL.ped(),
+      MODAL.volume(),
+      MODAL.icms(),
+      MODAL.empresa(),
+      MODAL.motorista(),
+      MODAL.sat(),
+      MODAL.porta(),
+      MODAL.transito(),
+      MODAL.obs(),
+    ];
+    fields.forEach((el) => {
+      if (!el) return;
+      if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") el.value = "";
     });
 
-    // quando muda filial => seta regional + responsável
-    sFil?.addEventListener("change", () => {
-      const filial = upper(sFil.value);
-      const info = FILIAIS[filial];
-      if (info) {
-        if (sReg) sReg.value = upper(info.regional);
-        if (sCon) fillSelect(sCon, [upper(info.responsavel)], "");
-        if (sCon) sCon.value = upper(info.responsavel);
-      } else {
-        if (sCon) fillSelect(sCon, [], "");
-      }
-    });
-  }
-
-  let modalMode = "new";
-  let editingRow = null;
-
-  function clearModal() {
-    [
-      "mOrigem","mColeta","mDestino","mUF","mDescarga","mProduto",
-      "mKM","mPed","mVolume","mICMS","mEmpresa","mMotorista",
-      "mSat","mPorta","mTransito","mObs"
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-
-    const st = MODAL.status();
-    if (st) st.value = "LIBERADO";
+    const status = MODAL.status();
+    if (status) status.value = "LIBERADO";
 
     // selects
-    setupModalSelects();
+    if (MODAL.regional()) MODAL.regional().value = "";
+    if (MODAL.filial()) MODAL.filial().value = "";
+    if (MODAL.cliente()) MODAL.cliente().value = "";
+    if (MODAL.contato()) MODAL.contato().value = "";
   }
 
-  function fillModalFromRow(row) {
-    setupModalSelects();
-
-    const sReg = MODAL.regional();
-    const sFil = MODAL.filial();
-    const sCli = MODAL.cliente();
-    const sCon = MODAL.contato();
-
-    const reg = upper(valueFromRow(row, "regional"));
-    const fil = upper(valueFromRow(row, "filial"));
-    const cli = upper(valueFromRow(row, "cliente"));
-    const con = onlyLettersUpper(valueFromRow(row, "contato"));
-
-    if (sReg && reg) sReg.value = reg;
-
-    // refaz filiais conforme regional do registro
-    if (sFil) fillSelect(sFil, filiaisByRegional(reg || uniqueRegionaisFromFiliais()[0] || ""), "Selecione a filial");
-    if (sFil && fil) sFil.value = fil;
-
-    if (sCli && cli) sCli.value = cli;
-
-    if (sCon) {
-      fillSelect(sCon, [con], "");
-      sCon.value = con;
-    }
-
-    const setU = (id, v) => { const el = document.getElementById(id); if (el) el.value = upper(v); };
-    const setR = (id, v) => { const el = document.getElementById(id); if (el) el.value = safeText(v); };
-
-    setU("mOrigem", valueFromRow(row, "origem"));
-    setU("mColeta", valueFromRow(row, "coleta"));
-    setU("mDestino", valueFromRow(row, "destino"));
-    setU("mUF", valueFromRow(row, "uf"));
-    setU("mDescarga", valueFromRow(row, "descarga"));
-    setU("mProduto", valueFromRow(row, "produto"));
-
-    setR("mKM", valueFromRow(row, "km"));
-    setR("mPed", valueFromRow(row, "pedagioEixo"));
-    setR("mVolume", valueFromRow(row, "volume"));
-    setR("mICMS", valueFromRow(row, "icms"));
-    setR("mEmpresa", valueFromRow(row, "valorEmpresa"));
-    setR("mMotorista", valueFromRow(row, "valorMotorista"));
-
-    setU("mSat", valueFromRow(row, "pedidoSat"));
-    setU("mPorta", valueFromRow(row, "porta"));
-    setR("mTransito", valueFromRow(row, "transito"));
-
-    const st = MODAL.status();
-    if (st) st.value = upper(valueFromRow(row, "status")) || "LIBERADO";
-
-    const obs = MODAL.obs();
-    if (obs) obs.value = safeText(valueFromRow(row, "obs"));
-  }
-
-  function openModal(mode, row) {
-    modalMode = mode === "edit" ? "edit" : "new";
-    editingRow = row || null;
-
-    const title = MODAL.title();
-    if (title) title.textContent = modalMode === "edit" ? "Editar Frete" : "Novo Frete";
-
-    if (modalMode === "new") clearModal();
-    else fillModalFromRow(row);
-
-    showModal(true);
-    setTimeout(() => MODAL.filial()?.focus(), 50);
-  }
-
-  function readModalPayload() {
-    const sReg = MODAL.regional();
-    const sFil = MODAL.filial();
-    const sCli = MODAL.cliente();
-    const sCon = MODAL.contato();
+  // ----------------------------
+  // SAVE: envia para Apps Script
+  // - tenta várias actions para bater com seu backend sem você me mandar ele
+  // ----------------------------
+  function collectModalPayload() {
+    const regional = safeText(MODAL.regional()?.value).toUpperCase();
+    const filial = safeText(MODAL.filial()?.value).toUpperCase();
+    const cliente = safeText(MODAL.cliente()?.value).toUpperCase();
+    const contato = safeText(MODAL.contato()?.value).toUpperCase(); // só nome
 
     const payload = {
-      regional: upper(sReg?.value),
-      filial: upper(sFil?.value),
-      cliente: upper(sCli?.value),
-      contato: onlyLettersUpper(sCon?.value), // só nome
+      regional,
+      filial,
+      cliente,
+      contato,
 
-      origem: upper(MODAL.origem()?.value),
-      coleta: upper(MODAL.coleta()?.value),
-      destino: upper(MODAL.destino()?.value),
-      uf: upper(MODAL.uf()?.value),
-      descarga: upper(MODAL.descarga()?.value),
-      produto: upper(MODAL.produto()?.value),
+      origem: safeText(MODAL.origem()?.value).toUpperCase(),
+      coleta: safeText(MODAL.coleta()?.value).toUpperCase(),
+      destino: safeText(MODAL.destino()?.value).toUpperCase(),
+      uf: safeText(MODAL.uf()?.value).toUpperCase(),
+      descarga: safeText(MODAL.descarga()?.value).toUpperCase(),
+      produto: safeText(MODAL.produto()?.value).toUpperCase(),
+      pedidoSat: safeText(MODAL.sat()?.value).toUpperCase(),
+      porta: safeText(MODAL.porta()?.value).toUpperCase(),
+      status: safeText(MODAL.status()?.value).toUpperCase(),
+      obs: safeText(MODAL.obs()?.value).toUpperCase(),
 
       km: safeText(MODAL.km()?.value),
       pedagioEixo: safeText(MODAL.ped()?.value),
@@ -644,156 +691,99 @@
       icms: safeText(MODAL.icms()?.value),
       valorEmpresa: safeText(MODAL.empresa()?.value),
       valorMotorista: safeText(MODAL.motorista()?.value),
-
-      pedidoSat: upper(MODAL.sat()?.value),
-      porta: upper(MODAL.porta()?.value),
       transito: safeText(MODAL.transito()?.value),
-      status: upper(MODAL.status()?.value),
-      obs: safeText(MODAL.obs()?.value),
     };
-
-    // força consistência filial -> regional/contato
-    const info = FILIAIS[payload.filial];
-    if (info) {
-      payload.regional = upper(info.regional);
-      payload.contato = upper(info.responsavel);
-    }
 
     return payload;
   }
 
-  async function saveModal() {
-    const payload = readModalPayload();
+  function validateModalPayload(p) {
+    const missing = [];
+    if (!p.regional) missing.push("REGIONAL");
+    if (!p.filial) missing.push("FILIAL");
+    if (!p.cliente) missing.push("CLIENTE");
+    if (!p.contato) missing.push("CONTATO");
+    if (!p.origem) missing.push("ORIGEM");
+    if (!p.destino) missing.push("DESTINO");
+    if (!p.uf) missing.push("UF");
+    if (!p.km) missing.push("KM");
+    if (!p.valorMotorista) missing.push("VLR MOTORISTA");
 
-    if (!payload.regional) return alert("Selecione a REGIONAL.");
-    if (!payload.filial) return alert("Selecione a FILIAL.");
-    if (!payload.cliente) return alert("Selecione o CLIENTE.");
+    if (missing.length) {
+      alert("Preencha: " + missing.join(", "));
+      return false;
+    }
+    return true;
+  }
+
+  async function saveNewFrete(payload) {
+    const actions = ["create", "add", "new", "save", "upsert"];
+    let lastErr = null;
+
+    for (const action of actions) {
+      try {
+        const data = await apiGet({ action, ...payload });
+        if (data?.ok) return data;
+        // alguns backends retornam {success:true}
+        if (data?.success) return { ok: true, data };
+        lastErr = new Error("Resposta sem ok (action=" + action + ")");
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    throw lastErr || new Error("Não consegui salvar (action create/add/new/save/upsert).");
+  }
+
+  function openNewModal() {
+    const modal = MODAL.wrap();
+    if (!modal) {
+      alert("Modal não encontrado no fretes.html (id='modal').");
+      return;
+    }
+    if (MODAL.title()) MODAL.title().textContent = "Novo Frete";
+    clearModalFields();
+    modalShow(true);
+  }
+
+  function closeModal() {
+    modalShow(false);
+  }
+
+  async function handleSave() {
+    const payload = collectModalPayload();
+    if (!validateModalPayload(payload)) return;
 
     try {
       setStatus("💾 Salvando...");
-
-      const id = editingRow?.id ? String(editingRow.id) : "";
-
-      const tries = modalMode === "edit"
-        ? [
-            { action: "update", id, ...payload },
-            { action: "edit", id, ...payload },
-            { action: "upsert", id, ...payload },
-            { action: "save", id, ...payload },
-          ]
-        : [
-            { action: "create", ...payload },
-            { action: "add", ...payload },
-            { action: "insert", ...payload },
-            { action: "upsert", ...payload },
-            { action: "save", ...payload },
-          ];
-
-      let last = null;
-      for (const p of tries) {
-        try {
-          const data = await apiGet(p);
-          if (data?.ok) {
-            setStatus("✅ Salvo");
-            closeModal();
-            await atualizar();
-            return;
-          }
-          last = data;
-        } catch (e) {
-          last = e;
-        }
-      }
-
-      console.error("[fretes] falha save tries:", last);
-      setStatus("❌ Falha ao salvar");
-      alert("Não consegui salvar no Apps Script. Se você me mandar o doGet/doPost do Apps Script, eu amarro a action certa.");
+      await saveNewFrete(payload);
+      setStatus("✅ Salvo");
+      closeModal();
+      await atualizar();
     } catch (e) {
       console.error("[fretes] erro salvar:", e);
       setStatus("❌ Erro ao salvar");
-      alert("Erro ao salvar. Veja o console (F12).");
+      alert("Não consegui salvar no Sheets. Veja o console (F12) para detalhes.");
     }
   }
 
-  function bindModalButtons() {
+  function bindModalEvents() {
+    const modal = MODAL.wrap();
+    if (!modal) return;
+
+    // fecha por botões
     MODAL.btnClose()?.addEventListener("click", closeModal);
     MODAL.btnCancel()?.addEventListener("click", closeModal);
-    MODAL.btnSave()?.addEventListener("click", saveModal);
+    MODAL.btnSave()?.addEventListener("click", handleSave);
 
-    MODAL.el()?.addEventListener("click", (e) => {
-      if (e.target && e.target.id === "modal") closeModal();
+    // fecha clicando fora do card
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
     });
 
+    // ESC fecha
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && MODAL.el()?.style.display === "flex") closeModal();
-    });
-  }
-
-  // ----------------------------
-  // RENDER
-  // ----------------------------
-  function render(rowsRaw) {
-    const tbody = getTbody();
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-    if (!rowsRaw || !rowsRaw.length) return;
-
-    const rows = applyPisoSN(rowsRaw);
-
-    rows.sort((a, b) => {
-      const fa = safeText(a?.filial).localeCompare(safeText(b?.filial));
-      if (fa !== 0) return fa;
-
-      const ca = safeText(a?.cliente).localeCompare(safeText(b?.cliente));
-      if (ca !== 0) return ca;
-
-      const oa = safeText(a?.origem).localeCompare(safeText(b?.origem));
-      if (oa !== 0) return oa;
-
-      return safeText(a?.destino).localeCompare(safeText(b?.destino));
-    });
-
-    let filialAtual = "";
-
-    rows.forEach((row) => {
-      const filialRow = safeText(row?.filial);
-      if (filialRow !== filialAtual) {
-        filialAtual = filialRow;
-
-        const trGroup = document.createElement("tr");
-        trGroup.className = "groupRow";
-
-        const td = document.createElement("td");
-        td.colSpan = COLS.length;
-        td.textContent = filialAtual || "SEM FILIAL";
-
-        trGroup.appendChild(td);
-        tbody.appendChild(trGroup);
-      }
-
-      const tr = document.createElement("tr");
-
-      COLS.forEach((col, idx) => {
-        if (col.isContato) {
-          tr.appendChild(buildContatoCell(valueFromRow(row, "contato", idx)));
-          return;
-        }
-        if (col.isAcoes) {
-          tr.appendChild(buildAcoesCell(row));
-          return;
-        }
-        if (col.isSN) {
-          tr.appendChild(buildSNCell(valueFromRow(row, col.key, idx)));
-          return;
-        }
-
-        const td = document.createElement("td");
-        td.textContent = valueFromRow(row, col.key, idx);
-        tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
+      if (e.key === "Escape") closeModal();
     });
   }
 
@@ -808,7 +798,6 @@
       setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
-
       if (String(e?.message || "").includes("retornou HTML")) {
         setStatus("❌ Erro ao sincronizar (deploy/permissão)");
         console.warn("[fretes] Trecho retorno:", e.preview || "");
@@ -823,19 +812,30 @@
     const btnNovo = $("#btnNew");
 
     if (btnAtualizar) btnAtualizar.addEventListener("click", atualizar);
-    if (btnNovo) btnNovo.addEventListener("click", () => openModal("new", null));
 
+    // ✅ NOVO agora abre o modal de verdade
+    if (btnNovo) {
+      btnNovo.addEventListener("click", () => {
+        openNewModal();
+      });
+    }
+
+    // ✅ quando pesos mudarem, recalcula S/N
     ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {
       const el = document.querySelector(sel);
       if (!el) return;
       el.addEventListener("input", () => atualizar());
     });
-
-    bindModalButtons();
   }
 
   function init() {
     bindButtons();
+
+    // modal
+    fillModalSelectors();
+    initModalUppercase();
+    bindModalEvents();
+
     atualizar();
   }
 

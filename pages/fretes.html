@@ -185,6 +185,11 @@
     .num{text-align:right;}
 
     /* ======================================================
+       ✅ FORÇA MAIÚSCULO NA UI (inputs/selects/textarea)
+    ======================================================= */
+    input, select, textarea { text-transform: uppercase; }
+
+    /* ======================================================
        ✅ WhatsApp: ícone
     ======================================================= */
     .waIcon{
@@ -385,8 +390,19 @@
       <div class="ft-spacer"></div>
 
       <div class="ft-block">
+        <!-- ✅ NOVO: REGIONAL -->
+        <select class="ft-select" id="fRegional" title="Regional">
+          <option value="">Todas as regionais</option>
+        </select>
+
+        <!-- ✅ FILIAL (já existia) -->
         <select class="ft-select" id="fFilial" title="Filial">
           <option value="">Todas as filiais</option>
+        </select>
+
+        <!-- ✅ NOVO: CONTATO -->
+        <select class="ft-select" id="fContato" title="Contato">
+          <option value="">Todos os contatos</option>
         </select>
 
         <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
@@ -529,6 +545,19 @@
           window.location.href = "./share-clientes.html";
         });
       }
+
+      // ✅ Fechar modal (UI)
+      const modal = document.getElementById("modal");
+      const close = document.getElementById("btnCloseModal");
+      const cancel = document.getElementById("btnCancel");
+      function closeModal(){
+        if(!modal) return;
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden","true");
+      }
+      close?.addEventListener("click", closeModal);
+      cancel?.addEventListener("click", closeModal);
+      modal?.addEventListener("click", (e)=>{ if(e.target && e.target.id==="modal") closeModal(); });
     });
   </script>
 </body>

@@ -1,4 +1,4 @@
-/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N) */
+/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N + MODAL NOVO/EDITAR) */
 (function () {
   "use strict";
 
@@ -37,13 +37,8 @@
     let s = String(value).trim();
     if (!s) return NaN;
 
-    // remove R$, espaços etc
     s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
-
-    // se tem vírgula, assume decimal pt-BR
-    if (s.includes(",")) {
-      s = s.replace(/\./g, "").replace(",", ".");
-    }
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
 
     const n = Number(s);
     return Number.isFinite(n) ? n : NaN;
@@ -296,6 +291,167 @@
     return td;
   }
 
+  // ======================================================
+  // ✅ PILL S/N (usa CSS .pillSN.s .pillSN.n no fretes.html)
+  // ======================================================
+  function buildSNCell(v) {
+    const td = document.createElement("td");
+    td.className = "num";
+
+    const val = safeText(v).toUpperCase(); // S / N
+    const pill = document.createElement("span");
+    pill.className =
+      "pillSN " + (val === "S" ? "s" : val === "N" ? "n" : "empty");
+    pill.textContent = val || "-";
+    td.appendChild(pill);
+    return td;
+  }
+
+  // ======================================================
+  // ✅ MODAL (NOVO / EDITAR)
+  // ======================================================
+  const modalEl = $("#modal");
+  const btnCloseModal = $("#btnCloseModal");
+  const btnCancel = $("#btnCancel");
+  const btnSave = $("#btnSave");
+  const modalTitle = $("#modalTitle");
+
+  // campos do modal
+  const F = {
+    regional: $("#mRegional"),
+    filial: $("#mFilial"),
+    cliente: $("#mCliente"),
+    contato: $("#mContato"),
+    origem: $("#mOrigem"),
+    coleta: $("#mColeta"),
+    destino: $("#mDestino"),
+    uf: $("#mUF"),
+    descarga: $("#mDescarga"),
+    km: $("#mKM"),
+    pedagioEixo: $("#mPed"),
+    volume: $("#mVolume"),
+    valorEmpresa: $("#mEmpresa"),
+    valorMotorista: $("#mMotorista"),
+    produto: $("#mProduto"),
+    icms: $("#mICMS"),
+    pedidoSat: $("#mSat"),
+    porta: $("#mPorta"),
+    transito: $("#mTransito"),
+    status: $("#mStatus"),
+    obs: $("#mObs"),
+  };
+
+  let CURRENT_EDIT = null; // guarda row ao editar (inclui id)
+
+  function openModal() {
+    if (!modalEl) return;
+    modalEl.style.display = "flex";
+    modalEl.setAttribute("aria-hidden", "false");
+  }
+
+  function closeModal() {
+    if (!modalEl) return;
+    modalEl.style.display = "none";
+    modalEl.setAttribute("aria-hidden", "true");
+  }
+
+  function clearModal() {
+    Object.values(F).forEach((el) => {
+      if (!el) return;
+      if (el.tagName === "SELECT") {
+        // mantém selecionado o primeiro item se existir
+        if (el.options && el.options.length) el.selectedIndex = 0;
+        else el.value = "";
+      } else {
+        el.value = "";
+      }
+    });
+  }
+
+  function fillModalFromRow(row) {
+    if (!row) return;
+    F.regional && (F.regional.value = safeText(row.regional));
+    F.filial && (F.filial.value = safeText(row.filial));
+    F.cliente && (F.cliente.value = safeText(row.cliente));
+    F.contato && (F.contato.value = safeText(row.contato));
+    F.origem && (F.origem.value = safeText(row.origem));
+    F.coleta && (F.coleta.value = safeText(row.coleta));
+    F.destino && (F.destino.value = safeText(row.destino));
+    F.uf && (F.uf.value = safeText(row.uf));
+    F.descarga && (F.descarga.value = safeText(row.descarga));
+    F.km && (F.km.value = safeText(row.km));
+    F.pedagioEixo && (F.pedagioEixo.value = safeText(row.pedagioEixo));
+    F.volume && (F.volume.value = safeText(row.volume));
+    F.valorEmpresa && (F.valorEmpresa.value = safeText(row.valorEmpresa));
+    F.valorMotorista && (F.valorMotorista.value = safeText(row.valorMotorista));
+    F.produto && (F.produto.value = safeText(row.produto));
+    F.icms && (F.icms.value = safeText(row.icms));
+    F.pedidoSat && (F.pedidoSat.value = safeText(row.pedidoSat));
+    F.porta && (F.porta.value = safeText(row.porta));
+    F.transito && (F.transito.value = safeText(row.transito));
+    F.status && (F.status.value = safeText(row.status) || "LIBERADO");
+    F.obs && (F.obs.value = safeText(row.obs));
+  }
+
+  function collectModalData() {
+    return {
+      id: CURRENT_EDIT?.id || "",
+
+      regional: safeText(F.regional?.value),
+      filial: safeText(F.filial?.value),
+      cliente: safeText(F.cliente?.value),
+      contato: safeText(F.contato?.value),
+
+      origem: safeText(F.origem?.value),
+      coleta: safeText(F.coleta?.value),
+      destino: safeText(F.destino?.value),
+      uf: safeText(F.uf?.value),
+      descarga: safeText(F.descarga?.value),
+
+      km: safeText(F.km?.value),
+      pedagioEixo: safeText(F.pedagioEixo?.value),
+      volume: safeText(F.volume?.value),
+
+      valorEmpresa: safeText(F.valorEmpresa?.value),
+      valorMotorista: safeText(F.valorMotorista?.value),
+
+      produto: safeText(F.produto?.value),
+      icms: safeText(F.icms?.value),
+      pedidoSat: safeText(F.pedidoSat?.value),
+
+      porta: safeText(F.porta?.value),
+      transito: safeText(F.transito?.value),
+
+      status: safeText(F.status?.value),
+      obs: safeText(F.obs?.value),
+    };
+  }
+
+  async function saveFromModal() {
+    try {
+      const payload = collectModalData();
+
+      setStatus("💾 Salvando...");
+      const data = await apiGet({
+        action: "save",
+        data: JSON.stringify(payload),
+      });
+
+      if (data?.ok) {
+        setStatus("✅ Salvo");
+        closeModal();
+        await atualizar();
+      } else {
+        setStatus("❌ Falha ao salvar");
+        alert(data?.error || "Falha ao salvar.");
+      }
+    } catch (e) {
+      console.error("[fretes] erro save:", e);
+      setStatus("❌ Erro ao salvar");
+      alert("Erro ao salvar. Veja o console.");
+    }
+  }
+
   function buildAcoesCell(row) {
     const td = document.createElement("td");
     td.className = "num";
@@ -308,9 +464,11 @@
     btnEdit.textContent = "Editar";
     btnEdit.style.marginRight = "6px";
     btnEdit.addEventListener("click", () => {
-      console.log("[fretes] editar", id, row);
-      // se você já tiver modal/edit, chame aqui:
-      // window.openEditModal?.(row);
+      CURRENT_EDIT = row || null;
+      if (modalTitle) modalTitle.textContent = "Editar Frete";
+      clearModal();
+      fillModalFromRow(row);
+      openModal();
     });
 
     const btnDel = document.createElement("button");
@@ -351,7 +509,6 @@
     e4: { eixos: 4, rkm: 7.4505, custoCC: 792.30, weightInputId: "w4", defaultPeso: 39 },
     e7: { eixos: 7, rkm: 7.4505, custoCC: 792.30, weightInputId: "w7", defaultPeso: 36 },
     e6: { eixos: 6, rkm: 6.8058, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
-    // no seu fretes.html não tem input w5, então usamos padrão (e se você criar no futuro, ele pega)
     e5: { eixos: 5, rkm: 6.1859, custoCC: 642.10, weightInputId: "w5", defaultPeso: 26 },
   };
 
@@ -364,8 +521,8 @@
   function calcMinRPorTon(param, km, pedagioPorEixo) {
     const peso = getPesoFromUI(param.weightInputId, param.defaultPeso);
     const numerador = (param.rkm * km) + param.custoCC + (pedagioPorEixo * param.eixos);
-    const base = numerador / peso;          // R$/ton
-    const minTon = ceil0(base);              // arredonda pra cima (igual seu piso.html)
+    const base = numerador / peso;
+    const minTon = ceil0(base);
     return minTon;
   }
 
@@ -378,7 +535,7 @@
     return (rows || []).map((r) => {
       const km = parsePtNumber(valueFromRow(r, "km")) || 0;
       const ped = parsePtNumber(valueFromRow(r, "pedagioEixo")) || 0;
-      const vm = parsePtNumber(valueFromRow(r, "valorMotorista")); // R$/ton (da sua planilha)
+      const vm = parsePtNumber(valueFromRow(r, "valorMotorista"));
 
       const min5 = calcMinRPorTon(PISO_PARAMS.e5, km, ped);
       const min6 = calcMinRPorTon(PISO_PARAMS.e6, km, ped);
@@ -393,9 +550,6 @@
         e7: sn(vm, min7),
         e4: sn(vm, min4),
         e9: sn(vm, min9),
-
-        // opcional (debug): mínimos calculados
-        // _min5: min5, _min6: min6, _min7: min7, _min4: min4, _min9: min9,
       };
     });
   }
@@ -410,10 +564,8 @@
     tbody.innerHTML = "";
     if (!rowsRaw || !rowsRaw.length) return;
 
-    // ✅ calcula S/N antes de ordenar/renderizar
     const rows = applyPisoSN(rowsRaw);
 
-    // 🔹 ordena: FILIAL → CLIENTE → ORIGEM → DESTINO
     rows.sort((a, b) => {
       const fa = safeText(a?.filial).localeCompare(safeText(b?.filial));
       if (fa !== 0) return fa;
@@ -430,7 +582,6 @@
     let filialAtual = "";
 
     rows.forEach((row) => {
-      // Cabeçalho de FILIAL
       const filialRow = safeText(row?.filial);
       if (filialRow !== filialAtual) {
         filialAtual = filialRow;
@@ -446,7 +597,6 @@
         tbody.appendChild(trGroup);
       }
 
-      // Linha normal
       const tr = document.createElement("tr");
 
       COLS.forEach((col, idx) => {
@@ -458,6 +608,12 @@
 
         if (col.isAcoes) {
           tr.appendChild(buildAcoesCell(row));
+          return;
+        }
+
+        // ✅ S/N com pill
+        if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
+          tr.appendChild(buildSNCell(valueFromRow(row, col.key, idx)));
           return;
         }
 
@@ -497,20 +653,40 @@
 
     if (btnAtualizar) btnAtualizar.addEventListener("click", atualizar);
 
+    // ✅ NOVO abre modal e limpa campos
     if (btnNovo) {
       btnNovo.addEventListener("click", () => {
-        console.log("[fretes] clique em NOVO (bind ok)");
-        // window.openNewModal?.();
+        CURRENT_EDIT = null;
+        if (modalTitle) modalTitle.textContent = "Novo Frete";
+        clearModal();
+        openModal();
       });
     }
 
-    // ✅ quando pesos mudarem, recalcula a tabela (S/N)
+    // ✅ fechar modal
+    btnCloseModal && btnCloseModal.addEventListener("click", closeModal);
+    btnCancel && btnCancel.addEventListener("click", closeModal);
+
+    // clique fora fecha
+    if (modalEl) {
+      modalEl.addEventListener("click", (e) => {
+        if (e.target === modalEl) closeModal();
+      });
+    }
+
+    // ESC fecha
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    // ✅ salvar modal
+    btnSave && btnSave.addEventListener("click", saveFromModal);
+
+    // ✅ quando pesos mudarem, recalcula S/N
     ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {
       const el = document.querySelector(sel);
       if (!el) return;
       el.addEventListener("input", () => {
-        // não precisa bater na API de novo, só re-render com os dados que já estão na tela
-        // mas como aqui não guardamos cache, chamamos atualizar (simples e confiável)
         atualizar();
       });
     });

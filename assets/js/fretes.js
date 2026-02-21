@@ -334,38 +334,62 @@
   }
 
   function render(rows) {
-    const tbody = getTbody();
-    if (!tbody) {
-      console.warn("[fretes] tbody não encontrado no HTML.");
-      return;
+  const tbody = getTbody();
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  if (!rows || !rows.length) return;
+
+  // 🔹 ordena: FILIAL → CLIENTE → ORIGEM → DESTINO
+  rows.sort((a, b) => {
+    const filialA = (a.filial || "").localeCompare(b.filial || "");
+    if (filialA !== 0) return filialA;
+
+    const clienteA = (a.cliente || "").localeCompare(b.cliente || "");
+    if (clienteA !== 0) return clienteA;
+
+    const origemA = (a.origem || "").localeCompare(b.origem || "");
+    if (origemA !== 0) return origemA;
+
+    return (a.destino || "").localeCompare(b.destino || "");
+  });
+
+  let filialAtual = "";
+
+  rows.forEach((row) => {
+    // 📌 CABEÇALHO FILIAL
+    if (row.filial !== filialAtual) {
+      filialAtual = row.filial;
+
+      const trGroup = document.createElement("tr");
+      trGroup.className = "groupRow";
+
+      const td = document.createElement("td");
+      td.colSpan = COLS.length;
+      td.textContent = filialAtual;
+
+      trGroup.appendChild(td);
+      tbody.appendChild(trGroup);
     }
 
-    tbody.innerHTML = "";
+    // 📌 LINHA NORMAL
+    const tr = document.createElement("tr");
 
-    rows.forEach((row) => {
-      const tr = document.createElement("tr");
-      tr.className = "rowSlim";
-
-      COLS.forEach((col, idx) => {
-        if (col.isContato) {
-          const contatoText = valueFromRow(row, "contato", idx);
-          tr.appendChild(buildContatoCell(contatoText));
-          return;
-        }
-
-        if (col.isAcoes) {
-          tr.appendChild(buildAcoesCell(row));
-          return;
-        }
-
+    COLS.forEach((col, idx) => {
+      if (col.isContato) {
+        const contatoText = valueFromRow(row, "contato", idx);
+        tr.appendChild(buildContatoCell(contatoText));
+      } else {
         const td = document.createElement("td");
         td.textContent = valueFromRow(row, col.key, idx);
         tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
+      }
     });
-  }
+
+    tbody.appendChild(tr);
+  });
+}
 
   // ----------------------------
   // AÇÕES

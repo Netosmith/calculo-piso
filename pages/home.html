@@ -5,7 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Home | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
+
+  <!-- Ajustes locais só do HOME -->
+  <style>
+    /* melhora clique dos ícones do topo */
+    .topbar .actions a.icon-btn{ text-decoration:none; }
+
+    /* grid mais flexível (sem depender do app.css) */
+    .hero .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:14px;
+      margin-top:16px;
+    }
+    @media (max-width: 900px){
+      .hero .grid{ grid-template-columns: 1fr; }
+    }
+
+    /* deixa os cards mais "apertadinhos" e alinhados */
+    .hero .card{
+      min-height: 112px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .hero .card-left{ display:flex; align-items:center; justify-content:center; }
+    .hero .tile{
+      width:64px; height:64px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:18px;
+      background: rgba(255,255,255,.12);
+      backdrop-filter: blur(6px);
+    }
+    .hero .card-right h3{ margin:0 0 4px; }
+    .hero .card-right p{ margin:0; opacity:.9; }
+
+    /* badge arrumadinho */
+    .badge{
+      margin-left:6px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:18px;
+      height:18px;
+      padding:0 6px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+    }
+  </style>
 </head>
+
 <body>
   <div class="topbar">
     <div class="topbar-inner">
@@ -15,11 +65,12 @@
       </div>
 
       <div class="actions">
-        <div class="icon-btn" title="Notificações">🔔</div>
-        <div class="icon-btn" title="Mensagens">✉️ <span class="badge">3</span></div>
-        <div class="icon-btn" title="Arquivos">📁</div>
-        <div class="icon-btn" title="Configurações">⚙️</div>
-        <div class="icon-btn" title="Sair" data-logout>👤</div>
+        <!-- Links (mesmo que alguns sejam placeholder por enquanto) -->
+        <a class="icon-btn" href="./notificacoes.html" title="Notificações" aria-label="Notificações">🔔</a>
+        <a class="icon-btn" href="./mensagens.html" title="Mensagens" aria-label="Mensagens">✉️ <span class="badge">3</span></a>
+        <a class="icon-btn" href="./arquivos.html" title="Arquivos" aria-label="Arquivos">📁</a>
+        <a class="icon-btn" href="./config.html" title="Configurações" aria-label="Configurações">⚙️</a>
+        <div class="icon-btn" title="Sair" data-logout aria-label="Sair">👤</div>
       </div>
     </div>
   </div>
@@ -35,7 +86,7 @@
       <div class="grid">
         <a class="card theme-blue" data-feature="piso" href="./calculo-piso.html">
           <div class="card-left">
-            <div class="tile" style="font-size:38px;">🧾📈</div>
+            <div class="tile" style="font-size:34px;">🧾📈</div>
           </div>
           <div class="card-right">
             <h3>Cálculo de Piso ANTT</h3>
@@ -45,7 +96,7 @@
 
         <a class="card theme-green" data-feature="fretes" href="./fretes.html">
           <div class="card-left">
-            <div class="tile" style="font-size:44px;">🚛</div>
+            <div class="tile" style="font-size:40px;">🚛</div>
           </div>
           <div class="card-right">
             <h3>Fretes (Operacional)</h3>
@@ -55,7 +106,7 @@
 
         <a class="card theme-purple" data-feature="share" href="./share-clientes.html">
           <div class="card-left">
-            <div class="tile" style="font-size:44px;">👥</div>
+            <div class="tile" style="font-size:40px;">👥</div>
           </div>
           <div class="card-right">
             <h3>Share Clientes</h3>
@@ -63,14 +114,24 @@
           </div>
         </a>
 
-        <!-- ✅ DIVULGAÇÃO -->
         <a class="card theme-gold" data-feature="divulgacao" href="./divulgacao.html">
           <div class="card-left">
-            <div class="tile" style="font-size:42px;">📣</div>
+            <div class="tile" style="font-size:38px;">📣</div>
           </div>
           <div class="card-right">
             <h3>Divulgação</h3>
             <p>Ferramentas para comunicação e marketing</p>
+          </div>
+        </a>
+
+        <!-- ✅ NOVO: ADMINISTRATIVO -->
+        <a class="card theme-blue" data-feature="administrativo" href="./administrativo.html">
+          <div class="card-left">
+            <div class="tile" style="font-size:38px;">🗂️</div>
+          </div>
+          <div class="card-right">
+            <h3>Administrativo</h3>
+            <p>Frota leve, cheques e solicitações por filial</p>
           </div>
         </a>
       </div>
@@ -84,8 +145,8 @@
 
     // ✅ esconde cards não liberados para o estado
     window.addEventListener("DOMContentLoaded", () => {
-      const uf = getSelectedState();
-      const user = getUser();
+      const uf = getSelectedState?.() || "";
+      const user = getUser?.() || "";
 
       const sub = document.getElementById("homeSub");
       if(sub){
@@ -94,7 +155,7 @@
 
       document.querySelectorAll("[data-feature]").forEach((card) => {
         const feature = card.getAttribute("data-feature");
-        if(!canAccessFeature(feature)){
+        if(typeof canAccessFeature === "function" && !canAccessFeature(feature)){
           card.style.display = "none";
         }
       });

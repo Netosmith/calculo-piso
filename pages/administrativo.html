@@ -6,126 +6,7 @@
   <title>Administrativo | NOVA FROTA</title>
 
   <link rel="stylesheet" href="../assets/css/app.css" />
-
-  <style>
-    .container{max-width:1650px}
-    .pageAdmin{
-      display:flex; flex-direction:column; gap:12px;
-      min-height:calc(100vh - 72px);
-      padding:18px 0 18px;
-      background:#F5F7FA;
-    }
-    .card{padding:14px; overflow:hidden; background:#fff; border:1px solid #E5E7EB; border-radius:18px; box-shadow:0 4px 12px rgba(0,0,0,.04)}
-    .topTitle{display:flex; justify-content:space-between; align-items:flex-end; gap:10px; flex-wrap:wrap}
-    .topTitle h1{margin:0; font-size:18px; font-weight:950; color:#0F172A}
-    .sub{font-size:12px; color:rgba(17,24,39,.70); max-width:980px}
-
-    /* tabs */
-    .tabs{display:flex; gap:8px; flex-wrap:wrap}
-    .tabBtn{
-      height:34px; padding:0 12px; border-radius:12px;
-      border:1px solid #D1D5DB; background:#fff; color:#0F172A;
-      font-weight:900; cursor:pointer;
-    }
-    .tabBtn.active{background:#0F172A; color:#fff; border-color:#0B1220}
-    .tabPanel{display:none}
-    .tabPanel.active{display:block}
-
-    /* toolbar */
-    .toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-    .spacer{flex:1 1 auto}
-    .label{font-size:11px; font-weight:950; color:#0F172A; opacity:.9}
-    .sel, .inp, textarea{
-      height:34px; padding:6px 10px; border-radius:12px;
-      border:1px solid #D1D5DB; background:#fff; color:#111827;
-      outline:none; font-size:12px;
-      text-transform: uppercase; /* ✅ força maiúsculo */
-    }
-    textarea{height:auto; min-height:72px; resize:vertical}
-    .sel{width:220px}
-    .inp{width:min(380px,55vw)}
-    @media (max-width:700px){ .sel,.inp{width:100%} }
-
-    .btnTiny{
-      height:34px; padding:0 12px; border-radius:12px;
-      border:1px solid rgba(15,23,42,.14);
-      background:#0F172A; color:#fff; font-weight:950;
-      cursor:pointer; white-space:nowrap;
-    }
-    .btnTiny:hover{filter:brightness(1.06)}
-    .btnTiny.ghost{background:#fff; color:#0F172A; border:1px solid #D1D5DB}
-    .btnTiny.green{background:#0B3B2E; border-color:rgba(6,118,71,.25)}
-    .btnTiny.blue{background:#102A6B; border-color:rgba(59,130,246,.35)}
-
-    /* table */
-    .tableWrap{
-      overflow:auto; border:1px solid rgba(43,58,114,.25);
-      border-radius:14px; background:#fff;
-      max-height: calc(100vh - 360px);
-      min-height: 360px;
-    }
-    table{width:100%; border-collapse:collapse; min-width:1100px; background:#fff;}
-    th,td{
-      padding:8px 10px; border-bottom:1px solid #E5E7EB;
-      font-size:12px; white-space:nowrap; color:#111827;
-      vertical-align:middle;
-    }
-    thead th{
-      position:sticky; top:0; z-index:3;
-      background:#0F172A; color:#fff; font-size:11px;
-      letter-spacing:.02em;
-      border-bottom:1px solid #0B1220;
-    }
-    tbody tr:nth-child(even){background:#F1F4F9;}
-    tbody tr:hover{background:#E8EDFF;}
-    .num{text-align:right;}
-    .muted{color:rgba(17,24,39,.70); font-size:12px}
-
-    /* upload */
-    .fileInput{display:none}
-    .uploadBtn{
-      height:30px; padding:0 10px; border-radius:999px;
-      border:1px solid rgba(17,24,39,.15);
-      background:#fff; cursor:pointer; font-weight:900;
-    }
-    .uploadBtn:hover{filter:brightness(1.03)}
-
-    /* status pills */
-    .pill{
-      display:inline-flex; align-items:center; justify-content:center;
-      height:24px; padding:0 10px; border-radius:999px;
-      border:1px solid rgba(17,24,39,.14); font-weight:950; font-size:11px;
-      background:#EEF2F7; color:#0F172A;
-    }
-    .pill.ok{background:#DCFCE7; border-color:#86EFAC; color:#166534;}
-    .pill.warn{background:#FEF9C3; border-color:#FDE68A; color:#854D0E;}
-    .pill.bad{background:#FEE2E2; border-color:#FCA5A5; color:#7F1D1D;}
-
-    /* modal */
-    #modal{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:9999;
-      background:rgba(0,0,0,.55); backdrop-filter: blur(6px); padding:18px;}
-    #modal.show{display:flex}
-    .modalCard{width:min(980px, 100%); background:#fff; border:1px solid #E5E7EB; border-radius:18px;
-      box-shadow:0 18px 45px rgba(0,0,0,.28); overflow:hidden;}
-    .modalHead{display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:12px 14px; border-bottom:1px solid #E5E7EB; background:#F8FAFC;}
-    .modalHead h2{margin:0; font-size:14px; font-weight:950; color:#0F172A}
-    .iconClose{width:34px;height:34px;border-radius:12px;border:1px solid #D1D5DB;background:#fff;cursor:pointer;font-weight:900;color:#0F172A}
-    .modalBody{padding:14px; max-height: calc(100vh - 220px); overflow:auto;}
-    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-    @media (max-width:900px){ .grid2{grid-template-columns:1fr;} }
-    .field label{display:block; font-size:11px; font-weight:950; color:#0F172A; margin:0 0 6px}
-    .field input, .field select, .field textarea{
-      width:100%; border-radius:12px; border:1px solid #D1D5DB; background:#fff; outline:none;
-      font-size:12px; color:#111827; padding:6px 10px;
-      text-transform: uppercase; /* ✅ força maiúsculo */
-    }
-    .field input, .field select{height:34px;}
-    .field input:focus, .field select:focus, .field textarea:focus{
-      border-color:#5B7CFA; box-shadow:0 0 0 3px rgba(91,124,250,.18);
-    }
-    .modalFoot{display:flex; justify-content:flex-end; gap:10px; padding:12px 14px; border-top:1px solid #E5E7EB; background:#F8FAFC;}
-  </style>
+  <link rel="stylesheet" href="../assets/css/administrativo.css" />
 </head>
 
 <body>
@@ -135,143 +16,104 @@
         <a class="burger" href="./home.html" title="Voltar"><div></div></a>
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
+
       <div class="actions">
+        <div class="icon-btn" title="Configurações">⚙️</div>
         <div class="icon-btn" title="Sair" data-logout>👤</div>
       </div>
     </div>
   </div>
 
-  <div class="container pageAdmin">
-    <div class="card">
-      <div class="topTitle">
-        <div>
-          <h1>ADMINISTRATIVO <span id="adminStatus" class="muted" style="margin-left:10px;">• pronto</span></h1>
-          <div class="sub">
-            Central de rotinas: <b>Frota Leve</b> (checklist mensal com fotos) • <b>Cheques</b> (termo assinado) • <b>Solicitações</b> (previsão por filial).
-            <span class="muted">Uploads vão para Google Drive (ID da pasta será configurado depois).</span>
+  <section class="hero admin-hero">
+    <div class="container hero-content admin-wrap">
+
+      <div class="admin-head">
+        <div class="admin-title">
+          <div class="admin-title-row">
+            <div class="admin-gear">⚙️</div>
+            <div>
+              <div class="admin-h1">ADMINISTRATIVO</div>
+              <div class="admin-sub" id="adminSub">Central de rotinas internas (frota, cheques e solicitações).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- resumo topo -->
+      <div class="admin-summary">
+        <button class="sumCard sumBlue" data-tab="frota" type="button">
+          <div class="sumIcon">🚗</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Frota leve</div>
+            <div class="sumValue"><span id="kpiFrota">0</span> veículos</div>
+          </div>
+        </button>
+
+        <button class="sumCard sumGreen" data-tab="cheques" type="button">
+          <div class="sumIcon">💳</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Cheques em circulação</div>
+            <div class="sumValue"><span id="kpiCheques">0</span> ativos</div>
+          </div>
+        </button>
+
+        <button class="sumCard sumGold" data-tab="solicitacoes" type="button">
+          <div class="sumIcon">📋</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Solicitações abertas</div>
+            <div class="sumValue"><span id="kpiSolic">0</span> aguardando envio</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- abas -->
+      <div class="admin-tabs">
+        <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
+        <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
+        <button class="tabBtn" data-tab="solicitacoes" type="button">Solicitações</button>
+        <div class="tabLine"></div>
+      </div>
+
+      <!-- conteúdo -->
+      <div class="admin-panel">
+        <div class="panelHead">
+          <div class="panelTitle" id="panelTitle">Frota Leve</div>
+          <div class="panelRight">
+            <select class="adminSelect" id="fFilialAdmin" title="Filial">
+              <option value="">Todas as filiais</option>
+            </select>
+
+            <input class="adminSearch" id="fBuscaAdmin" placeholder="Buscar..." />
+
+            <button class="btnAdmin ghost" id="btnAdminReload" type="button">Atualizar</button>
+            <button class="btnAdmin" id="btnAdminNovo" type="button">+ Novo</button>
           </div>
         </div>
 
-        <div class="tabs">
-          <button class="tabBtn active" data-tab="frota">Frota Leve</button>
-          <button class="tabBtn" data-tab="cheques">Cheques</button>
-          <button class="tabBtn" data-tab="solicit">Solicitações</button>
+        <!-- views -->
+        <div class="panelBody">
+          <!-- Frota -->
+          <div class="view isActive" id="view-frota">
+            <div class="cardsGrid" id="gridFrota"></div>
+          </div>
+
+          <!-- Cheques -->
+          <div class="view" id="view-cheques">
+            <div class="cardsGrid" id="gridCheques"></div>
+          </div>
+
+          <!-- Solicitações -->
+          <div class="view" id="view-solicitacoes">
+            <div class="cardsGrid" id="gridSolic"></div>
+          </div>
         </div>
       </div>
+
     </div>
+  </section>
 
-    <!-- PAINEL: FROTA -->
-    <div class="card tabPanel active" id="tab-frota">
-      <div class="toolbar">
-        <span class="label">Filial:</span>
-        <select class="sel" id="fltFrotaFilial">
-          <option value="">TODAS</option>
-        </select>
-
-        <input class="inp" id="fltFrotaBusca" placeholder="Buscar (placa, condutor)..." />
-
-        <div class="spacer"></div>
-        <button class="btnTiny green" id="btnNovoVeic" type="button">+ Novo Veículo</button>
-      </div>
-
-      <div class="tableWrap" style="margin-top:12px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Placa</th>
-              <th>Condutor</th>
-              <th>Filial</th>
-              <th>Checklist Mensal (Upload)</th>
-              <th>Histórico</th>
-            </tr>
-          </thead>
-          <tbody id="tbFrota"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- PAINEL: CHEQUES -->
-    <div class="card tabPanel" id="tab-cheques">
-      <div class="toolbar">
-        <span class="label">Filial:</span>
-        <select class="sel" id="fltChequeFilial">
-          <option value="">TODAS</option>
-        </select>
-
-        <input class="inp" id="fltChequeBusca" placeholder="Buscar (sequência, contato)..." />
-
-        <div class="spacer"></div>
-        <button class="btnTiny green" id="btnNovoCheque" type="button">+ Novo Registro</button>
-      </div>
-
-      <div class="tableWrap" style="margin-top:12px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Filial</th>
-              <th>Data</th>
-              <th>Sequência</th>
-              <th>Contato</th>
-              <th>Termo Assinado (Upload)</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="tbCheques"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- PAINEL: SOLICITAÇÕES -->
-    <div class="card tabPanel" id="tab-solicit">
-      <div class="toolbar">
-        <span class="label">Filial:</span>
-        <select class="sel" id="fltSolFilial">
-          <option value="">TODAS</option>
-        </select>
-
-        <input class="inp" id="fltSolBusca" placeholder="Buscar (observação)..." />
-
-        <div class="spacer"></div>
-        <button class="btnTiny green" id="btnNovaSol" type="button">+ Nova Solicitação</button>
-      </div>
-
-      <div class="tableWrap" style="margin-top:12px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Filial</th>
-              <th>Data</th>
-              <th>Qtd</th>
-              <th>Previsto Para</th>
-              <th>Status</th>
-              <th>Observação</th>
-            </tr>
-          </thead>
-          <tbody id="tbSolic"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL (reaproveitável) -->
-  <div id="modal" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modalHead">
-        <h2 id="modalTitle">Novo</h2>
-        <button class="iconClose" id="btnCloseModal" type="button" title="Fechar">✕</button>
-      </div>
-      <div class="modalBody" id="modalBody"></div>
-      <div class="modalFoot">
-        <button class="btnTiny ghost" id="btnCancel" type="button">Cancelar</button>
-        <button class="btnTiny green" id="btnSave" type="button">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- scripts -->
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/administrativo.js"></script>
-
   <script>
     requireHomeAuth();
     bindLogoutButton();

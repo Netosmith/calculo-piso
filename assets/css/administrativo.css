@@ -8,6 +8,21 @@
   padding-bottom: 30px;
 }
 
+/* ===== Correção geral: impedir "texto preto feio" ===== */
+.adminPage, .adminPage *{ color: var(--text); }
+.adminPage input,
+.adminPage select,
+.adminPage textarea{
+  color: var(--text) !important;
+  background: rgba(13,20,48,.65) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+}
+.adminPage input::placeholder,
+.adminPage textarea::placeholder{
+  color: rgba(233,238,252,.55) !important;
+}
+.adminPage select option{ color:#0b1020; }
+
 /* Head */
 .admin-head{
   margin-top: 36px;
@@ -47,6 +62,12 @@
   font-size: 14px;
   text-shadow: 0 10px 40px rgba(0,0,0,.65);
 }
+.admin-sync{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(233,238,252,.72);
+  opacity: .92;
+}
 
 /* Summary cards */
 .admin-summary{
@@ -57,7 +78,7 @@
 }
 @media (min-width: 920px){
   .admin-summary{
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 14px;
   }
 }
@@ -101,6 +122,8 @@
 .sumBlue{ background: linear-gradient(135deg, rgba(18,40,90,.86), rgba(14,20,48,.72)); }
 .sumGreen{ background: linear-gradient(135deg, rgba(14,70,52,.90), rgba(13,28,40,.72)); }
 .sumGold{ background: linear-gradient(135deg, rgba(116,92,24,.86), rgba(20,22,32,.72)); }
+.sumPurple{ background: linear-gradient(135deg, rgba(94,35,80,.88), rgba(26,20,48,.72)); }
+.sumSlate{ background: linear-gradient(135deg, rgba(26,34,50,.88), rgba(14,20,48,.72)); }
 
 /* Tabs */
 .admin-tabs{
@@ -110,6 +133,7 @@
   gap: 16px;
   position: relative;
   padding-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .tabBtn{
@@ -217,7 +241,7 @@
   .cardsGrid{ grid-template-columns: 1fr 1fr 1fr; }
 }
 
-/* Card item (veículo/cheque/solicitação) */
+/* Card item */
 .adminCard{
   border-radius: 18px;
   background: rgba(255,255,255,.06);
@@ -303,6 +327,9 @@
 .pill.ok{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.35); }
 .pill.pendente{ background: rgba(250,204,21,.16); border-color: rgba(250,204,21,.34); }
 .pill.atrasado{ background: rgba(239,68,68,.16); border-color: rgba(239,68,68,.34); }
+.pill.aberta{ background: rgba(59,130,246,.16); border-color: rgba(59,130,246,.34); }
+.pill.andamento{ background: rgba(250,204,21,.16); border-color: rgba(250,204,21,.34); }
+.pill.finalizada{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.35); }
 
 .linkBtn{
   height: 28px;
@@ -315,3 +342,143 @@
   cursor:pointer;
 }
 .linkBtn:hover{ filter: brightness(1.08); }
+
+/* ===== Cheques: histórico dentro do card ===== */
+.chequeList{
+  padding: 0 14px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.chequeRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(13,20,48,.35);
+}
+.chequeLeft{
+  min-width:0;
+  flex:1;
+}
+.chequeLeft .l1{
+  font-weight: 950;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.chequeLeft .l2{
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(233,238,252,.72);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.chequeActions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex:0 0 auto;
+}
+.btnMini{
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(233,238,252,.92);
+  font-weight: 900;
+  cursor:pointer;
+}
+.btnMini:hover{ filter: brightness(1.08); }
+.btnMini.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.14); }
+.btnMini.warn{ border-color: rgba(250,204,21,.34); background: rgba(250,204,21,.12); }
+
+/* ===== Modal ===== */
+#modalAdmin{
+  position: fixed;
+  inset: 0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  padding: 18px;
+}
+#modalAdmin.isOpen{ display:flex; }
+
+.modalCard{
+  width: min(980px, 100%);
+  border-radius: 18px;
+  background: rgba(17,26,51,.92);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 55px rgba(0,0,0,.55);
+  overflow:hidden;
+}
+.modalHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+.modalHead h2{
+  margin:0;
+  font-size: 14px;
+  font-weight: 1000;
+}
+.iconClose{
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  cursor:pointer;
+  font-weight: 1000;
+}
+.modalBody{
+  padding: 14px;
+  max-height: calc(100vh - 220px);
+  overflow:auto;
+}
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px){
+  .grid2{ grid-template-columns: 1fr; }
+}
+.field label{
+  display:block;
+  font-size: 11px;
+  font-weight: 950;
+  color: rgba(233,238,252,.92);
+  margin: 0 0 6px;
+}
+.field input, .field select, .field textarea{
+  width:100%;
+  border-radius: 12px;
+  padding: 10px 10px;
+  outline:none;
+}
+.field textarea{
+  min-height: 86px;
+  resize: vertical;
+}
+.modalFoot{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+}

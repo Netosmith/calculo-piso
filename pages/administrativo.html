@@ -25,7 +25,7 @@
   </div>
 
   <section class="hero admin-hero">
-    <div class="container hero-content admin-wrap">
+    <div class="container hero-content admin-wrap adminPage">
 
       <div class="admin-head">
         <div class="admin-title">
@@ -34,6 +34,7 @@
             <div>
               <div class="admin-h1">ADMINISTRATIVO</div>
               <div class="admin-sub" id="adminSub">Central de rotinas internas (frota, cheques e solicitações).</div>
+              <div class="admin-sync" id="adminSyncStatus">✅ Pronto</div>
             </div>
           </div>
         </div>
@@ -45,23 +46,39 @@
           <div class="sumIcon">🚗</div>
           <div class="sumTxt">
             <div class="sumTitle">Frota leve</div>
-            <div class="sumValue"><span id="kpiFrota">0</span> veículos</div>
+            <div class="sumValue"><span id="kpiFrota">0</span> itens</div>
           </div>
         </button>
 
         <button class="sumCard sumGreen" data-tab="cheques" type="button">
           <div class="sumIcon">💳</div>
           <div class="sumTxt">
-            <div class="sumTitle">Cheques em circulação</div>
-            <div class="sumValue"><span id="kpiCheques">0</span> ativos</div>
+            <div class="sumTitle">Cheques</div>
+            <div class="sumValue"><span id="kpiCheques">0</span> registros</div>
           </div>
         </button>
 
         <button class="sumCard sumGold" data-tab="solicitacoes" type="button">
           <div class="sumIcon">📋</div>
           <div class="sumTxt">
-            <div class="sumTitle">Solicitações abertas</div>
-            <div class="sumValue"><span id="kpiSolic">0</span> aguardando envio</div>
+            <div class="sumTitle">Solicitações</div>
+            <div class="sumValue"><span id="kpiSolic">0</span> abertas</div>
+          </div>
+        </button>
+
+        <button class="sumCard sumPurple" data-tab="patrimonio" type="button">
+          <div class="sumIcon">🏷️</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Patrimônio</div>
+            <div class="sumValue"><span id="kpiPatrimonio">0</span> itens</div>
+          </div>
+        </button>
+
+        <button class="sumCard sumSlate" data-tab="epis" type="button">
+          <div class="sumIcon">🦺</div>
+          <div class="sumTxt">
+            <div class="sumTitle">EPIs</div>
+            <div class="sumValue"><span id="kpiEpis">0</span> entregas</div>
           </div>
         </button>
       </div>
@@ -69,8 +86,10 @@
       <!-- abas -->
       <div class="admin-tabs">
         <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
-        <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
+        <button class="tabBtn" data-tab="cheques" type="button">Cheques em circulação</button>
         <button class="tabBtn" data-tab="solicitacoes" type="button">Solicitações</button>
+        <button class="tabBtn" data-tab="patrimonio" type="button">Patrimônio</button>
+        <button class="tabBtn" data-tab="epis" type="button">Controle de EPIs</button>
         <div class="tabLine"></div>
       </div>
 
@@ -106,11 +125,40 @@
           <div class="view" id="view-solicitacoes">
             <div class="cardsGrid" id="gridSolic"></div>
           </div>
+
+          <!-- Patrimônio -->
+          <div class="view" id="view-patrimonio">
+            <div class="cardsGrid" id="gridPatrimonio"></div>
+          </div>
+
+          <!-- EPIs -->
+          <div class="view" id="view-epis">
+            <div class="cardsGrid" id="gridEpis"></div>
+          </div>
         </div>
       </div>
 
     </div>
   </section>
+
+  <!-- ===== MODAL ===== -->
+  <div id="modalAdmin" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitleAdmin">
+      <div class="modalHead">
+        <h2 id="modalTitleAdmin">Novo</h2>
+        <button class="iconClose" id="btnCloseModalAdmin" type="button" title="Fechar">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid2" id="modalFieldsAdmin"></div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btnAdmin ghost" id="btnCancelModalAdmin" type="button">Cancelar</button>
+        <button class="btnAdmin" id="btnSaveModalAdmin" type="button">Salvar</button>
+      </div>
+    </div>
+  </div>
 
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/administrativo.js"></script>

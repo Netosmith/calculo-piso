@@ -1,0 +1,317 @@
+/* Mantém o mesmo tema do app.css, só especializa Administrativo */
+
+.admin-hero::before{
+  filter: saturate(1.05) brightness(.95);
+}
+
+.admin-wrap{
+  padding-bottom: 30px;
+}
+
+/* Head */
+.admin-head{
+  margin-top: 36px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.admin-title-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.admin-gear{
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  display:grid;
+  place-items:center;
+  font-size: 20px;
+  box-shadow: 0 16px 50px rgba(0,0,0,.35);
+}
+
+.admin-h1{
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: .02em;
+  text-shadow: 0 10px 40px rgba(0,0,0,.65);
+}
+.admin-sub{
+  margin-top: 4px;
+  color: rgba(233,238,252,.78);
+  font-size: 14px;
+  text-shadow: 0 10px 40px rgba(0,0,0,.65);
+}
+
+/* Summary cards */
+.admin-summary{
+  margin-top: 18px;
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 920px){
+  .admin-summary{
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+}
+
+.sumCard{
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(17,26,51,.70);
+  box-shadow: var(--shadow);
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 14px 14px;
+  cursor:pointer;
+  transition: transform .12s ease, filter .12s ease;
+}
+.sumCard:hover{ transform: translateY(-2px); filter: brightness(1.06); }
+
+.sumIcon{
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+  display:grid;
+  place-items:center;
+  font-size: 22px;
+}
+.sumTitle{
+  font-weight: 950;
+  font-size: 14px;
+}
+.sumValue{
+  margin-top: 3px;
+  font-weight: 1000;
+  font-variant-numeric: tabular-nums;
+  opacity: .92;
+}
+.sumValue span{ font-size: 18px; }
+
+.sumBlue{ background: linear-gradient(135deg, rgba(18,40,90,.86), rgba(14,20,48,.72)); }
+.sumGreen{ background: linear-gradient(135deg, rgba(14,70,52,.90), rgba(13,28,40,.72)); }
+.sumGold{ background: linear-gradient(135deg, rgba(116,92,24,.86), rgba(20,22,32,.72)); }
+
+/* Tabs */
+.admin-tabs{
+  margin-top: 18px;
+  display:flex;
+  align-items:center;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.tabBtn{
+  background: transparent;
+  border: 0;
+  color: rgba(233,238,252,.80);
+  font-weight: 950;
+  font-size: 14px;
+  cursor:pointer;
+  padding: 10px 2px;
+  opacity: .85;
+}
+.tabBtn.isActive{
+  opacity: 1;
+  color: #ffffff;
+}
+.tabLine{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:1px;
+  background: rgba(255,255,255,.12);
+}
+
+/* Panel */
+.admin-panel{
+  margin-top: 10px;
+  border-radius: 18px;
+  background: rgba(17,26,51,.72);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+.panelHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 14px 14px;
+  background: rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  flex-wrap: wrap;
+}
+
+.panelTitle{
+  font-weight: 1000;
+  letter-spacing: .01em;
+  font-size: 16px;
+}
+
+.panelRight{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adminSelect, .adminSearch{
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(13,20,48,.65);
+  color: var(--text);
+  outline: none;
+  padding: 8px 10px;
+}
+.adminSelect{ min-width: 210px; }
+.adminSearch{ width: min(420px, 60vw); }
+
+.adminSelect:focus, .adminSearch:focus{
+  border-color: rgba(91,124,250,.75);
+  box-shadow: 0 0 0 3px rgba(91,124,250,.20);
+}
+
+.btnAdmin{
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(91,124,250,.60);
+  background: rgba(27,42,90,.75);
+  color: var(--text);
+  font-weight: 900;
+  cursor:pointer;
+}
+.btnAdmin:hover{ filter: brightness(1.08); }
+
+.btnAdmin.ghost{
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+}
+
+/* Views */
+.panelBody{ padding: 14px; }
+.view{ display:none; }
+.view.isActive{ display:block; }
+
+.cardsGrid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 920px){
+  .cardsGrid{ grid-template-columns: 1fr 1fr 1fr; }
+}
+
+/* Card item (veículo/cheque/solicitação) */
+.adminCard{
+  border-radius: 18px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 18px 50px rgba(0,0,0,.30);
+  overflow:hidden;
+}
+
+.adminCardTop{
+  padding: 14px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+.avatar{
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  overflow:hidden;
+  flex: 0 0 auto;
+  display:grid;
+  place-items:center;
+  font-weight: 1000;
+  color: rgba(233,238,252,.90);
+}
+
+.adminMain{
+  min-width: 0;
+  flex: 1;
+}
+.big{
+  font-size: 18px;
+  font-weight: 1000;
+  letter-spacing: .01em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.smallLine{
+  margin-top: 3px;
+  font-size: 13px;
+  color: rgba(233,238,252,.80);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tagLine{
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(233,238,252,.65);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.adminCardFoot{
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.12);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  font-weight: 950;
+  font-size: 12px;
+  letter-spacing:.02em;
+  user-select:none;
+  white-space:nowrap;
+}
+
+.pill.ok{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.35); }
+.pill.pendente{ background: rgba(250,204,21,.16); border-color: rgba(250,204,21,.34); }
+.pill.atrasado{ background: rgba(239,68,68,.16); border-color: rgba(239,68,68,.34); }
+
+.linkBtn{
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(233,238,252,.90);
+  font-weight: 900;
+  cursor:pointer;
+}
+.linkBtn:hover{ filter: brightness(1.08); }

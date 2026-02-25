@@ -8,9 +8,10 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
 
   // ======================================================
-  // ✅ PLACEHOLDER: depois você coloca o ID do Drive
+  // ✅ DRIVE (RAIZ) - Pasta ADMINISTRATIVO
+  // Link: https://drive.google.com/drive/u/0/folders/1pXzVZWQrkgJb2E9JJeKP72h1cANovXhl
   // ======================================================
-  const DRIVE_FOLDER_ID = "COLOQUE_AQUI_DEPOIS";
+  const DRIVE_FOLDER_ID = "1pXzVZWQrkgJb2E9JJeKP72h1cANovXhl";
 
   // ======================================================
   // ✅ FILIAIS (ordem fixa)
@@ -346,7 +347,6 @@
       if (!map.has(f)) map.set(f, []);
       map.get(f).push(c);
     });
-    // ordenar cada lista
     for (const [k, arr] of map.entries()) map.set(k, sortCheques(arr));
     return map;
   }
@@ -359,7 +359,6 @@
     const filtered = applyFilters(list);
     const byFilial = groupChequesByFilial(filtered);
 
-    // ✅ Cards fixos: sempre percorre FILIAIS
     FILIAIS.forEach((filial) => {
       const hist = byFilial.get(filial) || [];
       const total = hist.length;
@@ -375,7 +374,7 @@
 
       const listHtml = hist.slice(0, 10).map((it) => {
         const hasTermo = !!it.termoUrl;
-        const termoTxt = hasTermo ? "Ver termo" : "Upload termo";
+        const termoTxt = hasTermo ? "Upload termo" : "Upload termo";
         const termoCls = hasTermo ? "ok" : "warn";
 
         return `
@@ -644,7 +643,6 @@
       ];
     }
 
-    // frota (simples, local)
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
@@ -698,7 +696,6 @@
         observacao: getVal("mObs"),
       };
     }
-    // frota
     return {
       filial: upper(getVal("mFilial")),
       placa: upper(getVal("mPlaca")),
@@ -742,7 +739,6 @@
     const tab = modal.ctx.tab;
     const payload = valuesFromModal(tab);
 
-    // valida básica
     if (!payload.filial) return alert("Selecione uma filial.");
 
     try {
@@ -762,7 +758,6 @@
         return;
       }
 
-      // demais: localStorage (já funciona)
       const list = tab === "solicitacoes" ? DATA.solicitacoes :
                    tab === "patrimonio" ? DATA.patrimonio :
                    tab === "epis" ? DATA.epis :
@@ -793,9 +788,6 @@
     saveLS(LS_KEYS.epis, DATA.epis);
   }
 
-  // ======================================================
-  // ✅ Actions gerais
-  // ======================================================
   async function reloadAll() {
     try {
       setStatus("🔄 Atualizando...");
@@ -812,29 +804,23 @@
     }
   }
 
-  // ======================================================
-  // Delegações (upload termo + abrir termo + novo por filial)
-  // ======================================================
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
-      // abrir termo
       if (el.matches("[data-open-termo]")) {
         const url = el.getAttribute("data-open-termo") || "";
         if (url) window.open(url, "_blank", "noopener");
         return;
       }
 
-      // abrir modal novo cheque já com filial
       if (el.matches("[data-new-cheque]")) {
         const filial = el.getAttribute("data-new-cheque") || "";
         openNew("cheques", { filial, data: todayBR(), status: "ATIVO" });
         return;
       }
 
-      // upload placeholder
       if (el.matches("[data-upload]")) {
         const type = el.getAttribute("data-upload");
         const placa = el.getAttribute("data-placa") || "";
@@ -850,14 +836,13 @@
           if (!file) return;
 
           alert(
-            `ARQUIVO SELECIONADO ✅\n\nTipo: ${type}\nRef: ${ref}\nArquivo: ${file.name}\n\nDrive Folder ID: ${DRIVE_FOLDER_ID}\n\n(Próxima etapa: subir pro Drive e salvar termoUrl no Sheets)`
+            `ARQUIVO SELECIONADO ✅\n\nTipo: ${type}\nRef: ${ref}\nArquivo: ${file.name}\n\nDrive Folder ID (ADMINISTRATIVO): ${DRIVE_FOLDER_ID}\n\n(Próxima etapa: subir pro Drive e salvar URL no Sheets)`
           );
         };
         input.click();
         return;
       }
 
-      // editar
       if (el.matches("[data-edit]")) {
         const tab = el.getAttribute("data-edit") || "";
         const id = el.getAttribute("data-id") || "";
@@ -867,9 +852,6 @@
     });
   }
 
-  // ======================================================
-  // Binds
-  // ======================================================
   function bindTabs() {
     document.querySelectorAll(".tabBtn").forEach((b) => {
       b.addEventListener("click", () => setActiveTab(b.dataset.tab));
@@ -897,7 +879,6 @@
       openNew(tab);
     });
 
-    // modal binds
     modal.el = $("#modalAdmin");
     modal.title = $("#modalTitleAdmin");
     modal.fields = $("#modalFieldsAdmin");
@@ -921,7 +902,7 @@
     const uf = (window.getSelectedState?.() || "").toUpperCase();
     const user = (window.getUser?.() || "");
     const sub = $("#adminSub");
-    if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf} | Drive: (definir depois)`;
+    if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf} | Drive: ${DRIVE_FOLDER_ID}`;
   }
 
   function escapeHtml(s) {

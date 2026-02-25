@@ -59,8 +59,6 @@
 
   // ======================================================
   // ✅ DADOS
-  // - cheques vem do Sheets via API
-  // - outros ficam locais (já funcionando)
   // ======================================================
   const DATA = {
     frota: loadLS(LS_KEYS.frota, [
@@ -104,7 +102,7 @@
   }
 
   // ======================================================
-  // ✅ JSONP helper (resolve CORS)
+  // ✅ JSONP helper (resolve CORS p/ cheques via GET)
   // ======================================================
   function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
@@ -145,7 +143,58 @@
   }
 
   // ======================================================
-  // ✅ CHEQUES: lista do Sheets + salvar via JSONP (evita Failed to fetch)
+  // ✅ POST JSON (para cheques_update e outras actions)
+  // ======================================================
+  async function apiPostJson(bodyObj) {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(bodyObj || {}),
+    });
+
+    const txt = await res.text().catch(() => "");
+    let data;
+    try { data = txt ? JSON.parse(txt) : null; }
+    catch { throw new Error("Resposta inválida da API (JSON): " + txt.slice(0, 200)); }
+
+    if (!res.ok || data?.ok === false) {
+      throw new Error(data?.error || ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  // ======================================================
+  // ✅ Upload REAL para Drive (POST multipart/form-data)
+  // action=drive_upload no Apps Script
+  // ======================================================
+  async function driveUpload(file, meta) {
+    const url = new URL(API_URL);
+    url.searchParams.set("action", "drive_upload");
+    url.searchParams.set("folderId", DRIVE_FOLDER_ID);
+
+    url.searchParams.set("type", meta.type || "ARQUIVO");
+    url.searchParams.set("ref", meta.ref || "");
+    url.searchParams.set("filename", file.name || ("upload_" + Date.now()));
+    if (meta.filial) url.searchParams.set("filial", meta.filial);
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    const resp = await fetch(url.toString(), { method: "POST", body: fd });
+    const txt = await resp.text().catch(() => "");
+    let data;
+    try { data = txt ? JSON.parse(txt) : null; }
+    catch { throw new Error("Resposta inválida do upload: " + txt.slice(0, 200)); }
+
+    if (!resp.ok || data?.ok === false) {
+      throw new Error(data?.error || ("HTTP " + resp.status));
+    }
+    return data.data; // {fileId,url,name,...}
+  }
+
+  // ======================================================
+  // ✅ CHEQUES: lista do Sheets + salvar via JSONP/GET
   // ======================================================
   function normalizeChequeRow(r) {
     return {
@@ -189,7 +238,6 @@
     DATA.cheques = sortCheques(arr.map(normalizeChequeRow));
   }
 
-  // ✅ AJUSTE PRINCIPAL: salvar cheque via JSONP/GET (cheques_add)
   async function createChequeOnSheets(payload) {
     const params = {
       action: "cheques_add",
@@ -204,6 +252,11 @@
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
     return res.data;
+  }
+
+  async function updateChequeOnSheets(payload) {
+    // payload: {id, termoUrl, termoNome, status?}
+    return apiPostJson({ action: "cheques_update", ...payload });
   }
 
   // ======================================================
@@ -292,7 +345,11 @@
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.mes)} ${upper(it.status)}</span>
-          <button class="linkBtn" type="button" data-upload="checklist" data-placa="${upper(it.placa)}">Upload checklist mensal</button>
+          <button class="linkBtn" type="button"
+            data-upload="checklist"
+            data-placa="${upper(it.placa)}"
+            data-filial="${upper(it.filial)}"
+          >Upload checklist mensal</button>
         </div>
       `;
       wrap.appendChild(card);
@@ -604,7 +661,6 @@
       ];
     }
 
-    // frota
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
@@ -713,7 +769,7 @@
         await createChequeOnSheets(payload);
 
         closeModal();
-        await reloadAll(); // ✅ agora recarrega do Sheets e atualiza o histórico
+        await reloadAll();
         return;
       }
 
@@ -762,45 +818,8 @@
   }
 
   // ======================================================
-  // ✅ Upload (placeholder) + pronto para integrar Drive via Apps Script
+  // ✅ Delegações (upload termo/checklist + abrir termo + novo por filial)
   // ======================================================
-  async function uploadFileToDriveViaJsonp(file, meta) {
-    // ⚠️ Só funciona quando você adicionar action=drive_upload no Apps Script.
-    // Aqui fica pronto o lado do front.
-    const base64 = await fileToBase64_(file);
-    const params = {
-      action: "drive_upload",
-      folderId: DRIVE_FOLDER_ID,
-      // meta:
-      kind: meta.kind || "",
-      filial: meta.filial || "",
-      placa: meta.placa || "",
-      chequeId: meta.chequeId || "",
-      filename: file.name,
-      mimeType: file.type || "application/octet-stream",
-      data: base64, // base64 sem prefixo
-    };
-
-    const url = buildUrl(params);
-    const res = await jsonp(url, 60000);
-    if (!res || res.ok === false) throw new Error(res?.error || "Falha no upload");
-    return res.data; // {fileId, fileUrl, name}
-  }
-
-  function fileToBase64_(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
-      reader.onload = () => {
-        const result = String(reader.result || "");
-        // remove "data:...;base64,"
-        const idx = result.indexOf("base64,");
-        resolve(idx >= 0 ? result.slice(idx + 7) : result);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
@@ -818,49 +837,56 @@
         return;
       }
 
+      // ✅ UPLOAD REAL PARA DRIVE + (se termo) salva no Sheets
       if (el.matches("[data-upload]")) {
-        const type = el.getAttribute("data-upload"); // checklist | termo
+        const type = el.getAttribute("data-upload") || ""; // checklist | termo
         const placa = el.getAttribute("data-placa") || "";
         const seq = el.getAttribute("data-seq") || "";
-        const id = el.getAttribute("data-id") || "";
-        const ref = placa || seq || id || "ITEM";
+        const id = el.getAttribute("data-id") || "";       // cheque id
+        const filial = upper(el.getAttribute("data-filial") || ""); // vem no termo; checklist também passa
+        const ref = seq || placa || id || "ITEM";
 
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*,application/pdf";
+
         input.onchange = async () => {
           const file = input.files && input.files[0];
           if (!file) return;
 
-          // ✅ por enquanto continua avisando (seu Apps Script ainda não tem drive_upload)
-          alert(
-            `ARQUIVO SELECIONADO ✅\n\nTipo: ${type}\nRef: ${ref}\nArquivo: ${file.name}\n\nDrive Folder ID (ADMINISTRATIVO): ${DRIVE_FOLDER_ID}\n\n` +
-            `Para ENVIAR ao Drive de verdade, falta só adicionar a action "drive_upload" no Apps Script.`
-          );
+          try {
+            setStatus("⬆️ Enviando para o Drive...");
 
-          // Quando você liberar a action no Apps Script, descomenta este bloco:
-          /*
-          try{
-            setStatus("☁️ Enviando para o Drive...");
-            const meta = {
-              kind: type,
-              filial: "",      // se quiser, posso passar filial
-              placa: placa,
-              chequeId: id
-            };
-            const up = await uploadFileToDriveViaJsonp(file, meta);
-            setStatus("✅ Upload OK");
+            const up = await driveUpload(file, {
+              type: type,
+              filial: filial,
+              ref: ref,
+            });
 
-            // aqui a gente salva termoUrl no cheque via cheques_update (próximo passo)
-            // ex: if(type==="termo") await updateChequeOnSheets({id, termoUrl: up.fileUrl, termoNome: up.name});
+            // ✅ Se for TERMO, atualiza o cheque no Sheets
+            if (type === "termo" && id) {
+              setStatus("💾 Vinculando termo no cheque...");
+              await updateChequeOnSheets({
+                id: id,
+                termoUrl: up.url,
+                termoNome: up.name,
+              });
+              await reloadAll();
+              setStatus("✅ Termo anexado");
+              return;
+            }
 
-          }catch(err){
+            // checklist ou outros: só confirma
+            setStatus("✅ Upload concluído");
+            alert("✅ Upload OK!\n\nArquivo: " + up.name + "\nLink: " + up.url);
+
+          } catch (err) {
             console.error(err);
             setStatus("❌ Falha no upload");
-            alert(err.message || "Falha no upload");
+            alert("❌ Não foi possível enviar para o Drive.\n\nErro: " + (err?.message || err));
           }
-          */
         };
+
         input.click();
         return;
       }

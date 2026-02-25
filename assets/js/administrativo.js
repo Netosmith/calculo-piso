@@ -1,9 +1,9 @@
-/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial + upload Drive + salvar termoUrl) */
+/* administrativo.js | NOVA FROTA (cheques via JSONP + upload via iframe POST + salvar termoUrl) */
 (function () {
   "use strict";
 
   // ======================================================
-  // ✅ URL DO SEU WEB APP (Apps Script /exec)
+  // ✅ URL DO WEB APP (Apps Script /exec)
   // ======================================================
   const API_URL =
     "https://script.google.com/macros/s/AKfycbwEYA_DcUb3CwyM49yaJJLYn9aun27YMBQC6ejHMb-HSz1ibke2JmTIalNPnhC2OnTk/exec";
@@ -51,15 +51,11 @@
     }
   }
   function saveLS(key, arr) {
-    try {
-      localStorage.setItem(key, JSON.stringify(arr || []));
-    } catch {}
+    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
   }
 
   // ======================================================
   // ✅ DADOS
-  // - cheques vem do Sheets via API
-  // - outros ficam locais
   // ======================================================
   const DATA = {
     frota: loadLS(LS_KEYS.frota, [
@@ -103,9 +99,9 @@
   }
 
   // ======================================================
-  // ✅ JSONP helper (resolve CORS)
+  // ✅ JSONP helper (pros cheques)
   // ======================================================
-  function jsonp(url, timeoutMs = 45000) {
+  function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
       const s = document.createElement("script");
@@ -122,16 +118,10 @@
         s.remove();
       }
 
-      window[cb] = (data) => {
-        cleanup();
-        resolve(data);
-      };
+      window[cb] = (data) => { cleanup(); resolve(data); };
 
       s.src = url + sep + "callback=" + encodeURIComponent(cb);
-      s.onerror = () => {
-        cleanup();
-        reject(new Error("Erro ao carregar script (JSONP)"));
-      };
+      s.onerror = () => { cleanup(); reject(new Error("Erro ao carregar script (JSONP)")); };
 
       document.head.appendChild(s);
     });
@@ -144,7 +134,7 @@
   }
 
   // ======================================================
-  // ✅ CHEQUES: lista + salvar + update via JSONP (GET)
+  // ✅ CHEQUES via JSONP
   // ======================================================
   function normalizeChequeRow(r) {
     return {
@@ -187,26 +177,21 @@
   }
 
   async function createChequeOnSheets(payload) {
-    const params = {
+    const url = buildUrl({
       action: "cheques_add",
       filial: upper(payload.filial),
       data: safeText(payload.data),
       sequencia: safeText(payload.sequencia),
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
-    };
-
-    const url = buildUrl(params);
+    });
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
-    return res.data; // {id}
+    return res.data;
   }
 
   async function updateChequeOnSheets(payload) {
-    const params = {
-      action: "cheques_update",
-      id: safeText(payload.id),
-    };
+    const params = { action: "cheques_update", id: safeText(payload.id) };
     if (payload.status != null) params.status = upper(payload.status);
     if (payload.termoUrl != null) params.termoUrl = safeText(payload.termoUrl);
     if (payload.termoNome != null) params.termoNome = safeText(payload.termoNome);
@@ -214,12 +199,12 @@
     const url = buildUrl(params);
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
-    return res.data; // {ok:true}
+    return res.data;
   }
 
   // ======================================================
-  // ✅ DRIVE UPLOAD via JSONP (GET) BASE64
-  // Salva em: ADMINISTRATIVO / FILIAL / (CHEQUES|CHECKLISTS)
+  // ✅ UPLOAD sem CORS: POST via FORM + IFRAME + postMessage
+  // (sem base64 no URL, vai no body)
   // ======================================================
   function fileToBase64_(file) {
     return new Promise((resolve, reject) => {
@@ -234,36 +219,83 @@
     });
   }
 
-  async function uploadFileToDriveViaJsonp(file, meta) {
-    const base64 = await fileToBase64_(file);
+  function postFormViaIframe_(fields, timeoutMs = 120000) {
+    return new Promise((resolve, reject) => {
+      const frameName = "upf_" + Math.random().toString(36).slice(2);
+      const iframe = document.createElement("iframe");
+      iframe.name = frameName;
+      iframe.style.display = "none";
 
-    const params = {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = API_URL;
+      form.target = frameName;
+
+      Object.entries(fields || {}).forEach(([k, v]) => {
+        const inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = k;
+        inp.value = String(v ?? "");
+        form.appendChild(inp);
+      });
+
+      const timer = setTimeout(() => cleanup(new Error("Timeout no upload")), timeoutMs);
+
+      function cleanup(err) {
+        clearTimeout(timer);
+        window.removeEventListener("message", onMsg);
+        try { form.remove(); } catch {}
+        try { iframe.remove(); } catch {}
+        if (err) reject(err);
+      }
+
+      function onMsg(ev) {
+        // Aceita msg do googleusercontent (apps script) e do seu domínio.
+        // Se quiser travar mais, me diga o domínio exato do deploy.
+        const data = ev && ev.data;
+        if (!data || data.__nf_upload__ !== true) return;
+
+        cleanup(); // remove listeners e nós
+
+        if (data.ok === false) {
+          reject(new Error(data.error || "Falha no upload"));
+          return;
+        }
+        resolve(data.data);
+      }
+
+      window.addEventListener("message", onMsg);
+
+      document.body.appendChild(iframe);
+      document.body.appendChild(form);
+      form.submit();
+    });
+  }
+
+  async function uploadFileToDrive(file, meta) {
+    const b64 = await fileToBase64_(file);
+
+    const fields = {
       action: "drive_upload",
       folderId: DRIVE_FOLDER_ID,
       filial: upper(meta.filial || ""),
-      type: String(meta.type || ""),         // "termo" | "checklist"
-      ref: String(meta.ref || ""),           // seq/placa
+      type: String(meta.type || ""),  // "termo" | "checklist"
+      ref: String(meta.ref || ""),
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
-      data: base64,
+      data: b64,
     };
 
-    const url = buildUrl(params);
-
-    // ⚠️ Se o PDF for MUITO grande, o GET pode estourar limite de URL.
-    // Aí a gente muda para upload em "chunks" (me chama que eu ajusto).
-    const res = await jsonp(url, 120000);
-    if (!res || res.ok === false) throw new Error(res?.error || "Falha no drive_upload");
-    return res.data; // {fileId, name, url, folderFilial, folderTipo}
+    const res = await postFormViaIframe_(fields, 180000);
+    // res esperado: { fileId, name, url, folderFilial, folderTipo }
+    return res;
   }
 
   // ======================================================
   // ✅ UI: tabs + filtros
   // ======================================================
   function setActiveTab(tab) {
-    document.querySelectorAll(".tabBtn").forEach((b) => {
-      b.classList.toggle("isActive", b.dataset.tab === tab);
-    });
+    document.querySelectorAll(".tabBtn").forEach((b) => b.classList.toggle("isActive", b.dataset.tab === tab));
     document.querySelectorAll(".view").forEach((v) => v.classList.remove("isActive"));
     const view = document.getElementById("view-" + tab);
     if (view) view.classList.add("isActive");
@@ -382,9 +414,7 @@
       card.className = "adminCard";
 
       const subtitle =
-        total === 0
-          ? "Sem registros ainda"
-          : `Total: ${total} | Termo pendente: ${pendentes}`;
+        total === 0 ? "Sem registros ainda" : `Total: ${total} | Termo pendente: ${pendentes}`;
 
       const listHtml = hist.slice(0, 10).map((it) => {
         const hasTermo = !!it.termoUrl;
@@ -420,9 +450,7 @@
           </div>
         </div>
         <div class="chequeList">
-          ${total
-            ? listHtml
-            : `<div class="chequeRow"><div class="chequeLeft"><div class="l1">Nenhum cheque registrado</div><div class="l2">Use o botão + Novo para cadastrar a primeira sequência.</div></div></div>`}
+          ${total ? listHtml : `<div class="chequeRow"><div class="chequeLeft"><div class="l1">Nenhum cheque registrado</div><div class="l2">Use o botão + Novo para cadastrar a primeira sequência.</div></div></div>`}
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pendentes ? "pendente" : "ok"}">${pendentes ? "PENDENTE TERMO" : "TERMOS OK"}</span>
@@ -659,7 +687,6 @@
       ];
     }
 
-    // frota
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
@@ -729,21 +756,6 @@
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
   }
 
-  function openEdit(tab, id) {
-    modal.ctx = { mode: "edit", tab, id };
-    const schema = schemaFor(tab);
-
-    const list = tab === "solicitacoes" ? DATA.solicitacoes :
-      tab === "patrimonio" ? DATA.patrimonio :
-      tab === "epis" ? DATA.epis :
-      DATA.frota;
-
-    const item = list.find((x) => x.id === id);
-    if (!item) return;
-
-    openModal(`Editar - ${labelTab(tab)}`, schema, item);
-  }
-
   function labelTab(tab) {
     if (tab === "cheques") return "Cheques";
     if (tab === "solicitacoes") return "Solicitações";
@@ -755,7 +767,6 @@
   async function saveModal() {
     const tab = modal.ctx.tab;
     const payload = valuesFromModal(tab);
-
     if (!payload.filial) return alert("Selecione uma filial.");
 
     try {
@@ -763,10 +774,8 @@
         if (!payload.data || !payload.sequencia || !payload.responsavel) {
           return alert("Preencha: Data, Sequência e Responsável.");
         }
-
         setStatus("💾 Salvando cheque...");
         await createChequeOnSheets(payload);
-
         closeModal();
         await reloadAll();
         return;
@@ -817,35 +826,39 @@
   }
 
   // ======================================================
-  // ✅ Delegações (upload + abrir termo + novo por filial)
+  // ✅ Delegation (upload termo/checklist)
   // ======================================================
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
-      // abrir termo
       if (el.matches("[data-open-termo]")) {
         const url = el.getAttribute("data-open-termo") || "";
         if (url) window.open(url, "_blank", "noopener");
         return;
       }
 
-      // abrir modal novo cheque já com filial
       if (el.matches("[data-new-cheque]")) {
         const filial = el.getAttribute("data-new-cheque") || "";
         openNew("cheques", { filial, data: todayBR(), status: "ATIVO" });
         return;
       }
 
-      // upload (termo / checklist)
       if (el.matches("[data-upload]")) {
         const type = el.getAttribute("data-upload"); // "termo" | "checklist"
         const placa = el.getAttribute("data-placa") || "";
         const seq = el.getAttribute("data-seq") || "";
         const chequeId = el.getAttribute("data-id") || "";
-        const filial = upper(el.getAttribute("data-filial") || "");
+        let filial = upper(el.getAttribute("data-filial") || "");
+
         const ref = placa || seq || chequeId || "ITEM";
+
+        // fallback: se for checklist e não veio filial, tenta achar na frota
+        if (!filial && type === "checklist" && placa) {
+          const found = DATA.frota.find((x) => upper(x.placa) === upper(placa));
+          filial = upper(found?.filial || "");
+        }
 
         const input = document.createElement("input");
         input.type = "file";
@@ -855,32 +868,21 @@
           const file = input.files && input.files[0];
           if (!file) return;
 
+          if (!filial) {
+            alert("Não achei a FILIAL para salvar no Drive. (precisa vir data-filial no botão)");
+            return;
+          }
+
           try {
             setStatus("☁️ Enviando para o Drive...");
 
-            const meta = {
-              filial: filial || (type === "termo" ? upper(el.getAttribute("data-filial") || "") : ""),
-              type: String(type || ""),
-              ref: ref,
-            };
+            const up = await uploadFileToDrive(file, {
+              filial,
+              type,
+              ref,
+            });
 
-            if (!meta.filial) {
-              // fallback: se for checklist e não veio filial no botão, tenta achar na frota
-              if (type === "checklist" && placa) {
-                const found = DATA.frota.find((x) => upper(x.placa) === upper(placa));
-                meta.filial = upper(found?.filial || "");
-              }
-            }
-
-            if (!meta.filial) {
-              setStatus("❌ Falha no upload");
-              alert("Não achei a FILIAL para salvar no Drive. (precisa vir data-filial)");
-              return;
-            }
-
-            const up = await uploadFileToDriveViaJsonp(file, meta);
-
-            // ✅ se for termo, salva URL no Sheets no cheque correspondente
+            // termo: grava no Sheets
             if (type === "termo") {
               if (!chequeId) {
                 setStatus("⚠️ Upload OK (sem vínculo)");
@@ -888,7 +890,7 @@
                 return;
               }
 
-              setStatus("🧾 Salvando link do termo no cheque...");
+              setStatus("🧾 Salvando link do termo...");
               await updateChequeOnSheets({
                 id: chequeId,
                 termoUrl: up.url,
@@ -900,7 +902,7 @@
               return;
             }
 
-            // checklist: só subir e pronto
+            // checklist: só envia
             setStatus("✅ Checklist enviado");
             alert(`Checklist enviado ✅\n\nFilial: ${up.folderFilial}\nPasta: ${up.folderTipo}\nArquivo: ${up.name}`);
           } catch (err) {
@@ -913,37 +915,22 @@
         input.click();
         return;
       }
-
-      // editar
-      if (el.matches("[data-edit]")) {
-        const tab = el.getAttribute("data-edit") || "";
-        const id = el.getAttribute("data-id") || "";
-        if (tab && id) openEdit(tab, id);
-        return;
-      }
     });
   }
 
   // ======================================================
-  // Binds
+  // binds
   // ======================================================
   function bindTabs() {
-    document.querySelectorAll(".tabBtn").forEach((b) => {
-      b.addEventListener("click", () => setActiveTab(b.dataset.tab));
-    });
-
-    document.querySelectorAll(".sumCard").forEach((c) => {
-      c.addEventListener("click", () => setActiveTab(c.dataset.tab));
-    });
+    document.querySelectorAll(".tabBtn").forEach((b) => b.addEventListener("click", () => setActiveTab(b.dataset.tab)));
+    document.querySelectorAll(".sumCard").forEach((c) => c.addEventListener("click", () => setActiveTab(c.dataset.tab)));
   }
-
   function bindFilters() {
     const sel = $("#fFilialAdmin");
     const inp = $("#fBuscaAdmin");
     if (sel) sel.addEventListener("change", renderAll);
     if (inp) inp.addEventListener("input", renderAll);
   }
-
   function bindActions() {
     const btnReload = $("#btnAdminReload");
     if (btnReload) btnReload.addEventListener("click", reloadAll);
@@ -965,12 +952,8 @@
     modal.btnCancel.addEventListener("click", closeModal);
     modal.btnSave.addEventListener("click", saveModal);
 
-    modal.el.addEventListener("click", (ev) => {
-      if (ev.target === modal.el) closeModal();
-    });
-    document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && modal.el.classList.contains("isOpen")) closeModal();
-    });
+    modal.el.addEventListener("click", (ev) => { if (ev.target === modal.el) closeModal(); });
+    document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && modal.el.classList.contains("isOpen")) closeModal(); });
   }
 
   function initHeader() {

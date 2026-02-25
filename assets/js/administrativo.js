@@ -5,7 +5,7 @@
   // ======================================================
   // ✅ COLE AQUI A URL DO SEU WEB APP (Apps Script /exec)
   // ======================================================
-  const API_URL = "COLE_AQUI_SUA_URL_DO_APPS_SCRIPT_EXEC";
+  const API_URL = "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
 
   // ======================================================
   // ✅ PLACEHOLDER: depois você coloca o ID do Drive

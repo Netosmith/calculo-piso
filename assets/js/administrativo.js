@@ -1,4 +1,4 @@
-/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial + novas abas + modal) */
+/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial + upload Drive + salvar termoUrl) */
 (function () {
   "use strict";
 
@@ -10,7 +10,6 @@
 
   // ======================================================
   // ✅ DRIVE (RAIZ) - Pasta ADMINISTRATIVO
-  // Link: https://drive.google.com/drive/u/0/folders/1pXzVZWQrkgJb2E9JJeKP72h1cANovXhl
   // ======================================================
   const DRIVE_FOLDER_ID = "1pXzVZWQrkgJb2E9JJeKP72h1cANovXhl";
 
@@ -59,6 +58,8 @@
 
   // ======================================================
   // ✅ DADOS
+  // - cheques vem do Sheets via API
+  // - outros ficam locais
   // ======================================================
   const DATA = {
     frota: loadLS(LS_KEYS.frota, [
@@ -102,9 +103,9 @@
   }
 
   // ======================================================
-  // ✅ JSONP helper (resolve CORS p/ cheques via GET)
+  // ✅ JSONP helper (resolve CORS)
   // ======================================================
-  function jsonp(url, timeoutMs = 25000) {
+  function jsonp(url, timeoutMs = 45000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
       const s = document.createElement("script");
@@ -143,58 +144,7 @@
   }
 
   // ======================================================
-  // ✅ POST JSON (para cheques_update e outras actions)
-  // ======================================================
-  async function apiPostJson(bodyObj) {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify(bodyObj || {}),
-    });
-
-    const txt = await res.text().catch(() => "");
-    let data;
-    try { data = txt ? JSON.parse(txt) : null; }
-    catch { throw new Error("Resposta inválida da API (JSON): " + txt.slice(0, 200)); }
-
-    if (!res.ok || data?.ok === false) {
-      throw new Error(data?.error || ("HTTP " + res.status));
-    }
-    return data;
-  }
-
-  // ======================================================
-  // ✅ Upload REAL para Drive (POST multipart/form-data)
-  // action=drive_upload no Apps Script
-  // ======================================================
-  async function driveUpload(file, meta) {
-    const url = new URL(API_URL);
-    url.searchParams.set("action", "drive_upload");
-    url.searchParams.set("folderId", DRIVE_FOLDER_ID);
-
-    url.searchParams.set("type", meta.type || "ARQUIVO");
-    url.searchParams.set("ref", meta.ref || "");
-    url.searchParams.set("filename", file.name || ("upload_" + Date.now()));
-    if (meta.filial) url.searchParams.set("filial", meta.filial);
-
-    const fd = new FormData();
-    fd.append("file", file);
-
-    const resp = await fetch(url.toString(), { method: "POST", body: fd });
-    const txt = await resp.text().catch(() => "");
-    let data;
-    try { data = txt ? JSON.parse(txt) : null; }
-    catch { throw new Error("Resposta inválida do upload: " + txt.slice(0, 200)); }
-
-    if (!resp.ok || data?.ok === false) {
-      throw new Error(data?.error || ("HTTP " + resp.status));
-    }
-    return data.data; // {fileId,url,name,...}
-  }
-
-  // ======================================================
-  // ✅ CHEQUES: lista do Sheets + salvar via JSONP/GET
+  // ✅ CHEQUES: lista + salvar + update via JSONP (GET)
   // ======================================================
   function normalizeChequeRow(r) {
     return {
@@ -229,8 +179,6 @@
   }
 
   async function loadChequesFromSheets() {
-    if (!API_URL) return;
-
     const url = buildUrl({ action: "cheques_list" });
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
@@ -251,12 +199,62 @@
     const url = buildUrl(params);
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
-    return res.data;
+    return res.data; // {id}
   }
 
   async function updateChequeOnSheets(payload) {
-    // payload: {id, termoUrl, termoNome, status?}
-    return apiPostJson({ action: "cheques_update", ...payload });
+    const params = {
+      action: "cheques_update",
+      id: safeText(payload.id),
+    };
+    if (payload.status != null) params.status = upper(payload.status);
+    if (payload.termoUrl != null) params.termoUrl = safeText(payload.termoUrl);
+    if (payload.termoNome != null) params.termoNome = safeText(payload.termoNome);
+
+    const url = buildUrl(params);
+    const res = await jsonp(url);
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
+    return res.data; // {ok:true}
+  }
+
+  // ======================================================
+  // ✅ DRIVE UPLOAD via JSONP (GET) BASE64
+  // Salva em: ADMINISTRATIVO / FILIAL / (CHEQUES|CHECKLISTS)
+  // ======================================================
+  function fileToBase64_(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
+      reader.onload = () => {
+        const result = String(reader.result || "");
+        const idx = result.indexOf("base64,");
+        resolve(idx >= 0 ? result.slice(idx + 7) : result);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadFileToDriveViaJsonp(file, meta) {
+    const base64 = await fileToBase64_(file);
+
+    const params = {
+      action: "drive_upload",
+      folderId: DRIVE_FOLDER_ID,
+      filial: upper(meta.filial || ""),
+      type: String(meta.type || ""),         // "termo" | "checklist"
+      ref: String(meta.ref || ""),           // seq/placa
+      filename: file.name,
+      mimeType: file.type || "application/octet-stream",
+      data: base64,
+    };
+
+    const url = buildUrl(params);
+
+    // ⚠️ Se o PDF for MUITO grande, o GET pode estourar limite de URL.
+    // Aí a gente muda para upload em "chunks" (me chama que eu ajusto).
+    const res = await jsonp(url, 120000);
+    if (!res || res.ok === false) throw new Error(res?.error || "Falha no drive_upload");
+    return res.data; // {fileId, name, url, folderFilial, folderTipo}
   }
 
   // ======================================================
@@ -390,7 +388,7 @@
 
       const listHtml = hist.slice(0, 10).map((it) => {
         const hasTermo = !!it.termoUrl;
-        const termoTxt = hasTermo ? "Upload termo" : "Upload termo";
+        const termoTxt = hasTermo ? "Reenviar termo" : "Upload termo";
         const termoCls = hasTermo ? "ok" : "warn";
 
         return `
@@ -661,6 +659,7 @@
       ];
     }
 
+    // frota
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
@@ -818,33 +817,35 @@
   }
 
   // ======================================================
-  // ✅ Delegações (upload termo/checklist + abrir termo + novo por filial)
+  // ✅ Delegações (upload + abrir termo + novo por filial)
   // ======================================================
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
+      // abrir termo
       if (el.matches("[data-open-termo]")) {
         const url = el.getAttribute("data-open-termo") || "";
         if (url) window.open(url, "_blank", "noopener");
         return;
       }
 
+      // abrir modal novo cheque já com filial
       if (el.matches("[data-new-cheque]")) {
         const filial = el.getAttribute("data-new-cheque") || "";
         openNew("cheques", { filial, data: todayBR(), status: "ATIVO" });
         return;
       }
 
-      // ✅ UPLOAD REAL PARA DRIVE + (se termo) salva no Sheets
+      // upload (termo / checklist)
       if (el.matches("[data-upload]")) {
-        const type = el.getAttribute("data-upload") || ""; // checklist | termo
+        const type = el.getAttribute("data-upload"); // "termo" | "checklist"
         const placa = el.getAttribute("data-placa") || "";
         const seq = el.getAttribute("data-seq") || "";
-        const id = el.getAttribute("data-id") || "";       // cheque id
-        const filial = upper(el.getAttribute("data-filial") || ""); // vem no termo; checklist também passa
-        const ref = seq || placa || id || "ITEM";
+        const chequeId = el.getAttribute("data-id") || "";
+        const filial = upper(el.getAttribute("data-filial") || "");
+        const ref = placa || seq || chequeId || "ITEM";
 
         const input = document.createElement("input");
         input.type = "file";
@@ -855,35 +856,57 @@
           if (!file) return;
 
           try {
-            setStatus("⬆️ Enviando para o Drive...");
+            setStatus("☁️ Enviando para o Drive...");
 
-            const up = await driveUpload(file, {
-              type: type,
-              filial: filial,
+            const meta = {
+              filial: filial || (type === "termo" ? upper(el.getAttribute("data-filial") || "") : ""),
+              type: String(type || ""),
               ref: ref,
-            });
+            };
 
-            // ✅ Se for TERMO, atualiza o cheque no Sheets
-            if (type === "termo" && id) {
-              setStatus("💾 Vinculando termo no cheque...");
-              await updateChequeOnSheets({
-                id: id,
-                termoUrl: up.url,
-                termoNome: up.name,
-              });
-              await reloadAll();
-              setStatus("✅ Termo anexado");
+            if (!meta.filial) {
+              // fallback: se for checklist e não veio filial no botão, tenta achar na frota
+              if (type === "checklist" && placa) {
+                const found = DATA.frota.find((x) => upper(x.placa) === upper(placa));
+                meta.filial = upper(found?.filial || "");
+              }
+            }
+
+            if (!meta.filial) {
+              setStatus("❌ Falha no upload");
+              alert("Não achei a FILIAL para salvar no Drive. (precisa vir data-filial)");
               return;
             }
 
-            // checklist ou outros: só confirma
-            setStatus("✅ Upload concluído");
-            alert("✅ Upload OK!\n\nArquivo: " + up.name + "\nLink: " + up.url);
+            const up = await uploadFileToDriveViaJsonp(file, meta);
 
+            // ✅ se for termo, salva URL no Sheets no cheque correspondente
+            if (type === "termo") {
+              if (!chequeId) {
+                setStatus("⚠️ Upload OK (sem vínculo)");
+                alert("Upload OK, mas não encontrei o ID do cheque para salvar o termoUrl.");
+                return;
+              }
+
+              setStatus("🧾 Salvando link do termo no cheque...");
+              await updateChequeOnSheets({
+                id: chequeId,
+                termoUrl: up.url,
+                termoNome: up.name,
+              });
+
+              await reloadAll();
+              setStatus("✅ Termo enviado e vinculado");
+              return;
+            }
+
+            // checklist: só subir e pronto
+            setStatus("✅ Checklist enviado");
+            alert(`Checklist enviado ✅\n\nFilial: ${up.folderFilial}\nPasta: ${up.folderTipo}\nArquivo: ${up.name}`);
           } catch (err) {
             console.error(err);
             setStatus("❌ Falha no upload");
-            alert("❌ Não foi possível enviar para o Drive.\n\nErro: " + (err?.message || err));
+            alert(`Não foi possível enviar para o Drive.\n\nErro: ${err?.message || "Falha"}`);
           }
         };
 
@@ -891,6 +914,7 @@
         return;
       }
 
+      // editar
       if (el.matches("[data-edit]")) {
         const tab = el.getAttribute("data-edit") || "";
         const id = el.getAttribute("data-id") || "";
@@ -900,6 +924,9 @@
     });
   }
 
+  // ======================================================
+  // Binds
+  // ======================================================
   function bindTabs() {
     document.querySelectorAll(".tabBtn").forEach((b) => {
       b.addEventListener("click", () => setActiveTab(b.dataset.tab));

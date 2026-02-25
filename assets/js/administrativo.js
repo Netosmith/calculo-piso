@@ -3,9 +3,10 @@
   "use strict";
 
   // ======================================================
-  // ✅ COLE AQUI A URL DO SEU WEB APP (Apps Script /exec)
+  // ✅ URL DO SEU WEB APP (Apps Script /exec)
   // ======================================================
-  const API_URL = "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
 
   // ======================================================
   // ✅ DRIVE (RAIZ) - Pasta ADMINISTRATIVO
@@ -51,7 +52,9 @@
     }
   }
   function saveLS(key, arr) {
-    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
+    try {
+      localStorage.setItem(key, JSON.stringify(arr || []));
+    } catch {}
   }
 
   // ======================================================
@@ -86,6 +89,7 @@
   }
   function upper(v) { return String(v ?? "").trim().toUpperCase(); }
   function safeText(v) { return String(v ?? "").trim(); }
+
   function todayBR() {
     const d = new Date();
     const dd = String(d.getDate()).padStart(2, "0");
@@ -99,101 +103,49 @@
     if (el) el.textContent = text;
   }
 
-  // ----------------------------
-  // API helpers
-  // ----------------------------
-  async function apiGet(paramsObj) {
-    const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+  // ======================================================
+  // ✅ JSONP helper (resolve CORS)
+  // ======================================================
+  function jsonp(url, timeoutMs = 25000) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      const s = document.createElement("script");
+      const sep = url.includes("?") ? "&" : "?";
 
-    const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    const rawText = await res.text().catch(() => "");
+      const t = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timeout (JSONP)"));
+      }, timeoutMs);
 
-    const looksHtml =
-      ct.includes("text/html") ||
-      /^\s*<!doctype html/i.test(rawText) ||
-      /^\s*<html/i.test(rawText);
-
-    if (looksHtml) {
-      const err = new Error("API retornou HTML (deploy/permissão do Apps Script).");
-      err.httpStatus = res.status;
-      err.preview = rawText.slice(0, 260);
-      throw err;
-    }
-
-    let data = null;
-    try {
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch {
-      const t = String(rawText || "").trim();
-      const p1 = t.indexOf("(");
-      const p2 = t.lastIndexOf(")");
-      const looksJsonp = p1 > 0 && p2 > p1 && /^[a-zA-Z_$][\w$]*\s*\(/.test(t);
-      if (looksJsonp) {
-        const inner = t.slice(p1 + 1, p2).trim();
-        data = inner ? JSON.parse(inner) : null;
-      } else {
-        const err = new Error("Falha ao interpretar JSON da API.");
-        err.preview = t.slice(0, 260);
-        throw err;
+      function cleanup() {
+        clearTimeout(t);
+        try { delete window[cb]; } catch {}
+        s.remove();
       }
-    }
 
-    if (!res.ok) {
-      const err = new Error("HTTP " + res.status);
-      err.httpStatus = res.status;
-      err.data = data;
-      throw err;
-    }
+      window[cb] = (data) => {
+        cleanup();
+        resolve(data);
+      };
 
-    return data;
+      s.src = url + sep + "callback=" + encodeURIComponent(cb);
+      s.onerror = () => {
+        cleanup();
+        reject(new Error("Erro ao carregar script (JSONP)"));
+      };
+
+      document.head.appendChild(s);
+    });
   }
 
-  async function apiPost(jsonObj) {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jsonObj || {}),
-    });
-
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    const rawText = await res.text().catch(() => "");
-
-    const looksHtml =
-      ct.includes("text/html") ||
-      /^\s*<!doctype html/i.test(rawText) ||
-      /^\s*<html/i.test(rawText);
-
-    if (looksHtml) {
-      const err = new Error("API retornou HTML (deploy/permissão do Apps Script).");
-      err.httpStatus = res.status;
-      err.preview = rawText.slice(0, 260);
-      throw err;
-    }
-
-    let data = null;
-    try {
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch {
-      const err = new Error("Falha ao interpretar JSON da API (POST).");
-      err.preview = String(rawText || "").slice(0, 260);
-      throw err;
-    }
-
-    if (!res.ok) {
-      const err = new Error("HTTP " + res.status);
-      err.httpStatus = res.status;
-      err.data = data;
-      throw err;
-    }
-
-    return data;
+  function buildUrl(paramsObj) {
+    const url = new URL(API_URL);
+    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+    return url.toString();
   }
 
   // ======================================================
-  // ✅ CHEQUES: lista do Sheets + render fixo por filial
+  // ✅ CHEQUES: lista do Sheets + salvar via JSONP (evita Failed to fetch)
   // ======================================================
   function normalizeChequeRow(r) {
     return {
@@ -228,15 +180,18 @@
   }
 
   async function loadChequesFromSheets() {
-    if (!API_URL || API_URL.includes("COLE_AQUI")) return;
+    if (!API_URL) return;
 
-    const res = await apiGet({ action: "cheques_list" });
-    const arr = res?.data || [];
+    const url = buildUrl({ action: "cheques_list" });
+    const res = await jsonp(url);
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
+    const arr = res.data || [];
     DATA.cheques = sortCheques(arr.map(normalizeChequeRow));
   }
 
+  // ✅ AJUSTE PRINCIPAL: salvar cheque via JSONP/GET (cheques_add)
   async function createChequeOnSheets(payload) {
-    const body = {
+    const params = {
       action: "cheques_add",
       filial: upper(payload.filial),
       data: safeText(payload.data),
@@ -244,7 +199,11 @@
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
     };
-    return apiPost(body);
+
+    const url = buildUrl(params);
+    const res = await jsonp(url);
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
+    return res.data;
   }
 
   // ======================================================
@@ -324,7 +283,7 @@
       card.className = "adminCard";
       card.innerHTML = `
         <div class="adminCardTop">
-          <div class="avatar">${upper(it.placa).slice(0,2)}</div>
+          <div class="avatar">${upper(it.placa).slice(0, 2)}</div>
           <div class="adminMain">
             <div class="big">${upper(it.placa)}</div>
             <div class="smallLine">${safeText(it.condutor)}</div>
@@ -406,7 +365,9 @@
           </div>
         </div>
         <div class="chequeList">
-          ${total ? listHtml : `<div class="chequeRow"><div class="chequeLeft"><div class="l1">Nenhum cheque registrado</div><div class="l2">Use o botão + Novo para cadastrar a primeira sequência.</div></div></div>`}
+          ${total
+            ? listHtml
+            : `<div class="chequeRow"><div class="chequeLeft"><div class="l1">Nenhum cheque registrado</div><div class="l2">Use o botão + Novo para cadastrar a primeira sequência.</div></div></div>`}
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pendentes ? "pendente" : "ok"}">${pendentes ? "PENDENTE TERMO" : "TERMOS OK"}</span>
@@ -643,6 +604,7 @@
       ];
     }
 
+    // frota
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
@@ -717,9 +679,9 @@
     const schema = schemaFor(tab);
 
     const list = tab === "solicitacoes" ? DATA.solicitacoes :
-                 tab === "patrimonio" ? DATA.patrimonio :
-                 tab === "epis" ? DATA.epis :
-                 DATA.frota;
+      tab === "patrimonio" ? DATA.patrimonio :
+      tab === "epis" ? DATA.epis :
+      DATA.frota;
 
     const item = list.find((x) => x.id === id);
     if (!item) return;
@@ -747,21 +709,18 @@
           return alert("Preencha: Data, Sequência e Responsável.");
         }
 
-        if (!API_URL || API_URL.includes("COLE_AQUI")) {
-          return alert("Cole a API_URL do Apps Script no administrativo.js para salvar cheques no Sheets.");
-        }
-
         setStatus("💾 Salvando cheque...");
         await createChequeOnSheets(payload);
+
         closeModal();
-        await reloadAll();
+        await reloadAll(); // ✅ agora recarrega do Sheets e atualiza o histórico
         return;
       }
 
       const list = tab === "solicitacoes" ? DATA.solicitacoes :
-                   tab === "patrimonio" ? DATA.patrimonio :
-                   tab === "epis" ? DATA.epis :
-                   DATA.frota;
+        tab === "patrimonio" ? DATA.patrimonio :
+        tab === "epis" ? DATA.epis :
+        DATA.frota;
 
       if (modal.ctx.mode === "edit") {
         const idx = list.findIndex((x) => x.id === modal.ctx.id);
@@ -777,7 +736,7 @@
     } catch (e) {
       console.error("[admin] save erro:", e);
       setStatus("❌ Falha");
-      alert(e?.data?.error || e?.message || "Falha ao salvar.");
+      alert(e?.message || "Falha ao salvar.");
     }
   }
 
@@ -798,10 +757,48 @@
     } catch (e) {
       console.error("[admin] reload erro:", e);
       setStatus("❌ Erro ao atualizar");
-      if (String(e?.message || "").includes("retornou HTML")) {
-        alert("Erro de deploy/permissão do Apps Script (retornou HTML).");
-      }
+      alert(e?.message || "Erro ao atualizar cheques.");
     }
+  }
+
+  // ======================================================
+  // ✅ Upload (placeholder) + pronto para integrar Drive via Apps Script
+  // ======================================================
+  async function uploadFileToDriveViaJsonp(file, meta) {
+    // ⚠️ Só funciona quando você adicionar action=drive_upload no Apps Script.
+    // Aqui fica pronto o lado do front.
+    const base64 = await fileToBase64_(file);
+    const params = {
+      action: "drive_upload",
+      folderId: DRIVE_FOLDER_ID,
+      // meta:
+      kind: meta.kind || "",
+      filial: meta.filial || "",
+      placa: meta.placa || "",
+      chequeId: meta.chequeId || "",
+      filename: file.name,
+      mimeType: file.type || "application/octet-stream",
+      data: base64, // base64 sem prefixo
+    };
+
+    const url = buildUrl(params);
+    const res = await jsonp(url, 60000);
+    if (!res || res.ok === false) throw new Error(res?.error || "Falha no upload");
+    return res.data; // {fileId, fileUrl, name}
+  }
+
+  function fileToBase64_(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
+      reader.onload = () => {
+        const result = String(reader.result || "");
+        // remove "data:...;base64,"
+        const idx = result.indexOf("base64,");
+        resolve(idx >= 0 ? result.slice(idx + 7) : result);
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   function bindDelegation() {
@@ -822,7 +819,7 @@
       }
 
       if (el.matches("[data-upload]")) {
-        const type = el.getAttribute("data-upload");
+        const type = el.getAttribute("data-upload"); // checklist | termo
         const placa = el.getAttribute("data-placa") || "";
         const seq = el.getAttribute("data-seq") || "";
         const id = el.getAttribute("data-id") || "";
@@ -831,13 +828,38 @@
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*,application/pdf";
-        input.onchange = () => {
+        input.onchange = async () => {
           const file = input.files && input.files[0];
           if (!file) return;
 
+          // ✅ por enquanto continua avisando (seu Apps Script ainda não tem drive_upload)
           alert(
-            `ARQUIVO SELECIONADO ✅\n\nTipo: ${type}\nRef: ${ref}\nArquivo: ${file.name}\n\nDrive Folder ID (ADMINISTRATIVO): ${DRIVE_FOLDER_ID}\n\n(Próxima etapa: subir pro Drive e salvar URL no Sheets)`
+            `ARQUIVO SELECIONADO ✅\n\nTipo: ${type}\nRef: ${ref}\nArquivo: ${file.name}\n\nDrive Folder ID (ADMINISTRATIVO): ${DRIVE_FOLDER_ID}\n\n` +
+            `Para ENVIAR ao Drive de verdade, falta só adicionar a action "drive_upload" no Apps Script.`
           );
+
+          // Quando você liberar a action no Apps Script, descomenta este bloco:
+          /*
+          try{
+            setStatus("☁️ Enviando para o Drive...");
+            const meta = {
+              kind: type,
+              filial: "",      // se quiser, posso passar filial
+              placa: placa,
+              chequeId: id
+            };
+            const up = await uploadFileToDriveViaJsonp(file, meta);
+            setStatus("✅ Upload OK");
+
+            // aqui a gente salva termoUrl no cheque via cheques_update (próximo passo)
+            // ex: if(type==="termo") await updateChequeOnSheets({id, termoUrl: up.fileUrl, termoNome: up.name});
+
+          }catch(err){
+            console.error(err);
+            setStatus("❌ Falha no upload");
+            alert(err.message || "Falha no upload");
+          }
+          */
         };
         input.click();
         return;

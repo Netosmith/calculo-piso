@@ -6,7 +6,7 @@
   // ✅ URL DO SEU WEB APP (Apps Script /exec)
   // ======================================================
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbwmf8xiaKnLkq0aFYnbqRhv-4mubxc_sW17qqyvdvbVzxTYKXCMUQFIAwNJDbkK9r1L/exec";
+    "https://script.google.com/macros/s/AKfycbybrlPoP0unvz7RCThBL8BeuM7kNrWOpzjJD337zgngYHkc82eb9hnuQsfCwa67N3FZ/exec";
 
   // ======================================================
   // ✅ DRIVE (RAIZ) - Pasta ADMINISTRATIVO

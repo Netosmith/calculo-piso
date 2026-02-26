@@ -16,8 +16,9 @@ function doGet(e) {
       result = { ok: true, data: listFretes() };
       
     } else if (action === 'save') {
-      const data = JSON.parse(e.parameter.data);
-      result = saveFrete(data);
+      const data = JSON.parse(e.parameter.data || '{}');
+      const merged = normalizePortaTransito(data, e.parameter);
+      result = saveFrete(merged);
       
     } else if (action === 'delete') {
       result = deleteFrete(e.parameter.id);
@@ -70,16 +71,50 @@ function listFretes() {
   }));
 }
 
+function normalizePortaTransito(data, params) {
+  const portaFromData = data.porta !== undefined && data.porta !== null && data.porta !== '' ? data.porta : null;
+  const transitoFromData = data.transito !== undefined && data.transito !== null && data.transito !== '' ? data.transito : null;
+
+  const portaFromParams = params.porta || params.qtPorta || params.qtdPorta || '';
+  const transitoFromParams = params.transito || params.qtTransito || params.qtdTransito || '';
+
+  return {
+    ...data,
+    porta: portaFromData !== null ? portaFromData : portaFromParams,
+    transito: transitoFromData !== null ? transitoFromData : transitoFromParams
+  };
+}
+
+function valueOrBlank(value) {
+  if (value === 0 || value === '0') return value;
+  return value ? value : '';
+}
+
 function saveFrete(data) {
   const sheet = getSheet();
   
   if (!data.id || data.id === '') {
     data.id = Utilities.getUuid();
   }
-  
+
+  const existingRow = findRowById(sheet, data.id);
+
+  if (existingRow > 0) {
+    const current = sheet.getRange(existingRow, 1, 1, 22).getValues()[0];
+    if (data.porta === '' || data.porta === null || data.porta === undefined) {
+      data.porta = current[18] || '';
+    }
+    if (data.transito === '' || data.transito === null || data.transito === undefined) {
+      data.transito = current[19] || '';
+    }
+  }
+
   Logger.log('💾 Salvando frete:');
   Logger.log('  porta: ' + data.porta);
   Logger.log('  transito: ' + data.transito);
+
+  const portaValue = valueOrBlank(data.porta);
+  const transitoValue = valueOrBlank(data.transito);
   
   // Array na ordem das colunas
   const rowData = [
@@ -101,16 +136,14 @@ function saveFrete(data) {
     data.produto || '',                 // 16
     data.icms || '',                    // 17
     data.pedidoSat || '',               // 18
-    data.porta || '',                   // 19 ⭐
-    data.transito || '',                // 20 ⭐
+    portaValue,                         // 19 ⭐
+    transitoValue,                      // 20 ⭐
     data.status || '',                  // 21
     data.obs || ''                      // 22
   ];
   
   Logger.log('Array[18] (porta): ' + rowData[18]);
   Logger.log('Array[19] (transito): ' + rowData[19]);
-  
-  const existingRow = findRowById(sheet, data.id);
   
   if (existingRow > 0) {
     sheet.getRange(existingRow, 1, 1, rowData.length).setValues([rowData]);

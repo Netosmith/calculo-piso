@@ -4,10 +4,104 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Divulgação | NOVA FROTA</title>
+
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <link rel="stylesheet" href="../assets/css/divulgacao.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    body.divulgacaoLight{ background:#f5f7fb; color:#111827; }
+    body.divulgacaoLight .topbar{
+      background:rgba(255,255,255,.9);
+      border-bottom:1px solid rgba(15,23,42,.10);
+      backdrop-filter: blur(10px);
+    }
+    body.divulgacaoLight .icon-btn{
+      background:rgba(15,23,42,.06);
+      border:1px solid rgba(15,23,42,.12);
+      color:#111827;
+    }
+
+    .pageWrap{ max-width: 1400px; margin: 0 auto; padding: 18px; }
+    .pageHeader{
+      display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      margin-bottom: 16px;
+    }
+    .pageHeader h1{ margin:0; font-size:22px; font-weight:900; color:#0f172a; }
+    .pageHeader p{ margin:6px 0 0; color:rgba(15,23,42,.65); font-size:13px; }
+
+    .templatesGrid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:18px; }
+    .templateCard{
+      background:#fff; border:1px solid rgba(15,23,42,.10); border-radius:18px; padding:14px;
+      box-shadow: 0 12px 28px rgba(15,23,42,.06);
+      display:flex; flex-direction:column; gap:14px;
+    }
+    .templateCard h2{ margin:0; font-size:16px; font-weight:900; color:#0f172a; }
+
+    .controlGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .controlGrid label{ font-size:11px; font-weight:900; color:rgba(15,23,42,.75); display:block; margin-bottom:6px; }
+    .controlGrid input{
+      width:100%; height:36px; padding:8px 10px; border-radius:12px;
+      border:1px solid rgba(15,23,42,.15); background:#fff; outline:none;
+    }
+    .controlGrid input:focus{ border-color:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.18); }
+    .controlFull{ grid-column:1 / -1; }
+
+    .controlActions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .btnAction{
+      height:34px; padding:0 12px; border-radius:12px;
+      border:1px solid rgba(15,23,42,.14); background:#0f172a; color:#fff; font-weight:900;
+      cursor:pointer;
+    }
+    .btnAction.secondary{ background:#fff; color:#0f172a; border-color:rgba(15,23,42,.18); }
+
+    .previewWrap{ display:flex; justify-content:center; }
+    .poster{
+      width: 320px; aspect-ratio: 9 / 16; border-radius: 28px; overflow:hidden; position:relative;
+      box-shadow: 0 18px 40px rgba(15,23,42,.25);
+      display:flex; flex-direction:column; align-items:center; text-align:center; padding:24px 22px 26px;
+      gap:12px; color:#fff; font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    .poster img{ max-width: 180px; }
+    .poster .pill{
+      padding:8px 18px; border-radius:999px; font-weight:900; font-size:13px; letter-spacing:.02em;
+      text-transform:uppercase; background:#fff; color:#16a34a;
+    }
+    .poster .mainText{ font-size:22px; font-weight:900; min-height:28px; }
+    .poster .subText{ font-size:12px; opacity:.9; min-height:18px; }
+    .poster .product{ font-size:16px; font-weight:900; color:#facc15; min-height:20px; }
+    .poster .price{ font-size:26px; font-weight:900; min-height:28px; }
+    .poster .note{
+      font-size:13px; font-weight:900; background:rgba(255,255,255,.9); color:#0f172a;
+      padding:10px 12px; border-radius:16px; min-height:22px; width:100%;
+    }
+    .poster .contact{ font-size:11px; opacity:.9; min-height:16px; }
+
+    .poster-1{
+      background:
+        linear-gradient(180deg, rgba(4,20,38,.85), rgba(4,20,38,.95)),
+        url("../assets/img/hero.jpg");
+      background-size: cover; background-position:center;
+    }
+
+    .poster-2{
+      background: linear-gradient(180deg, #0f172a, #1e293b);
+    }
+    .poster-2 .pill{ background:#16a34a; color:#fff; }
+    .poster-2 .note{ background:#16a34a; color:#fff; }
+
+    .poster-3{
+      background: linear-gradient(180deg, #0f172a 0%, #16a34a 100%);
+    }
+    .poster-3 .pill{ background:#fff; color:#0f172a; }
+    .poster-3 .price{ background:#0f172a; color:#fff; padding:10px 14px; border-radius:14px; }
+
+    @media (max-width:900px){
+      .controlGrid{ grid-template-columns: 1fr; }
+      .poster{ width: 100%; max-width: 360px; }
+    }
+  </style>
 </head>
-<body>
+<body class="divulgacaoLight">
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
@@ -20,114 +114,189 @@
     </div>
   </div>
 
-  <main class="container divulgacao-page">
-    <header class="page-header">
+  <main class="pageWrap">
+    <header class="pageHeader">
       <div>
-        <h1>Divulgação</h1>
-        <p>Escolha um modelo, preencha os campos e salve a imagem em JPG.</p>
+        <h1>Aba Divulgação</h1>
+        <p>Use os modelos abaixo, edite os dados do frete e salve em JPG para compartilhar.</p>
       </div>
-      <a class="btnTiny ghost" href="./home.html">Voltar</a>
     </header>
 
-    <!-- MODELO 1 -->
-    <section class="templateCard" data-template="1">
-      <div class="templateHeader">
-        <h2>Modelo 1 - Coleta x Descarga</h2>
-        <p>Layout direto para anúncios rápidos.</p>
-      </div>
-
-      <div class="templateBody">
-        <div class="templateForm">
-          <label>Local de coleta (Cidade-UF)</label>
-          <input data-template="1" data-field="coletaCidade" placeholder="Ex: INDIARA-GO" />
-
-          <label>Local de coleta (Detalhe)</label>
-          <input data-template="1" data-field="coletaLocal" placeholder="Ex: Faz Ouro Branco" />
-
-          <label>Local de descarga (Cidade-UF)</label>
-          <input data-template="1" data-field="descargaCidade" placeholder="Ex: RIO VERDE-GO" />
-
-          <label>Local de descarga (Detalhe)</label>
-          <input data-template="1" data-field="descargaLocal" placeholder="Ex: Terminal Rumo" />
-
-          <label>Produto</label>
-          <input data-template="1" data-field="produto" placeholder="Ex: Soja / Milho / Açúcar / Calcário/ Farelo de Soja/ Sorgo/ Fertilizante" />
-
-          <label>Valor por tonelada</label>
-          <input data-template="1" data-field="valor" placeholder="Ex: R$ 43,00 / A COMBINAR" />
-
-          <label>Observações</label>
-          <input data-template="1" data-field="obs" placeholder="Ex: Pagamento PIX ou cheque" />
-
-          <label>Filial</label>
-<select data-template="1" data-field="filial">
-  <option value="">Selecione...</option>
-
-  <option value="RIOVERDE">RIO VERDE</option>
-  <option value="FERTILIZANTE">FERTILIZANTE</option>
-  <option value="MONTIVIDIU">MONTIVIDIU</option>
-  <option value="MINEIROS">MINEIROS</option>
-  <option value="INDIARA">INDIARA</option>
-  <option value="FORMOSA">FORMOSA</option>
-  <option value="CRISTALINA">CRISTALINA</option>
-  <option value="CATALAO">CATALÃO</option>
-  <option value="ANAPOLIS">ANÁPOLIS</option>
-  <option value="URUACU">URUAÇU</option>
-  <option value="ITUMBIARA">ITUMBIARA</option>
-  <option value="VIANOPOLIS">VIANÓPOLIS</option>
-  <option value="CHAPEU">CHAPÉU</option>
-  <option value="ARAGUARI">ARAGUARI</option>
-  <option value="JATAI">JATAÍ</option>
-</select>
-
-          <label>Contatos (linha 1)</label>
-          <input data-template="1" data-field="contato1" placeholder="Ex: (64) 9xxxx-xxxx" />
-
-          <label>Contatos (linha 2)</label>
-          <input data-template="1" data-field="contato2" placeholder="Ex: (64) 9xxxx-xxxx" />
-
-          <label>Contatos (linha 3)</label>
-          <input data-template="1" data-field="contato3" placeholder="Ex: (64) 9xxxx-xxxx" />
-
-          <label>Contatos (linha 4)</label>
-          <input data-template="1" data-field="contato4" placeholder="Ex: (64) 9xxxx-xxxx" />
+    <section class="templatesGrid">
+      <div class="templateCard" data-template="1">
+        <h2>Modelo 1</h2>
+        <div class="controlGrid">
+          <div>
+            <label>Local de coleta</label>
+            <input data-template="1" data-field="coleta" placeholder="Ex: INDIARA-GO" />
+          </div>
+          <div>
+            <label>Coleta (complemento)</label>
+            <input data-template="1" data-field="coletaSub" placeholder="Ex: OURO BRANCO" />
+          </div>
+          <div>
+            <label>Descarga</label>
+            <input data-template="1" data-field="descarga" placeholder="Ex: RIO VERDE-GO" />
+          </div>
+          <div>
+            <label>Descarga (complemento)</label>
+            <input data-template="1" data-field="descargaSub" placeholder="Ex: RUMO" />
+          </div>
+          <div>
+            <label>Produto</label>
+            <input data-template="1" data-field="produto" placeholder="Ex: SOJA" />
+          </div>
+          <div>
+            <label>Valor</label>
+            <input data-template="1" data-field="valor" placeholder="Ex: R$ 43,00" />
+          </div>
+          <div class="controlFull">
+            <label>Pagamento</label>
+            <input data-template="1" data-field="pagamento" placeholder="Ex: PAGAMENTO PIX OU CHEQUE 80% ADIANTAMENTO" />
+          </div>
+          <div class="controlFull">
+            <label>Contatos</label>
+            <input data-template="1" data-field="contato" placeholder="Ex: FILIAL RIO VERDE - 64 99999-0000" />
+          </div>
         </div>
-
-        <div class="templatePreview" data-template-preview="1">
-          <img class="previewBg" src="../assets/img/SOJATESTE.png" alt="" />
-
-          <div class="previewColeta">
-            <div class="previewValue" data-bind="coletaCidade" data-placeholder="-CIDADE-UF"></div>
-            <div class="previewSmall" data-bind="coletaLocal" data-placeholder="Local"></div>
-          </div>
-
-          <div class="previewDescarga">
-            <div class="previewValue" data-bind="descargaCidade" data-placeholder="-CIDADE-UF"></div>
-            <div class="previewSmall" data-bind="descargaLocal" data-placeholder="Local"></div>
-          </div>
-
-          <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
-          <div class="previewPrice" data-bind="valor" data-placeholder="Valor por tonelada"></div>
-          <div class="previewNote" data-bind="obs" data-placeholder="Observações"></div>
-
-          <div class="previewContacts">
-            <div class="previewContactLine" data-bind="contato1" data-placeholder="Contato 1"></div>
-            <div class="previewContactLine" data-bind="contato2" data-placeholder="Contato 2"></div>
-            <div class="previewContactLine" data-bind="contato3" data-placeholder="Contato 3"></div>
-            <div class="previewContactLine" data-bind="contato4" data-placeholder="Contato 4"></div>
+        <div class="controlActions">
+          <button class="btnAction" data-action="save" data-template="1">Salvar JPG</button>
+          <button class="btnAction secondary" data-action="reset" data-template="1">Resetar</button>
+        </div>
+        <div class="previewWrap">
+          <div class="poster poster-1" data-template-preview="1">
+            <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+            <div class="pill">LOCAL DE COLETA</div>
+            <div class="mainText" data-bind="coleta"></div>
+            <div class="subText" data-bind="coletaSub"></div>
+            <div class="product" data-bind="produto"></div>
+            <div class="pill">DESCARGA</div>
+            <div class="mainText" data-bind="descarga"></div>
+            <div class="subText" data-bind="descargaSub"></div>
+            <div class="price" data-bind="valor"></div>
+            <div class="note" data-bind="pagamento"></div>
+            <div class="contact" data-bind="contato"></div>
           </div>
         </div>
       </div>
 
-      <div class="templateActions">
-        <button class="btnTiny green" data-action="save" data-template="1">Salvar JPG</button>
-        <button class="btnTiny ghost" data-action="reset" data-template="1">Resetar</button>
+      <div class="templateCard" data-template="2">
+        <h2>Modelo 2</h2>
+        <div class="controlGrid">
+          <div>
+            <label>Local de coleta</label>
+            <input data-template="2" data-field="coleta" placeholder="Ex: JATAÍ-GO" />
+          </div>
+          <div>
+            <label>Coleta (complemento)</label>
+            <input data-template="2" data-field="coletaSub" placeholder="Ex: FAZ. LIBERDADE" />
+          </div>
+          <div>
+            <label>Descarga</label>
+            <input data-template="2" data-field="descarga" placeholder="Ex: UBERABA-MG" />
+          </div>
+          <div>
+            <label>Descarga (complemento)</label>
+            <input data-template="2" data-field="descargaSub" placeholder="Ex: TIUB" />
+          </div>
+          <div>
+            <label>Produto</label>
+            <input data-template="2" data-field="produto" placeholder="Ex: MILHO" />
+          </div>
+          <div>
+            <label>Valor</label>
+            <input data-template="2" data-field="valor" placeholder="Ex: R$ 139,00" />
+          </div>
+          <div class="controlFull">
+            <label>Pagamento</label>
+            <input data-template="2" data-field="pagamento" placeholder="Ex: PIX OU CHEQUE 80% ADIANTAMENTO" />
+          </div>
+          <div class="controlFull">
+            <label>Contatos</label>
+            <input data-template="2" data-field="contato" placeholder="Ex: FILIAL FORMOSA - 62 99999-0000" />
+          </div>
+        </div>
+        <div class="controlActions">
+          <button class="btnAction" data-action="save" data-template="2">Salvar JPG</button>
+          <button class="btnAction secondary" data-action="reset" data-template="2">Resetar</button>
+        </div>
+        <div class="previewWrap">
+          <div class="poster poster-2" data-template-preview="2">
+            <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+            <div class="pill">LOCAL DE COLETA</div>
+            <div class="mainText" data-bind="coleta"></div>
+            <div class="subText" data-bind="coletaSub"></div>
+            <div class="product" data-bind="produto"></div>
+            <div class="pill">DESCARGA</div>
+            <div class="mainText" data-bind="descarga"></div>
+            <div class="subText" data-bind="descargaSub"></div>
+            <div class="price" data-bind="valor"></div>
+            <div class="note" data-bind="pagamento"></div>
+            <div class="contact" data-bind="contato"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="templateCard" data-template="3">
+        <h2>Modelo 3</h2>
+        <div class="controlGrid">
+          <div>
+            <label>Local de coleta</label>
+            <input data-template="3" data-field="coleta" placeholder="Ex: MINEIROS-GO" />
+          </div>
+          <div>
+            <label>Coleta (complemento)</label>
+            <input data-template="3" data-field="coletaSub" placeholder="Ex: FAZ. CAMPINA" />
+          </div>
+          <div>
+            <label>Descarga</label>
+            <input data-template="3" data-field="descarga" placeholder="Ex: SANTOS-SP" />
+          </div>
+          <div>
+            <label>Descarga (complemento)</label>
+            <input data-template="3" data-field="descargaSub" placeholder="Ex: PORTO" />
+          </div>
+          <div>
+            <label>Produto</label>
+            <input data-template="3" data-field="produto" placeholder="Ex: SOJA" />
+          </div>
+          <div>
+            <label>Valor</label>
+            <input data-template="3" data-field="valor" placeholder="Ex: R$ 95,00" />
+          </div>
+          <div class="controlFull">
+            <label>Pagamento</label>
+            <input data-template="3" data-field="pagamento" placeholder="Ex: PAGAMENTO IMEDIATO" />
+          </div>
+          <div class="controlFull">
+            <label>Contatos</label>
+            <input data-template="3" data-field="contato" placeholder="Ex: FILIAL ANÁPOLIS - 62 99999-0000" />
+          </div>
+        </div>
+        <div class="controlActions">
+          <button class="btnAction" data-action="save" data-template="3">Salvar JPG</button>
+          <button class="btnAction secondary" data-action="reset" data-template="3">Resetar</button>
+        </div>
+        <div class="previewWrap">
+          <div class="poster poster-3" data-template-preview="3">
+            <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+            <div class="pill">LOCAL DE COLETA</div>
+            <div class="mainText" data-bind="coleta"></div>
+            <div class="subText" data-bind="coletaSub"></div>
+            <div class="product" data-bind="produto"></div>
+            <div class="pill">DESCARGA</div>
+            <div class="mainText" data-bind="descarga"></div>
+            <div class="subText" data-bind="descargaSub"></div>
+            <div class="price" data-bind="valor"></div>
+            <div class="note" data-bind="pagamento"></div>
+            <div class="contact" data-bind="contato"></div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
   <script src="../assets/js/auth.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="../assets/js/divulgacao.js"></script>
   <script>
     requireHomeAuth();

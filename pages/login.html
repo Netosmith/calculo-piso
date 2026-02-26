@@ -5,71 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <style>
-    /* Modal seletor de estado (visual) */
-    .state-modal{
-      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background:rgba(0,0,0,.55); backdrop-filter:blur(8px); z-index:9999; padding:18px;
-    }
-    .state-modal.show{ display:flex; }
-    .state-card{
-      width:min(560px,100%);
-      background:linear-gradient(180deg, rgba(17,26,51,.92), rgba(13,20,48,.88));
-      border:1px solid rgba(34,48,94,.95);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 18px 45px rgba(0,0,0,.35);
-    }
-    .state-title{ font-weight:900; font-size:18px; margin:0 0 10px; color:#e9eefc; }
-    .state-sub{ font-size:12px; opacity:.8; margin-bottom:12px; color:#e9eefc; }
-    .state-grid{
-      display:grid; grid-template-columns:1fr 1fr; gap:10px;
-    }
-    @media (max-width:520px){ .state-grid{ grid-template-columns:1fr; } }
-
-    .ufbtn{
-      border:1px solid rgba(255,255,255,.18);
-      border-radius:14px;
-      padding:14px 12px;
-      color:#fff;
-      font-weight:900;
-      cursor:pointer;
-      text-align:left;
-      transition:transform .08s, filter .15s, box-shadow .15s;
-      user-select:none;
-    }
-    .ufbtn small{ display:block; opacity:.85; font-weight:700; margin-top:2px; }
-    .ufbtn:hover{ filter:brightness(1.08); }
-    .ufbtn:active{ transform:translateY(1px); }
-    .ufbtn.active{
-      box-shadow:0 0 0 3px rgba(91,124,250,.25);
-      outline:none;
-    }
-
-    /* cores com transparência */
-    .go{ background:linear-gradient(180deg, rgba(40,170,90,.55), rgba(20,90,55,.55)); }
-    .mt{ background:linear-gradient(180deg, rgba(220,120,60,.55), rgba(120,55,25,.55)); }
-    .mg{ background:linear-gradient(180deg, rgba(220,80,120,.55), rgba(120,35,60,.55)); }
-    .sp{ background:linear-gradient(180deg, rgba(70,120,255,.55), rgba(25,55,140,.55)); }
-    .pr{ background:linear-gradient(180deg, rgba(225,190,60,.55), rgba(130,95,20,.55)); }
-    .sc{ background:linear-gradient(180deg, rgba(170,90,220,.55), rgba(90,35,120,.55)); }
-    .to{ background:linear-gradient(180deg, rgba(60,200,190,.55), rgba(20,110,100,.55)); }
-    .ma{ background:linear-gradient(180deg, rgba(80,110,220,.55), rgba(25,45,120,.55)); }
-    .ba{ background:linear-gradient(180deg, rgba(60,190,120,.55), rgba(20,110,70,.55)); }
-
-    .state-actions{
-      display:flex; gap:10px; margin-top:14px; justify-content:flex-end; flex-wrap:wrap;
-    }
-    .state-actions .btn2{
-      padding:10px 14px; border-radius:14px; border:1px solid rgba(58,83,168,.95);
-      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color:#e9eefc; font-weight:900; cursor:pointer;
-    }
-    .state-actions .btn2.secondary{
-      border-color:rgba(255,255,255,.16);
-      background:rgba(13,20,48,.55);
-    }
-  </style>
 </head>
 <body>
   <div class="login-wrap">
@@ -91,133 +26,34 @@
       <button class="btn" id="btnLogin">Entrar</button>
 
       <div class="err" id="err">Usuário ou senha inválidos.</div>
-      <div class="small">Dedicado - Nova Frota ✅</div>
-    </div>
-  </div>
-
-  <!-- MODAL: SELECIONAR ESTADO -->
-  <div class="state-modal" id="stateModal" aria-hidden="true">
-    <div class="state-card">
-      <div class="state-title">Selecionar Estado</div>
-      <div class="state-sub">Escolha o estado que você vai acessar agora.</div>
-
-      <div class="state-grid" id="stateGrid"></div>
-
-      <div class="state-actions">
-        <button class="btn2 secondary" id="btnStateCancel">Cancelar</button>
-        <button class="btn2" id="btnStateOk">OK</button>
-      </div>
+      <div class="small">Dica: depois a gente pode evoluir isso para login por Google (Firebase) ✅</div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
   <script>
-    // Se já estiver logado e com estado, manda para Home
-    if(localStorage.getItem("nf_auth_home")==="1" && localStorage.getItem("nf_auth_state")){
+    // Se já estiver logado, manda para Home
+    if(localStorage.getItem("nf_auth_home") === "1"){
       window.location.href = "./home.html";
     }
 
     const btn = document.getElementById("btnLogin");
     const err = document.getElementById("err");
-    const userEl = document.getElementById("user");
-    const passEl = document.getElementById("pass");
-
-    const modal = document.getElementById("stateModal");
-    const grid  = document.getElementById("stateGrid");
-    const btnOk = document.getElementById("btnStateOk");
-    const btnCancel = document.getElementById("btnStateCancel");
-
-    let pendingStates = [];
-    let selectedUF = "";
-
-    const UF_META = {
-      GO:{label:"Goiás", cls:"go"},
-      MT:{label:"Mato Grosso", cls:"mt"},
-      MG:{label:"Minas Gerais", cls:"mg"},
-      SP:{label:"São Paulo", cls:"sp"},
-      PR:{label:"Paraná", cls:"pr"},
-      SC:{label:"Santa Catarina", cls:"sc"},
-      TO:{label:"Tocantins", cls:"to"},
-      PA:{label:"Pará", cls:"pa"},
-      MA:{label:"Maranhão", cls:"ma"},
-      BA:{label:"Bahia", cls:"ba"},
-    };
-
-    function openStateModal(states){
-      pendingStates = states || [];
-      selectedUF = pendingStates[0] || "";
-      grid.innerHTML = "";
-
-      pendingStates.forEach(uf=>{
-        const meta = UF_META[uf] || {label:uf, cls:"sp"};
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = `ufbtn ${meta.cls}`;
-        b.dataset.uf = uf;
-        b.innerHTML = `${meta.label} <small>${uf}</small>`;
-        b.onclick = ()=>{
-          selectedUF = uf;
-          [...grid.querySelectorAll(".ufbtn")].forEach(x=>x.classList.remove("active"));
-          b.classList.add("active");
-        };
-        grid.appendChild(b);
-      });
-
-      // marca o primeiro
-      const first = grid.querySelector(".ufbtn");
-      if(first) first.classList.add("active");
-
-      modal.classList.add("show");
-      modal.setAttribute("aria-hidden","false");
-    }
-
-    function closeStateModal(){
-      modal.classList.remove("show");
-      modal.setAttribute("aria-hidden","true");
-    }
 
     function doLogin(){
       err.style.display = "none";
-
-      const u = (userEl.value||"").trim();
-      const p = (passEl.value||"").trim();
-
-      const result = validateLogin(u, p);
-
-      if(!result.ok){
+      const p = document.getElementById("pass").value.trim();
+      if(p === AUTH.HOME_PASSWORD){
+        localStorage.setItem("nf_auth_home", "1");
+        window.location.href = "./home.html";
+      }else{
         err.style.display = "block";
-        return;
       }
-
-      // abre seletor só com os estados permitidos para este usuário
-      openStateModal(result.states || []);
     }
 
     btn.addEventListener("click", doLogin);
-    passEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
-
-    btnCancel.addEventListener("click", ()=>{
-      closeStateModal();
-      // opcional: deslogar se cancelar
-      logoutAll();
-    });
-
-    btnOk.addEventListener("click", ()=>{
-      if(!selectedUF){
-        alert("Selecione um estado.");
-        return;
-      }
-      setSelectedState(selectedUF);
-      closeStateModal();
-      window.location.href = "./home.html";
-    });
-
-    // fecha clicando fora
-    modal.addEventListener("click", (e)=>{
-      if(e.target === modal){
-        closeStateModal();
-        logoutAll();
-      }
+    document.getElementById("pass").addEventListener("keydown", (e)=>{
+      if(e.key === "Enter") doLogin();
     });
   </script>
 </body>

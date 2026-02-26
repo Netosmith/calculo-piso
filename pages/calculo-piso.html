@@ -7,7 +7,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  <!-- ✅ LOGIN DO PORTAL (HOME + ESTADO + PERMISSÕES DO PISO) -->
+  <!-- ✅ TRAVA DO LOGIN 1 (HOME)
+       Este arquivo está em /pages, então o caminho é ../assets/js/auth.js -->
   <script src="../assets/js/auth.js"></script>
 
   <style>
@@ -90,7 +91,18 @@
     tr.active{background:rgba(91,124,250,.16)}
     .motorCol{color:#ffb3b3;font-weight:800} .empresaCol{color:#b7d4ff;font-weight:800}
     .pesoInput{max-width:160px;text-align:right;padding:8px 10px;border-radius:12px;font-variant-numeric:tabular-nums;background:rgba(10,16,40,.92)}
-
+    /* LOGIN */
+    .lock{position:fixed;inset:0;background:rgba(11,16,32,.92);display:none;align-items:center;justify-content:center;padding:20px;z-index:9999;backdrop-filter:blur(8px)}
+    .lock.show{display:flex}
+    .lockCard{
+      width:min(520px,100%);background:linear-gradient(180deg, rgba(17,26,51,.9), rgba(13,20,48,.85));
+      border:1px solid rgba(34,48,94,.95);border-radius:18px;padding:18px;overflow:hidden;
+      box-shadow:0 18px 45px rgba(0,0,0,.35);position:relative;
+    }
+    .lockCard::before{content:"";position:absolute;inset:-40px -40px auto -40px;height:140px;background:radial-gradient(closest-side, rgba(60,255,160,.12), transparent 70%);opacity:.55;pointer-events:none}
+    .lockTitle{font-size:18px;font-weight:900;margin:0 0 8px}
+    .lockRow{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+    .lockHint{font-size:12px;opacity:.8;margin-top:8px}
     .topbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .topRight{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
     .smallBtn{
@@ -102,7 +114,6 @@
     .smallBtn:hover{filter:brightness(1.08)} .smallBtn:active{transform:translateY(1px)}
     .smallBtn.green{border-color:rgba(60,255,160,.45);background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
     .smallBtn.green:hover{box-shadow:0 0 0 3px rgba(60,255,160,.12)}
-
     /* Toggle */
     .toggleWrap{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:12px;border:1px solid rgba(58,83,168,.75);background:rgba(13,20,48,.55);user-select:none}
     .toggleWrap .lbl{font-size:12px;font-weight:800;opacity:.9}
@@ -110,7 +121,6 @@
     .toggle::after{content:"";position:absolute;top:50%;left:3px;width:18px;height:18px;border-radius:999px;transform:translateY(-50%);background:rgba(233,238,252,.92);box-shadow:0 6px 14px rgba(0,0,0,.25);transition:left .15s, background .15s}
     .toggle.on{border-color:rgba(60,255,160,.55);background:rgba(60,255,160,.14)}
     .toggle.on::after{left:22px;background:rgba(60,255,160,.92)}
-
     /* Export shot */
     .exportShot{display:none;margin-top:12px}
     .shotGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
@@ -121,7 +131,6 @@
     .shotValue{margin-top:4px;font-size:18px;font-weight:900;letter-spacing:.2px;font-variant-numeric:tabular-nums}
     .shotTableWrap{margin-top:12px;overflow:hidden;border:1px solid rgba(43,58,114,.95);border-radius:14px}
     .shotTableWrap table th{position:static}
-
     /* Quote mode */
     body.quoteMode .grid{grid-template-columns:1fr!important}
     body.quoteMode .quoteHide{display:none!important}
@@ -129,7 +138,6 @@
     @media (max-width:860px){body.quoteMode .quoteTableGrow{height:calc(100vh - 330px);min-height:380px}}
     body.quoteMode .quoteEntrada{display:block!important}
     body.quoteMode .normalEntrada{display:none!important}
-
     /* Admin modal */
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:18px}
     .modal.show{display:flex}
@@ -151,6 +159,23 @@
   </style>
 </head>
 <body>
+
+  <!-- LOGIN (CALCULADORA) -->
+  <div class="lock" id="lock">
+    <div class="lockCard">
+      <p class="lockTitle">🔒 CÁLCULO ANTT - PISO MÍNIMO</p>
+      <div class="muted">Selecione seu usuário e digite a senha para acessar.</div>
+      <div class="lockRow">
+        <label for="lockUser">Usuário</label>
+        <select id="lockUser"></select>
+        <label for="lockPass">Senha</label>
+        <input id="lockPass" type="password" placeholder="Senha do usuário" />
+        <button class="btn" id="lockBtn">Entrar</button>
+        <div class="muted" id="lockMsg" style="color:#ffb3b3; display:none;">Usuário ou senha incorretos.</div>
+      </div>
+      <div class="lockHint">Acesso somente para Nova Frota</div>
+    </div>
+  </div>
 
   <!-- ADMIN MODAL -->
   <div class="modal" id="adminModal" aria-hidden="true">
@@ -217,8 +242,8 @@
           </div>
 
           <button class="smallBtn" id="btnAdmin" style="display:none">🛠 Admin</button>
-          <button class="smallBtn green" id="btnExportCSV">⬇️ Exportar CSV</button>
-          <button class="smallBtn green" id="btnExportJPG">🖼️ Exportar JPEG</button>
+          <button class="smallBtn green" id="btnExportCSV" title="Exporta todos os tipos com os valores calculados atuais">⬇️ Exportar CSV</button>
+          <button class="smallBtn green" id="btnExportJPG" title="Gera um JPEG com KM/Margem/Pedágio/ICMS + Tabela completa">🖼️ Exportar JPEG</button>
           <span class="pill" id="userBadge">Deslogado</span>
           <button class="smallBtn" id="btnLogout">Sair</button>
         </div>
@@ -249,11 +274,13 @@
       <div class="card">
         <div class="pill">Entrada</div>
 
+        <!-- NORMAL (fora do modo cotação) -->
         <div class="normalEntrada">
           <label for="tipo">Tipo</label>
           <select id="tipo"></select>
         </div>
 
+        <!-- COTAÇÃO RÁPIDA (sem Tipo) -->
         <div class="quoteEntrada" style="display:none;">
           <div class="muted">Modo cotação: selecione o <b>Tipo</b> clicando direto na tabela.</div>
         </div>
@@ -343,72 +370,66 @@
   </div>
 
 <script>
-/* ==========================================================
-   ✅ Integração com auth.js (portal)
-   - usuário vem do getUser()
-   - admin = LUZIANO
-========================================================== */
-
-const ADMIN_USER = "LUZIANO";
-
-/** garante auth.js carregado + login + estado + permissão do piso */
-function enforcePisoAuth(){
+/* ================== HOME AUTH (LOGIN 1) ==================
+   - Se auth.js existir, ele deve expor requireHomeAuth().
+   - Chamamos no DOMContentLoaded para não quebrar a tela caso o script falhe ao carregar. */
+function enforceHomeAuth(){
   try{
-    if (typeof requirePisoAuth === "function") {
-      requirePisoAuth();
-      return true;
-    }
-    if (typeof requireHomeAuth === "function") {
+    if (typeof requireHomeAuth === "function"){
       requireHomeAuth();
-      console.warn("[PISO] requirePisoAuth não existe, usando requireHomeAuth.");
-      return true;
+    } else {
+      // Se você quiser que SEMPRE bloqueie quando auth.js não carrega,
+      // troque o console.warn por um redirect forçado.
+      console.warn("[HomeAuth] auth.js não carregou ou requireHomeAuth() não existe.");
     }
-    console.warn("[PISO] auth.js não carregou (funções não encontradas).");
-    return false;
-  } catch (e){
-    console.warn("[PISO] erro enforcePisoAuth:", e);
-    return false;
+  }catch(err){
+    console.warn("[HomeAuth] erro ao validar Login 1:", err);
   }
 }
 
-/** usuário do portal */
-function portalUser(){
-  try{
-    if (typeof getUser === "function") return String(getUser() || "").trim().toUpperCase();
-  }catch(e){}
-  // fallback caso auth.js não tenha getUser por algum motivo
-  return String(localStorage.getItem("nf_auth_user") || "").trim().toUpperCase();
+function logoutAll(){
+  // Logout do login interno da calculadora
+  try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+  // Logout do Login 1 (HOME) do sistema
+  try{ localStorage.removeItem("nf_auth_home"); }catch(e){}
+  // Volta para o login geral (ajuste se seu arquivo tiver outro nome)
+  window.location.href = "./login.html";
 }
 
-/** estado selecionado */
-function portalUF(){
-  try{
-    if (typeof getSelectedState === "function") return String(getSelectedState() || "").trim().toUpperCase();
-  }catch(e){}
-  return String(localStorage.getItem("nf_auth_state") || "").trim().toUpperCase();
-}
+/* ================== USERS (ADMIN) ================== */
+const ADMIN_USER = "LUZIANO";
+const USERS_DEFAULT = {
+  "LUZIANO":"1993",
+  "ARIEL":"1987",
+  "VALDEMI":"2026",
+  "LUIS":"2026",
+  "ELIEL":"2026",
+  "MATHEUS OS":"2026",
+  "SERGIO":"2026",
+};
+const USERS_KEY = "antt_users_v1";
+const AUTH_KEY  = "antt_auth_user_v1";
 
-function isAdmin(){ return portalUser() === ADMIN_USER; }
-
-/** logout do portal */
-function logoutPortal(){
+function loadUsers(){
   try{
-    if (typeof logoutAll === "function") logoutAll();
-    else{
-      localStorage.removeItem("nf_auth_home");
-      localStorage.removeItem("nf_auth_user");
-      localStorage.removeItem("nf_auth_state");
-      localStorage.removeItem("nf_auth_piso");
-    }
-  }catch(e){}
-  window.location.href = "../pages/login.html";
+    const raw = localStorage.getItem(USERS_KEY);
+    const u = raw ? JSON.parse(raw) : null;
+    const merged = Object.assign({}, USERS_DEFAULT, (u && typeof u === "object" ? u : {}));
+    if (!merged[ADMIN_USER]) merged[ADMIN_USER] = USERS_DEFAULT[ADMIN_USER] || "1993";
+    return merged;
+  }catch(e){
+    return Object.assign({}, USERS_DEFAULT);
+  }
 }
+function saveUsers(u){
+  localStorage.setItem(USERS_KEY, JSON.stringify(u));
+}
+let USERS = loadUsers();
+
+function isAdmin(){ return getAuthUser() === ADMIN_USER; }
 
 /* ================== MODO COTAÇÃO ================== */
-function quoteModeKey(){
-  const u = portalUser() || "DEFAULT";
-  return `piso_${u}_quote_mode_v1`;
-}
+function quoteModeKey(){ const u=getAuthUser()||"DEFAULT"; return `antt_${u}_quote_mode_v1`; }
 function isQuoteMode(){ return localStorage.getItem(quoteModeKey())==="1"; }
 function setQuoteMode(on){ localStorage.setItem(quoteModeKey(), on?"1":"0"); }
 function applyQuoteModeUI(){
@@ -416,6 +437,83 @@ function applyQuoteModeUI(){
   document.body.classList.toggle("quoteMode", on);
   const t = document.getElementById("toggleQuote");
   if (t){ t.classList.toggle("on", on); t.setAttribute("aria-checked", on?"true":"false"); }
+}
+
+/* ================== AUTH (CALCULADORA) ================== */
+function getAuthUser(){
+  const u = localStorage.getItem(AUTH_KEY);
+  return u && USERS[u] ? u : null;
+}
+function setAuthUser(user){
+  if (user) localStorage.setItem(AUTH_KEY, user);
+  else localStorage.removeItem(AUTH_KEY);
+}
+
+function showLock(show){
+  const lock = document.getElementById("lock");
+  const app  = document.getElementById("app");
+  if (show){
+    lock.classList.add("show");
+    app.style.display="none";
+    document.getElementById("lockPass").value="";
+    document.getElementById("lockMsg").style.display="none";
+    document.getElementById("lockUser").focus();
+  }else{
+    lock.classList.remove("show");
+    app.style.display="";
+  }
+}
+function updateUserBadge(){
+  const u=getAuthUser();
+  const el=document.getElementById("userBadge");
+  if (el) el.textContent = u ? `Logado: ${u}` : "Deslogado";
+  const btnAdmin = document.getElementById("btnAdmin");
+  if (btnAdmin) btnAdmin.style.display = (u===ADMIN_USER) ? "" : "none";
+}
+function getScopePrefix(){ const u=getAuthUser()||"DEFAULT"; return `antt_${u}_`; }
+
+function initAuth(){
+  USERS = loadUsers();
+
+  const sel = document.getElementById("lockUser");
+  sel.innerHTML="";
+  Object.keys(USERS).sort().forEach((name)=>{
+    const op=document.createElement("option");
+    op.value=name; op.textContent=name;
+    sel.appendChild(op);
+  });
+
+  if (!getAuthUser()) showLock(true); else showLock(false);
+
+  const btn=document.getElementById("lockBtn");
+  const pass=document.getElementById("lockPass");
+  const msg=document.getElementById("lockMsg");
+
+  function tryLogin(){
+    USERS = loadUsers();
+    const user=sel.value;
+    const ok = USERS[user] && pass.value === USERS[user];
+    msg.style.display = ok ? "none" : "block";
+    if (ok){
+      setAuthUser(user);
+      showLock(false);
+      updateUserBadge();
+      pesosCustom = loadPesosCustom();
+      applyQuoteModeUI();
+      calc();
+    }
+  }
+
+  btn.addEventListener("click", tryLogin);
+  pass.addEventListener("keydown",(e)=>{ if (e.key==="Enter") tryLogin(); });
+
+  // ✅ AJUSTADO: "Sair" agora derruba também o Login 1 e volta para login geral
+  document.getElementById("btnLogout").addEventListener("click", (e)=>{
+    e.preventDefault();
+    logoutAll();
+  });
+
+  updateUserBadge();
 }
 
 /* ================== DATA ================== */
@@ -435,8 +533,8 @@ const DATA = [
 ];
 
 const $ = (id)=>document.getElementById(id);
-const money=(n)=>Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const numpt=(n,d=4)=>Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=(n)=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const numpt=(n,d=4)=>n.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 
 function parsePtNumber(value){
   let s=String(value??"").trim().replace(/\s+/g,"");
@@ -446,21 +544,16 @@ function parsePtNumber(value){
   const n=Number(s);
   return Number.isFinite(n)?n:NaN;
 }
-function fmtPeso(n){
-  const nn = Number(n);
-  if(!Number.isFinite(nn)) return "0,000";
-  return nn.toLocaleString("pt-BR",{minimumFractionDigits:3,maximumFractionDigits:3});
-}
+function fmtPeso(n){ return Number(n).toLocaleString("pt-BR",{minimumFractionDigits:3,maximumFractionDigits:3}); }
 function fillTipos(){
   const sel=$("tipo");
-  if (!sel) return;
   sel.innerHTML="";
   DATA.forEach((r,idx)=>{
     const op=document.createElement("option");
     op.value=idx; op.textContent=r.tipo;
     sel.appendChild(op);
   });
-  sel.value = sel.value || "0";
+  sel.value="0";
 }
 function extrairEixos(tipo){
   const m=String(tipo).trim().match(/^(\d+)/);
@@ -475,19 +568,15 @@ function bindGlow(el){
 }
 
 function getInputs(){
-  const km=Number($("km")?.value||0);
-  const pedagioPorEixo=Number($("pedagio")?.value||0);
-  const margem=Number($("margem")?.value||0)/100;
-  const icms=Number($("icms")?.value||0)/100;
+  const km=Number($("km").value||0);
+  const pedagioPorEixo=Number($("pedagio").value||0);
+  const margem=Number($("margem").value||0)/100;
+  const icms=Number($("icms").value||0)/100;
   return {km,pedagioPorEixo,margem,icms};
 }
 
-/* ================== PESOS POR USUÁRIO (PORTAL) ================== */
-function scopePrefix(){
-  const u = portalUser() || "DEFAULT";
-  return `piso_${u}_`;
-}
-function pesosKey(){ return scopePrefix()+"pesos_custom_v1"; }
+/* ================== PESOS POR USUÁRIO ================== */
+function pesosKey(){ return getScopePrefix()+"pesos_custom_v1"; }
 function loadPesosCustom(){
   try{
     const raw=localStorage.getItem(pesosKey());
@@ -505,12 +594,11 @@ function getPeso(row){
   const n=Number(v);
   return (Number.isFinite(n)&&n>0)?n:row.peso;
 }
-
 function renderTabelaPesos(){
   const tbody=$("tblPesos");
   if(!tbody) return;
   tbody.innerHTML="";
-  const idxSel=Number($("tipo")?.value||0);
+  const idxSel=Number($("tipo").value);
 
   DATA.forEach((row,idx)=>{
     const tr=document.createElement("tr");
@@ -548,7 +636,6 @@ function renderTabelaPesos(){
     tbody.appendChild(tr);
   });
 }
-
 function resetPesos(){
   pesosCustom={};
   localStorage.removeItem(pesosKey());
@@ -560,7 +647,7 @@ function resetAllPesos(){
   const keys=[];
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
-    if(k && k.startsWith("piso_") && k.endsWith("_pesos_custom_v1")) keys.push(k);
+    if(k && k.endsWith("_pesos_custom_v1")) keys.push(k);
   }
   keys.forEach(k=>localStorage.removeItem(k));
 }
@@ -585,9 +672,8 @@ function calcFretes(row, km, pedagioPorEixo, margem, icms){
 
 function renderTabela(km, pedagioPorEixo, margem, icms){
   const tbody=$("tblFretes");
-  if(!tbody) return;
   tbody.innerHTML="";
-  const idxSel=Number($("tipo")?.value||0);
+  const idxSel=Number($("tipo").value);
 
   DATA.forEach((row,idx)=>{
     const r=calcFretes(row,km,pedagioPorEixo,margem,icms);
@@ -599,8 +685,7 @@ function renderTabela(km, pedagioPorEixo, margem, icms){
       <td class="num empresaCol">${Number.isFinite(r.freteEmpresa)?money(r.freteEmpresa):"Erro"}</td>
       <td class="num" style="opacity:.85">${r.eixos}</td>`;
     tr.addEventListener("click", ()=>{
-      const tipoEl = $("tipo");
-      if (tipoEl) tipoEl.value=String(idx);
+      $("tipo").value=String(idx);
       calc();
     });
     tbody.appendChild(tr);
@@ -637,15 +722,13 @@ function buildExportRows(){
   });
 }
 function exportCSV(){
-  const u = portalUser();
-  if(!u){ alert("Você não está logado no portal."); return; }
-
+  if(!getAuthUser()) return;
   const rows=buildExportRows();
   const headers=Object.keys(rows[0]||{});
   const lines=[];
   const {km,pedagioPorEixo,margem,icms}=getInputs();
   lines.push(csvEscape("NOVA FROTA - Exportação ANTT 6.067/2025"));
-  lines.push(csvEscape(`Usuário: ${u} | UF: ${portalUF()} | KM: ${km} | Pedágio/eixo: ${pedagioPorEixo} | Margem: ${(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}% | ICMS: ${(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`));
+  lines.push(csvEscape(`Usuário: ${getAuthUser()} | KM: ${km} | Pedágio/eixo: ${pedagioPorEixo} | Margem: ${(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}% | ICMS: ${(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`));
   lines.push("");
   lines.push(headers.map(csvEscape).join(";"));
   for(const r of rows){
@@ -667,7 +750,7 @@ function exportCSV(){
   const url=URL.createObjectURL(blob);
   const d=new Date();
   const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
-  const filename=`antt_export_${u}_${stamp}.csv`;
+  const filename=`antt_export_${getAuthUser()}_${stamp}.csv`;
   const a=document.createElement("a"); a.href=url; a.download=filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1200);
@@ -689,26 +772,20 @@ function renderShotTable(){
   }
 }
 function exportJPG(){
-  const u = portalUser();
-  if(!u){ alert("Você não está logado no portal."); return; }
-
+  if(!getAuthUser()) return;
   const shot=$("exportShot");
-  if(!shot) return;
-
   const {km,pedagioPorEixo,margem,icms}=getInputs();
   $("shotKM").textContent=km.toLocaleString("pt-BR",{maximumFractionDigits:1});
   $("shotPed").textContent=pedagioPorEixo.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   $("shotMargem").textContent=(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   $("shotICMS").textContent=(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  $("shotUser").textContent=u;
-
+  $("shotUser").textContent=getAuthUser();
   renderShotTable();
   shot.style.display="block";
-
   html2canvas(shot,{backgroundColor:null,scale:2}).then((canvas)=>{
     const d=new Date();
     const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
-    const filename=`antt_resumo_${u}_${stamp}.jpg`;
+    const filename=`antt_resumo_${getAuthUser()}_${stamp}.jpg`;
     canvas.toBlob((blob)=>{
       const url=URL.createObjectURL(blob);
       const a=document.createElement("a"); a.href=url; a.download=filename;
@@ -724,44 +801,24 @@ function exportJPG(){
 
 /* ================== CALC ================== */
 function calc(opts={}){
-  const tipoEl = $("tipo");
-  if (!tipoEl) return;
-
-  if (!tipoEl.options || tipoEl.options.length===0){
-    fillTipos();
-  }
-
-  const idx = Number(tipoEl.value || 0);
-  const row = DATA[idx] || DATA[0];
-
+  if(!getAuthUser()) return;
+  const row=DATA[Number($("tipo").value)];
   const {km,pedagioPorEixo,margem,icms}=getInputs();
   const {eixos,pesoUsado,freteMotorista,freteEmpresa}=calcFretes(row,km,pedagioPorEixo,margem,icms);
 
-  $("outRkm").textContent="R$ "+numpt(row.rkm,4);
-  $("outCC").textContent="R$ "+numpt(row.custoCC,3);
-  $("outPeso").textContent=fmtPeso(pesoUsado);
-  $("outObs").textContent=`${row.tipo} | Eixos: ${eixos}`;
-  $("outMotorista").textContent=money(freteMotorista);
-  $("outEmpresa").textContent=Number.isFinite(freteEmpresa)?money(freteEmpresa):"Erro (margem/ICMS 100%)";
+  if($("outRkm")) $("outRkm").textContent="R$ "+numpt(row.rkm,4);
+  if($("outCC")) $("outCC").textContent="R$ "+numpt(row.custoCC,3);
+  if($("outPeso")) $("outPeso").textContent=fmtPeso(pesoUsado);
+  if($("outObs")) $("outObs").textContent=`${row.tipo} | Eixos: ${eixos}`;
+  if($("outMotorista")) $("outMotorista").textContent=money(freteMotorista);
+  if($("outEmpresa")) $("outEmpresa").textContent=Number.isFinite(freteEmpresa)?money(freteEmpresa):"Erro (margem/ICMS 100%)";
 
   renderTabela(km,pedagioPorEixo,margem,icms);
 
-  if(!opts.skipPesosRender && !isEditingPeso){
-    renderTabelaPesos();
-  }
+  if(!opts.skipPesosRender && !isEditingPeso) renderTabelaPesos();
 }
 
 /* ================== ADMIN UI ================== */
-const USERS_KEY = "piso_users_v1"; // (admin local)
-function loadUsers(){
-  try{
-    const raw = localStorage.getItem(USERS_KEY);
-    const u = raw ? JSON.parse(raw) : {};
-    return (u && typeof u==="object") ? u : {};
-  }catch(e){ return {}; }
-}
-function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
-
 function showAdmin(show){
   const m=$("adminModal");
   if(!m) return;
@@ -770,16 +827,10 @@ function showAdmin(show){
   if(show) renderAdminUsers();
 }
 function renderAdminUsers(){
-  const USERS = loadUsers();
+  USERS = loadUsers();
   const tbody=$("admUserTable");
-  if(!tbody) return;
   tbody.innerHTML="";
-  const names = Object.keys(USERS).sort();
-
-  // garante que LUZIANO apareça como ADMIN mesmo sem estar no storage
-  if(!names.includes(ADMIN_USER)) names.unshift(ADMIN_USER);
-
-  names.forEach((u)=>{
+  Object.keys(USERS).sort().forEach((u)=>{
     const tr=document.createElement("tr");
     const isAdm = (u===ADMIN_USER);
     tr.innerHTML=`
@@ -789,15 +840,15 @@ function renderAdminUsers(){
       </td>`;
     tbody.appendChild(tr);
   });
-
   tbody.querySelectorAll("button[data-del]").forEach((b)=>{
     b.addEventListener("click", ()=>{
       const u=b.getAttribute("data-del");
       if(!u || u===ADMIN_USER) return;
       if(confirm(`Excluir o usuário ${u}?`)){
-        const USERS = loadUsers();
+        USERS = loadUsers();
         delete USERS[u];
         saveUsers(USERS);
+        initAuth(); // repopula select login
         renderAdminUsers();
         toastAdmin("Usuário excluído.", true);
       }
@@ -815,82 +866,69 @@ function toastAdmin(txt, ok){
 
 /* ================== INIT ================== */
 document.addEventListener("DOMContentLoaded", ()=>{
-  // 1) valida portal (login + estado + permissão do piso + senha extra)
-  const ok = enforcePisoAuth();
-  if(!ok){
-    alert("auth.js não carregou. Confira o caminho: ../assets/js/auth.js");
-    return;
-  }
+  // 1) valida Login 1 (HOME)
+  enforceHomeAuth();
 
-  // 2) user badge + admin + ações
-  const u = portalUser();
-  const uf = portalUF();
-  $("userBadge").textContent = u ? `Logado: ${u} (${uf||"--"})` : "Deslogado";
-  $("btnAdmin").style.display = isAdmin() ? "" : "none";
-
-  $("btnLogout").addEventListener("click", (e)=>{ e.preventDefault(); logoutPortal(); });
-
-  // 3) boot tabela/cálculo
+  // 2) init calculadora
+  initAuth();
   fillTipos();
-  pesosCustom = loadPesosCustom();
-  applyQuoteModeUI();
-  calc();
 
-  // binds
-  $("btnResetPesos")?.addEventListener("click", resetPesos);
-  $("btnCalc")?.addEventListener("click", ()=>calc());
-  $("tipo")?.addEventListener("change", ()=>calc());
+  const btnReset=$("btnResetPesos");
+  if(btnReset) btnReset.addEventListener("click", resetPesos);
 
-  ["km","pedagio","margem","icms"].forEach(id=>{
-    const el=$(id);
-    if(el) el.addEventListener("input", ()=>calc());
-  });
+  const btnCalc=$("btnCalc");
+  if(btnCalc) btnCalc.addEventListener("click", ()=>calc());
 
-  ["km","pedagio","margem","icms","tipo","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
+  $("tipo").addEventListener("change", ()=>calc());
+  ["km","pedagio","margem","icms"].forEach(id=>$(id).addEventListener("input", ()=>calc()));
 
-  $("btnExportCSV")?.addEventListener("click", exportCSV);
-  $("btnExportJPG")?.addEventListener("click", exportJPG);
+  ["km","pedagio","margem","icms","tipo","lockPass","lockUser","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
 
-  // Toggle cotação
+  $("btnExportCSV").addEventListener("click", exportCSV);
+  $("btnExportJPG").addEventListener("click", exportJPG);
+
+  /* Toggle cotação */
   const tgl=$("toggleQuote");
   function toggleQuote(){
+    if(!getAuthUser()) return;
     const next=!isQuoteMode();
     setQuoteMode(next);
     applyQuoteModeUI();
     calc();
   }
-  if(tgl){
-    tgl.addEventListener("click", toggleQuote);
-    tgl.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleQuote(); }
-    });
-  }
+  tgl.addEventListener("click", toggleQuote);
+  tgl.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleQuote(); }
+  });
 
-  // Admin
-  $("btnAdminClose")?.addEventListener("click", ()=>showAdmin(false));
-  $("adminModal")?.addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
-  $("btnAdmin")?.addEventListener("click", ()=>{ if(isAdmin()) showAdmin(true); });
+  /* Admin bind */
+  $("btnAdminClose").addEventListener("click", ()=>showAdmin(false));
+  $("adminModal").addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
 
-  $("btnAdminSaveUser")?.addEventListener("click", ()=>{
+  $("btnAdmin").addEventListener("click", ()=>{
     if(!isAdmin()) return;
-    let name = String($("admUserName")?.value||"").trim().toUpperCase();
-    const pass = String($("admUserPass")?.value||"").trim();
-    if(!name) return toastAdmin("Informe o nome do usuário.", false);
-    if(!pass) return toastAdmin("Informe a senha.", false);
+    showAdmin(true);
+  });
 
-    name = name.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
-
-    const USERS = loadUsers();
-    USERS[name]=pass;
+  $("btnAdminSaveUser").addEventListener("click", ()=>{
+    if(!isAdmin()) return;
+    let u = String($("admUserName").value||"").trim().toUpperCase();
+    const p = String($("admUserPass").value||"").trim();
+    if(!u) return toastAdmin("Informe o nome do usuário.", false);
+    if(!p) return toastAdmin("Informe a senha.", false);
+    // sanitiza
+    u = u.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
+    USERS = loadUsers();
+    USERS[u]=p;
+    if(!USERS[ADMIN_USER]) USERS[ADMIN_USER]=USERS_DEFAULT[ADMIN_USER]||"1993";
     saveUsers(USERS);
-
-    $("admUserName").value="";
-    $("admUserPass").value="";
+    initAuth();
     renderAdminUsers();
+    $("admUserName").value=""; $("admUserPass").value="";
     toastAdmin("Usuário salvo/atualizado.", true);
   });
 
-  $("btnAdminResetAllPesos")?.addEventListener("click", ()=>{
+  $("btnAdminResetAllPesos").addEventListener("click", ()=>{
     if(!isAdmin()) return;
     if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
       resetAllPesos();
@@ -899,6 +937,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
       toastAdmin("Pesos resetados (todos).", true);
     }
   });
+
+  /* boot */
+  if(getAuthUser()){
+    pesosCustom=loadPesosCustom();
+    applyQuoteModeUI();
+    calc();
+  }
 });
 </script>
 </body>

@@ -221,9 +221,19 @@
   }
 
   // ======================================================
-  // ✅ UPLOAD REAL via IFRAME (POST) sem CORS
-  // - Apps Script responde HTML e manda parent.postMessage(...)
+  // ✅ UPLOAD para o Drive via JSONP (GET) com Base64
+  //
+  // Por que JSONP e não iframe/fetch?
+  //  - iframe POST: o Google retorna X-Frame-Options bloqueando postMessage
+  //  - fetch: Apps Script não tem CORS headers em doPost
+  //  - JSONP GET: funciona sem restrições de CORS/SAMEORIGIN
+  //
+  // Limite prático: ~4 MB por arquivo (URL limit do Apps Script).
+  // Arquivos maiores são rejeitados com mensagem clara ao usuário.
   // ======================================================
+
+  const UPLOAD_MAX_BYTES = 4 * 1024 * 1024; // 4 MB
+
   function fileToBase64_(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -237,76 +247,64 @@
     });
   }
 
+  // ✅ Converte base64 para Blob para medir tamanho real (bytes)
+  function base64ByteLength_(b64) {
+    // cada 4 chars base64 = 3 bytes; desconta padding
+    const padding = (b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0);
+    return Math.floor(b64.length * 3 / 4) - padding;
+  }
+
+  /**
+   * Upload via JSONP GET — envia o base64 como parâmetro de querystring.
+   * O Apps Script (doGet action=drive_upload) recebe via e.parameter.data.
+   */
   async function uploadToDriveIframe_(file, meta) {
+    // Valida tamanho antes de qualquer coisa
+    if (file.size > UPLOAD_MAX_BYTES) {
+      throw new Error(
+        `Arquivo muito grande: ${(file.size / 1024 / 1024).toFixed(1)} MB.\n` +
+        `Máximo permitido: ${UPLOAD_MAX_BYTES / 1024 / 1024} MB.\n` +
+        `Compacte o arquivo ou reduza a resolução da imagem.`
+      );
+    }
+
+    const filial = upper(meta.filial || "");
+    if (!filial) throw new Error("Filial não identificada para o upload.");
+
+    setStatus("📄 Lendo arquivo...");
     const base64 = await fileToBase64_(file);
 
-    // form fields (o Apps Script lê via e.parameter)
-    const fields = {
+    // Dupla verificação por segurança (tamanho base64)
+    if (base64ByteLength_(base64) > UPLOAD_MAX_BYTES) {
+      throw new Error(
+        `Arquivo muito grande após codificação.\n` +
+        `Máximo permitido: ${UPLOAD_MAX_BYTES / 1024 / 1024} MB.`
+      );
+    }
+
+    setStatus("☁️ Enviando para o Drive (JSONP)...");
+
+    // Monta parâmetros — idênticos ao que driveUploadBase64_ espera
+    const params = {
+      action: "drive_upload",
       folderId: DRIVE_FOLDER_ID,
-      filial: upper(meta.filial || ""),
-      type: meta.type || "",     // "termo" | "checklist"
-      ref: meta.ref || "",       // placa ou sequencia etc
+      filial,
+      type:     meta.type || "arquivo",   // "termo" | "checklist" | "arquivo"
+      ref:      meta.ref  || "",
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
-      data: base64,
+      data:     base64,
     };
 
-    if (!fields.filial) throw new Error("Filial não identificada para o upload.");
+    // Usa o helper jsonp() já existente (resolve CORS via <script>)
+    const url = buildUrl(params);
+    const res = await jsonp(url, 90000); // 90s timeout para arquivos grandes
 
-    const iframeName = "nf_up_" + Math.random().toString(36).slice(2);
-    const iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.style.display = "none";
+    if (!res || res.ok === false) {
+      throw new Error(res?.error || "Falha no upload (Apps Script retornou erro)");
+    }
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.target = iframeName;
-    form.action = API_URL + "?action=drive_upload"; // ✅ action no querystring
-    form.enctype = "application/x-www-form-urlencoded"; // base64 vai como texto
-
-    Object.entries(fields).forEach(([k, v]) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = k;
-      input.value = String(v ?? "");
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(iframe);
-    document.body.appendChild(form);
-
-    return new Promise((resolve, reject) => {
-      const timeoutMs = 120000; // 2 min
-      const t = setTimeout(() => cleanup(new Error("Timeout no upload (iframe)")), timeoutMs);
-
-      function cleanup(err) {
-        clearTimeout(t);
-        window.removeEventListener("message", onMsg);
-        try { form.remove(); } catch {}
-        try { iframe.remove(); } catch {}
-        if (err) reject(err);
-      }
-
-      function onMsg(ev) {
-        const data = ev && ev.data;
-        if (!data || data.__nf_upload__ !== true) return; // só pega nossa mensagem
-
-        if (data.ok) {
-          cleanup();
-          resolve(data.data);
-        } else {
-          cleanup(new Error(data.error || "Falha no upload"));
-        }
-      }
-
-      window.addEventListener("message", onMsg);
-
-      try {
-        form.submit();
-      } catch (err) {
-        cleanup(new Error("Falha ao enviar formulário"));
-      }
-    });
+    return res.data; // { fileId, name, url, folderFilial, folderTipo }
   }
 
   // ======================================================

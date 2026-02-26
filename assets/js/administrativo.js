@@ -1,4 +1,4 @@
-/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial + upload Drive + modal) */
+/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial + upload Drive por filial/subpasta) */
 (function () {
   "use strict";
 
@@ -31,7 +31,7 @@
   ];
 
   // ======================================================
-  // ✅ STORAGE (locais)
+  // ✅ STORAGE (para Solicitações/Patrimônio/EPIs enquanto não liga no Sheets)
   // ======================================================
   const LS_KEYS = {
     solicit: "nf_admin_solicitacoes_v1",
@@ -51,7 +51,9 @@
     }
   }
   function saveLS(key, arr) {
-    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
+    try {
+      localStorage.setItem(key, JSON.stringify(arr || []));
+    } catch {}
   }
 
   // ======================================================
@@ -98,18 +100,8 @@
     if (el) el.textContent = text;
   }
 
-  function escapeHtml(s) {
-    const t = String(s ?? "");
-    return t
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
   // ======================================================
-  // ✅ JSONP helper (resolve CORS para CHEQUES)
+  // ✅ JSONP helper (resolve CORS)
   // ======================================================
   function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
@@ -150,7 +142,7 @@
   }
 
   // ======================================================
-  // ✅ CHEQUES: lista do Sheets + salvar via JSONP/GET
+  // ✅ CHEQUES (Sheets) via JSONP
   // ======================================================
   function normalizeChequeRow(r) {
     return {
@@ -185,8 +177,6 @@
   }
 
   async function loadChequesFromSheets() {
-    if (!API_URL) return;
-
     const url = buildUrl({ action: "cheques_list" });
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
@@ -195,36 +185,44 @@
   }
 
   async function createChequeOnSheets(payload) {
-    const url = buildUrl({
+    const params = {
       action: "cheques_add",
       filial: upper(payload.filial),
       data: safeText(payload.data),
       sequencia: safeText(payload.sequencia),
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
-    });
+    };
+
+    const url = buildUrl(params);
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
     return res.data;
   }
 
   async function updateChequeOnSheets(payload) {
-    const url = buildUrl({
+    const params = {
       action: "cheques_update",
       id: safeText(payload.id),
-      status: payload.status ? upper(payload.status) : "",
-      termoUrl: payload.termoUrl ? safeText(payload.termoUrl) : "",
-      termoNome: payload.termoNome ? safeText(payload.termoNome) : "",
+      status: payload.status != null ? upper(payload.status) : "",
+      termoUrl: payload.termoUrl != null ? safeText(payload.termoUrl) : "",
+      termoNome: payload.termoNome != null ? safeText(payload.termoNome) : "",
+    };
+
+    // remove params vazios pra não sobrescrever sem querer
+    Object.keys(params).forEach((k) => {
+      if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
     });
+
+    const url = buildUrl(params);
     const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
     return res.data;
   }
 
   // ======================================================
-  // ✅ UPLOAD DRIVE via IFRAME POST (sem CORS e sem estourar URL)
-  // - envia base64 no corpo (hidden input)
-  // - recebe resposta via postMessage (Apps Script manda HTML com parent.postMessage)
+  // ✅ UPLOAD REAL via IFRAME (POST) sem CORS
+  // - Apps Script responde HTML e manda parent.postMessage(...)
   // ======================================================
   function fileToBase64_(file) {
     return new Promise((resolve, reject) => {
@@ -239,80 +237,76 @@
     });
   }
 
-  function driveUploadViaIframe_(params, timeoutMs = 120000) {
-    return new Promise((resolve, reject) => {
-      const iframeName = "nf_up_iframe_" + Math.random().toString(36).slice(2);
-      const formId = "nf_up_form_" + Math.random().toString(36).slice(2);
-
-      const iframe = document.createElement("iframe");
-      iframe.name = iframeName;
-      iframe.style.display = "none";
-      document.body.appendChild(iframe);
-
-      const form = document.createElement("form");
-      form.id = formId;
-      form.method = "POST";
-      form.action = API_URL; // /exec
-      form.target = iframeName;
-      form.style.display = "none";
-      form.enctype = "application/x-www-form-urlencoded";
-
-      function addInput(name, value) {
-        const inp = document.createElement("input");
-        inp.type = "hidden";
-        inp.name = name;
-        inp.value = String(value ?? "");
-        form.appendChild(inp);
-      }
-
-      Object.entries(params || {}).forEach(([k, v]) => addInput(k, v));
-      document.body.appendChild(form);
-
-      const timer = setTimeout(() => cleanup(new Error("Timeout no upload (iframe)")), timeoutMs);
-
-      function onMsg(ev) {
-        const data = ev && ev.data;
-        if (!data || data.__nf_upload__ !== true) return; // só aceita resposta do upload
-        cleanup(null, data);
-      }
-
-      function cleanup(err, data) {
-        clearTimeout(timer);
-        window.removeEventListener("message", onMsg);
-        try { form.remove(); } catch {}
-        try { iframe.remove(); } catch {}
-        if (err) reject(err);
-        else resolve(data);
-      }
-
-      window.addEventListener("message", onMsg);
-
-      // dispara
-      try {
-        form.submit();
-      } catch (e) {
-        cleanup(new Error("Falha ao enviar formulário (upload)"));
-      }
-    });
-  }
-
-  async function uploadFileToDrive(file, meta) {
+  async function uploadToDriveIframe_(file, meta) {
     const base64 = await fileToBase64_(file);
 
-    const params = {
-      action: "drive_upload",
+    // form fields (o Apps Script lê via e.parameter)
+    const fields = {
       folderId: DRIVE_FOLDER_ID,
       filial: upper(meta.filial || ""),
-      type: String(meta.type || "").toLowerCase(), // termo|checklist
-      ref: safeText(meta.ref || ""),
+      type: meta.type || "",     // "termo" | "checklist"
+      ref: meta.ref || "",       // placa ou sequencia etc
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
       data: base64,
     };
 
-    const res = await driveUploadViaIframe_(params);
-    if (!res || res.ok === false) throw new Error(res?.error || "Não foi possível enviar para o Drive.");
-    return res.data; // {fileId, name, url, folderFilial, folderTipo}
+    if (!fields.filial) throw new Error("Filial não identificada para o upload.");
+
+    const iframeName = "nf_up_" + Math.random().toString(36).slice(2);
+    const iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.style.display = "none";
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.target = iframeName;
+    form.action = API_URL + "?action=drive_upload"; // ✅ action no querystring
+    form.enctype = "application/x-www-form-urlencoded"; // base64 vai como texto
+
+    Object.entries(fields).forEach(([k, v]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = k;
+      input.value = String(v ?? "");
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+
+    return new Promise((resolve, reject) => {
+      const timeoutMs = 120000; // 2 min
+      const t = setTimeout(() => cleanup(new Error("Timeout no upload (iframe)")), timeoutMs);
+
+      function cleanup(err) {
+        clearTimeout(t);
+        window.removeEventListener("message", onMsg);
+        try { form.remove(); } catch {}
+        try { iframe.remove(); } catch {}
+        if (err) reject(err);
+      }
+
+      function onMsg(ev) {
+        const data = ev && ev.data;
+        if (!data || data.__nf_upload__ !== true) return; // só pega nossa mensagem
+
+        if (data.ok) {
+          cleanup();
+          resolve(data.data);
+        } else {
+          cleanup(new Error(data.error || "Falha no upload"));
+        }
+      }
+
+      window.addEventListener("message", onMsg);
+
+      try {
+        form.submit();
+      } catch (err) {
+        cleanup(new Error("Falha ao enviar formulário"));
+      }
+    });
   }
 
   // ======================================================
@@ -401,7 +395,11 @@
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.mes)} ${upper(it.status)}</span>
-          <button class="linkBtn" type="button" data-upload="checklist" data-placa="${upper(it.placa)}">Upload checklist mensal</button>
+          <button class="linkBtn" type="button"
+            data-upload="checklist"
+            data-placa="${upper(it.placa)}"
+            data-filial="${upper(it.filial)}"
+          >Upload checklist mensal</button>
         </div>
       `;
       wrap.appendChild(card);
@@ -442,6 +440,7 @@
 
       const listHtml = hist.slice(0, 10).map((it) => {
         const hasTermo = !!it.termoUrl;
+        const termoTxt = hasTermo ? "Reenviar termo" : "Upload termo";
         const termoCls = hasTermo ? "ok" : "warn";
 
         return `
@@ -457,7 +456,7 @@
                 data-id="${safeText(it.id)}"
                 data-filial="${upper(it.filial)}"
                 data-seq="${upper(it.sequencia)}"
-              >Upload termo</button>
+              >${termoTxt}</button>
             </div>
           </div>
         `;
@@ -486,7 +485,7 @@
     });
   }
 
-  function renderSolic(list) { /* igual ao seu (mantido) */ 
+  function renderSolic(list) {
     const wrap = $("#gridSolic");
     if (!wrap) return;
     wrap.innerHTML = "";
@@ -520,7 +519,7 @@
     });
   }
 
-  function renderPatrimonio(list) { /* igual ao seu (mantido) */ 
+  function renderPatrimonio(list) {
     const wrap = $("#gridPatrimonio");
     if (!wrap) return;
     wrap.innerHTML = "";
@@ -546,7 +545,7 @@
     });
   }
 
-  function renderEpis(list) { /* igual ao seu (mantido) */ 
+  function renderEpis(list) {
     const wrap = $("#gridEpis");
     if (!wrap) return;
     wrap.innerHTML = "";
@@ -671,7 +670,6 @@
       ];
     }
 
-    // (restante igual ao seu)
     if (tab === "solicitacoes") {
       return [
         { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
@@ -713,6 +711,7 @@
       ];
     }
 
+    // frota
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
@@ -775,6 +774,28 @@
     };
   }
 
+  function openNew(tab, preset) {
+    modal.ctx = { mode: "new", tab, id: "" };
+    const schema = schemaFor(tab);
+    const initial = preset || (tab === "cheques" ? { filial: "", status: "ATIVO", data: todayBR() } : { filial: "" });
+    openModal(`Novo - ${labelTab(tab)}`, schema, initial);
+  }
+
+  function openEdit(tab, id) {
+    modal.ctx = { mode: "edit", tab, id };
+    const schema = schemaFor(tab);
+
+    const list = tab === "solicitacoes" ? DATA.solicitacoes :
+      tab === "patrimonio" ? DATA.patrimonio :
+      tab === "epis" ? DATA.epis :
+      DATA.frota;
+
+    const item = list.find((x) => x.id === id);
+    if (!item) return;
+
+    openModal(`Editar - ${labelTab(tab)}`, schema, item);
+  }
+
   function labelTab(tab) {
     if (tab === "cheques") return "Cheques";
     if (tab === "solicitacoes") return "Solicitações";
@@ -783,16 +804,10 @@
     return "Frota";
   }
 
-  function openNew(tab, preset) {
-    modal.ctx = { mode: "new", tab, id: "" };
-    const schema = schemaFor(tab);
-    const initial = preset || (tab === "cheques" ? { filial: "", status: "ATIVO", data: todayBR() } : { filial: "" });
-    openModal(`Novo - ${labelTab(tab)}`, schema, initial);
-  }
-
   async function saveModal() {
     const tab = modal.ctx.tab;
     const payload = valuesFromModal(tab);
+
     if (!payload.filial) return alert("Selecione uma filial.");
 
     try {
@@ -800,6 +815,7 @@
         if (!payload.data || !payload.sequencia || !payload.responsavel) {
           return alert("Preencha: Data, Sequência e Responsável.");
         }
+
         setStatus("💾 Salvando cheque...");
         await createChequeOnSheets(payload);
         closeModal();
@@ -812,7 +828,13 @@
         tab === "epis" ? DATA.epis :
         DATA.frota;
 
-      list.unshift({ id: uid(), ...payload });
+      if (modal.ctx.mode === "edit") {
+        const idx = list.findIndex((x) => x.id === modal.ctx.id);
+        if (idx >= 0) list[idx] = { ...list[idx], ...payload };
+      } else {
+        list.unshift({ id: uid(), ...payload });
+      }
+
       persistLocal();
       closeModal();
       renderAll();
@@ -846,48 +868,8 @@
   }
 
   // ======================================================
-  // ✅ Upload handlers
+  // Delegações (upload termo/checklist + abrir termo + novo por filial)
   // ======================================================
-  function findFilialByPlaca_(placa) {
-    const p = upper(placa);
-    const it = (DATA.frota || []).find(x => upper(x.placa) === p);
-    return it ? upper(it.filial) : "";
-  }
-
-  async function handleUpload_(type, file, meta) {
-    try {
-      setStatus("☁️ Enviando para o Drive...");
-      const up = await uploadFileToDrive(file, meta);
-      setStatus("✅ Upload OK");
-
-      // Se for TERMO: salva URL no Sheets e recarrega
-      if (type === "termo" && meta.chequeId) {
-        setStatus("🧾 Salvando termo no Sheets...");
-        await updateChequeOnSheets({
-          id: meta.chequeId,
-          termoUrl: up.url,
-          termoNome: up.name,
-        });
-        await reloadAll();
-        setStatus("✅ Termo vinculado");
-      }
-
-      // Checklist: (por enquanto só salva no Drive, se quiser depois criamos aba CHECKLISTS)
-      alert(
-        `✅ Upload concluído!\n\n` +
-        `Tipo: ${type}\n` +
-        `Filial: ${meta.filial}\n` +
-        `Pasta: ${up.folderTipo}\n` +
-        `Arquivo: ${up.name}\n\n` +
-        `Link:\n${up.url}`
-      );
-    } catch (err) {
-      console.error(err);
-      setStatus("❌ Falha no upload");
-      alert("Não foi possível enviar para o Drive.\n\nErro: " + (err?.message || err));
-    }
-  }
-
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
@@ -906,43 +888,73 @@
       }
 
       if (el.matches("[data-upload]")) {
-        const type = String(el.getAttribute("data-upload") || "").toLowerCase(); // checklist | termo
-
+        const type = el.getAttribute("data-upload"); // checklist | termo
         const placa = el.getAttribute("data-placa") || "";
         const seq = el.getAttribute("data-seq") || "";
         const chequeId = el.getAttribute("data-id") || "";
-        const filialFromBtn = el.getAttribute("data-filial") || "";
-        const filial = upper(filialFromBtn || (placa ? findFilialByPlaca_(placa) : ""));
+        const filialBtn = el.getAttribute("data-filial") || "";
 
-        const ref = (type === "checklist") ? upper(placa) : upper(seq || chequeId);
+        const ref = placa || seq || chequeId || "ITEM";
 
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*,application/pdf";
+
         input.onchange = async () => {
           const file = input.files && input.files[0];
           if (!file) return;
 
-          if (!filial) {
-            alert("Não consegui identificar a FILIAL deste item.\n\nConfirme se a frota tem a filial cadastrada ou se o botão tem data-filial.");
-            return;
+          // ✅ filial: do botão (cheques) ou do card frota
+          const filial = upper(filialBtn || "");
+
+          try {
+            setStatus("☁️ Enviando para o Drive...");
+            const up = await uploadToDriveIframe_(file, {
+              filial,
+              type,         // termo | checklist
+              ref,          // placa ou sequencia etc
+            });
+
+            setStatus("✅ Upload OK");
+
+            // ✅ se for termo, salva no Sheets no cheque correspondente
+            if (type === "termo" && chequeId) {
+              setStatus("🧾 Salvando termo no cheque...");
+              await updateChequeOnSheets({
+                id: chequeId,
+                termoUrl: up.url,
+                termoNome: up.name,
+              });
+              setStatus("✅ Termo vinculado ao cheque");
+              await reloadAll();
+            } else {
+              // checklist: só confirma o link
+              alert(`Upload OK ✅\n\nArquivo: ${up.name}\nLink: ${up.url}\n\nPasta: ${up.folderFilial} / ${up.folderTipo}`);
+            }
+
+          } catch (err) {
+            console.error(err);
+            setStatus("❌ Falha no upload");
+            alert(err?.message || "Falha no upload");
           }
-
-          const meta = {
-            type,                 // termo | checklist
-            filial,               // obrigatório para salvar na subpasta
-            ref,                  // placa ou seq
-            chequeId: chequeId,   // só para termo
-          };
-
-          await handleUpload_(type, file, meta);
         };
+
         input.click();
+        return;
+      }
+
+      if (el.matches("[data-edit]")) {
+        const tab = el.getAttribute("data-edit") || "";
+        const id = el.getAttribute("data-id") || "";
+        if (tab && id) openEdit(tab, id);
         return;
       }
     });
   }
 
+  // ======================================================
+  // Binds
+  // ======================================================
   function bindTabs() {
     document.querySelectorAll(".tabBtn").forEach((b) => {
       b.addEventListener("click", () => setActiveTab(b.dataset.tab));
@@ -994,6 +1006,16 @@
     const user = (window.getUser?.() || "");
     const sub = $("#adminSub");
     if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf} | Drive: ${DRIVE_FOLDER_ID}`;
+  }
+
+  function escapeHtml(s) {
+    const t = String(s ?? "");
+    return t
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   function init() {

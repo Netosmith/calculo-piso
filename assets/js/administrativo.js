@@ -221,18 +221,24 @@
   }
 
   // ======================================================
-  // ✅ UPLOAD para o Drive via JSONP (GET) com Base64
+  // ✅ UPLOAD para o Drive via JSONP chunked
   //
-  // Por que JSONP e não iframe/fetch?
-  //  - iframe POST: o Google retorna X-Frame-Options bloqueando postMessage
-  //  - fetch: Apps Script não tem CORS headers em doPost
-  //  - JSONP GET: funciona sem restrições de CORS/SAMEORIGIN
+  // Estratégia:
+  //  1. Lê o arquivo e converte para base64
+  //  2. Divide o base64 em chunks de ~10 KB cada
+  //  3. Envia chunk a chunk via JSONP GET (action=upload_chunk)
+  //     O Apps Script armazena os chunks em PropertiesService
+  //  4. Após todos os chunks, envia action=upload_finalize
+  //     O Apps Script reassembla e cria o arquivo no Drive
   //
-  // Limite prático: ~4 MB por arquivo (URL limit do Apps Script).
-  // Arquivos maiores são rejeitados com mensagem clara ao usuário.
+  // Por que chunked?
+  //  - JSONP GET não tem limite de CORS nem X-Frame-Options
+  //  - URLs longas (base64 completo) são rejeitadas pelo browser
+  //  - Chunks de ~10 KB ficam dentro do limite seguro de URL
   // ======================================================
 
-  const UPLOAD_MAX_BYTES = 4 * 1024 * 1024; // 4 MB
+  const UPLOAD_MAX_BYTES  = 10 * 1024 * 1024; // 10 MB limite total
+  const UPLOAD_CHUNK_CHARS = 10000;            // ~10 KB de base64 por chunk
 
   function fileToBase64_(file) {
     return new Promise((resolve, reject) => {
@@ -247,19 +253,11 @@
     });
   }
 
-  // ✅ Converte base64 para Blob para medir tamanho real (bytes)
-  function base64ByteLength_(b64) {
-    // cada 4 chars base64 = 3 bytes; desconta padding
-    const padding = (b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0);
-    return Math.floor(b64.length * 3 / 4) - padding;
-  }
-
   /**
-   * Upload via JSONP GET — envia o base64 como parâmetro de querystring.
-   * O Apps Script (doGet action=drive_upload) recebe via e.parameter.data.
+   * Upload via JSONP chunked.
+   * Compatível com doGet actions: upload_chunk + upload_finalize
    */
   async function uploadToDriveIframe_(file, meta) {
-    // Valida tamanho antes de qualquer coisa
     if (file.size > UPLOAD_MAX_BYTES) {
       throw new Error(
         `Arquivo muito grande: ${(file.size / 1024 / 1024).toFixed(1)} MB.\n` +
@@ -274,34 +272,49 @@
     setStatus("📄 Lendo arquivo...");
     const base64 = await fileToBase64_(file);
 
-    // Dupla verificação por segurança (tamanho base64)
-    if (base64ByteLength_(base64) > UPLOAD_MAX_BYTES) {
-      throw new Error(
-        `Arquivo muito grande após codificação.\n` +
-        `Máximo permitido: ${UPLOAD_MAX_BYTES / 1024 / 1024} MB.`
-      );
+    // Divide em chunks
+    const chunks = [];
+    for (let i = 0; i < base64.length; i += UPLOAD_CHUNK_CHARS) {
+      chunks.push(base64.slice(i, i + UPLOAD_CHUNK_CHARS));
     }
 
-    setStatus("☁️ Enviando para o Drive (JSONP)...");
+    // ID único para esta sessão de upload
+    const uploadId = "up_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
 
-    // Monta parâmetros — idênticos ao que driveUploadBase64_ espera
-    const params = {
-      action: "drive_upload",
+    // Envia cada chunk
+    for (let i = 0; i < chunks.length; i++) {
+      const pct = Math.round(((i + 1) / chunks.length) * 90);
+      setStatus(`☁️ Enviando chunk ${i + 1}/${chunks.length} (${pct}%)...`);
+
+      const res = await jsonp(buildUrl({
+        action:   "upload_chunk",
+        uploadId,
+        chunk:    String(i),
+        total:    String(chunks.length),
+        data:     chunks[i],
+      }), 30000);
+
+      if (!res || res.ok === false) {
+        throw new Error(`Falha no chunk ${i + 1}: ` + (res?.error || "erro desconhecido"));
+      }
+    }
+
+    // Finaliza o upload
+    setStatus("🔧 Finalizando no Drive...");
+    const res = await jsonp(buildUrl({
+      action:   "upload_finalize",
+      uploadId,
       folderId: DRIVE_FOLDER_ID,
       filial,
-      type:     meta.type || "arquivo",   // "termo" | "checklist" | "arquivo"
+      type:     meta.type || "arquivo",
       ref:      meta.ref  || "",
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
-      data:     base64,
-    };
-
-    // Usa o helper jsonp() já existente (resolve CORS via <script>)
-    const url = buildUrl(params);
-    const res = await jsonp(url, 90000); // 90s timeout para arquivos grandes
+      total:    String(chunks.length),
+    }), 120000); // 2 min para o Apps Script montar o arquivo no Drive
 
     if (!res || res.ok === false) {
-      throw new Error(res?.error || "Falha no upload (Apps Script retornou erro)");
+      throw new Error(res?.error || "Falha ao finalizar upload no Drive");
     }
 
     return res.data; // { fileId, name, url, folderFilial, folderTipo }

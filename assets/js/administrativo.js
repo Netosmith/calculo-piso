@@ -108,10 +108,11 @@
       const cb = "cb_" + Math.random().toString(36).slice(2);
       const s = document.createElement("script");
       const sep = url.includes("?") ? "&" : "?";
+      const fullUrl = url + sep + "callback=" + encodeURIComponent(cb);
 
       const t = setTimeout(() => {
         cleanup();
-        reject(new Error("Timeout (JSONP)"));
+        reject(new Error("Timeout (JSONP) — Apps Script demorou demais"));
       }, timeoutMs);
 
       function cleanup() {
@@ -125,12 +126,17 @@
         resolve(data);
       };
 
-      s.src = url + sep + "callback=" + encodeURIComponent(cb);
+      // onerror: HTTP 4xx/5xx ou URL muito longa
       s.onerror = () => {
         cleanup();
-        reject(new Error("Erro ao carregar script (JSONP)"));
+        const urlLen = fullUrl.length;
+        const msg = urlLen > 6000
+          ? `URL muito longa (${urlLen} chars). Reduza o tamanho do arquivo.`
+          : `Falha na comunicação com o servidor (JSONP onerror). URL: ${urlLen} chars.`;
+        reject(new Error(msg));
       };
 
+      s.src = fullUrl;
       document.head.appendChild(s);
     });
   }
@@ -238,7 +244,9 @@
   // ======================================================
 
   const UPLOAD_MAX_BYTES  = 10 * 1024 * 1024; // 10 MB limite total
-  const UPLOAD_CHUNK_CHARS = 10000;            // ~10 KB de base64 por chunk
+  // ⚠️ Apps Script rejeita URLs > ~8KB com HTTP 400 (onerror no <script>)
+  // Limite real testado: 4000 chars de base64 → URL total ~4200 chars → HTTP 200 ✅
+  const UPLOAD_CHUNK_CHARS = 3500;            // margem segura abaixo do limite
 
   function fileToBase64_(file) {
     return new Promise((resolve, reject) => {
@@ -295,7 +303,18 @@
       }), 30000);
 
       if (!res || res.ok === false) {
-        throw new Error(`Falha no chunk ${i + 1}: ` + (res?.error || "erro desconhecido"));
+        const errMsg = res?.error || "erro desconhecido";
+        // Detecta Apps Script desatualizado e orienta o usuário
+        if (errMsg.includes("Ação inválida")) {
+          throw new Error(
+            "⚠️ O servidor (Apps Script) está desatualizado.\n\n" +
+            "Você precisa publicar o novo script:\n" +
+            "1. Abra o Apps Script\n" +
+            "2. Cole o conteúdo do arquivo apps-script-ADMINISTRATIVO-v2.gs\n" +
+            "3. Deploy → Manage deployments → New version"
+          );
+        }
+        throw new Error(`Falha no chunk ${i + 1}: ` + errMsg);
       }
     }
 

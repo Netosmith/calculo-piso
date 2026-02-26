@@ -56,14 +56,14 @@
     /* ✅ Ajuste: dá um pouco mais de espaço pro meio (Corredor) e pro Status */
     .topRow{
       display:grid;
-      grid-template-columns: 420px 1fr 420px;
+      grid-template-columns: 420px 1fr 420px; /* antes: 340 / 460 */
       gap:12px; align-items:stretch;
     }
     @media (max-width:1200px){ .topRow{grid-template-columns: 1fr;} }
 
     .clientRow{
       display:grid;
-      grid-template-columns: 140px 1fr;
+      grid-template-columns: 140px 1fr; /* antes: 120 */
       gap:10px; align-items:start;
     }
     @media (max-width:1200px){ .clientRow{grid-template-columns: 1fr;} }
@@ -84,6 +84,7 @@
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
+    /* ✅ STATUS CLIENTE (fonte menor + cabe tudo) */
     .statusList{ display:flex; flex-direction:column; }
     .statusLine{
       display:flex; align-items:center; justify-content:space-between;
@@ -99,8 +100,8 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      font-size:13px;
-      max-width: 240px;
+      font-size:13px;            /* ✅ menor */
+      max-width: 240px;          /* ✅ força caber e não empurrar valor */
     }
     .statusValue{
       font-weight:1000;
@@ -109,7 +110,7 @@
       white-space:nowrap;
       min-width:96px;
       text-align:right;
-      font-size:13px;
+      font-size:13px;            /* ✅ menor */
     }
 
     .corrBox{
@@ -122,10 +123,11 @@
       padding:8px 10px; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
     }
 
+    /* ✅ Ajuste pedido: colunas mais próximas e sem “cortar” na direita */
     .corrGrid{
       display:grid;
-      grid-template-columns: repeat(3, minmax(140px, 1fr));
-      gap:6px 14px;
+      grid-template-columns: repeat(3, minmax(140px, 1fr)); /* antes: 180px */
+      gap:6px 14px;              /* ✅ aproxima */
       padding:10px 12px;
       align-content:start;
     }
@@ -210,45 +212,8 @@
       color:#0f3d22;
     }
 
-    /* ======================================================
-       ✅ PRINT MODE: FORÇA LAYOUT DESKTOP MESMO NO CELULAR
-       - some topbar
-       - trava largura em 1650px
-       - desliga "quebra" de grid do @media
-       - captura tabela completa sem altura fixa
-    ======================================================= */
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
-
-    body.printMode #pageShare{
-      width:1650px !important;
-      max-width:1650px !important;
-    }
-    body.printMode .container.nfWide{
-      max-width:1650px !important;
-    }
-
-    /* força os grids em 3 colunas, mesmo no mobile */
-    body.printMode .topRow{
-      grid-template-columns: 420px 1fr 420px !important;
-    }
-    body.printMode .clientRow{
-      grid-template-columns: 140px 1fr !important;
-    }
-    body.printMode .corrGrid{
-      grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
-    }
-
-    /* tira altura travada pra não cortar no print */
-    body.printMode .tableWrap{
-      height:auto !important;
-      min-height: 0 !important;
-      overflow: visible !important;
-    }
-    body.printMode table{
-      min-width:1400px !important;
-    }
-
   </style>
 </head>
 
@@ -358,6 +323,7 @@
     bindLogoutButton();
 
     (function(){
+      // ✅ URL do Apps Script (mesma da aba fretes)
       const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
 
       function onReady(fn){
@@ -403,6 +369,7 @@
       
       function canon(s){ return String(s || '').trim().toUpperCase(); }
 
+      // ✅ pega campo por vários nomes possíveis + busca case-insensitive
       function getField(row, names){
         if(!row) return undefined;
 
@@ -451,6 +418,7 @@
         return `<span class="statusPill ${cls}">${s || '—'}</span>`;
       }
 
+      // ✅ JSONP (igual ao fretes.js)
       function jsonp(url, timeoutMs = 30000) {
         return new Promise((resolve, reject) => {
           const cb = "cb_" + Math.random().toString(36).slice(2);
@@ -459,6 +427,7 @@
 
           const t = setTimeout(() => {
             cleanup();
+            console.error("⏰ JSONP Timeout após " + (timeoutMs/1000) + "s");
             reject(new Error("Timeout ao carregar dados (30s)"));
           }, timeoutMs);
 
@@ -469,13 +438,17 @@
           }
 
           window[cb] = (data) => {
+            console.log("✅ JSONP recebido:", data);
             cleanup();
             resolve(data);
           };
 
+          console.log("🔄 JSONP request:", url + sep + "callback=" + cb);
           s.src = url + sep + "callback=" + encodeURIComponent(cb);
-          s.onerror = () => {
+          
+          s.onerror = (e) => {
             cleanup();
+            console.error("❌ JSONP erro:", e);
             reject(new Error("Erro ao carregar script do Google Sheets"));
           };
 
@@ -483,14 +456,59 @@
         });
       }
 
+      // ✅ Carrega fretes do Google Sheets (action=list)
       async function loadFromSheets(){
-        const response = await jsonp(SHEETS_API_URL + "?action=list");
-        if (response.ok === false) throw new Error(response.error || "Erro no Apps Script");
-
-        let data = response.data || response;
-        if (!Array.isArray(data)) data = data.rows || data.fretes || data.items || [];
-        if (!Array.isArray(data)) return [];
-        return data;
+        try {
+          console.log("📡 Carregando fretes do Google Sheets...");
+          const response = await jsonp(SHEETS_API_URL + "?action=list");
+          
+          console.log("📦 Resposta recebida:", response);
+          
+          // Verifica se houve erro no Apps Script
+          if (response.ok === false) {
+            const errorMsg = response.error || 'Erro desconhecido no Apps Script';
+            
+            // Se for erro de openById, dá uma mensagem específica
+            if (errorMsg.includes('openById')) {
+              throw new Error(
+                "⚠️ ERRO NO APPS SCRIPT: O código está usando 'openById' que não funciona.\n\n" +
+                "SOLUÇÃO:\n" +
+                "1. Abra sua planilha Google Sheets\n" +
+                "2. Vá em Extensions > Apps Script\n" +
+                "3. DELETE TODO o código antigo\n" +
+                "4. Cole o código do arquivo 'apps-script-FIXED.gs'\n" +
+                "5. Salve (Ctrl+S)\n" +
+                "6. Deploy > New deployment\n" +
+                "7. Execute as: Me\n" +
+                "8. Who has access: Anyone\n" +
+                "9. Deploy e atualize a URL se mudou\n\n" +
+                "Arquivo: apps-script-FIXED.gs está no repositório GitHub"
+              );
+            }
+            
+            throw new Error(errorMsg);
+          }
+          
+          // Pega os dados (pode vir em response.data ou direto)
+          let data = response.data || response;
+          
+          // Se ainda não for array, tenta outras propriedades
+          if (!Array.isArray(data)) {
+            data = data.rows || data.fretes || data.items || [];
+          }
+          
+          if (!Array.isArray(data)) {
+            console.error("❌ Resposta não é um array:", response);
+            return [];
+          }
+          
+          console.log("✅ Total de fretes carregados:", data.length);
+          return data;
+          
+        } catch (err) {
+          console.error("💥 Erro ao carregar Share Clientes:", err);
+          throw err;
+        }
       }
 
       onReady(function(){
@@ -531,13 +549,22 @@
           const displayName = clientIndex.get(key) || key;
           const rows = BASE.filter(r => canon(r.cliente) === key);
 
+          console.log(`🔍 Share Clientes - Renderizando para ${displayName}:`, rows);
+
           const totalLotes = rows.length;
-          const totalCaminhoes = rows.reduce((acc, r) => acc + (int(getPorta(r)) + int(getTransito(r))), 0);
+          const totalCaminhoes = rows.reduce((acc, r) => {
+            const cmhL = int(getPorta(r));
+            const cmhT = int(getTransito(r));
+            console.log(`  📦 Frete: cmhLocal=${cmhL}, cmhTrans=${cmhT}, total=${cmhL+cmhT}`);
+            return acc + (cmhL + cmhT);
+          }, 0);
+
           const projTon = totalCaminhoes * 38;
 
           setText('kLotes', fmtInt(totalLotes));
           setText('kCaminhao', fmtInt(totalCaminhoes));
           setText('kVolume', fmtTon(projTon));
+
           setLogo(displayName);
 
           const map = new Map();
@@ -583,9 +610,11 @@
         async function hydrate(){
           try{
             updateSyncStatus('loading', 'Carregando...');
+            console.log("🔄 Atualizando dados do Share Clientes...");
             BASE = await loadFromSheets();
 
             if(!Array.isArray(BASE) || BASE.length === 0){
+              console.warn("⚠️ Nenhum frete encontrado");
               updateSyncStatus('success', 'Nenhum frete cadastrado');
               selCliente.innerHTML = '<option value="">Nenhum cliente encontrado</option>';
               corrList.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Nenhum dado disponível</div>';
@@ -597,18 +626,28 @@
               return;
             }
 
+            console.log("✅ Dados carregados:", BASE.length, "fretes");
+
             if(selCliente.options.length === 0) fillClients();
             else buildClientIndex();
 
             const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
             if(key) renderForClient(key);
-
+            
+            // Conta clientes únicos
             const clientesUnicos = new Set(BASE.map(r => canon(r.cliente)).filter(Boolean));
             updateSyncStatus('success', `${BASE.length} fretes | ${clientesUnicos.size} clientes`);
 
           }catch(err){
+            console.error("💥 Erro ao carregar Share Clientes:", err);
             updateSyncStatus('error', 'Falha ao carregar');
-            alert("❌ Falha ao carregar dados do Google Sheets.\n\nErro: " + err.message);
+            alert("❌ Falha ao carregar dados do Google Sheets.\n\n" +
+                  "Erro: " + err.message + "\n\n" +
+                  "Verifique:\n" +
+                  "1. A URL do Apps Script está correta?\n" +
+                  "2. O Apps Script está publicado como 'Anyone'?\n" +
+                  "3. Há dados na aba 'Fretes'?\n\n" +
+                  "Veja o console (F12) para mais detalhes.");
           }
         }
 
@@ -619,35 +658,16 @@
 
         if(btnReload) btnReload.addEventListener('click', hydrate);
 
-        // ✅ PRINT DESKTOP NO CELULAR
         if(btnPrint && pageShare){
           btnPrint.addEventListener('click', async function(){
-            const prevScrollY = window.scrollY || 0;
-
             try{
-              // entra modo print
               document.body.classList.add('printMode');
-
-              // garante topo da página (evita corte por scroll)
-              window.scrollTo(0, 0);
-
-              // espera layout estabilizar e imagens carregarem um pouco
-              await new Promise(r=>setTimeout(r, 250));
-
-              // calcula tamanho total
-              const W = 1650; // desktop fixo
-              const H = pageShare.scrollHeight;
+              await new Promise(r=>setTimeout(r,120));
 
               const canvas = await html2canvas(pageShare, {
-                backgroundColor: '#f4f6fb',
-                useCORS: true,
                 scale: 2,
-                windowWidth: W,
-                windowHeight: H,
-                width: W,
-                height: H,
-                scrollX: 0,
-                scrollY: 0
+                backgroundColor: '#f4f6fb',
+                useCORS: true
               });
 
               const link = document.createElement('a');
@@ -658,9 +678,7 @@
               console.error(e);
               alert('Não foi possível gerar o print. Veja o console.');
             }finally{
-              // sai modo print e volta scroll
               document.body.classList.remove('printMode');
-              window.scrollTo(0, prevScrollY);
             }
           });
         }

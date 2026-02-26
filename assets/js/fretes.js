@@ -1,487 +1,592 @@
-/* fretes.js | NOVA FROTA (AJUSTADO + PISO S/N + MODAL + SELECTS + MAIÚSCULAS) */
+/* fretes.js | NOVA FROTA
+   - Operacional + Permissão Frete Mínimo
+   - Contatos fixos
+   - Separação por filial
+   - Pesos por usuário
+   - Sync com Google Sheets via JSONP
+   - Botão Share Clientes
+   - Botão WhatsApp no Contato (se tiver número)
+*/
 (function () {
   "use strict";
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbzQv34T2Oi_hs5Re91N81XM1lH_5mZSkNJw8_8I6Ij4HZNFb97mcL8fNmob1Bg8ZGI6/exec";
+  /********************
+   * CONFIG
+   ********************/
+  const API_URL = "https://script.google.com/macros/s/AKfycbzeVrvWltpM8bJ0qUxkt1sUUi-RrS4XlGXHsFcEyXVFaNmOvGu89sNj0HdVqW0eD2Qa/exec";
 
-  // ======================================================
-  // ✅ CADASTRO LOCAL (dentro do GitHub)
-  // - Aqui você mantém Regional/Filiais/Clientes/Contatos e Telefones
-  // - Contato salva só o NOME (ex: "ARIEL")
-  // - Telefone fica aqui e o WhatsApp usa isso automaticamente
-  // ======================================================
-  const DIRECTORY = {
-    regionais: ["GOIAS", "MINAS"],
-    filiaisPorRegional: {
-      GOIAS: ["ITUMBIARA", "RIO VERDE", "MONTIVIDIU", "ANAPOLIS"],
-      MINAS: ["UBERLANDIA", "ARAGUARI"],
-    },
-    clientes: ["LDC", "COFCO", "OURO SAFRA", "CARGILL"],
-    // Responsável por FILIAL + telefone separado
-    contatosPorFilial: {
-      ITUMBIARA: [
-        { nome: "ARIEL", fone: "5564992277537" },
-        { nome: "SERGIO", fone: "5564999999999" },
-      ],
-      "RIO VERDE": [{ nome: "JHONATAN", fone: "5564998887777" }],
-      MONTIVIDIU: [{ nome: "SERGIO", fone: "5564988887777" }],
-      ANAPOLIS: [{ nome: "ARIEL", fone: "5564987776666" }],
-      UBERLANDIA: [{ nome: "SERGIO", fone: "5534991112222" }],
-      ARAGUARI: [{ nome: "JHONATAN", fone: "5534993334444" }],
-    },
-  };
+  const LS_KEY_ROWS = "nf_fretes_rows_v1";
+  const LS_KEY_WEIGHTS_PREFIX = "nf_fretes_weights_";
+  const LS_KEY_USER = "nf_auth_user";
 
-  // Mapa rápido: NOME -> TELEFONE (pra WhatsApp)
-  const CONTACT_PHONE = (() => {
-    const map = {};
-    Object.values(DIRECTORY.contatosPorFilial || {}).forEach((arr) => {
-      (arr || []).forEach((c) => {
-        if (c?.nome && c?.fone) map[String(c.nome).toUpperCase().trim()] = String(c.fone).trim();
-      });
-    });
-    return map;
-  })();
+  const FILIAIS_ORDEM = [
+    "ITUMBIARA", "ANAPOLIS", "RIO VERDE", "CRISTALINA", "BOM JESUS", "JATAI",
+    "CATALÃO", "INDIARA", "MINEIROS", "MONTIVIDIU", "CHAP CÉU"
+  ];
 
-  // ----------------------------
-  // DOM helpers
-  // ----------------------------
-  const $ = (sel) => document.querySelector(sel);
+  const CONTATOS_FIXOS = [
+    "ARIEL 64 99227-7537",
+    "JHONATAN",
+    "NARCISO",
+    "SERGIO",
+    "ELTON",
+    "EVERALDO",
+    "RONE",
+    "RAFAEL",
+    "KIEWERSON",
+    "PIRULITO"
+  ];
 
-  function getTbody() {
-    return document.querySelector("#tbody") || document.querySelector("tbody");
+  /********************
+   * HELPERS
+   ********************/
+  const $ = (id) => document.getElementById(id);
+
+  function getUserKey() {
+    const u = localStorage.getItem(LS_KEY_USER) || localStorage.getItem("nf_user") || "default";
+    return String(u).trim().toUpperCase() || "default";
   }
 
-  function setStatus(text) {
-    const el =
-      document.querySelector("[data-sync-status]") ||
-      document.querySelector("#syncStatus") ||
-      document.querySelector("#status") ||
-      document.querySelector(".syncStatus");
-    if (el) el.textContent = text;
+  function safeText(v) { return (v ?? "").toString().trim(); }
+
+  function num(v) {
+    const n = Number(String(v).replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, ""));
+    return isFinite(n) ? n : 0;
   }
 
-  function safeText(v) {
-    return (v ?? "").toString().trim();
+  function normalizeSheetNumber(v) {
+    if (v === "" || v === null || v === undefined) return "";
+    const n = num(v);
+    return isFinite(n) ? String(n) : safeText(v);
   }
 
-  // ----------------------------
-  // Parse número pt-BR (ex: "1.234,56" -> 1234.56)
-  // ----------------------------
-  function parsePtNumber(value) {
-    if (value === null || value === undefined) return NaN;
-    if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
-
-    let s = String(value).trim();
-    if (!s) return NaN;
-
-    s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
-    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
-    const n = Number(s);
-    return Number.isFinite(n) ? n : NaN;
+  function formatBRL(v) {
+    const n = Number(v);
+    if (!isFinite(n)) return "";
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
-  function ceil0(n) {
-    return Math.ceil(n);
+  function statusClass(st) {
+    const s = safeText(st).toUpperCase();
+    if (s === "LIBERADO") return "liberado";
+    if (s === "PARADO") return "parado";
+    return "suspenso";
   }
 
-  // ----------------------------
-  // WhatsApp helper
-  // - se tiver número no texto, usa ele
-  // - se for só nome (ex: "ARIEL"), busca no CONTACT_PHONE
-  // ----------------------------
+  function updateSyncStatus(status, message) {
+    const el = $("syncStatus");
+    if (!el) return;
+
+    if (status === "loading") {
+      el.textContent = "🔄 " + (message || "Carregando...");
+      el.style.color = "#5B7CFA";
+    } else if (status === "success") {
+      el.textContent = "✅ " + (message || "Sincronizado");
+      el.style.color = "#067647";
+    } else if (status === "error") {
+      el.textContent = "❌ " + (message || "Falha ao carregar");
+      el.style.color = "#991B1B";
+    }
+  }
+
+  // Extrai telefone do contato (ex: "ARIEL 64 99227-7537")
   function extractPhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
-
-    // 1) tenta extrair dígitos do texto
     let digits = s.replace(/\D/g, "");
-    if (digits) {
-      if (digits.startsWith("55")) return digits;
-      if (digits.length === 10 || digits.length === 11) return "55" + digits;
-    }
-
-    // 2) fallback: se for nome, busca no mapa local
-    const nameKey = s.toUpperCase().trim();
-    const phone = CONTACT_PHONE[nameKey] || "";
-    if (!phone) return "";
-
-    const p = phone.replace(/\D/g, "");
-    if (!p) return "";
-    return p.startsWith("55") ? p : "55" + p;
+    if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) return digits;
+    if (digits.length === 10 || digits.length === 11) return "55" + digits;
+    return "";
   }
 
   function whatsappLinkFromContato(contato) {
     const phone = extractPhoneBR(contato);
-    return phone ? "https://wa.me/" + phone : "";
+    return phone ? ("https://wa.me/" + phone) : "";
   }
 
-  // ----------------------------
-  // API (JSON + JSONP)
-  // ----------------------------
-  async function apiGet(paramsObj) {
-    const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+  // JSONP (resolve CORS no GitHub Pages)
+  function jsonp(url, timeoutMs = 15000) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      const s = document.createElement("script");
+      const sep = url.includes("?") ? "&" : "?";
+      let done = false;
 
-    const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    const rawText = await res.text().catch(() => "");
+      const t = setTimeout(() => {
+        if (done) return;
+        done = true;
+        cleanup();
+        reject(new Error("Timeout JSONP: servidor não chamou callback (deploy/permissão/erro no script)."));
+      }, timeoutMs);
 
-    const looksHtml =
-      ct.includes("text/html") ||
-      /^\s*<!doctype html/i.test(rawText) ||
-      /^\s*<html/i.test(rawText);
-
-    if (looksHtml) {
-      const err = new Error("API retornou HTML (deploy/permissão do Apps Script).");
-      err.httpStatus = res.status;
-      err.url = url.toString();
-      err.preview = rawText.slice(0, 260);
-      throw err;
-    }
-
-    let data = null;
-    try {
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch {
-      const t = String(rawText || "").trim();
-      const p1 = t.indexOf("(");
-      const p2 = t.lastIndexOf(")");
-      const looksJsonp = p1 > 0 && p2 > p1 && /^[a-zA-Z_$][\w$]*\s*\(/.test(t);
-
-      if (looksJsonp) {
-        const inner = t.slice(p1 + 1, p2).trim();
-        try {
-          data = inner ? JSON.parse(inner) : null;
-        } catch {
-          const err = new Error("Falha ao interpretar JSONP da API.");
-          err.url = url.toString();
-          err.preview = t.slice(0, 260);
-          throw err;
-        }
-      } else {
-        const err = new Error("Falha ao interpretar JSON da API.");
-        err.url = url.toString();
-        err.preview = t.slice(0, 260);
-        throw err;
+      function cleanup() {
+        clearTimeout(t);
+        try { delete window[cb]; } catch {}
+        s.remove();
       }
-    }
 
-    if (!res.ok) {
-      const err = new Error("HTTP " + res.status);
-      err.httpStatus = res.status;
-      err.data = data;
-      err.url = url.toString();
-      throw err;
-    }
-
-    return data;
-  }
-
-  async function fetchRows() {
-    const tries = [{ action: "list" }, { action: "rows" }, {}];
-    let lastErr = null;
-
-    for (const p of tries) {
-      try {
-        const data = await apiGet(p);
-        const rows =
-          data?.data ||
-          data?.rows ||
-          data?.fretes ||
-          data?.result ||
-          (Array.isArray(data) ? data : null);
-
-        if (Array.isArray(rows)) return rows;
-        lastErr = new Error("Resposta sem array de linhas (params: " + JSON.stringify(p) + ")");
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-
-    throw lastErr || new Error("Falha ao buscar dados.");
-  }
-
-  // ----------------------------
-  // COLUNAS (na ordem do HTML)
-  // ----------------------------
-  const COLS = [
-    { key: "regional", label: "Regional" },
-    { key: "filial", label: "Filial" },
-    { key: "cliente", label: "Cliente" },
-    { key: "origem", label: "Origem" },
-    { key: "coleta", label: "Coleta" },
-    { key: "contato", label: "Contato", isContato: true },
-    { key: "destino", label: "Destino" },
-    { key: "uf", label: "UF" },
-    { key: "descarga", label: "Descarga" },
-    { key: "volume", label: "Volume" },
-    { key: "valorEmpresa", label: "Vlr Empresa" },
-    { key: "valorMotorista", label: "Vlr Motorista" },
-    { key: "km", label: "KM" },
-    { key: "pedagioEixo", label: "Pedágio/Eixo" },
-    { key: "e5", label: "5E" },
-    { key: "e6", label: "6E" },
-    { key: "e7", label: "7E" },
-    { key: "e4", label: "4E" },
-    { key: "e9", label: "9E" },
-    { key: "produto", label: "Produto" },
-    { key: "icms", label: "ICMS" },
-    { key: "pedidoSat", label: "Pedido SAT" },
-    { key: "porta", label: "Porta" },
-    { key: "transito", label: "Trânsito" },
-    { key: "status", label: "Status" },
-    { key: "obs", label: "Observações" },
-    { key: "__acoes", label: "Ações", isAcoes: true },
-  ];
-
-  function valueFromRow(row, key, index) {
-    if (Array.isArray(row)) return safeText(row[index] ?? "");
-
-    if (row && typeof row === "object") {
-      const map = {
-        regional: ["regional"],
-        filial: ["filial"],
-        cliente: ["cliente"],
-        origem: ["origem"],
-        coleta: ["coleta"],
-        contato: ["contato", "contatos", "telefone", "fone"],
-        destino: ["destino"],
-        uf: ["uf", "estado"],
-        descarga: ["descarga"],
-        volume: ["volume"],
-        valorEmpresa: ["valorEmpresa", "vlrEmpresa", "empresa"],
-        valorMotorista: ["valorMotorista", "vlrMotorista", "motorista"],
-        km: ["km"],
-        pedagioEixo: ["pedagioEixo", "pedagio", "pedagio_por_eixo"],
-        e5: ["e5", "5e"],
-        e6: ["e6", "6e"],
-        e7: ["e7", "7e"],
-        e4: ["e4", "4e"],
-        e9: ["e9", "9e"],
-        produto: ["produto"],
-        icms: ["icms"],
-        pedidoSat: ["pedidoSat", "pedidoSAT", "pedido", "sat"],
-        porta: ["porta"],
-        transito: ["transito", "trânsito", "transitoDias"],
-        status: ["status"],
-        obs: ["obs", "observacao", "observações", "observacoes"],
+      window[cb] = (data) => {
+        if (done) return;
+        done = true;
+        cleanup();
+        resolve(data);
       };
 
-      const candidates = map[key] || [key];
-      for (const c of candidates) {
-        if (c in row) return safeText(row[c]);
+      s.src = url + sep + "callback=" + encodeURIComponent(cb);
+      s.onerror = () => {
+        if (done) return;
+        done = true;
+        cleanup();
+        reject(new Error("Falha JSONP: não foi possível carregar o script remoto."));
+      };
+
+      document.head.appendChild(s);
+    });
+  }
+
+  /********************
+   * PESOS
+   ********************/
+  const DEFAULT_WEIGHTS = { w9: 47, w4: 39, w7: 36, w6: 31 };
+
+  function loadWeights() {
+    const key = LS_KEY_WEIGHTS_PREFIX + getUserKey();
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return { ...DEFAULT_WEIGHTS };
+      const obj = JSON.parse(raw);
+      return {
+        w9: isFinite(Number(obj.w9)) ? Number(obj.w9) : DEFAULT_WEIGHTS.w9,
+        w4: isFinite(Number(obj.w4)) ? Number(obj.w4) : DEFAULT_WEIGHTS.w4,
+        w7: isFinite(Number(obj.w7)) ? Number(obj.w7) : DEFAULT_WEIGHTS.w7,
+        w6: isFinite(Number(obj.w6)) ? Number(obj.w6) : DEFAULT_WEIGHTS.w6
+      };
+    } catch {
+      return { ...DEFAULT_WEIGHTS };
+    }
+  }
+
+  function saveWeights(weights) {
+    const key = LS_KEY_WEIGHTS_PREFIX + getUserKey();
+    localStorage.setItem(key, JSON.stringify(weights));
+  }
+
+  /********************
+   * PERMISSÃO
+   ********************/
+  function permYN(isOk) { return isOk ? "S" : "N"; }
+
+  function calcPerm(row, weights) {
+    const km = num(row.km);
+    const ped = num(row.pedagioEixo);
+    const mot = num(row.valorMotorista);
+
+    if (!km || km <= 0 || !isFinite(km) || row.km === "") return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!isFinite(ped)) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+    if (!isFinite(mot) || mot <= 0) return { p5: "", p6: "", p7: "", p4: "", p9: "" };
+
+    const t5 = ((km * 6.0301) + (ped * 5) + 615.26) / 26;
+    const t6 = ((km * 6.7408) + (ped * 6) + 663.07) / Math.max(1, num(weights.w6));
+    const t7 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w7));
+    const t4 = ((km * 7.313) + (ped * 7) + 753.88) / Math.max(1, num(weights.w4));
+    const t9 = ((km * 8.242) + (ped * 9) + 808.17) / Math.max(1, num(weights.w9));
+
+    return {
+      p5: permYN(t5 < mot),
+      p6: permYN(t6 < mot),
+      p7: permYN(t7 < mot),
+      p4: permYN(t4 < mot),
+      p9: permYN(t9 < mot)
+    };
+  }
+
+  /********************
+   * STORAGE
+   ********************/
+  function saveRowsLocal(rows) { localStorage.setItem(LS_KEY_ROWS, JSON.stringify(rows)); }
+
+  function loadRowsLocal() {
+    const raw = localStorage.getItem(LS_KEY_ROWS);
+    if (!raw) return [];
+    try {
+      const rows = JSON.parse(raw);
+      return Array.isArray(rows) ? rows : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /********************
+   * SHEETS SYNC (ROBUSTO)
+   ********************/
+  // Helper para pegar campo com vários nomes possíveis
+  function getFieldValue(row, possibleNames) {
+    for (const name of possibleNames) {
+      if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
+        return row[name];
       }
     }
     return "";
   }
 
-  function buildContatoCell(contatoText) {
-    const td = document.createElement("td");
+  function normalizeFromSheets(payload) {
+    // ✅ Aceita:
+    // 1) Array direto: [ {...}, {...} ]
+    // 2) Wrapper: {rows:[...]} ou {data:[...]} ou {ok:true, rows:[...]}
+    // 3) Erro: {ok:false, error:"..."}  -> lança erro real
+    let rows = payload;
 
-    const wrap = document.createElement("div");
-    wrap.style.display = "flex";
-    wrap.style.alignItems = "center";
-    wrap.style.justifyContent = "space-between";
-    wrap.style.gap = "6px";
-    wrap.style.minWidth = "0";
-
-    const span = document.createElement("span");
-    span.textContent = contatoText || "";
-    span.style.whiteSpace = "nowrap";
-    span.style.overflow = "hidden";
-    span.style.textOverflow = "ellipsis";
-    span.style.minWidth = "0";
-    wrap.appendChild(span);
-
-    const wpp = whatsappLinkFromContato(contatoText);
-    if (wpp) {
-      const a = document.createElement("a");
-      a.href = wpp;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.title = "Chamar no WhatsApp";
-      a.className = "waIcon";
-
-      const img = document.createElement("img");
-      img.src = "../assets/img/whatsapp.png";
-      img.alt = "WhatsApp";
-      img.onerror = () => {
-        a.textContent = "📞";
-        a.style.background = "#EEF2F7";
-      };
-
-      a.appendChild(img);
-      wrap.appendChild(a);
+    if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+      if (payload.ok === false) throw new Error(payload.error || "Apps Script retornou ok:false");
+      if (Array.isArray(payload.rows)) rows = payload.rows;
+      else if (Array.isArray(payload.data)) rows = payload.data;
+      else {
+        // caso venha algum objeto inesperado
+        throw new Error("Resposta do Sheets não é lista. Recebido: " + JSON.stringify(payload).slice(0, 200));
+      }
     }
 
-    td.appendChild(wrap);
-    return td;
-  }
+    if (!Array.isArray(rows)) {
+      throw new Error("Resposta do Sheets não é array. Tipo: " + (typeof rows));
+    }
 
-  function buildAcoesCell(row) {
-    const td = document.createElement("td");
-    td.className = "num";
-
-    const id = row?.id ? String(row.id) : "";
-
-    const btnEdit = document.createElement("button");
-    btnEdit.type = "button";
-    btnEdit.className = "btnTiny ghost";
-    btnEdit.textContent = "Editar";
-    btnEdit.style.marginRight = "6px";
-    btnEdit.addEventListener("click", () => {
-      console.log("[fretes] editar", id, row);
-      // se quiser, dá pra implementar edição depois (reaproveita o mesmo modal)
-    });
-
-    const btnDel = document.createElement("button");
-    btnDel.type = "button";
-    btnDel.className = "btnTiny";
-    btnDel.textContent = "Excluir";
-    btnDel.addEventListener("click", async () => {
-      if (!id) return alert("Sem ID para excluir.");
-      if (!confirm("Excluir este frete?")) return;
-
-      try {
-        setStatus("🗑 Excluindo...");
-        const data = await apiGet({ action: "delete", id });
-        if (data?.ok) {
-          setStatus("✅ Excluído");
-          await atualizar();
-        } else {
-          setStatus("❌ Falha ao excluir");
-          alert(data?.error || "Falha ao excluir.");
-        }
-      } catch (e) {
-        console.error("[fretes] erro delete:", e);
-        setStatus("❌ Erro ao excluir");
+    return rows.map((r) => {
+      // 🔍 Log para debug - vamos ver o que está vindo do Sheets
+      if (rows.indexOf(r) === 0) {
+        console.log("📋 Primeira linha do Sheets (debug):", r);
+        console.log("📋 Chaves disponíveis:", Object.keys(r));
       }
-    });
 
-    td.appendChild(btnEdit);
-    td.appendChild(btnDel);
-    return td;
-  }
+      return {
+        id: safeText(r.id) || crypto.randomUUID(),
+        regional: safeText(r.regional),
+        filial: safeText(r.filial).toUpperCase(),
+        cliente: safeText(r.cliente),
+        origem: safeText(r.origem),
+        coleta: safeText(r.coleta),
+        contato: safeText(r.contato),
+        destino: safeText(r.destino),
+        uf: safeText(r.uf).toUpperCase(),
+        descarga: safeText(r.descarga),
 
-  function buildPillSNCell(val) {
-    const td = document.createElement("td");
-    td.className = "num";
+        volume: r.volume === "" ? "" : num(r.volume),
+        valorEmpresa: r.valorEmpresa === "" ? "" : num(r.valorEmpresa),
+        valorMotorista: r.valorMotorista === "" ? "" : num(r.valorMotorista),
+        pedagioEixo: r.pedagioEixo === "" ? "" : num(r.pedagioEixo),
+        km: r.km === "" ? "" : num(r.km),
 
-    const v = safeText(val).toUpperCase();
-    const span = document.createElement("span");
-    span.className = "pillSN " + (v === "S" ? "s" : v === "N" ? "n" : "empty");
-    span.textContent = v || "-";
+        produto: safeText(r.produto),
+        icms: safeText(r.icms),
 
-    td.appendChild(span);
-    return td;
-  }
+        // ✅ Aceita vários nomes possíveis para as colunas de quantidade
+        pedidoSat: (() => {
+          const val = getFieldValue(r, ["pedidoSat", "Pedido SAT", "pedido_sat", "sat"]);
+          if (val === "" || val === null || val === undefined) return "";
+          const n = num(val);
+          return isFinite(n) ? n : "";
+        })(),
+        
+        porta: (() => {
+          const val = getFieldValue(r, ["porta", "qtdPorta", "qtPorta", "qtd_porta", "Qtd Porta", "QtdPorta"]);
+          if (val === "" || val === null || val === undefined) return "";
+          const n = num(val);
+          console.log(`🔍 porta para cliente ${r.cliente}: valor="${val}", num=${n}, result=${isFinite(n) ? n : ""}`);
+          return isFinite(n) ? n : "";
+        })(),
+        
+        transito: (() => {
+          const val = getFieldValue(r, ["transito", "qtdTransito", "qtd_transito", "Qtd Trânsito", "QtdTransito"]);
+          if (val === "" || val === null || val === undefined) return "";
+          const n = num(val);
+          console.log(`🔍 transito para cliente ${r.cliente}: valor="${val}", num=${n}, result=${isFinite(n) ? n : ""}`);
+          return isFinite(n) ? n : "";
+        })(),
 
-  // ======================================================
-  // ✅ PISO MÍNIMO (S/N) baseado na sua página do piso
-  // ======================================================
-  const PISO_PARAMS = {
-    e9: { eixos: 9, rkm: 8.53, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
-    e4: { eixos: 4, rkm: 7.4505, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
-    e7: { eixos: 7, rkm: 7.4505, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
-    e6: { eixos: 6, rkm: 6.8058, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
-    e5: { eixos: 5, rkm: 6.1859, custoCC: 642.1, weightInputId: "w5", defaultPeso: 26 },
-  };
-
-  function getPesoFromUI(id, fallback) {
-    const el = document.getElementById(id);
-    const v = parsePtNumber(el?.value);
-    return Number.isFinite(v) && v > 0 ? v : fallback;
-  }
-
-  function calcMinRPorTon(param, km, pedagioPorEixo) {
-    const peso = getPesoFromUI(param.weightInputId, param.defaultPeso);
-    const numerador = param.rkm * km + param.custoCC + pedagioPorEixo * param.eixos;
-    const base = numerador / peso; // R$/ton
-    return ceil0(base);
-  }
-
-  function sn(valueMotoristaTon, minTon) {
-    if (!Number.isFinite(valueMotoristaTon) || !Number.isFinite(minTon)) return "";
-    return valueMotoristaTon >= minTon ? "S" : "N";
-  }
-
-  function applyPisoSN(rows) {
-    return (rows || []).map((r) => {
-      const km = parsePtNumber(valueFromRow(r, "km")) || 0;
-      const ped = parsePtNumber(valueFromRow(r, "pedagioEixo")) || 0;
-      const vm = parsePtNumber(valueFromRow(r, "valorMotorista")); // R$/ton
-
-      const min5 = calcMinRPorTon(PISO_PARAMS.e5, km, ped);
-      const min6 = calcMinRPorTon(PISO_PARAMS.e6, km, ped);
-      const min7 = calcMinRPorTon(PISO_PARAMS.e7, km, ped);
-      const min4 = calcMinRPorTon(PISO_PARAMS.e4, km, ped);
-      const min9 = calcMinRPorTon(PISO_PARAMS.e9, km, ped);
-
-      return { ...r, e5: sn(vm, min5), e6: sn(vm, min6), e7: sn(vm, min7), e4: sn(vm, min4), e9: sn(vm, min9) };
+        status: safeText(r.status).toUpperCase(),
+        obs: safeText(r.obs || "")
+      };
     });
   }
 
-  // ----------------------------
-  // RENDER (agrupa por filial, ordena por cliente)
-  // ----------------------------
-  function render(rowsRaw) {
-    const tbody = getTbody();
-    if (!tbody) return;
+  async function reloadFromServer() {
+    updateSyncStatus("loading", "Carregando do Sheets...");
+    const payload = await jsonp(API_URL + "?action=list");
+    const rows = normalizeFromSheets(payload);
+
+    state.rows = rows;
+    saveRowsLocal(rows);
+    render(state.rows, state.weights);
+
+    updateSyncStatus("success", `Sincronizado (${rows.length} fretes)`);
+  }
+
+  async function saveRowToSheets(row) {
+    console.log("🚀 saveRowToSheets - ANTES de enviar:");
+    console.log("  - row completo:", JSON.stringify(row, null, 2));
+    console.log("  - porta:", row.porta, "(tipo:", typeof row.porta, ")");
+    console.log("  - transito:", row.transito, "(tipo:", typeof row.transito, ")");
+    
+    const params = new URLSearchParams();
+    params.append("action", "save");
+
+    const portaParam = row.porta ?? row.qtPorta ?? row.qtdPorta ?? "";
+    const transitoParam = row.transito ?? row.qtTransito ?? row.qtdTransito ?? "";
+
+    params.append("porta", portaParam);
+    params.append("transito", transitoParam);
+    params.append("qtPorta", portaParam);
+    params.append("qtdPorta", portaParam);
+    params.append("qtTransito", transitoParam);
+    params.append("qtdTransito", transitoParam);
+    
+    const jsonData = JSON.stringify({
+      ...row,
+      porta: portaParam,
+      transito: transitoParam,
+      qtPorta: portaParam,
+      qtdPorta: portaParam,
+      qtTransito: transitoParam,
+      qtdTransito: transitoParam
+    });
+    console.log("📦 JSON enviado:", jsonData);
+    
+    // 🧪 TESTE: Copie esta URL e cole no navegador para testar
+    const testUrl = `${API_URL}?action=save&data=${encodeURIComponent(jsonData)}&callback=teste`;
+    console.log("🧪 TESTE: Cole esta URL no navegador:");
+    console.log(testUrl);
+    console.log("");
+    
+    params.append("data", jsonData);
+    
+    const fullUrl = `${API_URL}?${params.toString()}`;
+    console.log("🌐 URL completa:", fullUrl);
+    
+    const result = await jsonp(fullUrl);
+    
+    console.log("✅ Resposta do servidor:", result);
+
+    if (!result || result.ok === false || result.status !== "success") {
+      console.error("❌ ERRO na resposta:", result);
+      throw new Error((result && (result.error || result.message)) || "Erro ao salvar no Sheets");
+    }
+    return result;
+  }
+
+  async function deleteRowFromSheets(id) {
+    const params = new URLSearchParams();
+    params.append("action", "delete");
+    params.append("id", id);
+    const result = await jsonp(`${API_URL}?${params.toString()}`);
+
+    if (!result || result.ok === false || result.status !== "success") {
+      throw new Error((result && (result.error || result.message)) || "Erro ao deletar no Sheets");
+    }
+    return result;
+  }
+
+  /********************
+   * UI: SELECTS
+   ********************/
+  function fillFilialSelect(sel, includeAll) {
+    sel.innerHTML = "";
+    if (includeAll) {
+      const op = document.createElement("option");
+      op.value = "";
+      op.textContent = "Todas";
+      sel.appendChild(op);
+    }
+    FILIAIS_ORDEM.forEach((f) => {
+      const op = document.createElement("option");
+      op.value = f;
+      op.textContent = f;
+      sel.appendChild(op);
+    });
+  }
+
+  function fillContatoSelect(sel) {
+    sel.innerHTML = "";
+    CONTATOS_FIXOS.forEach((c) => {
+      const op = document.createElement("option");
+      op.value = c;
+      op.textContent = c;
+      sel.appendChild(op);
+    });
+  }
+
+  /********************
+   * RENDER
+   ********************/
+  function matchesSearch(row, q) {
+    if (!q) return true;
+    const blob = [
+      row.regional, row.filial, row.cliente, row.origem, row.coleta, row.contato,
+      row.destino, row.uf, row.descarga, row.produto, row.icms, row.status, row.obs
+    ].join(" ").toLowerCase();
+    return blob.includes(q.toLowerCase());
+  }
+
+  function orderFilialIndex(f) {
+    const i = FILIAIS_ORDEM.indexOf(safeText(f).toUpperCase());
+    return i >= 0 ? i : 9999;
+  }
+
+  function render(rows, weights) {
+    const tbody = $("tbody");
+    const fFilial = $("fFilial").value;
+    const fBusca = $("fBusca").value.trim();
+
+    let list = rows.filter((r) => {
+      if (fFilial && safeText(r.filial).toUpperCase() !== fFilial) return false;
+      if (!matchesSearch(r, fBusca)) return false;
+      return true;
+    });
+
+    list = list.slice().sort((a, b) => {
+      const ia = orderFilialIndex(a.filial);
+      const ib = orderFilialIndex(b.filial);
+      if (ia !== ib) return ia - ib;
+      const da = safeText(a.destino);
+      const db = safeText(b.destino);
+      if (da !== db) return da.localeCompare(db, "pt-BR");
+      return safeText(a.cliente).localeCompare(safeText(b.cliente), "pt-BR");
+    });
 
     tbody.innerHTML = "";
-    if (!rowsRaw || !rowsRaw.length) return;
+    let currentFilial = null;
 
-    const rows = applyPisoSN(rowsRaw);
+    list.forEach((row) => {
+      const filial = safeText(row.filial).toUpperCase();
 
-    rows.sort((a, b) => {
-      const fa = safeText(a?.filial).localeCompare(safeText(b?.filial));
-      if (fa !== 0) return fa;
-      const ca = safeText(a?.cliente).localeCompare(safeText(b?.cliente));
-      if (ca !== 0) return ca;
-      const oa = safeText(a?.origem).localeCompare(safeText(b?.origem));
-      if (oa !== 0) return oa;
-      return safeText(a?.destino).localeCompare(safeText(b?.destino));
-    });
-
-    let filialAtual = "";
-
-    rows.forEach((row) => {
-      const filialRow = safeText(row?.filial);
-      if (filialRow !== filialAtual) {
-        filialAtual = filialRow;
-
-        const trGroup = document.createElement("tr");
-        trGroup.className = "groupRow";
-        const td = document.createElement("td");
-        td.colSpan = COLS.length;
-        td.textContent = filialAtual || "SEM FILIAL";
-        trGroup.appendChild(td);
-        tbody.appendChild(trGroup);
+      if (filial !== currentFilial) {
+        currentFilial = filial;
+        const trG = document.createElement("tr");
+        trG.className = "groupRow";
+        const tdG = document.createElement("td");
+        tdG.colSpan = 27;
+        tdG.textContent = filial || "SEM FILIAL";
+        trG.appendChild(tdG);
+        tbody.appendChild(trG);
       }
 
+      const perm = calcPerm(row, weights);
       const tr = document.createElement("tr");
+      tr.className = "rowSlim";
 
-      COLS.forEach((col, idx) => {
-        if (col.isContato) {
-          const contatoText = valueFromRow(row, "contato", idx);
-          tr.appendChild(buildContatoCell(contatoText));
-          return;
-        }
+      const wpp = whatsappLinkFromContato(row.contato);
 
-        if (col.isAcoes) {
-          tr.appendChild(buildAcoesCell(row));
-          return;
-        }
+      const cells = [
+        safeText(row.regional),
+        safeText(row.filial),
+        safeText(row.cliente),
+        safeText(row.origem),
+        safeText(row.coleta),
 
-        // ✅ pílulas S/N
-        if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
-          tr.appendChild(buildPillSNCell(valueFromRow(row, col.key, idx)));
-          return;
-        }
+        // contato + botão whatsapp
+        {
+          contact: true,
+          v: safeText(row.contato),
+          wpp
+        },
 
+        safeText(row.destino),
+        safeText(row.uf),
+        safeText(row.descarga),
+        { num: true, v: safeText(row.volume) },
+
+        { num: true, v: formatBRL(row.valorEmpresa) },
+        { num: true, v: formatBRL(row.valorMotorista) },
+
+        { num: true, v: safeText(row.km) },
+        { num: true, v: safeText(row.pedagioEixo) },
+
+        { yn: true, v: perm.p5 },
+        { yn: true, v: perm.p6 },
+        { yn: true, v: perm.p7 },
+        { yn: true, v: perm.p4 },
+        { yn: true, v: perm.p9 },
+
+        safeText(row.produto),
+        safeText(row.icms),
+        { num: true, v: row.pedidoSat !== "" && row.pedidoSat !== null && row.pedidoSat !== undefined ? safeText(row.pedidoSat) : "" },
+        { num: true, v: row.porta !== "" && row.porta !== null && row.porta !== undefined ? safeText(row.porta) : "" },
+        { num: true, v: row.transito !== "" && row.transito !== null && row.transito !== undefined ? safeText(row.transito) : "" },
+        { status: true, v: safeText(row.status) },
+        safeText(row.obs),
+        { actions: true }
+      ];
+
+      cells.forEach((c) => {
         const td = document.createElement("td");
-        td.textContent = valueFromRow(row, col.key, idx);
+
+        if (typeof c === "object" && c) {
+          if (c.num) td.classList.add("num");
+
+          if (c.contact) {
+            const wrap = document.createElement("div");
+            wrap.style.display = "flex";
+            wrap.style.alignItems = "center";
+            wrap.style.justifyContent = "space-between";
+            wrap.style.gap = "8px";
+
+            const span = document.createElement("span");
+            span.textContent = c.v || "";
+            span.style.overflow = "hidden";
+            span.style.textOverflow = "ellipsis";
+            span.style.whiteSpace = "nowrap";
+
+            wrap.appendChild(span);
+
+            if (c.wpp) {
+              const a = document.createElement("a");
+              a.href = c.wpp;
+              a.target = "_blank";
+              a.rel = "noopener";
+              a.title = "Chamar no WhatsApp";
+              a.textContent = "WhatsApp";
+              a.className = "btnTiny green";
+              a.style.padding = "6px 10px";
+              a.style.whiteSpace = "nowrap";
+              wrap.appendChild(a);
+            }
+
+            td.appendChild(wrap);
+          } else if (c.yn) {
+            const span = document.createElement("span");
+            span.className = "pillYN " + (c.v === "S" ? "yes" : (c.v === "N" ? "no" : ""));
+            span.textContent = c.v || "";
+            td.classList.add("num");
+            td.appendChild(span);
+          } else if (c.status) {
+            const s = safeText(c.v).toUpperCase() || "SUSPENSO";
+            const span = document.createElement("span");
+            span.className = "statusPill " + statusClass(s);
+            span.textContent = s;
+            td.appendChild(span);
+          } else if (c.actions) {
+            td.classList.add("num");
+
+            const btnEdit = document.createElement("button");
+            btnEdit.className = "btnSmall";
+            btnEdit.style.padding = "7px 10px";
+            btnEdit.textContent = "Editar";
+            btnEdit.addEventListener("click", () => openModal("edit", row.id));
+
+            const btnDel = document.createElement("button");
+            btnDel.className = "btnSmall";
+            btnDel.style.padding = "7px 10px";
+            btnDel.style.marginLeft = "8px";
+            btnDel.textContent = "Excluir";
+            btnDel.addEventListener("click", () => removeRow(row.id));
+
+            td.appendChild(btnEdit);
+            td.appendChild(btnDel);
+          } else {
+            td.textContent = c.v ?? "";
+          }
+        } else {
+          td.textContent = c ?? "";
+        }
+
         tr.appendChild(td);
       });
 
@@ -489,354 +594,248 @@
     });
   }
 
-  // ----------------------------
-  // MODAL: utilitários
-  // ----------------------------
-  const MODAL = {
-    wrap: () => document.getElementById("modal"),
-    title: () => document.getElementById("modalTitle"),
-    btnClose: () => document.getElementById("btnCloseModal"),
-    btnCancel: () => document.getElementById("btnCancel"),
-    btnSave: () => document.getElementById("btnSave"),
+  /********************
+   * MODAL CRUD
+   ********************/
+  let state = { rows: [], editId: null, weights: { ...DEFAULT_WEIGHTS } };
 
-    // campos (IDs do seu fretes.html)
-    regional: () => document.getElementById("mRegional"),
-    filial: () => document.getElementById("mFilial"),
-    cliente: () => document.getElementById("mCliente"),
-    contato: () => document.getElementById("mContato"),
-
-    origem: () => document.getElementById("mOrigem"),
-    coleta: () => document.getElementById("mColeta"),
-    destino: () => document.getElementById("mDestino"),
-    uf: () => document.getElementById("mUF"),
-    descarga: () => document.getElementById("mDescarga"),
-    produto: () => document.getElementById("mProduto"),
-    km: () => document.getElementById("mKM"),
-    ped: () => document.getElementById("mPed"),
-    volume: () => document.getElementById("mVolume"),
-    icms: () => document.getElementById("mICMS"),
-    empresa: () => document.getElementById("mEmpresa"),
-    motorista: () => document.getElementById("mMotorista"),
-    sat: () => document.getElementById("mSat"),
-    porta: () => document.getElementById("mPorta"),
-    transito: () => document.getElementById("mTransito"),
-    status: () => document.getElementById("mStatus"),
-    obs: () => document.getElementById("mObs"),
-  };
-
-  function modalShow(show) {
-    const el = MODAL.wrap();
-    if (!el) return;
-    el.style.display = show ? "flex" : "none";
-    el.setAttribute("aria-hidden", show ? "false" : "true");
-  }
-
-  function setSelectOptions(selectEl, options, placeholderText) {
-    if (!selectEl) return;
-    const isSelect = selectEl.tagName === "SELECT";
-    if (!isSelect) return;
-
-    selectEl.innerHTML = "";
-    const ph = document.createElement("option");
-    ph.value = "";
-    ph.textContent = placeholderText || "SELECIONE...";
-    selectEl.appendChild(ph);
-
-    (options || []).forEach((opt) => {
-      const o = document.createElement("option");
-      o.value = String(opt).toUpperCase().trim();
-      o.textContent = String(opt).toUpperCase().trim();
-      selectEl.appendChild(o);
-    });
-  }
-
-  function forceUppercaseInput(el) {
-    if (!el) return;
-    const tag = el.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") {
-      // não mexe em números
-      const type = (el.getAttribute("type") || "").toLowerCase();
-      const isNumeric = type === "number" || el.inputMode === "decimal" || el.inputMode === "numeric";
-      if (isNumeric) return;
-
-      el.addEventListener("input", () => {
-        const start = el.selectionStart;
-        const end = el.selectionEnd;
-        el.value = String(el.value || "").toUpperCase();
-        try {
-          el.setSelectionRange(start, end);
-        } catch {}
-      });
-    }
-  }
-
-  function initModalUppercase() {
-    [
-      MODAL.origem(),
-      MODAL.coleta(),
-      MODAL.destino(),
-      MODAL.uf(),
-      MODAL.descarga(),
-      MODAL.produto(),
-      MODAL.sat(),
-      MODAL.porta(),
-      MODAL.obs(),
-    ].forEach(forceUppercaseInput);
-  }
-
-  // ----------------------------
-  // MODAL: popula selects (Regional/Filial/Cliente/Contato)
-  // ----------------------------
-  function fillModalSelectors() {
-    const rSel = MODAL.regional();
-    const fSel = MODAL.filial();
-    const cSel = MODAL.cliente();
-    const ctSel = MODAL.contato();
-
-    setSelectOptions(rSel, DIRECTORY.regionais || [], "SELECIONE A REGIONAL");
-    setSelectOptions(cSel, DIRECTORY.clientes || [], "SELECIONE O CLIENTE");
-
-    // inicial vazio
-    setSelectOptions(fSel, [], "SELECIONE A FILIAL");
-    setSelectOptions(ctSel, [], "SELECIONE O CONTATO");
-
-    if (rSel) {
-      rSel.addEventListener("change", () => {
-        const reg = safeText(rSel.value).toUpperCase();
-        const filiais = (DIRECTORY.filiaisPorRegional?.[reg] || []).map((x) => String(x).toUpperCase());
-        setSelectOptions(fSel, filiais, "SELECIONE A FILIAL");
-
-        // limpa contato ao trocar regional
-        setSelectOptions(ctSel, [], "SELECIONE O CONTATO");
-        if (fSel) fSel.value = "";
-      });
+  function openModal(mode, id) {
+    console.log("🔧 openModal chamado:");
+    console.log("  - mode:", mode);
+    console.log("  - id:", id);
+    
+    state.editId = mode === "edit" ? id : null;
+    const r = mode === "edit" ? state.rows.find((x) => x.id === id) : null;
+    
+    if (r) {
+      console.log("✏️ EDIÇÃO - Frete encontrado:");
+      console.log("  - id:", r.id);
+      console.log("  - cliente:", r.cliente);
+      console.log("  - porta ATUAL:", r.porta);
+      console.log("  - transito ATUAL:", r.transito);
+    } else if (mode === "edit") {
+      console.error("❌ ERRO: Modo EDIT mas frete não encontrado! ID:", id);
+    } else {
+      console.log("➕ CRIAÇÃO - Novo frete");
     }
 
-    if (fSel) {
-      fSel.addEventListener("change", () => {
-        const filial = safeText(fSel.value).toUpperCase();
-        const contatos = (DIRECTORY.contatosPorFilial?.[filial] || []).map((c) => String(c.nome).toUpperCase());
-        setSelectOptions(ctSel, contatos, "SELECIONE O CONTATO");
+    $("mRegional").value = r ? r.regional : "GOIÁS";
+    $("mFilial").value = r ? safeText(r.filial).toUpperCase() : "ITUMBIARA";
+    $("mCliente").value = r ? r.cliente : "";
+    $("mOrigem").value = r ? r.origem : "";
+    $("mColeta").value = r ? r.coleta : "";
+    $("mContato").value = r ? (r.contato || CONTATOS_FIXOS[0]) : CONTATOS_FIXOS[0];
+    $("mDestino").value = r ? r.destino : "";
+    $("mUF").value = r ? r.uf : "GO";
+    $("mDescarga").value = r ? r.descarga : "";
+    $("mProduto").value = r ? r.produto : "";
+    $("mKM").value = r ? r.km : "";
+    $("mPed").value = r ? r.pedagioEixo : 0;
+    $("mVolume").value = r ? r.volume : "";
+    $("mEmpresa").value = r ? r.valorEmpresa : "";
+    $("mMotorista").value = r ? r.valorMotorista : "";
+    $("mICMS").value = r ? r.icms : "";
+    $("mSat").value = r ? (r.pedidoSat ?? "") : "";
+    $("mPorta").value = r ? (r.porta ?? "") : "";
+    $("mTransito").value = r ? (r.transito ?? "") : "";
+    $("mStatus").value = r ? safeText(r.status).toUpperCase() : "LIBERADO";
+    $("mObs").value = r ? r.obs : "";
 
-        // se só tiver 1 contato, auto-seleciona
-        if (ctSel && contatos.length === 1) ctSel.value = contatos[0];
-      });
-    }
-  }
-
-  function clearModalFields() {
-    const fields = [
-      MODAL.origem(),
-      MODAL.coleta(),
-      MODAL.destino(),
-      MODAL.uf(),
-      MODAL.descarga(),
-      MODAL.produto(),
-      MODAL.km(),
-      MODAL.ped(),
-      MODAL.volume(),
-      MODAL.icms(),
-      MODAL.empresa(),
-      MODAL.motorista(),
-      MODAL.sat(),
-      MODAL.porta(),
-      MODAL.transito(),
-      MODAL.obs(),
-    ];
-    fields.forEach((el) => {
-      if (!el) return;
-      if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") el.value = "";
-    });
-
-    const status = MODAL.status();
-    if (status) status.value = "LIBERADO";
-
-    // selects
-    if (MODAL.regional()) MODAL.regional().value = "";
-    if (MODAL.filial()) MODAL.filial().value = "";
-    if (MODAL.cliente()) MODAL.cliente().value = "";
-    if (MODAL.contato()) MODAL.contato().value = "";
-  }
-
-  // ----------------------------
-  // SAVE: envia para Apps Script
-  // - tenta várias actions para bater com seu backend sem você me mandar ele
-  // ----------------------------
-  function collectModalPayload() {
-    const regional = safeText(MODAL.regional()?.value).toUpperCase();
-    const filial = safeText(MODAL.filial()?.value).toUpperCase();
-    const cliente = safeText(MODAL.cliente()?.value).toUpperCase();
-    const contato = safeText(MODAL.contato()?.value).toUpperCase(); // só nome
-
-    const payload = {
-      regional,
-      filial,
-      cliente,
-      contato,
-
-      origem: safeText(MODAL.origem()?.value).toUpperCase(),
-      coleta: safeText(MODAL.coleta()?.value).toUpperCase(),
-      destino: safeText(MODAL.destino()?.value).toUpperCase(),
-      uf: safeText(MODAL.uf()?.value).toUpperCase(),
-      descarga: safeText(MODAL.descarga()?.value).toUpperCase(),
-      produto: safeText(MODAL.produto()?.value).toUpperCase(),
-      pedidoSat: safeText(MODAL.sat()?.value).toUpperCase(),
-      porta: safeText(MODAL.porta()?.value).toUpperCase(),
-      status: safeText(MODAL.status()?.value).toUpperCase(),
-      obs: safeText(MODAL.obs()?.value).toUpperCase(),
-
-      km: safeText(MODAL.km()?.value),
-      pedagioEixo: safeText(MODAL.ped()?.value),
-      volume: safeText(MODAL.volume()?.value),
-      icms: safeText(MODAL.icms()?.value),
-      valorEmpresa: safeText(MODAL.empresa()?.value),
-      valorMotorista: safeText(MODAL.motorista()?.value),
-      transito: safeText(MODAL.transito()?.value),
-    };
-
-    return payload;
-  }
-
-  function validateModalPayload(p) {
-    const missing = [];
-    if (!p.regional) missing.push("REGIONAL");
-    if (!p.filial) missing.push("FILIAL");
-    if (!p.cliente) missing.push("CLIENTE");
-    if (!p.contato) missing.push("CONTATO");
-    if (!p.origem) missing.push("ORIGEM");
-    if (!p.destino) missing.push("DESTINO");
-    if (!p.uf) missing.push("UF");
-    if (!p.km) missing.push("KM");
-    if (!p.valorMotorista) missing.push("VLR MOTORISTA");
-
-    if (missing.length) {
-      alert("Preencha: " + missing.join(", "));
-      return false;
-    }
-    return true;
-  }
-
-  async function saveNewFrete(payload) {
-    const actions = ["create", "add", "new", "save", "upsert"];
-    let lastErr = null;
-
-    for (const action of actions) {
-      try {
-        const data = await apiGet({ action, ...payload });
-        if (data?.ok) return data;
-        // alguns backends retornam {success:true}
-        if (data?.success) return { ok: true, data };
-        lastErr = new Error("Resposta sem ok (action=" + action + ")");
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-
-    throw lastErr || new Error("Não consegui salvar (action create/add/new/save/upsert).");
-  }
-
-  function openNewModal() {
-    const modal = MODAL.wrap();
-    if (!modal) {
-      alert("Modal não encontrado no fretes.html (id='modal').");
-      return;
-    }
-    if (MODAL.title()) MODAL.title().textContent = "Novo Frete";
-    clearModalFields();
-    modalShow(true);
+    $("modal").style.display = "flex";
   }
 
   function closeModal() {
-    modalShow(false);
+    $("modal").style.display = "none";
+    state.editId = null;
   }
 
-  async function handleSave() {
-    const payload = collectModalPayload();
-    if (!validateModalPayload(payload)) return;
+  function collectModal() {
+    const mPortaValue = $("mPorta").value;
+    const mTransitoValue = $("mTransito").value;
+    const existing = state.editId ? state.rows.find((x) => x.id === state.editId) : null;
+    
+    console.log("📝 collectModal - Coletando dados do formulário:");
+    console.log("  - state.editId:", state.editId, "(É edição:", state.editId !== null, ")");
+    console.log("  - Campo mPorta.value:", mPortaValue, "(tipo:", typeof mPortaValue, ")");
+    console.log("  - Campo mTransito.value:", mTransitoValue, "(tipo:", typeof mTransitoValue, ")");
+    
+    const portaRaw = (mPortaValue === "" && existing && existing.porta !== "" && existing.porta !== null && existing.porta !== undefined)
+      ? existing.porta
+      : mPortaValue;
+    const transitoRaw = (mTransitoValue === "" && existing && existing.transito !== "" && existing.transito !== null && existing.transito !== undefined)
+      ? existing.transito
+      : mTransitoValue;
 
-    try {
-      setStatus("💾 Salvando...");
-      await saveNewFrete(payload);
-      setStatus("✅ Salvo");
-      closeModal();
-      await atualizar();
-    } catch (e) {
-      console.error("[fretes] erro salvar:", e);
-      setStatus("❌ Erro ao salvar");
-      alert("Não consegui salvar no Sheets. Veja o console (F12) para detalhes.");
-    }
+    const portaFinal = (portaRaw === "" || portaRaw === null || portaRaw === undefined) ? "" : num(portaRaw);
+    const transitoFinal = (transitoRaw === "" || transitoRaw === null || transitoRaw === undefined) ? "" : num(transitoRaw);
+    
+    console.log("  - porta após conversão:", portaFinal, "(tipo:", typeof portaFinal, ")");
+    console.log("  - transito após conversão:", transitoFinal, "(tipo:", typeof transitoFinal, ")");
+    
+    const collected = {
+      id: state.editId || "", // se vazio, Apps Script cria no final
+      regional: safeText($("mRegional").value),
+      filial: safeText($("mFilial").value).toUpperCase(),
+      cliente: safeText($("mCliente").value),
+      origem: safeText($("mOrigem").value),
+      coleta: safeText($("mColeta").value),
+      contato: safeText($("mContato").value),
+      destino: safeText($("mDestino").value),
+      uf: safeText($("mUF").value).toUpperCase(),
+      descarga: safeText($("mDescarga").value),
+
+      volume: $("mVolume").value === "" ? "" : num($("mVolume").value),
+      valorEmpresa: $("mEmpresa").value === "" ? "" : num($("mEmpresa").value),
+      valorMotorista: $("mMotorista").value === "" ? "" : num($("mMotorista").value),
+      km: $("mKM").value === "" ? "" : num($("mKM").value),
+      pedagioEixo: $("mPed").value === "" ? "" : num($("mPed").value),
+
+      produto: safeText($("mProduto").value),
+      icms: safeText($("mICMS").value),
+      pedidoSat: $("mSat").value === "" ? "" : num($("mSat").value),
+      porta: portaFinal,
+      transito: transitoFinal,
+      qtdPorta: portaFinal,
+      qtPorta: portaFinal,
+      qtdTransito: transitoFinal,
+      status: safeText($("mStatus").value).toUpperCase(),
+      obs: safeText($("mObs").value)
+    };
+    
+    console.log("📦 Objeto coletado (ANTES de retornar):");
+    console.log("  - id:", collected.id);
+    console.log("  - cliente:", collected.cliente);
+    console.log("  - porta:", collected.porta);
+    console.log("  - transito:", collected.transito);
+    
+    return collected;
   }
 
-  function bindModalEvents() {
-    const modal = MODAL.wrap();
-    if (!modal) return;
+  async function upsertRow(row) {
+    console.log("🔄 upsertRow - Objeto recebido do collectModal:");
+    console.log("  - porta:", row.porta, "(tipo:", typeof row.porta, ")");
+    console.log("  - transito:", row.transito, "(tipo:", typeof row.transito, ")");
+    console.log("  - Objeto completo:", JSON.stringify(row, null, 2));
+    
+    const portaForSheet = normalizeSheetNumber(row.porta);
+    const transitoForSheet = normalizeSheetNumber(row.transito);
 
-    // fecha por botões
-    MODAL.btnClose()?.addEventListener("click", closeModal);
-    MODAL.btnCancel()?.addEventListener("click", closeModal);
-    MODAL.btnSave()?.addEventListener("click", handleSave);
+    const payload = {
+      ...row,
+      porta: portaForSheet,
+      transito: transitoForSheet,
+      qtdPorta: row.qtdPorta !== undefined ? row.qtdPorta : portaForSheet,
+      qtPorta: row.qtPorta !== undefined ? row.qtPorta : (row.qtdPorta !== undefined ? row.qtdPorta : portaForSheet),
+      qtdTransito: row.qtdTransito !== undefined ? row.qtdTransito : transitoForSheet
+    };
 
-    // fecha clicando fora do card
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
+    await saveRowToSheets(payload);
+    await reloadFromServer(); // garante que pega o id/linha real do Sheets
+  }
+
+  async function removeRow(id) {
+    if (!confirm("Excluir este frete?")) return;
+    await deleteRowFromSheets(id);
+    await reloadFromServer();
+  }
+
+  /********************
+   * INIT
+   ********************/
+  async function init() {
+    fillFilialSelect($("fFilial"), true);
+    fillFilialSelect($("mFilial"), false);
+    fillContatoSelect($("mContato"));
+
+    state.weights = loadWeights();
+    $("w9").value = state.weights.w9;
+    $("w4").value = state.weights.w4;
+    $("w7").value = state.weights.w7;
+    $("w6").value = state.weights.w6;
+
+    $("btnSaveWeights").addEventListener("click", () => {
+      const w = {
+        w9: num($("w9").value) || DEFAULT_WEIGHTS.w9,
+        w4: num($("w4").value) || DEFAULT_WEIGHTS.w4,
+        w7: num($("w7").value) || DEFAULT_WEIGHTS.w7,
+        w6: num($("w6").value) || DEFAULT_WEIGHTS.w6
+      };
+      state.weights = w;
+      saveWeights(w);
+      render(state.rows, state.weights);
+      alert("Pesos salvos ✅");
     });
 
-    // ESC fecha
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
+    $("btnResetWeights").addEventListener("click", () => {
+      state.weights = { ...DEFAULT_WEIGHTS };
+      $("w9").value = state.weights.w9;
+      $("w4").value = state.weights.w4;
+      $("w7").value = state.weights.w7;
+      $("w6").value = state.weights.w6;
+      saveWeights(state.weights);
+      render(state.rows, state.weights);
     });
-  }
 
-  // ----------------------------
-  // AÇÕES
-  // ----------------------------
-  async function atualizar() {
-    try {
-      setStatus("🔄 Carregando...");
-      const rows = await fetchRows();
-      render(rows);
-      setStatus("✅ Atualizado");
-    } catch (e) {
-      console.error("[fretes] erro ao atualizar:", e);
-      if (String(e?.message || "").includes("retornou HTML")) {
-        setStatus("❌ Erro ao sincronizar (deploy/permissão)");
-        console.warn("[fretes] Trecho retorno:", e.preview || "");
-      } else {
-        setStatus("❌ Erro ao sincronizar");
+    $("fFilial").addEventListener("change", () => render(state.rows, state.weights));
+    $("fBusca").addEventListener("input", () => render(state.rows, state.weights));
+
+    $("btnNew").addEventListener("click", () => openModal("new"));
+
+    $("btnCloseModal").addEventListener("click", closeModal);
+    $("btnCancel").addEventListener("click", closeModal);
+
+    $("btnSave").addEventListener("click", async () => {
+      const row = collectModal();
+      if (!row.filial) return alert("Selecione uma filial.");
+      if (!row.contato) return alert("Selecione um contato.");
+
+      const btn = $("btnSave");
+      const txt = btn.textContent;
+      btn.disabled = true; btn.textContent = "Salvando...";
+
+      try {
+        await upsertRow(row);
+        closeModal();
+        alert("✅ Salvo no Google Sheets!");
+      } catch (e) {
+        console.error(e);
+        alert("❌ Erro ao salvar: " + e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = txt;
       }
-    }
-  }
+    });
 
-  function bindButtons() {
-    const btnAtualizar = $("#btnReloadFromSheets");
-    const btnNovo = $("#btnNew");
+    const btnShare = $("btnShareClientes");
+    if (btnShare) btnShare.addEventListener("click", () => (window.location.href = "./share-clientes.html"));
 
-    if (btnAtualizar) btnAtualizar.addEventListener("click", atualizar);
-
-    // ✅ NOVO agora abre o modal de verdade
-    if (btnNovo) {
-      btnNovo.addEventListener("click", () => {
-        openNewModal();
+    const btnReload = $("btnReloadFromSheets");
+    if (btnReload) {
+      btnReload.addEventListener("click", async () => {
+        const old = btnReload.textContent;
+        btnReload.disabled = true;
+        btnReload.textContent = "Carregando...";
+        try {
+          await reloadFromServer();
+          alert("✅ Atualizado do Google Sheets!");
+        } catch (e) {
+          console.error("ERRO SHEETS (detalhado):", e);
+          alert("Falha ao carregar do Google Sheets. Veja o console (F12).");
+        } finally {
+          btnReload.disabled = false;
+          btnReload.textContent = old;
+        }
       });
     }
 
-    // ✅ quando pesos mudarem, recalcula S/N
-    ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {
-      const el = document.querySelector(sel);
-      if (!el) return;
-      el.addEventListener("input", () => atualizar());
-    });
-  }
-
-  function init() {
-    bindButtons();
-
-    // modal
-    fillModalSelectors();
-    initModalUppercase();
-    bindModalEvents();
-
-    atualizar();
+    // carga inicial: Sheets -> fallback local
+    try {
+      await reloadFromServer();
+    } catch (e) {
+      console.warn("Sheets falhou, usando localStorage:", e);
+      updateSyncStatus("error", "Offline - dados locais");
+      state.rows = loadRowsLocal();
+      render(state.rows, state.weights);
+    }
   }
 
   window.addEventListener("DOMContentLoaded", init);

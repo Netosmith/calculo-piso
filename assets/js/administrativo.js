@@ -100,6 +100,15 @@
     if (el) el.textContent = text;
   }
 
+  // ✅ Escapar para atributo HTML (sem estragar URL com &amp;)
+  function escapeAttr(s) {
+    return String(s ?? "")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
+
   // ======================================================
   // ✅ JSONP helper (resolve CORS)
   // ======================================================
@@ -221,20 +230,9 @@
   }
 
   // ======================================================
-  // ✅ UPLOAD para o Drive via JSONP chunked
-  //
-  // Estratégia:
-  //  1. Lê o arquivo e converte para base64
-  //  2. Divide o base64 em chunks de ~10 KB cada
-  //  3. Envia chunk a chunk via JSONP GET (action=upload_chunk)
-  //     O Apps Script armazena os chunks em PropertiesService
-  //  4. Após todos os chunks, envia action=upload_finalize
-  //     O Apps Script reassembla e cria o arquivo no Drive
-  //
-  // Por que chunked?
-  //  - JSONP GET não tem limite de CORS nem X-Frame-Options
-  //  - URLs longas (base64 completo) são rejeitadas pelo browser
-  //  - Chunks de ~10 KB ficam dentro do limite seguro de URL
+  // ✅ UPLOAD para o Drive via JSONP chunked (MELHORADO)
+  // Agora os chunks vão pro Drive temporário (no back),
+  // e não mais pro PropertiesService.
   // ======================================================
 
   const UPLOAD_MAX_BYTES  = 10 * 1024 * 1024; // 10 MB limite total
@@ -253,10 +251,6 @@
     });
   }
 
-  /**
-   * Upload via JSONP chunked.
-   * Compatível com doGet actions: upload_chunk + upload_finalize
-   */
   async function uploadToDriveIframe_(file, meta) {
     if (file.size > UPLOAD_MAX_BYTES) {
       throw new Error(
@@ -272,16 +266,13 @@
     setStatus("📄 Lendo arquivo...");
     const base64 = await fileToBase64_(file);
 
-    // Divide em chunks
     const chunks = [];
     for (let i = 0; i < base64.length; i += UPLOAD_CHUNK_CHARS) {
       chunks.push(base64.slice(i, i + UPLOAD_CHUNK_CHARS));
     }
 
-    // ID único para esta sessão de upload
     const uploadId = "up_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
 
-    // Envia cada chunk
     for (let i = 0; i < chunks.length; i++) {
       const pct = Math.round(((i + 1) / chunks.length) * 90);
       setStatus(`☁️ Enviando chunk ${i + 1}/${chunks.length} (${pct}%)...`);
@@ -292,14 +283,16 @@
         chunk:    String(i),
         total:    String(chunks.length),
         data:     chunks[i],
-      }), 30000);
+
+        // ✅ NOVO: manda o folderId para o back salvar no Drive temp
+        folderId: DRIVE_FOLDER_ID,
+      }), 45000);
 
       if (!res || res.ok === false) {
         throw new Error(`Falha no chunk ${i + 1}: ` + (res?.error || "erro desconhecido"));
       }
     }
 
-    // Finaliza o upload
     setStatus("🔧 Finalizando no Drive...");
     const res = await jsonp(buildUrl({
       action:   "upload_finalize",
@@ -311,13 +304,13 @@
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
       total:    String(chunks.length),
-    }), 120000); // 2 min para o Apps Script montar o arquivo no Drive
+    }), 180000);
 
     if (!res || res.ok === false) {
       throw new Error(res?.error || "Falha ao finalizar upload no Drive");
     }
 
-    return res.data; // { fileId, name, url, folderFilial, folderTipo }
+    return res.data;
   }
 
   // ======================================================
@@ -454,6 +447,7 @@
         const termoTxt = hasTermo ? "Reenviar termo" : "Upload termo";
         const termoCls = hasTermo ? "ok" : "warn";
 
+        // ✅ IMPORTANTE: escapeAttr para não quebrar URL com &amp;
         return `
           <div class="chequeRow">
             <div class="chequeLeft">
@@ -461,7 +455,7 @@
               <div class="l2">RESP: ${upper(it.responsavel)} | ${upper(it.status || "ATIVO")}</div>
             </div>
             <div class="chequeActions">
-              ${hasTermo ? `<button class="btnMini ok" type="button" data-open-termo="${escapeHtml(it.termoUrl)}">Ver termo</button>` : ""}
+              ${hasTermo ? `<button class="btnMini ok" type="button" data-open-termo="${escapeAttr(it.termoUrl)}">Ver termo</button>` : ""}
               <button class="btnMini ${termoCls}" type="button"
                 data-upload="termo"
                 data-id="${safeText(it.id)}"
@@ -915,20 +909,18 @@
           const file = input.files && input.files[0];
           if (!file) return;
 
-          // ✅ filial: do botão (cheques) ou do card frota
           const filial = upper(filialBtn || "");
 
           try {
             setStatus("☁️ Enviando para o Drive...");
             const up = await uploadToDriveIframe_(file, {
               filial,
-              type,         // termo | checklist
-              ref,          // placa ou sequencia etc
+              type,
+              ref,
             });
 
             setStatus("✅ Upload OK");
 
-            // ✅ se for termo, salva no Sheets no cheque correspondente
             if (type === "termo" && chequeId) {
               setStatus("🧾 Salvando termo no cheque...");
               await updateChequeOnSheets({
@@ -939,7 +931,6 @@
               setStatus("✅ Termo vinculado ao cheque");
               await reloadAll();
             } else {
-              // checklist: só confirma o link
               alert(`Upload OK ✅\n\nArquivo: ${up.name}\nLink: ${up.url}\n\nPasta: ${up.folderFilial} / ${up.folderTipo}`);
             }
 

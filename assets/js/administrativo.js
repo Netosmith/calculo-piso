@@ -1,6 +1,7 @@
 /* administrativo.js | NOVA FROTA
-   - Cheques: filiais em botões pequenos (pílulas) e tabela abaixo
-   - Termo assinado: SIM/NÃO editável
+   - Cheques: filiais em BOTÕES (2 linhas) + tabela abaixo
+   - Remove drawer antigo (sem "FILIAL / Fechar")
+   - Termo assinado: SIM/NÃO editável (toggle)
    - Frota: botão Editar no card
 */
 (function () {
@@ -71,6 +72,9 @@
     if (el) el.textContent = text;
   }
 
+  // =========================
+  // JSONP
+  // =========================
   function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
@@ -255,7 +259,7 @@
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.status)}</span>
-          <button class="btnMiniEdit" type="button" data-edit="frota" data-id="${it.id}">Editar</button>
+          <button class="linkBtn" type="button" data-edit="frota" data-id="${it.id}">Editar</button>
         </div>
       `;
       wrap.appendChild(card);
@@ -263,7 +267,7 @@
   }
 
   // =========================
-  // Cheques (pílulas + tabela)
+  // Cheques (BOTÕES 2 LINHAS + TABELA ABAIXO)
   // =========================
   let selectedChequeFilial = "";
 
@@ -278,34 +282,43 @@
     return map;
   }
 
-  function renderChequePills() {
+  function pickDefaultFilial(byFilial){
+    if (selectedChequeFilial && FILIAIS.includes(selectedChequeFilial)) return selectedChequeFilial;
+    const firstWith = FILIAIS.find(f => (byFilial.get(f) || []).length > 0);
+    selectedChequeFilial = firstWith || "ITUMBIARA";
+    return selectedChequeFilial;
+  }
+
+  function renderChequeButtons() {
     const wrap = document.getElementById("chequesFilialPills");
     if (!wrap) return;
 
     const filtered = applyFilters(DATA.cheques);
     const byFilial = groupChequesByFilial(filtered);
-
-    if (!selectedChequeFilial) {
-      const firstWith = FILIAIS.find(f => (byFilial.get(f) || []).length > 0);
-      selectedChequeFilial = firstWith || "ITUMBIARA";
-    }
+    pickDefaultFilial(byFilial);
 
     wrap.innerHTML = "";
+
     FILIAIS.forEach((filial) => {
       const total = (byFilial.get(filial) || []).length;
+      const pend = (byFilial.get(filial) || []).filter(x => upper(x.termoAssinado) !== "SIM").length;
 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pillFilial" + (filial === selectedChequeFilial ? " isActive" : "");
       btn.setAttribute("data-cheque-filial", filial);
-      btn.innerHTML = `<span class="dot"></span> ${filial} <span class="count">(${total})</span>`;
+      btn.innerHTML = `
+        <span class="dot ${pend ? "warn" : "ok"}"></span>
+        <span class="name">${filial}</span>
+        <span class="count">(${total})</span>
+      `;
       wrap.appendChild(btn);
     });
 
     const listSel = byFilial.get(selectedChequeFilial) || [];
-    const pend = listSel.filter(x => upper(x.termoAssinado) !== "SIM").length;
+    const pendSel = listSel.filter(x => upper(x.termoAssinado) !== "SIM").length;
     const meta = document.getElementById("chequesMeta");
-    if (meta) meta.textContent = `Selecionado: ${selectedChequeFilial} • Total: ${listSel.length} • Pendentes: ${pend}`;
+    if (meta) meta.textContent = `Selecionado: ${selectedChequeFilial} • Total: ${listSel.length} • Pendentes: ${pendSel}`;
   }
 
   function renderChequesTable() {
@@ -350,7 +363,7 @@
       setStatus("🧾 Atualizando termo...");
       await updateChequeOnSheets({ id: chequeId, termoAssinado: novo });
       await reloadAll(false);
-      renderChequePills();
+      renderChequeButtons();
       renderChequesTable();
       setStatus("✅ Termo atualizado");
     } catch (e) {
@@ -360,12 +373,12 @@
   }
 
   function renderCheques() {
-    renderChequePills();
+    renderChequeButtons();
     renderChequesTable();
   }
 
   // =========================
-  // Outras abas
+  // Outras abas (mantidas)
   // =========================
   function renderSolic(list) {
     const wrap = $("#gridSolic");
@@ -476,7 +489,7 @@
   }
 
   // =========================
-  // Modal (novo/editar)
+  // Modal (novo/editar) - usado por cheques e frota
   // =========================
   const modal = { el:null,title:null,fields:null,btnClose:null,btnCancel:null,btnSave:null, ctx:{mode:"new",tab:"frota",id:""} };
 
@@ -543,7 +556,6 @@
       ];
     }
 
-    // mantém os schemas existentes para as outras abas (igual seu arquivo anterior)
     return [
       { id:"mFilial", name:"filial", label:"Filial", type:"select", options: filialOpts },
       { id:"mPlaca", name:"placa", label:"Placa", placeholder:"ABC1D23", type:"text" },
@@ -577,15 +589,13 @@
     };
   }
 
-  function labelTab(tab) { return tab === "cheques" ? "Cheques" : "Frota"; }
-
   function openNew(tab) {
     modal.ctx = { mode:"new", tab, id:"" };
     const schema = schemaFor(tab);
     const initial = (tab === "cheques")
       ? { filial: selectedChequeFilial || "ITUMBIARA", status:"ATIVO", data: todayBR(), termoAssinado:"NÃO" }
       : { filial:"" };
-    openModal(`Novo - ${labelTab(tab)}`, schema, initial);
+    openModal(`Novo - ${tab === "cheques" ? "Cheques" : "Frota"}`, schema, initial);
   }
 
   async function saveModal() {
@@ -607,7 +617,6 @@
         return;
       }
 
-      // frota local (seu comportamento anterior)
       if (modal.ctx.mode === "edit") {
         const idx = DATA.frota.findIndex((x) => x.id === modal.ctx.id);
         if (idx >= 0) DATA.frota[idx] = { ...DATA.frota[idx], ...payload };
@@ -636,17 +645,23 @@
     }
   }
 
+  // =========================
+  // Delegação de cliques
+  // =========================
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
-      if (el.matches("[data-cheque-filial]")) {
-        selectedChequeFilial = upper(el.getAttribute("data-cheque-filial") || "");
+      // clique nos botões de filial
+      const pill = el.closest?.("[data-cheque-filial]");
+      if (pill) {
+        selectedChequeFilial = upper(pill.getAttribute("data-cheque-filial") || "");
         renderCheques();
         return;
       }
 
+      // toggle termo
       if (el.matches("[data-toggle-termo]")) {
         const id = el.getAttribute("data-toggle-termo") || "";
         const atual = el.getAttribute("data-termo-atual") || "NÃO";
@@ -654,8 +669,8 @@
         return;
       }
 
+      // editar frota
       if (el.matches("[data-edit='frota']")) {
-        // abre modal edição frota
         const id = el.getAttribute("data-id") || "";
         modal.ctx = { mode:"edit", tab:"frota", id };
         const schema = schemaFor("frota");
@@ -683,9 +698,11 @@
 
   function bindActions() {
     $("#btnAdminReload")?.addEventListener("click", () => reloadAll(true));
+
     $("#btnAdminNovo")?.addEventListener("click", () => {
       const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
-      openNew(tab === "cheques" ? "cheques" : "frota");
+      if (tab === "cheques") return openNew("cheques");
+      return openNew("frota");
     });
 
     modal.el = $("#modalAdmin");

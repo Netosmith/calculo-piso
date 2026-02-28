@@ -11,6 +11,44 @@
     /* melhora clique dos ícones do topo */
     .topbar .actions a.icon-btn{ text-decoration:none; }
 
+    /* ===== Solicitações (topo) compacto ===== */
+    .homeSolicTop{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-right: 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(10,14,24,.35);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color:#fff;
+      cursor:pointer;
+      transition: transform .08s ease, border-color .15s ease, background .15s ease;
+      white-space: nowrap;
+    }
+    .homeSolicTop:active{ transform: scale(.99); }
+    .homeSolicTop:hover{ border-color: rgba(255,255,255,.22); background: rgba(10,14,24,.45); }
+
+    .homeSolicTop .sumIcon{ font-size:18px; line-height:1; }
+    .homeSolicTop .sumTxt{ display:flex; flex-direction:column; line-height:1.05; }
+    .homeSolicTop .sumTitle{ font-weight:900; font-size:12px; letter-spacing:.2px; }
+    .homeSolicTop .sumValue{ font-size:12px; opacity:.9; }
+
+    /* Modal do app.css já existe; só garante overlay ocupar tudo */
+    #homeSolicModal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(6px);
+      z-index: 9999;
+      padding: 18px;
+    }
+    #homeSolicModal.isOpen{ display:flex; }
+
     /* grid mais flexível (sem depender do app.css) */
     .hero .grid{
       display:grid;
@@ -20,6 +58,8 @@
     }
     @media (max-width: 900px){
       .hero .grid{ grid-template-columns: 1fr; }
+      .homeSolicTop{ padding: 9px 10px; }
+      .homeSolicTop .sumTitle{ display:none; } /* no mobile fica compacto */
     }
 
     /* deixa os cards mais "apertadinhos" e alinhados */
@@ -64,53 +104,54 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
 
-<button class="sumCard sumGold" id="homeSolicCard" type="button">
-  <div class="sumIcon">📋</div>
-  <div class="sumTxt">
-    <div class="sumTitle">Solicitações</div>
-    <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
-  </div>
-</button>
-
-<!-- Modal simples para enviar solicitação -->
-<div id="homeSolicModal" aria-hidden="true">
-  <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
-    <div class="modalHead">
-      <h2 id="homeSolicTitle">Nova Solicitação</h2>
-      <button class="iconClose" id="homeSolicClose" type="button">✕</button>
-    </div>
-
-    <div class="modalBody">
-      <div class="grid2">
-        <div class="field">
-          <label>Filial</label>
-          <select id="hsFilial"></select>
-        </div>
-        <div class="field">
-          <label>Tipo</label>
-          <input id="hsTipo" placeholder="CHEQUES / MANUTENÇÃO / TONER..." />
-        </div>
-        <div class="field" style="grid-column:1/-1;">
-          <label>Observação</label>
-          <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="modalFoot">
-      <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
-      <button class="btnAdmin" id="homeSolicSend" type="button">Enviar</button>
-    </div>
-  </div>
-</div>
-      
       <div class="actions">
+        <!-- ✅ Solicitações no topo (alinhado e compacto) -->
+        <button class="homeSolicTop" id="homeSolicCard" type="button" title="Solicitações">
+          <div class="sumIcon">📋</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Solicitações</div>
+            <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
+          </div>
+        </button>
+
         <!-- Links (mesmo que alguns sejam placeholder por enquanto) -->
         <a class="icon-btn" href="./notificacoes.html" title="Notificações" aria-label="Notificações">🔔</a>
         <a class="icon-btn" href="./mensagens.html" title="Mensagens" aria-label="Mensagens">✉️ <span class="badge">3</span></a>
         <a class="icon-btn" href="./arquivos.html" title="Arquivos" aria-label="Arquivos">📁</a>
         <a class="icon-btn" href="./config.html" title="Configurações" aria-label="Configurações">⚙️</a>
         <div class="icon-btn" title="Sair" data-logout aria-label="Sair">👤</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal simples para enviar solicitação -->
+  <div id="homeSolicModal" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
+      <div class="modalHead">
+        <h2 id="homeSolicTitle">Nova Solicitação</h2>
+        <button class="iconClose" id="homeSolicClose" type="button">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid2">
+          <div class="field">
+            <label>Filial</label>
+            <select id="hsFilial"></select>
+          </div>
+          <div class="field">
+            <label>Tipo</label>
+            <input id="hsTipo" placeholder="CHEQUES / MANUTENÇÃO / TONER..." />
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Observação</label>
+            <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
+        <button class="btnAdmin" id="homeSolicSend" type="button">Enviar</button>
       </div>
     </div>
   </div>
@@ -164,7 +205,7 @@
           </div>
         </a>
 
-        <!-- ✅ NOVO: ADMINISTRATIVO -->
+        <!-- ✅ ADMINISTRATIVO -->
         <a class="card theme-blue" data-feature="administrativo" href="./administrativo.html">
           <div class="card-left">
             <div class="tile" style="font-size:38px;">🗂️</div>
@@ -179,6 +220,10 @@
   </section>
 
   <script src="../assets/js/auth.js"></script>
+
+  <!-- ✅ IMPORTANTÍSSIMO: seu script do modal e KPI -->
+  <script src="../assets/js/home-solicitacoes.js"></script>
+
   <script>
     requireHomeAuth();
     bindLogoutButton();

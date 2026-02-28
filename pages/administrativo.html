@@ -3,199 +3,323 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Administrativo | NOVA FROTA</title>
-
+  <title>Home | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <link rel="stylesheet" href="../assets/css/administrativo.css" />
+
+  <style>
+    .topbar .actions a.icon-btn{ text-decoration:none; }
+
+    .hero .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:14px;
+      margin-top:16px;
+    }
+    @media (max-width: 900px){ .hero .grid{ grid-template-columns: 1fr; } }
+
+    .hero .card{
+      min-height: 112px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .hero .card-left{ display:flex; align-items:center; justify-content:center; }
+    .hero .tile{
+      width:64px; height:64px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:18px;
+      background: rgba(255,255,255,.12);
+      backdrop-filter: blur(6px);
+    }
+    .hero .card-right h3{ margin:0 0 4px; }
+    .hero .card-right p{ margin:0; opacity:.9; }
+
+    .badge{
+      margin-left:6px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:18px;
+      height:18px;
+      padding:0 6px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+    }
+
+    /* ===== CARD SOLICITAÇÕES no topo (igual vibe do administrativo) ===== */
+    .sumCard{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(17,26,51,.65);
+      backdrop-filter: blur(10px);
+      cursor:pointer;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      color: rgba(233,238,252,.92);
+    }
+    .sumCard:hover{ filter: brightness(1.06); }
+    .sumIcon{
+      width:40px;height:40px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      font-size:18px;
+    }
+    .sumTitle{ font-weight: 950; font-size: 13px; }
+    .sumValue{ font-weight: 1000; font-size: 12px; opacity:.92; }
+
+    /* ===== MODAL Solicitações ===== */
+    #homeSolicModal{
+      position: fixed;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 9999;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+      padding: 18px;
+    }
+    #homeSolicModal.isOpen{ display:flex; }
+    .modalCard{
+      width: min(980px, 100%);
+      border-radius: 18px;
+      background: rgba(17,26,51,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 55px rgba(0,0,0,.55);
+      overflow:hidden;
+      color: rgba(233,238,252,.92);
+    }
+    .modalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.06);
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .modalHead h2{
+      margin:0;
+      font-size: 14px;
+      font-weight: 1000;
+    }
+    .iconClose{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,238,252,.92);
+      cursor:pointer;
+      font-weight: 1000;
+    }
+    .modalBody{
+      padding: 14px;
+      max-height: calc(100vh - 220px);
+      overflow:auto;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 900px){ .grid2{ grid-template-columns: 1fr; } }
+
+    .field label{
+      display:block;
+      font-size: 11px;
+      font-weight: 950;
+      color: rgba(233,238,252,.92);
+      margin: 0 0 6px;
+    }
+    .field input, .field select, .field textarea{
+      width:100%;
+      border-radius: 12px;
+      padding: 10px 10px;
+      outline:none;
+      color: rgba(233,238,252,.92);
+      background: rgba(13,20,48,.65);
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .field textarea{ min-height: 120px; resize: vertical; }
+    .field input[readonly]{ opacity: .85; }
+
+    .modalFoot{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+    }
+    .btnAdmin{
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(91,124,250,.60);
+      background: rgba(27,42,90,.75);
+      color: rgba(233,238,252,.92);
+      font-weight: 900;
+      cursor:pointer;
+    }
+    .btnAdmin:hover{ filter: brightness(1.08); }
+    .btnAdmin.ghost{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+    }
+  </style>
 </head>
 
 <body>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
+        <div class="burger" title="Menu"><div></div></div>
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
 
-      <div class="actions">
-        <!-- ✅ Botão Solicitações no topo -->
-        <button class="icon-btn" id="btnTopSolic" type="button" title="Solicitações">
-          📋 <span class="badge" id="badgeTopSolic">0</span>
-        </button>
+      <!-- ✅ Card Solicitações no topo -->
+      <button class="sumCard" id="homeSolicCard" type="button" title="Abrir Solicitações">
+        <div class="sumIcon">📋</div>
+        <div class="sumTxt">
+          <div class="sumTitle">Solicitações</div>
+          <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
+        </div>
+      </button>
 
-        <div class="icon-btn" title="Configurações">⚙️</div>
-        <div class="icon-btn" title="Sair" data-logout>👤</div>
+      <!-- ✅ Modal -->
+      <div id="homeSolicModal" aria-hidden="true">
+        <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
+          <div class="modalHead">
+            <h2 id="homeSolicTitle">Nova Solicitação</h2>
+            <button class="iconClose" id="homeSolicClose" type="button">✕</button>
+          </div>
+
+          <div class="modalBody">
+            <div class="grid2">
+              <div class="field">
+                <label>Filial</label>
+                <select id="hsFilial"></select>
+              </div>
+              <div class="field">
+                <label>Tipo (editável)</label>
+                <input id="hsTipo" placeholder="Ex: CHEQUES / MANUTENÇÃO / TONER..." />
+              </div>
+
+              <div class="field">
+                <label>Data</label>
+                <input id="hsData" placeholder="dd/mm/aaaa" />
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select id="hsStatus"></select>
+              </div>
+
+              <div class="field" style="grid-column:1/-1;">
+                <label>Observação</label>
+                <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
+              </div>
+
+              <div class="field" style="grid-column:1/-1;">
+                <label>Solicitante</label>
+                <input id="hsSolicitante" readonly />
+              </div>
+            </div>
+          </div>
+
+          <div class="modalFoot">
+            <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
+            <button class="btnAdmin" id="homeSolicSave" type="button">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="icon-btn" href="./notificacoes.html" title="Notificações" aria-label="Notificações">🔔</a>
+        <a class="icon-btn" href="./mensagens.html" title="Mensagens" aria-label="Mensagens">✉️ <span class="badge">3</span></a>
+        <a class="icon-btn" href="./arquivos.html" title="Arquivos" aria-label="Arquivos">📁</a>
+        <a class="icon-btn" href="./config.html" title="Configurações" aria-label="Configurações">⚙️</a>
+        <div class="icon-btn" title="Sair" data-logout aria-label="Sair">👤</div>
       </div>
     </div>
   </div>
 
-  <section class="hero admin-hero">
-    <div class="container hero-content admin-wrap adminPage">
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-title">Bem-vindo ao <b>Sistema Operacional</b></div>
 
-      <div class="admin-head">
-        <div class="admin-title">
-          <div class="admin-title-row">
-            <div class="admin-gear">⚙️</div>
-            <div>
-              <div class="admin-h1">ADMINISTRATIVO</div>
-              <div class="admin-sub" id="adminSub">Central de rotinas internas (frota, cheques e solicitações).</div>
-              <div class="admin-sync" id="adminSyncStatus">✅ Pronto</div>
-            </div>
+      <div class="hero-sub" id="homeSub">Escolha uma das opções abaixo para continuar</div>
+
+      <div class="grid">
+        <a class="card theme-blue" data-feature="piso" href="./calculo-piso.html">
+          <div class="card-left"><div class="tile" style="font-size:34px;">🧾📈</div></div>
+          <div class="card-right">
+            <h3>Cálculo de Piso ANTT</h3>
+            <p>Faça o cálculo do piso mínimo de frete</p>
           </div>
-        </div>
+        </a>
+
+        <a class="card theme-green" data-feature="fretes" href="./fretes.html">
+          <div class="card-left"><div class="tile" style="font-size:40px;">🚛</div></div>
+          <div class="card-right">
+            <h3>Fretes (Operacional)</h3>
+            <p>Gerencie e atualize os fretes diários</p>
+          </div>
+        </a>
+
+        <a class="card theme-purple" data-feature="share" href="./share-clientes.html">
+          <div class="card-left"><div class="tile" style="font-size:40px;">👥</div></div>
+          <div class="card-right">
+            <h3>Share Clientes</h3>
+            <p>Compartilhe informações com clientes</p>
+          </div>
+        </a>
+
+        <a class="card theme-gold" data-feature="divulgacao" href="./divulgacao.html">
+          <div class="card-left"><div class="tile" style="font-size:38px;">📣</div></div>
+          <div class="card-right">
+            <h3>Divulgação</h3>
+            <p>Ferramentas para comunicação e marketing</p>
+          </div>
+        </a>
+
+        <a class="card theme-blue" data-feature="administrativo" href="./administrativo.html">
+          <div class="card-left"><div class="tile" style="font-size:38px;">🗂️</div></div>
+          <div class="card-right">
+            <h3>Administrativo</h3>
+            <p>Frota leve, cheques e solicitações por filial</p>
+          </div>
+        </a>
       </div>
-
-      <!-- resumo topo -->
-      <div class="admin-summary">
-        <button class="sumCard sumBlue" data-tab="frota" type="button">
-          <div class="sumIcon">🚗</div>
-          <div class="sumTxt">
-            <div class="sumTitle">Frota leve</div>
-            <div class="sumValue"><span id="kpiFrota">0</span> itens</div>
-          </div>
-        </button>
-
-        <button class="sumCard sumGreen" data-tab="cheques" type="button">
-          <div class="sumIcon">💳</div>
-          <div class="sumTxt">
-            <div class="sumTitle">Cheques</div>
-            <div class="sumValue"><span id="kpiCheques">0</span> registros</div>
-          </div>
-        </button>
-
-        <button class="sumCard sumGold" data-tab="solicitacoes" type="button">
-          <div class="sumIcon">📋</div>
-          <div class="sumTxt">
-            <div class="sumTitle">Solicitações</div>
-            <div class="sumValue"><span id="kpiSolic">0</span> abertas</div>
-          </div>
-        </button>
-
-        <button class="sumCard sumPurple" data-tab="patrimonio" type="button">
-          <div class="sumIcon">🏷️</div>
-          <div class="sumTxt">
-            <div class="sumTitle">Patrimônio</div>
-            <div class="sumValue"><span id="kpiPatrimonio">0</span> itens</div>
-          </div>
-        </button>
-
-        <button class="sumCard sumSlate" data-tab="epis" type="button">
-          <div class="sumIcon">🦺</div>
-          <div class="sumTxt">
-            <div class="sumTitle">EPIs</div>
-            <div class="sumValue"><span id="kpiEpis">0</span> entregas</div>
-          </div>
-        </button>
-      </div>
-
-      <!-- abas -->
-      <div class="admin-tabs">
-        <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
-        <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
-        <button class="tabBtn" data-tab="solicitacoes" type="button">Solicitações</button>
-        <button class="tabBtn" data-tab="patrimonio" type="button">Patrimônio</button>
-        <button class="tabBtn" data-tab="epis" type="button">Controle de EPIs</button>
-        <div class="tabLine"></div>
-      </div>
-
-      <!-- conteúdo -->
-      <div class="admin-panel">
-        <div class="panelHead">
-          <div class="panelTitle" id="panelTitle">Frota Leve</div>
-          <div class="panelRight">
-            <select class="adminSelect" id="fFilialAdmin" title="Filial">
-              <option value="">Todas as filiais</option>
-            </select>
-
-            <input class="adminSearch" id="fBuscaAdmin" placeholder="Buscar..." />
-
-            <button class="btnAdmin ghost" id="btnAdminReload" type="button">Atualizar</button>
-            <button class="btnAdmin" id="btnAdminNovo" type="button">+ Novo</button>
-          </div>
-        </div>
-
-        <div class="panelBody">
-          <!-- Frota -->
-          <div class="view isActive" id="view-frota">
-            <div class="cardsGrid" id="gridFrota"></div>
-          </div>
-
-          <!-- ✅ Cheques (FILIAIS EM BOTÕES + TABELA ABAIXO) -->
-          <div class="view" id="view-cheques">
-            <!-- barra compacta das filiais -->
-            <div class="chequesBox">
-              <div class="chequesTopRow">
-                <div class="chequesMeta" id="chequesMeta">Selecionado: - • Total: 0 • Pendentes: 0</div>
-              </div>
-
-              <!-- botões (quebra automática: fica em 2 linhas dependendo da largura) -->
-              <div class="pillsWrap" id="chequesFilialPills"></div>
-
-              <!-- tabela fixa abaixo -->
-              <div class="nfTableWrap chequesTableWrap">
-                <div class="nfDrawerHint" id="chequesHint"></div>
-
-                <table class="nfTable">
-                  <thead>
-                    <tr>
-                      <th>Filial</th>
-                      <th>Data</th>
-                      <th>Sequência</th>
-                      <th>Responsável</th>
-                      <th>Status</th>
-                      <th>Termo assinado</th>
-                    </tr>
-                  </thead>
-                  <tbody id="chequesTbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- Solicitações -->
-          <div class="view" id="view-solicitacoes">
-            <div class="cardsGrid" id="gridSolic"></div>
-          </div>
-
-          <!-- Patrimônio -->
-          <div class="view" id="view-patrimonio">
-            <div class="cardsGrid" id="gridPatrimonio"></div>
-          </div>
-
-          <!-- EPIs -->
-          <div class="view" id="view-epis">
-            <div class="cardsGrid" id="gridEpis"></div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </section>
 
-  <!-- ===== MODAL ===== -->
-  <div id="modalAdmin" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitleAdmin">
-      <div class="modalHead">
-        <h2 id="modalTitleAdmin">Novo</h2>
-        <button class="iconClose" id="btnCloseModalAdmin" type="button" title="Fechar">✕</button>
-      </div>
-
-      <div class="modalBody">
-        <div class="grid2" id="modalFieldsAdmin"></div>
-      </div>
-
-      <div class="modalFoot">
-        <button class="btnAdmin ghost" id="btnCancelModalAdmin" type="button">Cancelar</button>
-        <button class="btnAdmin" id="btnSaveModalAdmin" type="button">Salvar</button>
-      </div>
-    </div>
-  </div>
-
   <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/administrativo.js"></script>
+  <script src="../assets/js/home-solicitacoes.js"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const uf = getSelectedState?.() || "";
+      const user = getUser?.() || "";
+      const sub = document.getElementById("homeSub");
+      if(sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
+
+      document.querySelectorAll("[data-feature]").forEach((card) => {
+        const feature = card.getAttribute("data-feature");
+        if(typeof canAccessFeature === "function" && !canAccessFeature(feature)){
+          card.style.display = "none";
+        }
+      });
+    });
   </script>
 </body>
 </html>

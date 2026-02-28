@@ -9,40 +9,14 @@
   <style>
     .topbar .actions a.icon-btn{ text-decoration:none; }
 
-    /* Card Solicitações no topo (compacto e bonito) */
-    .homeSolicTop{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(10,14,24,.35);
-      backdrop-filter: blur(10px);
-      cursor:pointer;
-      transition: transform .15s ease, background .15s ease;
-      color:#fff;
-      margin-right:10px;
-      height:44px;
-      white-space:nowrap;
-    }
-    .homeSolicTop:hover{ transform: translateY(-1px); background: rgba(10,14,24,.48); }
-    .homeSolicTop .ico{ width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:10px; background: rgba(255,255,255,.10); }
-    .homeSolicTop .txt{ display:flex; flex-direction:column; line-height:1.05; }
-    .homeSolicTop .t1{ font-weight:900; font-size:12px; opacity:.95; }
-    .homeSolicTop .t2{ font-weight:800; font-size:11px; opacity:.85; }
-    .homeSolicTop .num{ font-weight:900; }
-
-    /* grid mais flexível (sem depender do app.css) */
     .hero .grid{
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap:14px;
       margin-top:16px;
     }
-    @media (max-width: 900px){
-      .hero .grid{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 900px){ .hero .grid{ grid-template-columns: 1fr; } }
 
-    /* cards mais alinhados */
     .hero .card{
       min-height: 112px;
       display:flex;
@@ -73,73 +47,132 @@
       font-weight:900;
     }
 
-    /* Modal da Home (estilo administrativo) */
-    #homeSolicModal{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      z-index:9999;
-    }
-    #homeSolicModal.isOpen{ display:flex; align-items:center; justify-content:center; padding:18px; }
-
-    #homeSolicModal .modalCard{
-      width:min(980px, 96vw);
-      border-radius:18px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(18,22,36,.92);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 18px 50px rgba(0,0,0,.35);
-      color:#fff;
-    }
-    #homeSolicModal .modalHead{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 16px;
-      background: rgba(255,255,255,.05);
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
-    #homeSolicModal .modalHead h2{ margin:0; font-size:16px; letter-spacing:.5px; }
-    #homeSolicModal .iconClose{
-      width:36px; height:36px; border-radius:12px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      color:#fff;
+    /* ===== CARD SOLICITAÇÕES no topo (igual vibe do administrativo) ===== */
+    .sumCard{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(17,26,51,.65);
+      backdrop-filter: blur(10px);
       cursor:pointer;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      color: rgba(233,238,252,.92);
     }
-    #homeSolicModal .modalBody{ padding:14px 16px; }
-    #homeSolicModal .grid2{
+    .sumCard:hover{ filter: brightness(1.06); }
+    .sumIcon{
+      width:40px;height:40px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      font-size:18px;
+    }
+    .sumTitle{ font-weight: 950; font-size: 13px; }
+    .sumValue{ font-weight: 1000; font-size: 12px; opacity:.92; }
+
+    /* ===== MODAL Solicitações ===== */
+    #homeSolicModal{
+      position: fixed;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 9999;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+      padding: 18px;
+    }
+    #homeSolicModal.isOpen{ display:flex; }
+    .modalCard{
+      width: min(980px, 100%);
+      border-radius: 18px;
+      background: rgba(17,26,51,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 55px rgba(0,0,0,.55);
+      overflow:hidden;
+      color: rgba(233,238,252,.92);
+    }
+    .modalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.06);
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .modalHead h2{
+      margin:0;
+      font-size: 14px;
+      font-weight: 1000;
+    }
+    .iconClose{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,238,252,.92);
+      cursor:pointer;
+      font-weight: 1000;
+    }
+    .modalBody{
+      padding: 14px;
+      max-height: calc(100vh - 220px);
+      overflow:auto;
+    }
+    .grid2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:12px;
+      gap: 12px;
     }
-    @media (max-width: 860px){
-      #homeSolicModal .grid2{ grid-template-columns: 1fr; }
+    @media (max-width: 900px){ .grid2{ grid-template-columns: 1fr; } }
+
+    .field label{
+      display:block;
+      font-size: 11px;
+      font-weight: 950;
+      color: rgba(233,238,252,.92);
+      margin: 0 0 6px;
     }
-    #homeSolicModal .field label{ display:block; font-size:12px; opacity:.85; margin:0 0 6px; font-weight:800; }
-    #homeSolicModal input, #homeSolicModal select, #homeSolicModal textarea{
+    .field input, .field select, .field textarea{
       width:100%;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 10px;
       outline:none;
+      color: rgba(233,238,252,.92);
+      background: rgba(13,20,48,.65);
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .field textarea{ min-height: 120px; resize: vertical; }
+    .field input[readonly]{ opacity: .85; }
+
+    .modalFoot{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.06);
-      color:#fff;
     }
-    #homeSolicModal textarea{ min-height:110px; resize: vertical; }
-    #homeSolicModal .muted{
-      margin-top:6px;
-      font-size:12px;
-      opacity:.85;
-      padding:10px 12px;
-      border-radius:12px;
-      background: rgba(255,255,255,.04);
-      border:1px dashed rgba(255,255,255,.14);
+    .btnAdmin{
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(91,124,250,.60);
+      background: rgba(27,42,90,.75);
+      color: rgba(233,238,252,.92);
+      font-weight: 900;
+      cursor:pointer;
     }
-    #homeSolicModal .modalFoot{
-      display:flex; justify-content:flex-end; gap:10px;
-      padding:12px 16px;
-      border-top:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
+    .btnAdmin:hover{ filter: brightness(1.08); }
+    .btnAdmin.ghost{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
     }
   </style>
 </head>
@@ -152,16 +185,63 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
 
-      <div class="actions">
-        <!-- ✅ Solicitações no topo (igual vibe do Administrativo) -->
-        <div class="homeSolicTop" id="homeSolicCard" title="Abrir Solicitações">
-          <div class="ico">📋</div>
-          <div class="txt">
-            <div class="t1">Solicitações</div>
-            <div class="t2"><span class="num" id="homeSolicOpen">0</span> abertas</div>
+      <!-- ✅ Card Solicitações no topo -->
+      <button class="sumCard" id="homeSolicCard" type="button" title="Abrir Solicitações">
+        <div class="sumIcon">📋</div>
+        <div class="sumTxt">
+          <div class="sumTitle">Solicitações</div>
+          <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
+        </div>
+      </button>
+
+      <!-- ✅ Modal -->
+      <div id="homeSolicModal" aria-hidden="true">
+        <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
+          <div class="modalHead">
+            <h2 id="homeSolicTitle">Nova Solicitação</h2>
+            <button class="iconClose" id="homeSolicClose" type="button">✕</button>
+          </div>
+
+          <div class="modalBody">
+            <div class="grid2">
+              <div class="field">
+                <label>Filial</label>
+                <select id="hsFilial"></select>
+              </div>
+              <div class="field">
+                <label>Tipo (editável)</label>
+                <input id="hsTipo" placeholder="Ex: CHEQUES / MANUTENÇÃO / TONER..." />
+              </div>
+
+              <div class="field">
+                <label>Data</label>
+                <input id="hsData" placeholder="dd/mm/aaaa" />
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select id="hsStatus"></select>
+              </div>
+
+              <div class="field" style="grid-column:1/-1;">
+                <label>Observação</label>
+                <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
+              </div>
+
+              <div class="field" style="grid-column:1/-1;">
+                <label>Solicitante</label>
+                <input id="hsSolicitante" readonly />
+              </div>
+            </div>
+          </div>
+
+          <div class="modalFoot">
+            <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
+            <button class="btnAdmin" id="homeSolicSave" type="button">Salvar</button>
           </div>
         </div>
+      </div>
 
+      <div class="actions">
         <a class="icon-btn" href="./notificacoes.html" title="Notificações" aria-label="Notificações">🔔</a>
         <a class="icon-btn" href="./mensagens.html" title="Mensagens" aria-label="Mensagens">✉️ <span class="badge">3</span></a>
         <a class="icon-btn" href="./arquivos.html" title="Arquivos" aria-label="Arquivos">📁</a>
@@ -171,68 +251,15 @@
     </div>
   </div>
 
-  <!-- ✅ Modal: Nova Solicitação (estilo “top”) -->
-  <div id="homeSolicModal" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
-      <div class="modalHead">
-        <h2 id="homeSolicTitle">Nova Solicitação</h2>
-        <button class="iconClose" id="homeSolicClose" type="button">✕</button>
-      </div>
-
-      <div class="modalBody">
-        <div class="grid2">
-          <div class="field">
-            <label>Filial</label>
-            <select id="hsFilial"></select>
-          </div>
-
-          <div class="field">
-            <label>Tipo (editável)</label>
-            <input id="hsTipo" placeholder="Ex: CHEQUES / MANUTENÇÃO / TONER..." />
-          </div>
-
-          <div class="field">
-            <label>Data</label>
-            <input id="hsData" placeholder="dd/mm/aaaa" />
-          </div>
-
-          <div class="field">
-            <label>Status</label>
-            <select id="hsStatus">
-              <option value="ABERTA">ABERTA</option>
-              <option value="EM ANDAMENTO">EM ANDAMENTO</option>
-              <option value="FINALIZADA">FINALIZADA</option>
-            </select>
-          </div>
-
-          <div class="field" style="grid-column:1/-1;">
-            <label>Observação</label>
-            <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
-            <div class="muted" id="hsSolicitante">Solicitante: —</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modalFoot">
-        <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
-        <button class="btnAdmin" id="homeSolicSend" type="button">Salvar</button>
-      </div>
-    </div>
-  </div>
-
   <section class="hero">
     <div class="container hero-content">
       <div class="hero-title">Bem-vindo ao <b>Sistema Operacional</b></div>
 
-      <div class="hero-sub" id="homeSub">
-        Escolha uma das opções abaixo para continuar
-      </div>
+      <div class="hero-sub" id="homeSub">Escolha uma das opções abaixo para continuar</div>
 
       <div class="grid">
         <a class="card theme-blue" data-feature="piso" href="./calculo-piso.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:34px;">🧾📈</div>
-          </div>
+          <div class="card-left"><div class="tile" style="font-size:34px;">🧾📈</div></div>
           <div class="card-right">
             <h3>Cálculo de Piso ANTT</h3>
             <p>Faça o cálculo do piso mínimo de frete</p>
@@ -240,9 +267,7 @@
         </a>
 
         <a class="card theme-green" data-feature="fretes" href="./fretes.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:40px;">🚛</div>
-          </div>
+          <div class="card-left"><div class="tile" style="font-size:40px;">🚛</div></div>
           <div class="card-right">
             <h3>Fretes (Operacional)</h3>
             <p>Gerencie e atualize os fretes diários</p>
@@ -250,9 +275,7 @@
         </a>
 
         <a class="card theme-purple" data-feature="share" href="./share-clientes.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:40px;">👥</div>
-          </div>
+          <div class="card-left"><div class="tile" style="font-size:40px;">👥</div></div>
           <div class="card-right">
             <h3>Share Clientes</h3>
             <p>Compartilhe informações com clientes</p>
@@ -260,9 +283,7 @@
         </a>
 
         <a class="card theme-gold" data-feature="divulgacao" href="./divulgacao.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:38px;">📣</div>
-          </div>
+          <div class="card-left"><div class="tile" style="font-size:38px;">📣</div></div>
           <div class="card-right">
             <h3>Divulgação</h3>
             <p>Ferramentas para comunicação e marketing</p>
@@ -270,9 +291,7 @@
         </a>
 
         <a class="card theme-blue" data-feature="administrativo" href="./administrativo.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:38px;">🗂️</div>
-          </div>
+          <div class="card-left"><div class="tile" style="font-size:38px;">🗂️</div></div>
           <div class="card-right">
             <h3>Administrativo</h3>
             <p>Frota leve, cheques e solicitações por filial</p>
@@ -291,11 +310,8 @@
     window.addEventListener("DOMContentLoaded", () => {
       const uf = getSelectedState?.() || "";
       const user = getUser?.() || "";
-
       const sub = document.getElementById("homeSub");
-      if(sub){
-        sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
-      }
+      if(sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
 
       document.querySelectorAll("[data-feature]").forEach((card) => {
         const feature = card.getAttribute("data-feature");

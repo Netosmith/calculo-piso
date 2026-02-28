@@ -343,7 +343,7 @@
 }
 .linkBtn:hover{ filter: brightness(1.08); }
 
-/* ===== Cheques: histórico dentro do card ===== */
+/* ===== Cheques: histórico dentro do card (usado nas abas antigas como Solicitações também) ===== */
 .chequeList{
   padding: 0 14px 14px;
   display:flex;
@@ -384,6 +384,8 @@
   align-items:center;
   flex:0 0 auto;
 }
+
+/* ===== Botões pequenos (reuso) ===== */
 .btnMini{
   height: 30px;
   padding: 0 10px;
@@ -393,6 +395,7 @@
   color: rgba(233,238,252,.92);
   font-weight: 900;
   cursor:pointer;
+  line-height: 1;
 }
 .btnMini:hover{ filter: brightness(1.08); }
 .btnMini.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.14); }
@@ -482,95 +485,145 @@
   border-top: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.06);
 }
-/* ===== Cheques (layout com painel) ===== */
-.chequesLayout{
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
 
-.chequesDetail{
-  display: none;
-  padding: 16px;
+/* =======================================================
+   ✅ CHEQUES NOVO (PILLS EM 2 LINHAS + TABELA ABAIXO)
+   ======================================================= */
+
+.chequesBox{
+  width: 100%;
   border-radius: 18px;
-  backdrop-filter: blur(10px);
-  background: rgba(10,16,30,.35);
+  background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.10);
-  box-shadow: 0 14px 40px rgba(0,0,0,.25);
+  box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  padding: 14px;
 }
 
-.chequesDetail.isOpen{ display: block; }
-
-.chequesDetailHead{
+.chequesTopRow{
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   justify-content:space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.chequesDetailTitle{
-  font-weight: 800;
-  letter-spacing: .6px;
-  font-size: 18px;
-}
-
-.chequesDetailSub{
-  opacity: .8;
+.chequesMeta{
+  font-weight: 900;
   font-size: 13px;
+  color: rgba(233,238,252,.85);
+  text-shadow: 0 10px 40px rgba(0,0,0,.35);
 }
 
-.chequesDetailActions{
+/* ✅ Botões das filiais (quebra em 2 linhas automaticamente) */
+.pillsWrap{
   display:flex;
-  gap: 10px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 14px;
 }
 
+.pillFilial{
+  display:inline-flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,14,24,.22);
+  backdrop-filter: blur(8px);
+  color: rgba(233,238,252,.92);
+  cursor:pointer;
+  font-weight: 950;
+  font-size: 12px;
+  letter-spacing: .02em;
+  line-height: 1;
+  user-select: none;
+  transition: filter .12s ease, transform .12s ease, border-color .12s ease;
+}
+.pillFilial:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+
+.pillFilial .name{ white-space: nowrap; }
+.pillFilial .count{
+  opacity: .85;
+  font-weight: 1000;
+  font-variant-numeric: tabular-nums;
+}
+
+.pillFilial .dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(34,197,94,.95);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.14);
+}
+.pillFilial .dot.warn{
+  background: rgba(250,204,21,.95);
+  box-shadow: 0 0 0 3px rgba(250,204,21,.14);
+}
+
+.pillFilial.isActive{
+  border-color: rgba(91,124,250,.75);
+  box-shadow: 0 0 0 3px rgba(91,124,250,.20);
+}
+
+/* tabela */
 .chequesTableWrap{
   overflow:auto;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,.10);
+  background: rgba(13,20,48,.20);
 }
 
-.chequesTable{
+.nfTable{
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 980px;
 }
 
-.chequesTable thead th{
+.nfTable thead th{
   text-align:left;
   font-size: 12px;
-  opacity: .85;
+  opacity: .86;
   padding: 12px;
   background: rgba(255,255,255,.06);
   position: sticky;
   top: 0;
   backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
-.chequesTable tbody td{
+.nfTable tbody td{
   padding: 12px;
   border-top: 1px solid rgba(255,255,255,.08);
   vertical-align: middle;
 }
 
-.adminCardSelect{
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  border: none;
+/* dica/empty */
+#chequesHint{
+  padding: 10px 12px;
+  font-size: 12px;
+  color: rgba(233,238,252,.72);
 }
 
+/* =======================================================
+   🧹 Desativa estilos antigos de cheques (drawer/detail)
+   (pra não conflitar com o novo)
+   ======================================================= */
+.chequesLayout,
+.chequesDetail,
+.chequesDetail.isOpen,
+.chequesDetailHead,
+.chequesDetailTitle,
+.chequesDetailSub,
+.chequesDetailActions,
+.chequesTableWrap .chequesTable,
+.chequesTable,
+.chequesTable thead th,
+.chequesTable tbody td,
+.adminCardSelect,
 .adminCardSelect.isSelected{
-  outline: 2px solid rgba(120,190,255,.45);
-  box-shadow: 0 0 0 6px rgba(120,190,255,.12);
+  /* não remove do DOM, só neutraliza se ainda existir */
 }
 
-.btnMini{
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.08);
-  color: inherit;
-}
+/* Se você quiser forçar esconder o "detail" antigo (caso ainda exista no HTML): */
+.chequesDetail{ display:none !important; }

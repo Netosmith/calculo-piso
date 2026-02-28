@@ -1,4 +1,4 @@
-/* administrativo.js | NOVA FROTA (sem upload) */
+/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial em drawer + termoAssinado SIM/NÃO) */
 (function () {
   "use strict";
 
@@ -6,7 +6,7 @@
   // ✅ URL DO SEU WEB APP (Apps Script /exec)
   // ======================================================
   const API_URL =
-    "https://script.google.com/macros/s/AKfycby3Y4VmeoWyoHoZGQGaFab2gfpRVDckCSmfjVYBRHsePbvt7pWuCcHDlz31MKDy02wP/exec";
+    "https://script.google.com/macros/s/AKfycbybrlPoP0unvz7RCThBL8BeuM7kNrWOpzjJD337zgngYHkc82eb9hnuQsfCwa67N3FZ/exec";
 
   // ======================================================
   // ✅ FILIAIS (ordem fixa)
@@ -26,13 +26,13 @@
   ];
 
   // ======================================================
-  // ✅ STORAGE (fallback local para Frota/Patrimônio/EPIs)
-  //    Solicitações agora vai pro Sheets (multi-usuário)
+  // ✅ STORAGE (Solicitações/Patrimônio/EPIs/Frota local)
   // ======================================================
   const LS_KEYS = {
+    solicit: "nf_admin_solicitacoes_v1",
     patrimonio: "nf_admin_patrimonio_v1",
     epis: "nf_admin_epis_v1",
-    frota: "nf_admin_frota_v2",
+    frota: "nf_admin_frota_v1",
   };
 
   function loadLS(key, fallback) {
@@ -46,9 +46,7 @@
     }
   }
   function saveLS(key, arr) {
-    try {
-      localStorage.setItem(key, JSON.stringify(arr || []));
-    } catch {}
+    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
   }
 
   // ======================================================
@@ -56,29 +54,13 @@
   // ======================================================
   const DATA = {
     frota: loadLS(LS_KEYS.frota, [
-      {
-        id: uid(),
-        placa: "ABC1D23",
-        condutor: "PEDRO SANTOS",
-        filial: "ITUMBIARA",
-        filialTelefone: "(64) 99999-9999",
-        tipoVeiculo: "CARRO",
-        status: "OK",
-        mes: "MAR/2026",
-      },
-      {
-        id: uid(),
-        placa: "XYZ2E34",
-        condutor: "LUCAS SILVA",
-        filial: "RIO VERDE",
-        filialTelefone: "(64) 98888-8888",
-        tipoVeiculo: "MOTO",
-        status: "PENDENTE",
-        mes: "ABR/2026",
-      },
+      { id: uid(), placa: "ABC1D23", condutor: "PEDRO SANTOS", filial: "ITUMBIARA", status: "OK", mes: "MAR/2026", telefone: "(64) 99999-1111", tipoVeiculo: "HATCH" },
+      { id: uid(), placa: "XYZ2E34", condutor: "LUCAS SILVA", filial: "RIO VERDE", status: "PENDENTE", mes: "ABR/2026", telefone: "(64) 99999-2222", tipoVeiculo: "SEDAN" },
     ]),
     cheques: [],
-    solicitacoes: [], // agora vem do Sheets
+    solicitacoes: loadLS(LS_KEYS.solicit, [
+      { id: uid(), filial: "ITUMBIARA", tipo: "CHEQUES", observacao: "PRECISO DE MAIS 2 TALÕES", status: "ABERTA", data: todayBR() },
+    ]),
     patrimonio: loadLS(LS_KEYS.patrimonio, [
       { id: uid(), filial: "ITUMBIARA", equipamento: "NOTEBOOK", numeroPatrimonio: "NF-001", posse: "ARIEL", status: "ATIVO", observacao: "" },
     ]),
@@ -128,7 +110,7 @@
       function cleanup() {
         clearTimeout(t);
         try { delete window[cb]; } catch {}
-        try { s.remove(); } catch {}
+        s.remove();
       }
 
       window[cb] = (data) => {
@@ -136,8 +118,7 @@
         resolve(data);
       };
 
-      // cache-bust ajuda quando o iOS “segura” script antigo
-      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
+      s.src = url + sep + "callback=" + encodeURIComponent(cb);
       s.onerror = () => {
         cleanup();
         reject(new Error("Erro ao carregar script (JSONP)"));
@@ -155,14 +136,8 @@
 
   // ======================================================
   // ✅ CHEQUES (Sheets) via JSONP
-  // Colunas esperadas no Sheet CHEQUES:
-  // id | createdAt | filial | data | sequencia | responsavel | status | termoAssinado | updatedAt
   // ======================================================
   function normalizeChequeRow(r) {
-    const termoRaw = safeText(r?.termoAssinado);
-    const termoAssinado =
-      upper(termoRaw) === "SIM" || termoRaw === "1" || upper(termoRaw) === "TRUE";
-
     return {
       id: safeText(r?.id),
       filial: upper(r?.filial),
@@ -170,7 +145,7 @@
       sequencia: safeText(r?.sequencia),
       responsavel: upper(r?.responsavel),
       status: upper(r?.status || "ATIVO"),
-      termoAssinado,
+      termoAssinado: upper(r?.termoAssinado || "NÃO"),
       createdAt: Number(r?.createdAt || 0) || 0,
       updatedAt: Number(r?.updatedAt || 0) || 0,
     };
@@ -194,7 +169,8 @@
   }
 
   async function loadChequesFromSheets() {
-    const res = await jsonp(buildUrl({ action: "cheques_list" }));
+    const url = buildUrl({ action: "cheques_list" });
+    const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
     const arr = res.data || [];
     DATA.cheques = sortCheques(arr.map(normalizeChequeRow));
@@ -208,9 +184,11 @@
       sequencia: safeText(payload.sequencia),
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
-      termoAssinado: payload.termoAssinado ? "SIM" : "NAO",
+      termoAssinado: upper(payload.termoAssinado || "NÃO"),
     };
-    const res = await jsonp(buildUrl(params));
+
+    const url = buildUrl(params);
+    const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
     return res.data;
   }
@@ -220,76 +198,16 @@
       action: "cheques_update",
       id: safeText(payload.id),
       status: payload.status != null ? upper(payload.status) : "",
-      termoAssinado: payload.termoAssinado != null ? (payload.termoAssinado ? "SIM" : "NAO") : "",
+      termoAssinado: payload.termoAssinado != null ? upper(payload.termoAssinado) : "",
     };
 
     Object.keys(params).forEach((k) => {
       if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
     });
 
-    const res = await jsonp(buildUrl(params));
+    const url = buildUrl(params);
+    const res = await jsonp(url);
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
-    return res.data;
-  }
-
-  // ======================================================
-  // ✅ SOLICITAÇÕES (Sheets) via JSONP
-  // Colunas no Sheet SOLICITACOES:
-  // id | createdAt | filial | tipo | observacao | status | data | updatedAt
-  // status: ABERTA | RESOLVIDA
-  // ======================================================
-  function normalizeSolicRow(r) {
-    return {
-      id: safeText(r?.id),
-      filial: upper(r?.filial),
-      tipo: upper(r?.tipo),
-      observacao: safeText(r?.observacao),
-      status: upper(r?.status || "ABERTA"),
-      data: safeText(r?.data) || todayBR(),
-      createdAt: Number(r?.createdAt || 0) || 0,
-      updatedAt: Number(r?.updatedAt || 0) || 0,
-    };
-  }
-
-  async function loadSolicFromSheets() {
-    const res = await jsonp(buildUrl({ action: "solicit_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_list");
-    DATA.solicitacoes = (res.data || []).map(normalizeSolicRow).sort((a, b) => (b.createdAt - a.createdAt));
-  }
-
-  async function addSolicOnSheets(payload) {
-    const params = {
-      action: "solicit_add",
-      filial: upper(payload.filial),
-      tipo: upper(payload.tipo),
-      observacao: safeText(payload.observacao),
-      data: safeText(payload.data || todayBR()),
-    };
-    const res = await jsonp(buildUrl(params));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_add");
-    return res.data;
-  }
-
-  async function updateSolicOnSheets(payload) {
-    const params = {
-      action: "solicit_update",
-      id: safeText(payload.id),
-      status: payload.status != null ? upper(payload.status) : "",
-      tipo: payload.tipo != null ? upper(payload.tipo) : "",
-      observacao: payload.observacao != null ? safeText(payload.observacao) : "",
-      data: payload.data != null ? safeText(payload.data) : "",
-    };
-    Object.keys(params).forEach((k) => {
-      if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
-    });
-    const res = await jsonp(buildUrl(params));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_update");
-    return res.data;
-  }
-
-  async function deleteSolicOnSheets(id) {
-    const res = await jsonp(buildUrl({ action: "solicit_delete", id: safeText(id) }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_delete");
     return res.data;
   }
 
@@ -312,9 +230,6 @@
         tab === "solicitacoes" ? "Solicitações" :
         tab === "patrimonio" ? "Patrimônio" : "Controle de EPIs";
     }
-
-    // quando muda de tab, reseta detalhe dos cheques
-    if (tab !== "cheques") closeChequesDetail();
 
     const inp = $("#fBuscaAdmin");
     if (inp) inp.value = "";
@@ -340,7 +255,6 @@
     if (s === "ABERTA") return "aberta";
     if (s === "EM ANDAMENTO") return "andamento";
     if (s === "FINALIZADA") return "finalizada";
-    if (s === "RESOLVIDA") return "finalizada";
     return "pendente";
   }
 
@@ -362,7 +276,7 @@
   }
 
   // ======================================================
-  // ✅ Render: Frota (mais infos)
+  // ✅ Frota (mais infos no card)
   // ======================================================
   function renderFrota(list) {
     const wrap = $("#gridFrota");
@@ -378,13 +292,11 @@
           <div class="adminMain">
             <div class="big">${upper(it.placa)}</div>
             <div class="smallLine">${safeText(it.condutor)}</div>
-            <div class="tagLine">${upper(it.filial)} • ${escapeHtml(safeText(it.filialTelefone || "—"))}</div>
-            <div class="tagLine">TIPO: ${upper(it.tipoVeiculo || "—")}</div>
+            <div class="tagLine">${upper(it.filial)} • ${safeText(it.telefone || "")} • ${upper(it.tipoVeiculo || "")}</div>
           </div>
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.mes)} ${upper(it.status)}</span>
-          <button class="linkBtn" type="button" data-edit="frota" data-id="${it.id}">Editar</button>
         </div>
       `;
       wrap.appendChild(card);
@@ -392,9 +304,9 @@
   }
 
   // ======================================================
-  // ✅ Render: Cheques (cards selecionáveis + detalhe em tabela)
+  // ✅ Cheques (cards minimalistas + drawer tabela)
   // ======================================================
-  let CHEQUES_SELECTED_FILIAL = "";
+  let drawerFilial = "";
 
   function groupChequesByFilial(list) {
     const map = new Map();
@@ -407,7 +319,7 @@
     return map;
   }
 
-  function renderChequesFiliaisCards(list) {
+  function renderChequesFiliais(list) {
     const wrap = $("#gridCheques");
     if (!wrap) return;
     wrap.innerHTML = "";
@@ -418,101 +330,102 @@
     FILIAIS.forEach((filial) => {
       const hist = byFilial.get(filial) || [];
       const total = hist.length;
-      const pendTermo = hist.filter((x) => !x.termoAssinado).length;
+      const pendentes = hist.filter((x) => upper(x.termoAssinado) !== "SIM").length;
 
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "adminCard adminCardSelect " + (CHEQUES_SELECTED_FILIAL === filial ? "isSelected" : "");
-      card.setAttribute("data-open-filial", filial);
-
-      const subtitle =
-        total === 0
-          ? "Sem registros"
-          : `Total: ${total} • Termo pendente: ${pendTermo}`;
+      const card = document.createElement("div");
+      card.className = "adminCard adminCardMini";
 
       card.innerHTML = `
         <div class="adminCardTop">
           <div class="avatar">💳</div>
           <div class="adminMain">
             <div class="big">${filial}</div>
-            <div class="smallLine">${subtitle}</div>
+            <div class="smallLine">${total ? `Total: ${total} • Pendentes: ${pendentes}` : "Sem registros"}</div>
             <div class="tagLine">Clique para abrir</div>
           </div>
         </div>
         <div class="adminCardFoot">
-          <span class="pill ${pendTermo ? "pendente" : "ok"}">${pendTermo ? "PENDÊNCIAS" : "OK"}</span>
-          <span class="linkBtn" style="pointer-events:none;">Abrir</span>
+          <span class="pill ${pendentes ? "pendente" : "ok"}">${pendentes ? "PENDENTE" : "OK"}</span>
+          <button class="linkBtn" type="button" data-open-filial="${filial}">Abrir</button>
         </div>
       `;
-
       wrap.appendChild(card);
     });
   }
 
-  function openChequesDetail(filial) {
-    CHEQUES_SELECTED_FILIAL = upper(filial || "");
-    const box = $("#chequesDetail");
-    if (!box) return;
+  function openDrawerCheques(filial) {
+    drawerFilial = upper(filial || "");
+    const el = $("#drawerCheques");
+    if (!el) return;
 
-    box.setAttribute("aria-hidden", "false");
-    box.classList.add("isOpen");
+    $("#drawerFilialTitle").textContent = drawerFilial;
+    $("#drawerFilialSub").textContent = "Histórico de cheques (formato planilha)";
 
-    $("#chequesDetailTitle").textContent = CHEQUES_SELECTED_FILIAL;
-    const total = DATA.cheques.filter((x) => upper(x.filial) === CHEQUES_SELECTED_FILIAL).length;
-    $("#chequesDetailSub").textContent = total ? `Histórico: ${total} registros` : "Nenhum registro ainda";
-
-    renderChequesDetailTable();
-    renderChequesFiliaisCards(DATA.cheques);
+    renderDrawerTable();
+    el.classList.add("isOpen");
+    el.setAttribute("aria-hidden", "false");
   }
 
-  function closeChequesDetail() {
-    CHEQUES_SELECTED_FILIAL = "";
-    const box = $("#chequesDetail");
-    if (!box) return;
-    box.classList.remove("isOpen");
-    box.setAttribute("aria-hidden", "true");
-    renderChequesFiliaisCards(DATA.cheques);
+  function closeDrawerCheques() {
+    const el = $("#drawerCheques");
+    if (!el) return;
+    el.classList.remove("isOpen");
+    el.setAttribute("aria-hidden", "true");
+    drawerFilial = "";
   }
 
-  function renderChequesDetailTable() {
-    const body = $("#chequesDetailBody");
-    if (!body) return;
-    body.innerHTML = "";
+  function renderDrawerTable() {
+    const tbody = $("#drawerChequesTbody");
+    const hint = $("#drawerHint");
+    if (!tbody) return;
 
-    const rows = sortCheques(DATA.cheques.filter((x) => upper(x.filial) === CHEQUES_SELECTED_FILIAL));
+    const rows = DATA.cheques.filter(c => upper(c.filial) === drawerFilial);
+    const ordered = sortCheques(rows);
 
-    if (!rows.length) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="7" style="opacity:.8;padding:14px;">Sem cheques cadastrados para esta filial. Use “+ Novo nesta filial”.</td>`;
-      body.appendChild(tr);
+    tbody.innerHTML = "";
+
+    if (!ordered.length) {
+      if (hint) hint.textContent = "Nenhum cheque cadastrado nesta filial. Use + Novo para lançar a primeira sequência.";
       return;
     }
+    if (hint) hint.textContent = "";
 
-    rows.forEach((it) => {
+    ordered.forEach((it) => {
+      const termo = upper(it.termoAssinado || "NÃO");
       const tr = document.createElement("tr");
-
-      const termoTxt = it.termoAssinado ? "SIM" : "NÃO";
-      const termoCls = it.termoAssinado ? "pill ok" : "pill pendente";
-
       tr.innerHTML = `
-        <td>${escapeHtml(it.filial)}</td>
-        <td>${escapeHtml(it.data)}</td>
-        <td>${escapeHtml(it.sequencia)}</td>
-        <td>${escapeHtml(it.responsavel)}</td>
-        <td><span class="pill ${pillClassFromStatus(it.status)}">${escapeHtml(it.status)}</span></td>
+        <td>${escapeHtml(safeText(it.data))}</td>
+        <td><b>${escapeHtml(safeText(it.sequencia))}</b></td>
+        <td>${escapeHtml(safeText(it.responsavel))}</td>
+        <td>${escapeHtml(safeText(it.status || "ATIVO"))}</td>
         <td>
-          <button type="button" class="${termoCls}" data-toggle-termo="${escapeHtml(it.id)}">${termoTxt}</button>
-        </td>
-        <td style="white-space:nowrap;">
-          <button type="button" class="btnMini" data-edit-cheque="${escapeHtml(it.id)}">Editar</button>
+          <button class="btnMini ${termo === "SIM" ? "ok" : "warn"}" type="button"
+            data-toggle-termo="${escapeHtml(it.id)}"
+            data-termo-atual="${termo}"
+          >${termo}</button>
         </td>
       `;
-      body.appendChild(tr);
+      tbody.appendChild(tr);
     });
   }
 
+  async function toggleTermo(chequeId, termoAtual) {
+    const novo = upper(termoAtual) === "SIM" ? "NÃO" : "SIM";
+    try {
+      setStatus("🧾 Atualizando termo...");
+      await updateChequeOnSheets({ id: chequeId, termoAssinado: novo });
+      await reloadAll(false);
+      renderDrawerTable();
+      setStatus("✅ Termo atualizado");
+    } catch (e) {
+      console.error(e);
+      setStatus("❌ Falha");
+      alert(e?.message || "Falha ao atualizar termo");
+    }
+  }
+
   // ======================================================
-  // ✅ Render: Solicitações (resolver/excluir)
+  // ✅ Render das outras abas (mantidas)
   // ======================================================
   function renderSolic(list) {
     const wrap = $("#gridSolic");
@@ -528,10 +441,9 @@
           <div class="adminMain">
             <div class="big">${upper(it.filial)}</div>
             <div class="smallLine">TIPO: ${upper(it.tipo || "")}</div>
-            <div class="tagLine">DATA: ${escapeHtml(safeText(it.data || ""))}</div>
+            <div class="tagLine">DATA: ${safeText(it.data || "")}</div>
           </div>
         </div>
-
         <div class="chequeList">
           <div class="chequeRow">
             <div class="chequeLeft">
@@ -540,17 +452,9 @@
             </div>
           </div>
         </div>
-
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.status)}</span>
-
-          ${
-            upper(it.status) === "ABERTA"
-              ? `<button class="linkBtn" type="button" data-solic-resolver="${escapeHtml(it.id)}">Marcar resolvido</button>`
-              : `<button class="linkBtn" type="button" data-solic-reabrir="${escapeHtml(it.id)}">Reabrir</button>`
-          }
-
-          <button class="linkBtn" type="button" data-solic-excluir="${escapeHtml(it.id)}">Excluir</button>
+          <button class="linkBtn" type="button" data-edit="solicit" data-id="${it.id}">Editar</button>
         </div>
       `;
       wrap.appendChild(card);
@@ -615,16 +519,18 @@
     $("#kpiSolic").textContent = String(DATA.solicitacoes.filter((s) => upper(s.status) === "ABERTA").length);
     $("#kpiPatrimonio").textContent = String(DATA.patrimonio.length);
     $("#kpiEpis").textContent = String(DATA.epis.length);
+
+    // ✅ badge no topo
+    const abertas = DATA.solicitacoes.filter((s) => upper(s.status) === "ABERTA").length;
+    const badge = $("#badgeTopSolic");
+    if (badge) badge.textContent = String(abertas);
   }
 
   function renderAll() {
     updateKpis();
     const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
     if (tab === "frota") renderFrota(DATA.frota);
-    if (tab === "cheques") {
-      renderChequesFiliaisCards(DATA.cheques);
-      if (CHEQUES_SELECTED_FILIAL) renderChequesDetailTable();
-    }
+    if (tab === "cheques") renderChequesFiliais(DATA.cheques);
     if (tab === "solicitacoes") renderSolic(DATA.solicitacoes);
     if (tab === "patrimonio") renderPatrimonio(DATA.patrimonio);
     if (tab === "epis") renderEpis(DATA.epis);
@@ -709,9 +615,23 @@
           { value: "ENCERRADO", label: "ENCERRADO" },
         ]},
         { id: "mTermo", name: "termoAssinado", label: "Termo assinado", type: "select", options: [
-          { value: "NAO", label: "NÃO" },
+          { value: "NÃO", label: "NÃO" },
           { value: "SIM", label: "SIM" },
         ]},
+      ];
+    }
+
+    if (tab === "solicitacoes") {
+      return [
+        { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
+        { id: "mTipo", name: "tipo", label: "Tipo (editável)", placeholder: "Ex: CHEQUES / MANUTENÇÃO / TONER...", type: "text" },
+        { id: "mData", name: "data", label: "Data", placeholder: todayBR(), type: "text" },
+        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
+          { value: "ABERTA", label: "ABERTA" },
+          { value: "EM ANDAMENTO", label: "EM ANDAMENTO" },
+          { value: "FINALIZADA", label: "FINALIZADA" },
+        ]},
+        { id: "mObs", name: "observacao", label: "Observação", type: "textarea", full: true },
       ];
     }
 
@@ -742,13 +662,13 @@
       ];
     }
 
-    // frota (AGORA COM TELEFONE + TIPO VEÍCULO)
+    // frota
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
       { id: "mCond", name: "condutor", label: "Condutor", placeholder: "NOME", type: "text" },
-      { id: "mFone", name: "filialTelefone", label: "Filial Telefone", placeholder: "(64) 99999-9999", type: "text" },
-      { id: "mTipo", name: "tipoVeiculo", label: "Tipo do veículo", placeholder: "CARRO / MOTO / CAMINHONETE", type: "text" },
+      { id: "mTel", name: "telefone", label: "Filial Telefone", placeholder: "(64) 99999-0000", type: "text" },
+      { id: "mTipoV", name: "tipoVeiculo", label: "Tipo do veículo", placeholder: "HATCH / SEDAN / PICKUP", type: "text" },
       { id: "mMes", name: "mes", label: "Mês ref.", placeholder: "MAR/2026", type: "text" },
       { id: "mStatus", name: "status", label: "Status", type: "select", options: [
         { value: "OK", label: "OK" },
@@ -766,10 +686,18 @@
         sequencia: getVal("mSeq"),
         responsavel: upper(getVal("mResp")),
         status: upper(getVal("mStatus") || "ATIVO"),
-        termoAssinado: upper(getVal("mTermo")) === "SIM",
+        termoAssinado: upper(getVal("mTermo") || "NÃO"),
       };
     }
-
+    if (tab === "solicitacoes") {
+      return {
+        filial: upper(getVal("mFilial")),
+        tipo: upper(getVal("mTipo")),
+        data: getVal("mData") || todayBR(),
+        status: upper(getVal("mStatus") || "ABERTA"),
+        observacao: getVal("mObs"),
+      };
+    }
     if (tab === "patrimonio") {
       return {
         filial: upper(getVal("mFilial")),
@@ -780,7 +708,6 @@
         observacao: getVal("mObs"),
       };
     }
-
     if (tab === "epis") {
       return {
         filial: upper(getVal("mFilial")),
@@ -792,13 +719,12 @@
         observacao: getVal("mObs"),
       };
     }
-
     return {
       filial: upper(getVal("mFilial")),
       placa: upper(getVal("mPlaca")),
       condutor: upper(getVal("mCond")),
-      filialTelefone: getVal("mFone"),
-      tipoVeiculo: upper(getVal("mTipo")),
+      telefone: getVal("mTel"),
+      tipoVeiculo: getVal("mTipoV"),
       mes: upper(getVal("mMes")),
       status: upper(getVal("mStatus") || "OK"),
     };
@@ -808,10 +734,11 @@
     modal.ctx = { mode: "new", tab, id: "" };
     const schema = schemaFor(tab);
 
-    let initial = preset || {};
-    if (tab === "cheques") {
-      initial = { filial: "", status: "ATIVO", data: todayBR(), termoAssinado: "NAO", ...preset };
-    }
+    const initial =
+      preset ||
+      (tab === "cheques"
+        ? { filial: drawerFilial || "", status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" }
+        : { filial: "" });
 
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
   }
@@ -820,18 +747,8 @@
     modal.ctx = { mode: "edit", tab, id };
     const schema = schemaFor(tab);
 
-    // cheques vem do Sheets, mas editaremos via modal também (status/termo)
-    if (tab === "cheques") {
-      const item = DATA.cheques.find((x) => x.id === id);
-      if (!item) return;
-      openModal(`Editar - Cheques`, schema, {
-        ...item,
-        termoAssinado: item.termoAssinado ? "SIM" : "NAO"
-      });
-      return;
-    }
-
-    const list = tab === "patrimonio" ? DATA.patrimonio :
+    const list = tab === "solicitacoes" ? DATA.solicitacoes :
+      tab === "patrimonio" ? DATA.patrimonio :
       tab === "epis" ? DATA.epis :
       DATA.frota;
 
@@ -843,6 +760,7 @@
 
   function labelTab(tab) {
     if (tab === "cheques") return "Cheques";
+    if (tab === "solicitacoes") return "Solicitações";
     if (tab === "patrimonio") return "Patrimônio";
     if (tab === "epis") return "EPIs";
     return "Frota";
@@ -859,24 +777,16 @@
         if (!payload.data || !payload.sequencia || !payload.responsavel) {
           return alert("Preencha: Data, Sequência e Responsável.");
         }
-
         setStatus("💾 Salvando cheque...");
-        if (modal.ctx.mode === "edit") {
-          await updateChequeOnSheets({
-            id: modal.ctx.id,
-            status: payload.status,
-            termoAssinado: payload.termoAssinado,
-          });
-        } else {
-          await createChequeOnSheets(payload);
-        }
+        await createChequeOnSheets(payload);
         closeModal();
-        await reloadAll();
-        if (payload.filial) openChequesDetail(payload.filial);
+        await reloadAll(false);
+        if (drawerFilial) renderDrawerTable();
         return;
       }
 
-      const list = tab === "patrimonio" ? DATA.patrimonio :
+      const list = tab === "solicitacoes" ? DATA.solicitacoes :
+        tab === "patrimonio" ? DATA.patrimonio :
         tab === "epis" ? DATA.epis :
         DATA.frota;
 
@@ -900,120 +810,49 @@
 
   function persistLocal() {
     saveLS(LS_KEYS.frota, DATA.frota);
+    saveLS(LS_KEYS.solicit, DATA.solicitacoes);
     saveLS(LS_KEYS.patrimonio, DATA.patrimonio);
     saveLS(LS_KEYS.epis, DATA.epis);
   }
 
-  async function reloadAll() {
+  async function reloadAll(showAlert = true) {
     try {
       setStatus("🔄 Atualizando...");
-      await Promise.all([
-        loadChequesFromSheets(),
-        loadSolicFromSheets(),
-      ]);
+      await loadChequesFromSheets();
       updateKpis();
       renderAll();
       setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[admin] reload erro:", e);
       setStatus("❌ Erro ao atualizar");
-      alert(e?.message || "Erro ao atualizar.");
+      if (showAlert) alert(e?.message || "Erro ao atualizar cheques.");
     }
   }
 
   // ======================================================
-  // Delegações (cheques abrir filial, toggle termo, editar cheque, solicitações resolver/excluir, editar itens)
+  // Delegações (abrir drawer + toggle termo + editar)
   // ======================================================
   function bindDelegation() {
-    document.addEventListener("click", async (ev) => {
+    document.addEventListener("click", (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
-      // abrir filial cheques
+      // abre filial (drawer)
       if (el.matches("[data-open-filial]")) {
-        openChequesDetail(el.getAttribute("data-open-filial") || "");
-        return;
-      }
-      const parentOpen = el.closest?.("[data-open-filial]");
-      if (parentOpen instanceof HTMLElement) {
-        openChequesDetail(parentOpen.getAttribute("data-open-filial") || "");
+        const filial = el.getAttribute("data-open-filial") || "";
+        openDrawerCheques(filial);
         return;
       }
 
-      // toggle termo assinado SIM/NÃO
+      // toggle termo
       if (el.matches("[data-toggle-termo]")) {
         const id = el.getAttribute("data-toggle-termo") || "";
-        const item = DATA.cheques.find((x) => x.id === id);
-        if (!item) return;
-        try {
-          setStatus("💾 Atualizando termo...");
-          await updateChequeOnSheets({ id, termoAssinado: !item.termoAssinado });
-          await reloadAll();
-          if (CHEQUES_SELECTED_FILIAL) openChequesDetail(CHEQUES_SELECTED_FILIAL);
-          setStatus("✅ Atualizado");
-        } catch (e) {
-          console.error(e);
-          setStatus("❌ Falha");
-          alert(e?.message || "Falha ao atualizar termo.");
-        }
+        const atual = el.getAttribute("data-termo-atual") || "NÃO";
+        if (id) toggleTermo(id, atual);
         return;
       }
 
-      // editar cheque (abre modal)
-      if (el.matches("[data-edit-cheque]")) {
-        const id = el.getAttribute("data-edit-cheque") || "";
-        if (id) openEdit("cheques", id);
-        return;
-      }
-
-      // solicitações: resolver / reabrir / excluir
-      if (el.matches("[data-solic-resolver]")) {
-        const id = el.getAttribute("data-solic-resolver") || "";
-        try {
-          setStatus("💾 Marcando resolvida...");
-          await updateSolicOnSheets({ id, status: "RESOLVIDA" });
-          await reloadAll();
-          setStatus("✅ OK");
-        } catch (e) {
-          console.error(e);
-          setStatus("❌ Falha");
-          alert(e?.message || "Falha ao resolver.");
-        }
-        return;
-      }
-
-      if (el.matches("[data-solic-reabrir]")) {
-        const id = el.getAttribute("data-solic-reabrir") || "";
-        try {
-          setStatus("💾 Reabrindo...");
-          await updateSolicOnSheets({ id, status: "ABERTA" });
-          await reloadAll();
-          setStatus("✅ OK");
-        } catch (e) {
-          console.error(e);
-          setStatus("❌ Falha");
-          alert(e?.message || "Falha ao reabrir.");
-        }
-        return;
-      }
-
-      if (el.matches("[data-solic-excluir]")) {
-        const id = el.getAttribute("data-solic-excluir") || "";
-        if (!confirm("Excluir esta solicitação?")) return;
-        try {
-          setStatus("🗑️ Excluindo...");
-          await deleteSolicOnSheets(id);
-          await reloadAll();
-          setStatus("✅ Excluída");
-        } catch (e) {
-          console.error(e);
-          setStatus("❌ Falha");
-          alert(e?.message || "Falha ao excluir.");
-        }
-        return;
-      }
-
-      // editar frota/patrimonio/epis
+      // editar cards
       if (el.matches("[data-edit]")) {
         const tab = el.getAttribute("data-edit") || "";
         const id = el.getAttribute("data-id") || "";
@@ -1034,6 +873,10 @@
     document.querySelectorAll(".sumCard").forEach((c) => {
       c.addEventListener("click", () => setActiveTab(c.dataset.tab));
     });
+
+    // ✅ botão topo solicitações
+    const btn = $("#btnTopSolic");
+    if (btn) btn.addEventListener("click", () => setActiveTab("solicitacoes"));
   }
 
   function bindFilters() {
@@ -1045,22 +888,12 @@
 
   function bindActions() {
     const btnReload = $("#btnAdminReload");
-    if (btnReload) btnReload.addEventListener("click", reloadAll);
+    if (btnReload) btnReload.addEventListener("click", () => reloadAll(true));
 
     const btnNovo = $("#btnAdminNovo");
     if (btnNovo) btnNovo.addEventListener("click", () => {
       const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
       openNew(tab);
-    });
-
-    // cheques detail buttons
-    const btnClose = $("#btnCloseChequesDetail");
-    if (btnClose) btnClose.addEventListener("click", closeChequesDetail);
-
-    const btnNovoFilial = $("#btnNovoChequeFilial");
-    if (btnNovoFilial) btnNovoFilial.addEventListener("click", () => {
-      if (!CHEQUES_SELECTED_FILIAL) return;
-      openNew("cheques", { filial: CHEQUES_SELECTED_FILIAL, data: todayBR(), status: "ATIVO", termoAssinado: "NAO" });
     });
 
     // modal
@@ -1080,6 +913,16 @@
     });
     document.addEventListener("keydown", (ev) => {
       if (ev.key === "Escape" && modal.el.classList.contains("isOpen")) closeModal();
+      if (ev.key === "Escape" && $("#drawerCheques")?.classList.contains("isOpen")) closeDrawerCheques();
+    });
+
+    // drawer buttons
+    $("#btnDrawerFechar")?.addEventListener("click", closeDrawerCheques);
+    $("#btnDrawerNovoCheque")?.addEventListener("click", () => openNew("cheques", { filial: drawerFilial || "" }));
+
+    // click fora do drawer para fechar
+    $("#drawerCheques")?.addEventListener("click", (ev) => {
+      if (ev.target === $("#drawerCheques")) closeDrawerCheques();
     });
   }
 
@@ -1110,7 +953,7 @@
 
     persistLocal();
     renderAll();
-    reloadAll();
+    reloadAll(false);
   }
 
   window.addEventListener("DOMContentLoaded", init);

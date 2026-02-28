@@ -1,4 +1,6 @@
-/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial em drawer + termoAssinado SIM/NÃO) */
+/* administrativo.js | NOVA FROTA
+   (tabs + filtros + cheques por filial em barra + tabela + termoAssinado SIM/NÃO editável)
+*/
 (function () {
   "use strict";
 
@@ -110,7 +112,7 @@
       function cleanup() {
         clearTimeout(t);
         try { delete window[cb]; } catch {}
-        s.remove();
+        try { s.remove(); } catch {}
       }
 
       window[cb] = (data) => {
@@ -118,7 +120,7 @@
         resolve(data);
       };
 
-      s.src = url + sep + "callback=" + encodeURIComponent(cb);
+      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
       s.onerror = () => {
         cleanup();
         reject(new Error("Erro ao carregar script (JSONP)"));
@@ -145,6 +147,7 @@
       sequencia: safeText(r?.sequencia),
       responsavel: upper(r?.responsavel),
       status: upper(r?.status || "ATIVO"),
+      // ✅ campo obrigatório no Sheet: termoAssinado
       termoAssinado: upper(r?.termoAssinado || "NÃO"),
       createdAt: Number(r?.createdAt || 0) || 0,
       updatedAt: Number(r?.updatedAt || 0) || 0,
@@ -233,6 +236,13 @@
 
     const inp = $("#fBuscaAdmin");
     if (inp) inp.value = "";
+
+    // ✅ se abriu cheques, garante uma filial selecionada
+    if (tab === "cheques" && !chequesSelectedFilial) {
+      const sel = upper($("#fFilialAdmin")?.value || "");
+      chequesSelectedFilial = sel || FILIAIS[0];
+    }
+
     renderAll();
   }
 
@@ -304,9 +314,9 @@
   }
 
   // ======================================================
-  // ✅ Cheques (cards minimalistas + drawer tabela)
+  // ✅ Cheques (barra de filiais + tabela)
   // ======================================================
-  let drawerFilial = "";
+  let chequesSelectedFilial = "";
 
   function groupChequesByFilial(list) {
     const map = new Map();
@@ -319,103 +329,228 @@
     return map;
   }
 
-  function renderChequesFiliais(list) {
-    const wrap = $("#gridCheques");
-    if (!wrap) return;
-    wrap.innerHTML = "";
+  function ensureChequesLayout(wrap) {
+    // injeta layout dentro do #gridCheques, sem depender de alterar HTML
+    wrap.innerHTML = `
+      <div class="nf-cheques">
+        <div class="nf-cheques-head">
+          <div class="nf-cheques-title">
+            <div class="nf-cheques-h1">Filiais</div>
+            <div class="nf-cheques-h2" id="nfChequesHint"></div>
+          </div>
 
-    const filtered = applyFilters(list);
-    const byFilial = groupChequesByFilial(filtered);
-
-    FILIAIS.forEach((filial) => {
-      const hist = byFilial.get(filial) || [];
-      const total = hist.length;
-      const pendentes = hist.filter((x) => upper(x.termoAssinado) !== "SIM").length;
-
-      const card = document.createElement("div");
-      card.className = "adminCard adminCardMini";
-
-      card.innerHTML = `
-        <div class="adminCardTop">
-          <div class="avatar">💳</div>
-          <div class="adminMain">
-            <div class="big">${filial}</div>
-            <div class="smallLine">${total ? `Total: ${total} • Pendentes: ${pendentes}` : "Sem registros"}</div>
-            <div class="tagLine">Clique para abrir</div>
+          <div class="nf-cheques-actions">
+            <button class="btnAdmin ghost" id="btnChequesNovoInline" type="button">+ Novo (filial)</button>
           </div>
         </div>
-        <div class="adminCardFoot">
-          <span class="pill ${pendentes ? "pendente" : "ok"}">${pendentes ? "PENDENTE" : "OK"}</span>
-          <button class="linkBtn" type="button" data-open-filial="${filial}">Abrir</button>
+
+        <div class="nf-cheques-bar" id="nfChequesBar"></div>
+
+        <div class="nf-cheques-tableWrap">
+          <table class="nf-table">
+            <thead>
+              <tr>
+                <th>Filial</th>
+                <th>Data</th>
+                <th>Sequência</th>
+                <th>Responsável</th>
+                <th>Status</th>
+                <th>Termo assinado</th>
+              </tr>
+            </thead>
+            <tbody id="nfChequesTbody"></tbody>
+          </table>
+
+          <div class="nf-empty" id="nfChequesEmpty" style="display:none;">
+            Nenhum cheque nesta filial. Use <b>+ Novo</b> para cadastrar a primeira sequência.
+          </div>
         </div>
+      </div>
+    `;
+
+    // estilos premium/minimalistas (injeção segura)
+    if (!document.getElementById("nfChequesStyle")) {
+      const st = document.createElement("style");
+      st.id = "nfChequesStyle";
+      st.textContent = `
+        .nf-cheques{ display:flex; flex-direction:column; gap:12px; }
+        .nf-cheques-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .nf-cheques-title{ display:flex; flex-direction:column; gap:2px; }
+        .nf-cheques-h1{ font-weight:900; letter-spacing:.2px; }
+        .nf-cheques-h2{ font-size:12px; opacity:.85; }
+
+        .nf-cheques-bar{
+          display:flex;
+          gap:8px;
+          overflow:auto;
+          padding-bottom:4px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .nf-chip{
+          border:1px solid rgba(255,255,255,.14);
+          background: rgba(10,14,24,.28);
+          color:#fff;
+          padding:8px 10px;
+          border-radius:999px;
+          display:flex;
+          align-items:center;
+          gap:8px;
+          cursor:pointer;
+          white-space:nowrap;
+          user-select:none;
+          transition: transform .08s ease, background .15s ease, border-color .15s ease;
+          font-weight:800;
+          font-size:12px;
+        }
+        .nf-chip:active{ transform: scale(.99); }
+        .nf-chip:hover{ border-color: rgba(255,255,255,.22); background: rgba(10,14,24,.38); }
+        .nf-chip.isActive{
+          border-color: rgba(255,255,255,.35);
+          background: rgba(255,255,255,.10);
+        }
+        .nf-chip .dot{
+          width:8px; height:8px; border-radius:999px;
+          background: rgba(46,204,113,.9);
+          box-shadow: 0 0 0 3px rgba(46,204,113,.12);
+        }
+        .nf-chip .dot.warn{
+          background: rgba(241,196,15,.95);
+          box-shadow: 0 0 0 3px rgba(241,196,15,.14);
+        }
+
+        .nf-cheques-tableWrap{
+          border:1px solid rgba(255,255,255,.10);
+          background: rgba(10,14,24,.22);
+          border-radius:16px;
+          overflow:hidden;
+        }
+        .nf-table{
+          width:100%;
+          border-collapse: collapse;
+        }
+        .nf-table thead th{
+          text-align:left;
+          font-size:12px;
+          opacity:.9;
+          padding:12px 12px;
+          background: rgba(255,255,255,.06);
+          border-bottom: 1px solid rgba(255,255,255,.08);
+          white-space:nowrap;
+        }
+        .nf-table tbody td{
+          padding:12px 12px;
+          border-bottom: 1px solid rgba(255,255,255,.06);
+          font-size:13px;
+          white-space:nowrap;
+        }
+        .nf-table tbody tr:hover td{
+          background: rgba(255,255,255,.04);
+        }
+        .nf-select{
+          border:1px solid rgba(255,255,255,.16);
+          background: rgba(0,0,0,.15);
+          color:#fff;
+          border-radius: 10px;
+          padding:7px 10px;
+          font-weight:900;
+          outline:none;
+        }
+        .nf-empty{
+          padding:14px 12px;
+          opacity:.9;
+        }
       `;
-      wrap.appendChild(card);
+      document.head.appendChild(st);
+    }
+  }
+
+  function renderCheques(list) {
+    const wrap = $("#gridCheques");
+    if (!wrap) return;
+
+    ensureChequesLayout(wrap);
+
+    const selGlobal = upper($("#fFilialAdmin")?.value || "");
+    if (selGlobal) chequesSelectedFilial = selGlobal;
+    if (!chequesSelectedFilial) chequesSelectedFilial = FILIAIS[0];
+
+    const filteredAll = applyFilters(list);
+    const byFilial = groupChequesByFilial(filteredAll);
+
+    const bar = $("#nfChequesBar");
+    const tbody = $("#nfChequesTbody");
+    const empty = $("#nfChequesEmpty");
+    const hint = $("#nfChequesHint");
+
+    if (!bar || !tbody) return;
+
+    // barra de filiais (chips)
+    bar.innerHTML = "";
+    FILIAIS.forEach((filial) => {
+      const hist = byFilial.get(filial) || [];
+      const pend = hist.filter(x => upper(x.termoAssinado) !== "SIM").length;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nf-chip" + (filial === chequesSelectedFilial ? " isActive" : "");
+      btn.setAttribute("data-cheque-filial", filial);
+
+      const dotClass = pend ? "dot warn" : "dot";
+      btn.innerHTML = `
+        <span class="${dotClass}"></span>
+        <span>${filial}</span>
+        <span style="opacity:.8;font-weight:900;">(${hist.length})</span>
+      `;
+      bar.appendChild(btn);
     });
-  }
 
-  function openDrawerCheques(filial) {
-    drawerFilial = upper(filial || "");
-    const el = $("#drawerCheques");
-    if (!el) return;
+    // dica topo
+    const histSel = byFilial.get(chequesSelectedFilial) || [];
+    const pendSel = histSel.filter(x => upper(x.termoAssinado) !== "SIM").length;
+    if (hint) {
+      hint.textContent = `Selecionado: ${chequesSelectedFilial} • Total: ${histSel.length} • Pendentes: ${pendSel}`;
+    }
 
-    $("#drawerFilialTitle").textContent = drawerFilial;
-    $("#drawerFilialSub").textContent = "Histórico de cheques (formato planilha)";
-
-    renderDrawerTable();
-    el.classList.add("isOpen");
-    el.setAttribute("aria-hidden", "false");
-  }
-
-  function closeDrawerCheques() {
-    const el = $("#drawerCheques");
-    if (!el) return;
-    el.classList.remove("isOpen");
-    el.setAttribute("aria-hidden", "true");
-    drawerFilial = "";
-  }
-
-  function renderDrawerTable() {
-    const tbody = $("#drawerChequesTbody");
-    const hint = $("#drawerHint");
-    if (!tbody) return;
-
-    const rows = DATA.cheques.filter(c => upper(c.filial) === drawerFilial);
-    const ordered = sortCheques(rows);
-
+    // tabela
     tbody.innerHTML = "";
+    const ordered = sortCheques(histSel);
 
     if (!ordered.length) {
-      if (hint) hint.textContent = "Nenhum cheque cadastrado nesta filial. Use + Novo para lançar a primeira sequência.";
+      if (empty) empty.style.display = "block";
       return;
     }
-    if (hint) hint.textContent = "";
+    if (empty) empty.style.display = "none";
 
     ordered.forEach((it) => {
       const termo = upper(it.termoAssinado || "NÃO");
       const tr = document.createElement("tr");
       tr.innerHTML = `
+        <td><b>${escapeHtml(upper(it.filial))}</b></td>
         <td>${escapeHtml(safeText(it.data))}</td>
         <td><b>${escapeHtml(safeText(it.sequencia))}</b></td>
         <td>${escapeHtml(safeText(it.responsavel))}</td>
         <td>${escapeHtml(safeText(it.status || "ATIVO"))}</td>
         <td>
-          <button class="btnMini ${termo === "SIM" ? "ok" : "warn"}" type="button"
-            data-toggle-termo="${escapeHtml(it.id)}"
-            data-termo-atual="${termo}"
-          >${termo}</button>
+          <select class="nf-select" data-termo-select="${escapeHtml(it.id)}" data-termo-old="${termo}">
+            <option value="NÃO" ${termo === "NÃO" ? "selected" : ""}>NÃO</option>
+            <option value="SIM" ${termo === "SIM" ? "selected" : ""}>SIM</option>
+          </select>
         </td>
       `;
       tbody.appendChild(tr);
     });
+
+    // botão + novo (filial selecionada)
+    $("#btnChequesNovoInline")?.addEventListener("click", () => {
+      openNew("cheques", { filial: chequesSelectedFilial, status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" });
+    }, { once: true });
   }
 
-  async function toggleTermo(chequeId, termoAtual) {
-    const novo = upper(termoAtual) === "SIM" ? "NÃO" : "SIM";
+  async function setTermoAssinado(chequeId, novo) {
     try {
-      setStatus("🧾 Atualizando termo...");
-      await updateChequeOnSheets({ id: chequeId, termoAssinado: novo });
+      setStatus("🧾 Salvando termo...");
+      await updateChequeOnSheets({ id: chequeId, termoAssinado: upper(novo) });
       await reloadAll(false);
-      renderDrawerTable();
       setStatus("✅ Termo atualizado");
     } catch (e) {
       console.error(e);
@@ -520,7 +655,6 @@
     $("#kpiPatrimonio").textContent = String(DATA.patrimonio.length);
     $("#kpiEpis").textContent = String(DATA.epis.length);
 
-    // ✅ badge no topo
     const abertas = DATA.solicitacoes.filter((s) => upper(s.status) === "ABERTA").length;
     const badge = $("#badgeTopSolic");
     if (badge) badge.textContent = String(abertas);
@@ -529,8 +663,9 @@
   function renderAll() {
     updateKpis();
     const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
+
     if (tab === "frota") renderFrota(DATA.frota);
-    if (tab === "cheques") renderChequesFiliais(DATA.cheques);
+    if (tab === "cheques") renderCheques(DATA.cheques);
     if (tab === "solicitacoes") renderSolic(DATA.solicitacoes);
     if (tab === "patrimonio") renderPatrimonio(DATA.patrimonio);
     if (tab === "epis") renderEpis(DATA.epis);
@@ -737,7 +872,7 @@
     const initial =
       preset ||
       (tab === "cheques"
-        ? { filial: drawerFilial || "", status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" }
+        ? { filial: chequesSelectedFilial || "", status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" }
         : { filial: "" });
 
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
@@ -781,7 +916,6 @@
         await createChequeOnSheets(payload);
         closeModal();
         await reloadAll(false);
-        if (drawerFilial) renderDrawerTable();
         return;
       }
 
@@ -830,25 +964,21 @@
   }
 
   // ======================================================
-  // Delegações (abrir drawer + toggle termo + editar)
+  // Delegações (chips cheques + select termo + editar)
   // ======================================================
   function bindDelegation() {
     document.addEventListener("click", (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
-      // abre filial (drawer)
-      if (el.matches("[data-open-filial]")) {
-        const filial = el.getAttribute("data-open-filial") || "";
-        openDrawerCheques(filial);
-        return;
-      }
-
-      // toggle termo
-      if (el.matches("[data-toggle-termo]")) {
-        const id = el.getAttribute("data-toggle-termo") || "";
-        const atual = el.getAttribute("data-termo-atual") || "NÃO";
-        if (id) toggleTermo(id, atual);
+      // troca filial (chip)
+      if (el.closest?.("[data-cheque-filial]")) {
+        const btn = el.closest("[data-cheque-filial]");
+        const filial = btn?.getAttribute("data-cheque-filial") || "";
+        if (filial) {
+          chequesSelectedFilial = upper(filial);
+          renderAll();
+        }
         return;
       }
 
@@ -858,6 +988,18 @@
         const id = el.getAttribute("data-id") || "";
         if (tab && id) openEdit(tab, id);
         return;
+      }
+    });
+
+    // termo assinado (select)
+    document.addEventListener("change", (ev) => {
+      const el = ev.target;
+      if (!(el instanceof HTMLSelectElement)) return;
+
+      if (el.matches("[data-termo-select]")) {
+        const id = el.getAttribute("data-termo-select") || "";
+        const novo = upper(el.value || "NÃO");
+        if (id) setTermoAssinado(id, novo);
       }
     });
   }
@@ -874,7 +1016,7 @@
       c.addEventListener("click", () => setActiveTab(c.dataset.tab));
     });
 
-    // ✅ botão topo solicitações
+    // ✅ botão topo solicitações (se existir)
     const btn = $("#btnTopSolic");
     if (btn) btn.addEventListener("click", () => setActiveTab("solicitacoes"));
   }
@@ -882,7 +1024,15 @@
   function bindFilters() {
     const sel = $("#fFilialAdmin");
     const inp = $("#fBuscaAdmin");
-    if (sel) sel.addEventListener("change", renderAll);
+    if (sel) sel.addEventListener("change", () => {
+      // se estiver na aba cheques e escolher filial no filtro, já seleciona
+      const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "";
+      if (tab === "cheques") {
+        const f = upper(sel.value || "");
+        if (f) chequesSelectedFilial = f;
+      }
+      renderAll();
+    });
     if (inp) inp.addEventListener("input", renderAll);
   }
 
@@ -904,25 +1054,15 @@
     modal.btnCancel = $("#btnCancelModalAdmin");
     modal.btnSave = $("#btnSaveModalAdmin");
 
-    modal.btnClose.addEventListener("click", closeModal);
-    modal.btnCancel.addEventListener("click", closeModal);
-    modal.btnSave.addEventListener("click", saveModal);
+    modal.btnClose?.addEventListener("click", closeModal);
+    modal.btnCancel?.addEventListener("click", closeModal);
+    modal.btnSave?.addEventListener("click", saveModal);
 
-    modal.el.addEventListener("click", (ev) => {
+    modal.el?.addEventListener("click", (ev) => {
       if (ev.target === modal.el) closeModal();
     });
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && modal.el.classList.contains("isOpen")) closeModal();
-      if (ev.key === "Escape" && $("#drawerCheques")?.classList.contains("isOpen")) closeDrawerCheques();
-    });
-
-    // drawer buttons
-    $("#btnDrawerFechar")?.addEventListener("click", closeDrawerCheques);
-    $("#btnDrawerNovoCheque")?.addEventListener("click", () => openNew("cheques", { filial: drawerFilial || "" }));
-
-    // click fora do drawer para fechar
-    $("#drawerCheques")?.addEventListener("click", (ev) => {
-      if (ev.target === $("#drawerCheques")) closeDrawerCheques();
+      if (ev.key === "Escape" && modal.el?.classList.contains("isOpen")) closeModal();
     });
   }
 

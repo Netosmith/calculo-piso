@@ -18,6 +18,11 @@
       </div>
 
       <div class="actions">
+        <!-- ✅ Botão Solicitações no topo -->
+        <button class="icon-btn" id="btnTopSolic" type="button" title="Solicitações">
+          📋 <span class="badge" id="badgeTopSolic">0</span>
+        </button>
+
         <div class="icon-btn" title="Configurações">⚙️</div>
         <div class="icon-btn" title="Sair" data-logout>👤</div>
       </div>
@@ -109,47 +114,47 @@
           </div>
         </div>
 
-        <!-- views -->
         <div class="panelBody">
           <!-- Frota -->
           <div class="view isActive" id="view-frota">
             <div class="cardsGrid" id="gridFrota"></div>
           </div>
 
-          <!-- Cheques -->
+          <!-- ✅ Cheques (cards minimalistas + drawer de histórico) -->
           <div class="view" id="view-cheques">
-            <div class="chequesLayout">
-              <!-- cards filiais -->
-              <div class="cardsGrid" id="gridCheques"></div>
+            <div class="cardsGrid" id="gridCheques"></div>
 
-              <!-- detalhe filial -->
-              <div class="chequesDetail" id="chequesDetail" aria-hidden="true">
-                <div class="chequesDetailHead">
-                  <div>
-                    <div class="chequesDetailTitle" id="chequesDetailTitle">FILIAL</div>
-                    <div class="chequesDetailSub" id="chequesDetailSub">Histórico de cheques</div>
+            <!-- Drawer -->
+            <div class="nfDrawer" id="drawerCheques" aria-hidden="true">
+              <div class="nfDrawerCard">
+                <div class="nfDrawerHead">
+                  <div class="nfDrawerTitle">
+                    <div class="big" id="drawerFilialTitle">FILIAL</div>
+                    <div class="smallLine" id="drawerFilialSub">Histórico de cheques</div>
                   </div>
-                  <div class="chequesDetailActions">
-                    <button class="btnAdmin ghost" id="btnCloseChequesDetail" type="button">Fechar</button>
-                    <button class="btnAdmin" id="btnNovoChequeFilial" type="button">+ Novo nesta filial</button>
+                  <div class="nfDrawerActions">
+                    <button class="btnMini" id="btnDrawerNovoCheque" type="button">+ Novo</button>
+                    <button class="btnMini warn" id="btnDrawerFechar" type="button">Fechar</button>
                   </div>
                 </div>
 
-                <div class="chequesTableWrap">
-                  <table class="chequesTable">
-                    <thead>
-                      <tr>
-                        <th>Filial</th>
-                        <th>Data</th>
-                        <th>Sequência</th>
-                        <th>Responsável</th>
-                        <th>Status</th>
-                        <th>Termo assinado</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="chequesDetailBody"></tbody>
-                  </table>
+                <div class="nfDrawerBody">
+                  <div class="nfTableWrap">
+                    <table class="nfTable">
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th>Sequência</th>
+                          <th>Responsável</th>
+                          <th>Status</th>
+                          <th>Termo assinado</th>
+                        </tr>
+                      </thead>
+                      <tbody id="drawerChequesTbody"></tbody>
+                    </table>
+                  </div>
+
+                  <div class="nfDrawerHint" id="drawerHint"></div>
                 </div>
               </div>
             </div>

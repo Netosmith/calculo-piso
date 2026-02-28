@@ -120,42 +120,34 @@
             <div class="cardsGrid" id="gridFrota"></div>
           </div>
 
-          <!-- ✅ Cheques (cards minimalistas + drawer de histórico) -->
+          <!-- ✅ Cheques (FILIAIS EM BOTÕES + TABELA ABAIXO) -->
           <div class="view" id="view-cheques">
-            <div class="cardsGrid" id="gridCheques"></div>
+            <!-- barra compacta das filiais -->
+            <div class="chequesBox">
+              <div class="chequesTopRow">
+                <div class="chequesMeta" id="chequesMeta">Selecionado: - • Total: 0 • Pendentes: 0</div>
+              </div>
 
-            <!-- Drawer -->
-            <div class="nfDrawer" id="drawerCheques" aria-hidden="true">
-              <div class="nfDrawerCard">
-                <div class="nfDrawerHead">
-                  <div class="nfDrawerTitle">
-                    <div class="big" id="drawerFilialTitle">FILIAL</div>
-                    <div class="smallLine" id="drawerFilialSub">Histórico de cheques</div>
-                  </div>
-                  <div class="nfDrawerActions">
-                    <button class="btnMini" id="btnDrawerNovoCheque" type="button">+ Novo</button>
-                    <button class="btnMini warn" id="btnDrawerFechar" type="button">Fechar</button>
-                  </div>
-                </div>
+              <!-- botões (quebra automática: fica em 2 linhas dependendo da largura) -->
+              <div class="pillsWrap" id="chequesFilialPills"></div>
 
-                <div class="nfDrawerBody">
-                  <div class="nfTableWrap">
-                    <table class="nfTable">
-                      <thead>
-                        <tr>
-                          <th>Data</th>
-                          <th>Sequência</th>
-                          <th>Responsável</th>
-                          <th>Status</th>
-                          <th>Termo assinado</th>
-                        </tr>
-                      </thead>
-                      <tbody id="drawerChequesTbody"></tbody>
-                    </table>
-                  </div>
+              <!-- tabela fixa abaixo -->
+              <div class="nfTableWrap chequesTableWrap">
+                <div class="nfDrawerHint" id="chequesHint"></div>
 
-                  <div class="nfDrawerHint" id="drawerHint"></div>
-                </div>
+                <table class="nfTable">
+                  <thead>
+                    <tr>
+                      <th>Filial</th>
+                      <th>Data</th>
+                      <th>Sequência</th>
+                      <th>Responsável</th>
+                      <th>Status</th>
+                      <th>Termo assinado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="chequesTbody"></tbody>
+                </table>
               </div>
             </div>
           </div>

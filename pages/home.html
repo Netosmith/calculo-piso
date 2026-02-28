@@ -64,6 +64,46 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
 
+<button class="sumCard sumGold" id="homeSolicCard" type="button">
+  <div class="sumIcon">📋</div>
+  <div class="sumTxt">
+    <div class="sumTitle">Solicitações</div>
+    <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
+  </div>
+</button>
+
+<!-- Modal simples para enviar solicitação -->
+<div id="homeSolicModal" aria-hidden="true">
+  <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
+    <div class="modalHead">
+      <h2 id="homeSolicTitle">Nova Solicitação</h2>
+      <button class="iconClose" id="homeSolicClose" type="button">✕</button>
+    </div>
+
+    <div class="modalBody">
+      <div class="grid2">
+        <div class="field">
+          <label>Filial</label>
+          <select id="hsFilial"></select>
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <input id="hsTipo" placeholder="CHEQUES / MANUTENÇÃO / TONER..." />
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Observação</label>
+          <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalFoot">
+      <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
+      <button class="btnAdmin" id="homeSolicSend" type="button">Enviar</button>
+    </div>
+  </div>
+</div>
+      
       <div class="actions">
         <!-- Links (mesmo que alguns sejam placeholder por enquanto) -->
         <a class="icon-btn" href="./notificacoes.html" title="Notificações" aria-label="Notificações">🔔</a>

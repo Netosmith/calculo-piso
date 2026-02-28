@@ -86,7 +86,7 @@
       <!-- abas -->
       <div class="admin-tabs">
         <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
-        <button class="tabBtn" data-tab="cheques" type="button">Cheques em circulação</button>
+        <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
         <button class="tabBtn" data-tab="solicitacoes" type="button">Solicitações</button>
         <button class="tabBtn" data-tab="patrimonio" type="button">Patrimônio</button>
         <button class="tabBtn" data-tab="epis" type="button">Controle de EPIs</button>
@@ -118,7 +118,41 @@
 
           <!-- Cheques -->
           <div class="view" id="view-cheques">
-            <div class="cardsGrid" id="gridCheques"></div>
+            <div class="chequesLayout">
+              <!-- cards filiais -->
+              <div class="cardsGrid" id="gridCheques"></div>
+
+              <!-- detalhe filial -->
+              <div class="chequesDetail" id="chequesDetail" aria-hidden="true">
+                <div class="chequesDetailHead">
+                  <div>
+                    <div class="chequesDetailTitle" id="chequesDetailTitle">FILIAL</div>
+                    <div class="chequesDetailSub" id="chequesDetailSub">Histórico de cheques</div>
+                  </div>
+                  <div class="chequesDetailActions">
+                    <button class="btnAdmin ghost" id="btnCloseChequesDetail" type="button">Fechar</button>
+                    <button class="btnAdmin" id="btnNovoChequeFilial" type="button">+ Novo nesta filial</button>
+                  </div>
+                </div>
+
+                <div class="chequesTableWrap">
+                  <table class="chequesTable">
+                    <thead>
+                      <tr>
+                        <th>Filial</th>
+                        <th>Data</th>
+                        <th>Sequência</th>
+                        <th>Responsável</th>
+                        <th>Status</th>
+                        <th>Termo assinado</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="chequesDetailBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Solicitações -->

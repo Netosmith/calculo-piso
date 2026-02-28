@@ -42,24 +42,38 @@
     return url.toString();
   }
 
-  function openModal(){
-    $("#homeSolicModal")?.classList.add("isOpen");
+  function setModalOpen(open){
+    const modal = $("#homeSolicModal");
+    if(!modal) return;
+
+    modal.classList.toggle("isOpen", !!open);
+    modal.setAttribute("aria-hidden", open ? "false" : "true");
+
+    if(open){
+      // foco no primeiro campo
+      setTimeout(()=> $("#hsFilial")?.focus(), 30);
+    }
   }
-  function closeModal(){
-    $("#homeSolicModal")?.classList.remove("isOpen");
-  }
+
+  function openModal(){ setModalOpen(true); }
+  function closeModal(){ setModalOpen(false); }
 
   function fillFiliais(){
     const sel = $("#hsFilial");
     if(!sel) return;
-    sel.innerHTML = `<option value="">Selecione...</option>` + FILIAIS.map(f=>`<option value="${f}">${f}</option>`).join("");
+    sel.innerHTML =
+      `<option value="">Selecione...</option>` +
+      FILIAIS.map(f=>`<option value="${f}">${f}</option>`).join("");
   }
 
   async function refreshKpi(){
     try{
       const res = await jsonp(buildUrl({ action:"solicit_list" }));
       if(!res || res.ok === false) return;
-      const abertas = (res.data || []).filter(x => String(x.status||"").toUpperCase() === "ABERTA").length;
+
+      const abertas = (res.data || [])
+        .filter(x => String(x.status||"").toUpperCase() === "ABERTA").length;
+
       const el = $("#homeSolicOpen");
       if(el) el.textContent = String(abertas);
     }catch(e){
@@ -69,7 +83,7 @@
 
   async function sendSolic(){
     const filial = String($("#hsFilial")?.value||"").toUpperCase();
-    const tipo = String($("#hsTipo")?.value||"").toUpperCase() || "GERAL";
+    const tipo = (String($("#hsTipo")?.value||"").trim().toUpperCase() || "GERAL");
     const obs = String($("#hsObs")?.value||"").trim();
 
     if(!filial) return alert("Selecione a filial.");
@@ -78,14 +92,20 @@
     try{
       const res = await jsonp(buildUrl({
         action:"solicit_add",
-        filial, tipo,
+        filial,
+        tipo,
         observacao: obs,
         data: ""
       }));
+
       if(!res || res.ok === false) throw new Error(res?.error || "Falha ao enviar");
-      closeModal();
+
+      // limpa + fecha
       $("#hsTipo").value = "";
       $("#hsObs").value = "";
+      $("#hsFilial").value = "";
+
+      closeModal();
       await refreshKpi();
       alert("Solicitação enviada ✅");
     }catch(e){
@@ -102,6 +122,7 @@
     $("#homeSolicModal")?.addEventListener("click", (ev)=>{
       if(ev.target === $("#homeSolicModal")) closeModal();
     });
+
     document.addEventListener("keydown", (ev)=>{
       if(ev.key === "Escape") closeModal();
     });

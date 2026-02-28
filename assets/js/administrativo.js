@@ -1,4 +1,4 @@
-/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial + upload Drive por filial/subpasta) */
+/* administrativo.js | NOVA FROTA (sem upload) */
 (function () {
   "use strict";
 
@@ -6,12 +6,7 @@
   // ✅ URL DO SEU WEB APP (Apps Script /exec)
   // ======================================================
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbzaJGiPfZ5y0S0cj9LXoWLVhvTF4ztkBFkp6XlMFK-pnSXEcJF4XewKO6ifuZA3rw/exec";
-
-  // ======================================================
-  // ✅ DRIVE (RAIZ) - Pasta ADMINISTRATIVO
-  // ======================================================
-  const DRIVE_FOLDER_ID = "1pXzVZWQrkgJb2E9JJeKP72h1cANovXhl";
+    "https://script.google.com/macros/s/AKfycbybrlPoP0unvz7RCThBL8BeuM7kNrWOpzjJD337zgngYHkc82eb9hnuQsfCwa67N3FZ/exec";
 
   // ======================================================
   // ✅ FILIAIS (ordem fixa)
@@ -31,13 +26,13 @@
   ];
 
   // ======================================================
-  // ✅ STORAGE (para Solicitações/Patrimônio/EPIs enquanto não liga no Sheets)
+  // ✅ STORAGE (fallback local para Frota/Patrimônio/EPIs)
+  //    Solicitações agora vai pro Sheets (multi-usuário)
   // ======================================================
   const LS_KEYS = {
-    solicit: "nf_admin_solicitacoes_v1",
     patrimonio: "nf_admin_patrimonio_v1",
     epis: "nf_admin_epis_v1",
-    frota: "nf_admin_frota_v1",
+    frota: "nf_admin_frota_v2",
   };
 
   function loadLS(key, fallback) {
@@ -61,13 +56,29 @@
   // ======================================================
   const DATA = {
     frota: loadLS(LS_KEYS.frota, [
-      { id: uid(), placa: "ABC1D23", condutor: "PEDRO SANTOS", filial: "ITUMBIARA", status: "OK", mes: "MAR/2026" },
-      { id: uid(), placa: "XYZ2E34", condutor: "LUCAS SILVA", filial: "RIO VERDE", status: "PENDENTE", mes: "ABR/2026" },
+      {
+        id: uid(),
+        placa: "ABC1D23",
+        condutor: "PEDRO SANTOS",
+        filial: "ITUMBIARA",
+        filialTelefone: "(64) 99999-9999",
+        tipoVeiculo: "CARRO",
+        status: "OK",
+        mes: "MAR/2026",
+      },
+      {
+        id: uid(),
+        placa: "XYZ2E34",
+        condutor: "LUCAS SILVA",
+        filial: "RIO VERDE",
+        filialTelefone: "(64) 98888-8888",
+        tipoVeiculo: "MOTO",
+        status: "PENDENTE",
+        mes: "ABR/2026",
+      },
     ]),
     cheques: [],
-    solicitacoes: loadLS(LS_KEYS.solicit, [
-      { id: uid(), filial: "ITUMBIARA", tipo: "CHEQUES", observacao: "PRECISO DE MAIS 2 TALÕES", status: "ABERTA", data: todayBR() },
-    ]),
+    solicitacoes: [], // agora vem do Sheets
     patrimonio: loadLS(LS_KEYS.patrimonio, [
       { id: uid(), filial: "ITUMBIARA", equipamento: "NOTEBOOK", numeroPatrimonio: "NF-001", posse: "ARIEL", status: "ATIVO", observacao: "" },
     ]),
@@ -100,15 +111,6 @@
     if (el) el.textContent = text;
   }
 
-  // ✅ Escapar para atributo HTML (sem estragar URL com &amp;)
-  function escapeAttr(s) {
-    return String(s ?? "")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
-  }
-
   // ======================================================
   // ✅ JSONP helper (resolve CORS)
   // ======================================================
@@ -126,7 +128,7 @@
       function cleanup() {
         clearTimeout(t);
         try { delete window[cb]; } catch {}
-        s.remove();
+        try { s.remove(); } catch {}
       }
 
       window[cb] = (data) => {
@@ -134,7 +136,8 @@
         resolve(data);
       };
 
-      s.src = url + sep + "callback=" + encodeURIComponent(cb);
+      // cache-bust ajuda quando o iOS “segura” script antigo
+      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
       s.onerror = () => {
         cleanup();
         reject(new Error("Erro ao carregar script (JSONP)"));
@@ -152,8 +155,14 @@
 
   // ======================================================
   // ✅ CHEQUES (Sheets) via JSONP
+  // Colunas esperadas no Sheet CHEQUES:
+  // id | createdAt | filial | data | sequencia | responsavel | status | termoAssinado | updatedAt
   // ======================================================
   function normalizeChequeRow(r) {
+    const termoRaw = safeText(r?.termoAssinado);
+    const termoAssinado =
+      upper(termoRaw) === "SIM" || termoRaw === "1" || upper(termoRaw) === "TRUE";
+
     return {
       id: safeText(r?.id),
       filial: upper(r?.filial),
@@ -161,8 +170,7 @@
       sequencia: safeText(r?.sequencia),
       responsavel: upper(r?.responsavel),
       status: upper(r?.status || "ATIVO"),
-      termoUrl: safeText(r?.termoUrl),
-      termoNome: safeText(r?.termoNome),
+      termoAssinado,
       createdAt: Number(r?.createdAt || 0) || 0,
       updatedAt: Number(r?.updatedAt || 0) || 0,
     };
@@ -186,8 +194,7 @@
   }
 
   async function loadChequesFromSheets() {
-    const url = buildUrl({ action: "cheques_list" });
-    const res = await jsonp(url);
+    const res = await jsonp(buildUrl({ action: "cheques_list" }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
     const arr = res.data || [];
     DATA.cheques = sortCheques(arr.map(normalizeChequeRow));
@@ -201,10 +208,9 @@
       sequencia: safeText(payload.sequencia),
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
+      termoAssinado: payload.termoAssinado ? "SIM" : "NAO",
     };
-
-    const url = buildUrl(params);
-    const res = await jsonp(url);
+    const res = await jsonp(buildUrl(params));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
     return res.data;
   }
@@ -214,102 +220,76 @@
       action: "cheques_update",
       id: safeText(payload.id),
       status: payload.status != null ? upper(payload.status) : "",
-      termoUrl: payload.termoUrl != null ? safeText(payload.termoUrl) : "",
-      termoNome: payload.termoNome != null ? safeText(payload.termoNome) : "",
+      termoAssinado: payload.termoAssinado != null ? (payload.termoAssinado ? "SIM" : "NAO") : "",
     };
 
-    // remove params vazios pra não sobrescrever sem querer
     Object.keys(params).forEach((k) => {
       if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
     });
 
-    const url = buildUrl(params);
-    const res = await jsonp(url);
+    const res = await jsonp(buildUrl(params));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
     return res.data;
   }
 
   // ======================================================
-  // ✅ UPLOAD para o Drive via JSONP chunked (MELHORADO)
-  // Agora os chunks vão pro Drive temporário (no back),
-  // e não mais pro PropertiesService.
+  // ✅ SOLICITAÇÕES (Sheets) via JSONP
+  // Colunas no Sheet SOLICITACOES:
+  // id | createdAt | filial | tipo | observacao | status | data | updatedAt
+  // status: ABERTA | RESOLVIDA
   // ======================================================
-
-  const UPLOAD_MAX_BYTES  = 10 * 1024 * 1024; // 10 MB limite total
-  const UPLOAD_CHUNK_CHARS = 10000;            // ~10 KB de base64 por chunk
-
-  function fileToBase64_(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
-      reader.onload = () => {
-        const result = String(reader.result || "");
-        const idx = result.indexOf("base64,");
-        resolve(idx >= 0 ? result.slice(idx + 7) : result);
-      };
-      reader.readAsDataURL(file);
-    });
+  function normalizeSolicRow(r) {
+    return {
+      id: safeText(r?.id),
+      filial: upper(r?.filial),
+      tipo: upper(r?.tipo),
+      observacao: safeText(r?.observacao),
+      status: upper(r?.status || "ABERTA"),
+      data: safeText(r?.data) || todayBR(),
+      createdAt: Number(r?.createdAt || 0) || 0,
+      updatedAt: Number(r?.updatedAt || 0) || 0,
+    };
   }
 
-  async function uploadToDriveIframe_(file, meta) {
-    if (file.size > UPLOAD_MAX_BYTES) {
-      throw new Error(
-        `Arquivo muito grande: ${(file.size / 1024 / 1024).toFixed(1)} MB.\n` +
-        `Máximo permitido: ${UPLOAD_MAX_BYTES / 1024 / 1024} MB.\n` +
-        `Compacte o arquivo ou reduza a resolução da imagem.`
-      );
-    }
+  async function loadSolicFromSheets() {
+    const res = await jsonp(buildUrl({ action: "solicit_list" }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_list");
+    DATA.solicitacoes = (res.data || []).map(normalizeSolicRow).sort((a, b) => (b.createdAt - a.createdAt));
+  }
 
-    const filial = upper(meta.filial || "");
-    if (!filial) throw new Error("Filial não identificada para o upload.");
+  async function addSolicOnSheets(payload) {
+    const params = {
+      action: "solicit_add",
+      filial: upper(payload.filial),
+      tipo: upper(payload.tipo),
+      observacao: safeText(payload.observacao),
+      data: safeText(payload.data || todayBR()),
+    };
+    const res = await jsonp(buildUrl(params));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_add");
+    return res.data;
+  }
 
-    setStatus("📄 Lendo arquivo...");
-    const base64 = await fileToBase64_(file);
+  async function updateSolicOnSheets(payload) {
+    const params = {
+      action: "solicit_update",
+      id: safeText(payload.id),
+      status: payload.status != null ? upper(payload.status) : "",
+      tipo: payload.tipo != null ? upper(payload.tipo) : "",
+      observacao: payload.observacao != null ? safeText(payload.observacao) : "",
+      data: payload.data != null ? safeText(payload.data) : "",
+    };
+    Object.keys(params).forEach((k) => {
+      if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
+    });
+    const res = await jsonp(buildUrl(params));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_update");
+    return res.data;
+  }
 
-    const chunks = [];
-    for (let i = 0; i < base64.length; i += UPLOAD_CHUNK_CHARS) {
-      chunks.push(base64.slice(i, i + UPLOAD_CHUNK_CHARS));
-    }
-
-    const uploadId = "up_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
-
-    for (let i = 0; i < chunks.length; i++) {
-      const pct = Math.round(((i + 1) / chunks.length) * 90);
-      setStatus(`☁️ Enviando chunk ${i + 1}/${chunks.length} (${pct}%)...`);
-
-      const res = await jsonp(buildUrl({
-        action:   "upload_chunk",
-        uploadId,
-        chunk:    String(i),
-        total:    String(chunks.length),
-        data:     chunks[i],
-
-        // ✅ NOVO: manda o folderId para o back salvar no Drive temp
-        folderId: DRIVE_FOLDER_ID,
-      }), 45000);
-
-      if (!res || res.ok === false) {
-        throw new Error(`Falha no chunk ${i + 1}: ` + (res?.error || "erro desconhecido"));
-      }
-    }
-
-    setStatus("🔧 Finalizando no Drive...");
-    const res = await jsonp(buildUrl({
-      action:   "upload_finalize",
-      uploadId,
-      folderId: DRIVE_FOLDER_ID,
-      filial,
-      type:     meta.type || "arquivo",
-      ref:      meta.ref  || "",
-      filename: file.name,
-      mimeType: file.type || "application/octet-stream",
-      total:    String(chunks.length),
-    }), 180000);
-
-    if (!res || res.ok === false) {
-      throw new Error(res?.error || "Falha ao finalizar upload no Drive");
-    }
-
+  async function deleteSolicOnSheets(id) {
+    const res = await jsonp(buildUrl({ action: "solicit_delete", id: safeText(id) }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_delete");
     return res.data;
   }
 
@@ -328,10 +308,13 @@
     if (title) {
       title.textContent =
         tab === "frota" ? "Frota Leve" :
-        tab === "cheques" ? "Cheques em circulação" :
+        tab === "cheques" ? "Cheques" :
         tab === "solicitacoes" ? "Solicitações" :
         tab === "patrimonio" ? "Patrimônio" : "Controle de EPIs";
     }
+
+    // quando muda de tab, reseta detalhe dos cheques
+    if (tab !== "cheques") closeChequesDetail();
 
     const inp = $("#fBuscaAdmin");
     if (inp) inp.value = "";
@@ -357,6 +340,7 @@
     if (s === "ABERTA") return "aberta";
     if (s === "EM ANDAMENTO") return "andamento";
     if (s === "FINALIZADA") return "finalizada";
+    if (s === "RESOLVIDA") return "finalizada";
     return "pendente";
   }
 
@@ -378,14 +362,14 @@
   }
 
   // ======================================================
-  // ✅ Render
+  // ✅ Render: Frota (mais infos)
   // ======================================================
   function renderFrota(list) {
     const wrap = $("#gridFrota");
     if (!wrap) return;
     wrap.innerHTML = "";
 
-    list.forEach((it) => {
+    applyFilters(list).forEach((it) => {
       const card = document.createElement("div");
       card.className = "adminCard";
       card.innerHTML = `
@@ -394,21 +378,23 @@
           <div class="adminMain">
             <div class="big">${upper(it.placa)}</div>
             <div class="smallLine">${safeText(it.condutor)}</div>
-            <div class="tagLine">${upper(it.filial)}</div>
+            <div class="tagLine">${upper(it.filial)} • ${escapeHtml(safeText(it.filialTelefone || "—"))}</div>
+            <div class="tagLine">TIPO: ${upper(it.tipoVeiculo || "—")}</div>
           </div>
         </div>
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.mes)} ${upper(it.status)}</span>
-          <button class="linkBtn" type="button"
-            data-upload="checklist"
-            data-placa="${upper(it.placa)}"
-            data-filial="${upper(it.filial)}"
-          >Upload checklist mensal</button>
+          <button class="linkBtn" type="button" data-edit="frota" data-id="${it.id}">Editar</button>
         </div>
       `;
       wrap.appendChild(card);
     });
   }
+
+  // ======================================================
+  // ✅ Render: Cheques (cards selecionáveis + detalhe em tabela)
+  // ======================================================
+  let CHEQUES_SELECTED_FILIAL = "";
 
   function groupChequesByFilial(list) {
     const map = new Map();
@@ -421,7 +407,7 @@
     return map;
   }
 
-  function renderChequesFixedByFilial(list) {
+  function renderChequesFiliaisCards(list) {
     const wrap = $("#gridCheques");
     if (!wrap) return;
     wrap.innerHTML = "";
@@ -432,40 +418,17 @@
     FILIAIS.forEach((filial) => {
       const hist = byFilial.get(filial) || [];
       const total = hist.length;
-      const pendentes = hist.filter((x) => !x.termoUrl).length;
+      const pendTermo = hist.filter((x) => !x.termoAssinado).length;
 
-      const card = document.createElement("div");
-      card.className = "adminCard";
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "adminCard adminCardSelect " + (CHEQUES_SELECTED_FILIAL === filial ? "isSelected" : "");
+      card.setAttribute("data-open-filial", filial);
 
       const subtitle =
         total === 0
-          ? "Sem registros ainda"
-          : `Total: ${total} | Termo pendente: ${pendentes}`;
-
-      const listHtml = hist.slice(0, 10).map((it) => {
-        const hasTermo = !!it.termoUrl;
-        const termoTxt = hasTermo ? "Reenviar termo" : "Upload termo";
-        const termoCls = hasTermo ? "ok" : "warn";
-
-        // ✅ IMPORTANTE: escapeAttr para não quebrar URL com &amp;
-        return `
-          <div class="chequeRow">
-            <div class="chequeLeft">
-              <div class="l1">SEQ: ${upper(it.sequencia)} <span style="opacity:.75">•</span> ${safeText(it.data)}</div>
-              <div class="l2">RESP: ${upper(it.responsavel)} | ${upper(it.status || "ATIVO")}</div>
-            </div>
-            <div class="chequeActions">
-              ${hasTermo ? `<button class="btnMini ok" type="button" data-open-termo="${escapeAttr(it.termoUrl)}">Ver termo</button>` : ""}
-              <button class="btnMini ${termoCls}" type="button"
-                data-upload="termo"
-                data-id="${safeText(it.id)}"
-                data-filial="${upper(it.filial)}"
-                data-seq="${upper(it.sequencia)}"
-              >${termoTxt}</button>
-            </div>
-          </div>
-        `;
-      }).join("");
+          ? "Sem registros"
+          : `Total: ${total} • Termo pendente: ${pendTermo}`;
 
       card.innerHTML = `
         <div class="adminCardTop">
@@ -473,23 +436,84 @@
           <div class="adminMain">
             <div class="big">${filial}</div>
             <div class="smallLine">${subtitle}</div>
-            <div class="tagLine">HISTÓRICO (últimos ${Math.min(10, total)})</div>
+            <div class="tagLine">Clique para abrir</div>
           </div>
         </div>
-        <div class="chequeList">
-          ${total
-            ? listHtml
-            : `<div class="chequeRow"><div class="chequeLeft"><div class="l1">Nenhum cheque registrado</div><div class="l2">Use o botão + Novo para cadastrar a primeira sequência.</div></div></div>`}
-        </div>
         <div class="adminCardFoot">
-          <span class="pill ${pendentes ? "pendente" : "ok"}">${pendentes ? "PENDENTE TERMO" : "TERMOS OK"}</span>
-          <button class="linkBtn" type="button" data-new-cheque="${filial}">+ Novo nesta filial</button>
+          <span class="pill ${pendTermo ? "pendente" : "ok"}">${pendTermo ? "PENDÊNCIAS" : "OK"}</span>
+          <span class="linkBtn" style="pointer-events:none;">Abrir</span>
         </div>
       `;
+
       wrap.appendChild(card);
     });
   }
 
+  function openChequesDetail(filial) {
+    CHEQUES_SELECTED_FILIAL = upper(filial || "");
+    const box = $("#chequesDetail");
+    if (!box) return;
+
+    box.setAttribute("aria-hidden", "false");
+    box.classList.add("isOpen");
+
+    $("#chequesDetailTitle").textContent = CHEQUES_SELECTED_FILIAL;
+    const total = DATA.cheques.filter((x) => upper(x.filial) === CHEQUES_SELECTED_FILIAL).length;
+    $("#chequesDetailSub").textContent = total ? `Histórico: ${total} registros` : "Nenhum registro ainda";
+
+    renderChequesDetailTable();
+    renderChequesFiliaisCards(DATA.cheques);
+  }
+
+  function closeChequesDetail() {
+    CHEQUES_SELECTED_FILIAL = "";
+    const box = $("#chequesDetail");
+    if (!box) return;
+    box.classList.remove("isOpen");
+    box.setAttribute("aria-hidden", "true");
+    renderChequesFiliaisCards(DATA.cheques);
+  }
+
+  function renderChequesDetailTable() {
+    const body = $("#chequesDetailBody");
+    if (!body) return;
+    body.innerHTML = "";
+
+    const rows = sortCheques(DATA.cheques.filter((x) => upper(x.filial) === CHEQUES_SELECTED_FILIAL));
+
+    if (!rows.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="7" style="opacity:.8;padding:14px;">Sem cheques cadastrados para esta filial. Use “+ Novo nesta filial”.</td>`;
+      body.appendChild(tr);
+      return;
+    }
+
+    rows.forEach((it) => {
+      const tr = document.createElement("tr");
+
+      const termoTxt = it.termoAssinado ? "SIM" : "NÃO";
+      const termoCls = it.termoAssinado ? "pill ok" : "pill pendente";
+
+      tr.innerHTML = `
+        <td>${escapeHtml(it.filial)}</td>
+        <td>${escapeHtml(it.data)}</td>
+        <td>${escapeHtml(it.sequencia)}</td>
+        <td>${escapeHtml(it.responsavel)}</td>
+        <td><span class="pill ${pillClassFromStatus(it.status)}">${escapeHtml(it.status)}</span></td>
+        <td>
+          <button type="button" class="${termoCls}" data-toggle-termo="${escapeHtml(it.id)}">${termoTxt}</button>
+        </td>
+        <td style="white-space:nowrap;">
+          <button type="button" class="btnMini" data-edit-cheque="${escapeHtml(it.id)}">Editar</button>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  // ======================================================
+  // ✅ Render: Solicitações (resolver/excluir)
+  // ======================================================
   function renderSolic(list) {
     const wrap = $("#gridSolic");
     if (!wrap) return;
@@ -504,9 +528,10 @@
           <div class="adminMain">
             <div class="big">${upper(it.filial)}</div>
             <div class="smallLine">TIPO: ${upper(it.tipo || "")}</div>
-            <div class="tagLine">DATA: ${safeText(it.data || "")}</div>
+            <div class="tagLine">DATA: ${escapeHtml(safeText(it.data || ""))}</div>
           </div>
         </div>
+
         <div class="chequeList">
           <div class="chequeRow">
             <div class="chequeLeft">
@@ -515,9 +540,17 @@
             </div>
           </div>
         </div>
+
         <div class="adminCardFoot">
           <span class="pill ${pillClassFromStatus(it.status)}">${upper(it.status)}</span>
-          <button class="linkBtn" type="button" data-edit="solicit" data-id="${it.id}">Editar</button>
+
+          ${
+            upper(it.status) === "ABERTA"
+              ? `<button class="linkBtn" type="button" data-solic-resolver="${escapeHtml(it.id)}">Marcar resolvido</button>`
+              : `<button class="linkBtn" type="button" data-solic-reabrir="${escapeHtml(it.id)}">Reabrir</button>`
+          }
+
+          <button class="linkBtn" type="button" data-solic-excluir="${escapeHtml(it.id)}">Excluir</button>
         </div>
       `;
       wrap.appendChild(card);
@@ -588,7 +621,10 @@
     updateKpis();
     const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
     if (tab === "frota") renderFrota(DATA.frota);
-    if (tab === "cheques") renderChequesFixedByFilial(DATA.cheques);
+    if (tab === "cheques") {
+      renderChequesFiliaisCards(DATA.cheques);
+      if (CHEQUES_SELECTED_FILIAL) renderChequesDetailTable();
+    }
     if (tab === "solicitacoes") renderSolic(DATA.solicitacoes);
     if (tab === "patrimonio") renderPatrimonio(DATA.patrimonio);
     if (tab === "epis") renderEpis(DATA.epis);
@@ -665,27 +701,17 @@
     if (tab === "cheques") {
       return [
         { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
-        { id: "mData", name: "data", label: "Data (dd/mm/aaaa)", placeholder: "24/02/2026", type: "text" },
+        { id: "mData", name: "data", label: "Data (dd/mm/aaaa)", placeholder: todayBR(), type: "text" },
         { id: "mSeq", name: "sequencia", label: "Sequência", placeholder: "000123", type: "text" },
         { id: "mResp", name: "responsavel", label: "Responsável", placeholder: "ARIEL", type: "text" },
         { id: "mStatus", name: "status", label: "Status", type: "select", options: [
           { value: "ATIVO", label: "ATIVO" },
           { value: "ENCERRADO", label: "ENCERRADO" },
         ]},
-      ];
-    }
-
-    if (tab === "solicitacoes") {
-      return [
-        { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
-        { id: "mTipo", name: "tipo", label: "Tipo (editável)", placeholder: "Ex: CHEQUES / MANUTENÇÃO / TONER...", type: "text" },
-        { id: "mData", name: "data", label: "Data", placeholder: todayBR(), type: "text" },
-        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
-          { value: "ABERTA", label: "ABERTA" },
-          { value: "EM ANDAMENTO", label: "EM ANDAMENTO" },
-          { value: "FINALIZADA", label: "FINALIZADA" },
+        { id: "mTermo", name: "termoAssinado", label: "Termo assinado", type: "select", options: [
+          { value: "NAO", label: "NÃO" },
+          { value: "SIM", label: "SIM" },
         ]},
-        { id: "mObs", name: "observacao", label: "Observação", type: "textarea", full: true },
       ];
     }
 
@@ -716,11 +742,13 @@
       ];
     }
 
-    // frota
+    // frota (AGORA COM TELEFONE + TIPO VEÍCULO)
     return [
       { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
       { id: "mPlaca", name: "placa", label: "Placa", placeholder: "ABC1D23", type: "text" },
       { id: "mCond", name: "condutor", label: "Condutor", placeholder: "NOME", type: "text" },
+      { id: "mFone", name: "filialTelefone", label: "Filial Telefone", placeholder: "(64) 99999-9999", type: "text" },
+      { id: "mTipo", name: "tipoVeiculo", label: "Tipo do veículo", placeholder: "CARRO / MOTO / CAMINHONETE", type: "text" },
       { id: "mMes", name: "mes", label: "Mês ref.", placeholder: "MAR/2026", type: "text" },
       { id: "mStatus", name: "status", label: "Status", type: "select", options: [
         { value: "OK", label: "OK" },
@@ -738,17 +766,10 @@
         sequencia: getVal("mSeq"),
         responsavel: upper(getVal("mResp")),
         status: upper(getVal("mStatus") || "ATIVO"),
+        termoAssinado: upper(getVal("mTermo")) === "SIM",
       };
     }
-    if (tab === "solicitacoes") {
-      return {
-        filial: upper(getVal("mFilial")),
-        tipo: upper(getVal("mTipo")),
-        data: getVal("mData") || todayBR(),
-        status: upper(getVal("mStatus") || "ABERTA"),
-        observacao: getVal("mObs"),
-      };
-    }
+
     if (tab === "patrimonio") {
       return {
         filial: upper(getVal("mFilial")),
@@ -759,6 +780,7 @@
         observacao: getVal("mObs"),
       };
     }
+
     if (tab === "epis") {
       return {
         filial: upper(getVal("mFilial")),
@@ -770,10 +792,13 @@
         observacao: getVal("mObs"),
       };
     }
+
     return {
       filial: upper(getVal("mFilial")),
       placa: upper(getVal("mPlaca")),
       condutor: upper(getVal("mCond")),
+      filialTelefone: getVal("mFone"),
+      tipoVeiculo: upper(getVal("mTipo")),
       mes: upper(getVal("mMes")),
       status: upper(getVal("mStatus") || "OK"),
     };
@@ -782,7 +807,12 @@
   function openNew(tab, preset) {
     modal.ctx = { mode: "new", tab, id: "" };
     const schema = schemaFor(tab);
-    const initial = preset || (tab === "cheques" ? { filial: "", status: "ATIVO", data: todayBR() } : { filial: "" });
+
+    let initial = preset || {};
+    if (tab === "cheques") {
+      initial = { filial: "", status: "ATIVO", data: todayBR(), termoAssinado: "NAO", ...preset };
+    }
+
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
   }
 
@@ -790,8 +820,18 @@
     modal.ctx = { mode: "edit", tab, id };
     const schema = schemaFor(tab);
 
-    const list = tab === "solicitacoes" ? DATA.solicitacoes :
-      tab === "patrimonio" ? DATA.patrimonio :
+    // cheques vem do Sheets, mas editaremos via modal também (status/termo)
+    if (tab === "cheques") {
+      const item = DATA.cheques.find((x) => x.id === id);
+      if (!item) return;
+      openModal(`Editar - Cheques`, schema, {
+        ...item,
+        termoAssinado: item.termoAssinado ? "SIM" : "NAO"
+      });
+      return;
+    }
+
+    const list = tab === "patrimonio" ? DATA.patrimonio :
       tab === "epis" ? DATA.epis :
       DATA.frota;
 
@@ -803,7 +843,6 @@
 
   function labelTab(tab) {
     if (tab === "cheques") return "Cheques";
-    if (tab === "solicitacoes") return "Solicitações";
     if (tab === "patrimonio") return "Patrimônio";
     if (tab === "epis") return "EPIs";
     return "Frota";
@@ -822,14 +861,22 @@
         }
 
         setStatus("💾 Salvando cheque...");
-        await createChequeOnSheets(payload);
+        if (modal.ctx.mode === "edit") {
+          await updateChequeOnSheets({
+            id: modal.ctx.id,
+            status: payload.status,
+            termoAssinado: payload.termoAssinado,
+          });
+        } else {
+          await createChequeOnSheets(payload);
+        }
         closeModal();
         await reloadAll();
+        if (payload.filial) openChequesDetail(payload.filial);
         return;
       }
 
-      const list = tab === "solicitacoes" ? DATA.solicitacoes :
-        tab === "patrimonio" ? DATA.patrimonio :
+      const list = tab === "patrimonio" ? DATA.patrimonio :
         tab === "epis" ? DATA.epis :
         DATA.frota;
 
@@ -853,7 +900,6 @@
 
   function persistLocal() {
     saveLS(LS_KEYS.frota, DATA.frota);
-    saveLS(LS_KEYS.solicit, DATA.solicitacoes);
     saveLS(LS_KEYS.patrimonio, DATA.patrimonio);
     saveLS(LS_KEYS.epis, DATA.epis);
   }
@@ -861,90 +907,113 @@
   async function reloadAll() {
     try {
       setStatus("🔄 Atualizando...");
-      await loadChequesFromSheets();
+      await Promise.all([
+        loadChequesFromSheets(),
+        loadSolicFromSheets(),
+      ]);
       updateKpis();
       renderAll();
       setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[admin] reload erro:", e);
       setStatus("❌ Erro ao atualizar");
-      alert(e?.message || "Erro ao atualizar cheques.");
+      alert(e?.message || "Erro ao atualizar.");
     }
   }
 
   // ======================================================
-  // Delegações (upload termo/checklist + abrir termo + novo por filial)
+  // Delegações (cheques abrir filial, toggle termo, editar cheque, solicitações resolver/excluir, editar itens)
   // ======================================================
   function bindDelegation() {
-    document.addEventListener("click", (ev) => {
+    document.addEventListener("click", async (ev) => {
       const el = ev.target;
       if (!(el instanceof HTMLElement)) return;
 
-      if (el.matches("[data-open-termo]")) {
-        const url = el.getAttribute("data-open-termo") || "";
-        if (url) window.open(url, "_blank", "noopener");
+      // abrir filial cheques
+      if (el.matches("[data-open-filial]")) {
+        openChequesDetail(el.getAttribute("data-open-filial") || "");
+        return;
+      }
+      const parentOpen = el.closest?.("[data-open-filial]");
+      if (parentOpen instanceof HTMLElement) {
+        openChequesDetail(parentOpen.getAttribute("data-open-filial") || "");
         return;
       }
 
-      if (el.matches("[data-new-cheque]")) {
-        const filial = el.getAttribute("data-new-cheque") || "";
-        openNew("cheques", { filial, data: todayBR(), status: "ATIVO" });
+      // toggle termo assinado SIM/NÃO
+      if (el.matches("[data-toggle-termo]")) {
+        const id = el.getAttribute("data-toggle-termo") || "";
+        const item = DATA.cheques.find((x) => x.id === id);
+        if (!item) return;
+        try {
+          setStatus("💾 Atualizando termo...");
+          await updateChequeOnSheets({ id, termoAssinado: !item.termoAssinado });
+          await reloadAll();
+          if (CHEQUES_SELECTED_FILIAL) openChequesDetail(CHEQUES_SELECTED_FILIAL);
+          setStatus("✅ Atualizado");
+        } catch (e) {
+          console.error(e);
+          setStatus("❌ Falha");
+          alert(e?.message || "Falha ao atualizar termo.");
+        }
         return;
       }
 
-      if (el.matches("[data-upload]")) {
-        const type = el.getAttribute("data-upload"); // checklist | termo
-        const placa = el.getAttribute("data-placa") || "";
-        const seq = el.getAttribute("data-seq") || "";
-        const chequeId = el.getAttribute("data-id") || "";
-        const filialBtn = el.getAttribute("data-filial") || "";
-
-        const ref = placa || seq || chequeId || "ITEM";
-
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*,application/pdf";
-
-        input.onchange = async () => {
-          const file = input.files && input.files[0];
-          if (!file) return;
-
-          const filial = upper(filialBtn || "");
-
-          try {
-            setStatus("☁️ Enviando para o Drive...");
-            const up = await uploadToDriveIframe_(file, {
-              filial,
-              type,
-              ref,
-            });
-
-            setStatus("✅ Upload OK");
-
-            if (type === "termo" && chequeId) {
-              setStatus("🧾 Salvando termo no cheque...");
-              await updateChequeOnSheets({
-                id: chequeId,
-                termoUrl: up.url,
-                termoNome: up.name,
-              });
-              setStatus("✅ Termo vinculado ao cheque");
-              await reloadAll();
-            } else {
-              alert(`Upload OK ✅\n\nArquivo: ${up.name}\nLink: ${up.url}\n\nPasta: ${up.folderFilial} / ${up.folderTipo}`);
-            }
-
-          } catch (err) {
-            console.error(err);
-            setStatus("❌ Falha no upload");
-            alert(err?.message || "Falha no upload");
-          }
-        };
-
-        input.click();
+      // editar cheque (abre modal)
+      if (el.matches("[data-edit-cheque]")) {
+        const id = el.getAttribute("data-edit-cheque") || "";
+        if (id) openEdit("cheques", id);
         return;
       }
 
+      // solicitações: resolver / reabrir / excluir
+      if (el.matches("[data-solic-resolver]")) {
+        const id = el.getAttribute("data-solic-resolver") || "";
+        try {
+          setStatus("💾 Marcando resolvida...");
+          await updateSolicOnSheets({ id, status: "RESOLVIDA" });
+          await reloadAll();
+          setStatus("✅ OK");
+        } catch (e) {
+          console.error(e);
+          setStatus("❌ Falha");
+          alert(e?.message || "Falha ao resolver.");
+        }
+        return;
+      }
+
+      if (el.matches("[data-solic-reabrir]")) {
+        const id = el.getAttribute("data-solic-reabrir") || "";
+        try {
+          setStatus("💾 Reabrindo...");
+          await updateSolicOnSheets({ id, status: "ABERTA" });
+          await reloadAll();
+          setStatus("✅ OK");
+        } catch (e) {
+          console.error(e);
+          setStatus("❌ Falha");
+          alert(e?.message || "Falha ao reabrir.");
+        }
+        return;
+      }
+
+      if (el.matches("[data-solic-excluir]")) {
+        const id = el.getAttribute("data-solic-excluir") || "";
+        if (!confirm("Excluir esta solicitação?")) return;
+        try {
+          setStatus("🗑️ Excluindo...");
+          await deleteSolicOnSheets(id);
+          await reloadAll();
+          setStatus("✅ Excluída");
+        } catch (e) {
+          console.error(e);
+          setStatus("❌ Falha");
+          alert(e?.message || "Falha ao excluir.");
+        }
+        return;
+      }
+
+      // editar frota/patrimonio/epis
       if (el.matches("[data-edit]")) {
         const tab = el.getAttribute("data-edit") || "";
         const id = el.getAttribute("data-id") || "";
@@ -984,6 +1053,17 @@
       openNew(tab);
     });
 
+    // cheques detail buttons
+    const btnClose = $("#btnCloseChequesDetail");
+    if (btnClose) btnClose.addEventListener("click", closeChequesDetail);
+
+    const btnNovoFilial = $("#btnNovoChequeFilial");
+    if (btnNovoFilial) btnNovoFilial.addEventListener("click", () => {
+      if (!CHEQUES_SELECTED_FILIAL) return;
+      openNew("cheques", { filial: CHEQUES_SELECTED_FILIAL, data: todayBR(), status: "ATIVO", termoAssinado: "NAO" });
+    });
+
+    // modal
     modal.el = $("#modalAdmin");
     modal.title = $("#modalTitleAdmin");
     modal.fields = $("#modalFieldsAdmin");
@@ -1007,7 +1087,7 @@
     const uf = (window.getSelectedState?.() || "").toUpperCase();
     const user = (window.getUser?.() || "");
     const sub = $("#adminSub");
-    if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf} | Drive: ${DRIVE_FOLDER_ID}`;
+    if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
   }
 
   function escapeHtml(s) {

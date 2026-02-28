@@ -482,3 +482,95 @@
   border-top: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.06);
 }
+/* ===== Cheques (layout com painel) ===== */
+.chequesLayout{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.chequesDetail{
+  display: none;
+  padding: 16px;
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  background: rgba(10,16,30,.35);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 14px 40px rgba(0,0,0,.25);
+}
+
+.chequesDetail.isOpen{ display: block; }
+
+.chequesDetailHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.chequesDetailTitle{
+  font-weight: 800;
+  letter-spacing: .6px;
+  font-size: 18px;
+}
+
+.chequesDetailSub{
+  opacity: .8;
+  font-size: 13px;
+}
+
+.chequesDetailActions{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chequesTableWrap{
+  overflow:auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.chequesTable{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.chequesTable thead th{
+  text-align:left;
+  font-size: 12px;
+  opacity: .85;
+  padding: 12px;
+  background: rgba(255,255,255,.06);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(8px);
+}
+
+.chequesTable tbody td{
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  vertical-align: middle;
+}
+
+.adminCardSelect{
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  border: none;
+}
+
+.adminCardSelect.isSelected{
+  outline: 2px solid rgba(120,190,255,.45);
+  box-shadow: 0 0 0 6px rgba(120,190,255,.12);
+}
+
+.btnMini{
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.08);
+  color: inherit;
+}

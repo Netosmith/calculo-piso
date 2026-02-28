@@ -18,7 +18,6 @@
       </div>
 
       <div class="actions">
-        <!-- ✅ Botão Solicitações no topo -->
         <button class="icon-btn" id="btnTopSolic" type="button" title="Solicitações">
           📋 <span class="badge" id="badgeTopSolic">0</span>
         </button>
@@ -45,7 +44,6 @@
         </div>
       </div>
 
-      <!-- resumo topo -->
       <div class="admin-summary">
         <button class="sumCard sumBlue" data-tab="frota" type="button">
           <div class="sumIcon">🚗</div>
@@ -88,7 +86,6 @@
         </button>
       </div>
 
-      <!-- abas -->
       <div class="admin-tabs">
         <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
         <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
@@ -98,7 +95,6 @@
         <div class="tabLine"></div>
       </div>
 
-      <!-- conteúdo -->
       <div class="admin-panel">
         <div class="panelHead">
           <div class="panelTitle" id="panelTitle">Frota Leve</div>
@@ -115,26 +111,17 @@
         </div>
 
         <div class="panelBody">
-          <!-- Frota -->
           <div class="view isActive" id="view-frota">
             <div class="cardsGrid" id="gridFrota"></div>
           </div>
 
-          <!-- ✅ Cheques (FILIAIS EM BOTÕES + TABELA ABAIXO) -->
+          <!-- ✅ Cheques: botões de filiais + tabela -->
           <div class="view" id="view-cheques">
-            <!-- barra compacta das filiais -->
             <div class="chequesBox">
-              <div class="chequesTopRow">
-                <div class="chequesMeta" id="chequesMeta">Selecionado: - • Total: 0 • Pendentes: 0</div>
-              </div>
+              <div class="chequesMeta" id="chequesMeta">Selecionado: — • Total: 0 • Pendentes: 0</div>
+              <div class="filialBar" id="filialBar"></div>
 
-              <!-- botões (quebra automática: fica em 2 linhas dependendo da largura) -->
-              <div class="pillsWrap" id="chequesFilialPills"></div>
-
-              <!-- tabela fixa abaixo -->
-              <div class="nfTableWrap chequesTableWrap">
-                <div class="nfDrawerHint" id="chequesHint"></div>
-
+              <div class="nfTableWrap">
                 <table class="nfTable">
                   <thead>
                     <tr>
@@ -152,17 +139,14 @@
             </div>
           </div>
 
-          <!-- Solicitações -->
           <div class="view" id="view-solicitacoes">
             <div class="cardsGrid" id="gridSolic"></div>
           </div>
 
-          <!-- Patrimônio -->
           <div class="view" id="view-patrimonio">
             <div class="cardsGrid" id="gridPatrimonio"></div>
           </div>
 
-          <!-- EPIs -->
           <div class="view" id="view-epis">
             <div class="cardsGrid" id="gridEpis"></div>
           </div>
@@ -172,7 +156,6 @@
     </div>
   </section>
 
-  <!-- ===== MODAL ===== -->
   <div id="modalAdmin" aria-hidden="true">
     <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitleAdmin">
       <div class="modalHead">

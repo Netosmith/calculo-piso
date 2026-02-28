@@ -1,18 +1,23 @@
+/* home-solicitacoes.js | NOVA FROTA (Home -> Solicitações via LocalStorage do Administrativo) */
 (function(){
   "use strict";
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbyWSvivxCp4GslWhGRxfvg6gcE72hNATplIqdVG2tp46DtrdxWzKLqirm-BgcSv2tlw/exec";
-
+  // ✅ mesma lista de filiais do Administrativo
   const FILIAIS = [
     "ITUMBIARA","RIO VERDE","JATAI","MINEIROS","CHAPADAO DO CEU","MONTIVIDIU",
     "INDIARA","BOM JESUS DE GO","VIANOPOLIS","ANAPOLIS","URUAÇU"
   ];
 
+  // ✅ usa o MESMO storage do administrativo.js
+  const LS_KEY_SOLIC = "nf_admin_solicitacoes_v1";
+
   const $ = (s)=>document.querySelector(s);
 
+  function uid(){
+    return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+  }
   function upper(v){ return String(v ?? "").trim().toUpperCase(); }
-  function safe(v){ return String(v ?? "").trim(); }
+  function safeText(v){ return String(v ?? "").trim(); }
 
   function todayBR(){
     const d = new Date();
@@ -22,109 +27,115 @@
     return `${dd}/${mm}/${yy}`;
   }
 
-  function jsonp(url, timeoutMs = 25000) {
-    return new Promise((resolve, reject) => {
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      const s = document.createElement("script");
-      const sep = url.includes("?") ? "&" : "?";
-
-      const t = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout (JSONP)"));
-      }, timeoutMs);
-
-      function cleanup() {
-        clearTimeout(t);
-        try { delete window[cb]; } catch {}
-        try { s.remove(); } catch {}
-      }
-
-      window[cb] = (data) => { cleanup(); resolve(data); };
-      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      s.onerror = () => { cleanup(); reject(new Error("Erro ao carregar script (JSONP)")); };
-      document.head.appendChild(s);
-    });
+  function loadSolic(){
+    try{
+      const raw = localStorage.getItem(LS_KEY_SOLIC);
+      if(!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    }catch{
+      return [];
+    }
   }
-
-  function buildUrl(paramsObj) {
-    const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
-    return url.toString();
+  function saveSolic(arr){
+    try{ localStorage.setItem(LS_KEY_SOLIC, JSON.stringify(arr || [])); }catch{}
   }
 
   function openModal(){
-    $("#homeSolicModal")?.classList.add("isOpen");
-    const user = (window.getUser?.() || "").trim();
-    const el = $("#hsSolicitante");
-    if(el) el.textContent = "Solicitante: " + (user || "—");
+    const modal = $("#homeSolicModal");
+    if(!modal) return;
+    modal.classList.add("isOpen");
+    modal.setAttribute("aria-hidden","false");
 
-    const data = $("#hsData");
-    if(data && !data.value) data.value = todayBR();
+    // defaults
+    const d = $("#hsData");
+    const s = $("#hsStatus");
+    if(d && !d.value) d.value = todayBR();
+    if(s && !s.value) s.value = "ABERTA";
 
-    const st = $("#hsStatus");
-    if(st && !st.value) st.value = "ABERTA";
+    // solicitante
+    const solicitante = $("#hsSolicitante");
+    if(solicitante){
+      const user = (window.getUser?.() || "").trim();
+      solicitante.value = user ? user : "USUÁRIO";
+    }
   }
+
   function closeModal(){
-    $("#homeSolicModal")?.classList.remove("isOpen");
+    const modal = $("#homeSolicModal");
+    if(!modal) return;
+    modal.classList.remove("isOpen");
+    modal.setAttribute("aria-hidden","true");
   }
 
   function fillFiliais(){
     const sel = $("#hsFilial");
     if(!sel) return;
-    sel.innerHTML =
-      `<option value="">Selecione...</option>` +
-      FILIAIS.map(f=>`<option value="${f}">${f}</option>`).join("");
+    sel.innerHTML = `<option value="">Selecione...</option>` + FILIAIS.map(f=>`<option value="${f}">${f}</option>`).join("");
   }
 
-  async function refreshKpi(){
-    try{
-      const res = await jsonp(buildUrl({ action:"solicit_list" }));
-      if(!res || res.ok === false) return;
-      const abertas = (res.data || []).filter(x => upper(x.status) === "ABERTA").length;
-      const el = $("#homeSolicOpen");
-      if(el) el.textContent = String(abertas);
-    }catch(e){
-      // silencioso na home
-    }
+  function fillStatus(){
+    const sel = $("#hsStatus");
+    if(!sel) return;
+    sel.innerHTML = `
+      <option value="ABERTA">ABERTA</option>
+      <option value="EM ANDAMENTO">EM ANDAMENTO</option>
+      <option value="FINALIZADA">FINALIZADA</option>
+    `;
   }
 
-  async function sendSolic(){
-    const filial = upper($("#hsFilial")?.value);
-    const tipo = upper($("#hsTipo")?.value) || "GERAL";
-    const obs = safe($("#hsObs")?.value);
-    const data = safe($("#hsData")?.value) || todayBR();
-    const status = upper($("#hsStatus")?.value) || "ABERTA";
-    const solicitante = safe(window.getUser?.() || "");
+  function refreshKpi(){
+    const arr = loadSolic();
+    const abertas = arr.filter(x => upper(x.status) === "ABERTA").length;
+    const el = $("#homeSolicOpen");
+    if(el) el.textContent = String(abertas);
+  }
+
+  function sendSolic(){
+    const filial = upper($("#hsFilial")?.value || "");
+    const tipo = upper($("#hsTipo")?.value || "");
+    const data = safeText($("#hsData")?.value || todayBR());
+    const status = upper($("#hsStatus")?.value || "ABERTA");
+    const obs = safeText($("#hsObs")?.value || "");
+    const solicitante = safeText($("#hsSolicitante")?.value || (window.getUser?.() || "USUÁRIO"));
 
     if(!filial) return alert("Selecione a filial.");
+    if(!tipo) return alert("Preencha o Tipo.");
     if(!obs) return alert("Escreva a observação.");
 
-    try{
-      const res = await jsonp(buildUrl({
-        action:"solicit_add",
-        filial, tipo,
-        observacao: obs,
-        data,
-        status,
-        solicitante
-      }));
-      if(!res || res.ok === false) throw new Error(res?.error || "Falha ao enviar");
+    const arr = loadSolic();
 
-      closeModal();
-      $("#hsTipo").value = "";
-      $("#hsObs").value = "";
-      await refreshKpi();
-      alert("Solicitação salva ✅");
-    }catch(e){
-      alert(e?.message || "Falha ao salvar solicitação.");
-    }
+    // ✅ mesmo formato do administrativo (id/filial/tipo/observacao/status/data)
+    arr.unshift({
+      id: uid(),
+      filial,
+      tipo,
+      observacao: obs,
+      status,
+      data,
+      solicitante,
+      createdAt: Date.now()
+    });
+
+    saveSolic(arr);
+
+    // reset
+    $("#hsFilial").value = "";
+    $("#hsTipo").value = "";
+    $("#hsObs").value = "";
+    $("#hsStatus").value = "ABERTA";
+    $("#hsData").value = todayBR();
+
+    closeModal();
+    refreshKpi();
+    alert("Solicitação salva ✅ (já aparece no Administrativo)");
   }
 
   function bind(){
     $("#homeSolicCard")?.addEventListener("click", openModal);
     $("#homeSolicClose")?.addEventListener("click", closeModal);
     $("#homeSolicCancel")?.addEventListener("click", closeModal);
-    $("#homeSolicSend")?.addEventListener("click", sendSolic);
+    $("#homeSolicSave")?.addEventListener("click", sendSolic);
 
     $("#homeSolicModal")?.addEventListener("click", (ev)=>{
       if(ev.target === $("#homeSolicModal")) closeModal();
@@ -136,8 +147,9 @@
 
   window.addEventListener("DOMContentLoaded", ()=>{
     fillFiliais();
-    bind();
+    fillStatus();
     refreshKpi();
-    setInterval(refreshKpi, 60000);
+    bind();
+    setInterval(refreshKpi, 30000);
   });
 })();

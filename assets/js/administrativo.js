@@ -6,7 +6,7 @@
   // ✅ URL DO SEU WEB APP (Apps Script /exec)
   // ======================================================
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbybrlPoP0unvz7RCThBL8BeuM7kNrWOpzjJD337zgngYHkc82eb9hnuQsfCwa67N3FZ/exec";
+    "https://script.google.com/macros/s/AKfycby3Y4VmeoWyoHoZGQGaFab2gfpRVDckCSmfjVYBRHsePbvt7pWuCcHDlz31MKDy02wP/exec";
 
   // ======================================================
   // ✅ FILIAIS (ordem fixa)

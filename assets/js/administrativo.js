@@ -13,10 +13,19 @@
   const LS_KEYS = { frota: "nf_admin_frota_v1" };
 
   function loadLS(key, fallback) {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-    catch { return fallback; }
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      const data = JSON.parse(raw);
+      return Array.isArray(data) ? data : fallback;
+    } catch {
+      return fallback;
+    }
   }
-  function saveLS(key, arr) { try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {} }
+
+  function saveLS(key, arr) {
+    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
+  }
 
   const DATA = {
     frota: loadLS(LS_KEYS.frota, [
@@ -34,6 +43,7 @@
   function uid() {
     return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
   }
+
   function upper(v) { return String(v ?? "").trim().toUpperCase(); }
   function safeText(v) { return String(v ?? "").trim(); }
 
@@ -56,7 +66,10 @@
       const s = document.createElement("script");
       const sep = url.includes("?") ? "&" : "?";
 
-      const t = setTimeout(() => { cleanup(); reject(new Error("Timeout (JSONP)")); }, timeoutMs);
+      const t = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timeout (JSONP)"));
+      }, timeoutMs);
 
       function cleanup() {
         clearTimeout(t);
@@ -64,10 +77,17 @@
         try { s.remove(); } catch {}
       }
 
-      window[cb] = (data) => { cleanup(); resolve(data); };
+      window[cb] = (data) => {
+        cleanup();
+        resolve(data);
+      };
 
       s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      s.onerror = () => { cleanup(); reject(new Error("Erro ao carregar script (JSONP)")); };
+      s.onerror = () => {
+        cleanup();
+        reject(new Error("Erro ao carregar script (JSONP)"));
+      };
+
       document.head.appendChild(s);
     });
   }
@@ -86,12 +106,12 @@
     return new Date(yy, mm - 1, dd).getTime();
   }
 
-  function sortByDateDesc(list, field="data"){
-    return (list||[]).slice().sort((a,b)=>{
+  function sortByDateDesc(list, field = "data") {
+    return (list || []).slice().sort((a, b) => {
       const ta = parseBRDate(a[field]);
       const tb = parseBRDate(b[field]);
-      if(tb !== ta) return tb - ta;
-      return String(b.id||"").localeCompare(String(a.id||""));
+      if (tb !== ta) return tb - ta;
+      return String(b.id || "").localeCompare(String(a.id || ""));
     });
   }
 
@@ -109,7 +129,7 @@
     };
   }
 
-  function normalizeSolic(r){
+  function normalizeSolic(r) {
     return {
       id: safeText(r?.id),
       filial: upper(r?.filial),
@@ -123,7 +143,7 @@
     };
   }
 
-  function normalizePat(r){
+  function normalizePat(r) {
     return {
       id: safeText(r?.id),
       filial: upper(r?.filial),
@@ -137,7 +157,7 @@
     };
   }
 
-  function normalizeEpi(r){
+  function normalizeEpi(r) {
     return {
       id: safeText(r?.id),
       filial: upper(r?.filial),
@@ -155,25 +175,25 @@
   async function loadChequesFromSheets() {
     const res = await jsonp(buildUrl({ action: "cheques_list" }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
-    DATA.cheques = sortByDateDesc((res.data||[]).map(normalizeChequeRow), "data");
+    DATA.cheques = sortByDateDesc((res.data || []).map(normalizeChequeRow), "data");
   }
 
-  async function loadSolicFromSheets(){
-    const res = await jsonp(buildUrl({ action:"solicit_list" }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro solicit_list");
-    DATA.solicitacoes = sortByDateDesc((res.data||[]).map(normalizeSolic), "data");
+  async function loadSolicFromSheets() {
+    const res = await jsonp(buildUrl({ action: "solicit_list" }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_list");
+    DATA.solicitacoes = sortByDateDesc((res.data || []).map(normalizeSolic), "data");
   }
 
-  async function loadPatFromSheets(){
-    const res = await jsonp(buildUrl({ action:"patrimonio_list" }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_list");
-    DATA.patrimonio = (res.data||[]).map(normalizePat);
+  async function loadPatFromSheets() {
+    const res = await jsonp(buildUrl({ action: "patrimonio_list" }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_list");
+    DATA.patrimonio = (res.data || []).map(normalizePat);
   }
 
-  async function loadEpisFromSheets(){
-    const res = await jsonp(buildUrl({ action:"epis_list" }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro epis_list");
-    DATA.epis = (res.data||[]).map(normalizeEpi);
+  async function loadEpisFromSheets() {
+    const res = await jsonp(buildUrl({ action: "epis_list" }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_list");
+    DATA.epis = (res.data || []).map(normalizeEpi);
   }
 
   async function createChequeOnSheets(payload) {
@@ -197,6 +217,7 @@
       status: payload.status != null ? upper(payload.status) : "",
       termoAssinado: payload.termoAssinado != null ? upper(payload.termoAssinado) : "",
     };
+
     Object.keys(params).forEach((k) => {
       if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
     });
@@ -206,23 +227,23 @@
     return res.data;
   }
 
-  async function createSolicOnSheets(payload){
+  async function createSolicOnSheets(payload) {
     const res = await jsonp(buildUrl({
-      action:"solicit_add",
+      action: "solicit_add",
       filial: upper(payload.filial),
       tipo: upper(payload.tipo || "GERAL"),
       data: safeText(payload.data || todayBR()),
       status: upper(payload.status || "ABERTA"),
       observacao: safeText(payload.observacao || ""),
-      solicitante: upper(payload.solicitante || (window.getUser?.()||"USUÁRIO")),
+      solicitante: upper(payload.solicitante || (window.getUser?.() || "USUÁRIO")),
     }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro solicit_add");
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_add");
     return res.data;
   }
 
-  async function updateSolicOnSheets(payload){
+  async function updateSolicOnSheets(payload) {
     const res = await jsonp(buildUrl({
-      action:"solicit_update",
+      action: "solicit_update",
       id: safeText(payload.id),
       status: payload.status != null ? upper(payload.status) : "",
       tipo: payload.tipo != null ? upper(payload.tipo) : "",
@@ -231,13 +252,13 @@
       solicitante: payload.solicitante != null ? upper(payload.solicitante) : "",
       filial: payload.filial != null ? upper(payload.filial) : "",
     }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro solicit_update");
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_update");
     return res.data;
   }
 
-  async function createPatOnSheets(payload){
+  async function createPatOnSheets(payload) {
     const res = await jsonp(buildUrl({
-      action:"patrimonio_add",
+      action: "patrimonio_add",
       filial: upper(payload.filial),
       equipamento: upper(payload.equipamento || ""),
       numeroPatrimonio: upper(payload.numeroPatrimonio || ""),
@@ -245,13 +266,13 @@
       status: upper(payload.status || "ATIVO"),
       observacao: safeText(payload.observacao || ""),
     }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_add");
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_add");
     return res.data;
   }
 
-  async function updatePatOnSheets(payload){
+  async function updatePatOnSheets(payload) {
     const res = await jsonp(buildUrl({
-      action:"patrimonio_update",
+      action: "patrimonio_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
       equipamento: payload.equipamento != null ? upper(payload.equipamento) : "",
@@ -260,13 +281,13 @@
       status: payload.status != null ? upper(payload.status) : "",
       observacao: payload.observacao != null ? safeText(payload.observacao) : "",
     }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_update");
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_update");
     return res.data;
   }
 
-  async function createEpiOnSheets(payload){
+  async function createEpiOnSheets(payload) {
     const res = await jsonp(buildUrl({
-      action:"epis_add",
+      action: "epis_add",
       filial: upper(payload.filial),
       colaborador: upper(payload.colaborador || ""),
       epi: upper(payload.epi || ""),
@@ -275,13 +296,13 @@
       validade: safeText(payload.validade || ""),
       observacao: safeText(payload.observacao || ""),
     }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro epis_add");
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_add");
     return res.data;
   }
 
-  async function updateEpiOnSheets(payload){
+  async function updateEpiOnSheets(payload) {
     const res = await jsonp(buildUrl({
-      action:"epis_update",
+      action: "epis_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
       colaborador: payload.colaborador != null ? upper(payload.colaborador) : "",
@@ -291,7 +312,7 @@
       validade: payload.validade != null ? safeText(payload.validade) : "",
       observacao: payload.observacao != null ? safeText(payload.observacao) : "",
     }));
-    if(!res || res.ok === false) throw new Error(res?.error || "Erro epis_update");
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_update");
     return res.data;
   }
 
@@ -320,6 +341,7 @@
   function applyFilters(list) {
     const selFilial = upper($("#fFilialAdmin")?.value || "");
     const q = upper($("#fBuscaAdmin")?.value || "");
+
     return (list || []).filter((it) => {
       if (selFilial && upper(it.filial || "") !== selFilial) return false;
       if (q) {
@@ -330,11 +352,11 @@
     });
   }
 
-  // ===== Tabs
   function setActiveTab(tab) {
     document.querySelectorAll(".tabBtn").forEach((b) => {
       b.classList.toggle("isActive", b.dataset.tab === tab);
     });
+
     document.querySelectorAll(".view").forEach((v) => v.classList.remove("isActive"));
     const view = document.getElementById("view-" + tab);
     if (view) view.classList.add("isActive");
@@ -351,15 +373,13 @@
     const inp = $("#fBuscaAdmin");
     if (inp) inp.value = "";
 
-    // ✅ quando entra em Cheques, garante filial selecionada
-    if(tab === "cheques" && !selectedChequeFilial){
+    if (tab === "cheques" && !selectedChequeFilial) {
       selectedChequeFilial = FILIAIS[0];
     }
 
     renderAll();
   }
 
-  // ===== Frota
   function renderFrota(list) {
     const wrap = $("#gridFrota");
     if (!wrap) return;
@@ -386,36 +406,67 @@
     });
   }
 
-  // ===== Cheques (botões + tabela)
   let selectedChequeFilial = "";
 
-  function groupChequesByFilial(list){
+  function getChequeRowsForButtons() {
+    const q = upper($("#fBuscaAdmin")?.value || "");
+    let rows = DATA.cheques.slice();
+
+    if (q) {
+      rows = rows.filter((it) => upper(JSON.stringify(it)).includes(q));
+    }
+
+    return rows;
+  }
+
+  function getChequeRowsForTable() {
+    const q = upper($("#fBuscaAdmin")?.value || "");
+    const selFilialFiltro = upper($("#fFilialAdmin")?.value || "");
+
+    let rows = DATA.cheques.filter((c) => upper(c.filial) === selectedChequeFilial);
+
+    if (selFilialFiltro && selFilialFiltro !== selectedChequeFilial) {
+      rows = [];
+    }
+
+    if (q) {
+      rows = rows.filter((it) => upper(JSON.stringify(it)).includes(q));
+    }
+
+    return rows;
+  }
+
+  function groupChequesByFilial(list) {
     const map = new Map();
-    (list||[]).forEach(c=>{
+    (list || []).forEach((c) => {
       const f = upper(c.filial);
-      if(!map.has(f)) map.set(f, []);
+      if (!map.has(f)) map.set(f, []);
       map.get(f).push(c);
     });
     return map;
   }
 
-  function renderFilialButtons(){
+  function renderFilialButtons() {
     const bar = $("#filialBar");
     const meta = $("#chequesMeta");
     const tbody = $("#chequesTbody");
-    if(!bar || !meta || !tbody) return;
+    if (!bar || !meta || !tbody) return;
 
     bar.innerHTML = "";
 
-    const filtered = applyFilters(DATA.cheques);
-    const byFilial = groupChequesByFilial(filtered);
+    const sourceRows = getChequeRowsForButtons();
+    const byFilial = groupChequesByFilial(sourceRows);
 
-    // ✅ se não tiver selecionada, pega a primeira existente
-    if(!selectedChequeFilial) selectedChequeFilial = FILIAIS[0];
+    const filialFiltro = upper($("#fFilialAdmin")?.value || "");
+    const filiaisToShow = filialFiltro ? FILIAIS.filter((f) => f === filialFiltro) : FILIAIS.slice();
 
-    FILIAIS.forEach(filial=>{
+    if (!selectedChequeFilial || (filialFiltro && selectedChequeFilial !== filialFiltro)) {
+      selectedChequeFilial = filiaisToShow[0] || FILIAIS[0];
+    }
+
+    filiaisToShow.forEach((filial) => {
       const rows = byFilial.get(filial) || [];
-      const pend = rows.filter(x => upper(x.termoAssinado) !== "SIM").length;
+      const pend = rows.filter((x) => upper(x.termoAssinado) !== "SIM").length;
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -428,7 +479,8 @@
         <span>${filial}</span>
         <span class="filialCount">(${rows.length})</span>
       `;
-      btn.addEventListener("click", ()=>{
+
+      btn.addEventListener("click", () => {
         selectedChequeFilial = filial;
         renderChequesArea();
       });
@@ -439,35 +491,33 @@
     renderChequesArea();
   }
 
-  function renderChequesArea(){
+  function renderChequesArea() {
     const meta = $("#chequesMeta");
     const tbody = $("#chequesTbody");
     const bar = $("#filialBar");
-    if(!meta || !tbody || !bar) return;
+    if (!meta || !tbody || !bar) return;
 
-    // marca selecionado
-    bar.querySelectorAll(".filialBtn").forEach(b=>{
+    bar.querySelectorAll(".filialBtn").forEach((b) => {
       b.classList.toggle("isSelected", b.getAttribute("data-filial") === selectedChequeFilial);
     });
 
-    const filtered = applyFilters(DATA.cheques).filter(c => upper(c.filial) === selectedChequeFilial);
-    const ordered = sortByDateDesc(filtered, "data");
+    const ordered = sortByDateDesc(getChequeRowsForTable(), "data");
 
     const total = ordered.length;
-    const pend = ordered.filter(x => upper(x.termoAssinado) !== "SIM").length;
+    const pend = ordered.filter((x) => upper(x.termoAssinado) !== "SIM").length;
 
     meta.textContent = `Selecionado: ${selectedChequeFilial} • Total: ${total} • Pendentes: ${pend}`;
 
     tbody.innerHTML = "";
 
-    if(!ordered.length){
+    if (!ordered.length) {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td colspan="6" style="opacity:.85">Nenhum cheque cadastrado nesta filial. Use + Novo para lançar.</td>`;
       tbody.appendChild(tr);
       return;
     }
 
-    ordered.forEach(it=>{
+    ordered.forEach((it) => {
       const termo = upper(it.termoAssinado || "NÃO");
       const tr = document.createElement("tr");
       tr.innerHTML = `
@@ -502,7 +552,6 @@
     }
   }
 
-  // ===== Solicitações
   function renderSolic(list) {
     const wrap = $("#gridSolic");
     if (!wrap) return;
@@ -533,7 +582,6 @@
     });
   }
 
-  // ===== Patrimônio
   function renderPatrimonio(list) {
     const wrap = $("#gridPatrimonio");
     if (!wrap) return;
@@ -560,7 +608,6 @@
     });
   }
 
-  // ===== EPIs
   function renderEpis(list) {
     const wrap = $("#gridEpis");
     if (!wrap) return;
@@ -602,6 +649,7 @@
   function renderAll() {
     updateKpis();
     const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
+
     if (tab === "frota") renderFrota(DATA.frota);
     if (tab === "cheques") renderFilialButtons();
     if (tab === "solicitacoes") renderSolic(DATA.solicitacoes);
@@ -609,10 +657,13 @@
     if (tab === "epis") renderEpis(DATA.epis);
   }
 
-  // ===== Modal
   const modal = {
-    el: null, title: null, fields: null,
-    btnClose: null, btnCancel: null, btnSave: null,
+    el: null,
+    title: null,
+    fields: null,
+    btnClose: null,
+    btnCancel: null,
+    btnSave: null,
     ctx: { mode: "new", tab: "frota", id: "" },
   };
 
@@ -649,7 +700,7 @@
       input.id = f.id;
       input.value = safeText(initialValues?.[f.name] ?? "");
       input.placeholder = f.placeholder || "";
-      if(f.readonly) input.readOnly = true;
+      if (f.readonly) input.readOnly = true;
 
       wrap.appendChild(input);
       modal.fields.appendChild(wrap);
@@ -701,7 +752,7 @@
           { value: "FINALIZADA", label: "FINALIZADA" },
         ]},
         { id: "mObs", name: "observacao", label: "Observação", type: "textarea", full: true },
-        { id: "mSolic", name: "solicitante", label: "Solicitante", type: "text", readonly:true, full:true, placeholder:user },
+        { id: "mSolic", name: "solicitante", label: "Solicitante", type: "text", readonly: true, full: true, placeholder: user },
       ];
     }
 
@@ -758,6 +809,7 @@
         termoAssinado: upper(getVal("mTermo") || "NÃO"),
       };
     }
+
     if (tab === "solicitacoes") {
       const user = (window.getUser?.() || "USUÁRIO").toUpperCase();
       return {
@@ -769,6 +821,7 @@
         solicitante: upper(getVal("mSolic") || user),
       };
     }
+
     if (tab === "patrimonio") {
       return {
         filial: upper(getVal("mFilial")),
@@ -779,6 +832,7 @@
         observacao: getVal("mObs"),
       };
     }
+
     if (tab === "epis") {
       return {
         filial: upper(getVal("mFilial")),
@@ -818,7 +872,7 @@
       tab === "cheques"
         ? { filial: selectedChequeFilial || FILIAIS[0], status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" }
         : tab === "solicitacoes"
-          ? { filial: "", status:"ABERTA", data: todayBR(), solicitante: (window.getUser?.()||"USUÁRIO").toUpperCase() }
+          ? { filial: "", status: "ABERTA", data: todayBR(), solicitante: (window.getUser?.() || "USUÁRIO").toUpperCase() }
           : { filial: "" };
 
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
@@ -846,7 +900,6 @@
     if (!payload.filial) return alert("Selecione uma filial.");
 
     try {
-      // ✅ CHEQUES (Sheets)
       if (tab === "cheques") {
         if (!payload.data || !payload.sequencia || !payload.responsavel) {
           return alert("Preencha: Data, Sequência e Responsável.");
@@ -858,12 +911,11 @@
         return;
       }
 
-      // ✅ SOLICITAÇÕES (Sheets)
-      if(tab === "solicitacoes"){
+      if (tab === "solicitacoes") {
         setStatus("💾 Salvando solicitação...");
-        if(modal.ctx.mode === "edit"){
+        if (modal.ctx.mode === "edit") {
           await updateSolicOnSheets({ id: modal.ctx.id, ...payload });
-        }else{
+        } else {
           await createSolicOnSheets(payload);
         }
         closeModal();
@@ -871,12 +923,11 @@
         return;
       }
 
-      // ✅ PATRIMÔNIO (Sheets)
-      if(tab === "patrimonio"){
+      if (tab === "patrimonio") {
         setStatus("💾 Salvando patrimônio...");
-        if(modal.ctx.mode === "edit"){
+        if (modal.ctx.mode === "edit") {
           await updatePatOnSheets({ id: modal.ctx.id, ...payload });
-        }else{
+        } else {
           await createPatOnSheets(payload);
         }
         closeModal();
@@ -884,12 +935,11 @@
         return;
       }
 
-      // ✅ EPIs (Sheets)
-      if(tab === "epis"){
+      if (tab === "epis") {
         setStatus("💾 Salvando EPI...");
-        if(modal.ctx.mode === "edit"){
+        if (modal.ctx.mode === "edit") {
           await updateEpiOnSheets({ id: modal.ctx.id, ...payload });
-        }else{
+        } else {
           await createEpiOnSheets(payload);
         }
         closeModal();
@@ -897,7 +947,6 @@
         return;
       }
 
-      // ✅ FROTA (Local)
       const list = DATA.frota;
       if (modal.ctx.mode === "edit") {
         const idx = list.findIndex((x) => x.id === modal.ctx.id);
@@ -905,6 +954,7 @@
       } else {
         list.unshift({ id: uid(), ...payload });
       }
+
       saveLS(LS_KEYS.frota, DATA.frota);
       closeModal();
       renderAll();
@@ -980,7 +1030,6 @@
     const btnReload = $("#btnAdminReload");
     if (btnReload) btnReload.addEventListener("click", () => reloadAll(true));
 
-    // ✅ FIX: + Novo cria conforme TAB ATIVA
     const btnNovo = $("#btnAdminNovo");
     if (btnNovo) btnNovo.addEventListener("click", () => {
       const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
@@ -1032,7 +1081,6 @@
     bindActions();
     bindDelegation();
 
-    // ✅ default filial cheques
     selectedChequeFilial = FILIAIS[0];
 
     renderAll();

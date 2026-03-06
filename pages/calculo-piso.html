@@ -424,8 +424,8 @@ const DATA = [
   { tipo:"9 Rodocaçamba",      rkm:8.53,   custoCC:877.83, peso:47 },
   { tipo:"8 eixos Graneleiro", rkm:7.4505, custoCC:792.30, peso:45 },
   { tipo:"8 eixos Caçamba",    rkm:7.4505, custoCC:792.30, peso:43 },
-  { tipo:"7 eixo Graneleiro", rkm:7.4505, custoCC:792.30, peso:39 },
-  { tipo:"7 eixo Caçamba",    rkm:7.4505, custoCC:792.30, peso:37 },
+  { tipo:"4 eixo Graneleiro", rkm:7.4505, custoCC:792.30, peso:39 },
+  { tipo:"4 eixo Caçamba",    rkm:7.4505, custoCC:792.30, peso:37 },
   { tipo:"7 Bitrem",           rkm:7.4505, custoCC:792.30, peso:37 },
   { tipo:"7 Biçamba",          rkm:7.4505, custoCC:792.30, peso:35 },
   { tipo:"6 LS Graneleiro",    rkm:6.8058, custoCC:656.76, peso:31 },
@@ -463,8 +463,13 @@ function fillTipos(){
   sel.value = sel.value || "0";
 }
 function extrairEixos(tipo){
-  const m=String(tipo).trim().match(/^(\d+)/);
-  return m?Number(m[1]):0;
+  const m = String(tipo).trim().match(/^(\d+)/);
+  const n = m ? Number(m[1]) : 0;
+
+  // ✅ Ajuste solicitado: quando for "4º eixo" (tipo começa com 4), usar 7 eixos (3 cavalo + 4 carreta)
+  if (n === 4) return 7;
+
+  return n;
 }
 function ceil0(n){ return Math.ceil(n); }
 

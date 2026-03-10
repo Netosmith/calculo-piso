@@ -1,4 +1,4 @@
-/* administrativo.js | NOVA FROTA (tabs + filtros + cheques por filial em botões + Sheets: cheques/solicit/patrimonio/epis) */
+/* administrativo.js | NOVA FROTA */
 (function () {
   "use strict";
 
@@ -12,40 +12,25 @@
 
   const LS_KEYS = { frota: "nf_admin_frota_v1" };
 
-  function loadLS(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      const data = JSON.parse(raw);
-      return Array.isArray(data) ? data : fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  function saveLS(key, arr) {
-    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
-  }
-
-  const DATA = {
-    frota: loadLS(LS_KEYS.frota, [
-      { id: uid(), placa: "ABC1D23", condutor: "PEDRO SANTOS", filial: "ITUMBIARA", status: "OK", mes: "MAR/2026", telefone: "(64) 99999-1111", tipoVeiculo: "HATCH" },
-      { id: uid(), placa: "XYZ2E34", condutor: "LUCAS SILVA", filial: "RIO VERDE", status: "PENDENTE", mes: "ABR/2026", telefone: "(64) 99999-2222", tipoVeiculo: "SEDAN" },
-    ]),
-    cheques: [],
-    solicitacoes: [],
-    patrimonio: [],
-    epis: [],
-  };
-
   const $ = (sel) => document.querySelector(sel);
 
   function uid() {
     return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
   }
-
   function upper(v) { return String(v ?? "").trim().toUpperCase(); }
   function safeText(v) { return String(v ?? "").trim(); }
+
+  function loadLS(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  function saveLS(key, arr) {
+    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
+  }
 
   function todayBR() {
     const d = new Date();
@@ -59,6 +44,27 @@
     const el = $("#adminSyncStatus");
     if (el) el.textContent = text;
   }
+
+  function escapeHtml(s) {
+    const t = String(s ?? "");
+    return t
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  const DATA = {
+    frota: loadLS(LS_KEYS.frota, [
+      { id: uid(), placa: "ABC1D23", condutor: "PEDRO SANTOS", filial: "ITUMBIARA", status: "OK", mes: "MAR/2026", telefone: "(64) 99999-1111", tipoVeiculo: "HATCH" },
+      { id: uid(), placa: "XYZ2E34", condutor: "LUCAS SILVA", filial: "RIO VERDE", status: "PENDENTE", mes: "ABR/2026", telefone: "(64) 99999-2222", tipoVeiculo: "SEDAN" },
+    ]),
+    cheques: [],
+    solicitacoes: [],
+    patrimonio: [],
+    epis: [],
+  };
 
   function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
@@ -102,7 +108,9 @@
     const t = String(s || "").trim();
     const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (!m) return 0;
-    const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
+    const dd = Number(m[1]);
+    const mm = Number(m[2]);
+    const yy = Number(m[3]);
     return new Date(yy, mm - 1, dd).getTime();
   }
 
@@ -211,18 +219,12 @@
   }
 
   async function updateChequeOnSheets(payload) {
-    const params = {
+    const res = await jsonp(buildUrl({
       action: "cheques_update",
       id: safeText(payload.id),
       status: payload.status != null ? upper(payload.status) : "",
       termoAssinado: payload.termoAssinado != null ? upper(payload.termoAssinado) : "",
-    };
-
-    Object.keys(params).forEach((k) => {
-      if (params[k] === "" && k !== "action" && k !== "id") delete params[k];
-    });
-
-    const res = await jsonp(buildUrl(params));
+    }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
     return res.data;
   }
@@ -245,12 +247,12 @@
     const res = await jsonp(buildUrl({
       action: "solicit_update",
       id: safeText(payload.id),
-      status: payload.status != null ? upper(payload.status) : "",
+      filial: payload.filial != null ? upper(payload.filial) : "",
       tipo: payload.tipo != null ? upper(payload.tipo) : "",
       data: payload.data != null ? safeText(payload.data) : "",
+      status: payload.status != null ? upper(payload.status) : "",
       observacao: payload.observacao != null ? safeText(payload.observacao) : "",
       solicitante: payload.solicitante != null ? upper(payload.solicitante) : "",
-      filial: payload.filial != null ? upper(payload.filial) : "",
     }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_update");
     return res.data;
@@ -352,6 +354,8 @@
     });
   }
 
+  let selectedChequeFilial = "";
+
   function setActiveTab(tab) {
     document.querySelectorAll(".tabBtn").forEach((b) => {
       b.classList.toggle("isActive", b.dataset.tab === tab);
@@ -369,9 +373,6 @@
         tab === "solicitacoes" ? "Solicitações" :
         tab === "patrimonio" ? "Patrimônio" : "Controle de EPIs";
     }
-
-    const inp = $("#fBuscaAdmin");
-    if (inp) inp.value = "";
 
     if (tab === "cheques" && !selectedChequeFilial) {
       selectedChequeFilial = FILIAIS[0];
@@ -406,36 +407,6 @@
     });
   }
 
-  let selectedChequeFilial = "";
-
-  function getChequeRowsForButtons() {
-    const q = upper($("#fBuscaAdmin")?.value || "");
-    let rows = DATA.cheques.slice();
-
-    if (q) {
-      rows = rows.filter((it) => upper(JSON.stringify(it)).includes(q));
-    }
-
-    return rows;
-  }
-
-  function getChequeRowsForTable() {
-    const q = upper($("#fBuscaAdmin")?.value || "");
-    const selFilialFiltro = upper($("#fFilialAdmin")?.value || "");
-
-    let rows = DATA.cheques.filter((c) => upper(c.filial) === selectedChequeFilial);
-
-    if (selFilialFiltro && selFilialFiltro !== selectedChequeFilial) {
-      rows = [];
-    }
-
-    if (q) {
-      rows = rows.filter((it) => upper(JSON.stringify(it)).includes(q));
-    }
-
-    return rows;
-  }
-
   function groupChequesByFilial(list) {
     const map = new Map();
     (list || []).forEach((c) => {
@@ -448,23 +419,15 @@
 
   function renderFilialButtons() {
     const bar = $("#filialBar");
-    const meta = $("#chequesMeta");
-    const tbody = $("#chequesTbody");
-    if (!bar || !meta || !tbody) return;
+    if (!bar) return;
 
     bar.innerHTML = "";
+    const filtered = applyFilters(DATA.cheques);
+    const byFilial = groupChequesByFilial(filtered);
 
-    const sourceRows = getChequeRowsForButtons();
-    const byFilial = groupChequesByFilial(sourceRows);
+    if (!selectedChequeFilial) selectedChequeFilial = FILIAIS[0];
 
-    const filialFiltro = upper($("#fFilialAdmin")?.value || "");
-    const filiaisToShow = filialFiltro ? FILIAIS.filter((f) => f === filialFiltro) : FILIAIS.slice();
-
-    if (!selectedChequeFilial || (filialFiltro && selectedChequeFilial !== filialFiltro)) {
-      selectedChequeFilial = filiaisToShow[0] || FILIAIS[0];
-    }
-
-    filiaisToShow.forEach((filial) => {
+    FILIAIS.forEach((filial) => {
       const rows = byFilial.get(filial) || [];
       const pend = rows.filter((x) => upper(x.termoAssinado) !== "SIM").length;
 
@@ -495,13 +458,15 @@
     const meta = $("#chequesMeta");
     const tbody = $("#chequesTbody");
     const bar = $("#filialBar");
+
     if (!meta || !tbody || !bar) return;
 
     bar.querySelectorAll(".filialBtn").forEach((b) => {
       b.classList.toggle("isSelected", b.getAttribute("data-filial") === selectedChequeFilial);
     });
 
-    const ordered = sortByDateDesc(getChequeRowsForTable(), "data");
+    const filtered = applyFilters(DATA.cheques).filter((c) => upper(c.filial) === selectedChequeFilial);
+    const ordered = sortByDateDesc(filtered, "data");
 
     const total = ordered.length;
     const pend = ordered.filter((x) => upper(x.termoAssinado) !== "SIM").length;
@@ -543,8 +508,8 @@
       setStatus("🧾 Atualizando termo...");
       await updateChequeOnSheets({ id: chequeId, termoAssinado: novo });
       await reloadAll(false);
-      setStatus("✅ Termo atualizado");
       renderChequesArea();
+      setStatus("✅ Termo atualizado");
     } catch (e) {
       console.error(e);
       setStatus("❌ Falha");
@@ -641,9 +606,10 @@
     $("#kpiPatrimonio").textContent = String(DATA.patrimonio.length);
     $("#kpiEpis").textContent = String(DATA.epis.length);
 
-    const abertas = DATA.solicitacoes.filter((s) => upper(s.status) === "ABERTA").length;
     const badge = $("#badgeTopSolic");
-    if (badge) badge.textContent = String(abertas);
+    if (badge) {
+      badge.textContent = String(DATA.solicitacoes.filter((s) => upper(s.status) === "ABERTA").length);
+    }
   }
 
   function renderAll() {
@@ -714,8 +680,7 @@
 
   function getVal(id) {
     const el = document.getElementById(id);
-    if (!el) return "";
-    return safeText(el.value);
+    return el ? safeText(el.value) : "";
   }
 
   function schemaFor(tab) {
@@ -741,7 +706,7 @@
     }
 
     if (tab === "solicitacoes") {
-      const user = (window.getUser?.() || "USUÁRIO").toUpperCase();
+      const user = upper(window.getUser?.() || "USUÁRIO");
       return [
         { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
         { id: "mTipo", name: "tipo", label: "Tipo (editável)", placeholder: "Ex: CHEQUES / MANUTENÇÃO / TONER...", type: "text" },
@@ -811,7 +776,7 @@
     }
 
     if (tab === "solicitacoes") {
-      const user = (window.getUser?.() || "USUÁRIO").toUpperCase();
+      const user = upper(window.getUser?.() || "USUÁRIO");
       return {
         filial: upper(getVal("mFilial")),
         tipo: upper(getVal("mTipo")),
@@ -872,7 +837,7 @@
       tab === "cheques"
         ? { filial: selectedChequeFilial || FILIAIS[0], status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" }
         : tab === "solicitacoes"
-          ? { filial: "", status: "ABERTA", data: todayBR(), solicitante: (window.getUser?.() || "USUÁRIO").toUpperCase() }
+          ? { filial: "", status: "ABERTA", data: todayBR(), solicitante: upper(window.getUser?.() || "USUÁRIO") }
           : { filial: "" };
 
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
@@ -897,12 +862,16 @@
     const tab = modal.ctx.tab;
     const payload = valuesFromModal(tab);
 
-    if (!payload.filial) return alert("Selecione uma filial.");
+    if (!payload.filial) {
+      alert("Selecione uma filial.");
+      return;
+    }
 
     try {
       if (tab === "cheques") {
         if (!payload.data || !payload.sequencia || !payload.responsavel) {
-          return alert("Preencha: Data, Sequência e Responsável.");
+          alert("Preencha: Data, Sequência e Responsável.");
+          return;
         }
         setStatus("💾 Salvando cheque...");
         await createChequeOnSheets(payload);
@@ -969,15 +938,28 @@
   async function reloadAll(showAlert = true) {
     try {
       setStatus("🔄 Atualizando...");
-      await Promise.all([
+
+      const results = await Promise.allSettled([
         loadChequesFromSheets(),
         loadSolicFromSheets(),
         loadPatFromSheets(),
         loadEpisFromSheets(),
       ]);
+
+      const errors = results
+        .filter((r) => r.status === "rejected")
+        .map((r) => r.reason?.message || "Erro desconhecido");
+
       updateKpis();
       renderAll();
-      setStatus("✅ Atualizado");
+
+      if (errors.length) {
+        console.error("[admin] reload erros:", errors);
+        setStatus("⚠️ Atualizado com pendências");
+        if (showAlert) alert(errors.join("\n"));
+      } else {
+        setStatus("✅ Atualizado");
+      }
     } catch (e) {
       console.error("[admin] reload erro:", e);
       setStatus("❌ Erro ao atualizar");
@@ -1001,7 +983,6 @@
         const tab = el.getAttribute("data-edit") || "";
         const id = el.getAttribute("data-id") || "";
         if (tab && id) openEdit(tab, id);
-        return;
       }
     });
   }
@@ -1015,8 +996,8 @@
       c.addEventListener("click", () => setActiveTab(c.dataset.tab));
     });
 
-    const btn = $("#btnTopSolic");
-    if (btn) btn.addEventListener("click", () => setActiveTab("solicitacoes"));
+    const btnTop = $("#btnTopSolic");
+    if (btnTop) btnTop.addEventListener("click", () => setActiveTab("solicitacoes"));
   }
 
   function bindFilters() {
@@ -1031,10 +1012,12 @@
     if (btnReload) btnReload.addEventListener("click", () => reloadAll(true));
 
     const btnNovo = $("#btnAdminNovo");
-    if (btnNovo) btnNovo.addEventListener("click", () => {
-      const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
-      openNew(tab);
-    });
+    if (btnNovo) {
+      btnNovo.addEventListener("click", () => {
+        const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
+        openNew(tab);
+      });
+    }
 
     modal.el = $("#modalAdmin");
     modal.title = $("#modalTitleAdmin");
@@ -1043,34 +1026,24 @@
     modal.btnCancel = $("#btnCancelModalAdmin");
     modal.btnSave = $("#btnSaveModalAdmin");
 
-    modal.btnClose.addEventListener("click", closeModal);
-    modal.btnCancel.addEventListener("click", closeModal);
-    modal.btnSave.addEventListener("click", saveModal);
+    modal.btnClose?.addEventListener("click", closeModal);
+    modal.btnCancel?.addEventListener("click", closeModal);
+    modal.btnSave?.addEventListener("click", saveModal);
 
-    modal.el.addEventListener("click", (ev) => {
+    modal.el?.addEventListener("click", (ev) => {
       if (ev.target === modal.el) closeModal();
     });
 
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && modal.el.classList.contains("isOpen")) closeModal();
+      if (ev.key === "Escape" && modal.el?.classList.contains("isOpen")) closeModal();
     });
   }
 
   function initHeader() {
-    const uf = (window.getSelectedState?.() || "").toUpperCase();
-    const user = (window.getUser?.() || "");
+    const uf = upper(window.getSelectedState?.() || "");
+    const user = safeText(window.getUser?.() || "");
     const sub = $("#adminSub");
     if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
-  }
-
-  function escapeHtml(s) {
-    const t = String(s ?? "");
-    return t
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
   }
 
   function init() {

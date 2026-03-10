@@ -9,13 +9,39 @@
   <style>
     .topbar .actions a.icon-btn{ text-decoration:none; }
 
+    .topbar-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:220px;
+    }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-left:auto;
+      flex-wrap:wrap;
+    }
+
     .hero .grid{
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap:14px;
       margin-top:16px;
     }
-    @media (max-width: 900px){ .hero .grid{ grid-template-columns: 1fr; } }
+
+    @media (max-width: 900px){
+      .hero .grid{ grid-template-columns: 1fr; }
+    }
 
     .hero .card{
       min-height: 112px;
@@ -23,14 +49,24 @@
       align-items:center;
       gap:14px;
     }
-    .hero .card-left{ display:flex; align-items:center; justify-content:center; }
+
+    .hero .card-left{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
     .hero .tile{
-      width:64px; height:64px;
-      display:flex; align-items:center; justify-content:center;
+      width:64px;
+      height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       border-radius:18px;
       background: rgba(255,255,255,.12);
       backdrop-filter: blur(6px);
     }
+
     .hero .card-right h3{ margin:0 0 4px; }
     .hero .card-right p{ margin:0; opacity:.9; }
 
@@ -47,118 +83,192 @@
       font-weight:900;
     }
 
-    /* Card Solicitações (topo) */
+    /* Solicitações no topo */
     .sumCard{
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(17,26,51,.70);
-      box-shadow: var(--shadow);
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(17,26,51,.70);
+      box-shadow:var(--shadow);
       display:flex;
       align-items:center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap:10px;
+      padding:10px 12px;
       cursor:pointer;
-      transition: transform .12s ease, filter .12s ease;
-      margin-right: 10px;
+      transition:transform .12s ease, filter .12s ease;
+      min-width:190px;
     }
-    .sumCard:hover{ transform: translateY(-2px); filter: brightness(1.06); }
+
+    .sumCard:hover{
+      transform:translateY(-2px);
+      filter:brightness(1.06);
+    }
+
     .sumIcon{
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.12);
+      width:44px;
+      height:44px;
+      border-radius:14px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
       display:grid;
       place-items:center;
-      font-size: 18px;
+      font-size:18px;
+      flex:0 0 auto;
     }
-    .sumTitle{ font-weight: 950; font-size: 13px; }
-    .sumValue{ margin-top: 2px; font-weight: 1000; opacity: .92; }
-    .sumGold{ background: linear-gradient(135deg, rgba(116,92,24,.86), rgba(20,22,32,.72)); }
 
-    /* Modal (mesmo estilo do app) */
+    .sumTxt{
+      display:flex;
+      flex-direction:column;
+      line-height:1.15;
+    }
+
+    .sumTitle{
+      font-weight:950;
+      font-size:13px;
+    }
+
+    .sumValue{
+      margin-top:2px;
+      font-weight:1000;
+      opacity:.92;
+    }
+
+    .sumGold{
+      background: linear-gradient(135deg, rgba(116,92,24,.86), rgba(20,22,32,.72));
+    }
+
+    .topSolicWrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-left:auto;
+      margin-right:6px;
+    }
+
+    @media (max-width: 1100px){
+      .topSolicWrap{
+        order:3;
+        width:100%;
+        justify-content:flex-start;
+        margin:0;
+      }
+    }
+
+    /* Modal */
     #homeSolicModal{
-      position: fixed;
-      inset: 0;
+      position:fixed;
+      inset:0;
       display:none;
       align-items:center;
       justify-content:center;
-      z-index: 9999;
-      background: rgba(0,0,0,.55);
-      backdrop-filter: blur(8px);
-      padding: 18px;
+      z-index:9999;
+      background:rgba(0,0,0,.55);
+      backdrop-filter:blur(8px);
+      padding:18px;
     }
+
     #homeSolicModal.isOpen{ display:flex; }
 
     .modalCard{
-      width: min(980px, 100%);
-      border-radius: 18px;
-      background: rgba(17,26,51,.92);
-      border: 1px solid rgba(255,255,255,.12);
-      box-shadow: 0 18px 55px rgba(0,0,0,.55);
+      width:min(980px, 100%);
+      border-radius:18px;
+      background:rgba(17,26,51,.92);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 18px 55px rgba(0,0,0,.55);
       overflow:hidden;
     }
+
     .modalHead{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding: 12px 14px;
-      background: rgba(255,255,255,.06);
-      border-bottom: 1px solid rgba(255,255,255,.10);
+      padding:12px 14px;
+      background:rgba(255,255,255,.06);
+      border-bottom:1px solid rgba(255,255,255,.10);
     }
-    .modalHead h2{ margin:0; font-size: 14px; font-weight: 1000; }
+
+    .modalHead h2{
+      margin:0;
+      font-size:14px;
+      font-weight:1000;
+      color:var(--text);
+    }
+
     .iconClose{
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
+      width:36px;
+      height:36px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
       cursor:pointer;
-      font-weight: 1000;
+      font-weight:1000;
     }
-    .modalBody{ padding: 14px; max-height: calc(100vh - 220px); overflow:auto; }
-    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 900px){ .grid2{ grid-template-columns: 1fr; } }
+
+    .modalBody{
+      padding:14px;
+      max-height:calc(100vh - 220px);
+      overflow:auto;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    @media (max-width: 900px){
+      .grid2{ grid-template-columns:1fr; }
+    }
+
     .field label{
       display:block;
-      font-size: 11px;
-      font-weight: 950;
-      color: rgba(233,238,252,.92);
-      margin: 0 0 6px;
+      font-size:11px;
+      font-weight:950;
+      color:rgba(233,238,252,.92);
+      margin:0 0 6px;
     }
-    .field input, .field select, .field textarea{
+
+    .field input,
+    .field select,
+    .field textarea{
       width:100%;
-      border-radius: 12px;
-      padding: 10px 10px;
+      border-radius:12px;
+      padding:10px 10px;
       outline:none;
-      color: var(--text);
-      background: rgba(13,20,48,.65);
-      border: 1px solid rgba(255,255,255,.14);
+      color:var(--text);
+      background:rgba(13,20,48,.65);
+      border:1px solid rgba(255,255,255,.14);
     }
-    .field textarea{ min-height: 110px; resize: vertical; }
+
+    .field textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+
     .modalFoot{
       display:flex;
       justify-content:flex-end;
       gap:10px;
-      padding: 12px 14px;
-      border-top: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
+      padding:12px 14px;
+      border-top:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
     }
+
     .btnAdmin{
-      height: 38px;
-      padding: 0 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(91,124,250,.60);
-      background: rgba(27,42,90,.75);
-      color: var(--text);
-      font-weight: 900;
+      height:38px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(91,124,250,.60);
+      background:rgba(27,42,90,.75);
+      color:var(--text);
+      font-weight:900;
       cursor:pointer;
     }
+
     .btnAdmin.ghost{
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
     }
   </style>
 </head>
@@ -171,14 +281,15 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
 
-      <!-- ✅ Solicitações no topo -->
-      <button class="sumCard sumGold" id="homeSolicCard" type="button">
-        <div class="sumIcon">📋</div>
-        <div class="sumTxt">
-          <div class="sumTitle">Solicitações</div>
-          <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
-        </div>
-      </button>
+      <div class="topSolicWrap">
+        <button class="sumCard sumGold" id="homeSolicCard" type="button">
+          <div class="sumIcon">📋</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Solicitações</div>
+            <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
+          </div>
+        </button>
+      </div>
 
       <div class="actions">
         <a class="icon-btn" href="./notificacoes.html" title="Notificações" aria-label="Notificações">🔔</a>
@@ -190,7 +301,6 @@
     </div>
   </div>
 
-  <!-- ✅ Modal Solicitação -->
   <div id="homeSolicModal" aria-hidden="true">
     <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
       <div class="modalHead">
@@ -253,7 +363,9 @@
 
       <div class="grid">
         <a class="card theme-blue" data-feature="piso" href="./calculo-piso.html">
-          <div class="card-left"><div class="tile" style="font-size:34px;">🧾📈</div></div>
+          <div class="card-left">
+            <div class="tile" style="font-size:34px;">🧾📈</div>
+          </div>
           <div class="card-right">
             <h3>Cálculo de Piso ANTT</h3>
             <p>Faça o cálculo do piso mínimo de frete</p>
@@ -261,7 +373,9 @@
         </a>
 
         <a class="card theme-green" data-feature="fretes" href="./fretes.html">
-          <div class="card-left"><div class="tile" style="font-size:40px;">🚛</div></div>
+          <div class="card-left">
+            <div class="tile" style="font-size:40px;">🚛</div>
+          </div>
           <div class="card-right">
             <h3>Fretes (Operacional)</h3>
             <p>Gerencie e atualize os fretes diários</p>
@@ -269,7 +383,9 @@
         </a>
 
         <a class="card theme-purple" data-feature="share" href="./share-clientes.html">
-          <div class="card-left"><div class="tile" style="font-size:40px;">👥</div></div>
+          <div class="card-left">
+            <div class="tile" style="font-size:40px;">👥</div>
+          </div>
           <div class="card-right">
             <h3>Share Clientes</h3>
             <p>Compartilhe informações com clientes</p>
@@ -277,7 +393,9 @@
         </a>
 
         <a class="card theme-gold" data-feature="divulgacao" href="./divulgacao.html">
-          <div class="card-left"><div class="tile" style="font-size:38px;">📣</div></div>
+          <div class="card-left">
+            <div class="tile" style="font-size:38px;">📣</div>
+          </div>
           <div class="card-right">
             <h3>Divulgação</h3>
             <p>Ferramentas para comunicação e marketing</p>
@@ -285,7 +403,9 @@
         </a>
 
         <a class="card theme-blue" data-feature="administrativo" href="./administrativo.html">
-          <div class="card-left"><div class="tile" style="font-size:38px;">🗂️</div></div>
+          <div class="card-left">
+            <div class="tile" style="font-size:38px;">🗂️</div>
+          </div>
           <div class="card-right">
             <h3>Administrativo</h3>
             <p>Frota leve, cheques e solicitações por filial</p>
@@ -305,11 +425,14 @@
       const uf = getSelectedState?.() || "";
       const user = getUser?.() || "";
       const sub = document.getElementById("homeSub");
-      if(sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
+
+      if (sub) {
+        sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
+      }
 
       document.querySelectorAll("[data-feature]").forEach((card) => {
         const feature = card.getAttribute("data-feature");
-        if(typeof canAccessFeature === "function" && !canAccessFeature(feature)){
+        if (typeof canAccessFeature === "function" && !canAccessFeature(feature)) {
           card.style.display = "none";
         }
       });

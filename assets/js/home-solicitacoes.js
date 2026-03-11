@@ -9,15 +9,15 @@
     "INDIARA","BOM JESUS DE GO","VIANOPOLIS","ANAPOLIS","URUAÇU"
   ];
 
-  const $ = (s)=>document.querySelector(s);
+  const $ = (s) => document.querySelector(s);
 
   function upper(v){ return String(v ?? "").trim().toUpperCase(); }
   function safeText(v){ return String(v ?? "").trim(); }
 
   function todayBR(){
     const d = new Date();
-    const dd = String(d.getDate()).padStart(2,"0");
-    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
     const yy = d.getFullYear();
     return `${dd}/${mm}/${yy}`;
   }
@@ -39,10 +39,17 @@
         try { s.remove(); } catch {}
       }
 
-      window[cb] = (data) => { cleanup(); resolve(data); };
+      window[cb] = (data) => {
+        cleanup();
+        resolve(data);
+      };
 
       s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      s.onerror = () => { cleanup(); reject(new Error("Erro ao carregar script (JSONP)")); };
+      s.onerror = () => {
+        cleanup();
+        reject(new Error("Erro ao carregar script (JSONP)"));
+      };
+
       document.head.appendChild(s);
     });
   }
@@ -53,18 +60,107 @@
     return url.toString();
   }
 
+  function ensureLoading() {
+    if (document.getElementById("homeSolicLoading")) return;
+
+    const el = document.createElement("div");
+    el.id = "homeSolicLoading";
+    el.innerHTML = `
+      <div class="homeSolicLoadingBox">
+        <div class="homeSolicSpinner"></div>
+        <div class="homeSolicLoadingText">Salvando solicitação...</div>
+      </div>
+    `;
+    document.body.appendChild(el);
+
+    const style = document.createElement("style");
+    style.id = "homeSolicLoadingStyle";
+    style.textContent = `
+      #homeSolicLoading{
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(3,8,20,.58);
+        backdrop-filter: blur(8px);
+        z-index: 10050;
+      }
+      #homeSolicLoading.isOpen{ display:flex; }
+      .homeSolicLoadingBox{
+        width: min(280px, 88vw);
+        padding: 28px 20px;
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(17,26,51,.92);
+        box-shadow: 0 22px 60px rgba(0,0,0,.42);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      .homeSolicSpinner{
+        width: 58px;
+        height: 58px;
+        border-radius: 999px;
+        border: 5px solid rgba(255,255,255,.10);
+        border-top-color: rgba(79,209,255,.95);
+        border-right-color: rgba(79,209,255,.65);
+        animation: homeSolicSpin .8s linear infinite;
+      }
+      .homeSolicLoadingText{
+        color: #e9eefc;
+        font-size: 15px;
+        font-weight: 800;
+        text-align: center;
+      }
+      @keyframes homeSolicSpin{
+        to{ transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showLoading() {
+    ensureLoading();
+    $("#homeSolicLoading")?.classList.add("isOpen");
+  }
+
+  function hideLoading() {
+    $("#homeSolicLoading")?.classList.remove("isOpen");
+  }
+
   function openModal(){
     $("#homeSolicModal")?.classList.add("isOpen");
+
+    const user = upper(window.getUser?.() || "USUÁRIO");
+    const dataEl = $("#hsData");
+    const statusEl = $("#hsStatus");
+    const solicitanteEl = $("#hsSolicitante");
+
+    if (dataEl && !dataEl.value) dataEl.value = todayBR();
+    if (statusEl && !statusEl.value) statusEl.value = "ABERTA";
+    if (solicitanteEl) solicitanteEl.value = user;
   }
 
   function closeModal(){
     $("#homeSolicModal")?.classList.remove("isOpen");
   }
 
+  function resetForm(){
+    const user = upper(window.getUser?.() || "USUÁRIO");
+
+    if ($("#hsFilial")) $("#hsFilial").value = "";
+    if ($("#hsTipo")) $("#hsTipo").value = "";
+    if ($("#hsData")) $("#hsData").value = todayBR();
+    if ($("#hsStatus")) $("#hsStatus").value = "ABERTA";
+    if ($("#hsObs")) $("#hsObs").value = "";
+    if ($("#hsSolicitante")) $("#hsSolicitante").value = user;
+  }
+
   function fillFiliais(){
     const sel = $("#hsFilial");
     if(!sel) return;
-
     sel.innerHTML =
       `<option value="">Selecione...</option>` +
       FILIAIS.map(f => `<option value="${f}">${f}</option>`).join("");
@@ -75,9 +171,9 @@
       const res = await jsonp(buildUrl({ action:"solicit_list" }));
       if(!res || res.ok === false) return;
 
-      const abertas = (res.data || [])
-        .filter(x => upper(x.status) === "ABERTA")
-        .length;
+      const abertas = (res.data || []).filter(
+        x => upper(x.status || "") === "ABERTA"
+      ).length;
 
       const el = $("#homeSolicOpen");
       if(el) el.textContent = String(abertas);
@@ -87,45 +183,45 @@
   }
 
   async function sendSolic(){
+    const btn = $("#homeSolicSend");
     const filial = upper($("#hsFilial")?.value || "");
     const tipo = upper($("#hsTipo")?.value || "GERAL");
     const data = safeText($("#hsData")?.value || todayBR());
     const status = upper($("#hsStatus")?.value || "ABERTA");
     const observacao = safeText($("#hsObs")?.value || "");
-    const solicitante = upper(window.getUser?.() || "USUÁRIO");
+    const solicitante = upper($("#hsSolicitante")?.value || (window.getUser?.() || "USUÁRIO"));
 
     if(!filial) return alert("Selecione a filial.");
-    if(!observacao) return alert("Descreva a observação.");
+    if(!observacao) return alert("Escreva a observação.");
 
     try{
+      if (btn) btn.disabled = true;
+      showLoading();
+
       const res = await jsonp(buildUrl({
-        action:"solicit_add",
+        action: "solicit_add",
         filial,
         tipo,
         data,
         status,
         observacao,
         solicitante
-      }));
+      }), 30000);
 
       if(!res || res.ok === false){
-        throw new Error(res?.error || "Falha ao enviar solicitação");
+        throw new Error(res?.error || "Falha ao enviar solicitação.");
       }
 
-      closeModal();
-
-      if($("#hsFilial")) $("#hsFilial").value = "";
-      if($("#hsTipo")) $("#hsTipo").value = "";
-      if($("#hsData")) $("#hsData").value = todayBR();
-      if($("#hsStatus")) $("#hsStatus").value = "ABERTA";
-      if($("#hsObs")) $("#hsObs").value = "";
-      if($("#hsSolicitante")) $("#hsSolicitante").value = solicitante;
-
       await refreshKpi();
-      alert("Solicitação enviada ✅");
+      resetForm();
+      closeModal();
+      alert("Solicitação salva com sucesso ✅");
     }catch(e){
       console.error("[home-solic] sendSolic:", e);
-      alert(e?.message || "Falha ao enviar solicitação.");
+      alert(e?.message || "Falha ao salvar solicitação.");
+    }finally{
+      hideLoading();
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -133,7 +229,7 @@
     $("#homeSolicCard")?.addEventListener("click", openModal);
     $("#homeSolicClose")?.addEventListener("click", closeModal);
     $("#homeSolicCancel")?.addEventListener("click", closeModal);
-    $("#homeSolicSave")?.addEventListener("click", sendSolic);
+    $("#homeSolicSend")?.addEventListener("click", sendSolic);
 
     $("#homeSolicModal")?.addEventListener("click", (ev)=>{
       if(ev.target === $("#homeSolicModal")) closeModal();
@@ -145,13 +241,10 @@
   }
 
   window.addEventListener("DOMContentLoaded", ()=>{
+    ensureLoading();
     fillFiliais();
     bind();
-
-    if($("#hsData")) $("#hsData").value = todayBR();
-    if($("#hsStatus")) $("#hsStatus").value = "ABERTA";
-    if($("#hsSolicitante")) $("#hsSolicitante").value = upper(window.getUser?.() || "USUÁRIO");
-
+    resetForm();
     refreshKpi();
     setInterval(refreshKpi, 60000);
   });

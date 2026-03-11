@@ -56,7 +56,9 @@
 
   function buildUrl(paramsObj) {
     const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+    Object.entries(paramsObj || {}).forEach(([k, v]) => {
+      url.searchParams.set(k, v);
+    });
     return url.toString();
   }
 
@@ -130,21 +132,13 @@
     $("#homeSolicLoading")?.classList.remove("isOpen");
   }
 
-  function openModal(){
-    $("#homeSolicModal")?.classList.add("isOpen");
+  function fillFiliais(){
+    const sel = $("#hsFilial");
+    if(!sel) return;
 
-    const user = upper(window.getUser?.() || "USUÁRIO");
-    const dataEl = $("#hsData");
-    const statusEl = $("#hsStatus");
-    const solicitanteEl = $("#hsSolicitante");
-
-    if (dataEl && !dataEl.value) dataEl.value = todayBR();
-    if (statusEl && !statusEl.value) statusEl.value = "ABERTA";
-    if (solicitanteEl) solicitanteEl.value = user;
-  }
-
-  function closeModal(){
-    $("#homeSolicModal")?.classList.remove("isOpen");
+    sel.innerHTML =
+      `<option value="">Selecione...</option>` +
+      FILIAIS.map(f => `<option value="${f}">${f}</option>`).join("");
   }
 
   function resetForm(){
@@ -158,17 +152,29 @@
     if ($("#hsSolicitante")) $("#hsSolicitante").value = user;
   }
 
-  function fillFiliais(){
-    const sel = $("#hsFilial");
-    if(!sel) return;
-    sel.innerHTML =
-      `<option value="">Selecione...</option>` +
-      FILIAIS.map(f => `<option value="${f}">${f}</option>`).join("");
+  function openModal(){
+    const modal = $("#homeSolicModal");
+    if (!modal) return;
+
+    modal.classList.add("isOpen");
+
+    const user = upper(window.getUser?.() || "USUÁRIO");
+    const dataEl = $("#hsData");
+    const statusEl = $("#hsStatus");
+    const solicitanteEl = $("#hsSolicitante");
+
+    if (dataEl && !safeText(dataEl.value)) dataEl.value = todayBR();
+    if (statusEl && !safeText(statusEl.value)) statusEl.value = "ABERTA";
+    if (solicitanteEl) solicitanteEl.value = user;
+  }
+
+  function closeModal(){
+    $("#homeSolicModal")?.classList.remove("isOpen");
   }
 
   async function refreshKpi(){
     try{
-      const res = await jsonp(buildUrl({ action:"solicit_list" }));
+      const res = await jsonp(buildUrl({ action:"solicit_list" }), 25000);
       if(!res || res.ok === false) return;
 
       const abertas = (res.data || []).filter(
@@ -184,6 +190,7 @@
 
   async function sendSolic(){
     const btn = $("#homeSolicSend");
+
     const filial = upper($("#hsFilial")?.value || "");
     const tipo = upper($("#hsTipo")?.value || "GERAL");
     const data = safeText($("#hsData")?.value || todayBR());
@@ -191,8 +198,15 @@
     const observacao = safeText($("#hsObs")?.value || "");
     const solicitante = upper($("#hsSolicitante")?.value || (window.getUser?.() || "USUÁRIO"));
 
-    if(!filial) return alert("Selecione a filial.");
-    if(!observacao) return alert("Escreva a observação.");
+    if(!filial){
+      alert("Selecione a filial.");
+      return;
+    }
+
+    if(!observacao){
+      alert("Escreva a observação.");
+      return;
+    }
 
     try{
       if (btn) btn.disabled = true;
@@ -209,7 +223,7 @@
       }), 30000);
 
       if(!res || res.ok === false){
-        throw new Error(res?.error || "Falha ao enviar solicitação.");
+        throw new Error(res?.error || "Falha ao salvar solicitação.");
       }
 
       await refreshKpi();

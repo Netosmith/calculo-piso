@@ -10,8 +10,6 @@
     "INDIARA","BOM JESUS DE GO","VIANOPOLIS","ANAPOLIS","URUAÇU",
   ];
 
-  const LS_KEYS = { frota: "nf_admin_frota_v1" };
-
   const $ = (sel) => document.querySelector(sel);
 
   function uid() {
@@ -19,18 +17,6 @@
   }
   function upper(v) { return String(v ?? "").trim().toUpperCase(); }
   function safeText(v) { return String(v ?? "").trim(); }
-
-  function loadLS(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch {
-      return fallback;
-    }
-  }
-  function saveLS(key, arr) {
-    try { localStorage.setItem(key, JSON.stringify(arr || [])); } catch {}
-  }
 
   function todayBR() {
     const d = new Date();
@@ -56,10 +42,7 @@
   }
 
   const DATA = {
-    frota: loadLS(LS_KEYS.frota, [
-      { id: uid(), placa: "ABC1D23", condutor: "PEDRO SANTOS", filial: "ITUMBIARA", status: "OK", mes: "MAR/2026", telefone: "(64) 99999-1111", tipoVeiculo: "HATCH" },
-      { id: uid(), placa: "XYZ2E34", condutor: "LUCAS SILVA", filial: "RIO VERDE", status: "PENDENTE", mes: "ABR/2026", telefone: "(64) 99999-2222", tipoVeiculo: "SEDAN" },
-    ]),
+    frota: [],
     cheques: [],
     solicitacoes: [],
     patrimonio: [],
@@ -123,6 +106,21 @@
     });
   }
 
+  function normalizeFrota(r) {
+    return {
+      id: safeText(r?.id),
+      filial: upper(r?.filial),
+      placa: upper(r?.placa || ""),
+      condutor: upper(r?.condutor || ""),
+      telefone: safeText(r?.telefone || ""),
+      tipoVeiculo: upper(r?.tipoVeiculo || ""),
+      mes: upper(r?.mes || ""),
+      status: upper(r?.status || "OK"),
+      createdAt: Number(r?.createdAt || 0) || 0,
+      updatedAt: Number(r?.updatedAt || 0) || 0,
+    };
+  }
+
   function normalizeChequeRow(r) {
     return {
       id: safeText(r?.id),
@@ -180,6 +178,12 @@
     };
   }
 
+  async function loadFrotaFromSheets() {
+    const res = await jsonp(buildUrl({ action: "frotaleve_list" }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro frotaleve_list");
+    DATA.frota = (res.data || []).map(normalizeFrota);
+  }
+
   async function loadChequesFromSheets() {
     const res = await jsonp(buildUrl({ action: "cheques_list" }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
@@ -202,6 +206,37 @@
     const res = await jsonp(buildUrl({ action: "epis_list" }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_list");
     DATA.epis = (res.data || []).map(normalizeEpi);
+  }
+
+  async function createFrotaOnSheets(payload) {
+    const res = await jsonp(buildUrl({
+      action: "frotaleve_add",
+      filial: upper(payload.filial),
+      placa: upper(payload.placa || ""),
+      condutor: upper(payload.condutor || ""),
+      telefone: safeText(payload.telefone || ""),
+      tipoVeiculo: upper(payload.tipoVeiculo || ""),
+      mes: upper(payload.mes || ""),
+      status: upper(payload.status || "OK"),
+    }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro frotaleve_add");
+    return res.data;
+  }
+
+  async function updateFrotaOnSheets(payload) {
+    const res = await jsonp(buildUrl({
+      action: "frotaleve_update",
+      id: safeText(payload.id),
+      filial: payload.filial != null ? upper(payload.filial) : "",
+      placa: payload.placa != null ? upper(payload.placa) : "",
+      condutor: payload.condutor != null ? upper(payload.condutor) : "",
+      telefone: payload.telefone != null ? safeText(payload.telefone) : "",
+      tipoVeiculo: payload.tipoVeiculo != null ? upper(payload.tipoVeiculo) : "",
+      mes: payload.mes != null ? upper(payload.mes) : "",
+      status: payload.status != null ? upper(payload.status) : "",
+    }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro frotaleve_update");
+    return res.data;
   }
 
   async function createChequeOnSheets(payload) {
@@ -815,7 +850,7 @@
       placa: upper(getVal("mPlaca")),
       condutor: upper(getVal("mCond")),
       telefone: getVal("mTel"),
-      tipoVeiculo: getVal("mTipoV"),
+      tipoVeiculo: upper(getVal("mTipoV")),
       mes: upper(getVal("mMes")),
       status: upper(getVal("mStatus") || "OK"),
     };
@@ -847,7 +882,9 @@
     modal.ctx = { mode: "edit", tab, id };
     const schema = schemaFor(tab);
 
-    const list = tab === "solicitacoes" ? DATA.solicitacoes :
+    const list =
+      tab === "frota" ? DATA.frota :
+      tab === "solicitacoes" ? DATA.solicitacoes :
       tab === "patrimonio" ? DATA.patrimonio :
       tab === "epis" ? DATA.epis :
       DATA.frota;
@@ -916,18 +953,18 @@
         return;
       }
 
-      const list = DATA.frota;
-      if (modal.ctx.mode === "edit") {
-        const idx = list.findIndex((x) => x.id === modal.ctx.id);
-        if (idx >= 0) list[idx] = { ...list[idx], ...payload };
-      } else {
-        list.unshift({ id: uid(), ...payload });
+      if (tab === "frota") {
+        setStatus("💾 Salvando frota...");
+        if (modal.ctx.mode === "edit") {
+          await updateFrotaOnSheets({ id: modal.ctx.id, ...payload });
+        } else {
+          await createFrotaOnSheets(payload);
+        }
+        closeModal();
+        await reloadAll(false);
+        return;
       }
 
-      saveLS(LS_KEYS.frota, DATA.frota);
-      closeModal();
-      renderAll();
-      setStatus("✅ Salvo");
     } catch (e) {
       console.error("[admin] save erro:", e);
       setStatus("❌ Falha");
@@ -940,6 +977,7 @@
       setStatus("🔄 Atualizando...");
 
       const results = await Promise.allSettled([
+        loadFrotaFromSheets(),
         loadChequesFromSheets(),
         loadSolicFromSheets(),
         loadPatFromSheets(),
@@ -1044,6 +1082,18 @@
     const user = safeText(window.getUser?.() || "");
     const sub = $("#adminSub");
     if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
+  }
+
+  function fillFiliaisSelect() {
+    const sel = $("#fFilialAdmin");
+    if (!sel) return;
+    sel.innerHTML = `<option value="">Todas as filiais</option>`;
+    FILIAIS.forEach((f) => {
+      const opt = document.createElement("option");
+      opt.value = f;
+      opt.textContent = f;
+      sel.appendChild(opt);
+    });
   }
 
   function init() {

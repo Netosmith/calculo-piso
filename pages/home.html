@@ -96,6 +96,8 @@
       cursor:pointer;
       transition:transform .12s ease, filter .12s ease;
       min-width:190px;
+      appearance:none;
+      -webkit-appearance:none;
     }
 
     .sumCard:hover{
@@ -246,6 +248,11 @@
       resize:vertical;
     }
 
+    .field input[readonly]{
+      opacity:.92;
+      cursor:default;
+    }
+
     .modalFoot{
       display:flex;
       justify-content:flex-end;
@@ -257,13 +264,24 @@
 
     .btnAdmin{
       height:38px;
-      padding:0 12px;
+      padding:0 14px;
       border-radius:12px;
       border:1px solid rgba(91,124,250,.60);
       background:rgba(27,42,90,.75);
       color:var(--text);
       font-weight:900;
       cursor:pointer;
+      transition:filter .12s ease, transform .12s ease, opacity .12s ease;
+    }
+
+    .btnAdmin:hover{
+      filter:brightness(1.06);
+    }
+
+    .btnAdmin:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+      transform:none;
     }
 
     .btnAdmin.ghost{
@@ -428,6 +446,20 @@
 
       if (sub) {
         sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
+      }
+
+      const solicitante = document.getElementById("hsSolicitante");
+      if (solicitante) {
+        solicitante.value = String(user || "").toUpperCase();
+      }
+
+      const data = document.getElementById("hsData");
+      if (data && !data.value) {
+        const agora = new Date();
+        const dd = String(agora.getDate()).padStart(2, "0");
+        const mm = String(agora.getMonth() + 1).padStart(2, "0");
+        const yy = agora.getFullYear();
+        data.value = `${dd}/${mm}/${yy}`;
       }
 
       document.querySelectorAll("[data-feature]").forEach((card) => {

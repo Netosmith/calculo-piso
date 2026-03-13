@@ -26,14 +26,14 @@ const USERS = {
   LUIS:    { password: "1234", states: ["GO"] },
   VALDEMI: { password: "1234", states: ["GO"] },
   ARIEL:   { password: "1234", states: ["GO"] },
-  GOIAS:   { password: "1234", states: ["GO"] },
-  MATOGROSSO: { password: "1234", states: ["MT"] },
-  MINASGERAIS:{ password: "1234", states: ["MG"] },
-  TOCANTINS:{ password: "1234", states: ["TO"] },
-  BAHIA:{ password: "1234", states: ["BA"] },
-  MARANHAO:{ password: "1234", states: ["MA"] },
-  PARA:{ password: "1234", states: ["PA"] },
-  PARANA:  { password: "1234", states: ["PR"] }
+  GOIAS:   { password: "5554", states: ["GO"] },
+  MATOGROSSO: { password: "5554", states: ["MT"] },
+  MINASGERAIS:{ password: "5554", states: ["MG"] },
+  TOCANTINS:{ password: "5554", states: ["TO"] },
+  BAHIA:{ password: "5554", states: ["BA"] },
+  MARANHAO:{ password: "5554", states: ["MA"] },
+  PARA:{ password: "5554", states: ["PA"] },
+  PARANA:  { password: "5554", states: ["PR"] }
 };
 
 // ======== SENHA EXTRA DO PISO ========

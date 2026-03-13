@@ -7,7 +7,7 @@
 
   const FILIAIS = [
     "ITUMBIARA","RIO VERDE","JATAI","MINEIROS","CHAPADAO DO CEU","MONTIVIDIU",
-    "INDIARA","BOM JESUS DE GO","VIANOPOLIS","ANAPOLIS","URUAÇU",
+    "INDIARA","BOM JESUS DE GO","VIANOPOLIS","ANAPOLIS","URUAÇU","FORMOSA",
   ];
 
   const $ = (sel) => document.querySelector(sel);

@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 
   <style>
-    /* ====== BASE (densidade / planilha) ====== */
     .container{max-width:1400px}
     .card{padding:14px; overflow:hidden}
+
     .tableWrap{
       overflow:auto;
       border:1px solid rgba(43,58,114,.35);
@@ -22,7 +22,14 @@
     @media (max-width:1100px){
       .tableWrap{height:auto; min-height:360px;}
     }
-    table{width:100%; border-collapse:collapse; min-width:1400px; background:#fff;}
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1700px;
+      background:#fff;
+    }
+
     th,td{
       padding:6px 10px;
       border-bottom:1px solid #D1D5DB;
@@ -31,23 +38,22 @@
       white-space:nowrap;
       color:#111827;
     }
+
     thead th{
-      position:sticky; top:0; z-index:3;
+      position:sticky;
+      top:0;
+      z-index:3;
       background:#0F172A;
       color:#fff;
       border-bottom:1px solid #0B1220;
       font-size:11px;
       letter-spacing:.02em;
     }
+
     tbody tr:nth-child(even){background:#F1F4F9;}
     tbody tr:hover{background:#E8EDFF;}
-    .rowSlim td{padding-top:5px; padding-bottom:5px;}
 
-    /* pills */
-    .muted2{color: rgba(17,24,39,.70);}
-
-    /* ====== LAYOUT ====== */
-    .container.nfWide{max-width: 1650px;}
+    .container.nfWide{max-width:1650px;}
     .container.pageFretes{
       display:flex;
       flex-direction:column;
@@ -67,13 +73,13 @@
       box-shadow:0 4px 12px rgba(0,0,0,.04);
       border-radius:18px;
     }
+
     .card.tableFull .tableWrap{
       flex:1 1 auto;
       max-height:none !important;
       height:auto !important;
     }
 
-    /* ====== TOP minimalista ====== */
     .fretes-top{
       display:flex;
       align-items:flex-end;
@@ -86,7 +92,13 @@
       border-radius:18px;
       box-shadow:0 4px 12px rgba(0,0,0,.04);
     }
-    .fretes-top .title{display:flex; flex-direction:column; gap:4px;}
+
+    .fretes-top .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
     .fretes-top .title h1{
       margin:0;
       font-size:18px;
@@ -94,13 +106,13 @@
       letter-spacing:.2px;
       color:#0F172A;
     }
+
     .fretes-top .title .sub{
       font-size:12px;
       color: rgba(17,24,39,.70);
-      max-width: 980px;
+      max-width:980px;
     }
 
-    /* ====== toolbar compacta ====== */
     .fretes-toolbar{
       display:flex;
       align-items:center;
@@ -112,8 +124,16 @@
       background:#FFFFFF;
       box-shadow:0 4px 12px rgba(0,0,0,.04);
     }
-    .ft-block{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+
+    .ft-block{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
     .ft-spacer{flex:1 1 auto; min-width:10px}
+
     .ft-label{
       font-size:11px;
       font-weight:900;
@@ -121,6 +141,7 @@
       color:#0F172A;
       margin-right:2px;
     }
+
     .ft-mini{
       display:flex;
       align-items:center;
@@ -130,6 +151,7 @@
       color:#0F172A;
       opacity:.95;
     }
+
     .ft-mini input{
       width:66px;
       height:32px;
@@ -140,10 +162,12 @@
       color:#111827;
       outline:none;
     }
+
     .ft-mini input:focus{
       border-color:#5B7CFA;
       box-shadow:0 0 0 3px rgba(91,124,250,.18);
     }
+
     .ft-select, .ft-search{
       height:32px;
       padding:6px 10px;
@@ -153,8 +177,10 @@
       color:#111827;
       outline:none;
     }
+
     .ft-select{width:200px}
-    .ft-search{width:min(380px, 55vw)}
+    .ft-search{width:min(420px, 55vw)}
+
     @media (max-width:700px){
       .ft-select,.ft-search{width:100%}
     }
@@ -170,6 +196,7 @@
       cursor:pointer;
       white-space:nowrap;
     }
+
     .btnTiny:hover{filter:brightness(1.06)}
     .btnTiny.green{background:#0B3B2E; border-color:rgba(6,118,71,.25)}
     .btnTiny.ghost{
@@ -183,15 +210,8 @@
     }
 
     .num{text-align:right;}
-
-    /* ======================================================
-       ✅ FORÇA MAIÚSCULO NA UI (inputs/selects/textarea)
-    ======================================================= */
     input, select, textarea { text-transform: uppercase; }
 
-    /* ======================================================
-       ✅ WhatsApp: ícone
-    ======================================================= */
     .waIcon{
       display:inline-flex;
       align-items:center;
@@ -214,9 +234,6 @@
       display:block;
     }
 
-    /* ======================================================
-       ✅ Pílulas S/N (verde/vermelho sofisticado)
-    ======================================================= */
     .pillSN{
       display:inline-flex;
       align-items:center;
@@ -235,9 +252,6 @@
     .pillSN.n{background:#FEE2E2;border-color:#FCA5A5;color:#7F1D1D;}
     .pillSN.empty{background:#EEF2F7;border-color:#CBD5E1;color:#475569;}
 
-    /* ======================================================
-       ✅ Linha cabeçalho por FILIAL (groupRow)
-    ======================================================= */
     .groupRow td{
       background:#0F172A !important;
       color:#fff !important;
@@ -245,13 +259,10 @@
       letter-spacing:.02em;
       border-bottom:1px solid #0B1220;
       position:sticky;
-      top:36px; /* abaixo do thead */
+      top:36px;
       z-index:2;
     }
 
-    /* ======================================================
-       ✅ MODAL (Novo/Editar)
-    ======================================================= */
     #modal{
       position:fixed;
       inset:0;
@@ -263,6 +274,7 @@
       backdrop-filter: blur(6px);
       padding:18px;
     }
+
     .modalCard{
       width:min(980px, 100%);
       background:#fff;
@@ -271,6 +283,7 @@
       box-shadow:0 18px 45px rgba(0,0,0,.28);
       overflow:hidden;
     }
+
     .modalHead{
       display:flex;
       align-items:center;
@@ -280,12 +293,14 @@
       border-bottom:1px solid #E5E7EB;
       background:#F8FAFC;
     }
+
     .modalHead h2{
       margin:0;
       font-size:14px;
       font-weight:950;
       color:#0F172A;
     }
+
     .iconClose{
       width:34px;height:34px;border-radius:12px;
       border:1px solid #D1D5DB;
@@ -294,19 +309,23 @@
       font-weight:900;
       color:#0F172A;
     }
+
     .modalBody{
       padding:14px;
       max-height: calc(100vh - 220px);
       overflow:auto;
     }
+
     .grid2{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:12px;
     }
+
     @media (max-width:900px){
       .grid2{grid-template-columns:1fr;}
     }
+
     .field label{
       display:block;
       font-size:11px;
@@ -314,6 +333,7 @@
       color:#0F172A;
       margin:0 0 6px;
     }
+
     .field input, .field select, .field textarea{
       width:100%;
       height:34px;
@@ -325,15 +345,18 @@
       color:#111827;
       font-size:12px;
     }
+
     .field textarea{
       height:auto;
       min-height:72px;
       resize:vertical;
     }
+
     .field input:focus, .field select:focus, .field textarea:focus{
       border-color:#5B7CFA;
       box-shadow:0 0 0 3px rgba(91,124,250,.18);
     }
+
     .modalFoot{
       display:flex;
       justify-content:flex-end;
@@ -359,7 +382,6 @@
   </div>
 
   <div class="container nfWide pageFretes" style="padding-top:18px;">
-    <!-- TÍTULO -->
     <div class="card fretes-top">
       <div class="title">
         <h1>
@@ -373,15 +395,14 @@
       </div>
     </div>
 
-    <!-- BARRA COMPACTA -->
     <div class="fretes-toolbar">
       <div class="ft-block">
         <span class="ft-label">Pesos:</span>
-
         <div class="ft-mini"><span>9E</span><input id="w9" type="number" step="0.01" value="47" /></div>
         <div class="ft-mini"><span>4E</span><input id="w4" type="number" step="0.01" value="39" /></div>
         <div class="ft-mini"><span>7E</span><input id="w7" type="number" step="0.01" value="36" /></div>
         <div class="ft-mini"><span>6E</span><input id="w6" type="number" step="0.01" value="31" /></div>
+        <div class="ft-mini"><span>5E</span><input id="w5" type="number" step="0.01" value="26" /></div>
 
         <button class="btnTiny" id="btnSaveWeights" type="button">Salvar</button>
         <button class="btnTiny ghost" id="btnResetWeights" type="button">Reset</button>
@@ -390,40 +411,26 @@
       <div class="ft-spacer"></div>
 
       <div class="ft-block">
-        <!-- ✅ NOVO: REGIONAL -->
         <select class="ft-select" id="fRegional" title="Regional">
           <option value="">Todas as regionais</option>
         </select>
 
-        <!-- ✅ FILIAL (já existia) -->
         <select class="ft-select" id="fFilial" title="Filial">
           <option value="">Todas as filiais</option>
         </select>
 
-        <!-- ✅ NOVO: CONTATO -->
         <select class="ft-select" id="fContato" title="Contato">
           <option value="">Todos os contatos</option>
         </select>
 
         <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
 
-        <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button" title="Atualizar dados do Google Sheets">
-          🔄 Atualizar
-        </button>
-
-        <button class="btnTiny blue" id="btnShareClientes" type="button" title="Abrir Share Clientes">
-          Share Clientes
-        </button>
-
+        <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
+        <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
         <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
-
-        <button class="btnTiny ghost" id="btnResetExample" type="button" style="display:none;" title="Restaura o exemplo local">
-          Exemplo
-        </button>
       </div>
     </div>
 
-    <!-- TABELA -->
     <div class="card tableFull">
       <div class="tableWrap">
         <table>
@@ -443,13 +450,11 @@
               <th class="num">Vlr Motorista</th>
               <th class="num">KM</th>
               <th class="num">Pedágio/Eixo</th>
-
               <th class="num">5E</th>
               <th class="num">6E</th>
               <th class="num">7E</th>
               <th class="num">4E</th>
               <th class="num">9E</th>
-
               <th>Produto</th>
               <th>ICMS</th>
               <th class="num">Pedido SAT</th>
@@ -460,16 +465,12 @@
               <th class="num">Ações</th>
             </tr>
           </thead>
-
           <tbody id="tbody"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- ======================================================
-       ✅ MODAL NOVO/EDITAR (IDs compatíveis com fretes.js)
-  ======================================================= -->
   <div id="modal" aria-hidden="true">
     <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modalHead">
@@ -479,26 +480,26 @@
 
       <div class="modalBody">
         <div class="grid2">
-         <div class="field">
-  <div class="field">
-  <label>Regional</label>
-  <select id="mRegional"></select>
-</div>
+          <div class="field">
+            <label>Regional</label>
+            <select id="mRegional"></select>
+          </div>
 
-<div class="field">
-  <label>Filial</label>
-  <select id="mFilial"></select>
-</div>
+          <div class="field">
+            <label>Filial</label>
+            <select id="mFilial"></select>
+          </div>
 
-<div class="field">
-  <label>Cliente</label>
-  <select id="mCliente"></select>
-</div>
+          <div class="field">
+            <label>Cliente</label>
+            <select id="mCliente"></select>
+          </div>
 
-<div class="field">
-  <label>Contato (Responsável da Filial)</label>
-  <select id="mContato" disabled></select>
-</div>
+          <div class="field">
+            <label>Contato (Responsável da Filial)</label>
+            <select id="mContato"></select>
+          </div>
+
           <div class="field"><label>Origem</label><input id="mOrigem" /></div>
           <div class="field"><label>Coleta</label><input id="mColeta" /></div>
 
@@ -525,7 +526,7 @@
             <label>Status</label>
             <select id="mStatus">
               <option value="LIBERADO">LIBERADO</option>
-              <option value="EM ANALISE">EM ANÁLISE</option>
+              <option value="EM ANALISE">EM ANALISE</option>
               <option value="BLOQUEADO">BLOQUEADO</option>
             </select>
           </div>
@@ -544,7 +545,6 @@
     </div>
   </div>
 
-  <!-- ✅ Scripts no final -->
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/fretes.js"></script>
 
@@ -559,19 +559,6 @@
           window.location.href = "./share-clientes.html";
         });
       }
-
-      // ✅ Fechar modal (UI)
-      const modal = document.getElementById("modal");
-      const close = document.getElementById("btnCloseModal");
-      const cancel = document.getElementById("btnCancel");
-      function closeModal(){
-        if(!modal) return;
-        modal.style.display = "none";
-        modal.setAttribute("aria-hidden","true");
-      }
-      close?.addEventListener("click", closeModal);
-      cancel?.addEventListener("click", closeModal);
-      modal?.addEventListener("click", (e)=>{ if(e.target && e.target.id==="modal") closeModal(); });
     });
   </script>
 </body>

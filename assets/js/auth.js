@@ -26,7 +26,7 @@ const USERS = {
   LUIS:    { password: "1234", states: ["GO"] },
   VALDEMI: { password: "1234", states: ["GO"] },
   ARIEL:   { password: "1234", states: ["GO"] },
-  GOIAS:   { password: "5554", states: ["GO"] },
+  GOIAS:   { password: "1234", states: ["GO"] },
   MATOGROSSO: { password: "5554", states: ["MT"] },
   MINASGERAIS:{ password: "5554", states: ["MG"] },
   TOCANTINS:{ password: "5554", states: ["TO"] },

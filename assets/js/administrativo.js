@@ -3,7 +3,7 @@
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbxRMEGLtFy9n7xaYW3bzjA9JHLzneXHLyhkttP1T120f-GqNGGRAiirwzOVOHX9zGmY/exec";
+    "https://script.google.com/macros/s/AKfycbysabnW3gmEpzwrc0AAnRFlGdNeAK_7tF1hpYaYnxajxv4fLYpPPtL9ZUPZJljkMMNV/exec";
 
   const FILIAIS = [
     "ITUMBIARA","RIO VERDE","JATAI","MINEIROS","CHAPADAO DO CEU","MONTIVIDIU",

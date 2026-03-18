@@ -37,7 +37,7 @@
             <div class="admin-gear">⚙️</div>
             <div>
               <div class="admin-h1">ADMINISTRATIVO</div>
-              <div class="admin-sub" id="adminSub">Central de rotinas internas (frota, cheques e solicitações).</div>
+              <div class="admin-sub" id="adminSub">Central de rotinas internas.</div>
               <div class="admin-sync" id="adminSyncStatus">✅ Pronto</div>
             </div>
           </div>
@@ -58,6 +58,14 @@
           <div class="sumTxt">
             <div class="sumTitle">Cheques</div>
             <div class="sumValue"><span id="kpiCheques">0</span> registros</div>
+          </div>
+        </button>
+
+        <button class="sumCard sumBlue" data-tab="materiais" type="button">
+          <div class="sumIcon">📦</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Materiais</div>
+            <div class="sumValue"><span id="kpiMateriais">0</span> registros</div>
           </div>
         </button>
 
@@ -89,6 +97,7 @@
       <div class="admin-tabs">
         <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
         <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
+        <button class="tabBtn" data-tab="materiais" type="button">Materiais</button>
         <button class="tabBtn" data-tab="solicitacoes" type="button">Solicitações</button>
         <button class="tabBtn" data-tab="patrimonio" type="button">Patrimônio</button>
         <button class="tabBtn" data-tab="epis" type="button">Controle de EPIs</button>
@@ -115,7 +124,6 @@
             <div class="cardsGrid" id="gridFrota"></div>
           </div>
 
-          <!-- ✅ Cheques: botões de filiais + tabela -->
           <div class="view" id="view-cheques">
             <div class="chequesBox">
               <div class="chequesMeta" id="chequesMeta">Selecionado: — • Total: 0 • Pendentes: 0</div>
@@ -139,6 +147,29 @@
             </div>
           </div>
 
+          <div class="view" id="view-materiais">
+            <div class="chequesBox">
+              <div class="chequesMeta" id="materiaisMeta">Selecionado: — • Total: 0 • Pendentes: 0</div>
+              <div class="filialBar" id="materialBar"></div>
+
+              <div class="nfTableWrap">
+                <table class="nfTable">
+                  <thead>
+                    <tr>
+                      <th>Filial</th>
+                      <th>Data</th>
+                      <th>Material</th>
+                      <th>Responsável</th>
+                      <th>Status</th>
+                      <th>Recebido</th>
+                    </tr>
+                  </thead>
+                  <tbody id="materiaisTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           <div class="view" id="view-solicitacoes">
             <div class="cardsGrid" id="gridSolic"></div>
           </div>
@@ -152,7 +183,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </section>
 

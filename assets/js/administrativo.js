@@ -12,9 +12,6 @@
 
   const $ = (sel) => document.querySelector(sel);
 
-  function uid() {
-    return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-  }
   function upper(v) { return String(v ?? "").trim().toUpperCase(); }
   function safeText(v) { return String(v ?? "").trim(); }
 
@@ -44,6 +41,7 @@
   const DATA = {
     frota: [],
     cheques: [],
+    materiais: [],
     solicitacoes: [],
     patrimonio: [],
     epis: [],
@@ -135,6 +133,20 @@
     };
   }
 
+  function normalizeMaterialRow(r) {
+    return {
+      id: safeText(r?.id),
+      filial: upper(r?.filial),
+      data: safeText(r?.data),
+      descricao: safeText(r?.descricao),
+      responsavel: upper(r?.responsavel),
+      status: upper(r?.status || "ATIVO"),
+      recebido: upper(r?.recebido || "NÃO"),
+      createdAt: Number(r?.createdAt || 0) || 0,
+      updatedAt: Number(r?.updatedAt || 0) || 0,
+    };
+  }
+
   function normalizeSolic(r) {
     return {
       id: safeText(r?.id),
@@ -188,6 +200,12 @@
     const res = await jsonp(buildUrl({ action: "cheques_list" }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
     DATA.cheques = sortByDateDesc((res.data || []).map(normalizeChequeRow), "data");
+  }
+
+  async function loadMateriaisFromSheets() {
+    const res = await jsonp(buildUrl({ action: "materiais_list" }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro materiais_list");
+    DATA.materiais = sortByDateDesc((res.data || []).map(normalizeMaterialRow), "data");
   }
 
   async function loadSolicFromSheets() {
@@ -261,6 +279,35 @@
       termoAssinado: payload.termoAssinado != null ? upper(payload.termoAssinado) : "",
     }));
     if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
+    return res.data;
+  }
+
+  async function createMaterialOnSheets(payload) {
+    const res = await jsonp(buildUrl({
+      action: "materiais_add",
+      filial: upper(payload.filial),
+      data: safeText(payload.data),
+      descricao: upper(payload.descricao || ""),
+      responsavel: upper(payload.responsavel || ""),
+      status: upper(payload.status || "ATIVO"),
+      recebido: upper(payload.recebido || "NÃO"),
+    }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro materiais_add");
+    return res.data;
+  }
+
+  async function updateMaterialOnSheets(payload) {
+    const res = await jsonp(buildUrl({
+      action: "materiais_update",
+      id: safeText(payload.id),
+      filial: payload.filial != null ? upper(payload.filial) : "",
+      data: payload.data != null ? safeText(payload.data) : "",
+      descricao: payload.descricao != null ? upper(payload.descricao) : "",
+      responsavel: payload.responsavel != null ? upper(payload.responsavel) : "",
+      status: payload.status != null ? upper(payload.status) : "",
+      recebido: payload.recebido != null ? upper(payload.recebido) : "",
+    }));
+    if (!res || res.ok === false) throw new Error(res?.error || "Erro materiais_update");
     return res.data;
   }
 
@@ -390,6 +437,7 @@
   }
 
   let selectedChequeFilial = "";
+  let selectedMaterialFilial = "";
 
   function setActiveTab(tab) {
     document.querySelectorAll(".tabBtn").forEach((b) => {
@@ -405,13 +453,13 @@
       title.textContent =
         tab === "frota" ? "Frota Leve" :
         tab === "cheques" ? "Cheques" :
+        tab === "materiais" ? "Materiais" :
         tab === "solicitacoes" ? "Solicitações" :
         tab === "patrimonio" ? "Patrimônio" : "Controle de EPIs";
     }
 
-    if (tab === "cheques" && !selectedChequeFilial) {
-      selectedChequeFilial = FILIAIS[0];
-    }
+    if (tab === "cheques" && !selectedChequeFilial) selectedChequeFilial = FILIAIS[0];
+    if (tab === "materiais" && !selectedMaterialFilial) selectedMaterialFilial = FILIAIS[0];
 
     renderAll();
   }
@@ -442,7 +490,7 @@
     });
   }
 
-  function groupChequesByFilial(list) {
+  function groupByFilial(list) {
     const map = new Map();
     (list || []).forEach((c) => {
       const f = upper(c.filial);
@@ -458,7 +506,7 @@
 
     bar.innerHTML = "";
     const filtered = applyFilters(DATA.cheques);
-    const byFilial = groupChequesByFilial(filtered);
+    const byFilial = groupByFilial(filtered);
 
     if (!selectedChequeFilial) selectedChequeFilial = FILIAIS[0];
 
@@ -537,6 +585,91 @@
     });
   }
 
+  function renderMaterialButtons() {
+    const bar = $("#materialBar");
+    if (!bar) return;
+
+    bar.innerHTML = "";
+    const filtered = applyFilters(DATA.materiais);
+    const byFilial = groupByFilial(filtered);
+
+    if (!selectedMaterialFilial) selectedMaterialFilial = FILIAIS[0];
+
+    FILIAIS.forEach((filial) => {
+      const rows = byFilial.get(filial) || [];
+      const pend = rows.filter((x) => upper(x.recebido) !== "SIM").length;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filialBtn" + (selectedMaterialFilial === filial ? " isSelected" : "");
+      btn.setAttribute("data-material-filial", filial);
+
+      const dotColor = pend ? "rgba(250,204,21,.95)" : "rgba(34,197,94,.90)";
+      btn.innerHTML = `
+        <span class="filialDot" style="background:${dotColor}; box-shadow:0 0 0 3px ${pend ? "rgba(250,204,21,.14)" : "rgba(34,197,94,.14)"};"></span>
+        <span>${filial}</span>
+        <span class="filialCount">(${rows.length})</span>
+      `;
+
+      btn.addEventListener("click", () => {
+        selectedMaterialFilial = filial;
+        renderMateriaisArea();
+      });
+
+      bar.appendChild(btn);
+    });
+
+    renderMateriaisArea();
+  }
+
+  function renderMateriaisArea() {
+    const meta = $("#materiaisMeta");
+    const tbody = $("#materiaisTbody");
+    const bar = $("#materialBar");
+
+    if (!meta || !tbody || !bar) return;
+
+    bar.querySelectorAll(".filialBtn").forEach((b) => {
+      b.classList.toggle("isSelected", b.getAttribute("data-material-filial") === selectedMaterialFilial);
+    });
+
+    const filtered = applyFilters(DATA.materiais).filter((c) => upper(c.filial) === selectedMaterialFilial);
+    const ordered = sortByDateDesc(filtered, "data");
+
+    const total = ordered.length;
+    const pend = ordered.filter((x) => upper(x.recebido) !== "SIM").length;
+
+    meta.textContent = `Selecionado: ${selectedMaterialFilial} • Total: ${total} • Pendentes: ${pend}`;
+
+    tbody.innerHTML = "";
+
+    if (!ordered.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="6" style="opacity:.85">Nenhum material cadastrado nesta filial. Use + Novo para lançar.</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
+
+    ordered.forEach((it) => {
+      const recebido = upper(it.recebido || "NÃO");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(it.filial)}</td>
+        <td>${escapeHtml(it.data)}</td>
+        <td><b>${escapeHtml(it.descricao)}</b></td>
+        <td>${escapeHtml(it.responsavel)}</td>
+        <td>${escapeHtml(it.status)}</td>
+        <td>
+          <button class="linkBtn" type="button"
+            data-toggle-material="${escapeHtml(it.id)}"
+            data-recebido-atual="${recebido}"
+          >${recebido}</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
   async function toggleTermo(chequeId, termoAtual) {
     const novo = upper(termoAtual) === "SIM" ? "NÃO" : "SIM";
     try {
@@ -549,6 +682,21 @@
       console.error(e);
       setStatus("❌ Falha");
       alert(e?.message || "Falha ao atualizar termo");
+    }
+  }
+
+  async function toggleRecebido(materialId, atual) {
+    const novo = upper(atual) === "SIM" ? "NÃO" : "SIM";
+    try {
+      setStatus("📦 Atualizando material...");
+      await updateMaterialOnSheets({ id: materialId, recebido: novo });
+      await reloadAll(false);
+      renderMateriaisArea();
+      setStatus("✅ Material atualizado");
+    } catch (e) {
+      console.error(e);
+      setStatus("❌ Falha");
+      alert(e?.message || "Falha ao atualizar material");
     }
   }
 
@@ -637,6 +785,7 @@
   function updateKpis() {
     $("#kpiFrota").textContent = String(DATA.frota.length);
     $("#kpiCheques").textContent = String(DATA.cheques.length);
+    $("#kpiMateriais").textContent = String(DATA.materiais.length);
     $("#kpiSolic").textContent = String(DATA.solicitacoes.filter((s) => upper(s.status) === "ABERTA").length);
     $("#kpiPatrimonio").textContent = String(DATA.patrimonio.length);
     $("#kpiEpis").textContent = String(DATA.epis.length);
@@ -653,6 +802,7 @@
 
     if (tab === "frota") renderFrota(DATA.frota);
     if (tab === "cheques") renderFilialButtons();
+    if (tab === "materiais") renderMaterialButtons();
     if (tab === "solicitacoes") renderSolic(DATA.solicitacoes);
     if (tab === "patrimonio") renderPatrimonio(DATA.patrimonio);
     if (tab === "epis") renderEpis(DATA.epis);
@@ -740,6 +890,23 @@
       ];
     }
 
+    if (tab === "materiais") {
+      return [
+        { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
+        { id: "mData", name: "data", label: "Data (dd/mm/aaaa)", placeholder: todayBR(), type: "text" },
+        { id: "mDesc", name: "descricao", label: "Material", placeholder: "EX: PAPEL A4 / TONER / CANETA", type: "text" },
+        { id: "mResp", name: "responsavel", label: "Responsável", placeholder: "ARIEL", type: "text" },
+        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
+          { value: "ATIVO", label: "ATIVO" },
+          { value: "ENCERRADO", label: "ENCERRADO" },
+        ]},
+        { id: "mReceb", name: "recebido", label: "Recebido", type: "select", options: [
+          { value: "NÃO", label: "NÃO" },
+          { value: "SIM", label: "SIM" },
+        ]},
+      ];
+    }
+
     if (tab === "solicitacoes") {
       const user = upper(window.getUser?.() || "USUÁRIO");
       return [
@@ -810,6 +977,17 @@
       };
     }
 
+    if (tab === "materiais") {
+      return {
+        filial: upper(getVal("mFilial")),
+        data: getVal("mData"),
+        descricao: upper(getVal("mDesc")),
+        responsavel: upper(getVal("mResp")),
+        status: upper(getVal("mStatus") || "ATIVO"),
+        recebido: upper(getVal("mReceb") || "NÃO"),
+      };
+    }
+
     if (tab === "solicitacoes") {
       const user = upper(window.getUser?.() || "USUÁRIO");
       return {
@@ -858,6 +1036,7 @@
 
   function labelTab(tab) {
     if (tab === "cheques") return "Cheques";
+    if (tab === "materiais") return "Materiais";
     if (tab === "solicitacoes") return "Solicitações";
     if (tab === "patrimonio") return "Patrimônio";
     if (tab === "epis") return "EPIs";
@@ -871,9 +1050,11 @@
     const initial =
       tab === "cheques"
         ? { filial: selectedChequeFilial || FILIAIS[0], status: "ATIVO", data: todayBR(), termoAssinado: "NÃO" }
-        : tab === "solicitacoes"
-          ? { filial: "", status: "ABERTA", data: todayBR(), solicitante: upper(window.getUser?.() || "USUÁRIO") }
-          : { filial: "" };
+        : tab === "materiais"
+          ? { filial: selectedMaterialFilial || FILIAIS[0], status: "ATIVO", data: todayBR(), recebido: "NÃO" }
+          : tab === "solicitacoes"
+            ? { filial: "", status: "ABERTA", data: todayBR(), solicitante: upper(window.getUser?.() || "USUÁRIO") }
+            : { filial: "" };
 
     openModal(`Novo - ${labelTab(tab)}`, schema, initial);
   }
@@ -884,10 +1065,12 @@
 
     const list =
       tab === "frota" ? DATA.frota :
+      tab === "cheques" ? DATA.cheques :
+      tab === "materiais" ? DATA.materiais :
       tab === "solicitacoes" ? DATA.solicitacoes :
       tab === "patrimonio" ? DATA.patrimonio :
       tab === "epis" ? DATA.epis :
-      DATA.frota;
+      [];
 
     const item = list.find((x) => x.id === id);
     if (!item) return;
@@ -911,7 +1094,27 @@
           return;
         }
         setStatus("💾 Salvando cheque...");
-        await createChequeOnSheets(payload);
+        if (modal.ctx.mode === "edit") {
+          await updateChequeOnSheets({ id: modal.ctx.id, ...payload });
+        } else {
+          await createChequeOnSheets(payload);
+        }
+        closeModal();
+        await reloadAll(false);
+        return;
+      }
+
+      if (tab === "materiais") {
+        if (!payload.data || !payload.descricao || !payload.responsavel) {
+          alert("Preencha: Data, Material e Responsável.");
+          return;
+        }
+        setStatus("💾 Salvando material...");
+        if (modal.ctx.mode === "edit") {
+          await updateMaterialOnSheets({ id: modal.ctx.id, ...payload });
+        } else {
+          await createMaterialOnSheets(payload);
+        }
         closeModal();
         await reloadAll(false);
         return;
@@ -979,6 +1182,7 @@
       const results = await Promise.allSettled([
         loadFrotaFromSheets(),
         loadChequesFromSheets(),
+        loadMateriaisFromSheets(),
         loadSolicFromSheets(),
         loadPatFromSheets(),
         loadEpisFromSheets(),
@@ -1014,6 +1218,13 @@
         const id = el.getAttribute("data-toggle-termo") || "";
         const atual = el.getAttribute("data-termo-atual") || "NÃO";
         if (id) toggleTermo(id, atual);
+        return;
+      }
+
+      if (el.matches("[data-toggle-material]")) {
+        const id = el.getAttribute("data-toggle-material") || "";
+        const atual = el.getAttribute("data-recebido-atual") || "NÃO";
+        if (id) toggleRecebido(id, atual);
         return;
       }
 
@@ -1084,18 +1295,6 @@
     if (sub) sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
   }
 
-  function fillFiliaisSelect() {
-    const sel = $("#fFilialAdmin");
-    if (!sel) return;
-    sel.innerHTML = `<option value="">Todas as filiais</option>`;
-    FILIAIS.forEach((f) => {
-      const opt = document.createElement("option");
-      opt.value = f;
-      opt.textContent = f;
-      sel.appendChild(opt);
-    });
-  }
-
   function init() {
     initHeader();
     fillFiliaisSelect();
@@ -1105,6 +1304,7 @@
     bindDelegation();
 
     selectedChequeFilial = FILIAIS[0];
+    selectedMaterialFilial = FILIAIS[0];
 
     renderAll();
     reloadAll(false);

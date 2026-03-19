@@ -8,20 +8,25 @@
   const DIRECTORY = {
     regionais: ["GOIAS", "MINAS"],
     filiaisPorRegional: {
-      GOIAS: ["ITUMBIARA", "RIO VERDE", "MONTIVIDIU", "ANAPOLIS"],
+      GOIAS: ["ITUMBIARA", "RIO VERDE", "MONTIVIDIU", "ANAPOLIS", "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA", "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"],
       MINAS: ["UBERLANDIA", "ARAGUARI"],
     },
     clientes: ["LDC", "COFCO", "OURO SAFRA", "CARGILL"],
     contatosPorFilial: {
-      ITUMBIARA: [
-        { nome: "ARIEL", fone: "5564992277537" },
-        { nome: "SERGIO", fone: "5564999999999" },
-      ],
-      "RIO VERDE": [{ nome: "JHONATAN", fone: "5564998887777" }],
-      MONTIVIDIU: [{ nome: "SERGIO", fone: "5564988887777" }],
-      ANAPOLIS: [{ nome: "ARIEL", fone: "5564987776666" }],
-      UBERLANDIA: [{ nome: "SERGIO", fone: "5534991112222" }],
-      ARAGUARI: [{ nome: "JHONATAN", fone: "5534993334444" }],
+      ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992277537" }],
+      "RIO VERDE": [{ nome: "ARIEL", fone: "5564998887777" }],
+      MONTIVIDIU: [{ nome: "ROBSON", fone: "5564988887777" }],
+      ANAPOLIS: [{ nome: "SERGIO", fone: "5564987776666" }],
+      FORMOSA: [{ nome: "FABIOLA ", fone: "5534991112222" }],
+      CRISTALINA: [{ nome: "EVERALDO", fone: "5534993334444" }],
+      CATALAO: [{ nome: "EVERALDO JR", fone: "5534993334444" }],
+      VIANOPOLIS: [{ nome: "FHELLIPE", fone: "5534993334444" }],
+      JATAI: [{ nome: "RONE", fone: "5534993334444" }],
+      MINEIROS: [{ nome: "KIEWERSON", fone: "5534993334444" }],
+      "CHAP CEU": [{ nome: "RICARDO", fone: "5534993334444" }],
+      INDIARA: [{ nome: "RAFAEL", fone: "5534993334444" }],
+      URUAÇU: [{ nome: "GUILHERME", fone: "5534993334444" }],
+      "BOM JESUS": [{ nome: "MATEUS", fone: "5534993334444" }],
     },
   };
 

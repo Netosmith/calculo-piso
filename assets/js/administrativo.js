@@ -104,6 +104,27 @@
     });
   }
 
+  function extractSequenceRange(seqText) {
+    const s = upper(seqText)
+      .replace(/\s+/g, " ")
+      .replace(/ATÉ/g, "A")
+      .replace(/ATE/g, "A")
+      .replace(/AO/g, "A");
+
+    const m = s.match(/(\d+)\s*(?:A|-|\/)\s*(\d+)/);
+    if (!m) return null;
+
+    const ini = Number(m[1]);
+    const fim = Number(m[2]);
+
+    if (!Number.isFinite(ini) || !Number.isFinite(fim)) return null;
+
+    return {
+      ini: Math.min(ini, fim),
+      fim: Math.max(ini, fim)
+    };
+  }
+
   function normalizeFrota(r) {
     return {
       id: safeText(r?.id),
@@ -424,15 +445,25 @@
 
   function applyFilters(list) {
     const selFilial = upper($("#fFilialAdmin")?.value || "");
-    const q = upper($("#fBuscaAdmin")?.value || "");
+    const qRaw = safeText($("#fBuscaAdmin")?.value || "");
+    const q = upper(qRaw);
+    const qNumRaw = String(qRaw).replace(/\D/g, "");
+    const qNum = qNumRaw ? Number(qNumRaw) : NaN;
 
     return (list || []).filter((it) => {
       if (selFilial && upper(it.filial || "") !== selFilial) return false;
-      if (q) {
-        const blob = upper(JSON.stringify(it));
-        if (!blob.includes(q)) return false;
+
+      if (!q) return true;
+
+      if (Number.isFinite(qNum) && qNum > 0 && it.sequencia) {
+        const range = extractSequenceRange(it.sequencia);
+        if (range && qNum >= range.ini && qNum <= range.fim) {
+          return true;
+        }
       }
-      return true;
+
+      const blob = upper(JSON.stringify(it));
+      return blob.includes(q);
     });
   }
 
@@ -500,11 +531,30 @@
     return map;
   }
 
+  function maybeAutoSelectChequeFilialBySearch() {
+    const qRaw = safeText($("#fBuscaAdmin")?.value || "");
+    const qNumRaw = qRaw.replace(/\D/g, "");
+    const qNum = qNumRaw ? Number(qNumRaw) : NaN;
+
+    if (!Number.isFinite(qNum) || qNum <= 0) return;
+
+    const match = applyFilters(DATA.cheques).find((it) => {
+      const range = extractSequenceRange(it.sequencia);
+      return range && qNum >= range.ini && qNum <= range.fim;
+    });
+
+    if (match?.filial) {
+      selectedChequeFilial = upper(match.filial);
+    }
+  }
+
   function renderFilialButtons() {
     const bar = $("#filialBar");
     if (!bar) return;
 
     bar.innerHTML = "";
+    maybeAutoSelectChequeFilialBySearch();
+
     const filtered = applyFilters(DATA.cheques);
     const byFilial = groupByFilial(filtered);
 

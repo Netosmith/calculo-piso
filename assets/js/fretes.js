@@ -11,7 +11,7 @@
       GOIAS: ["ITUMBIARA", "RIO VERDE", "MONTIVIDIU", "ANAPOLIS", "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA", "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"],
       MINAS: ["UBERLANDIA", "ARAGUARI"],
     },
-    clientes: ["LDC", "COFCO", "OURO SAFRA", "CARGILL"],
+    clientes: ["LDC", "COFCO", "OURO SAFRA", "CARGILL", "CEREAL", "COMIGO", "BREJEIRO", "BTG"],
     contatosPorFilial: {
       ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992277537" }],
       "RIO VERDE": [{ nome: "ARIEL", fone: "5564998887777" }],

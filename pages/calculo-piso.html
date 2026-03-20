@@ -102,6 +102,10 @@
     .smallBtn:hover{filter:brightness(1.08)} .smallBtn:active{transform:translateY(1px)}
     .smallBtn.green{border-color:rgba(60,255,160,.45);background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
     .smallBtn.green:hover{box-shadow:0 0 0 3px rgba(60,255,160,.12)}
+    .smallBtn.home{
+      border-color:rgba(91,124,250,.95);
+      background:linear-gradient(180deg, rgba(45,68,145,.95), rgba(25,40,92,.95));
+    }
 
     /* Toggle */
     .toggleWrap{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:12px;border:1px solid rgba(58,83,168,.75);background:rgba(13,20,48,.55);user-select:none}
@@ -220,6 +224,7 @@
           <button class="smallBtn green" id="btnExportCSV">⬇️ Exportar CSV</button>
           <button class="smallBtn green" id="btnExportJPG">🖼️ Exportar JPEG</button>
           <span class="pill" id="userBadge">Deslogado</span>
+          <button class="smallBtn home" id="btnHome">🏠 Início</button>
           <button class="smallBtn" id="btnLogout">Sair</button>
         </div>
       </div>
@@ -376,7 +381,6 @@ function portalUser(){
   try{
     if (typeof getUser === "function") return String(getUser() || "").trim().toUpperCase();
   }catch(e){}
-  // fallback caso auth.js não tenha getUser por algum motivo
   return String(localStorage.getItem("nf_auth_user") || "").trim().toUpperCase();
 }
 
@@ -389,6 +393,10 @@ function portalUF(){
 }
 
 function isAdmin(){ return portalUser() === ADMIN_USER; }
+
+function goHome(){
+  window.location.href = "./home.html";
+}
 
 /** logout do portal */
 function logoutPortal(){
@@ -424,8 +432,8 @@ const DATA = [
   { tipo:"9 Rodocaçamba",      rkm:8.9995,   custoCC:877.83, peso:47 },
   { tipo:"8 eixos Graneleiro", rkm:7.8555, custoCC:792.30, peso:45 },
   { tipo:"8 eixos Caçamba",    rkm:7.8555, custoCC:792.30, peso:43 },
-  { tipo:"4 eixo Graneleiro", rkm:7.8555, custoCC:792.30, peso:39 },
-  { tipo:"4 eixo Caçamba",    rkm:7.8555, custoCC:792.30, peso:37 },
+  { tipo:"4 eixo Graneleiro",  rkm:7.8555, custoCC:792.30, peso:39 },
+  { tipo:"4 eixo Caçamba",     rkm:7.8555, custoCC:792.30, peso:37 },
   { tipo:"7 Bitrem",           rkm:7.8555, custoCC:792.30, peso:37 },
   { tipo:"7 Biçamba",          rkm:7.8555, custoCC:792.30, peso:35 },
   { tipo:"6 LS Graneleiro",    rkm:7.2108, custoCC:656.76, peso:31 },
@@ -466,7 +474,6 @@ function extrairEixos(tipo){
   const m = String(tipo).trim().match(/^(\d+)/);
   const n = m ? Number(m[1]) : 0;
 
-  // ✅ Ajuste solicitado: quando for "4º eixo" (tipo começa com 4), usar 7 eixos (3 cavalo + 4 carreta)
   if (n === 4) return 7;
 
   return n;
@@ -560,7 +567,6 @@ function resetPesos(){
   calc();
 }
 
-/* reset global (admin) */
 function resetAllPesos(){
   const keys=[];
   for(let i=0;i<localStorage.length;i++){
@@ -757,7 +763,7 @@ function calc(opts={}){
 }
 
 /* ================== ADMIN UI ================== */
-const USERS_KEY = "piso_users_v1"; // (admin local)
+const USERS_KEY = "piso_users_v1";
 function loadUsers(){
   try{
     const raw = localStorage.getItem(USERS_KEY);
@@ -781,7 +787,6 @@ function renderAdminUsers(){
   tbody.innerHTML="";
   const names = Object.keys(USERS).sort();
 
-  // garante que LUZIANO apareça como ADMIN mesmo sem estar no storage
   if(!names.includes(ADMIN_USER)) names.unshift(ADMIN_USER);
 
   names.forEach((u)=>{
@@ -820,28 +825,32 @@ function toastAdmin(txt, ok){
 
 /* ================== INIT ================== */
 document.addEventListener("DOMContentLoaded", ()=>{
-  // 1) valida portal (login + estado + permissão do piso + senha extra)
   const ok = enforcePisoAuth();
   if(!ok){
     alert("auth.js não carregou. Confira o caminho: ../assets/js/auth.js");
     return;
   }
 
-  // 2) user badge + admin + ações
   const u = portalUser();
   const uf = portalUF();
   $("userBadge").textContent = u ? `Logado: ${u} (${uf||"--"})` : "Deslogado";
   $("btnAdmin").style.display = isAdmin() ? "" : "none";
 
-  $("btnLogout").addEventListener("click", (e)=>{ e.preventDefault(); logoutPortal(); });
+  $("btnHome")?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    goHome();
+  });
 
-  // 3) boot tabela/cálculo
+  $("btnLogout").addEventListener("click", (e)=>{
+    e.preventDefault();
+    logoutPortal();
+  });
+
   fillTipos();
   pesosCustom = loadPesosCustom();
   applyQuoteModeUI();
   calc();
 
-  // binds
   $("btnResetPesos")?.addEventListener("click", resetPesos);
   $("btnCalc")?.addEventListener("click", ()=>calc());
   $("tipo")?.addEventListener("change", ()=>calc());
@@ -856,7 +865,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("btnExportCSV")?.addEventListener("click", exportCSV);
   $("btnExportJPG")?.addEventListener("click", exportJPG);
 
-  // Toggle cotação
   const tgl=$("toggleQuote");
   function toggleQuote(){
     const next=!isQuoteMode();
@@ -867,14 +875,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
   if(tgl){
     tgl.addEventListener("click", toggleQuote);
     tgl.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleQuote(); }
+      if(e.key==="Enter"||e.key===" "){
+        e.preventDefault();
+        toggleQuote();
+      }
     });
   }
 
-  // Admin
   $("btnAdminClose")?.addEventListener("click", ()=>showAdmin(false));
-  $("adminModal")?.addEventListener("click",(e)=>{ if(e.target && e.target.id==="adminModal") showAdmin(false); });
-  $("btnAdmin")?.addEventListener("click", ()=>{ if(isAdmin()) showAdmin(true); });
+  $("adminModal")?.addEventListener("click",(e)=>{
+    if(e.target && e.target.id==="adminModal") showAdmin(false);
+  });
+  $("btnAdmin")?.addEventListener("click", ()=>{
+    if(isAdmin()) showAdmin(true);
+  });
 
   $("btnAdminSaveUser")?.addEventListener("click", ()=>{
     if(!isAdmin()) return;

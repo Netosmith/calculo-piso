@@ -32,7 +32,7 @@ const USERS = {
   CATALAO:   { password: "1234", states: ["GO"] },
   CRISTALINA:   { password: "1234", states: ["GO"] },
   FORMOSA:   { password: "1234", states: ["GO"] },
-  "BOM JESUS":   { password: "1234", states: ["GO"] },
+  "BOM JESUS":   { password: "8888", states: ["GO"] },
   YASMIN:   { password: "5707", states: ["GOADM"] },
   JAKELINE:   { password: "5707", states: ["GOADM"] },
   OUROSAFRA: { password: "1234", states: ["SP"] },

@@ -45,6 +45,7 @@
   const STATE = {
     rows: [],
     editingId: "",
+    inlineSaving: new Set(),
   };
 
   const COLS = [
@@ -70,8 +71,8 @@
     { key: "produto", label: "Produto" },
     { key: "icms", label: "ICMS" },
     { key: "pedidoSat", label: "Pedido SAT" },
-    { key: "porta", label: "Porta" },
-    { key: "transito", label: "Trânsito" },
+    { key: "porta", label: "Porta", isInlineEditable: true },
+    { key: "transito", label: "Trânsito", isInlineEditable: true },
     { key: "status", label: "Status" },
     { key: "obs", label: "Observações" },
     { key: "__acoes", label: "Ações", isAcoes: true },
@@ -300,6 +301,85 @@
     return td;
   }
 
+  function buildInlineEditableCell(row, key) {
+    const td = document.createElement("td");
+    td.className = "num";
+
+    const wrap = document.createElement("div");
+    wrap.className = "inlineCellWrap";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "inlineCellInput";
+    input.value = safeText(row[key] || "");
+    input.setAttribute("inputmode", "numeric");
+    input.setAttribute("autocomplete", "off");
+
+    const saveId = `${safeText(row.id)}::${key}`;
+
+    let originalValue = safeText(row[key] || "");
+    let isSaving = false;
+
+    async function commit() {
+      const newValue = safeText(input.value);
+
+      if (isSaving) return;
+      if (newValue === originalValue) return;
+      if (!safeText(row.id)) return;
+
+      isSaving = true;
+      STATE.inlineSaving.add(saveId);
+      wrap.classList.add("isSaving");
+      input.disabled = true;
+
+      try {
+        setStatus(`💾 Salvando ${key === "porta" ? "porta" : "trânsito"}...`);
+
+        await apiGet({
+          action: "fretes_update",
+          id: safeText(row.id),
+          [key]: newValue
+        });
+
+        const idx = STATE.rows.findIndex((r) => safeText(r.id) === safeText(row.id));
+        if (idx >= 0) {
+          STATE.rows[idx][key] = newValue;
+        }
+
+        originalValue = newValue;
+        setStatus("✅ Atualizado");
+      } catch (e) {
+        console.error(`[fretes] erro ao salvar ${key}:`, e);
+        input.value = originalValue;
+        setStatus("❌ Erro ao atualizar");
+        alert(e.message || `Falha ao salvar ${key}.`);
+      } finally {
+        isSaving = false;
+        STATE.inlineSaving.delete(saveId);
+        wrap.classList.remove("isSaving");
+        input.disabled = false;
+      }
+    }
+
+    input.addEventListener("blur", commit);
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        input.blur();
+      }
+
+      if (e.key === "Escape") {
+        input.value = originalValue;
+        input.blur();
+      }
+    });
+
+    wrap.appendChild(input);
+    td.appendChild(wrap);
+    return td;
+  }
+
   function buildAcoesCell(row) {
     const td = document.createElement("td");
     td.className = "num";
@@ -381,6 +461,11 @@
 
         if (["e5","e6","e7","e4","e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
+          return;
+        }
+
+        if (col.isInlineEditable) {
+          tr.appendChild(buildInlineEditableCell(row, col.key));
           return;
         }
 

@@ -1,28 +1,13 @@
-/* share-clientes.js | NOVA FROTA
-   - Painel "Share Clientes" derivado 100% da base Fretes (nf_fretes_rows_v1)
-   - Cliente select fixo (com base nos clientes existentes + lista fixa opcional)
-   - CMH's Local/Trans: lidos do Fretes e travados (sem ediÃ§Ã£o)
-   - Total Geral = Local + Trans
-   - "Quantidade por corredor": agrupado por Destino
-   - Print PNG via html2canvas (inclui logo do cliente)
-*/
+/* share-clientes.js | NOVA FROTA */
 (function () {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
 
-  // ===== Base vinda do Fretes =====
   const LS_KEY_FRETES_ROWS = "nf_fretes_rows_v1";
-
-  // ===== Config: logos por cliente =====
-  // Regra: colocar em /assets/img/clientes/ com nome igual ao cliente em MAIÃSCULO (sem espaÃ§os extras).
-  // Ex: CARGILL.png, COFCO.png, MOSAIC.png
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
 
-  // ===== Config: cliente select fixo =====
-  // Se quiser forÃ§ar uma ordem/sem depender do conteÃºdo, preencha aqui.
-  // Se estiver vazio, o select serÃ¡ montado a partir dos clientes existentes na base.
   const CLIENTES_FIXOS = [
     "CARGILL",
     "CARAMURU",
@@ -30,9 +15,9 @@
     "MOSAIC",
     "OURO SAFRA",
     "CERRADINHO",
-    "MMV GRÃOS",
-    "CONCEITO AGRÃCOLA",
-    "MILHÃO ALIMENTOS",
+    "MMV GRÃOS",
+    "CONCEITO AGRÍCOLA",
+    "MILHÃO ALIMENTOS",
     "CHS"
   ];
 
@@ -72,15 +57,12 @@
     }
   }
 
-  // ===== Deriva CMH's do Fretes =====
-  // ObservaÃ§Ã£o: seu fretes.js ainda nÃ£o tem campos "cmhLocal" e "cmhTrans".
-  // Se vocÃª jÃ¡ tiver, Ã³timo: ele usa.
-  // Se nÃ£o tiver, ele tenta mapear de campos alternativos (caso vocÃª adicione depois).
   function getCmhLocal(row) {
-    return row.cmhLocal ?? row.cmh_local ?? row.cmhL ?? "";
+    return row.cmhLocal ?? row.cmh_local ?? row.cmhL ?? row.porta ?? "";
   }
+
   function getCmhTrans(row) {
-    return row.cmhTrans ?? row.cmh_trans ?? row.cmhT ?? "";
+    return row.cmhTrans ?? row.cmh_trans ?? row.cmhT ?? row.transito ?? "";
   }
 
   function computeTotalGeral(cmhLocal, cmhTrans) {
@@ -90,13 +72,11 @@
     return (a + b);
   }
 
-  // ===== Clientes =====
   function buildClientesList(rows) {
     const fromData = Array.from(new Set(rows.map(r => up(r.cliente)).filter(Boolean)))
       .sort((a,b)=>a.localeCompare(b,"pt-BR"));
     const fixed = CLIENTES_FIXOS.map(up).filter(Boolean);
     const merged = Array.from(new Set([...fixed, ...fromData]));
-    // mantÃ©m a ordem do fixo no topo (se existir), resto em ordem alfabÃ©tica
     const ordered = [];
     fixed.forEach(c => { if (merged.includes(c)) ordered.push(c); });
     fromData.forEach(c => { if (!ordered.includes(c)) ordered.push(c); });
@@ -104,6 +84,7 @@
   }
 
   function fillSelect(sel, items, { includeAll = false, allLabel = "Todos" } = {}) {
+    if (!sel) return;
     sel.innerHTML = "";
     if (includeAll) {
       const op = document.createElement("option");
@@ -119,10 +100,11 @@
     });
   }
 
-  // ===== Logo =====
   async function setClientLogo(cliente) {
     const img = $("imgLogo");
     const fb = $("logoFallback");
+    if (!img || !fb) return;
+
     const name = up(cliente);
 
     img.style.display = "none";
@@ -157,7 +139,6 @@
     });
   }
 
-  // ===== Filtros =====
   function matchesSearch(row, q) {
     if (!q) return true;
     const blob = [row.origem, row.coleta, row.destino, row.descarga, row.produto, row.obs]
@@ -170,17 +151,16 @@
       .sort((a,b)=>a.localeCompare(b,"pt-BR"));
   }
 
-  // ===== KPIs =====
   function setKpis(rowsFiltered) {
     const lotes = rowsFiltered.length;
-    const cam = lotes; // pode virar regra real depois
+    const cam = rowsFiltered.reduce((acc, r) => acc + num(getCmhLocal(r)) + num(getCmhTrans(r)), 0);
     const vol = rowsFiltered.reduce((acc, r) => acc + num(r.volume), 0);
-    $("kLotes").textContent = String(lotes);
-    $("kCaminhao").textContent = String(cam);
-    $("kVolume").textContent = String(vol);
+
+    if ($("kLotes")) $("kLotes").textContent = String(lotes);
+    if ($("kCaminhao")) $("kCaminhao").textContent = String(cam);
+    if ($("kVolume")) $("kVolume").textContent = String(vol);
   }
 
-  // ===== Corredores (Destino) =====
   function setCorredores(rowsFiltered) {
     const map = new Map();
     rowsFiltered.forEach((r) => {
@@ -192,6 +172,7 @@
       .sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0],"pt-BR"));
 
     const wrap = $("corrList");
+    if (!wrap) return;
     wrap.innerHTML = "";
 
     if (list.length === 0) {
@@ -210,9 +191,9 @@
     });
   }
 
-  // ===== Tabela =====
   function renderTable(rowsFiltered) {
     const tbody = $("tbodyShare");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     rowsFiltered.forEach((r) => {
@@ -240,9 +221,10 @@
     });
   }
 
-  // ===== Print (PNG) =====
   async function doPrint() {
     const page = $("pageShare");
+    if (!page || typeof html2canvas === "undefined") return;
+
     document.body.classList.add("printMode");
     await new Promise(r => setTimeout(r, 80));
 
@@ -255,16 +237,14 @@
     document.body.classList.remove("printMode");
 
     const dataUrl = canvas.toDataURL("image/png");
-
     const a = document.createElement("a");
-    const cliente = up($("selCliente").value) || "CLIENTE";
+    const cliente = up($("selCliente")?.value) || "CLIENTE";
     const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
     a.download = `share-${cliente}-${stamp}.png`;
     a.href = dataUrl;
     a.click();
   }
 
-  // ===== Utils =====
   function escapeHtml(str) {
     return String(str ?? "")
       .replaceAll("&", "&amp;")
@@ -274,17 +254,21 @@
       .replaceAll("'", "&#039;");
   }
 
-  // ===== Main =====
   let state = {
     rowsAll: [],
     clientes: [],
   };
 
   function applyFiltersAndRender() {
-    const cliente = up($("selCliente").value);
-    const q = safeText($("inpBusca").value);
-    const st = up($("selStatus").value);
-    const dest = safeText($("selDestino").value);
+    const selCliente = $("selCliente");
+    const inpBusca = $("inpBusca");
+    const selStatus = $("selStatus");
+    const selDestino = $("selDestino");
+
+    const cliente = up(selCliente?.value);
+    const q = safeText(inpBusca?.value);
+    const st = up(selStatus?.value);
+    const dest = safeText(selDestino?.value);
 
     let list = state.rowsAll.slice();
 
@@ -299,38 +283,47 @@
   }
 
   function rebuildDestinosForCliente() {
-    const cliente = up($("selCliente").value);
+    const selCliente = $("selCliente");
+    const selDestino = $("selDestino");
+    if (!selCliente || !selDestino) return;
+
+    const cliente = up(selCliente.value);
     const list = state.rowsAll.filter(r => up(r.cliente) === cliente);
     const destinos = buildDestinosList(list);
-    fillSelect($("selDestino"), destinos, { includeAll: true, allLabel: "Todos" });
+    fillSelect(selDestino, destinos, { includeAll: true, allLabel: "Todos" });
   }
 
   function refresh() {
     state.rowsAll = loadFretesRows();
-
     state.clientes = buildClientesList(state.rowsAll);
+
     fillSelect($("selCliente"), state.clientes, { includeAll: false });
 
     const firstWithData = state.clientes.find(c => state.rowsAll.some(r => up(r.cliente) === c));
-    if (firstWithData) $("selCliente").value = firstWithData;
+    if ($("selCliente") && firstWithData) $("selCliente").value = firstWithData;
 
-    setClientLogo($("selCliente").value);
+    setClientLogo($("selCliente")?.value);
     rebuildDestinosForCliente();
     applyFiltersAndRender();
   }
 
   function init() {
-    $("selCliente").addEventListener("change", () => {
-      setClientLogo($("selCliente").value);
+    $("selCliente")?.addEventListener("change", () => {
+      setClientLogo($("selCliente")?.value);
       rebuildDestinosForCliente();
       applyFiltersAndRender();
     });
-    $("inpBusca").addEventListener("input", applyFiltersAndRender);
-    $("selStatus").addEventListener("change", applyFiltersAndRender);
-    $("selDestino").addEventListener("change", applyFiltersAndRender);
 
-    $("btnReload").addEventListener("click", refresh);
-    $("btnPrint").addEventListener("click", doPrint);
+    $("inpBusca")?.addEventListener("input", applyFiltersAndRender);
+    $("selStatus")?.addEventListener("change", applyFiltersAndRender);
+    $("selDestino")?.addEventListener("change", applyFiltersAndRender);
+
+    $("btnReload")?.addEventListener("click", refresh);
+    $("btnPrint")?.addEventListener("click", doPrint);
+
+    $("btnVoltarFretes")?.addEventListener("click", () => {
+      window.location.href = "./fretes.html";
+    });
 
     refresh();
   }

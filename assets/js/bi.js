@@ -6,7 +6,6 @@
     "https://script.google.com/macros/s/AKfycbysabnW3gmEpzwrc0AAnRFlGdNeAK_7tF1hpYaYnxajxv4fLYpPPtL9ZUPZJljkMMNV/exec";
 
   const PESO_MEDIO = 38;
-
   const $ = (sel) => document.querySelector(sel);
 
   const STATE = {
@@ -46,42 +45,51 @@
     return (Number(v) || 0).toLocaleString("pt-BR");
   }
 
-  function setStatus(text, isOk = true) {
+  function setStatus(text, ok = true) {
     const el = $("#syncStatus");
     if (!el) return;
     el.textContent = text;
-    el.style.color = isOk ? "#067647" : "#b42318";
+    el.style.color = ok ? "#067647" : "#b42318";
   }
 
   function jsonp(url, timeoutMs = 30000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
-      const s = document.createElement("script");
+      const script = document.createElement("script");
       const sep = url.includes("?") ? "&" : "?";
+      let finished = false;
 
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
+        if (finished) return;
+        finished = true;
         cleanup();
-        reject(new Error("Timeout (JSONP)"));
+        reject(new Error("Timeout ao carregar dados do Apps Script"));
       }, timeoutMs);
 
       function cleanup() {
-        clearTimeout(t);
+        clearTimeout(timer);
         try { delete window[cb]; } catch {}
-        try { s.remove(); } catch {}
+        try { script.remove(); } catch {}
       }
 
-      window[cb] = (data) => {
+      window[cb] = function (data) {
+        if (finished) return;
+        finished = true;
         cleanup();
         resolve(data);
       };
 
-      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      s.onerror = () => {
+      script.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
+      script.async = true;
+
+      script.onerror = function () {
+        if (finished) return;
+        finished = true;
         cleanup();
-        reject(new Error("Erro ao carregar script (JSONP)"));
+        reject(new Error("Erro ao carregar o script JSONP"));
       };
 
-      document.head.appendChild(s);
+      document.head.appendChild(script);
     });
   }
 
@@ -95,9 +103,15 @@
 
   async function apiGet(paramsObj) {
     const res = await jsonp(buildUrl(paramsObj), 35000);
-    if (!res || res.ok === false) {
-      throw new Error(res?.error || "Falha na API");
+
+    if (!res) {
+      throw new Error("Resposta vazia da API");
     }
+
+    if (res.ok === false) {
+      throw new Error(res.error || "Falha na API");
+    }
+
     return res;
   }
 
@@ -130,13 +144,14 @@
 
   function fillSelect(el, values, placeholder) {
     if (!el) return;
-    const current = el.value;
 
+    const current = el.value;
     el.innerHTML = "";
-    const op0 = document.createElement("option");
-    op0.value = "";
-    op0.textContent = placeholder;
-    el.appendChild(op0);
+
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = placeholder;
+    el.appendChild(first);
 
     values.forEach((v) => {
       const op = document.createElement("option");
@@ -272,6 +287,33 @@
     return arr.sort((a, b) => b.veiculos - a.veiculos || a.cliente.localeCompare(b.cliente));
   }
 
+  function renderIndicativoFilial(rows) {
+    const tbody = $("#tbodyIndicativo");
+    if (!tbody) return;
+
+    const resumo = buildResumoFilial(rows);
+    tbody.innerHTML = "";
+
+    if (!resumo.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum registro encontrado.</td></tr>`;
+      return;
+    }
+
+    resumo.forEach((r) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.filial}</td>
+        <td class="num">${intBR(r.porta)}</td>
+        <td class="num">${intBR(r.transito)}</td>
+        <td class="num">${intBR(r.veiculos)}</td>
+        <td class="num">${intBR(r.volume)} t</td>
+        <td class="num">${moneyBR(r.freteMedio)}</td>
+        <td class="num">${moneyBR(r.margemMedia)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
   function destroyCharts() {
     Object.values(STATE.charts).forEach((chart) => {
       if (chart && typeof chart.destroy === "function") {
@@ -290,36 +332,19 @@
           position: "top",
           labels: {
             color: "#334155",
-            font: {
-              weight: "700"
-            }
+            font: { weight: "700" }
           }
-        },
-        tooltip: {
-          mode: "index",
-          intersect: false
         }
       },
       scales: {
         x: {
-          ticks: {
-            color: "#475569",
-            font: {
-              weight: "700"
-            }
-          },
-          grid: {
-            color: "rgba(148,163,184,.12)"
-          }
+          ticks: { color: "#475569" },
+          grid: { color: "rgba(148,163,184,.12)" }
         },
         y: {
           beginAtZero: true,
-          ticks: {
-            color: "#475569"
-          },
-          grid: {
-            color: "rgba(148,163,184,.18)"
-          }
+          ticks: { color: "#475569" },
+          grid: { color: "rgba(148,163,184,.18)" }
         }
       }
     };
@@ -327,6 +352,11 @@
 
   function renderCharts(rows) {
     destroyCharts();
+
+    if (typeof Chart === "undefined") {
+      console.warn("[bi] Chart.js não carregou.");
+      return;
+    }
 
     const resumoFilial = buildResumoFilial(rows);
     const resumoCliente = buildResumoCliente(rows);
@@ -371,13 +401,11 @@
         data: {
           labels: labelsCliente,
           datasets: [{
-            label: "Veículos",
             data: veiculosCliente,
             backgroundColor: [
               "#3b82f6", "#16a34a", "#8b5cf6", "#f59e0b", "#ec4899",
               "#0ea5e9", "#14b8a6", "#ef4444", "#84cc16", "#6366f1"
-            ],
-            borderWidth: 1
+            ]
           }]
         },
         options: {
@@ -402,14 +430,13 @@
         data: {
           labels: labelsFilial,
           datasets: [{
-            label: "Toneladas",
+            label: "Volume (t)",
             data: volumeFilial,
             borderColor: "rgba(22,163,74,1)",
-            backgroundColor: "rgba(22,163,74,.16)",
+            backgroundColor: "rgba(22,163,74,.15)",
             fill: true,
             tension: .35,
-            pointRadius: 4,
-            pointHoverRadius: 5
+            pointRadius: 4
           }]
         },
         options: chartBaseOptions()
@@ -450,7 +477,6 @@
         data: {
           labels: labelsCliente,
           datasets: [{
-            label: "Margem Média",
             data: margemCliente,
             backgroundColor: [
               "rgba(59,130,246,.50)",
@@ -461,8 +487,7 @@
               "rgba(14,165,233,.50)",
               "rgba(20,184,166,.50)",
               "rgba(239,68,68,.50)"
-            ],
-            borderWidth: 1
+            ]
           }]
         },
         options: {
@@ -476,58 +501,17 @@
                 font: { weight: "700" }
               }
             }
-          },
-          scales: {
-            r: {
-              ticks: {
-                backdropColor: "transparent",
-                color: "#64748b"
-              },
-              grid: {
-                color: "rgba(148,163,184,.18)"
-              },
-              angleLines: {
-                color: "rgba(148,163,184,.18)"
-              }
-            }
           }
         }
       });
     }
   }
 
-  function renderIndicativoFilial(rows) {
-    const tbody = $("#tbodyIndicativo");
-    if (!tbody) return;
-
-    const resumo = buildResumoFilial(rows);
-    tbody.innerHTML = "";
-
-    if (!resumo.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum registro encontrado.</td></tr>`;
-      return;
-    }
-
-    resumo.forEach((r) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.filial}</td>
-        <td class="num">${intBR(r.porta)}</td>
-        <td class="num">${intBR(r.transito)}</td>
-        <td class="num">${intBR(r.veiculos)}</td>
-        <td class="num">${intBR(r.volume)} t</td>
-        <td class="num">${moneyBR(r.freteMedio)}</td>
-        <td class="num">${moneyBR(r.margemMedia)}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
   function renderAll() {
     const rows = getFilteredRows();
     renderKPIs(rows);
-    renderCharts(rows);
     renderIndicativoFilial(rows);
+    renderCharts(rows);
   }
 
   async function loadData() {
@@ -535,16 +519,32 @@
       setStatus("🔄 Carregando...", true);
 
       const res = await apiGet({ action: "fretes_list" });
-      STATE.rows = Array.isArray(res.data) ? res.data.map(normalizeRow) : [];
+      let rows = [];
+
+      if (Array.isArray(res)) {
+        rows = res;
+      } else if (Array.isArray(res.data)) {
+        rows = res.data;
+      } else if (Array.isArray(res.rows)) {
+        rows = res.rows;
+      } else if (Array.isArray(res.fretes)) {
+        rows = res.fretes;
+      }
+
+      STATE.rows = rows.map(normalizeRow);
 
       loadFilterOptions(STATE.rows);
       renderAll();
 
-      setStatus("✅ Atualizado", true);
+      if (!STATE.rows.length) {
+        setStatus("⚠️ Sem dados em Fretes", false);
+      } else {
+        setStatus(`✅ ${STATE.rows.length} registros carregados`, true);
+      }
     } catch (e) {
       console.error("[bi] erro ao carregar:", e);
       setStatus("❌ Falha ao carregar", false);
-      alert(e.message || "Falha ao carregar dados.");
+      alert("Erro ao carregar o B.I.: " + (e.message || "Erro desconhecido"));
     }
   }
 

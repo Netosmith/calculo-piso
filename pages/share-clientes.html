@@ -52,8 +52,11 @@
       border-color:rgba(34,197,94,.35);
       background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.10));
     }
+    body.shareLight .btnSmall.blue{
+      border-color:rgba(59,130,246,.35);
+      background:linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
+    }
 
-    /* ✅ Ajuste: dá um pouco mais de espaço pro meio (Corredor) e pro Status */
     .topRow{
       display:grid;
       grid-template-columns: 420px 1fr 420px;
@@ -210,13 +213,6 @@
       color:#0f3d22;
     }
 
-    /* ======================================================
-       ✅ PRINT MODE: FORÇA LAYOUT DESKTOP MESMO NO CELULAR
-       - some topbar
-       - trava largura em 1650px
-       - desliga "quebra" de grid do @media
-       - captura tabela completa sem altura fixa
-    ======================================================= */
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
 
@@ -228,7 +224,6 @@
       max-width:1650px !important;
     }
 
-    /* força os grids em 3 colunas, mesmo no mobile */
     body.printMode .topRow{
       grid-template-columns: 420px 1fr 420px !important;
     }
@@ -239,7 +234,6 @@
       grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
     }
 
-    /* tira altura travada pra não cortar no print */
     body.printMode .tableWrap{
       height:auto !important;
       min-height: 0 !important;
@@ -273,6 +267,7 @@
         </div>
 
         <div class="btnRow">
+          <button class="btnSmall blue" id="btnVoltarFretes" title="Voltar para Fretes">← Voltar para Fretes</button>
           <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">🔄 Atualizar</button>
           <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">🖼️ Gerar Print</button>
         </div>
@@ -499,6 +494,7 @@
         const tbody      = document.getElementById('tbodyShare');
         const btnReload  = document.getElementById('btnReload');
         const btnPrint   = document.getElementById('btnPrint');
+        const btnVoltarFretes = document.getElementById('btnVoltarFretes');
         const pageShare  = document.getElementById('pageShare');
 
         if(!selCliente || !corrList || !tbody) return;
@@ -619,23 +615,22 @@
 
         if(btnReload) btnReload.addEventListener('click', hydrate);
 
-        // ✅ PRINT DESKTOP NO CELULAR
+        if(btnVoltarFretes){
+          btnVoltarFretes.addEventListener('click', () => {
+            window.location.href = './fretes.html';
+          });
+        }
+
         if(btnPrint && pageShare){
           btnPrint.addEventListener('click', async function(){
             const prevScrollY = window.scrollY || 0;
 
             try{
-              // entra modo print
               document.body.classList.add('printMode');
-
-              // garante topo da página (evita corte por scroll)
               window.scrollTo(0, 0);
-
-              // espera layout estabilizar e imagens carregarem um pouco
               await new Promise(r=>setTimeout(r, 250));
 
-              // calcula tamanho total
-              const W = 1650; // desktop fixo
+              const W = 1650;
               const H = pageShare.scrollHeight;
 
               const canvas = await html2canvas(pageShare, {
@@ -658,7 +653,6 @@
               console.error(e);
               alert('Não foi possível gerar o print. Veja o console.');
             }finally{
-              // sai modo print e volta scroll
               document.body.classList.remove('printMode');
               window.scrollTo(0, prevScrollY);
             }

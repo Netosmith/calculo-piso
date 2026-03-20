@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>B.I. Fretes | NOVA FROTA</title>
+
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .container.nfWide{max-width:1700px}
+    .container.pageBI{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:calc(100vh - 72px);
+      padding-bottom:18px;
+      background:#F5F7FA;
+    }
+
+    .card{
+      padding:14px;
+      overflow:hidden;
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      border-radius:18px;
+    }
+
+    .bi-top{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .bi-top .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .bi-top .title h1{
+      margin:0;
+      font-size:20px;
+      font-weight:1000;
+      letter-spacing:.2px;
+      color:#0F172A;
+    }
+
+    .bi-top .title .sub{
+      font-size:12px;
+      color:rgba(17,24,39,.70);
+      max-width:980px;
+    }
+
+    .toolbar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .bi-select, .bi-search{
+      height:36px;
+      padding:6px 10px;
+      border-radius:12px;
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
+      outline:none;
+    }
+
+    .bi-select{min-width:220px}
+    .bi-search{width:min(380px, 55vw)}
+
+    .bi-select:focus, .bi-search:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+
+    .btnTiny{
+      height:36px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:#0F172A;
+      color:#FFFFFF;
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btnTiny:hover{filter:brightness(1.06)}
+    .btnTiny.ghost{
+      background:#FFFFFF;
+      color:#0F172A;
+      border:1px solid #D1D5DB;
+    }
+    .btnTiny.blue{
+      background:#102A6B;
+      border-color:rgba(59,130,246,.35);
+    }
+
+    .kpiGrid{
+      display:grid;
+      grid-template-columns:repeat(6, minmax(0,1fr));
+      gap:12px;
+    }
+    @media (max-width:1450px){
+      .kpiGrid{grid-template-columns:repeat(3, minmax(0,1fr));}
+    }
+    @media (max-width:850px){
+      .kpiGrid{grid-template-columns:1fr 1fr;}
+    }
+    @media (max-width:560px){
+      .kpiGrid{grid-template-columns:1fr;}
+    }
+
+    .kpiCard{
+      border-radius:18px;
+      border:1px solid #E5E7EB;
+      background:linear-gradient(180deg, #ffffff, #f8fafc);
+      padding:14px;
+    }
+
+    .kpiLabel{
+      font-size:11px;
+      font-weight:900;
+      color:rgba(17,24,39,.65);
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+
+    .kpiValue{
+      margin-top:8px;
+      font-size:26px;
+      font-weight:1000;
+      color:#0F172A;
+      line-height:1;
+    }
+
+    .kpiHint{
+      margin-top:8px;
+      font-size:12px;
+      color:rgba(17,24,39,.65);
+    }
+
+    .chartGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width:1100px){
+      .chartGrid{grid-template-columns:1fr;}
+    }
+
+    .chartCard{
+      min-height:360px;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .chartHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .chartTitle{
+      font-size:14px;
+      font-weight:1000;
+      color:#0F172A;
+    }
+
+    .chartWrap{
+      position:relative;
+      flex:1 1 auto;
+      min-height:300px;
+    }
+
+    .biTableWrap{
+      overflow:auto;
+      border:1px solid #E5E7EB;
+      border-radius:14px;
+      background:#fff;
+    }
+
+    .biTable{
+      width:100%;
+      min-width:1100px;
+      border-collapse:collapse;
+      background:#fff;
+    }
+
+    .biTable th, .biTable td{
+      padding:10px 12px;
+      border-bottom:1px solid #E5E7EB;
+      font-size:12px;
+      color:#111827;
+      white-space:nowrap;
+    }
+
+    .biTable thead th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#0F172A;
+      color:#fff;
+      font-size:11px;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+
+    .biTable tbody tr:nth-child(even){background:#F8FAFC}
+    .num{text-align:right}
+
+    .syncTag{
+      font-size:12px;
+      font-weight:800;
+      color:rgba(17,24,39,.72);
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
+      <div class="actions">
+        <div class="icon-btn" title="Sair" data-logout>👤</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container nfWide pageBI" style="padding-top:18px;">
+    <div class="card bi-top">
+      <div class="title">
+        <h1>
+          B.I. Fretes
+          <span id="syncStatus" class="syncTag" style="margin-left:10px;">🔄 Carregando...</span>
+        </h1>
+        <div class="sub">
+          Indicadores operacionais da base <b>Fretes</b>, com foco em veículos porta, trânsito,
+          volume, frete médio e margem média.
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <select id="fFilial" class="bi-select">
+          <option value="">Todas as filiais</option>
+        </select>
+
+        <select id="fCliente" class="bi-select">
+          <option value="">Todos os clientes</option>
+        </select>
+
+        <select id="fStatus" class="bi-select">
+          <option value="">Todos os status</option>
+        </select>
+
+        <input id="fBusca" class="bi-search" placeholder="Buscar por origem, destino, produto, contato..." />
+
+        <button class="btnTiny" id="btnAtualizar" type="button">🔄 Atualizar</button>
+        <button class="btnTiny ghost" id="btnLimpar" type="button">Limpar filtros</button>
+      </div>
+    </div>
+
+    <div class="kpiGrid">
+      <div class="kpiCard">
+        <div class="kpiLabel">Veículos Porta</div>
+        <div class="kpiValue" id="kpiPorta">0</div>
+        <div class="kpiHint">Soma da coluna Porta</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Veículos Trânsito</div>
+        <div class="kpiValue" id="kpiTransito">0</div>
+        <div class="kpiHint">Soma da coluna Trânsito</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Veículos Totais</div>
+        <div class="kpiValue" id="kpiVeiculos">0</div>
+        <div class="kpiHint">Porta + Trânsito</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Volume Total</div>
+        <div class="kpiValue" id="kpiVolume">0 t</div>
+        <div class="kpiHint">38 t por veículo</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Frete Médio Empresa</div>
+        <div class="kpiValue" id="kpiFreteMedio">R$ 0,00</div>
+        <div class="kpiHint">Média do Vlr Empresa</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Margem Média</div>
+        <div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div>
+        <div class="kpiHint">Empresa - Motorista</div>
+      </div>
+    </div>
+
+    <div class="chartGrid">
+      <div class="card chartCard">
+        <div class="chartHead">
+          <div class="chartTitle">Veículos por Filial</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="chartFilial"></canvas>
+        </div>
+      </div>
+
+      <div class="card chartCard">
+        <div class="chartHead">
+          <div class="chartTitle">Veículos por Cliente</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="chartCliente"></canvas>
+        </div>
+      </div>
+
+      <div class="card chartCard">
+        <div class="chartHead">
+          <div class="chartTitle">Volume por Filial</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="chartVolumeFilial"></canvas>
+        </div>
+      </div>
+
+      <div class="card chartCard">
+        <div class="chartHead">
+          <div class="chartTitle">Porta x Trânsito por Filial</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="chartPortaTransito"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chartHead">
+        <div class="chartTitle">Indicador Fixo por Filial</div>
+      </div>
+
+      <div class="biTableWrap">
+        <table class="biTable">
+          <thead>
+            <tr>
+              <th>Filial</th>
+              <th class="num">Porta</th>
+              <th class="num">Trânsito</th>
+              <th class="num">Veículos Totais</th>
+              <th class="num">Volume Total (t)</th>
+              <th class="num">Frete Médio Empresa</th>
+              <th class="num">Margem Média</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFilial"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/bi.js"></script>
+
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
+</body>
+</html>

@@ -38,9 +38,9 @@ const USERS = {
 };
 
 // ======== SENHA EXTRA DO PISO ========
-const AUTH = {
-  PISO_PASSWORD: "1010"
-};
+//const AUTH = {
+  //PISO_PASSWORD: "1010"
+//};
 
 // ======== PERMISSÕES POR ESTADO ========
 const STATE_FEATURES = {

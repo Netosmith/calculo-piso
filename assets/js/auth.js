@@ -5,8 +5,8 @@
 
 // ======== USUÁRIOS ========
 const USERS = {
-  LUZIANO: { password: "5707", states: ["GO","GOADM","SP","MT","MG","MA","BA","PR"] },
-  ELIEL:   { password: "1234", states: ["GO"] },
+  LUZIANO: { password: "5707", states: ["GO","GOADM","SP","MT","MG","MA","BA","PR","COMERCIAL"] },
+  ELIEL:   { password: "1234", states: ["COMERCIAL"] },
   RIOVERDE:   { password: "1234", states: ["GO"] },
   JATAI:   { password: "1234", states: ["GO"] },
   MONTIVIDIU:   { password: "1234", states: ["GO"] },
@@ -24,9 +24,9 @@ const USERS = {
   YASMIN:   { password: "5707", states: ["GOADM"] },
   JAKELINE:   { password: "5707", states: ["GOADM"] },
   OUROSAFRA: { password: "1234", states: ["SP"] },
-  LUIS:    { password: "1234", states: ["GO"] },
-  VALDEMI: { password: "1234", states: ["GO"] },
-  ARIEL:   { password: "1234", states: ["GO"] },
+  LUIS:    { password: "1234", states: ["COMERCIAL"] },
+  VALDEMI: { password: "1234", states: ["COMERCIAL"] },
+  ARIEL:   { password: "1234", states: ["COMERCIAL"] },
   GOIAS:   { password: "1234", states: ["GO"] },
   MATOGROSSO: { password: "5554", states: ["MT"] },
   MINASGERAIS:{ password: "5554", states: ["MG"] },
@@ -44,8 +44,9 @@ const AUTH = {
 
 // ======== PERMISSÕES POR ESTADO ========
 const STATE_FEATURES = {
-  GO: ["piso","fretes","share","divulgacao","bi"],
+  GO: ["fretes","divulgacao"],
   GOADM: ["administrativo"],
+  COMERCIAL: ["piso","fretes","share","divulgacao","bi"],
   SP: ["piso"],
   MG: ["piso","divulgacao"],
   MT: ["piso","divulgacao"],

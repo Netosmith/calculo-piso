@@ -44,7 +44,7 @@ const AUTH = {
 
 // ======== PERMISSÕES POR ESTADO ========
 const STATE_FEATURES = {
-  GO: ["piso","fretes","share","divulgacao"],
+  GO: ["piso","fretes","share","divulgacao","bi"],
   GOADM: ["administrativo"],
   SP: ["piso"],
   MG: ["piso","divulgacao"],

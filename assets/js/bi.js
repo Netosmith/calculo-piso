@@ -198,21 +198,32 @@
   }
 
   function calcKPIs(rows) {
-    const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
-    const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
-    const totalVeiculos = porta + transito;
-    const volume = totalVeiculos * PESO_MEDIO;
 
-    const freteMedio = rows.length
-      ? rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0) / rows.length
-      : 0;
+  const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
+  const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
+  const totalVeiculos = porta + transito;
+  const volume = totalVeiculos * PESO_MEDIO;
 
-    const margemMedia = rows.length
-      ? rows.reduce((acc, r) => acc + (num(r.valorEmpresa) - num(r.valorMotorista)), 0) / rows.length
-      : 0;
+  const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
+  const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
 
-    return { porta, transito, totalVeiculos, volume, freteMedio, margemMedia };
+  const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
+
+  let margemPercent = 0;
+
+  if (totalEmpresa > 0) {
+    margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
   }
+
+  return {
+    porta,
+    transito,
+    totalVeiculos,
+    volume,
+    freteMedio,
+    margemPercent
+  };
+}
 
   function renderKPIs(rows) {
     const k = calcKPIs(rows);
@@ -222,7 +233,7 @@
     $("#kpiVeiculos").textContent = intBR(k.totalVeiculos);
     $("#kpiVolume").textContent = intBR(k.volume) + " t";
     $("#kpiFreteMedio").textContent = moneyBR(k.freteMedio);
-    $("#kpiMargemMedia").textContent = moneyBR(k.margemMedia);
+    $("#kpiMargemMedia").textContent = k.margemPercent.toFixed(2) + "%";
   }
 
   function groupBy(rows, key) {
@@ -425,23 +436,34 @@
     }
 
     if (c3) {
-      STATE.charts.chartVolumeFilial = new Chart(c3, {
-        type: "line",
-        data: {
-          labels: labelsFilial,
-          datasets: [{
-            label: "Volume (t)",
-            data: volumeFilial,
-            borderColor: "rgba(22,163,74,1)",
-            backgroundColor: "rgba(22,163,74,.15)",
-            fill: true,
-            tension: .35,
-            pointRadius: 4
-          }]
-        },
-        options: chartBaseOptions()
-      });
+  STATE.charts.chartVolumeFilial = new Chart(c3, {
+    type: "bar",
+    data: {
+      labels: labelsFilial,
+      datasets: [{
+        label: "Volume (toneladas)",
+        data: volumeFilial,
+        backgroundColor: "rgba(22,163,74,.65)",
+        borderColor: "rgba(22,163,74,1)",
+        borderWidth: 1.5,
+        borderRadius: 10
+      }]
+    },
+    options: {
+      ...chartBaseOptions(),
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx){
+              return " " + ctx.raw.toLocaleString("pt-BR") + " toneladas";
+            }
+          }
+        }
+      }
     }
+  });
+}
 
     if (c4) {
       STATE.charts.chartPortaTransito = new Chart(c4, {
@@ -460,8 +482,8 @@
             {
               label: "Trânsito",
               data: transitoFilial,
-              backgroundColor: "rgba(236,72,153,.52)",
-              borderColor: "rgba(236,72,153,1)",
+              backgroundColor: "rgba(22,163,74,.52)",
+              borderColor: "rgba(22,163,74,1)",
               borderWidth: 1.2,
               borderRadius: 8
             }

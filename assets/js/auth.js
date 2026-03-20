@@ -25,7 +25,7 @@ const USERS = {
   MONTIVIDIU:   { password: "5554", states: ["GO"] },
   ANAPOLIS:   { password: "1234", states: ["GO"] },
   VIANOPOLIS:   { password: "1234", states: ["GO"] },
-  GUILHERME:   { password: "1234", states: ["GO"] },
+  GUILHERME:   { password: "5554", states: ["COMERCIAL"] },
   INDIARA:   { password: "1234", states: ["GO"] },
   MINEIROS:   { password: "1234", states: ["GO"] },
   CHAPCEU:   { password: "1234", states: ["GO"] },

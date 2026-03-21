@@ -53,16 +53,16 @@
   const COLS = [
     { key: "regional", label: "Regional" },
     { key: "filial", label: "Filial" },
-    { key: "cliente", label: "Cliente" },
+    { key: "cliente", label: "Cliente", isTag: "cliente" },
     { key: "origem", label: "Origem" },
     { key: "coleta", label: "Coleta" },
-    { key: "contato", label: "Contato", isContato: true },
+    { key: "contato", label: "Contato", isContato: true, isTag: "contato" },
     { key: "destino", label: "Destino" },
     { key: "uf", label: "UF" },
     { key: "descarga", label: "Descarga" },
     { key: "volume", label: "Volume" },
-    { key: "valorEmpresa", label: "Vlr Empresa" },
-    { key: "valorMotorista", label: "Vlr Motorista" },
+    { key: "valorEmpresa", label: "Vlr Empresa", isMoney: true },
+    { key: "valorMotorista", label: "Vlr Motorista", isMoney: true },
     { key: "km", label: "KM" },
     { key: "pedagioEixo", label: "Pedágio/Eixo" },
     { key: "e5", label: "5E" },
@@ -70,7 +70,7 @@
     { key: "e7", label: "7E" },
     { key: "e4", label: "4E" },
     { key: "e9", label: "9E" },
-    { key: "produto", label: "Produto" },
+    { key: "produto", label: "Produto", isTag: "produto" },
     { key: "icms", label: "ICMS" },
     { key: "pedidoSat", label: "Pedido SAT" },
     { key: "porta", label: "Porta", isInlineEditable: true },
@@ -110,6 +110,113 @@
     obs: () => document.getElementById("mObs"),
   };
 
+  const TAG_CLASS_BY_CLIENTE = {
+    "LDC": "tag-blue",
+    "OURO SAFRA": "tag-yellow",
+    "CARAMURU": "tag-green",
+    "CARGILL": "tag-orange",
+    "COFCO": "tag-cyan",
+    "VITERRA": "tag-purple",
+    "MOSAIC": "tag-red",
+    "CHS": "tag-slate",
+    "CUTRALE": "tag-orange",
+    "ADM": "tag-blue",
+    "AMAGGI": "tag-green",
+    "BRF": "tag-red",
+    "JBS SEARA": "tag-red",
+    "CONCREBEL": "tag-cyan",
+  };
+
+  const TAG_CLASS_BY_CONTATO = {
+    "ARIEL": "tag-blue",
+    "RONE": "tag-green",
+    "KIEWERSON": "tag-orange",
+    "JHONATAN": "tag-cyan",
+    "RAFAEL": "tag-purple",
+    "RICARDO": "tag-yellow",
+    "MATEUS": "tag-red",
+    "SERGIO": "tag-slate",
+    "ROBSON": "tag-blue",
+    "ALFREDO": "tag-green",
+    "EVERALDO": "tag-orange",
+    "EVERALDO JR": "tag-cyan",
+    "FHELLIPE": "tag-purple",
+    "FABIOLA": "tag-pink",
+    "GUILHERME": "tag-slate",
+    "NARCISO": "tag-yellow",
+  };
+
+  const TAG_CLASS_BY_PRODUTO = {
+    "SOJA": "tag-green",
+    "MILHO": "tag-yellow",
+    "FERTILIZANTE": "tag-blue",
+    "ADUBO": "tag-blue",
+    "AÇUCAR": "tag-pink",
+    "ACUCAR": "tag-pink",
+    "FARELO": "tag-orange",
+    "SEMENTE": "tag-purple",
+    "SEMENTES": "tag-purple",
+    "CALCARIO": "tag-slate",
+    "GESSO": "tag-cyan",
+  };
+
+  function ensureVisualStyles() {
+    if (document.getElementById("fretesVisualStyles")) return;
+
+    const style = document.createElement("style");
+    style.id = "fretesVisualStyles";
+    style.textContent = `
+      .nfTag{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        padding:4px 10px;
+        border-radius:999px;
+        font-size:11px;
+        font-weight:900;
+        line-height:1.1;
+        border:1px solid transparent;
+        white-space:nowrap;
+      }
+      .tag-neutral{ background:#F3F4F6; color:#374151; border-color:#D1D5DB; }
+
+      .tag-blue{ background:#DBEAFE; color:#1D4ED8; border-color:#93C5FD; }
+      .tag-yellow{ background:#FEF3C7; color:#B45309; border-color:#FCD34D; }
+      .tag-green{ background:#DCFCE7; color:#15803D; border-color:#86EFAC; }
+      .tag-orange{ background:#FFEDD5; color:#C2410C; border-color:#FDBA74; }
+      .tag-cyan{ background:#CFFAFE; color:#0F766E; border-color:#67E8F9; }
+      .tag-purple{ background:#EDE9FE; color:#7C3AED; border-color:#C4B5FD; }
+      .tag-red{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5; }
+      .tag-slate{ background:#E2E8F0; color:#334155; border-color:#CBD5E1; }
+      .tag-pink{ background:#FCE7F3; color:#BE185D; border-color:#F9A8D4; }
+
+      .inlineCellWrap{
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+      }
+
+      .inlineCellInput{
+        width:72px;
+        min-width:72px;
+        height:30px;
+        border:1px solid #D1D5DB;
+        border-radius:10px;
+        padding:4px 8px;
+        text-align:right;
+        background:#fff;
+        color:#111827;
+        font-weight:700;
+      }
+
+      .inlineCellWrap.isSaving .inlineCellInput{
+        opacity:.72;
+        background:#F3F4F6;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function safeText(v) {
     return String(v ?? "").trim();
   }
@@ -142,6 +249,20 @@
     return Number.isFinite(n) ? n : NaN;
   }
 
+  function formatCurrencyBR(value) {
+    const n = parsePtNumber(value);
+    if (!Number.isFinite(n)) return safeText(value);
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+
+  function normalizeCurrencyInput(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const n = parsePtNumber(raw);
+    if (!Number.isFinite(n)) return raw;
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+
   function ceil0(n) {
     return Math.ceil(n);
   }
@@ -166,6 +287,15 @@
   function whatsappLinkFromContato(contato) {
     const phone = extractPhoneBR(contato);
     return phone ? "https://wa.me/" + phone : "";
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   function jsonp(url, timeoutMs = 30000) {
@@ -259,20 +389,41 @@
     });
   }
 
-  function buildContatoCell(contatoText) {
+  function getTagClass(kind, value) {
+    const v = upper(value);
+    if (!v) return "tag-neutral";
+
+    if (kind === "cliente") return TAG_CLASS_BY_CLIENTE[v] || "tag-neutral";
+    if (kind === "contato") return TAG_CLASS_BY_CONTATO[v] || "tag-neutral";
+    if (kind === "produto") return TAG_CLASS_BY_PRODUTO[v] || "tag-neutral";
+
+    return "tag-neutral";
+  }
+
+  function buildTagCell(kind, value, extraNode) {
     const td = document.createElement("td");
 
     const wrap = document.createElement("div");
     wrap.style.display = "flex";
     wrap.style.alignItems = "center";
-    wrap.style.justifyContent = "space-between";
+    wrap.style.justifyContent = extraNode ? "space-between" : "flex-start";
     wrap.style.gap = "6px";
 
     const span = document.createElement("span");
-    span.textContent = contatoText || "";
+    span.className = `nfTag ${getTagClass(kind, value)}`;
+    span.textContent = safeText(value);
     wrap.appendChild(span);
 
+    if (extraNode) wrap.appendChild(extraNode);
+
+    td.appendChild(wrap);
+    return td;
+  }
+
+  function buildContatoCell(contatoText) {
     const wpp = whatsappLinkFromContato(contatoText);
+    let extra = null;
+
     if (wpp) {
       const a = document.createElement("a");
       a.href = wpp;
@@ -287,11 +438,10 @@
       img.onerror = () => { a.textContent = "📞"; };
 
       a.appendChild(img);
-      wrap.appendChild(a);
+      extra = a;
     }
 
-    td.appendChild(wrap);
-    return td;
+    return buildTagCell("contato", contatoText || "", extra);
   }
 
   function buildPillSNCell(val) {
@@ -475,11 +625,22 @@
           return;
         }
 
+        if (col.isTag) {
+          tr.appendChild(buildTagCell(col.isTag, row[col.key] || ""));
+          return;
+        }
+
         const td = document.createElement("td");
         if (["volume","valorEmpresa","valorMotorista","km","pedagioEixo","pedidoSat","porta","transito"].includes(col.key)) {
           td.className = "num";
         }
-        td.textContent = safeText(row[col.key]);
+
+        if (col.isMoney) {
+          td.textContent = formatCurrencyBR(row[col.key]);
+        } else {
+          td.textContent = safeText(row[col.key]);
+        }
+
         tr.appendChild(td);
       });
 
@@ -612,8 +773,8 @@
     if (MODAL.ped()) MODAL.ped().value = safeText(row.pedagioEixo);
     if (MODAL.volume()) MODAL.volume().value = safeText(row.volume);
     if (MODAL.icms()) MODAL.icms().value = safeText(row.icms);
-    if (MODAL.empresa()) MODAL.empresa().value = safeText(row.valorEmpresa);
-    if (MODAL.motorista()) MODAL.motorista().value = safeText(row.valorMotorista);
+    if (MODAL.empresa()) MODAL.empresa().value = normalizeCurrencyInput(row.valorEmpresa);
+    if (MODAL.motorista()) MODAL.motorista().value = normalizeCurrencyInput(row.valorMotorista);
     if (MODAL.sat()) MODAL.sat().value = safeText(row.pedidoSat);
     if (MODAL.porta()) MODAL.porta().value = safeText(row.porta);
     if (MODAL.transito()) MODAL.transito().value = safeText(row.transito);
@@ -633,8 +794,8 @@
       uf: upper(MODAL.uf()?.value),
       descarga: upper(MODAL.descarga()?.value),
       volume: safeText(MODAL.volume()?.value),
-      valorEmpresa: safeText(MODAL.empresa()?.value),
-      valorMotorista: safeText(MODAL.motorista()?.value),
+      valorEmpresa: normalizeCurrencyInput(MODAL.empresa()?.value),
+      valorMotorista: normalizeCurrencyInput(MODAL.motorista()?.value),
       km: safeText(MODAL.km()?.value),
       pedagioEixo: safeText(MODAL.ped()?.value),
       produto: upper(MODAL.produto()?.value),
@@ -724,6 +885,17 @@
     document.head.appendChild(style);
   }
 
+  function initMoneyFields() {
+    [MODAL.empresa(), MODAL.motorista()].forEach((el) => {
+      if (!el || el.dataset.moneyInit === "1") return;
+      el.dataset.moneyInit = "1";
+
+      el.addEventListener("blur", () => {
+        el.value = normalizeCurrencyInput(el.value);
+      });
+    });
+  }
+
   function showLoading() {
     ensureLoading();
     document.getElementById("freteLoading")?.classList.add("isOpen");
@@ -768,12 +940,14 @@
 
   function openNewModal() {
     clearModalFields();
+    initMoneyFields();
     modalShow(true);
   }
 
   function openEditModal(row) {
     clearModalFields();
     fillModalFromRow(row);
+    initMoneyFields();
     modalShow(true);
   }
 
@@ -855,8 +1029,10 @@
 
   function init() {
     ensureLoading();
+    ensureVisualStyles();
     fillModalSelectors();
     initUppercaseFields();
+    initMoneyFields();
     bindButtons();
     bindFilters();
     atualizar();

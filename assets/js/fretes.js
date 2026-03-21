@@ -217,7 +217,7 @@
   }
 
   const PISO_PARAMS = {
-    e9: { eixos: 9, rkm: 9.2262, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
+    e9: { eixos: 9, rkm: 9.2662, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
     e4: { eixos: 4, rkm: 8.0855, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
     e7: { eixos: 7, rkm: 8.0855, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
     e6: { eixos: 6, rkm: 7.4408, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },

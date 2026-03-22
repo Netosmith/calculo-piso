@@ -52,6 +52,100 @@
     inlineSaving: new Set(),
   };
 
+  /*
+    ==========================================================
+    CORES FIXAS
+    ALTERE AQUI SEMPRE QUE QUISER MUDAR
+    bg = fundo | fg = texto | name = nome da cor
+    ==========================================================
+  */
+
+  const FIXED_CLIENT_COLORS = {
+    "LDC":             { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
+    "OURO SAFRA":      { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
+    "CARAMURU":        { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
+    "CARGILL":         { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
+    "COFCO":           { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
+    "MOSAIC":          { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
+    "AMAGGI":          { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
+    "CHS":             { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
+    "BRF":             { bg: "#F3E8FF", fg: "#7E22CE", name: "LILÁS" },
+    "JBS SEARA":       { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
+    "NOVA AGRI":       { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
+    "CONCREBEL":       { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
+  };
+
+  const FIXED_CONTACT_COLORS = {
+    "ARIEL":       { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
+    "ROBSON":      { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
+    "SERGIO":      { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
+    "EVERALDO":    { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
+    "FABIOLA":     { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
+    "RAFAEL":      { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
+    "JHONATAN":    { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
+    "KIEWERSON":   { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
+    "RONE":        { bg: "#F3E8FF", fg: "#7E22CE", name: "LILÁS" },
+    "RICARDO":     { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
+    "GUILHERME":   { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
+    "NARCISO":     { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
+    "ALFREDO":     { bg: "#FEE2E2", fg: "#B91C1C", name: "RUBI" },
+    "MATEUS":      { bg: "#CCFBF1", fg: "#0F766E", name: "TURQUESA" },
+    "FHELLIPE":    { bg: "#F5D0FE", fg: "#A21CAF", name: "MAGENTA" },
+    "EVERALDO JR": { bg: "#CFFAFE", fg: "#0E7490", name: "AQUA" },
+  };
+
+  const FIXED_PRODUCT_COLORS = {
+    "SOJA":        { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
+    "MILHO":       { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
+    "FERTILIZANTE":{ bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
+    "ADUBO":       { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
+    "AÇUCAR":      { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
+    "ACUCAR":      { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
+    "SORGO":       { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
+    "FARELO":      { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
+    "DDG":         { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
+    "ETANOL":      { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
+    "SEMENTE":     { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
+    "SEMENTES":    { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
+    "CALCÁRIO":    { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
+    "CALCARIO":    { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
+    "GESSO":       { bg: "#F5D0FE", fg: "#A21CAF", name: "MAGENTA" },
+    "SAL":         { bg: "#CFFAFE", fg: "#0E7490", name: "AQUA" },
+  };
+
+  const FALLBACK_CLIENT_PALETTE = [
+    ["#DBEAFE", "#1D4ED8", "AZUL"],
+    ["#FEF3C7", "#B45309", "AMARELO"],
+    ["#DCFCE7", "#15803D", "VERDE"],
+    ["#FCE7F3", "#BE185D", "ROSA"],
+    ["#EDE9FE", "#6D28D9", "ROXO"],
+    ["#E0F2FE", "#0369A1", "CIANO"],
+    ["#FFE4E6", "#BE123C", "VERMELHO"],
+    ["#ECFCCB", "#4D7C0F", "LIMA"],
+  ];
+
+  const FALLBACK_CONTACT_PALETTE = [
+    ["#F1F5F9", "#334155", "CINZA"],
+    ["#CCFBF1", "#0F766E", "TURQUESA"],
+    ["#FEE2E2", "#B91C1C", "RUBI"],
+    ["#DBEAFE", "#1D4ED8", "AZUL"],
+    ["#FEF9C3", "#A16207", "MOSTARDA"],
+    ["#E9D5FF", "#7E22CE", "VIOLETA"],
+    ["#D1FAE5", "#047857", "ESMERALDA"],
+    ["#FDE68A", "#92400E", "DOURADO"],
+  ];
+
+  const FALLBACK_PRODUCT_PALETTE = [
+    ["#F3E8FF", "#7E22CE", "ROXO"],
+    ["#E0E7FF", "#4338CA", "ÍNDIGO"],
+    ["#DCFCE7", "#15803D", "VERDE"],
+    ["#FFE4E6", "#BE123C", "VERMELHO"],
+    ["#FCE7F3", "#BE185D", "ROSA"],
+    ["#FEF3C7", "#B45309", "AMARELO"],
+    ["#E0F2FE", "#0369A1", "CIANO"],
+    ["#ECFCCB", "#4D7C0F", "LIMA"],
+  ];
+
   const COLS = [
     { key: "regional", label: "Regional" },
     { key: "filial", label: "Filial" },
@@ -174,6 +268,15 @@
     return Math.ceil(n);
   }
 
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
   function extractPhoneBR(text) {
     const s = safeText(text);
     if (!s) return "";
@@ -287,99 +390,6 @@
     });
   }
 
-  /*
-    ============================================================
-    CORES FIXAS
-    EDITE AQUI AS CORES QUE VOCÊ QUISER
-    formato:
-    "NOME": { bg: "#CORFUNDO", fg: "#CORTEXTO" }
-    ============================================================
-  */
-
-  const FIXED_CLIENT_COLORS = {
-    "LDC": { bg: "#DBEAFE", fg: "#1D4ED8" },
-    "OURO SAFRA": { bg: "#FEF3C7", fg: "#B45309" },
-    "CARAMURU": { bg: "#DCFCE7", fg: "#15803D" },
-    "CARGILL": { bg: "#FFE4E6", fg: "#BE123C" },
-    "COFCO": { bg: "#EDE9FE", fg: "#6D28D9" },
-    "MOSAIC": { bg: "#E0F2FE", fg: "#0369A1" },
-    "VITERRA": { bg: "#FCE7F3", fg: "#BE185D" },
-    "CHS": { bg: "#ECFCCB", fg: "#4D7C0F" },
-    "AMAGGI": { bg: "#F3E8FF", fg: "#7E22CE" },
-    "ADM": { bg: "#F1F5F9", fg: "#334155" }
-  };
-
-  const FIXED_CONTACT_COLORS = {
-    "ARIEL": { bg: "#DBEAFE", fg: "#1D4ED8" },
-    "KIEWERSON": { bg: "#DCFCE7", fg: "#15803D" },
-    "RONE": { bg: "#FEF3C7", fg: "#B45309" },
-    "ROBSON": { bg: "#FFE4E6", fg: "#BE123C" },
-    "RAFAEL": { bg: "#EDE9FE", fg: "#6D28D9" },
-    "JHONATAN": { bg: "#E0F2FE", fg: "#0369A1" },
-    "RICARDO": { bg: "#FCE7F3", fg: "#BE185D" },
-    "EVERALDO": { bg: "#ECFCCB", fg: "#4D7C0F" },
-    "NARCISO": { bg: "#F3E8FF", fg: "#7E22CE" },
-    "FHELLIPE": { bg: "#F1F5F9", fg: "#334155" },
-    "FABIOLA": { bg: "#CCFBF1", fg: "#0F766E" },
-    "GUILHERME": { bg: "#FDE68A", fg: "#92400E" },
-    "SERGIO": { bg: "#FEE2E2", fg: "#B91C1C" },
-    "ALFREDO": { bg: "#D1FAE5", fg: "#047857" },
-    "MATEUS": { bg: "#E9D5FF", fg: "#7E22CE" },
-    "EVERALDO JR": { bg: "#E0E7FF", fg: "#4338CA" }
-  };
-
-  const FIXED_PRODUCT_COLORS = {
-    "SOJA": { bg: "#FEF3C7", fg: "#B45309" },
-    "MILHO": { bg: "#FEF9C3", fg: "#A16207" },
-    "FERTILIZANTE": { bg: "#DCFCE7", fg: "#15803D" },
-    "ADUBO": { bg: "#DCFCE7", fg: "#15803D" },
-    "AÇUCAR": { bg: "#FCE7F3", fg: "#BE185D" },
-    "ACUCAR": { bg: "#FCE7F3", fg: "#BE185D" },
-    "FARELO": { bg: "#DBEAFE", fg: "#1D4ED8" },
-    "SEMENTE": { bg: "#EDE9FE", fg: "#6D28D9" },
-    "DDG": { bg: "#E0F2FE", fg: "#0369A1" },
-    "SORGO": { bg: "#ECFCCB", fg: "#4D7C0F" }
-  };
-
-  function getPalette(kind) {
-    if (kind === "cliente") {
-      return [
-        ["#DBEAFE", "#1D4ED8"],
-        ["#FEF3C7", "#B45309"],
-        ["#DCFCE7", "#15803D"],
-        ["#FCE7F3", "#BE185D"],
-        ["#EDE9FE", "#6D28D9"],
-        ["#E0F2FE", "#0369A1"],
-        ["#FFE4E6", "#BE123C"],
-        ["#ECFCCB", "#4D7C0F"],
-      ];
-    }
-
-    if (kind === "contato") {
-      return [
-        ["#F1F5F9", "#334155"],
-        ["#CCFBF1", "#0F766E"],
-        ["#FEE2E2", "#B91C1C"],
-        ["#DBEAFE", "#1D4ED8"],
-        ["#FEF9C3", "#A16207"],
-        ["#E9D5FF", "#7E22CE"],
-        ["#D1FAE5", "#047857"],
-        ["#FDE68A", "#92400E"],
-      ];
-    }
-
-    return [
-      ["#F3E8FF", "#7E22CE"],
-      ["#E0E7FF", "#4338CA"],
-      ["#DCFCE7", "#15803D"],
-      ["#FFE4E6", "#BE123C"],
-      ["#FCE7F3", "#BE185D"],
-      ["#FEF3C7", "#B45309"],
-      ["#E0F2FE", "#0369A1"],
-      ["#ECFCCB", "#4D7C0F"],
-    ];
-  }
-
   function hashCode(text) {
     const s = upper(text);
     let h = 0;
@@ -390,20 +400,28 @@
     return Math.abs(h);
   }
 
-  function getFixedColorMap(kind) {
-    if (kind === "cliente") return FIXED_CLIENT_COLORS;
-    if (kind === "contato") return FIXED_CONTACT_COLORS;
-    return FIXED_PRODUCT_COLORS;
+  function getFixedColorConfig(value, kind) {
+    const key = upper(value);
+
+    if (kind === "cliente" && FIXED_CLIENT_COLORS[key]) {
+      return FIXED_CLIENT_COLORS[key];
+    }
+
+    if (kind === "contato" && FIXED_CONTACT_COLORS[key]) {
+      return FIXED_CONTACT_COLORS[key];
+    }
+
+    if (kind === "produto" && FIXED_PRODUCT_COLORS[key]) {
+      return FIXED_PRODUCT_COLORS[key];
+    }
+
+    return null;
   }
 
-  function getTagColors(text, kind) {
-    const key = upper(text);
-    const fixedMap = getFixedColorMap(kind);
-    if (fixedMap[key]) return fixedMap[key];
-
-    const palette = getPalette(kind);
-    const [bg, fg] = palette[hashCode(key) % palette.length];
-    return { bg, fg };
+  function getFallbackPalette(kind) {
+    if (kind === "cliente") return FALLBACK_CLIENT_PALETTE;
+    if (kind === "contato") return FALLBACK_CONTACT_PALETTE;
+    return FALLBACK_PRODUCT_PALETTE;
   }
 
   function createColorTag(text, kind) {
@@ -415,9 +433,26 @@
       return span;
     }
 
-    const { bg, fg } = getTagColors(value, kind);
+    const fixed = getFixedColorConfig(value, kind);
+    let bg, fg, colorName;
 
-    span.textContent = value;
+    if (fixed) {
+      bg = fixed.bg;
+      fg = fixed.fg;
+      colorName = fixed.name;
+    } else {
+      const palette = getFallbackPalette(kind);
+      const item = palette[hashCode(value) % palette.length];
+      bg = item[0];
+      fg = item[1];
+      colorName = item[2];
+    }
+
+    const finalText = kind === "produto"
+      ? `${colorName} • ${value}`
+      : value;
+
+    span.textContent = finalText;
     span.style.display = "inline-flex";
     span.style.alignItems = "center";
     span.style.maxWidth = "100%";
@@ -670,8 +705,6 @@
 
       tbody.appendChild(tr);
     });
-
-    syncFloatingScrollbar();
   }
 
   function getFilteredRows() {
@@ -907,26 +940,6 @@
         text-align:center;
       }
       @keyframes freteSpin{to{transform:rotate(360deg)}}
-
-      #nfFloatingHScroll{
-        position:fixed;
-        left:12px;
-        right:12px;
-        bottom:8px;
-        height:18px;
-        overflow-x:auto;
-        overflow-y:hidden;
-        z-index:9998;
-        display:none;
-        background:rgba(255,255,255,.94);
-        border:1px solid rgba(15,23,42,.12);
-        border-radius:999px;
-        box-shadow:0 8px 24px rgba(0,0,0,.12);
-        backdrop-filter:blur(6px);
-      }
-      #nfFloatingHScrollInner{
-        height:1px;
-      }
     `;
     document.head.appendChild(style);
   }
@@ -996,11 +1009,226 @@
       fillTopFilters(STATE.rows);
       applyFilters();
       setStatus("✅ Atualizado");
-      syncFloatingScrollbar();
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
       setStatus("❌ Erro ao sincronizar");
     }
+  }
+
+  function getDivulgacaoRows() {
+    return getFilteredRows().filter((row) => upper(row.status) === "LIBERADO");
+  }
+
+  function getFreteDivulgacaoValue(row) {
+    return formatMoneyBR(row.valorMotorista);
+  }
+
+  function buildDivulgacaoHtml(rows) {
+    const linhas = rows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.regional)}</td>
+        <td>${escapeHtml(row.filial)}</td>
+        <td>${escapeHtml(row.origem)}</td>
+        <td>${escapeHtml(row.coleta)}</td>
+        <td>${escapeHtml(row.destino)}</td>
+        <td>${escapeHtml(row.uf)}</td>
+        <td>${escapeHtml(row.descarga)}</td>
+        <td>${escapeHtml(row.produto)}</td>
+        <td class="freteCol">${escapeHtml(getFreteDivulgacaoValue(row))}</td>
+        <td>${escapeHtml(row.contato)}</td>
+      </tr>
+    `).join("");
+
+    const hoje = new Date().toLocaleDateString("pt-BR");
+
+    return `
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Divulgação de Frete</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color:#222;
+      background:#fff;
+    }
+
+    .page{
+      width:100%;
+      padding:8px 10px;
+    }
+
+    .head{
+      text-align:center;
+      margin-bottom:10px;
+      border:1px solid #cfd8dc;
+      padding:12px 10px;
+    }
+
+    .head img{
+      max-width:420px;
+      max-height:75px;
+      object-fit:contain;
+      display:block;
+      margin:0 auto 6px;
+    }
+
+    .bar{
+      height:24px;
+      background:#3B7D23;
+      margin-bottom:0;
+      border:1px solid #2f661b;
+      border-bottom:none;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:12px;
+    }
+
+    thead th{
+      background:#F6D96B;
+      color:#1f2937;
+      border:1px solid #666;
+      padding:6px 4px;
+      text-align:center;
+      font-weight:900;
+    }
+
+    tbody td{
+      border:1px solid #666;
+      padding:4px 4px;
+      vertical-align:middle;
+      word-wrap:break-word;
+    }
+
+    tbody tr:nth-child(even){
+      background:#f8f8f8;
+    }
+
+    .freteCol{
+      color:#c62828;
+      font-weight:900;
+      text-align:right;
+    }
+
+    .colRegional{width:6%}
+    .colFilial{width:9%}
+    .colOrigem{width:13%}
+    .colColeta{width:14%}
+    .colDestino{width:13%}
+    .colUf{width:4%}
+    .colDescarga{width:8%}
+    .colProduto{width:8%}
+    .colFrete{width:9%}
+    .colContato{width:16%}
+
+    .foot{
+      margin-top:8px;
+      font-size:11px;
+      color:#555;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .printHint{
+      margin-top:10px;
+      font-size:11px;
+      color:#666;
+      text-align:right;
+    }
+
+    @media print {
+      .printHint { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="head">
+      <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+    </div>
+
+    <div class="bar"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="colRegional">REGIONAL</th>
+          <th class="colFilial">FILIAL</th>
+          <th class="colOrigem">ORIGEM</th>
+          <th class="colColeta">LOCAL DE CARREGAMENTO</th>
+          <th class="colDestino">DESTINO</th>
+          <th class="colUf">UF</th>
+          <th class="colDescarga">DESCARGA</th>
+          <th class="colProduto">PRODUTO</th>
+          <th class="colFrete">FRETE</th>
+          <th class="colContato">CONTATO</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${linhas || `
+          <tr>
+            <td colspan="10" style="text-align:center;padding:18px;font-weight:700;">
+              NENHUM FRETE LIBERADO ENCONTRADO
+            </td>
+          </tr>
+        `}
+      </tbody>
+    </table>
+
+    <div class="foot">
+      <div><b>Data:</b> ${hoje}</div>
+      <div><b>Total de fretes:</b> ${rows.length}</div>
+    </div>
+
+    <div class="printHint">
+      Use "Salvar como PDF" e mantenha em modo paisagem.
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
+
+  function openDivulgacaoFrete() {
+    const rows = getDivulgacaoRows();
+
+    if (!rows.length) {
+      alert("Não há fretes LIBERADO para divulgar com os filtros atuais.");
+      return;
+    }
+
+    const html = buildDivulgacaoHtml(rows);
+    const win = window.open("", "_blank");
+
+    if (!win) {
+      alert("O navegador bloqueou a nova janela. Libere pop-up para continuar.");
+      return;
+    }
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+    win.onload = () => {
+      setTimeout(() => {
+        win.focus();
+        win.print();
+      }, 400);
+    };
   }
 
   function bindFilters() {
@@ -1016,6 +1244,7 @@
     $("#btnCloseModal")?.addEventListener("click", closeModal);
     $("#btnCancel")?.addEventListener("click", closeModal);
     $("#btnSave")?.addEventListener("click", handleSave);
+    $("#btnDivulgacaoFrete")?.addEventListener("click", openDivulgacaoFrete);
 
     MODAL.wrap()?.addEventListener("click", (e) => {
       if (e.target === MODAL.wrap()) closeModal();
@@ -1042,9 +1271,6 @@
       applyFilters();
       alert("Pesos recalculados ✅");
     });
-
-    window.addEventListener("resize", syncFloatingScrollbar);
-    window.addEventListener("scroll", syncFloatingScrollbar, { passive: true });
   }
 
   function bindMoneyMask(inputEl) {
@@ -1077,63 +1303,6 @@
     bindMoneyMask(MODAL.motorista());
   }
 
-  let floatingScrollSyncing = false;
-
-  function ensureFloatingScrollbar() {
-    if (document.getElementById("nfFloatingHScroll")) return;
-
-    const bar = document.createElement("div");
-    bar.id = "nfFloatingHScroll";
-
-    const inner = document.createElement("div");
-    inner.id = "nfFloatingHScrollInner";
-
-    bar.appendChild(inner);
-    document.body.appendChild(bar);
-
-    const tableWrap = document.querySelector(".tableWrap");
-    if (!tableWrap) return;
-
-    bar.addEventListener("scroll", () => {
-      if (floatingScrollSyncing) return;
-      floatingScrollSyncing = true;
-      tableWrap.scrollLeft = bar.scrollLeft;
-      floatingScrollSyncing = false;
-    });
-
-    tableWrap.addEventListener("scroll", () => {
-      if (floatingScrollSyncing) return;
-      floatingScrollSyncing = true;
-      bar.scrollLeft = tableWrap.scrollLeft;
-      floatingScrollSyncing = false;
-    });
-  }
-
-  function syncFloatingScrollbar() {
-    const tableWrap = document.querySelector(".tableWrap");
-    const table = document.querySelector(".tableWrap table");
-    const bar = document.getElementById("nfFloatingHScroll");
-    const inner = document.getElementById("nfFloatingHScrollInner");
-
-    if (!tableWrap || !table || !bar || !inner) return;
-
-    const hasOverflow = table.scrollWidth > tableWrap.clientWidth + 2;
-    if (!hasOverflow) {
-      bar.style.display = "none";
-      return;
-    }
-
-    inner.style.width = `${table.scrollWidth}px`;
-    bar.style.display = "block";
-    bar.scrollLeft = tableWrap.scrollLeft;
-  }
-
-  function initFloatingHorizontalScrollbar() {
-    ensureFloatingScrollbar();
-    setTimeout(syncFloatingScrollbar, 50);
-    setTimeout(syncFloatingScrollbar, 250);
-  }
-
   function init() {
     ensureLoading();
     fillModalSelectors();
@@ -1141,7 +1310,6 @@
     initMasks();
     bindButtons();
     bindFilters();
-    initFloatingHorizontalScrollbar();
     atualizar();
   }
 

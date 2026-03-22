@@ -54,14 +54,6 @@
     floatingSyncing: false,
   };
 
-  /*
-    ==========================================================
-    CORES FIXAS
-    ALTERE AQUI SEMPRE QUE QUISER MUDAR
-    bg = fundo | fg = texto | name = nome da cor
-    ==========================================================
-  */
-
   const FIXED_CLIENT_COLORS = {
     "LDC":             { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
     "OURO SAFRA":      { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
@@ -218,6 +210,13 @@
 
   function upperKeepSpaces(v) {
     return String(v ?? "").toUpperCase();
+  }
+
+  function normalizeFreteStatus(value) {
+    const s = upper(value);
+    if (s === "EM ANALISE") return "FINALIZANDO";
+    if (s === "BLOQUEADO") return "SUSPENSO";
+    return s;
   }
 
   function setStatus(text) {
@@ -513,7 +512,7 @@
   function buildStatusCell(value) {
     const td = document.createElement("td");
 
-    const status = upper(value);
+    const status = normalizeFreteStatus(value);
     const span = document.createElement("span");
 
     span.style.display = "inline-flex";
@@ -876,7 +875,7 @@
     if (MODAL.sat()) MODAL.sat().value = safeText(row.pedidoSat);
     if (MODAL.porta()) MODAL.porta().value = safeText(row.porta);
     if (MODAL.transito()) MODAL.transito().value = safeText(row.transito);
-    if (MODAL.status()) MODAL.status().value = upper(row.status) || "LIBERADO";
+    if (MODAL.status()) MODAL.status().value = normalizeFreteStatus(row.status) || "LIBERADO";
     if (MODAL.obs()) MODAL.obs().value = safeText(row.obs);
   }
 
@@ -901,7 +900,7 @@
       pedidoSat: upper(MODAL.sat()?.value),
       porta: safeText(MODAL.porta()?.value),
       transito: safeText(MODAL.transito()?.value),
-      status: upper(MODAL.status()?.value),
+      status: normalizeFreteStatus(MODAL.status()?.value),
       obs: upperKeepSpaces(MODAL.obs()?.value).trim(),
     };
   }
@@ -1044,7 +1043,12 @@
     try {
       setStatus("🔄 Carregando...");
       const res = await apiGet({ action: "fretes_list" });
-      STATE.rows = Array.isArray(res.data) ? res.data : [];
+      STATE.rows = Array.isArray(res.data)
+        ? res.data.map((row) => ({
+            ...row,
+            status: normalizeFreteStatus(row.status)
+          }))
+        : [];
       fillTopFilters(STATE.rows);
       applyFilters();
       setStatus("✅ Atualizado");
@@ -1055,7 +1059,7 @@
   }
 
   function getDivulgacaoRows() {
-    return getFilteredRows().filter((row) => upper(row.status) === "LIBERADO");
+    return getFilteredRows().filter((row) => normalizeFreteStatus(row.status) === "LIBERADO");
   }
 
   function getFreteDivulgacaoValue(row) {

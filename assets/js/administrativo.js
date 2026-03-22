@@ -1,4 +1,4 @@
-/* administrativo.js | NOVA FROTA 0*/
+/* administrativo.js | NOVA FROTA */
 (function () {
   "use strict";
 
@@ -6,14 +6,19 @@
     "https://script.google.com/macros/s/AKfycbx1HOSvYNb1fvckq3hlDz2p4nN8J1_8-4Ggza8D00a-tGwxyxb-QcLgCi7buwHYcLGX/exec";
 
   const FILIAIS = [
-    "ITUMBIARA","RIO VERDE","JATAI","MINEIROS","CHAPADAO DO CEU","MONTIVIDIU",
-    "INDIARA","BOM JESUS DE GO","VIANOPOLIS","ANAPOLIS","URUAÇU","FORMOSA","ARAGUARI","CATALAO",
+    "ITUMBIARA", "RIO VERDE", "JATAI", "MINEIROS", "CHAPADAO DO CEU", "MONTIVIDIU",
+    "INDIARA", "BOM JESUS DE GO", "VIANOPOLIS", "ANAPOLIS", "URUAÇU", "FORMOSA", "ARAGUARI", "CATALAO",
   ];
 
   const $ = (sel) => document.querySelector(sel);
 
-  function upper(v) { return String(v ?? "").trim().toUpperCase(); }
-  function safeText(v) { return String(v ?? "").trim(); }
+  function upper(v) {
+    return String(v ?? "").trim().toUpperCase();
+  }
+
+  function safeText(v) {
+    return String(v ?? "").trim();
+  }
 
   function todayBR() {
     const d = new Date();
@@ -86,7 +91,9 @@
 
   function buildUrl(paramsObj) {
     const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+    Object.entries(paramsObj || {}).forEach(([k, v]) => {
+      url.searchParams.set(k, v);
+    });
     return url.toString();
   }
 
@@ -113,6 +120,7 @@
     if (!data || data.ok === false) {
       throw new Error(data?.error || "Falha na API");
     }
+
     return data;
   }
 
@@ -120,9 +128,11 @@
     const t = String(s || "").trim();
     const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (!m) return 0;
+
     const dd = Number(m[1]);
     const mm = Number(m[2]);
     const yy = Number(m[3]);
+
     return new Date(yy, mm - 1, dd).getTime();
   }
 
@@ -152,7 +162,7 @@
 
     return {
       ini: Math.min(ini, fim),
-      fim: Math.max(ini, fim)
+      fim: Math.max(ini, fim),
     };
   }
 
@@ -444,14 +454,14 @@
   }
 
   async function uploadChequeTermoOnServer(chequeId, file, extra = {}) {
-    const base64 = await readFileAsBase64(file);
+    const base64Data = await readFileAsBase64(file);
 
     const res = await apiPostJSON({
       action: "cheques_upload_termo",
       id: safeText(chequeId),
       fileName: safeText(file.name),
       mimeType: safeText(file.type || "application/octet-stream"),
-      base64: base64,
+      base64Data: base64Data,
       filial: upper(extra.filial || ""),
       sequencia: safeText(extra.sequencia || ""),
     });
@@ -477,7 +487,9 @@
   function fillFiliaisSelect() {
     const sel = $("#fFilialAdmin");
     if (!sel) return;
+
     sel.innerHTML = `<option value="">Todas as filiais</option>`;
+
     FILIAIS.forEach((f) => {
       const opt = document.createElement("option");
       opt.value = f;
@@ -529,6 +541,7 @@
     });
 
     document.querySelectorAll(".view").forEach((v) => v.classList.remove("isActive"));
+
     const view = document.getElementById("view-" + tab);
     if (view) view.classList.add("isActive");
 
@@ -551,6 +564,7 @@
   function renderFrota(list) {
     const wrap = $("#gridFrota");
     if (!wrap) return;
+
     wrap.innerHTML = "";
 
     applyFilters(list).forEach((it) => {
@@ -790,6 +804,7 @@
 
   async function toggleTermo(chequeId, termoAtual) {
     const novo = upper(termoAtual) === "SIM" ? "NÃO" : "SIM";
+
     try {
       setStatus("🧾 Atualizando termo...");
       await updateChequeOnSheets({ id: chequeId, termoAssinado: novo });
@@ -805,6 +820,7 @@
 
   async function toggleRecebido(materialId, atual) {
     const novo = upper(atual) === "SIM" ? "NÃO" : "SIM";
+
     try {
       setStatus("📦 Atualizando material...");
       await updateMaterialOnSheets({ id: materialId, recebido: novo });
@@ -884,6 +900,7 @@
   function renderSolic(list) {
     const wrap = $("#gridSolic");
     if (!wrap) return;
+
     wrap.innerHTML = "";
 
     applyFilters(list).forEach((it) => {
@@ -914,6 +931,7 @@
   function renderPatrimonio(list) {
     const wrap = $("#gridPatrimonio");
     if (!wrap) return;
+
     wrap.innerHTML = "";
 
     applyFilters(list).forEach((it) => {
@@ -940,6 +958,7 @@
   function renderEpis(list) {
     const wrap = $("#gridEpis");
     if (!wrap) return;
+
     wrap.innerHTML = "";
 
     applyFilters(list).forEach((it) => {
@@ -979,6 +998,7 @@
 
   function renderAll() {
     updateKpis();
+
     const tab = document.querySelector(".tabBtn.isActive")?.dataset.tab || "frota";
 
     if (tab === "frota") renderFrota(DATA.frota);
@@ -1060,14 +1080,26 @@
         { id: "mData", name: "data", label: "Data (dd/mm/aaaa)", placeholder: todayBR(), type: "text" },
         { id: "mSeq", name: "sequencia", label: "Sequência", placeholder: "000123", type: "text" },
         { id: "mResp", name: "responsavel", label: "Responsável", placeholder: "ARIEL", type: "text" },
-        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
-          { value: "ATIVO", label: "ATIVO" },
-          { value: "ENCERRADO", label: "ENCERRADO" },
-        ]},
-        { id: "mTermo", name: "termoAssinado", label: "Termo assinado", type: "select", options: [
-          { value: "NÃO", label: "NÃO" },
-          { value: "SIM", label: "SIM" },
-        ]},
+        {
+          id: "mStatus",
+          name: "status",
+          label: "Status",
+          type: "select",
+          options: [
+            { value: "ATIVO", label: "ATIVO" },
+            { value: "ENCERRADO", label: "ENCERRADO" },
+          ]
+        },
+        {
+          id: "mTermo",
+          name: "termoAssinado",
+          label: "Termo assinado",
+          type: "select",
+          options: [
+            { value: "NÃO", label: "NÃO" },
+            { value: "SIM", label: "SIM" },
+          ]
+        },
       ];
     }
 
@@ -1077,14 +1109,26 @@
         { id: "mData", name: "data", label: "Data (dd/mm/aaaa)", placeholder: todayBR(), type: "text" },
         { id: "mDesc", name: "descricao", label: "Material", placeholder: "EX: PAPEL A4 / TONER / CANETA", type: "text" },
         { id: "mResp", name: "responsavel", label: "Responsável", placeholder: "ARIEL", type: "text" },
-        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
-          { value: "ATIVO", label: "ATIVO" },
-          { value: "ENCERRADO", label: "ENCERRADO" },
-        ]},
-        { id: "mReceb", name: "recebido", label: "Recebido", type: "select", options: [
-          { value: "NÃO", label: "NÃO" },
-          { value: "SIM", label: "SIM" },
-        ]},
+        {
+          id: "mStatus",
+          name: "status",
+          label: "Status",
+          type: "select",
+          options: [
+            { value: "ATIVO", label: "ATIVO" },
+            { value: "ENCERRADO", label: "ENCERRADO" },
+          ]
+        },
+        {
+          id: "mReceb",
+          name: "recebido",
+          label: "Recebido",
+          type: "select",
+          options: [
+            { value: "NÃO", label: "NÃO" },
+            { value: "SIM", label: "SIM" },
+          ]
+        },
       ];
     }
 
@@ -1094,11 +1138,17 @@
         { id: "mFilial", name: "filial", label: "Filial", type: "select", options: filialOpts },
         { id: "mTipo", name: "tipo", label: "Tipo (editável)", placeholder: "Ex: CHEQUES / MANUTENÇÃO / TONER...", type: "text" },
         { id: "mData", name: "data", label: "Data", placeholder: todayBR(), type: "text" },
-        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
-          { value: "ABERTA", label: "ABERTA" },
-          { value: "EM ANDAMENTO", label: "EM ANDAMENTO" },
-          { value: "FINALIZADA", label: "FINALIZADA" },
-        ]},
+        {
+          id: "mStatus",
+          name: "status",
+          label: "Status",
+          type: "select",
+          options: [
+            { value: "ABERTA", label: "ABERTA" },
+            { value: "EM ANDAMENTO", label: "EM ANDAMENTO" },
+            { value: "FINALIZADA", label: "FINALIZADA" },
+          ]
+        },
         { id: "mObs", name: "observacao", label: "Observação", type: "textarea", full: true },
         { id: "mSolic", name: "solicitante", label: "Solicitante", type: "text", readonly: true, full: true, placeholder: user },
       ];
@@ -1110,11 +1160,17 @@
         { id: "mEquip", name: "equipamento", label: "Equipamento", placeholder: "NOTEBOOK / CELULAR / IMPRESSORA", type: "text" },
         { id: "mNum", name: "numeroPatrimonio", label: "Número Patrimônio", placeholder: "NF-001", type: "text" },
         { id: "mPosse", name: "posse", label: "Em posse de", placeholder: "ARIEL", type: "text" },
-        { id: "mStatus", name: "status", label: "Status", type: "select", options: [
-          { value: "ATIVO", label: "ATIVO" },
-          { value: "MANUTENCAO", label: "MANUTENÇÃO" },
-          { value: "BAIXADO", label: "BAIXADO" },
-        ]},
+        {
+          id: "mStatus",
+          name: "status",
+          label: "Status",
+          type: "select",
+          options: [
+            { value: "ATIVO", label: "ATIVO" },
+            { value: "MANUTENCAO", label: "MANUTENÇÃO" },
+            { value: "BAIXADO", label: "BAIXADO" },
+          ]
+        },
         { id: "mObs", name: "observacao", label: "Observação", type: "textarea", full: true },
       ];
     }
@@ -1138,11 +1194,17 @@
       { id: "mTel", name: "telefone", label: "Filial Telefone", placeholder: "(64) 99999-0000", type: "text" },
       { id: "mTipoV", name: "tipoVeiculo", label: "Tipo do veículo", placeholder: "HATCH / SEDAN / PICKUP", type: "text" },
       { id: "mMes", name: "mes", label: "Mês ref.", placeholder: "MAR/2026", type: "text" },
-      { id: "mStatus", name: "status", label: "Status", type: "select", options: [
-        { value: "OK", label: "OK" },
-        { value: "PENDENTE", label: "PENDENTE" },
-        { value: "ATRASADO", label: "ATRASADO" },
-      ]},
+      {
+        id: "mStatus",
+        name: "status",
+        label: "Status",
+        type: "select",
+        options: [
+          { value: "OK", label: "OK" },
+          { value: "PENDENTE", label: "PENDENTE" },
+          { value: "ATRASADO", label: "ATRASADO" },
+        ]
+      },
     ];
   }
 
@@ -1274,12 +1336,15 @@
           alert("Preencha: Data, Sequência e Responsável.");
           return;
         }
+
         setStatus("💾 Salvando cheque...");
+
         if (modal.ctx.mode === "edit") {
           await updateChequeOnSheets({ id: modal.ctx.id, ...payload });
         } else {
           await createChequeOnSheets(payload);
         }
+
         closeModal();
         await reloadAll(false);
         return;
@@ -1290,12 +1355,15 @@
           alert("Preencha: Data, Material e Responsável.");
           return;
         }
+
         setStatus("💾 Salvando material...");
+
         if (modal.ctx.mode === "edit") {
           await updateMaterialOnSheets({ id: modal.ctx.id, ...payload });
         } else {
           await createMaterialOnSheets(payload);
         }
+
         closeModal();
         await reloadAll(false);
         return;
@@ -1303,11 +1371,13 @@
 
       if (tab === "solicitacoes") {
         setStatus("💾 Salvando solicitação...");
+
         if (modal.ctx.mode === "edit") {
           await updateSolicOnSheets({ id: modal.ctx.id, ...payload });
         } else {
           await createSolicOnSheets(payload);
         }
+
         closeModal();
         await reloadAll(false);
         return;
@@ -1315,11 +1385,13 @@
 
       if (tab === "patrimonio") {
         setStatus("💾 Salvando patrimônio...");
+
         if (modal.ctx.mode === "edit") {
           await updatePatOnSheets({ id: modal.ctx.id, ...payload });
         } else {
           await createPatOnSheets(payload);
         }
+
         closeModal();
         await reloadAll(false);
         return;
@@ -1327,11 +1399,13 @@
 
       if (tab === "epis") {
         setStatus("💾 Salvando EPI...");
+
         if (modal.ctx.mode === "edit") {
           await updateEpiOnSheets({ id: modal.ctx.id, ...payload });
         } else {
           await createEpiOnSheets(payload);
         }
+
         closeModal();
         await reloadAll(false);
         return;
@@ -1339,16 +1413,16 @@
 
       if (tab === "frota") {
         setStatus("💾 Salvando frota...");
+
         if (modal.ctx.mode === "edit") {
           await updateFrotaOnSheets({ id: modal.ctx.id, ...payload });
         } else {
           await createFrotaOnSheets(payload);
         }
+
         closeModal();
         await reloadAll(false);
-        return;
       }
-
     } catch (e) {
       console.error("[admin] save erro:", e);
       setStatus("❌ Falha");
@@ -1433,12 +1507,15 @@
     });
 
     const btnTop = $("#btnTopSolic");
-    if (btnTop) btnTop.addEventListener("click", () => setActiveTab("solicitacoes"));
+    if (btnTop) {
+      btnTop.addEventListener("click", () => setActiveTab("solicitacoes"));
+    }
   }
 
   function bindFilters() {
     const sel = $("#fFilialAdmin");
     const inp = $("#fBuscaAdmin");
+
     if (sel) sel.addEventListener("change", renderAll);
     if (inp) inp.addEventListener("input", renderAll);
   }
@@ -1471,7 +1548,9 @@
     });
 
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && modal.el?.classList.contains("isOpen")) closeModal();
+      if (ev.key === "Escape" && modal.el?.classList.contains("isOpen")) {
+        closeModal();
+      }
     });
 
     const fileInput = $("#chequeFileInput");
@@ -1479,9 +1558,11 @@
       fileInput.addEventListener("change", async (ev) => {
         const input = ev.target;
         const file = input?.files?.[0];
+
         if (file) {
           await handleChequeFileSelected(file);
         }
+
         input.value = "";
       });
     }

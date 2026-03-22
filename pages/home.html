@@ -3,160 +3,330 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Home | NOVA FROTA</title>
+  <title>Fretes | NOVA FROTA</title>
+
   <link rel="stylesheet" href="../assets/css/app.css" />
 
   <style>
-    .topbar .actions a.icon-btn{ text-decoration:none; }
+    .container{max-width:1400px}
+    .card{padding:14px; overflow:hidden}
 
-    .topbar-inner{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
+    .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(43,58,114,.35);
+      border-radius:14px;
+      height: calc(100vh - 210px);
+      min-height: 520px;
+      background:#fff;
     }
 
-    .brand{
+    @media (max-width:1100px){
+      .tableWrap{height:auto; min-height:360px;}
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1700px;
+      background:#fff;
+    }
+
+    th,td{
+      padding:4px 8px;
+      border-bottom:1px solid #D1D5DB;
+      font-size:11px;
+      line-height:1.15;
+      vertical-align:middle;
+      white-space:nowrap;
+      color:#111827;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:3;
+      background:#0F172A;
+      color:#fff;
+      border-bottom:1px solid #0B1220;
+      font-size:10px;
+      letter-spacing:.02em;
+      padding:5px 8px;
+    }
+
+    tbody tr:nth-child(even){background:#F1F4F9;}
+    tbody tr:hover{background:#E8EDFF;}
+
+    .container.nfWide{
+      max-width: 100% !important;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .container.pageFretes{
       display:flex;
-      align-items:center;
+      flex-direction:column;
       gap:12px;
-      min-width:220px;
+      min-height:calc(100vh - 72px);
+      padding: 12px 12px 18px;
+      background:#F5F7FA;
     }
 
-    .actions{
+    .card.tableFull{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      min-height: calc(100vh - 210px);
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      border-radius:18px;
+    }
+
+    .card.tableFull .tableWrap{
+      flex:1 1 auto;
+      max-height:none !important;
+      height:auto !important;
+    }
+
+    .fretes-top{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:12px 14px;
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .fretes-top .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .fretes-top .title h1{
+      margin:0;
+      font-size:18px;
+      font-weight:900;
+      letter-spacing:.2px;
+      color:#0F172A;
+    }
+
+    .fretes-top .title .sub{
+      font-size:12px;
+      color: rgba(17,24,39,.70);
+      max-width:980px;
+    }
+
+    .fretes-toolbar{
       display:flex;
       align-items:center;
       gap:10px;
-      margin-left:auto;
+      flex-wrap:wrap;
+      padding:10px 12px;
+      border-radius:18px;
+      border:1px solid #E5E7EB;
+      background:#FFFFFF;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .ft-block{
+      display:flex;
+      align-items:center;
+      gap:10px;
       flex-wrap:wrap;
     }
 
-    .hero .grid{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:14px;
-      margin-top:16px;
+    .ft-spacer{
+      flex:1 1 auto;
+      min-width:10px;
     }
 
-    @media (max-width: 900px){
-      .hero .grid{ grid-template-columns: 1fr; }
-    }
-
-    .hero .card{
-      min-height: 112px;
-      display:flex;
-      align-items:center;
-      gap:14px;
-    }
-
-    .hero .card-left{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    .hero .tile{
-      width:64px;
-      height:64px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:18px;
-      background: rgba(255,255,255,.12);
-      backdrop-filter: blur(6px);
-    }
-
-    .hero .card-right h3{ margin:0 0 4px; }
-    .hero .card-right p{ margin:0; opacity:.9; }
-
-    .badge{
-      margin-left:6px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:18px;
-      height:18px;
-      padding:0 6px;
-      border-radius:999px;
+    .ft-label{
       font-size:11px;
       font-weight:900;
+      opacity:.9;
+      color:#0F172A;
+      margin-right:2px;
     }
 
-    /* Solicitações no topo */
-    .sumCard{
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(17,26,51,.70);
-      box-shadow:var(--shadow);
+    .ft-mini{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      font-weight:900;
+      color:#0F172A;
+      opacity:.95;
+    }
+
+    .ft-mini input{
+      width:66px;
+      height:30px;
+      padding:4px 8px;
+      border-radius:10px;
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
+      outline:none;
+    }
+
+    .ft-mini input:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+
+    .ft-select,
+    .ft-search{
+      height:30px;
+      padding:4px 10px;
+      border-radius:10px;
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
+      outline:none;
+      font-size:11px;
+    }
+
+    .ft-select{
+      width:190px;
+      flex:0 0 190px;
+    }
+
+    .ft-search{
+      width:260px;
+      min-width:260px;
+      flex:0 0 260px;
+    }
+
+    .ft-actions{
       display:flex;
       align-items:center;
       gap:10px;
-      padding:10px 12px;
-      cursor:pointer;
-      transition:transform .12s ease, filter .12s ease;
-      min-width:190px;
-      appearance:none;
-      -webkit-appearance:none;
-    }
-
-    .sumCard:hover{
-      transform:translateY(-2px);
-      filter:brightness(1.06);
-    }
-
-    .sumIcon{
-      width:44px;
-      height:44px;
-      border-radius:14px;
-      background:rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.12);
-      display:grid;
-      place-items:center;
-      font-size:18px;
+      flex-wrap:nowrap;
       flex:0 0 auto;
     }
 
-    .sumTxt{
-      display:flex;
-      flex-direction:column;
-      line-height:1.15;
-    }
-
-    .sumTitle{
-      font-weight:950;
-      font-size:13px;
-    }
-
-    .sumValue{
-      margin-top:2px;
-      font-weight:1000;
-      opacity:.92;
-    }
-
-    .sumGold{
-      background: linear-gradient(135deg, rgba(116,92,24,.86), rgba(20,22,32,.72));
-    }
-
-    .topSolicWrap{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      margin-left:auto;
-      margin-right:6px;
-    }
-
-    @media (max-width: 1100px){
-      .topSolicWrap{
-        order:3;
-        width:100%;
-        justify-content:flex-start;
-        margin:0;
+    @media (max-width:1100px){
+      .ft-search{
+        width:220px;
+        min-width:220px;
+        flex:0 0 220px;
       }
     }
 
-    /* Modal */
-    #homeSolicModal{
+    @media (max-width:700px){
+      .ft-select,
+      .ft-search,
+      .ft-actions{
+        width:100%;
+      }
+
+      .ft-select{
+        flex:1 1 100%;
+      }
+
+      .ft-search{
+        min-width:100%;
+        flex:1 1 100%;
+      }
+
+      .ft-actions{
+        flex-wrap:wrap;
+      }
+    }
+
+    .btnTiny{
+      height:30px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:#0F172A;
+      color:#FFFFFF;
+      font-weight:900;
+      font-size:11px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .btnTiny:hover{filter:brightness(1.06)}
+    .btnTiny.green{background:#0B3B2E; border-color:rgba(6,118,71,.25)}
+    .btnTiny.ghost{
+      background:#FFFFFF;
+      color:#0F172A;
+      border:1px solid #D1D5DB;
+    }
+    .btnTiny.blue{
+      background:#102A6B;
+      border-color:rgba(59,130,246,.35);
+    }
+    .btnTiny.gold{
+      background:#8A6A12;
+      border-color:rgba(180,131,22,.35);
+      color:#fff;
+    }
+
+    .num{text-align:right;}
+    input, select, textarea { text-transform: uppercase; }
+
+    .waIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;
+      height:24px;
+      border-radius:8px;
+      border:1px solid rgba(17,24,39,.12);
+      background:#fff;
+      padding:0;
+      line-height:1;
+      flex:0 0 auto;
+    }
+    .waIcon:hover{
+      filter:brightness(1.03);
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+    }
+    .waIcon img{
+      width:15px;
+      height:15px;
+      display:block;
+    }
+
+    .pillSN{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:26px;
+      height:18px;
+      border-radius:999px;
+      font-weight:950;
+      font-size:10px;
+      letter-spacing:.02em;
+      border:1px solid rgba(17,24,39,.18);
+      box-shadow:0 2px 10px rgba(0,0,0,.06);
+      user-select:none;
+    }
+    .pillSN.s{background:#DCFCE7;border-color:#86EFAC;color:#166534;}
+    .pillSN.n{background:#FEE2E2;border-color:#FCA5A5;color:#7F1D1D;}
+    .pillSN.empty{background:#EEF2F7;border-color:#CBD5E1;color:#475569;}
+
+    .groupRow td{
+      background:#0F172A !important;
+      color:#fff !important;
+      font-weight:900;
+      letter-spacing:.02em;
+      border-bottom:1px solid #0B1220;
+      position:sticky;
+      top:29px;
+      z-index:2;
+      padding:6px 8px;
+    }
+
+    #modal{
       position:fixed;
       inset:0;
       display:none;
@@ -164,18 +334,16 @@
       justify-content:center;
       z-index:9999;
       background:rgba(0,0,0,.55);
-      backdrop-filter:blur(8px);
+      backdrop-filter: blur(6px);
       padding:18px;
     }
 
-    #homeSolicModal.isOpen{ display:flex; }
-
     .modalCard{
       width:min(980px, 100%);
+      background:#fff;
+      border:1px solid #E5E7EB;
       border-radius:18px;
-      background:rgba(17,26,51,.92);
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:0 18px 55px rgba(0,0,0,.55);
+      box-shadow:0 18px 45px rgba(0,0,0,.28);
       overflow:hidden;
     }
 
@@ -185,72 +353,73 @@
       justify-content:space-between;
       gap:10px;
       padding:12px 14px;
-      background:rgba(255,255,255,.06);
-      border-bottom:1px solid rgba(255,255,255,.10);
+      border-bottom:1px solid #E5E7EB;
+      background:#F8FAFC;
     }
 
     .modalHead h2{
       margin:0;
       font-size:14px;
-      font-weight:1000;
-      color:var(--text);
+      font-weight:950;
+      color:#0F172A;
     }
 
     .iconClose{
-      width:36px;
-      height:36px;
+      width:34px;
+      height:34px;
       border-radius:12px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(255,255,255,.06);
-      color:var(--text);
+      border:1px solid #D1D5DB;
+      background:#fff;
       cursor:pointer;
-      font-weight:1000;
+      font-weight:900;
+      color:#0F172A;
     }
 
     .modalBody{
       padding:14px;
-      max-height:calc(100vh - 220px);
+      max-height: calc(100vh - 220px);
       overflow:auto;
     }
 
     .grid2{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap:12px;
     }
 
-    @media (max-width: 900px){
-      .grid2{ grid-template-columns:1fr; }
+    @media (max-width:900px){
+      .grid2{grid-template-columns:1fr;}
     }
 
     .field label{
       display:block;
       font-size:11px;
-      font-weight:950;
-      color:rgba(233,238,252,.92);
+      font-weight:900;
+      color:#0F172A;
       margin:0 0 6px;
     }
 
-    .field input,
-    .field select,
-    .field textarea{
+    .field input, .field select, .field textarea{
       width:100%;
+      height:32px;
+      padding:5px 10px;
       border-radius:12px;
-      padding:10px 10px;
+      border:1px solid #D1D5DB;
+      background:#fff;
       outline:none;
-      color:var(--text);
-      background:rgba(13,20,48,.65);
-      border:1px solid rgba(255,255,255,.14);
+      color:#111827;
+      font-size:12px;
     }
 
     .field textarea{
-      min-height:110px;
+      height:auto;
+      min-height:72px;
       resize:vertical;
     }
 
-    .field input[readonly]{
-      opacity:.92;
-      cursor:default;
+    .field input:focus, .field select:focus, .field textarea:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
     }
 
     .modalFoot{
@@ -258,35 +427,46 @@
       justify-content:flex-end;
       gap:10px;
       padding:12px 14px;
-      border-top:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.06);
+      border-top:1px solid #E5E7EB;
+      background:#F8FAFC;
     }
 
-    .btnAdmin{
-      height:38px;
-      padding:0 14px;
-      border-radius:12px;
-      border:1px solid rgba(91,124,250,.60);
-      background:rgba(27,42,90,.75);
-      color:var(--text);
+    .inlineCellWrap{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      position:relative;
+      min-width:48px;
+    }
+
+    .inlineCellInput{
+      width:48px;
+      height:24px;
+      border:1px solid #D1D5DB;
+      border-radius:7px;
+      background:#fff;
+      text-align:center;
+      font-size:11px;
+      font-weight:800;
+      color:#111827;
+      outline:none;
+      padding:0 4px;
+      text-transform:none !important;
+    }
+
+    .inlineCellInput:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+      background:#F8FBFF;
+    }
+
+    .inlineCellWrap.isSaving::after{
+      content:"...";
+      position:absolute;
+      right:-14px;
+      color:#64748B;
+      font-size:10px;
       font-weight:900;
-      cursor:pointer;
-      transition:filter .12s ease, transform .12s ease, opacity .12s ease;
-    }
-
-    .btnAdmin:hover{
-      filter:brightness(1.06);
-    }
-
-    .btnAdmin:disabled{
-      opacity:.65;
-      cursor:not-allowed;
-      transform:none;
-    }
-
-    .btnAdmin.ghost{
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(255,255,255,.06);
     }
   </style>
 </head>
@@ -295,186 +475,196 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="burger" title="Menu">🏠</div>
+        <a class="burger" href="./home.html" title="Voltar">🏠</a>
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
-
-      <div class="topSolicWrap">
-        <button class="sumCard sumGold" id="homeSolicCard" type="button">
-          <div class="sumIcon">📋</div>
-          <div class="sumTxt">
-            <div class="sumTitle">Solicitações</div>
-            <div class="sumValue"><span id="homeSolicOpen">0</span> abertas</div>
-          </div>
-        </button>
-      </div>
-
       <div class="actions">
-        <a class="icon-btn" href="./config.html" title="Configurações" aria-label="Configurações">⚙️</a>
-        <div class="icon-btn" title="Sair" data-logout aria-label="Sair">↩️</div>
+        <div class="icon-btn" title="Sair" data-logout>↩️</div>
       </div>
     </div>
   </div>
 
-  <div id="homeSolicModal" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="homeSolicTitle">
+  <div class="container nfWide pageFretes">
+    <div class="card fretes-top">
+      <div class="title">
+        <h1>
+          Fretes (Operacional)
+          <span id="syncStatus" data-sync-status style="font-size:12px; opacity:0.7; margin-left:10px;">🔄 Carregando...</span>
+        </h1>
+        <div class="sub">
+          Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+          <b>Dados sincronizados com Google Sheets em tempo real.</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="fretes-toolbar">
+      <div class="ft-block">
+        <span class="ft-label">Pesos:</span>
+        <div class="ft-mini"><span>9E</span><input id="w9" type="number" step="0.01" value="47" /></div>
+        <div class="ft-mini"><span>4E</span><input id="w4" type="number" step="0.01" value="39" /></div>
+        <div class="ft-mini"><span>7E</span><input id="w7" type="number" step="0.01" value="36" /></div>
+        <div class="ft-mini"><span>6E</span><input id="w6" type="number" step="0.01" value="31" /></div>
+        <div class="ft-mini"><span>5E</span><input id="w5" type="number" step="0.01" value="26" /></div>
+
+        <button class="btnTiny" id="btnSaveWeights" type="button">Salvar</button>
+        <button class="btnTiny ghost" id="btnResetWeights" type="button">Reset</button>
+      </div>
+
+      <div class="ft-spacer"></div>
+
+      <div class="ft-block">
+        <select class="ft-select" id="fRegional" title="Regional">
+          <option value="">Todas as regionais</option>
+        </select>
+
+        <select class="ft-select" id="fFilial" title="Filial">
+          <option value="">Todas as filiais</option>
+        </select>
+
+        <select class="ft-select" id="fContato" title="Contato">
+          <option value="">Todos os contatos</option>
+        </select>
+
+        <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
+
+        <div class="ft-actions">
+          <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
+          <button class="btnTiny gold" id="btnDivulgacaoFrete" type="button">DIVULGAÇÃO FRETE</button>
+          <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
+          <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tableFull">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Regional</th>
+              <th>Filial</th>
+              <th>Cliente</th>
+              <th>Origem</th>
+              <th>Coleta</th>
+              <th>Contato</th>
+              <th>Destino</th>
+              <th>UF</th>
+              <th>Descarga</th>
+              <th class="num">Volume</th>
+              <th class="num">Vlr Empresa</th>
+              <th class="num">Vlr Motorista</th>
+              <th class="num">KM</th>
+              <th class="num">Pedágio/Eixo</th>
+              <th class="num">5E</th>
+              <th class="num">6E</th>
+              <th class="num">7E</th>
+              <th class="num">4E</th>
+              <th class="num">9E</th>
+              <th>Produto</th>
+              <th>ICMS</th>
+              <th class="num">Pedido SAT</th>
+              <th class="num">Porta</th>
+              <th class="num">Trânsito</th>
+              <th>Status</th>
+              <th>Observações</th>
+              <th class="num">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modalHead">
-        <h2 id="homeSolicTitle">Nova Solicitação</h2>
-        <button class="iconClose" id="homeSolicClose" type="button">✕</button>
+        <h2 id="modalTitle">Novo Frete</h2>
+        <button class="iconClose" id="btnCloseModal" type="button" title="Fechar">✕</button>
       </div>
 
       <div class="modalBody">
         <div class="grid2">
           <div class="field">
+            <label>Regional</label>
+            <select id="mRegional"></select>
+          </div>
+
+          <div class="field">
             <label>Filial</label>
-            <select id="hsFilial"></select>
+            <select id="mFilial"></select>
           </div>
 
           <div class="field">
-            <label>Tipo (editável)</label>
-            <input id="hsTipo" placeholder="Ex: CHEQUES / MANUTENÇÃO / TONER..." />
+            <label>Cliente</label>
+            <select id="mCliente"></select>
           </div>
 
           <div class="field">
-            <label>Data</label>
-            <input id="hsData" placeholder="dd/mm/aaaa" />
+            <label>Contato (Responsável da Filial)</label>
+            <select id="mContato"></select>
           </div>
 
+          <div class="field"><label>Origem</label><input id="mOrigem" /></div>
+          <div class="field"><label>Coleta</label><input id="mColeta" /></div>
+
+          <div class="field"><label>Destino</label><input id="mDestino" /></div>
+          <div class="field"><label>UF</label><input id="mUF" /></div>
+
+          <div class="field"><label>Descarga</label><input id="mDescarga" /></div>
+          <div class="field"><label>Produto</label><input id="mProduto" /></div>
+
+          <div class="field"><label>KM</label><input id="mKM" inputmode="decimal" /></div>
+          <div class="field"><label>Pedágio/Eixo</label><input id="mPed" inputmode="decimal" /></div>
+
+          <div class="field"><label>Volume</label><input id="mVolume" inputmode="decimal" /></div>
+          <div class="field"><label>ICMS</label><input id="mICMS" inputmode="decimal" /></div>
+
+          <div class="field"><label>Vlr Empresa</label><input id="mEmpresa" inputmode="decimal" /></div>
+          <div class="field"><label>Vlr Motorista</label><input id="mMotorista" inputmode="decimal" /></div>
+
+          <div class="field"><label>Pedido SAT</label><input id="mSat" /></div>
+          <div class="field"><label>Porta</label><input id="mPorta" /></div>
+
+          <div class="field"><label>Trânsito</label><input id="mTransito" /></div>
           <div class="field">
             <label>Status</label>
-            <select id="hsStatus">
-              <option value="ABERTA">ABERTA</option>
-              <option value="EM ANDAMENTO">EM ANDAMENTO</option>
-              <option value="FINALIZADA">FINALIZADA</option>
+            <select id="mStatus">
+              <option value="LIBERADO">LIBERADO</option>
+              <option value="EM ANALISE">EM ANALISE</option>
+              <option value="BLOQUEADO">BLOQUEADO</option>
             </select>
           </div>
 
-          <div class="field" style="grid-column:1/-1;">
-            <label>Observação</label>
-            <textarea id="hsObs" placeholder="Descreva o pedido..."></textarea>
-          </div>
-
-          <div class="field" style="grid-column:1/-1;">
-            <label>Solicitante</label>
-            <input id="hsSolicitante" readonly />
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Observações</label>
+            <textarea id="mObs"></textarea>
           </div>
         </div>
       </div>
 
       <div class="modalFoot">
-        <button class="btnAdmin ghost" id="homeSolicCancel" type="button">Cancelar</button>
-        <button class="btnAdmin" id="homeSolicSend" type="button">Salvar</button>
+        <button class="btnTiny ghost" id="btnCancel" type="button">Cancelar</button>
+        <button class="btnTiny green" id="btnSave" type="button">Salvar</button>
       </div>
     </div>
   </div>
 
-  <section class="hero">
-    <div class="container hero-content">
-      <div class="hero-title">Bem-vindo ao <b>Sistema Operacional</b></div>
-
-      <div class="hero-sub" id="homeSub">
-        Escolha uma das opções abaixo para continuar
-      </div>
-
-      <div class="grid">
-        <a class="card theme-blue" data-feature="piso" href="./calculo-piso.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:34px;">📈</div>
-          </div>
-          <div class="card-right">
-            <h3>Cálculo de Piso ANTT</h3>
-            <p>Faça o cálculo do piso mínimo de frete</p>
-          </div>
-        </a>
-
-        <a class="card theme-green" data-feature="fretes" href="./fretes.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:40px;">🚛</div>
-          </div>
-          <div class="card-right">
-            <h3>Fretes (Operacional)</h3>
-            <p>Gerencie e atualize os fretes diários</p>
-          </div>
-        </a>
-
-        <a class="card theme-purple" data-feature="share" href="./share-clientes.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:40px;">👥</div>
-          </div>
-          <div class="card-right">
-            <h3>Share Clientes</h3>
-            <p>Compartilhe informações com clientes</p>
-          </div>
-        </a>
-
-        <a class="card theme-blue" data-feature="bi" href="./bi.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:38px;">📊</div>
-          </div>
-          <div class="card-right">
-            <h3>B.I. Operacional</h3>
-            <p>Visualize indicadores, gráficos e volumes dos fretes</p>
-          </div>
-        </a>
-
-        <a class="card theme-gold" data-feature="divulgacao" href="./divulgacao.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:38px;">📣</div>
-          </div>
-          <div class="card-right">
-            <h3>Divulgação</h3>
-            <p>Ferramentas para comunicação e marketing</p>
-          </div>
-        </a>
-
-        <a class="card theme-blue" data-feature="administrativo" href="./administrativo.html">
-          <div class="card-left">
-            <div class="tile" style="font-size:38px;">🗂️</div>
-          </div>
-          <div class="card-right">
-            <h3>Administrativo</h3>
-            <p>Frota leve, cheques e solicitações por filial</p>
-          </div>
-        </a>
-      </div>
-    </div>
-  </section>
-
   <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/home-solicitacoes.js"></script>
+  <script src="../assets/js/fretes.js"></script>
+
   <script>
     requireHomeAuth();
     bindLogoutButton();
 
     window.addEventListener("DOMContentLoaded", () => {
-      const uf = getSelectedState?.() || "";
-      const user = getUser?.() || "";
-      const sub = document.getElementById("homeSub");
-
-      if (sub) {
-        sub.textContent = `Acesso liberado para ${user} | Estado: ${uf}`;
+      const btn = document.getElementById("btnShareClientes");
+      if(btn){
+        btn.addEventListener("click", () => {
+          window.location.href = "./share-clientes.html";
+        });
       }
-
-      const solicitante = document.getElementById("hsSolicitante");
-      if (solicitante) {
-        solicitante.value = String(user || "").toUpperCase();
-      }
-
-      const data = document.getElementById("hsData");
-      if (data && !data.value) {
-        const agora = new Date();
-        const dd = String(agora.getDate()).padStart(2, "0");
-        const mm = String(agora.getMonth() + 1).padStart(2, "0");
-        const yy = agora.getFullYear();
-        data.value = `${dd}/${mm}/${yy}`;
-      }
-
-      document.querySelectorAll("[data-feature]").forEach((card) => {
-        const feature = card.getAttribute("data-feature");
-        if (typeof canAccessFeature === "function" && !canAccessFeature(feature)) {
-          card.style.display = "none";
-        }
-      });
     });
   </script>
 </body>

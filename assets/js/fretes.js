@@ -287,6 +287,60 @@
     });
   }
 
+  /*
+    ============================================================
+    CORES FIXAS
+    EDITE AQUI AS CORES QUE VOCÊ QUISER
+    formato:
+    "NOME": { bg: "#CORFUNDO", fg: "#CORTEXTO" }
+    ============================================================
+  */
+
+  const FIXED_CLIENT_COLORS = {
+    "LDC": { bg: "#DBEAFE", fg: "#1D4ED8" },
+    "OURO SAFRA": { bg: "#FEF3C7", fg: "#B45309" },
+    "CARAMURU": { bg: "#DCFCE7", fg: "#15803D" },
+    "CARGILL": { bg: "#FFE4E6", fg: "#BE123C" },
+    "COFCO": { bg: "#EDE9FE", fg: "#6D28D9" },
+    "MOSAIC": { bg: "#E0F2FE", fg: "#0369A1" },
+    "VITERRA": { bg: "#FCE7F3", fg: "#BE185D" },
+    "CHS": { bg: "#ECFCCB", fg: "#4D7C0F" },
+    "AMAGGI": { bg: "#F3E8FF", fg: "#7E22CE" },
+    "ADM": { bg: "#F1F5F9", fg: "#334155" }
+  };
+
+  const FIXED_CONTACT_COLORS = {
+    "ARIEL": { bg: "#DBEAFE", fg: "#1D4ED8" },
+    "KIEWERSON": { bg: "#DCFCE7", fg: "#15803D" },
+    "RONE": { bg: "#FEF3C7", fg: "#B45309" },
+    "ROBSON": { bg: "#FFE4E6", fg: "#BE123C" },
+    "RAFAEL": { bg: "#EDE9FE", fg: "#6D28D9" },
+    "JHONATAN": { bg: "#E0F2FE", fg: "#0369A1" },
+    "RICARDO": { bg: "#FCE7F3", fg: "#BE185D" },
+    "EVERALDO": { bg: "#ECFCCB", fg: "#4D7C0F" },
+    "NARCISO": { bg: "#F3E8FF", fg: "#7E22CE" },
+    "FHELLIPE": { bg: "#F1F5F9", fg: "#334155" },
+    "FABIOLA": { bg: "#CCFBF1", fg: "#0F766E" },
+    "GUILHERME": { bg: "#FDE68A", fg: "#92400E" },
+    "SERGIO": { bg: "#FEE2E2", fg: "#B91C1C" },
+    "ALFREDO": { bg: "#D1FAE5", fg: "#047857" },
+    "MATEUS": { bg: "#E9D5FF", fg: "#7E22CE" },
+    "EVERALDO JR": { bg: "#E0E7FF", fg: "#4338CA" }
+  };
+
+  const FIXED_PRODUCT_COLORS = {
+    "SOJA": { bg: "#FEF3C7", fg: "#B45309" },
+    "MILHO": { bg: "#FEF9C3", fg: "#A16207" },
+    "FERTILIZANTE": { bg: "#DCFCE7", fg: "#15803D" },
+    "ADUBO": { bg: "#DCFCE7", fg: "#15803D" },
+    "AÇUCAR": { bg: "#FCE7F3", fg: "#BE185D" },
+    "ACUCAR": { bg: "#FCE7F3", fg: "#BE185D" },
+    "FARELO": { bg: "#DBEAFE", fg: "#1D4ED8" },
+    "SEMENTE": { bg: "#EDE9FE", fg: "#6D28D9" },
+    "DDG": { bg: "#E0F2FE", fg: "#0369A1" },
+    "SORGO": { bg: "#ECFCCB", fg: "#4D7C0F" }
+  };
+
   function getPalette(kind) {
     if (kind === "cliente") {
       return [
@@ -336,6 +390,22 @@
     return Math.abs(h);
   }
 
+  function getFixedColorMap(kind) {
+    if (kind === "cliente") return FIXED_CLIENT_COLORS;
+    if (kind === "contato") return FIXED_CONTACT_COLORS;
+    return FIXED_PRODUCT_COLORS;
+  }
+
+  function getTagColors(text, kind) {
+    const key = upper(text);
+    const fixedMap = getFixedColorMap(kind);
+    if (fixedMap[key]) return fixedMap[key];
+
+    const palette = getPalette(kind);
+    const [bg, fg] = palette[hashCode(key) % palette.length];
+    return { bg, fg };
+  }
+
   function createColorTag(text, kind) {
     const span = document.createElement("span");
     const value = safeText(text);
@@ -345,8 +415,7 @@
       return span;
     }
 
-    const palette = getPalette(kind);
-    const [bg, fg] = palette[hashCode(value) % palette.length];
+    const { bg, fg } = getTagColors(value, kind);
 
     span.textContent = value;
     span.style.display = "inline-flex";
@@ -601,6 +670,8 @@
 
       tbody.appendChild(tr);
     });
+
+    syncFloatingScrollbar();
   }
 
   function getFilteredRows() {
@@ -836,6 +907,26 @@
         text-align:center;
       }
       @keyframes freteSpin{to{transform:rotate(360deg)}}
+
+      #nfFloatingHScroll{
+        position:fixed;
+        left:12px;
+        right:12px;
+        bottom:8px;
+        height:18px;
+        overflow-x:auto;
+        overflow-y:hidden;
+        z-index:9998;
+        display:none;
+        background:rgba(255,255,255,.94);
+        border:1px solid rgba(15,23,42,.12);
+        border-radius:999px;
+        box-shadow:0 8px 24px rgba(0,0,0,.12);
+        backdrop-filter:blur(6px);
+      }
+      #nfFloatingHScrollInner{
+        height:1px;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -905,6 +996,7 @@
       fillTopFilters(STATE.rows);
       applyFilters();
       setStatus("✅ Atualizado");
+      syncFloatingScrollbar();
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
       setStatus("❌ Erro ao sincronizar");
@@ -950,6 +1042,9 @@
       applyFilters();
       alert("Pesos recalculados ✅");
     });
+
+    window.addEventListener("resize", syncFloatingScrollbar);
+    window.addEventListener("scroll", syncFloatingScrollbar, { passive: true });
   }
 
   function bindMoneyMask(inputEl) {
@@ -982,6 +1077,63 @@
     bindMoneyMask(MODAL.motorista());
   }
 
+  let floatingScrollSyncing = false;
+
+  function ensureFloatingScrollbar() {
+    if (document.getElementById("nfFloatingHScroll")) return;
+
+    const bar = document.createElement("div");
+    bar.id = "nfFloatingHScroll";
+
+    const inner = document.createElement("div");
+    inner.id = "nfFloatingHScrollInner";
+
+    bar.appendChild(inner);
+    document.body.appendChild(bar);
+
+    const tableWrap = document.querySelector(".tableWrap");
+    if (!tableWrap) return;
+
+    bar.addEventListener("scroll", () => {
+      if (floatingScrollSyncing) return;
+      floatingScrollSyncing = true;
+      tableWrap.scrollLeft = bar.scrollLeft;
+      floatingScrollSyncing = false;
+    });
+
+    tableWrap.addEventListener("scroll", () => {
+      if (floatingScrollSyncing) return;
+      floatingScrollSyncing = true;
+      bar.scrollLeft = tableWrap.scrollLeft;
+      floatingScrollSyncing = false;
+    });
+  }
+
+  function syncFloatingScrollbar() {
+    const tableWrap = document.querySelector(".tableWrap");
+    const table = document.querySelector(".tableWrap table");
+    const bar = document.getElementById("nfFloatingHScroll");
+    const inner = document.getElementById("nfFloatingHScrollInner");
+
+    if (!tableWrap || !table || !bar || !inner) return;
+
+    const hasOverflow = table.scrollWidth > tableWrap.clientWidth + 2;
+    if (!hasOverflow) {
+      bar.style.display = "none";
+      return;
+    }
+
+    inner.style.width = `${table.scrollWidth}px`;
+    bar.style.display = "block";
+    bar.scrollLeft = tableWrap.scrollLeft;
+  }
+
+  function initFloatingHorizontalScrollbar() {
+    ensureFloatingScrollbar();
+    setTimeout(syncFloatingScrollbar, 50);
+    setTimeout(syncFloatingScrollbar, 250);
+  }
+
   function init() {
     ensureLoading();
     fillModalSelectors();
@@ -989,6 +1141,7 @@
     initMasks();
     bindButtons();
     bindFilters();
+    initFloatingHorizontalScrollbar();
     atualizar();
   }
 

@@ -510,6 +510,43 @@
     return td;
   }
 
+  function buildStatusCell(value) {
+    const td = document.createElement("td");
+
+    const status = upper(value);
+    const span = document.createElement("span");
+
+    span.style.display = "inline-flex";
+    span.style.alignItems = "center";
+    span.style.justifyContent = "center";
+    span.style.minWidth = "96px";
+    span.style.height = "22px";
+    span.style.padding = "0 10px";
+    span.style.borderRadius = "999px";
+    span.style.fontWeight = "900";
+    span.style.fontSize = "10px";
+    span.style.letterSpacing = ".02em";
+    span.style.color = "#FFFFFF";
+    span.style.textTransform = "uppercase";
+    span.style.whiteSpace = "nowrap";
+    span.style.border = "1px solid rgba(0,0,0,.08)";
+    span.style.boxShadow = "0 2px 8px rgba(0,0,0,.08)";
+
+    if (status === "LIBERADO") {
+      span.style.background = "#15803D";
+    } else if (status === "FINALIZANDO") {
+      span.style.background = "#1D4ED8";
+    } else if (status === "SUSPENSO") {
+      span.style.background = "#B91C1C";
+    } else {
+      span.style.background = "#64748B";
+    }
+
+    span.textContent = status || "-";
+    td.appendChild(span);
+    return td;
+  }
+
   function buildInlineEditableCell(row, key) {
     const td = document.createElement("td");
     td.className = "num";
@@ -673,6 +710,11 @@
 
         if (["e5","e6","e7","e4","e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
+          return;
+        }
+
+        if (col.key === "status") {
+          tr.appendChild(buildStatusCell(row[col.key]));
           return;
         }
 

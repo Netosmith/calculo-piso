@@ -124,9 +124,8 @@
 
     .fretes-toolbar{
       display:flex;
-      align-items:center;
+      flex-direction:column;
       gap:10px;
-      flex-wrap:wrap;
       padding:10px 12px;
       border-radius:18px;
       border:1px solid #E5E7EB;
@@ -134,14 +133,13 @@
       box-shadow:0 4px 12px rgba(0,0,0,.04);
     }
 
-    .ft-block{
+    .ft-row{
       display:flex;
       align-items:center;
       gap:10px;
       flex-wrap:wrap;
+      width:100%;
     }
-
-    .ft-spacer{flex:1 1 auto; min-width:10px}
 
     .ft-label{
       font-size:11px;
@@ -177,7 +175,12 @@
       box-shadow:0 0 0 3px rgba(91,124,250,.18);
     }
 
-    .ft-select, .ft-search{
+    .ft-grow{
+      flex:1 1 auto;
+    }
+
+    .ft-select,
+    .ft-search{
       height:30px;
       padding:4px 10px;
       border-radius:10px;
@@ -188,11 +191,24 @@
       font-size:11px;
     }
 
-    .ft-select{width:200px}
-    .ft-search{width:min(420px, 55vw)}
+    .ft-select{
+      width:210px;
+      flex:0 0 210px;
+    }
 
-    @media (max-width:700px){
-      .ft-select,.ft-search{width:100%}
+    .ft-search{
+      width:360px;
+      flex:1 1 360px;
+      min-width:220px;
+      max-width:460px;
+    }
+
+    .ft-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:nowrap;
+      margin-left:auto;
     }
 
     .btnTiny{
@@ -223,6 +239,27 @@
       background:#8A6A12;
       border-color:rgba(180,131,22,.35);
       color:#fff;
+    }
+
+    @media (max-width:1200px){
+      .ft-actions{
+        margin-left:0;
+        flex-wrap:wrap;
+      }
+    }
+
+    @media (max-width:900px){
+      .ft-select,
+      .ft-search{
+        flex:1 1 100%;
+        width:100%;
+        max-width:none;
+      }
+
+      .ft-actions{
+        width:100%;
+        justify-content:flex-start;
+      }
     }
 
     .num{text-align:right;}
@@ -454,7 +491,7 @@
     </div>
 
     <div class="fretes-toolbar">
-      <div class="ft-block">
+      <div class="ft-row">
         <span class="ft-label">Pesos:</span>
         <div class="ft-mini"><span>9E</span><input id="w9" type="number" step="0.01" value="47" /></div>
         <div class="ft-mini"><span>4E</span><input id="w4" type="number" step="0.01" value="39" /></div>
@@ -466,9 +503,7 @@
         <button class="btnTiny ghost" id="btnResetWeights" type="button">Reset</button>
       </div>
 
-      <div class="ft-spacer"></div>
-
-      <div class="ft-block">
+      <div class="ft-row">
         <select class="ft-select" id="fRegional" title="Regional">
           <option value="">Todas as regionais</option>
         </select>
@@ -483,10 +518,12 @@
 
         <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
 
-        <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
-        <button class="btnTiny gold" id="btnDivulgacaoFrete" type="button">DIVULGAÇÃO FRETE</button>
-        <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
-        <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
+        <div class="ft-actions">
+          <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
+          <button class="btnTiny gold" id="btnDivulgacaoFrete" type="button">DIVULGAÇÃO FRETE</button>
+          <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
+          <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
+        </div>
       </div>
     </div>
 

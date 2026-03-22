@@ -1,7 +1,7 @@
 (function () {
 "use strict";
 
-const API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbysabnW3gmEpzwrc0AAnRFlGdNeAK_7tF1hpYaYnxajxv4fLYpPPtL9ZUPZJljkMMNV/exec";
 
 const FILIAIS = [
   "RIO VERDE",

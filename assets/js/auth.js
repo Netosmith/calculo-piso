@@ -6,7 +6,6 @@
 // ======== USUÁRIOS ========
 const USERS = {
   LUZIANO: { password: "5707", states: ["GO","GOADM","COMERCIAL"] },
-  LUCAS: { password: "2026" , states: ["PISO"] },
   ELIEL:   { password: "1234", states: ["COMERCIAL"] },
   MARCELO:   { password: "8888", states: ["COMERCIAL"] },
   SERGIO:   { password: "5554", states: ["COMERCIAL"] },

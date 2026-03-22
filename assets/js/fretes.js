@@ -50,6 +50,8 @@
     rows: [],
     editingId: "",
     inlineSaving: new Set(),
+    floatingBarReady: false,
+    floatingSyncing: false,
   };
 
   /*
@@ -95,22 +97,22 @@
   };
 
   const FIXED_PRODUCT_COLORS = {
-    "SOJA":        { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
-    "MILHO":       { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
-    "FERTILIZANTE":{ bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
-    "ADUBO":       { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
-    "AÇUCAR":      { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
-    "ACUCAR":      { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
-    "SORGO":       { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
-    "FARELO":      { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
-    "DDG":         { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
-    "ETANOL":      { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
-    "SEMENTE":     { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
-    "SEMENTES":    { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
-    "CALCÁRIO":    { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
-    "CALCARIO":    { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
-    "GESSO":       { bg: "#F5D0FE", fg: "#A21CAF", name: "MAGENTA" },
-    "SAL":         { bg: "#CFFAFE", fg: "#0E7490", name: "AQUA" },
+    "SOJA":         { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
+    "MILHO":        { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
+    "FERTILIZANTE": { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
+    "ADUBO":        { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
+    "AÇUCAR":       { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
+    "ACUCAR":       { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
+    "SORGO":        { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
+    "FARELO":       { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
+    "DDG":          { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
+    "ETANOL":       { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
+    "SEMENTE":      { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
+    "SEMENTES":     { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
+    "CALCÁRIO":     { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
+    "CALCARIO":     { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
+    "GESSO":        { bg: "#F5D0FE", fg: "#A21CAF", name: "MAGENTA" },
+    "SAL":          { bg: "#CFFAFE", fg: "#0E7490", name: "AQUA" },
   };
 
   const FALLBACK_CLIENT_PALETTE = [
@@ -403,17 +405,9 @@
   function getFixedColorConfig(value, kind) {
     const key = upper(value);
 
-    if (kind === "cliente" && FIXED_CLIENT_COLORS[key]) {
-      return FIXED_CLIENT_COLORS[key];
-    }
-
-    if (kind === "contato" && FIXED_CONTACT_COLORS[key]) {
-      return FIXED_CONTACT_COLORS[key];
-    }
-
-    if (kind === "produto" && FIXED_PRODUCT_COLORS[key]) {
-      return FIXED_PRODUCT_COLORS[key];
-    }
+    if (kind === "cliente" && FIXED_CLIENT_COLORS[key]) return FIXED_CLIENT_COLORS[key];
+    if (kind === "contato" && FIXED_CONTACT_COLORS[key]) return FIXED_CONTACT_COLORS[key];
+    if (kind === "produto" && FIXED_PRODUCT_COLORS[key]) return FIXED_PRODUCT_COLORS[key];
 
     return null;
   }
@@ -448,11 +442,9 @@
       colorName = item[2];
     }
 
-    const finalText = kind === "produto"
-      ? `${colorName} • ${value}`
-      : value;
-
-    span.textContent = finalText;
+    span.textContent = value;
+    span.title = `${colorName} • ${value}`;
+    span.setAttribute("data-color-name", colorName);
     span.style.display = "inline-flex";
     span.style.alignItems = "center";
     span.style.maxWidth = "100%";
@@ -638,7 +630,10 @@
     if (!tbody) return;
 
     tbody.innerHTML = "";
-    if (!rowsRaw || !rowsRaw.length) return;
+    if (!rowsRaw || !rowsRaw.length) {
+      syncFloatingHorizontalBar();
+      return;
+    }
 
     const rows = applyPisoSN(rowsRaw).slice().sort((a, b) => {
       const fa = safeText(a.filial).localeCompare(safeText(b.filial));
@@ -705,6 +700,8 @@
 
       tbody.appendChild(tr);
     });
+
+    syncFloatingHorizontalBar();
   }
 
   function getFilteredRows() {
@@ -1048,111 +1045,22 @@
   <meta charset="utf-8" />
   <title>Divulgação de Frete</title>
   <style>
-    @page {
-      size: A4 landscape;
-      margin: 10mm;
-    }
-
+    @page { size: A4 landscape; margin: 10mm; }
     * { box-sizing: border-box; }
-
-    body{
-      margin:0;
-      font-family: Arial, Helvetica, sans-serif;
-      color:#222;
-      background:#fff;
-    }
-
-    .page{
-      width:100%;
-      padding:8px 10px;
-    }
-
-    .head{
-      text-align:center;
-      margin-bottom:10px;
-      border:1px solid #cfd8dc;
-      padding:12px 10px;
-    }
-
-    .head img{
-      max-width:420px;
-      max-height:75px;
-      object-fit:contain;
-      display:block;
-      margin:0 auto 6px;
-    }
-
-    .bar{
-      height:24px;
-      background:#3B7D23;
-      margin-bottom:0;
-      border:1px solid #2f661b;
-      border-bottom:none;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      table-layout:fixed;
-      font-size:12px;
-    }
-
-    thead th{
-      background:#F6D96B;
-      color:#1f2937;
-      border:1px solid #666;
-      padding:6px 4px;
-      text-align:center;
-      font-weight:900;
-    }
-
-    tbody td{
-      border:1px solid #666;
-      padding:4px 4px;
-      vertical-align:middle;
-      word-wrap:break-word;
-    }
-
-    tbody tr:nth-child(even){
-      background:#f8f8f8;
-    }
-
-    .freteCol{
-      color:#c62828;
-      font-weight:900;
-      text-align:right;
-    }
-
-    .colRegional{width:6%}
-    .colFilial{width:9%}
-    .colOrigem{width:13%}
-    .colColeta{width:14%}
-    .colDestino{width:13%}
-    .colUf{width:4%}
-    .colDescarga{width:8%}
-    .colProduto{width:8%}
-    .colFrete{width:9%}
-    .colContato{width:16%}
-
-    .foot{
-      margin-top:8px;
-      font-size:11px;
-      color:#555;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    .printHint{
-      margin-top:10px;
-      font-size:11px;
-      color:#666;
-      text-align:right;
-    }
-
-    @media print {
-      .printHint { display:none; }
-    }
+    body{ margin:0; font-family: Arial, Helvetica, sans-serif; color:#222; background:#fff; }
+    .page{ width:100%; padding:8px 10px; }
+    .head{ text-align:center; margin-bottom:10px; border:1px solid #cfd8dc; padding:12px 10px; }
+    .head img{ max-width:420px; max-height:75px; object-fit:contain; display:block; margin:0 auto 6px; }
+    .bar{ height:24px; background:#3B7D23; margin-bottom:0; border:1px solid #2f661b; border-bottom:none; }
+    table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px; }
+    thead th{ background:#F6D96B; color:#1f2937; border:1px solid #666; padding:6px 4px; text-align:center; font-weight:900; }
+    tbody td{ border:1px solid #666; padding:4px 4px; vertical-align:middle; word-wrap:break-word; }
+    tbody tr:nth-child(even){ background:#f8f8f8; }
+    .freteCol{ color:#c62828; font-weight:900; text-align:right; }
+    .colRegional{width:6%}.colFilial{width:9%}.colOrigem{width:13%}.colColeta{width:14%}.colDestino{width:13%}.colUf{width:4%}.colDescarga{width:8%}.colProduto{width:8%}.colFrete{width:9%}.colContato{width:16%}
+    .foot{ margin-top:8px; font-size:11px; color:#555; display:flex; justify-content:space-between; gap:10px; }
+    .printHint{ margin-top:10px; font-size:11px; color:#666; text-align:right; }
+    @media print { .printHint { display:none; } }
   </style>
 </head>
 <body>
@@ -1160,9 +1068,7 @@
     <div class="head">
       <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
     </div>
-
     <div class="bar"></div>
-
     <table>
       <thead>
         <tr>
@@ -1188,12 +1094,10 @@
         `}
       </tbody>
     </table>
-
     <div class="foot">
       <div><b>Data:</b> ${hoje}</div>
       <div><b>Total de fretes:</b> ${rows.length}</div>
     </div>
-
     <div class="printHint">
       Use "Salvar como PDF" e mantenha em modo paisagem.
     </div>
@@ -1229,6 +1133,107 @@
         win.print();
       }, 400);
     };
+  }
+
+  function ensureFloatingHorizontalBar() {
+    if (STATE.floatingBarReady) return;
+
+    if (document.getElementById("nfFloatingHBar")) {
+      STATE.floatingBarReady = true;
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = "nfFloatingHBarStyle";
+    style.textContent = `
+      #nfFloatingHBar{
+        position:fixed;
+        left:12px;
+        right:12px;
+        bottom:8px;
+        height:18px;
+        display:none;
+        z-index:999;
+        background:rgba(255,255,255,.96);
+        border:1px solid rgba(15,23,42,.12);
+        border-radius:999px;
+        box-shadow:0 4px 14px rgba(0,0,0,.12);
+        overflow-x:auto;
+        overflow-y:hidden;
+        backdrop-filter:blur(6px);
+      }
+      #nfFloatingHBarInner{
+        height:1px;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const bar = document.createElement("div");
+    bar.id = "nfFloatingHBar";
+    bar.innerHTML = `<div id="nfFloatingHBarInner"></div>`;
+    document.body.appendChild(bar);
+
+    STATE.floatingBarReady = true;
+  }
+
+  function syncFloatingHorizontalBar() {
+    ensureFloatingHorizontalBar();
+
+    const wrap = document.querySelector(".tableWrap");
+    const bar = document.getElementById("nfFloatingHBar");
+    const inner = document.getElementById("nfFloatingHBarInner");
+
+    if (!wrap || !bar || !inner) return;
+
+    const hasOverflow = wrap.scrollWidth > wrap.clientWidth + 2;
+
+    if (!hasOverflow) {
+      bar.style.display = "none";
+      return;
+    }
+
+    inner.style.width = wrap.scrollWidth + "px";
+    bar.style.display = "block";
+
+    if (!STATE.floatingSyncing) {
+      bar.scrollLeft = wrap.scrollLeft;
+    }
+  }
+
+  function bindFloatingHorizontalBar() {
+    ensureFloatingHorizontalBar();
+
+    const wrap = document.querySelector(".tableWrap");
+    const bar = document.getElementById("nfFloatingHBar");
+
+    if (!wrap || !bar) return;
+
+    wrap.addEventListener("scroll", () => {
+      if (STATE.floatingSyncing) return;
+      STATE.floatingSyncing = true;
+      bar.scrollLeft = wrap.scrollLeft;
+      STATE.floatingSyncing = false;
+    }, { passive: true });
+
+    bar.addEventListener("scroll", () => {
+      if (STATE.floatingSyncing) return;
+      STATE.floatingSyncing = true;
+      wrap.scrollLeft = bar.scrollLeft;
+      STATE.floatingSyncing = false;
+    }, { passive: true });
+
+    window.addEventListener("resize", syncFloatingHorizontalBar, { passive: true });
+    window.addEventListener("scroll", syncFloatingHorizontalBar, { passive: true });
+
+    const observer = new MutationObserver(() => {
+      syncFloatingHorizontalBar();
+    });
+
+    observer.observe(wrap, {
+      childList: true,
+      subtree: true,
+      attributes: true
+    });
   }
 
   function bindFilters() {
@@ -1305,12 +1310,16 @@
 
   function init() {
     ensureLoading();
+    ensureFloatingHorizontalBar();
     fillModalSelectors();
     initUppercaseFields();
     initMasks();
     bindButtons();
     bindFilters();
+    bindFloatingHorizontalBar();
     atualizar();
+    setTimeout(syncFloatingHorizontalBar, 200);
+    setTimeout(syncFloatingHorizontalBar, 600);
   }
 
   window.addEventListener("DOMContentLoaded", init);

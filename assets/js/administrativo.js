@@ -47,6 +47,11 @@
     epis: [],
   };
 
+  const STATE = {
+    currentChequeUploadId: "",
+    uploadingChequeId: "",
+  };
+
   function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
@@ -83,6 +88,32 @@
     const url = new URL(API_URL);
     Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
     return url.toString();
+  }
+
+  async function apiGet(paramsObj) {
+    const res = await jsonp(buildUrl(paramsObj));
+    if (!res || res.ok === false) throw new Error(res?.error || "Falha na API");
+    return res;
+  }
+
+  async function apiPostJSON(payload) {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload || {}),
+    });
+
+    if (!res.ok) {
+      throw new Error("Falha na comunicação com o servidor");
+    }
+
+    const data = await res.json();
+    if (!data || data.ok === false) {
+      throw new Error(data?.error || "Falha na API");
+    }
+    return data;
   }
 
   function parseBRDate(s) {
@@ -149,6 +180,9 @@
       responsavel: upper(r?.responsavel),
       status: upper(r?.status || "ATIVO"),
       termoAssinado: upper(r?.termoAssinado || "NÃO"),
+      termoArquivoNome: safeText(r?.termoArquivoNome || ""),
+      termoArquivoUrl: safeText(r?.termoArquivoUrl || ""),
+      termoArquivoId: safeText(r?.termoArquivoId || ""),
       createdAt: Number(r?.createdAt || 0) || 0,
       updatedAt: Number(r?.updatedAt || 0) || 0,
     };
@@ -212,43 +246,37 @@
   }
 
   async function loadFrotaFromSheets() {
-    const res = await jsonp(buildUrl({ action: "frotaleve_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro frotaleve_list");
+    const res = await apiGet({ action: "frotaleve_list" });
     DATA.frota = (res.data || []).map(normalizeFrota);
   }
 
   async function loadChequesFromSheets() {
-    const res = await jsonp(buildUrl({ action: "cheques_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_list");
+    const res = await apiGet({ action: "cheques_list" });
     DATA.cheques = sortByDateDesc((res.data || []).map(normalizeChequeRow), "data");
   }
 
   async function loadMateriaisFromSheets() {
-    const res = await jsonp(buildUrl({ action: "materiais_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro materiais_list");
+    const res = await apiGet({ action: "materiais_list" });
     DATA.materiais = sortByDateDesc((res.data || []).map(normalizeMaterialRow), "data");
   }
 
   async function loadSolicFromSheets() {
-    const res = await jsonp(buildUrl({ action: "solicit_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_list");
+    const res = await apiGet({ action: "solicit_list" });
     DATA.solicitacoes = sortByDateDesc((res.data || []).map(normalizeSolic), "data");
   }
 
   async function loadPatFromSheets() {
-    const res = await jsonp(buildUrl({ action: "patrimonio_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_list");
+    const res = await apiGet({ action: "patrimonio_list" });
     DATA.patrimonio = (res.data || []).map(normalizePat);
   }
 
   async function loadEpisFromSheets() {
-    const res = await jsonp(buildUrl({ action: "epis_list" }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_list");
+    const res = await apiGet({ action: "epis_list" });
     DATA.epis = (res.data || []).map(normalizeEpi);
   }
 
   async function createFrotaOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "frotaleve_add",
       filial: upper(payload.filial),
       placa: upper(payload.placa || ""),
@@ -257,13 +285,12 @@
       tipoVeiculo: upper(payload.tipoVeiculo || ""),
       mes: upper(payload.mes || ""),
       status: upper(payload.status || "OK"),
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro frotaleve_add");
+    });
     return res.data;
   }
 
   async function updateFrotaOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "frotaleve_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
@@ -273,13 +300,12 @@
       tipoVeiculo: payload.tipoVeiculo != null ? upper(payload.tipoVeiculo) : "",
       mes: payload.mes != null ? upper(payload.mes) : "",
       status: payload.status != null ? upper(payload.status) : "",
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro frotaleve_update");
+    });
     return res.data;
   }
 
   async function createChequeOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "cheques_add",
       filial: upper(payload.filial),
       data: safeText(payload.data),
@@ -287,24 +313,28 @@
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
       termoAssinado: upper(payload.termoAssinado || "NÃO"),
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_add");
+      termoArquivoNome: safeText(payload.termoArquivoNome || ""),
+      termoArquivoUrl: safeText(payload.termoArquivoUrl || ""),
+      termoArquivoId: safeText(payload.termoArquivoId || ""),
+    });
     return res.data;
   }
 
   async function updateChequeOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "cheques_update",
       id: safeText(payload.id),
       status: payload.status != null ? upper(payload.status) : "",
       termoAssinado: payload.termoAssinado != null ? upper(payload.termoAssinado) : "",
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro cheques_update");
+      termoArquivoNome: payload.termoArquivoNome != null ? safeText(payload.termoArquivoNome) : "",
+      termoArquivoUrl: payload.termoArquivoUrl != null ? safeText(payload.termoArquivoUrl) : "",
+      termoArquivoId: payload.termoArquivoId != null ? safeText(payload.termoArquivoId) : "",
+    });
     return res.data;
   }
 
   async function createMaterialOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "materiais_add",
       filial: upper(payload.filial),
       data: safeText(payload.data),
@@ -312,13 +342,12 @@
       responsavel: upper(payload.responsavel || ""),
       status: upper(payload.status || "ATIVO"),
       recebido: upper(payload.recebido || "NÃO"),
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro materiais_add");
+    });
     return res.data;
   }
 
   async function updateMaterialOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "materiais_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
@@ -327,13 +356,12 @@
       responsavel: payload.responsavel != null ? upper(payload.responsavel) : "",
       status: payload.status != null ? upper(payload.status) : "",
       recebido: payload.recebido != null ? upper(payload.recebido) : "",
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro materiais_update");
+    });
     return res.data;
   }
 
   async function createSolicOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "solicit_add",
       filial: upper(payload.filial),
       tipo: upper(payload.tipo || "GERAL"),
@@ -341,13 +369,12 @@
       status: upper(payload.status || "ABERTA"),
       observacao: safeText(payload.observacao || ""),
       solicitante: upper(payload.solicitante || (window.getUser?.() || "USUÁRIO")),
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_add");
+    });
     return res.data;
   }
 
   async function updateSolicOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "solicit_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
@@ -356,13 +383,12 @@
       status: payload.status != null ? upper(payload.status) : "",
       observacao: payload.observacao != null ? safeText(payload.observacao) : "",
       solicitante: payload.solicitante != null ? upper(payload.solicitante) : "",
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro solicit_update");
+    });
     return res.data;
   }
 
   async function createPatOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "patrimonio_add",
       filial: upper(payload.filial),
       equipamento: upper(payload.equipamento || ""),
@@ -370,13 +396,12 @@
       posse: upper(payload.posse || ""),
       status: upper(payload.status || "ATIVO"),
       observacao: safeText(payload.observacao || ""),
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_add");
+    });
     return res.data;
   }
 
   async function updatePatOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "patrimonio_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
@@ -385,13 +410,12 @@
       posse: payload.posse != null ? upper(payload.posse) : "",
       status: payload.status != null ? upper(payload.status) : "",
       observacao: payload.observacao != null ? safeText(payload.observacao) : "",
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro patrimonio_update");
+    });
     return res.data;
   }
 
   async function createEpiOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "epis_add",
       filial: upper(payload.filial),
       colaborador: upper(payload.colaborador || ""),
@@ -400,13 +424,12 @@
       dataEntrega: safeText(payload.dataEntrega || todayBR()),
       validade: safeText(payload.validade || ""),
       observacao: safeText(payload.observacao || ""),
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_add");
+    });
     return res.data;
   }
 
   async function updateEpiOnSheets(payload) {
-    const res = await jsonp(buildUrl({
+    const res = await apiGet({
       action: "epis_update",
       id: safeText(payload.id),
       filial: payload.filial != null ? upper(payload.filial) : "",
@@ -416,9 +439,39 @@
       dataEntrega: payload.dataEntrega != null ? safeText(payload.dataEntrega) : "",
       validade: payload.validade != null ? safeText(payload.validade) : "",
       observacao: payload.observacao != null ? safeText(payload.observacao) : "",
-    }));
-    if (!res || res.ok === false) throw new Error(res?.error || "Erro epis_update");
+    });
     return res.data;
+  }
+
+  async function uploadChequeTermoOnServer(chequeId, file, extra = {}) {
+    const base64 = await readFileAsBase64(file);
+
+    const res = await apiPostJSON({
+      action: "cheques_upload_termo",
+      id: safeText(chequeId),
+      fileName: safeText(file.name),
+      mimeType: safeText(file.type || "application/octet-stream"),
+      base64: base64,
+      filial: upper(extra.filial || ""),
+      sequencia: safeText(extra.sequencia || ""),
+    });
+
+    return res.data;
+  }
+
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const result = String(reader.result || "");
+        const base64 = result.includes(",") ? result.split(",")[1] : result;
+        resolve(base64);
+      };
+
+      reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
+      reader.readAsDataURL(file);
+    });
   }
 
   function fillFiliaisSelect() {
@@ -610,13 +663,16 @@
 
     if (!ordered.length) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="6" style="opacity:.85">Nenhum cheque cadastrado nesta filial. Use + Novo para lançar.</td>`;
+      tr.innerHTML = `<td colspan="8" style="opacity:.85">Nenhum cheque cadastrado nesta filial. Use + Novo para lançar.</td>`;
       tbody.appendChild(tr);
       return;
     }
 
     ordered.forEach((it) => {
       const termo = upper(it.termoAssinado || "NÃO");
+      const hasFile = !!safeText(it.termoArquivoUrl);
+      const isUploading = STATE.uploadingChequeId === it.id;
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${escapeHtml(it.filial)}</td>
@@ -629,6 +685,18 @@
             data-toggle-termo="${escapeHtml(it.id)}"
             data-termo-atual="${termo}"
           >${termo}</button>
+        </td>
+        <td>
+          <button class="linkBtn" type="button"
+            data-upload-cheque="${escapeHtml(it.id)}"
+            ${isUploading ? "disabled" : ""}
+          >${isUploading ? "ENVIANDO..." : (hasFile ? "TROCAR" : "UPLOAD")}</button>
+        </td>
+        <td>
+          ${hasFile
+            ? `<a class="linkBtn" href="${escapeHtml(it.termoArquivoUrl)}" target="_blank" rel="noopener">ABRIR</a>`
+            : `<span style="opacity:.65">—</span>`
+          }
         </td>
       `;
       tbody.appendChild(tr);
@@ -747,6 +815,69 @@
       console.error(e);
       setStatus("❌ Falha");
       alert(e?.message || "Falha ao atualizar material");
+    }
+  }
+
+  async function handleChequeUploadClick(chequeId) {
+    const input = $("#chequeFileInput");
+    if (!input) {
+      alert("Input de upload não encontrado no HTML.");
+      return;
+    }
+
+    STATE.currentChequeUploadId = safeText(chequeId);
+    input.value = "";
+    input.click();
+  }
+
+  async function handleChequeFileSelected(file) {
+    const chequeId = safeText(STATE.currentChequeUploadId);
+    if (!chequeId || !file) return;
+
+    const cheque = DATA.cheques.find((x) => x.id === chequeId);
+    if (!cheque) {
+      alert("Cheque não encontrado para upload.");
+      return;
+    }
+
+    const allowed = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
+
+    const extOk = /\.(pdf|png|jpe?g|webp)$/i.test(file.name || "");
+    if (!allowed.includes(file.type) && !extOk) {
+      alert("Envie somente PDF, JPG, JPEG, PNG ou WEBP.");
+      return;
+    }
+
+    try {
+      STATE.uploadingChequeId = chequeId;
+      renderChequesArea();
+      setStatus("📤 Enviando termo assinado...");
+
+      await uploadChequeTermoOnServer(chequeId, file, {
+        filial: cheque.filial,
+        sequencia: cheque.sequencia,
+      });
+
+      await reloadAll(false);
+      renderChequesArea();
+      setStatus("✅ Termo enviado com sucesso");
+    } catch (e) {
+      console.error("[admin] upload cheque erro:", e);
+      setStatus("❌ Falha no upload");
+      alert(
+        e?.message ||
+        "Falha ao enviar arquivo. Confira se o Apps Script já possui a ação cheques_upload_termo em doPost."
+      );
+    } finally {
+      STATE.uploadingChequeId = "";
+      STATE.currentChequeUploadId = "";
+      renderChequesArea();
     }
   }
 
@@ -1278,6 +1409,12 @@
         return;
       }
 
+      if (el.matches("[data-upload-cheque]")) {
+        const id = el.getAttribute("data-upload-cheque") || "";
+        if (id) handleChequeUploadClick(id);
+        return;
+      }
+
       if (el.matches("[data-edit]")) {
         const tab = el.getAttribute("data-edit") || "";
         const id = el.getAttribute("data-id") || "";
@@ -1336,6 +1473,18 @@
     document.addEventListener("keydown", (ev) => {
       if (ev.key === "Escape" && modal.el?.classList.contains("isOpen")) closeModal();
     });
+
+    const fileInput = $("#chequeFileInput");
+    if (fileInput) {
+      fileInput.addEventListener("change", async (ev) => {
+        const input = ev.target;
+        const file = input?.files?.[0];
+        if (file) {
+          await handleChequeFileSelected(file);
+        }
+        input.value = "";
+      });
+    }
   }
 
   function initHeader() {

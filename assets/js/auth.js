@@ -11,6 +11,7 @@ const USERS = {
   MARCELO:   { password: "8888", states: ["COMERCIAL"] },
   SERGIO:   { password: "5554", states: ["COMERCIAL"] },
   RONE:   { password: "5554", states: ["COMERCIAL"] },
+  EVERALDOJR:   { password: "2000", states: ["COMERCIAL"] },
   KIEWERSON:   { password: "5554", states: ["COMERCIAL"] },
   RAFAEL:   { password: "5554", states: ["COMERCIAL"] },
   MATEUS:   { password: "5554", states: ["COMERCIAL"] },

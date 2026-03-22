@@ -3,7 +3,7 @@
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbysabnW3gmEpzwrc0AAnRFlGdNeAK_7tF1hpYaYnxajxv4fLYpPPtL9ZUPZJljkMMNV/exec";
+    "https://script.google.com/macros/s/AKfycbyOfN1PHdk_C4D5z1SFEEVEg7wWKnc7SberIARP4p6gt38fcrNeiNDjbq2vYrE9ryL0/exec";
 
   const DIRECTORY = {
     regionais: ["GOIAS", "MINAS"],
@@ -425,51 +425,49 @@
   }
 
   function createColorTag(text, kind) {
-  const span = document.createElement("span");
-  const value = safeText(text);
+    const span = document.createElement("span");
+    const value = safeText(text);
 
-  if (!value) {
-    span.textContent = "";
+    if (!value) {
+      span.textContent = "";
+      return span;
+    }
+
+    const fixed = getFixedColorConfig(value, kind);
+    let bg, fg, colorName;
+
+    if (fixed) {
+      bg = fixed.bg;
+      fg = fixed.fg;
+      colorName = fixed.name;
+    } else {
+      const palette = getFallbackPalette(kind);
+      const item = palette[hashCode(value) % palette.length];
+      bg = item[0];
+      fg = item[1];
+      colorName = item[2];
+    }
+
+    const finalText = kind === "produto"
+      ? `${colorName} • ${value}`
+      : value;
+
+    span.textContent = finalText;
+    span.style.display = "inline-flex";
+    span.style.alignItems = "center";
+    span.style.maxWidth = "100%";
+    span.style.padding = "2px 8px";
+    span.style.borderRadius = "999px";
+    span.style.fontWeight = "800";
+    span.style.fontSize = "11px";
+    span.style.lineHeight = "1.2";
+    span.style.background = bg;
+    span.style.color = fg;
+    span.style.border = `1px solid ${fg}22`;
+    span.style.whiteSpace = "nowrap";
+
     return span;
   }
-
-  const fixedMap = getPalette(kind);
-  const fixed = fixedMap[upper(value)];
-
-  let bg;
-  let fg;
-  let colorLabel = "";
-
-  if (fixed) {
-    bg = fixed.bg;
-    fg = fixed.fg;
-    colorLabel = fixed.label || "";
-  } else {
-    const pal = fallbackPalette(kind);
-    const selected = pal[hashCode(value) % pal.length];
-    bg = selected[0];
-    fg = selected[1];
-    colorLabel = selected[2] || "";
-  }
-
-  span.textContent = value;
-  span.dataset.colorName = colorLabel || "";
-
-  span.style.display = "inline-flex";
-  span.style.alignItems = "center";
-  span.style.maxWidth = "100%";
-  span.style.padding = "2px 8px";
-  span.style.borderRadius = "999px";
-  span.style.fontWeight = "800";
-  span.style.fontSize = "11px";
-  span.style.lineHeight = "1.2";
-  span.style.background = bg;
-  span.style.color = fg;
-  span.style.border = `1px solid ${fg}22`;
-  span.style.whiteSpace = "nowrap";
-
-  return span;
-}
 
   function buildContatoCell(contatoText) {
     const td = document.createElement("td");

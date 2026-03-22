@@ -27,7 +27,7 @@
       "RIO VERDE FERT": [{ nome: "NARCISO", fone: "5564999365343" }],
       "VIANOPOLIS": [{ nome: "FHELLIPE", fone: "5562999307778" }],
       "FORMOSA": [{ nome: "FABIOLA", fone: "5562996017658" }],
-      "CATALAO": [{ nome: "EVERALDO JR", fone: "556492373735" }],
+      "CATALÃO": [{ nome: "EVERALDO JR", fone: "556492373735" }],
       "URUAÇU": [{ nome: "GUILHERME", fone: "5562996978707" }],
     },
   };

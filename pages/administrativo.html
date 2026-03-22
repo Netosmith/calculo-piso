@@ -1,68 +1,214 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Administrativo | Nova Frota</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Administrativo | NOVA FROTA</title>
 
-  <link rel="stylesheet" href="../assets/css/app.css"/>
-  <link rel="stylesheet" href="../assets/css/administrativo.css"/>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/administrativo.css" />
 </head>
 
 <body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="burger" href="./home.html" title="Voltar">🏠</a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
 
-<div class="topbar">
-  <div class="topbar-inner">
-    <div class="brand">
-      <a class="burger" href="./home.html">🏠</a>
-      <img src="../assets/img/logo-novafrota.png"/>
-    </div>
+      <div class="actions">
+        <button class="icon-btn" id="btnTopSolic" type="button" title="Solicitações">
+          📋 <span class="badge" id="badgeTopSolic">0</span>
+        </button>
 
-    <div class="actions">
-      <button id="btnAdminReload">🔄</button>
-      <button data-logout>SAIR</button>
+        <div class="icon-btn" title="Configurações">⚙️</div>
+        <div class="icon-btn" title="Sair" data-logout>SAIR</div>
+      </div>
     </div>
   </div>
-</div>
 
-<section class="hero">
-<div class="container">
+  <section class="hero admin-hero">
+    <div class="container hero-content admin-wrap adminPage">
 
-<h2>ADMINISTRATIVO</h2>
+      <div class="admin-head">
+        <div class="admin-title">
+          <div class="admin-title-row">
+            <div class="admin-gear">⚙️</div>
+            <div>
+              <div class="admin-h1">ADMINISTRATIVO</div>
+              <div class="admin-sub" id="adminSub">Central de rotinas internas.</div>
+              <div class="admin-sync" id="adminSyncStatus">✅ Pronto</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-<!-- FILIAIS -->
-<div id="filialBar"></div>
+      <div class="admin-summary">
+        <button class="sumCard sumBlue" data-tab="frota" type="button">
+          <div class="sumIcon">🚗</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Frota leve</div>
+            <div class="sumValue"><span id="kpiFrota">0</span> itens</div>
+          </div>
+        </button>
 
-<!-- TABELA CHEQUES -->
-<table class="table">
-  <thead>
-    <tr>
-      <th>Filial</th>
-      <th>Data</th>
-      <th>Seq</th>
-      <th>Responsável</th>
-      <th>Status</th>
-      <th>Termo</th>
-      <th>Upload</th>
-      <th>Abrir</th>
-    </tr>
-  </thead>
-  <tbody id="chequesTbody"></tbody>
-</table>
+        <button class="sumCard sumGreen" data-tab="cheques" type="button">
+          <div class="sumIcon">💳</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Cheques</div>
+            <div class="sumValue"><span id="kpiCheques">0</span> registros</div>
+          </div>
+        </button>
 
-</div>
-</section>
+        <button class="sumCard sumBlue" data-tab="materiais" type="button">
+          <div class="sumIcon">📦</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Materiais</div>
+            <div class="sumValue"><span id="kpiMateriais">0</span> registros</div>
+          </div>
+        </button>
 
-<!-- INPUT OCULTO -->
-<input type="file" id="chequeFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none;"/>
+        <button class="sumCard sumGold" data-tab="solicitacoes" type="button">
+          <div class="sumIcon">📋</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Solicitações</div>
+            <div class="sumValue"><span id="kpiSolic">0</span> abertas</div>
+          </div>
+        </button>
 
-<script src="../assets/js/auth.js"></script>
-<script src="../assets/js/administrativo.js"></script>
+        <button class="sumCard sumPurple" data-tab="patrimonio" type="button">
+          <div class="sumIcon">🏷️</div>
+          <div class="sumTxt">
+            <div class="sumTitle">Patrimônio</div>
+            <div class="sumValue"><span id="kpiPatrimonio">0</span> itens</div>
+          </div>
+        </button>
 
-<script>
-requireHomeAuth();
-bindLogoutButton();
-</script>
+        <button class="sumCard sumSlate" data-tab="epis" type="button">
+          <div class="sumIcon">🦺</div>
+          <div class="sumTxt">
+            <div class="sumTitle">EPIs</div>
+            <div class="sumValue"><span id="kpiEpis">0</span> entregas</div>
+          </div>
+        </button>
+      </div>
 
+      <div class="admin-tabs">
+        <button class="tabBtn isActive" data-tab="frota" type="button">Frota Leve</button>
+        <button class="tabBtn" data-tab="cheques" type="button">Cheques</button>
+        <button class="tabBtn" data-tab="materiais" type="button">Materiais</button>
+        <button class="tabBtn" data-tab="solicitacoes" type="button">Solicitações</button>
+        <button class="tabBtn" data-tab="patrimonio" type="button">Patrimônio</button>
+        <button class="tabBtn" data-tab="epis" type="button">Controle de EPIs</button>
+        <div class="tabLine"></div>
+      </div>
+
+      <div class="admin-panel">
+        <div class="panelHead">
+          <div class="panelTitle" id="panelTitle">Frota Leve</div>
+          <div class="panelRight">
+            <select class="adminSelect" id="fFilialAdmin" title="Filial">
+              <option value="">Todas as filiais</option>
+            </select>
+
+            <input class="adminSearch" id="fBuscaAdmin" placeholder="Buscar..." />
+
+            <button class="btnAdmin ghost" id="btnAdminReload" type="button">Atualizar</button>
+            <button class="btnAdmin" id="btnAdminNovo" type="button">+ Novo</button>
+          </div>
+        </div>
+
+        <div class="panelBody">
+          <div class="view isActive" id="view-frota">
+            <div class="cardsGrid" id="gridFrota"></div>
+          </div>
+
+          <div class="view" id="view-cheques">
+            <div class="chequesBox">
+              <div class="chequesMeta" id="chequesMeta">Selecionado: — • Total: 0 • Pendentes: 0</div>
+              <div class="filialBar" id="filialBar"></div>
+
+              <div class="nfTableWrap">
+                <table class="nfTable">
+                  <thead>
+                    <tr>
+                      <th>Filial</th>
+                      <th>Data</th>
+                      <th>Sequência</th>
+                      <th>Responsável</th>
+                      <th>Status</th>
+                      <th>Termo assinado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="chequesTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="view" id="view-materiais">
+            <div class="chequesBox">
+              <div class="chequesMeta" id="materiaisMeta">Selecionado: — • Total: 0 • Pendentes: 0</div>
+              <div class="filialBar" id="materialBar"></div>
+
+              <div class="nfTableWrap">
+                <table class="nfTable">
+                  <thead>
+                    <tr>
+                      <th>Filial</th>
+                      <th>Data</th>
+                      <th>Material</th>
+                      <th>Responsável</th>
+                      <th>Status</th>
+                      <th>Recebido</th>
+                    </tr>
+                  </thead>
+                  <tbody id="materiaisTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="view" id="view-solicitacoes">
+            <div class="cardsGrid" id="gridSolic"></div>
+          </div>
+
+          <div class="view" id="view-patrimonio">
+            <div class="cardsGrid" id="gridPatrimonio"></div>
+          </div>
+
+          <div class="view" id="view-epis">
+            <div class="cardsGrid" id="gridEpis"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="modalAdmin" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitleAdmin">
+      <div class="modalHead">
+        <h2 id="modalTitleAdmin">Novo</h2>
+        <button class="iconClose" id="btnCloseModalAdmin" type="button" title="Fechar">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid2" id="modalFieldsAdmin"></div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btnAdmin ghost" id="btnCancelModalAdmin" type="button">Cancelar</button>
+        <button class="btnAdmin" id="btnSaveModalAdmin" type="button">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/administrativo.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
 </body>
 </html>

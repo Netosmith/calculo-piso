@@ -1052,9 +1052,9 @@
     .head{ text-align:center; margin-bottom:10px; border:1px solid #cfd8dc; padding:12px 10px; }
     .head img{ max-width:420px; max-height:75px; object-fit:contain; display:block; margin:0 auto 6px; }
     .bar{ height:24px; background:#3B7D23; margin-bottom:0; border:1px solid #2f661b; border-bottom:none; }
-    table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px; }
-    thead th{ background:#F6D96B; color:#1f2937; border:1px solid #666; padding:6px 4px; text-align:center; font-weight:900; }
-    tbody td{ border:1px solid #666; padding:4px 4px; vertical-align:middle; word-wrap:break-word; }
+    table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:10px; }
+    thead th{ background:#F6D96B; color:#1f2937; border:1px solid #666; padding:4px 3px; text-align:center; font-weight:900; font-size:10px; line-height:1.05 }
+    tbody td{ border:1px solid #666; padding:2px 3px; vertical-align:middle; word-wrap:break-word; font-size:9px; line-height:1.05; }
     tbody tr:nth-child(even){ background:#f8f8f8; }
     .freteCol{ color:#c62828; font-weight:900; text-align:right; }
     .colRegional{width:6%}.colFilial{width:9%}.colOrigem{width:13%}.colColeta{width:14%}.colDestino{width:13%}.colUf{width:4%}.colDescarga{width:8%}.colProduto{width:8%}.colFrete{width:9%}.colContato{width:16%}

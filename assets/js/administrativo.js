@@ -313,6 +313,9 @@
       responsavel: upper(payload.responsavel),
       status: upper(payload.status || "ATIVO"),
       termoAssinado: upper(payload.termoAssinado || "NÃO"),
+      termoArquivoNome: safeText(payload.termoArquivoNome || ""),
+      termoArquivoUrl: safeText(payload.termoArquivoUrl || ""),
+      termoArquivoId: safeText(payload.termoArquivoId || ""),
     });
     return res.data;
   }
@@ -323,6 +326,9 @@
       id: safeText(payload.id),
       status: payload.status != null ? upper(payload.status) : "",
       termoAssinado: payload.termoAssinado != null ? upper(payload.termoAssinado) : "",
+      termoArquivoNome: payload.termoArquivoNome != null ? safeText(payload.termoArquivoNome) : "",
+      termoArquivoUrl: payload.termoArquivoUrl != null ? safeText(payload.termoArquivoUrl) : "",
+      termoArquivoId: payload.termoArquivoId != null ? safeText(payload.termoArquivoId) : "",
     });
     return res.data;
   }
@@ -437,7 +443,7 @@
     return res.data;
   }
 
-  async function uploadChequeTermoOnServer(chequeId, file) {
+  async function uploadChequeTermoOnServer(chequeId, file, extra = {}) {
     const base64 = await readFileAsBase64(file);
 
     const res = await apiPostJSON({
@@ -445,7 +451,9 @@
       id: safeText(chequeId),
       fileName: safeText(file.name),
       mimeType: safeText(file.type || "application/octet-stream"),
-      base64Data: base64,
+      base64: base64,
+      filial: upper(extra.filial || ""),
+      sequencia: safeText(extra.sequencia || ""),
     });
 
     return res.data;
@@ -530,7 +538,7 @@
         tab === "frota" ? "Frota Leve" :
         tab === "cheques" ? "Cheques" :
         tab === "materiais" ? "Materiais" :
-        tab === "solicitacoes" ? "Solicitações" : 
+        tab === "solicitacoes" ? "Solicitações" :
         tab === "patrimonio" ? "Patrimônio" : "Controle de EPIs";
     }
 
@@ -826,16 +834,23 @@
     const chequeId = safeText(STATE.currentChequeUploadId);
     if (!chequeId || !file) return;
 
+    const cheque = DATA.cheques.find((x) => x.id === chequeId);
+    if (!cheque) {
+      alert("Cheque não encontrado para upload.");
+      return;
+    }
+
     const allowed = [
       "application/pdf",
       "image/png",
       "image/jpeg",
       "image/jpg",
+      "image/webp",
     ];
 
-    const extOk = /\.(pdf|png|jpe?g)$/i.test(file.name || "");
+    const extOk = /\.(pdf|png|jpe?g|webp)$/i.test(file.name || "");
     if (!allowed.includes(file.type) && !extOk) {
-      alert("Envie somente PDF, JPG, JPEG ou PNG.");
+      alert("Envie somente PDF, JPG, JPEG, PNG ou WEBP.");
       return;
     }
 
@@ -844,7 +859,10 @@
       renderChequesArea();
       setStatus("📤 Enviando termo assinado...");
 
-      await uploadChequeTermoOnServer(chequeId, file);
+      await uploadChequeTermoOnServer(chequeId, file, {
+        filial: cheque.filial,
+        sequencia: cheque.sequencia,
+      });
 
       await reloadAll(false);
       renderChequesArea();

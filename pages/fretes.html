@@ -175,12 +175,7 @@
       box-shadow:0 0 0 3px rgba(91,124,250,.18);
     }
 
-    .ft-grow{
-      flex:1 1 auto;
-    }
-
-    .ft-select,
-    .ft-search{
+    .ft-select, .ft-search{
       height:30px;
       padding:4px 10px;
       border-radius:10px;
@@ -192,8 +187,8 @@
     }
 
     .ft-select{
-      width:210px;
-      flex:0 0 210px;
+      width:220px;
+      flex:0 0 220px;
     }
 
     .ft-search{
@@ -203,11 +198,19 @@
       max-width:460px;
     }
 
+    .ft-search-wide{
+      flex:1 1 520px;
+      max-width:none;
+    }
+
     .ft-actions{
       display:flex;
       align-items:center;
       gap:10px;
-      flex-wrap:nowrap;
+      flex-wrap:wrap;
+    }
+
+    .top-actions{
       margin-left:auto;
     }
 
@@ -241,18 +244,20 @@
       color:#fff;
     }
 
-    @media (max-width:1200px){
-      .ft-actions{
+    @media (max-width:1100px){
+      .top-actions{
         margin-left:0;
-        flex-wrap:wrap;
+        width:100%;
+        justify-content:flex-start;
       }
     }
 
     @media (max-width:900px){
       .ft-select,
-      .ft-search{
-        flex:1 1 100%;
+      .ft-search,
+      .ft-search-wide{
         width:100%;
+        flex:1 1 100%;
         max-width:none;
       }
 
@@ -501,6 +506,13 @@
 
         <button class="btnTiny" id="btnSaveWeights" type="button">Salvar</button>
         <button class="btnTiny ghost" id="btnResetWeights" type="button">Reset</button>
+
+        <div class="ft-actions top-actions">
+          <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
+          <button class="btnTiny gold" id="btnDivulgacaoFrete" type="button">DIVULGAÇÃO FRETE</button>
+          <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
+          <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
+        </div>
       </div>
 
       <div class="ft-row">
@@ -516,14 +528,7 @@
           <option value="">Todos os contatos</option>
         </select>
 
-        <input class="ft-search" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
-
-        <div class="ft-actions">
-          <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
-          <button class="btnTiny gold" id="btnDivulgacaoFrete" type="button">DIVULGAÇÃO FRETE</button>
-          <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
-          <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
-        </div>
+        <input class="ft-search ft-search-wide" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
       </div>
     </div>
 

@@ -22,7 +22,7 @@
       "INDIARA": [{ nome: "RAFAEL", fone: "5564999108790" }],
       "ITUMBIARA": [{ nome: "JHONATAN", fone: "5564992251214" }],
       "JATAI": [{ nome: "RONE", fone: "5564996264511" }],
-      "CHAPADAO DO CEU": [{ nome: "RICARDO", fone: "5564999913512" }],
+      "CHAP CEU": [{ nome: "RICARDO", fone: "5564999913512" }],
       "CRISTALINA": [{ nome: "EVERALDO", fone: "5561996924906" }],
       "RIO VERDE FERT": [{ nome: "NARCISO", fone: "5564999365343" }],
       "VIANOPOLIS": [{ nome: "FHELLIPE", fone: "5562999307778" }],

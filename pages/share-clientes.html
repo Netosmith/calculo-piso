@@ -599,8 +599,7 @@
             const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
             if(key) renderForClient(key);
 
-            const clientesUnicos = new Set(BASE.map(r => canon(r.cliente)).filter(Boolean));
-            updateSyncStatus('success', `${BASE.length} fretes | ${clientesUnicos.size} clientes`);
+            updateSyncStatus('success', 'Dados atualizados');
 
           }catch(err){
             updateSyncStatus('error', 'Falha ao carregar');

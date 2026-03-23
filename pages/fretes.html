@@ -3,106 +3,664 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fretes | NOVA FROTA</title>
 
-  <!-- 🔥 anti-cache -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="../assets/css/app.css" />
 
-  <title>Administrativo | NOVA FROTA</title>
+  <style>
+    .container{max-width:1400px}
+    .card{padding:14px; overflow:hidden}
 
-  <link rel="stylesheet" href="../assets/css/app.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/administrativo.css?v=1" />
+    .tableWrap{
+      overflow:auto;
+      border:1px solid rgba(43,58,114,.35);
+      border-radius:14px;
+      height: calc(100vh - 210px);
+      min-height: 520px;
+      background:#fff;
+    }
+
+    @media (max-width:1100px){
+      .tableWrap{height:auto; min-height:360px;}
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1700px;
+      background:#fff;
+    }
+
+    th,td{
+      padding:4px 8px;
+      border-bottom:1px solid #D1D5DB;
+      font-size:11px;
+      line-height:1.15;
+      vertical-align:middle;
+      white-space:nowrap;
+      color:#111827;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:3;
+      background:#0F172A;
+      color:#fff;
+      border-bottom:1px solid #0B1220;
+      font-size:10px;
+      letter-spacing:.02em;
+      padding:5px 8px;
+    }
+
+    tbody tr:nth-child(even){background:#F1F4F9;}
+    tbody tr:hover{background:#E8EDFF;}
+
+    .container.nfWide{
+      max-width: 100% !important;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .container.pageFretes{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:calc(100vh - 72px);
+      padding: 12px 12px 18px;
+      background:#F5F7FA;
+    }
+
+    .card.tableFull{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      min-height: calc(100vh - 210px);
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      border-radius:18px;
+    }
+
+    .card.tableFull .tableWrap{
+      flex:1 1 auto;
+      max-height:none !important;
+      height:auto !important;
+    }
+
+    .fretes-top{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:12px 14px;
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .fretes-top .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .fretes-top .title h1{
+      margin:0;
+      font-size:18px;
+      font-weight:900;
+      letter-spacing:.2px;
+      color:#0F172A;
+    }
+
+    .fretes-top .title .sub{
+      font-size:12px;
+      color: rgba(17,24,39,.70);
+      max-width:980px;
+    }
+
+    .fretes-toolbar{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:18px;
+      border:1px solid #E5E7EB;
+      background:#FFFFFF;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .ft-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      width:100%;
+    }
+
+    .ft-label{
+      font-size:11px;
+      font-weight:900;
+      opacity:.9;
+      color:#0F172A;
+      margin-right:2px;
+    }
+
+    .ft-mini{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      font-weight:900;
+      color:#0F172A;
+      opacity:.95;
+    }
+
+    .ft-mini input{
+      width:66px;
+      height:30px;
+      padding:4px 8px;
+      border-radius:10px;
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
+      outline:none;
+    }
+
+    .ft-mini input:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+
+    .ft-select, .ft-search{
+      height:30px;
+      padding:4px 10px;
+      border-radius:10px;
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
+      outline:none;
+      font-size:11px;
+    }
+
+    .ft-select{
+      width:220px;
+      flex:0 0 220px;
+    }
+
+    .ft-search{
+      width:360px;
+      flex:1 1 360px;
+      min-width:220px;
+      max-width:460px;
+    }
+
+    .ft-search-wide{
+      flex:1 1 520px;
+      max-width:none;
+    }
+
+    .ft-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .top-actions{
+      margin-left:auto;
+    }
+
+    .btnTiny{
+      height:30px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:#0F172A;
+      color:#FFFFFF;
+      font-weight:900;
+      font-size:11px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .btnTiny:hover{filter:brightness(1.06)}
+    .btnTiny.green{background:#0B3B2E; border-color:rgba(6,118,71,.25)}
+    .btnTiny.ghost{
+      background:#FFFFFF;
+      color:#0F172A;
+      border:1px solid #D1D5DB;
+    }
+    .btnTiny.blue{
+      background:#102A6B;
+      border-color:rgba(59,130,246,.35);
+    }
+    .btnTiny.gold{
+      background:#8A6A12;
+      border-color:rgba(180,131,22,.35);
+      color:#fff;
+    }
+
+    @media (max-width:1100px){
+      .top-actions{
+        margin-left:0;
+        width:100%;
+        justify-content:flex-start;
+      }
+    }
+
+    @media (max-width:900px){
+      .ft-select,
+      .ft-search,
+      .ft-search-wide{
+        width:100%;
+        flex:1 1 100%;
+        max-width:none;
+      }
+
+      .ft-actions{
+        width:100%;
+        justify-content:flex-start;
+      }
+    }
+
+    .num{text-align:right;}
+    input, select, textarea { text-transform: uppercase; }
+
+    .waIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;
+      height:24px;
+      border-radius:8px;
+      border:1px solid rgba(17,24,39,.12);
+      background:#fff;
+      padding:0;
+      line-height:1;
+      flex:0 0 auto;
+    }
+    .waIcon:hover{
+      filter:brightness(1.03);
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+    }
+    .waIcon img{
+      width:15px;
+      height:15px;
+      display:block;
+    }
+
+    .pillSN{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:26px;
+      height:18px;
+      border-radius:999px;
+      font-weight:950;
+      font-size:10px;
+      letter-spacing:.02em;
+      border:1px solid rgba(17,24,39,.18);
+      box-shadow:0 2px 10px rgba(0,0,0,.06);
+      user-select:none;
+    }
+    .pillSN.s{background:#DCFCE7;border-color:#86EFAC;color:#166534;}
+    .pillSN.n{background:#FEE2E2;border-color:#FCA5A5;color:#7F1D1D;}
+    .pillSN.empty{background:#EEF2F7;border-color:#CBD5E1;color:#475569;}
+
+    .groupRow td{
+      background:#0F172A !important;
+      color:#fff !important;
+      font-weight:900;
+      letter-spacing:.02em;
+      border-bottom:1px solid #0B1220;
+      position:sticky;
+      top:29px;
+      z-index:2;
+      padding:6px 8px;
+    }
+
+    #modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      padding:18px;
+    }
+
+    .modalCard{
+      width:min(980px, 100%);
+      background:#fff;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 18px 45px rgba(0,0,0,.28);
+      overflow:hidden;
+    }
+
+    .modalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid #E5E7EB;
+      background:#F8FAFC;
+    }
+
+    .modalHead h2{
+      margin:0;
+      font-size:14px;
+      font-weight:950;
+      color:#0F172A;
+    }
+
+    .iconClose{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      border:1px solid #D1D5DB;
+      background:#fff;
+      cursor:pointer;
+      font-weight:900;
+      color:#0F172A;
+    }
+
+    .modalBody{
+      padding:14px;
+      max-height: calc(100vh - 220px);
+      overflow:auto;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+
+    @media (max-width:900px){
+      .grid2{grid-template-columns:1fr;}
+    }
+
+    .field label{
+      display:block;
+      font-size:11px;
+      font-weight:900;
+      color:#0F172A;
+      margin:0 0 6px;
+    }
+
+    .field input, .field select, .field textarea{
+      width:100%;
+      height:32px;
+      padding:5px 10px;
+      border-radius:12px;
+      border:1px solid #D1D5DB;
+      background:#fff;
+      outline:none;
+      color:#111827;
+      font-size:12px;
+    }
+
+    .field textarea{
+      height:auto;
+      min-height:72px;
+      resize:vertical;
+    }
+
+    .field input:focus, .field select:focus, .field textarea:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+
+    .modalFoot{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding:12px 14px;
+      border-top:1px solid #E5E7EB;
+      background:#F8FAFC;
+    }
+
+    .inlineCellWrap{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      position:relative;
+      min-width:48px;
+    }
+
+    .inlineCellInput{
+      width:48px;
+      height:24px;
+      border:1px solid #D1D5DB;
+      border-radius:7px;
+      background:#fff;
+      text-align:center;
+      font-size:11px;
+      font-weight:800;
+      color:#111827;
+      outline:none;
+      padding:0 4px;
+      text-transform:none !important;
+    }
+
+    .inlineCellInput:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+      background:#F8FBFF;
+    }
+
+    .inlineCellWrap.isSaving::after{
+      content:"...";
+      position:absolute;
+      right:-14px;
+      color:#64748B;
+      font-size:10px;
+      font-weight:900;
+    }
+  </style>
 </head>
 
 <body>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <a class="burger" href="./home.html" title="Voltar"><div></div></a>
+        <a class="burger" href="./home.html" title="Voltar">🏠</a>
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
-
       <div class="actions">
-        <button class="icon-btn" id="btnTopSolic" type="button" title="Solicitações">
-          📋 <span class="badge" id="badgeTopSolic">0</span>
-        </button>
-
-        <div class="icon-btn" title="Configurações">⚙️</div>
-        <div class="icon-btn" title="Sair" data-logout>👤</div>
+        <div class="icon-btn" title="Sair" data-logout>↩️</div>
       </div>
     </div>
   </div>
 
-  <section class="hero admin-hero">
-    <div class="container hero-content admin-wrap adminPage">
-
-      <div class="admin-head">
-        <div class="admin-title">
-          <div class="admin-title-row">
-            <div class="admin-gear">⚙️</div>
-            <div>
-              <div class="admin-h1">ADMINISTRATIVO</div>
-              <div class="admin-sub">Central de rotinas internas.</div>
-              <div class="admin-sync" id="adminSyncStatus">✅ Pronto</div>
-            </div>
-          </div>
+  <div class="container nfWide pageFretes">
+    <div class="card fretes-top">
+      <div class="title">
+        <h1>
+          Fretes (Operacional)
+          <span id="syncStatus" data-sync-status style="font-size:12px; opacity:0.7; margin-left:10px;">🔄 Carregando...</span>
+        </h1>
+        <div class="sub">
+          Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
+          <b>Dados sincronizados com Google Sheets em tempo real.</b>
         </div>
-      </div>
-
-      <div class="admin-tabs">
-        <button class="tabBtn" data-tab="frota">Frota Leve</button>
-        <button class="tabBtn isActive" data-tab="cheques">Cheques</button>
-      </div>
-
-      <div class="admin-panel">
-
-        <!-- ================= CHEQUES ================= -->
-        <div class="view isActive" id="view-cheques">
-          <div class="chequesBox">
-
-            <div class="nfTableWrap">
-              <table class="nfTable">
-                <thead>
-                  <tr>
-                    <th>Filial</th>
-                    <th>Data</th>
-                    <th>Sequência</th>
-                    <th>Responsável</th>
-                    <th>Status</th>
-                    <th>Termo</th>
-                    <th>Upload</th>
-                    <th>Arquivo</th>
-                  </tr>
-                </thead>
-
-                <tbody id="chequesTbody">
-                  <!-- JS vai montar -->
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </div>
-
       </div>
     </div>
-  </section>
 
-  <!-- 🔥 INPUT OCULTO DE UPLOAD -->
-  <input
-    type="file"
-    id="chequeFileInput"
-    accept=".pdf,.jpg,.jpeg,.png"
-    style="display:none"
-  />
+    <div class="fretes-toolbar">
+      <div class="ft-row">
+        <span class="ft-label">Pesos:</span>
+        <div class="ft-mini"><span>9E</span><input id="w9" type="number" step="0.01" value="47" /></div>
+        <div class="ft-mini"><span>4E</span><input id="w4" type="number" step="0.01" value="39" /></div>
+        <div class="ft-mini"><span>7E</span><input id="w7" type="number" step="0.01" value="36" /></div>
+        <div class="ft-mini"><span>6E</span><input id="w6" type="number" step="0.01" value="31" /></div>
+        <div class="ft-mini"><span>5E</span><input id="w5" type="number" step="0.01" value="26" /></div>
 
-  <script src="../assets/js/auth.js?v=1"></script>
-  <script src="../assets/js/administrativo.js?v=1"></script>
+        <button class="btnTiny" id="btnSaveWeights" type="button">Salvar</button>
+        <button class="btnTiny ghost" id="btnResetWeights" type="button">Reset</button>
+
+        <div class="ft-actions top-actions">
+          <button class="btnTiny" id="btnReloadFromSheets" data-action="atualizar" type="button">🔄 Atualizar</button>
+          <button class="btnTiny gold" id="btnDivulgacaoFrete" type="button">DIVULGAÇÃO FRETE</button>
+          <button class="btnTiny blue" id="btnShareClientes" type="button">Share Clientes</button>
+          <button class="btnTiny green" id="btnNew" data-action="novo" type="button">+ Novo</button>
+        </div>
+      </div>
+
+      <div class="ft-row">
+        <select class="ft-select" id="fRegional" title="Regional">
+          <option value="">Todas as regionais</option>
+        </select>
+
+        <select class="ft-select" id="fFilial" title="Filial">
+          <option value="">Todas as filiais</option>
+        </select>
+
+        <select class="ft-select" id="fContato" title="Contato">
+          <option value="">Todos os contatos</option>
+        </select>
+
+        <input class="ft-search ft-search-wide" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
+      </div>
+    </div>
+
+    <div class="card tableFull">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Regional</th>
+              <th>Filial</th>
+              <th>Cliente</th>
+              <th>Origem</th>
+              <th>Coleta</th>
+              <th>Contato</th>
+              <th>Destino</th>
+              <th>UF</th>
+              <th>Descarga</th>
+              <th class="num">Volume</th>
+              <th class="num">Vlr Empresa</th>
+              <th class="num">Vlr Motorista</th>
+              <th class="num">KM</th>
+              <th class="num">Pedágio/Eixo</th>
+              <th class="num">5E</th>
+              <th class="num">6E</th>
+              <th class="num">7E</th>
+              <th class="num">4E</th>
+              <th class="num">9E</th>
+              <th>Produto</th>
+              <th>ICMS</th>
+              <th class="num">Pedido SAT</th>
+              <th class="num">Porta</th>
+              <th class="num">Trânsito</th>
+              <th>Status</th>
+              <th>Observações</th>
+              <th class="num">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modalHead">
+        <h2 id="modalTitle">Novo Frete</h2>
+        <button class="iconClose" id="btnCloseModal" type="button" title="Fechar">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid2">
+          <div class="field">
+            <label>Regional</label>
+            <select id="mRegional"></select>
+          </div>
+
+          <div class="field">
+            <label>Filial</label>
+            <select id="mFilial"></select>
+          </div>
+
+          <div class="field">
+            <label>Cliente</label>
+            <select id="mCliente"></select>
+          </div>
+
+          <div class="field">
+            <label>Contato (Responsável da Filial)</label>
+            <select id="mContato"></select>
+          </div>
+
+          <div class="field"><label>Origem</label><input id="mOrigem" /></div>
+          <div class="field"><label>Coleta</label><input id="mColeta" /></div>
+
+          <div class="field"><label>Destino</label><input id="mDestino" /></div>
+          <div class="field"><label>UF</label><input id="mUF" /></div>
+
+          <div class="field"><label>Descarga</label><input id="mDescarga" /></div>
+          <div class="field"><label>Produto</label><input id="mProduto" /></div>
+
+          <div class="field"><label>KM</label><input id="mKM" inputmode="decimal" /></div>
+          <div class="field"><label>Pedágio/Eixo</label><input id="mPed" inputmode="decimal" /></div>
+
+          <div class="field"><label>Volume</label><input id="mVolume" inputmode="decimal" /></div>
+          <div class="field"><label>ICMS</label><input id="mICMS" inputmode="decimal" /></div>
+
+          <div class="field"><label>Vlr Empresa</label><input id="mEmpresa" inputmode="decimal" /></div>
+          <div class="field"><label>Vlr Motorista</label><input id="mMotorista" inputmode="decimal" /></div>
+
+          <div class="field"><label>Pedido SAT</label><input id="mSat" /></div>
+          <div class="field"><label>Porta</label><input id="mPorta" /></div>
+
+          <div class="field"><label>Trânsito</label><input id="mTransito" /></div>
+          <div class="field">
+            <label>Status</label>
+            <select id="mStatus">
+              <option value="LIBERADO">LIBERADO</option>
+              <option value="FINALIZANDO">FINALIZANDO</option>
+              <option value="SUSPENSO">SUSPENSO</option>
+            </select>
+          </div>
+
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Observações</label>
+            <textarea id="mObs"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btnTiny ghost" id="btnCancel" type="button">Cancelar</button>
+        <button class="btnTiny green" id="btnSave" type="button">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/fretes.js"></script>
 
   <script>
     requireHomeAuth();
     bindLogoutButton();
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("btnShareClientes");
+      if(btn){
+        btn.addEventListener("click", () => {
+          window.location.href = "./share-clientes.html";
+        });
+      }
+    });
   </script>
 </body>
 </html>

@@ -704,7 +704,7 @@
           <button class="linkBtn" type="button"
             data-upload-cheque="${escapeHtml(it.id)}"
             ${isUploading ? "disabled" : ""}
-          >${isUploading ? "ENVIANDO..." : (hasFile ? "TROCAR" : "UPLOAD")}</button>
+          >${isUploading ? "ENVIANDO..." : (hasFile ? "ALTERAR" : "UPLOAD")}</button>
         </td>
         <td>
           ${hasFile

@@ -6,11 +6,14 @@
     "https://script.google.com/macros/s/AKfycbybdYXsbNcEHCDznZwHL0SaJG-Y56GJ55Nq3DGCVjf8qmoRm-N1LgtrTV9A8Nprs83L/exec";
 
   const PESO_MEDIO = 38;
+  const AUTO_REFRESH_MS = 60000;
   const $ = (sel) => document.querySelector(sel);
 
   const STATE = {
     rows: [],
-    charts: {}
+    charts: {},
+    autoRefreshTimer: null,
+    isLoading: false
   };
 
   function safeText(v) {
@@ -198,32 +201,30 @@
   }
 
   function calcKPIs(rows) {
+    const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
+    const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
+    const totalVeiculos = porta + transito;
+    const volume = totalVeiculos * PESO_MEDIO;
 
-  const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
-  const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
-  const totalVeiculos = porta + transito;
-  const volume = totalVeiculos * PESO_MEDIO;
+    const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
+    const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
 
-  const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
-  const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
+    const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
 
-  const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
+    let margemPercent = 0;
+    if (totalEmpresa > 0) {
+      margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
+    }
 
-  let margemPercent = 0;
-
-  if (totalEmpresa > 0) {
-    margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
+    return {
+      porta,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemPercent
+    };
   }
-
-  return {
-    porta,
-    transito,
-    totalVeiculos,
-    volume,
-    freteMedio,
-    margemPercent
-  };
-}
 
   function renderKPIs(rows) {
     const k = calcKPIs(rows);
@@ -436,34 +437,34 @@
     }
 
     if (c3) {
-  STATE.charts.chartVolumeFilial = new Chart(c3, {
-    type: "bar",
-    data: {
-      labels: labelsFilial,
-      datasets: [{
-        label: "Volume (toneladas)",
-        data: volumeFilial,
-        backgroundColor: "rgba(22,163,74,.65)",
-        borderColor: "rgba(22,163,74,1)",
-        borderWidth: 1.5,
-        borderRadius: 10
-      }]
-    },
-    options: {
-      ...chartBaseOptions(),
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx){
-              return " " + ctx.raw.toLocaleString("pt-BR") + " toneladas";
+      STATE.charts.chartVolumeFilial = new Chart(c3, {
+        type: "bar",
+        data: {
+          labels: labelsFilial,
+          datasets: [{
+            label: "Volume (toneladas)",
+            data: volumeFilial,
+            backgroundColor: "rgba(22,163,74,.65)",
+            borderColor: "rgba(22,163,74,1)",
+            borderWidth: 1.5,
+            borderRadius: 10
+          }]
+        },
+        options: {
+          ...chartBaseOptions(),
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx){
+                  return " " + ctx.raw.toLocaleString("pt-BR") + " toneladas";
+                }
+              }
             }
           }
         }
-      }
+      });
     }
-  });
-}
 
     if (c4) {
       STATE.charts.chartPortaTransito = new Chart(c4, {
@@ -536,9 +537,12 @@
     renderCharts(rows);
   }
 
-  async function loadData() {
+  async function loadData(showStatus = true) {
+    if (STATE.isLoading) return;
+
     try {
-      setStatus("🔄 Carregando...", true);
+      STATE.isLoading = true;
+      if (showStatus) setStatus("🔄 Carregando...", true);
 
       const res = await apiGet({ action: "fretes_list" });
       let rows = [];
@@ -561,13 +565,30 @@
       if (!STATE.rows.length) {
         setStatus("⚠️ Sem dados em Fretes", false);
       } else {
-        setStatus(`✅ ${STATE.rows.length} registros carregados`, true);
+        const agora = new Date().toLocaleTimeString("pt-BR");
+        setStatus(`✅ Atualizado às ${agora}`, true);
       }
     } catch (e) {
       console.error("[bi] erro ao carregar:", e);
       setStatus("❌ Falha ao carregar", false);
-      alert("Erro ao carregar o B.I.: " + (e.message || "Erro desconhecido"));
+      if (showStatus) {
+        alert("Erro ao carregar o B.I.: " + (e.message || "Erro desconhecido"));
+      }
+    } finally {
+      STATE.isLoading = false;
     }
+  }
+
+  function startAutoRefresh() {
+    if (STATE.autoRefreshTimer) {
+      clearInterval(STATE.autoRefreshTimer);
+    }
+
+    STATE.autoRefreshTimer = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadData(false);
+      }
+    }, AUTO_REFRESH_MS);
   }
 
   function clearFilters() {
@@ -579,7 +600,7 @@
   }
 
   function bindEvents() {
-    $("#btnAtualizar")?.addEventListener("click", loadData);
+    $("#btnAtualizar")?.addEventListener("click", () => loadData(true));
     $("#btnLimpar")?.addEventListener("click", clearFilters);
 
     $("#fFilial")?.addEventListener("change", renderAll);
@@ -590,7 +611,8 @@
 
   function init() {
     bindEvents();
-    loadData();
+    loadData(true);
+    startAutoRefresh();
   }
 
   window.addEventListener("DOMContentLoaded", init);

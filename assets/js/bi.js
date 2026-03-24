@@ -3,7 +3,7 @@
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbx1HOSvYNb1fvckq3hlDz2p4nN8J1_8-4Ggza8D00a-tGwxyxb-QcLgCi7buwHYcLGX/exec";
+    "https://script.google.com/macros/s/AKfycbybdYXsbNcEHCDznZwHL0SaJG-Y56GJ55Nq3DGCVjf8qmoRm-N1LgtrTV9A8Nprs83L/exec";
 
   const PESO_MEDIO = 38;
   const $ = (sel) => document.querySelector(sel);

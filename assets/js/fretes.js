@@ -11,7 +11,7 @@
       GOIAS: ["ITUMBIARA", "RIO VERDE", "RIO VERDE FERT", "MONTIVIDIU", "ANAPOLIS", "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA", "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"],
       MINAS: ["UBERLANDIA", "ARAGUARI"],
     },
-    clientes: ["CARGILL", "COMIGO", "teste", "CONCREBEL", "VITERRA", "COFCO", "NOVA AGRI", "JBS SEARA", "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO", "C VALE", "OLAM BRASIL", "SODRU", "BOM JESUS", "SOYBRASIL", "LAVORO", "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE", "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA", "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS", "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO", "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO", "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL", "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX", "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC", "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN", "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA", "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO", "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA", "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL", "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM", "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL", "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA", "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL", "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS", "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO", "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS", "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA", "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE", "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"],
+    clientes: ["CARGILL", "COMIGO", "CONCREBEL", "VITERRA", "COFCO", "NOVA AGRI", "JBS SEARA", "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO", "C VALE", "OLAM BRASIL", "SODRU", "BOM JESUS", "SOYBRASIL", "LAVORO", "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE", "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA", "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS", "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO", "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO", "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL", "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX", "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC", "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN", "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA", "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO", "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA", "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL", "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM", "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL", "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA", "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL", "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS", "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO", "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS", "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA", "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE", "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"],
     contatosPorFilial: {
       "MINEIROS": [{ nome: "KIEWERSON", fone: "5564999794586" }],
       "ARAGUARI": [{ nome: "ALFREDO", fone: "5534997911299" }],
@@ -226,6 +226,12 @@
       document.querySelector("[data-sync-status]") ||
       document.querySelector("#syncStatus");
     if (el) el.textContent = text;
+  }
+
+  function labelInlineKey(key) {
+    if (key === "porta") return "porta";
+    if (key === "carregados") return "carregados";
+    return "trânsito";
   }
 
   function parsePtNumber(value) {
@@ -580,11 +586,7 @@
       input.disabled = true;
 
       try {
-        const label =
-          key === "porta" ? "porta" :
-          key === "carregados" ? "carregados" : "trânsito";
-
-        setStatus(`💾 Salvando ${label}...`);
+        setStatus(`💾 Salvando ${labelInlineKey(key)}...`);
 
         await apiGet({
           action: "fretes_update",
@@ -603,7 +605,7 @@
         console.error(`[fretes] erro ao salvar ${key}:`, e);
         input.value = originalValue;
         setStatus("❌ Erro ao atualizar");
-        alert(e.message || `Falha ao salvar ${key}.`);
+        alert(e.message || `Falha ao salvar ${labelInlineKey(key)}.`);
       } finally {
         isSaving = false;
         STATE.inlineSaving.delete(saveId);
@@ -713,7 +715,7 @@
           return;
         }
 
-        if (["e5","e6","e7","e4","e9"].includes(col.key)) {
+        if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
           return;
         }
@@ -730,7 +732,7 @@
 
         const td = document.createElement("td");
 
-        if (["volume","valorEmpresa","valorMotorista","km","pedagioEixo","pedidoSat","porta","carregados","transito"].includes(col.key)) {
+        if (["volume", "valorEmpresa", "valorMotorista", "km", "pedagioEixo", "pedidoSat", "porta", "carregados", "transito"].includes(col.key)) {
           td.className = "num";
         }
 

@@ -1,9 +1,9 @@
-/* fretes.js | NOVA FROTA (COMPLETO AJUSTADO COM CARREGADOS) */
+/* fretes.js | NOVA FROTA (COMPLETO AJUSTADO) */
 (function () {
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbzxnHSxJuXTfJfb9QKOQk37d7Qu-SM5QdnhVvshenHtmGknUmqaYpFUIfbQ02u_kyxv/exec";
+    "https://script.google.com/macros/s/AKfycbx1HOSvYNb1fvckq3hlDz2p4nN8J1_8-4Ggza8D00a-tGwxyxb-QcLgCi7buwHYcLGX/exec";
 
   const DIRECTORY = {
     regionais: ["GOIAS", "MINAS"],
@@ -164,7 +164,6 @@
     { key: "icms", label: "ICMS" },
     { key: "pedidoSat", label: "Pedido SAT" },
     { key: "porta", label: "Porta", isInlineEditable: true },
-    { key: "carregados", label: "Carregados", isInlineEditable: true },
     { key: "transito", label: "Trânsito", isInlineEditable: true },
     { key: "status", label: "Status" },
     { key: "obs", label: "Observações" },
@@ -196,7 +195,6 @@
     motorista: () => document.getElementById("mMotorista"),
     sat: () => document.getElementById("mSat"),
     porta: () => document.getElementById("mPorta"),
-    carregados: () => document.getElementById("mCarregados"),
     transito: () => document.getElementById("mTransito"),
     status: () => document.getElementById("mStatus"),
     obs: () => document.getElementById("mObs"),
@@ -226,12 +224,6 @@
       document.querySelector("[data-sync-status]") ||
       document.querySelector("#syncStatus");
     if (el) el.textContent = text;
-  }
-
-  function labelInlineKey(key) {
-    if (key === "porta") return "porta";
-    if (key === "carregados") return "carregados";
-    return "trânsito";
   }
 
   function parsePtNumber(value) {
@@ -586,7 +578,7 @@
       input.disabled = true;
 
       try {
-        setStatus(`💾 Salvando ${labelInlineKey(key)}...`);
+        setStatus(`💾 Salvando ${key === "porta" ? "porta" : "trânsito"}...`);
 
         await apiGet({
           action: "fretes_update",
@@ -605,7 +597,7 @@
         console.error(`[fretes] erro ao salvar ${key}:`, e);
         input.value = originalValue;
         setStatus("❌ Erro ao atualizar");
-        alert(e.message || `Falha ao salvar ${labelInlineKey(key)}.`);
+        alert(e.message || `Falha ao salvar ${key}.`);
       } finally {
         isSaving = false;
         STATE.inlineSaving.delete(saveId);
@@ -715,7 +707,7 @@
           return;
         }
 
-        if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
+        if (["e5","e6","e7","e4","e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
           return;
         }
@@ -732,7 +724,7 @@
 
         const td = document.createElement("td");
 
-        if (["volume", "valorEmpresa", "valorMotorista", "km", "pedagioEixo", "pedidoSat", "porta", "carregados", "transito"].includes(col.key)) {
+        if (["volume","valorEmpresa","valorMotorista","km","pedagioEixo","pedidoSat","porta","transito"].includes(col.key)) {
           td.className = "num";
         }
 
@@ -824,7 +816,7 @@
       MODAL.origem(), MODAL.coleta(), MODAL.destino(), MODAL.uf(), MODAL.descarga(),
       MODAL.produto(), MODAL.km(), MODAL.ped(), MODAL.volume(), MODAL.icms(),
       MODAL.empresa(), MODAL.motorista(), MODAL.sat(), MODAL.porta(),
-      MODAL.carregados(), MODAL.transito(), MODAL.obs()
+      MODAL.transito(), MODAL.obs()
     ].forEach((el) => { if (el) el.value = ""; });
 
     if (MODAL.status()) MODAL.status().value = "LIBERADO";
@@ -882,7 +874,6 @@
     if (MODAL.motorista()) MODAL.motorista().value = normalizeMoneyInput(row.valorMotorista);
     if (MODAL.sat()) MODAL.sat().value = safeText(row.pedidoSat);
     if (MODAL.porta()) MODAL.porta().value = safeText(row.porta);
-    if (MODAL.carregados()) MODAL.carregados().value = safeText(row.carregados);
     if (MODAL.transito()) MODAL.transito().value = safeText(row.transito);
     if (MODAL.status()) MODAL.status().value = normalizeFreteStatus(row.status) || "LIBERADO";
     if (MODAL.obs()) MODAL.obs().value = safeText(row.obs);
@@ -908,7 +899,6 @@
       icms: safeText(MODAL.icms()?.value),
       pedidoSat: upper(MODAL.sat()?.value),
       porta: safeText(MODAL.porta()?.value),
-      carregados: safeText(MODAL.carregados()?.value),
       transito: safeText(MODAL.transito()?.value),
       status: normalizeFreteStatus(MODAL.status()?.value),
       obs: upperKeepSpaces(MODAL.obs()?.value).trim(),

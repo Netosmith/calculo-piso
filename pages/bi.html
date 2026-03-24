@@ -142,7 +142,7 @@
 
     .kpiGrid{
       display:grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap:12px;
       margin-bottom:14px;
     }
@@ -231,7 +231,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:980px;
+      min-width:820px;
       background:#fff;
     }
 
@@ -264,12 +264,6 @@
       text-align:center;
       color:#64748b;
       font-weight:800;
-    }
-
-    @media (max-width: 1600px){
-      .kpiGrid{
-        grid-template-columns: repeat(4,1fr);
-      }
     }
 
     @media (max-width: 1400px){
@@ -323,7 +317,7 @@
       <div class="heroBITop">
         <div class="heroBITitle">
           <h1>B.I. Fretes</h1>
-          <p>Indicadores operacionais da base Fretes, com foco em veículos porta, carregados, trânsito, volume, frete médio e margem média.</p>
+          <p>Indicadores operacionais da base Fretes, com foco em veículos porta, trânsito, volume, frete médio e margem média.</p>
         </div>
 
         <div class="syncStatus" id="syncStatus">🔄 Carregando...</div>
@@ -357,12 +351,6 @@
       </div>
 
       <div class="kpiCard">
-        <div class="kpiLabel">Veículos Carregados</div>
-        <div class="kpiValue" id="kpiCarregados">0</div>
-        <div class="kpiFoot">Soma da coluna Carregados</div>
-      </div>
-
-      <div class="kpiCard">
         <div class="kpiLabel">Veículos Trânsito</div>
         <div class="kpiValue" id="kpiTransito">0</div>
         <div class="kpiFoot">Soma da coluna Trânsito</div>
@@ -371,7 +359,7 @@
       <div class="kpiCard">
         <div class="kpiLabel">Veículos Totais</div>
         <div class="kpiValue" id="kpiVeiculos">0</div>
-        <div class="kpiFoot">Porta + Carregados + Trânsito</div>
+        <div class="kpiFoot">Porta + Trânsito</div>
       </div>
 
       <div class="kpiCard">
@@ -388,8 +376,8 @@
 
       <div class="kpiCard">
         <div class="kpiLabel">Margem Média</div>
-        <div class="kpiValue" id="kpiMargemMedia">0,00%</div>
-        <div class="kpiFoot">((Empresa - Motorista) / Empresa) × 100</div>
+        <div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div>
+        <div class="kpiFoot">Empresa - Motorista</div>
       </div>
     </div>
 
@@ -423,10 +411,10 @@
 
       <div class="chartCard">
         <div class="chartHead">
-          <h3>Porta x Carregados x Trânsito por Filial</h3>
+          <h3>Porta x Trânsito por Filial</h3>
         </div>
         <div class="chartBody">
-          <canvas id="chartPortaCarregadosTransito"></canvas>
+          <canvas id="chartPortaTransito"></canvas>
         </div>
       </div>
 
@@ -449,7 +437,6 @@
               <tr>
                 <th>Filial</th>
                 <th class="num">Porta</th>
-                <th class="num">Carregados</th>
                 <th class="num">Trânsito</th>
                 <th class="num">Veículos</th>
                 <th class="num">Volume (t)</th>

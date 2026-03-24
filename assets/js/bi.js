@@ -136,6 +136,7 @@
       icms: upper(r?.icms),
       pedidoSat: safeText(r?.pedidoSat),
       porta: num(r?.porta),
+      carregados: num(r?.carregados),
       transito: num(r?.transito),
       status: upper(r?.status),
       obs: safeText(r?.obs)
@@ -198,42 +199,43 @@
   }
 
   function calcKPIs(rows) {
+    const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
+    const carregados = rows.reduce((acc, r) => acc + num(r.carregados), 0);
+    const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
+    const totalVeiculos = porta + carregados + transito;
+    const volume = totalVeiculos * PESO_MEDIO;
 
-  const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
-  const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
-  const totalVeiculos = porta + transito;
-  const volume = totalVeiculos * PESO_MEDIO;
+    const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
+    const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
 
-  const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
-  const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
+    const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
 
-  const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
+    let margemPercent = 0;
+    if (totalEmpresa > 0) {
+      margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
+    }
 
-  let margemPercent = 0;
-
-  if (totalEmpresa > 0) {
-    margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
+    return {
+      porta,
+      carregados,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemPercent
+    };
   }
-
-  return {
-    porta,
-    transito,
-    totalVeiculos,
-    volume,
-    freteMedio,
-    margemPercent
-  };
-}
 
   function renderKPIs(rows) {
     const k = calcKPIs(rows);
 
     $("#kpiPorta").textContent = intBR(k.porta);
+    $("#kpiCarregados").textContent = intBR(k.carregados);
     $("#kpiTransito").textContent = intBR(k.transito);
     $("#kpiVeiculos").textContent = intBR(k.totalVeiculos);
     $("#kpiVolume").textContent = intBR(k.volume) + " t";
     $("#kpiFreteMedio").textContent = moneyBR(k.freteMedio);
-    $("#kpiMargemMedia").textContent = k.margemPercent.toFixed(2) + "%";
+    $("#kpiMargemMedia").textContent = k.margemPercent.toFixed(2).replace(".", ",") + "%";
   }
 
   function groupBy(rows, key) {
@@ -252,8 +254,9 @@
 
     map.forEach((list, filial) => {
       const porta = list.reduce((a, r) => a + num(r.porta), 0);
+      const carregados = list.reduce((a, r) => a + num(r.carregados), 0);
       const transito = list.reduce((a, r) => a + num(r.transito), 0);
-      const veiculos = porta + transito;
+      const veiculos = porta + carregados + transito;
       const volume = veiculos * PESO_MEDIO;
       const freteMedio = list.length
         ? list.reduce((a, r) => a + num(r.valorEmpresa), 0) / list.length
@@ -265,6 +268,7 @@
       arr.push({
         filial,
         porta,
+        carregados,
         transito,
         veiculos,
         volume,
@@ -282,8 +286,9 @@
 
     map.forEach((list, cliente) => {
       const porta = list.reduce((a, r) => a + num(r.porta), 0);
+      const carregados = list.reduce((a, r) => a + num(r.carregados), 0);
       const transito = list.reduce((a, r) => a + num(r.transito), 0);
-      const veiculos = porta + transito;
+      const veiculos = porta + carregados + transito;
       const margemMedia = list.length
         ? list.reduce((a, r) => a + (num(r.valorEmpresa) - num(r.valorMotorista)), 0) / list.length
         : 0;
@@ -306,7 +311,7 @@
     tbody.innerHTML = "";
 
     if (!resumo.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum registro encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">Nenhum registro encontrado.</td></tr>`;
       return;
     }
 
@@ -315,6 +320,7 @@
       tr.innerHTML = `
         <td>${r.filial}</td>
         <td class="num">${intBR(r.porta)}</td>
+        <td class="num">${intBR(r.carregados)}</td>
         <td class="num">${intBR(r.transito)}</td>
         <td class="num">${intBR(r.veiculos)}</td>
         <td class="num">${intBR(r.volume)} t</td>
@@ -376,6 +382,7 @@
     const veiculosFilial = resumoFilial.map(r => r.veiculos);
     const volumeFilial = resumoFilial.map(r => r.volume);
     const portaFilial = resumoFilial.map(r => r.porta);
+    const carregadosFilial = resumoFilial.map(r => r.carregados);
     const transitoFilial = resumoFilial.map(r => r.transito);
 
     const labelsCliente = resumoCliente.map(r => r.cliente);
@@ -385,7 +392,7 @@
     const c1 = document.getElementById("chartVeiculosFilial");
     const c2 = document.getElementById("chartVeiculosCliente");
     const c3 = document.getElementById("chartVolumeFilial");
-    const c4 = document.getElementById("chartPortaTransito");
+    const c4 = document.getElementById("chartPortaCarregadosTransito");
     const c5 = document.getElementById("chartMargemCliente");
 
     if (c1) {
@@ -436,37 +443,37 @@
     }
 
     if (c3) {
-  STATE.charts.chartVolumeFilial = new Chart(c3, {
-    type: "bar",
-    data: {
-      labels: labelsFilial,
-      datasets: [{
-        label: "Volume (toneladas)",
-        data: volumeFilial,
-        backgroundColor: "rgba(22,163,74,.65)",
-        borderColor: "rgba(22,163,74,1)",
-        borderWidth: 1.5,
-        borderRadius: 10
-      }]
-    },
-    options: {
-      ...chartBaseOptions(),
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx){
-              return " " + ctx.raw.toLocaleString("pt-BR") + " toneladas";
+      STATE.charts.chartVolumeFilial = new Chart(c3, {
+        type: "bar",
+        data: {
+          labels: labelsFilial,
+          datasets: [{
+            label: "Volume (toneladas)",
+            data: volumeFilial,
+            backgroundColor: "rgba(22,163,74,.65)",
+            borderColor: "rgba(22,163,74,1)",
+            borderWidth: 1.5,
+            borderRadius: 10
+          }]
+        },
+        options: {
+          ...chartBaseOptions(),
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx){
+                  return " " + ctx.raw.toLocaleString("pt-BR") + " toneladas";
+                }
+              }
             }
           }
         }
-      }
+      });
     }
-  });
-}
 
     if (c4) {
-      STATE.charts.chartPortaTransito = new Chart(c4, {
+      STATE.charts.chartPortaCarregadosTransito = new Chart(c4, {
         type: "bar",
         data: {
           labels: labelsFilial,
@@ -476,6 +483,14 @@
               data: portaFilial,
               backgroundColor: "rgba(59,130,246,.62)",
               borderColor: "rgba(59,130,246,1)",
+              borderWidth: 1.2,
+              borderRadius: 8
+            },
+            {
+              label: "Carregados",
+              data: carregadosFilial,
+              backgroundColor: "rgba(245,158,11,.58)",
+              borderColor: "rgba(245,158,11,1)",
               borderWidth: 1.2,
               borderRadius: 8
             },

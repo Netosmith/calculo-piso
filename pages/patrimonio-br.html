@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patrimônio BR | NOVA FROTA</title>
+
+  <link rel="stylesheet" href="../assets/css/app.css" />
+
+  <style>
+    .page{
+      padding: 18px;
+    }
+
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:16px;
+    }
+
+    .header h1{
+      margin:0;
+      font-size:20px;
+    }
+
+    .btn{
+      padding:10px 14px;
+      border-radius:12px;
+      border:none;
+      font-weight:700;
+      cursor:pointer;
+      background:#1e3a8a;
+      color:#fff;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+      gap:14px;
+    }
+
+    .card{
+      background:rgba(17,26,51,.85);
+      border-radius:16px;
+      padding:14px;
+      border:1px solid rgba(255,255,255,.1);
+      box-shadow:0 10px 30px rgba(0,0,0,.3);
+    }
+
+    .card h3{
+      margin:0 0 8px;
+    }
+
+    .card p{
+      margin:0;
+      opacity:.8;
+      font-size:13px;
+    }
+
+    .tableWrap{
+      margin-top:18px;
+      overflow:auto;
+      border-radius:12px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+    }
+
+    th{
+      background:rgba(255,255,255,.05);
+    }
+
+    .badge{
+      padding:4px 8px;
+      border-radius:8px;
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .ok{ background:#14532d; color:#bbf7d0; }
+    .warn{ background:#78350f; color:#fde68a; }
+    .off{ background:#7f1d1d; color:#fecaca; }
+
+  </style>
+</head>
+
+<body>
+
+<div class="page">
+
+  <div class="header">
+    <h1>🏢 Patrimônio BR</h1>
+    <button class="btn" onclick="novoItem()">+ Novo Patrimônio</button>
+  </div>
+
+  <!-- CARDS -->
+  <div class="grid">
+    <div class="card">
+      <h3>Total de Itens</h3>
+      <p id="totalItens">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Ativos</h3>
+      <p id="ativos">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Manutenção</h3>
+      <p id="manutencao">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Inativos</h3>
+      <p id="inativos">0</p>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="tableWrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>Patrimônio</th>
+          <th>Descrição</th>
+          <th>Filial</th>
+          <th>Responsável</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script src="../assets/js/auth.js"></script>
+
+<script>
+  requireHomeAuth();
+  bindLogoutButton();
+
+  // MOCK inicial (depois ligamos no Apps Script)
+  let DATA = [
+    { id:"001", desc:"Notebook Dell", filial:"RIO VERDE", resp:"LUIS", status:"ATIVO" },
+    { id:"002", desc:"Impressora HP", filial:"JATAÍ", resp:"AMANDA", status:"MANUTENÇÃO" },
+    { id:"003", desc:"Celular Samsung", filial:"MINEIROS", resp:"PAULO", status:"INATIVO" }
+  ];
+
+  function render(){
+    const tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = "";
+
+    let total = DATA.length;
+    let ativos = 0;
+    let manut = 0;
+    let inat = 0;
+
+    DATA.forEach(item => {
+      if(item.status === "ATIVO") ativos++;
+      if(item.status === "MANUTENÇÃO") manut++;
+      if(item.status === "INATIVO") inat++;
+
+      const tr = document.createElement("tr");
+
+      let badgeClass = "ok";
+      if(item.status === "MANUTENÇÃO") badgeClass = "warn";
+      if(item.status === "INATIVO") badgeClass = "off";
+
+      tr.innerHTML = `
+        <td>${item.id}</td>
+        <td>${item.desc}</td>
+        <td>${item.filial}</td>
+        <td>${item.resp}</td>
+        <td><span class="badge ${badgeClass}">${item.status}</span></td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("totalItens").textContent = total;
+    document.getElementById("ativos").textContent = ativos;
+    document.getElementById("manutencao").textContent = manut;
+    document.getElementById("inativos").textContent = inat;
+  }
+
+  function novoItem(){
+    alert("Aqui você pode abrir um modal depois 🚀");
+  }
+
+  render();
+</script>
+
+</body>
+</html>

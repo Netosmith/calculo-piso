@@ -61,7 +61,6 @@ const STATE_FEATURES = {
   GO: ["fretes","divulgacao"],
   GOADM: ["administrativo", "patrimonio-br"],
   COMERCIAL: ["piso","fretes","share","divulgacao","bi"],
-  "PATRIMONIO-BR": ["patrimonio-br"]
   PISO: ["piso"],
   SP: ["piso","divulgacao"],
   MG: ["piso","divulgacao"],

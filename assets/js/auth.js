@@ -5,7 +5,7 @@
 
 // ======== USUÁRIOS ========
 const USERS = {
-  LUZIANO: { password: "5707", states: ["GO","GOADM","COMERCIAL"] },
+  LUZIANO: { password: "5707", states: ["GO","GOADM","COMERCIAL", "PATRIMONIO-BR"] },
   JONATHAN: { password: "2424", states: ["PISO"] },
   BARIONI: { password: "5707", states: ["COMERCIAL"] },
   ELIEL:   { password: "1234", states: ["COMERCIAL"] },
@@ -61,6 +61,7 @@ const STATE_FEATURES = {
   GO: ["fretes","divulgacao"],
   GOADM: ["administrativo", "patrimonio-br"],
   COMERCIAL: ["piso","fretes","share","divulgacao","bi"],
+  "PATRIMONIO-BR": ["patrimonio-br"]
   PISO: ["piso"],
   SP: ["piso","divulgacao"],
   MG: ["piso","divulgacao"],

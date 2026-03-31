@@ -8,198 +8,625 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 
   <style>
-    .page{
-      padding: 18px;
-    }
+    .container{max-width:1500px}
 
-    .header{
+    .container.pagePatrimonio{
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:16px;
+      flex-direction:column;
+      gap:12px;
+      min-height:calc(100vh - 72px);
+      padding:12px 12px 18px;
+      background:#F5F7FA;
     }
 
-    .header h1{
+    .pat-top{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:12px 14px;
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .pat-top .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .pat-top .title h1{
       margin:0;
       font-size:20px;
+      font-weight:900;
+      letter-spacing:.2px;
+      color:#0F172A;
     }
 
-    .btn{
-      padding:10px 14px;
+    .pat-top .title .sub{
+      font-size:12px;
+      color:rgba(17,24,39,.70);
+      max-width:980px;
+    }
+
+    .pat-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .btnPat{
+      height:38px;
+      padding:0 14px;
       border-radius:12px;
-      border:none;
-      font-weight:700;
+      border:1px solid rgba(15,23,42,.14);
+      background:#0F172A;
+      color:#FFFFFF;
+      font-weight:900;
+      font-size:12px;
       cursor:pointer;
-      background:#1e3a8a;
-      color:#fff;
+      white-space:nowrap;
     }
 
-    .grid{
+    .btnPat:hover{filter:brightness(1.05)}
+    .btnPat.ghost{
+      background:#FFFFFF;
+      color:#0F172A;
+      border:1px solid #D1D5DB;
+    }
+    .btnPat.green{
+      background:#0B3B2E;
+      border-color:rgba(6,118,71,.25);
+    }
+    .btnPat.blue{
+      background:#102A6B;
+      border-color:rgba(59,130,246,.35);
+    }
+
+    .kpiGrid{
       display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
-      gap:14px;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
     }
 
-    .card{
-      background:rgba(17,26,51,.85);
-      border-radius:16px;
-      padding:14px;
-      border:1px solid rgba(255,255,255,.1);
-      box-shadow:0 10px 30px rgba(0,0,0,.3);
+    .kpiCard{
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      padding:16px;
+      min-height:100px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
     }
 
-    .card h3{
-      margin:0 0 8px;
+    .kpiLabel{
+      font-size:11px;
+      font-weight:900;
+      color:#64748B;
+      letter-spacing:.06em;
+      text-transform:uppercase;
     }
 
-    .card p{
-      margin:0;
-      opacity:.8;
-      font-size:13px;
+    .kpiValue{
+      font-size:24px;
+      font-weight:1000;
+      color:#0F172A;
+      margin-top:6px;
+    }
+
+    .kpiFoot{
+      font-size:12px;
+      color:#64748B;
+      margin-top:4px;
+    }
+
+    .pat-toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:18px;
+      border:1px solid #E5E7EB;
+      background:#FFFFFF;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .pat-select,
+    .pat-search{
+      height:36px;
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid #D1D5DB;
+      background:#FFFFFF;
+      color:#111827;
+      outline:none;
+      font-size:12px;
+    }
+
+    .pat-select{
+      width:220px;
+      flex:0 0 220px;
+    }
+
+    .pat-search{
+      width:340px;
+      flex:1 1 340px;
+      min-width:220px;
+      max-width:520px;
+    }
+
+    .pat-select:focus,
+    .pat-search:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+
+    .cardTable{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      min-height:calc(100vh - 270px);
+      background:#FFFFFF;
+      border:1px solid #E5E7EB;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      border-radius:18px;
+      overflow:hidden;
     }
 
     .tableWrap{
-      margin-top:18px;
       overflow:auto;
-      border-radius:12px;
+      flex:1 1 auto;
+      background:#fff;
     }
 
     table{
       width:100%;
       border-collapse:collapse;
-      font-size:13px;
+      min-width:1300px;
+      background:#fff;
     }
 
-    th, td{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
+    th,td{
+      padding:8px 10px;
+      border-bottom:1px solid #E5E7EB;
+      font-size:12px;
+      line-height:1.2;
+      vertical-align:middle;
+      white-space:nowrap;
+      color:#111827;
       text-align:left;
     }
 
-    th{
-      background:rgba(255,255,255,.05);
-    }
-
-    .badge{
-      padding:4px 8px;
-      border-radius:8px;
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#0F172A;
+      color:#fff;
       font-size:11px;
-      font-weight:700;
+      letter-spacing:.02em;
+      text-transform:uppercase;
     }
 
-    .ok{ background:#14532d; color:#bbf7d0; }
-    .warn{ background:#78350f; color:#fde68a; }
-    .off{ background:#7f1d1d; color:#fecaca; }
+    tbody tr:nth-child(even){background:#F8FAFC;}
+    tbody tr:hover{background:#EEF4FF;}
 
+    .num{text-align:right;}
+
+    .statusBadge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:96px;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+      border:1px solid rgba(0,0,0,.08);
+    }
+
+    .statusBadge.ativo{
+      background:#DCFCE7;
+      color:#166534;
+      border-color:#86EFAC;
+    }
+
+    .statusBadge.manutencao{
+      background:#FEF3C7;
+      color:#92400E;
+      border-color:#FCD34D;
+    }
+
+    .statusBadge.inativo{
+      background:#FEE2E2;
+      color:#991B1B;
+      border-color:#FCA5A5;
+    }
+
+    .statusBadge.baixado{
+      background:#E2E8F0;
+      color:#334155;
+      border-color:#CBD5E1;
+    }
+
+    .anexoTag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 8px;
+      border-radius:999px;
+      background:#EEF2FF;
+      color:#1D4ED8;
+      font-size:11px;
+      font-weight:800;
+      text-decoration:none;
+      border:1px solid rgba(59,130,246,.18);
+      margin-right:6px;
+    }
+
+    .acoesWrap{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+
+    .btnTiny{
+      height:30px;
+      padding:0 12px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:#0F172A;
+      color:#FFFFFF;
+      font-weight:900;
+      font-size:11px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .btnTiny.ghost{
+      background:#FFFFFF;
+      color:#0F172A;
+      border:1px solid #D1D5DB;
+    }
+
+    .btnTiny:hover{filter:brightness(1.05)}
+
+    #modalPatrimonio{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      background:rgba(0,0,0,.55);
+      backdrop-filter:blur(6px);
+      padding:18px;
+    }
+
+    #modalPatrimonio.isOpen{display:flex}
+
+    .modalCard{
+      width:min(1100px,100%);
+      background:#fff;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 18px 45px rgba(0,0,0,.28);
+      overflow:hidden;
+    }
+
+    .modalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid #E5E7EB;
+      background:#F8FAFC;
+    }
+
+    .modalHead h2{
+      margin:0;
+      font-size:15px;
+      font-weight:950;
+      color:#0F172A;
+    }
+
+    .iconClose{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      border:1px solid #D1D5DB;
+      background:#fff;
+      cursor:pointer;
+      font-weight:900;
+      color:#0F172A;
+    }
+
+    .modalBody{
+      padding:14px;
+      max-height:calc(100vh - 220px);
+      overflow:auto;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .field label{
+      display:block;
+      font-size:11px;
+      font-weight:900;
+      color:#0F172A;
+      margin:0 0 6px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea{
+      width:100%;
+      min-height:38px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid #D1D5DB;
+      background:#fff;
+      outline:none;
+      color:#111827;
+      font-size:13px;
+    }
+
+    .field textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus{
+      border-color:#5B7CFA;
+      box-shadow:0 0 0 3px rgba(91,124,250,.18);
+    }
+
+    .uploadBox{
+      border:1px dashed #CBD5E1;
+      border-radius:14px;
+      padding:12px;
+      background:#F8FAFC;
+    }
+
+    .uploadInfo{
+      font-size:12px;
+      color:#64748B;
+      margin-top:6px;
+    }
+
+    .fileList{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .fileChip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#EEF2FF;
+      color:#1D4ED8;
+      font-size:11px;
+      font-weight:800;
+      border:1px solid rgba(59,130,246,.18);
+    }
+
+    .modalFoot{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding:12px 14px;
+      border-top:1px solid #E5E7EB;
+      background:#F8FAFC;
+    }
+
+    @media (max-width:1100px){
+      .kpiGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width:900px){
+      .grid2{
+        grid-template-columns:1fr;
+      }
+
+      .pat-select,
+      .pat-search{
+        width:100%;
+        flex:1 1 100%;
+        max-width:none;
+      }
+    }
+
+    @media (max-width:640px){
+      .kpiGrid{
+        grid-template-columns:1fr;
+      }
+    }
   </style>
 </head>
 
 <body>
-
-<div class="page">
-
-  <div class="header">
-    <h1>🏢 Patrimônio BR</h1>
-    <button class="btn" onclick="novoItem()">+ Novo Patrimônio</button>
-  </div>
-
-  <!-- CARDS -->
-  <div class="grid">
-    <div class="card">
-      <h3>Total de Itens</h3>
-      <p id="totalItens">0</p>
-    </div>
-
-    <div class="card">
-      <h3>Ativos</h3>
-      <p id="ativos">0</p>
-    </div>
-
-    <div class="card">
-      <h3>Manutenção</h3>
-      <p id="manutencao">0</p>
-    </div>
-
-    <div class="card">
-      <h3>Inativos</h3>
-      <p id="inativos">0</p>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="burger" href="./home.html" title="Voltar">🏠</a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
+      <div class="actions">
+        <div class="icon-btn" title="Sair" data-logout>↩️</div>
+      </div>
     </div>
   </div>
 
-  <!-- TABELA -->
-  <div class="tableWrap">
-    <table id="tbl">
-      <thead>
-        <tr>
-          <th>Patrimônio</th>
-          <th>Descrição</th>
-          <th>Filial</th>
-          <th>Responsável</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="container pagePatrimonio">
+    <div class="pat-top">
+      <div class="title">
+        <h1>🏢 Patrimônio BR <span id="syncStatus" style="font-size:12px; opacity:.7; margin-left:10px;">✅ Pronto</span></h1>
+        <div class="sub">Controle patrimonial nacional com cadastro, anexos e acompanhamento por filial, estado e responsável.</div>
+      </div>
+
+      <div class="pat-actions">
+        <button class="btnPat ghost" id="btnReloadPatrimonio" type="button">🔄 Atualizar</button>
+        <button class="btnPat green" id="btnNovoPatrimonio" type="button">+ Novo Patrimônio</button>
+      </div>
+    </div>
+
+    <div class="kpiGrid">
+      <div class="kpiCard">
+        <div class="kpiLabel">Total de Itens</div>
+        <div class="kpiValue" id="kpiTotalItens">0</div>
+        <div class="kpiFoot">Total cadastrado</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Ativos</div>
+        <div class="kpiValue" id="kpiAtivos">0</div>
+        <div class="kpiFoot">Em uso normal</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Manutenção</div>
+        <div class="kpiValue" id="kpiManutencao">0</div>
+        <div class="kpiFoot">Itens em reparo</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Inativos / Baixados</div>
+        <div class="kpiValue" id="kpiInativos">0</div>
+        <div class="kpiFoot">Sem operação</div>
+      </div>
+    </div>
+
+    <div class="pat-toolbar">
+      <select class="pat-select" id="fFilialPatrimonio">
+        <option value="">Todas as filiais</option>
+      </select>
+
+      <select class="pat-select" id="fEstadoPatrimonio">
+        <option value="">Todos os estados</option>
+      </select>
+
+      <select class="pat-select" id="fStatusPatrimonio">
+        <option value="">Todos os status</option>
+      </select>
+
+      <input class="pat-search" id="fBuscaPatrimonio" placeholder="Buscar por patrimônio, equipamento, responsável ou observação..." />
+    </div>
+
+    <div class="cardTable">
+      <div class="tableWrap">
+        <table id="tblPatrimonio">
+          <thead>
+            <tr>
+              <th>Filial</th>
+              <th>Estado</th>
+              <th>Equipamento</th>
+              <th>Número Patrimônio</th>
+              <th>Em posse de</th>
+              <th>Status</th>
+              <th>Observação</th>
+              <th>Anexos</th>
+              <th class="num">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPatrimonio">
+            <tr>
+              <td colspan="9" style="text-align:center; padding:22px; color:#64748B; font-weight:800;">
+                Nenhum patrimônio carregado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-</div>
+  <div id="modalPatrimonio" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalPatrimonioTitle">
+      <div class="modalHead">
+        <h2 id="modalPatrimonioTitle">Novo Patrimônio</h2>
+        <button class="iconClose" id="btnCloseModalPatrimonio" type="button" title="Fechar">✕</button>
+      </div>
 
-<script src="../assets/js/auth.js"></script>
+      <div class="modalBody">
+        <div class="grid2">
+          <div class="field">
+            <label>Filial</label>
+            <input id="mFilialPatrimonio" type="text" placeholder="Ex: RIO VERDE" />
+          </div>
 
-<script>
-  requireHomeAuth();
-  bindLogoutButton();
+          <div class="field">
+            <label>Estado</label>
+            <input id="mEstadoPatrimonio" type="text" placeholder="Ex: GO" />
+          </div>
 
-  // MOCK inicial (depois ligamos no Apps Script)
-  let DATA = [
-    { id:"001", desc:"Notebook Dell", filial:"RIO VERDE", resp:"LUIS", status:"ATIVO" },
-    { id:"002", desc:"Impressora HP", filial:"JATAÍ", resp:"AMANDA", status:"MANUTENÇÃO" },
-    { id:"003", desc:"Celular Samsung", filial:"MINEIROS", resp:"PAULO", status:"INATIVO" }
-  ];
+          <div class="field">
+            <label>Equipamento</label>
+            <input id="mEquipamentoPatrimonio" type="text" placeholder="NOTEBOOK / CELULAR / IMPRESSORA" />
+          </div>
 
-  function render(){
-    const tbody = document.querySelector("#tbl tbody");
-    tbody.innerHTML = "";
+          <div class="field">
+            <label>Número Patrimônio</label>
+            <input id="mNumeroPatrimonio" type="text" placeholder="NF-001" />
+          </div>
 
-    let total = DATA.length;
-    let ativos = 0;
-    let manut = 0;
-    let inat = 0;
+          <div class="field">
+            <label>Em posse de</label>
+            <input id="mPossePatrimonio" type="text" placeholder="ARIEL" />
+          </div>
 
-    DATA.forEach(item => {
-      if(item.status === "ATIVO") ativos++;
-      if(item.status === "MANUTENÇÃO") manut++;
-      if(item.status === "INATIVO") inat++;
+          <div class="field">
+            <label>Status</label>
+            <input id="mStatusPatrimonio" type="text" placeholder="ATIVO / MANUTENÇÃO / INATIVO / BAIXADO" />
+          </div>
 
-      const tr = document.createElement("tr");
+          <div class="field" style="grid-column:1/-1;">
+            <label>Observação</label>
+            <textarea id="mObsPatrimonio" placeholder="Detalhes do item, avarias, histórico, observações gerais..."></textarea>
+          </div>
 
-      let badgeClass = "ok";
-      if(item.status === "MANUTENÇÃO") badgeClass = "warn";
-      if(item.status === "INATIVO") badgeClass = "off";
+          <div class="field" style="grid-column:1/-1;">
+            <label>Upload de anexos (máximo 2)</label>
+            <div class="uploadBox">
+              <input id="mAnexosPatrimonio" type="file" accept=".jpg,.jpeg,.png,.pdf,.webp" multiple />
+              <div class="uploadInfo">Formatos permitidos: JPG, JPEG, PNG, WEBP e PDF. Máximo de 2 arquivos.</div>
+              <div class="fileList" id="listaArquivosPatrimonio"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      tr.innerHTML = `
-        <td>${item.id}</td>
-        <td>${item.desc}</td>
-        <td>${item.filial}</td>
-        <td>${item.resp}</td>
-        <td><span class="badge ${badgeClass}">${item.status}</span></td>
-      `;
+      <div class="modalFoot">
+        <button class="btnPat ghost" id="btnCancelModalPatrimonio" type="button">Cancelar</button>
+        <button class="btnPat blue" id="btnSaveModalPatrimonio" type="button">Salvar</button>
+      </div>
+    </div>
+  </div>
 
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById("totalItens").textContent = total;
-    document.getElementById("ativos").textContent = ativos;
-    document.getElementById("manutencao").textContent = manut;
-    document.getElementById("inativos").textContent = inat;
-  }
-
-  function novoItem(){
-    alert("Aqui você pode abrir um modal depois 🚀");
-  }
-
-  render();
-</script>
-
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
 </body>
 </html>

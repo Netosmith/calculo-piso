@@ -1437,123 +1437,125 @@
   }
 
   async function saveModal() {
-    if (STATE.savingModal) return;
+  if (STATE.modalSaving) return;
 
-    const tab = modal.ctx.tab;
-    const payload = valuesFromModal(tab);
+  const tab = modal.ctx.tab;
+  const payload = valuesFromModal(tab);
 
-    if (!payload.filial) {
-      alert("Selecione uma filial.");
+  if (!payload.filial) {
+    alert("Selecione uma filial.");
+    return;
+  }
+
+  try {
+    STATE.modalSaving = true;
+    showSavingOverlay("SALVANDO...");
+    if (modal.btnSave) modal.btnSave.disabled = true;
+
+    if (tab === "cheques") {
+      if (!payload.data || !payload.sequencia || !payload.responsavel) {
+        alert("Preencha: Data, Sequência e Responsável.");
+        return;
+      }
+
+      setStatus("💾 Salvando cheque...");
+
+      if (modal.ctx.mode === "edit") {
+        await updateChequeOnSheets({ id: modal.ctx.id, ...payload });
+      } else {
+        await createChequeOnSheets(payload);
+      }
+
+      closeModal();
+      await reloadAll(false);
       return;
     }
 
-    try {
-      if (tab === "cheques") {
-        if (!payload.data || !payload.sequencia || !payload.responsavel) {
-          alert("Preencha: Data, Sequência e Responsável.");
-          return;
-        }
-
-        setModalSaving(true, "SALVANDO...");
-        setStatus("💾 Salvando cheque...");
-
-        if (modal.ctx.mode === "edit") {
-          await updateChequeOnSheets({ id: modal.ctx.id, ...payload });
-        } else {
-          await createChequeOnSheets(payload);
-        }
-
-        closeModal();
-        await reloadAll(false);
+    if (tab === "materiais") {
+      if (!payload.data || !payload.descricao || !payload.responsavel) {
+        alert("Preencha: Data, Material e Responsável.");
         return;
       }
 
-      if (tab === "materiais") {
-        if (!payload.data || !payload.descricao || !payload.responsavel) {
-          alert("Preencha: Data, Material e Responsável.");
-          return;
-        }
+      setStatus("💾 Salvando material...");
 
-        setModalSaving(true, "SALVANDO...");
-        setStatus("💾 Salvando material...");
-
-        if (modal.ctx.mode === "edit") {
-          await updateMaterialOnSheets({ id: modal.ctx.id, ...payload });
-        } else {
-          await createMaterialOnSheets(payload);
-        }
-
-        closeModal();
-        await reloadAll(false);
-        return;
+      if (modal.ctx.mode === "edit") {
+        await updateMaterialOnSheets({ id: modal.ctx.id, ...payload });
+      } else {
+        await createMaterialOnSheets(payload);
       }
 
-      if (tab === "solicitacoes") {
-        setModalSaving(true, "SALVANDO...");
-        setStatus("💾 Salvando solicitação...");
-
-        if (modal.ctx.mode === "edit") {
-          await updateSolicOnSheets({ id: modal.ctx.id, ...payload });
-        } else {
-          await createSolicOnSheets(payload);
-        }
-
-        closeModal();
-        await reloadAll(false);
-        return;
-      }
-
-      if (tab === "patrimonio") {
-        setModalSaving(true, "SALVANDO...");
-        setStatus("💾 Salvando patrimônio...");
-
-        if (modal.ctx.mode === "edit") {
-          await updatePatOnSheets({ id: modal.ctx.id, ...payload });
-        } else {
-          await createPatOnSheets(payload);
-        }
-
-        closeModal();
-        await reloadAll(false);
-        return;
-      }
-
-      if (tab === "epis") {
-        setModalSaving(true, "SALVANDO...");
-        setStatus("💾 Salvando EPI...");
-
-        if (modal.ctx.mode === "edit") {
-          await updateEpiOnSheets({ id: modal.ctx.id, ...payload });
-        } else {
-          await createEpiOnSheets(payload);
-        }
-
-        closeModal();
-        await reloadAll(false);
-        return;
-      }
-
-      if (tab === "frota") {
-        setModalSaving(true, "SALVANDO...");
-        setStatus("💾 Salvando frota...");
-
-        if (modal.ctx.mode === "edit") {
-          await updateFrotaOnSheets({ id: modal.ctx.id, ...payload });
-        } else {
-          await createFrotaOnSheets(payload);
-        }
-
-        closeModal();
-        await reloadAll(false);
-      }
-    } catch (e) {
-      console.error("[admin] save erro:", e);
-      setStatus("❌ Falha");
-      alert(e?.message || "Falha ao salvar.");
-    } finally {
-      setModalSaving(false);
+      closeModal();
+      await reloadAll(false);
+      return;
     }
+
+    if (tab === "solicitacoes") {
+      setStatus("💾 Salvando solicitação...");
+
+      if (modal.ctx.mode === "edit") {
+        await updateSolicOnSheets({ id: modal.ctx.id, ...payload });
+      } else {
+        await createSolicOnSheets(payload);
+      }
+
+      closeModal();
+      await reloadAll(false);
+      return;
+    }
+
+    if (tab === "patrimonio") {
+      setStatus("💾 Salvando patrimônio...");
+
+      if (modal.ctx.mode === "edit") {
+        await updatePatOnSheets({ id: modal.ctx.id, ...payload });
+      } else {
+        await createPatOnSheets(payload);
+      }
+
+      closeModal();
+      await reloadAll(false);
+      return;
+    }
+
+    if (tab === "epis") {
+      setStatus("💾 Salvando EPI...");
+
+      if (modal.ctx.mode === "edit") {
+        await updateEpiOnSheets({ id: modal.ctx.id, ...payload });
+      } else {
+        await createEpiOnSheets(payload);
+      }
+
+      closeModal();
+      await reloadAll(false);
+      return;
+    }
+
+    if (tab === "frota") {
+      setStatus("💾 Salvando frota...");
+
+      if (modal.ctx.mode === "edit") {
+        await updateFrotaOnSheets({ id: modal.ctx.id, ...payload });
+      } else {
+        await createFrotaOnSheets(payload);
+      }
+
+      closeModal();
+      await reloadAll(false);
+      return;
+    }
+
+  } catch (e) {
+    console.error("[admin] save erro:", e);
+    setStatus("❌ Falha");
+    alert(e?.message || "Falha ao salvar.");
+  } finally {
+    STATE.modalSaving = false;
+    hideSavingOverlay();
+    if (modal.btnSave) modal.btnSave.disabled = false;
   }
+}
 
   async function reloadAll(showAlert = true) {
     try {

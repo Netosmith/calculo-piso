@@ -1174,10 +1174,10 @@
   }
 
   function closeModal() {
-    if (STATE.savingModal) return;
-    modal.el.classList.remove("isOpen");
-    modal.ctx = { mode: "new", tab: "frota", id: "" };
-  }
+  modal.el.classList.remove("isOpen");
+  modal.ctx = { mode: "new", tab: "frota", id: "" };
+  if (modal.fields) modal.fields.innerHTML = "";
+}
 
   function getVal(id) {
     const el = document.getElementById(id);

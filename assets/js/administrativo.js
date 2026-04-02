@@ -55,7 +55,119 @@
   const STATE = {
     currentChequeUploadId: "",
     uploadingChequeId: "",
+    savingModal: false,
   };
+
+  function ensureSavingOverlay() {
+    if (document.getElementById("adminSavingOverlay")) return;
+
+    const overlay = document.createElement("div");
+    overlay.id = "adminSavingOverlay";
+    overlay.innerHTML = `
+      <div class="adminSavingBox">
+        <div class="adminSavingTitle">SALVANDO...</div>
+        <div class="adminSavingBar">
+          <div class="adminSavingFill"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const style = document.createElement("style");
+    style.id = "adminSavingOverlayStyle";
+    style.textContent = `
+      #adminSavingOverlay{
+        position:fixed;
+        inset:0;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:rgba(3,8,20,.55);
+        backdrop-filter:blur(8px);
+        z-index:10060;
+      }
+
+      #adminSavingOverlay.isOpen{
+        display:flex;
+      }
+
+      .adminSavingBox{
+        width:min(360px, 88vw);
+        padding:24px 22px;
+        border-radius:18px;
+        border:1px solid rgba(255,255,255,.14);
+        background:rgba(10,18,40,.94);
+        box-shadow:0 20px 60px rgba(0,0,0,.45);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:14px;
+      }
+
+      .adminSavingTitle{
+        color:#67e8f9;
+        font-weight:1000;
+        font-size:22px;
+        letter-spacing:.08em;
+        text-shadow:0 0 10px rgba(103,232,249,.22);
+      }
+
+      .adminSavingBar{
+        width:100%;
+        height:18px;
+        border-radius:4px;
+        border:2px solid #67e8f9;
+        padding:2px;
+        background:rgba(103,232,249,.06);
+        overflow:hidden;
+        box-shadow:0 0 12px rgba(103,232,249,.12) inset;
+      }
+
+      .adminSavingFill{
+        width:45%;
+        height:100%;
+        border-radius:2px;
+        background:repeating-linear-gradient(
+          90deg,
+          #67e8f9 0 8px,
+          rgba(103,232,249,.65) 8px 12px
+        );
+        animation:adminSavingMove 1s linear infinite;
+      }
+
+      @keyframes adminSavingMove{
+        0%{ transform:translateX(-110%); }
+        100%{ transform:translateX(250%); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showSavingOverlay(text = "SALVANDO...") {
+    ensureSavingOverlay();
+    const overlay = document.getElementById("adminSavingOverlay");
+    const title = overlay?.querySelector(".adminSavingTitle");
+    if (title) title.textContent = text;
+    overlay?.classList.add("isOpen");
+  }
+
+  function hideSavingOverlay() {
+    document.getElementById("adminSavingOverlay")?.classList.remove("isOpen");
+  }
+
+  function setModalSaving(isSaving, label = "SALVANDO...") {
+    STATE.savingModal = !!isSaving;
+
+    if (modal.btnSave) modal.btnSave.disabled = !!isSaving;
+    if (modal.btnCancel) modal.btnCancel.disabled = !!isSaving;
+    if (modal.btnClose) modal.btnClose.disabled = !!isSaving;
+
+    if (isSaving) {
+      showSavingOverlay(label);
+    } else {
+      hideSavingOverlay();
+    }
+  }
 
   function jsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
@@ -873,6 +985,7 @@
     try {
       STATE.uploadingChequeId = chequeId;
       renderChequesArea();
+      showSavingOverlay("ENVIANDO...");
       setStatus("📤 Enviando termo assinado...");
 
       await uploadChequeTermoOnServer(chequeId, file, {
@@ -893,6 +1006,7 @@
     } finally {
       STATE.uploadingChequeId = "";
       STATE.currentChequeUploadId = "";
+      hideSavingOverlay();
       renderChequesArea();
     }
   }
@@ -1060,6 +1174,7 @@
   }
 
   function closeModal() {
+    if (STATE.savingModal) return;
     modal.el.classList.remove("isOpen");
     modal.ctx = { mode: "new", tab: "frota", id: "" };
   }
@@ -1322,6 +1437,8 @@
   }
 
   async function saveModal() {
+    if (STATE.savingModal) return;
+
     const tab = modal.ctx.tab;
     const payload = valuesFromModal(tab);
 
@@ -1337,6 +1454,7 @@
           return;
         }
 
+        setModalSaving(true, "SALVANDO...");
         setStatus("💾 Salvando cheque...");
 
         if (modal.ctx.mode === "edit") {
@@ -1356,6 +1474,7 @@
           return;
         }
 
+        setModalSaving(true, "SALVANDO...");
         setStatus("💾 Salvando material...");
 
         if (modal.ctx.mode === "edit") {
@@ -1370,6 +1489,7 @@
       }
 
       if (tab === "solicitacoes") {
+        setModalSaving(true, "SALVANDO...");
         setStatus("💾 Salvando solicitação...");
 
         if (modal.ctx.mode === "edit") {
@@ -1384,6 +1504,7 @@
       }
 
       if (tab === "patrimonio") {
+        setModalSaving(true, "SALVANDO...");
         setStatus("💾 Salvando patrimônio...");
 
         if (modal.ctx.mode === "edit") {
@@ -1398,6 +1519,7 @@
       }
 
       if (tab === "epis") {
+        setModalSaving(true, "SALVANDO...");
         setStatus("💾 Salvando EPI...");
 
         if (modal.ctx.mode === "edit") {
@@ -1412,6 +1534,7 @@
       }
 
       if (tab === "frota") {
+        setModalSaving(true, "SALVANDO...");
         setStatus("💾 Salvando frota...");
 
         if (modal.ctx.mode === "edit") {
@@ -1427,6 +1550,8 @@
       console.error("[admin] save erro:", e);
       setStatus("❌ Falha");
       alert(e?.message || "Falha ao salvar.");
+    } finally {
+      setModalSaving(false);
     }
   }
 
@@ -1576,6 +1701,7 @@
   }
 
   function init() {
+    ensureSavingOverlay();
     initHeader();
     fillFiliaisSelect();
     bindTabs();

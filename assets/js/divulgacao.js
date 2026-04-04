@@ -14,9 +14,9 @@
   const FILIAIS_CONTATOS = {
     RIOVERDE: [
       "LUIS.G (64) 99277-4293",
-      "MARÇAL (64) 99929-3431",
+      "RODRIGO (64) 99603-1200",
       "MARCIO (64) 99345-7740",
-      "ARIEL (64) 99227-7537"
+      "GUSTAVO (64) 99207-8772"
     ],
     FERTILIZANTE: [
       "NARCISO (64) 99936-5343",

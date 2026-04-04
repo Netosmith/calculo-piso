@@ -135,8 +135,26 @@
     }
 
     .sumGold{
-      background: linear-gradient(135deg, rgba(116,92,24,.86), rgba(20,22,32,.72));
-    }
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color:#1a1a1a;
+  border:1px solid rgba(255,215,0,.6);
+  box-shadow:
+    0 0 12px rgba(255,215,0,.4),
+    0 0 24px rgba(255,165,0,.25);
+}
+
+.sumGold .sumIcon{
+  background: rgba(0,0,0,.15);
+  border:1px solid rgba(255,255,255,.25);
+}
+
+.sumGold:hover{
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.15);
+  box-shadow:
+    0 0 18px rgba(255,215,0,.6),
+    0 0 32px rgba(255,165,0,.35);
+}
 
     .topSolicWrap{
       display:flex;

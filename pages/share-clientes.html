@@ -213,6 +213,11 @@
       color:#0f3d22;
     }
 
+    .hideFreteEmpresa .col-frete-empresa,
+    .hideFreteEmpresa .td-frete-empresa{
+      display:none !important;
+    }
+
     body.printMode .topbar{display:none !important;}
     body.printMode .container{padding-top:10px !important;}
 
@@ -242,7 +247,6 @@
     body.printMode table{
       min-width:1400px !important;
     }
-
   </style>
 </head>
 
@@ -269,6 +273,7 @@
         <div class="btnRow">
           <button class="btnSmall blue" id="btnVoltarFretes" title="Voltar para Fretes">← Voltar para Fretes</button>
           <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">🔄 Atualizar</button>
+          <button class="btnSmall" id="btnToggleFreteEmpresa" title="Ocultar ou mostrar a coluna Frete Empresa">Ocultar Frete Empresa</button>
           <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">🖼️ Gerar Print</button>
         </div>
       </div>
@@ -355,6 +360,8 @@
     (function(){
       const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
 
+      let ocultarFreteEmpresa = false;
+
       function onReady(fn){
         if(document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
         else document.addEventListener('DOMContentLoaded', fn);
@@ -431,12 +438,13 @@
         if(!name){
           img.style.display = 'none';
           fb.style.display = 'block';
+          fb.textContent = 'SEM LOGO';
           return;
         }
         const src = base + name + '.png';
         img.src = src;
         img.onload = () => { fb.style.display = 'none'; img.style.display = 'block'; };
-        img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; };
+        img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; fb.textContent = name; };
       }
 
       function makeStatusPillHTML(st){
@@ -488,6 +496,18 @@
         return data;
       }
 
+      function toggleFreteEmpresa(hide){
+        const page = document.getElementById('pageShare');
+        if (!page) return;
+
+        page.classList.toggle('hideFreteEmpresa', !!hide);
+
+        const btn = document.getElementById('btnToggleFreteEmpresa');
+        if (btn) {
+          btn.textContent = hide ? 'Mostrar Frete Empresa' : 'Ocultar Frete Empresa';
+        }
+      }
+
       onReady(function(){
         const selCliente = document.getElementById('selCliente');
         const corrList   = document.getElementById('corrList');
@@ -495,6 +515,7 @@
         const btnReload  = document.getElementById('btnReload');
         const btnPrint   = document.getElementById('btnPrint');
         const btnVoltarFretes = document.getElementById('btnVoltarFretes');
+        const btnToggleFreteEmpresa = document.getElementById('btnToggleFreteEmpresa');
         const pageShare  = document.getElementById('pageShare');
 
         if(!selCliente || !corrList || !tbody) return;
@@ -564,7 +585,7 @@
                 <td>${r.coleta ?? ''}</td>
                 <td>${r.destino ?? ''}</td>
                 <td>${r.descarga ?? ''}</td>
-                <td class="num">${moneyBR(frete)}</td>
+                <td class="num td-frete-empresa">${moneyBR(frete)}</td>
                 <td>${r.produto ?? ''}</td>
                 <td class="num">${cmhL ? fmtInt(cmhL) : ''}</td>
                 <td class="num">${cmhT ? fmtInt(cmhT) : ''}</td>
@@ -574,6 +595,8 @@
               </tr>
             `;
           }).join('');
+
+          toggleFreteEmpresa(ocultarFreteEmpresa);
         }
 
         async function hydrate(){
@@ -590,6 +613,7 @@
               setText('kLotes','0');
               setText('kCaminhao','0');
               setText('kVolume','0 t');
+              toggleFreteEmpresa(ocultarFreteEmpresa);
               return;
             }
 
@@ -613,6 +637,13 @@
         });
 
         if(btnReload) btnReload.addEventListener('click', hydrate);
+
+        if(btnToggleFreteEmpresa){
+          btnToggleFreteEmpresa.addEventListener('click', () => {
+            ocultarFreteEmpresa = !ocultarFreteEmpresa;
+            toggleFreteEmpresa(ocultarFreteEmpresa);
+          });
+        }
 
         if(btnVoltarFretes){
           btnVoltarFretes.addEventListener('click', () => {
@@ -658,6 +689,7 @@
           });
         }
 
+        toggleFreteEmpresa(false);
         hydrate();
       });
     })();

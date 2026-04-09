@@ -8,141 +8,143 @@
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
 
-const CLIENTES_FIXOS = [
-  "CARGILL",
-  "VITERRA",
-  "COFCO",
-  "NOVA AGRI",
-  "JBS SEARA",
-  "BRF",
-  "MOSAIC",
-  "AMAGGI",
-  "INGREDION",
-  "LDC",
-  "BRADO",
-  "C VALE",
-  "OLAM BRASIL",
-  "SODRU",
-  "BOM JESUS",
-  "SOYBRASIL",
-  "LAVORO",
-  "AGRIBRASIL",
-  "BOM FUTURO",
-  "CHS",
-  "CIBRAFERTIL",
-  "CJ TRADE",
-  "FERT TOCANTINS",
-  "GAVILON",
-  "GRUPO SCHEFFER",
-  "INPASA",
-  "AGRICOLA ALVORADA",
-  "ABJ AGROPECUARIA",
-  "ADM",
-  "FIAGRIL",
-  "FS",
-  "ALPHAGRAIN",
-  "FERTIMIG",
-  "FERTIPAR",
-  "GIRASSOL",
-  "GRUPO ATTO",
-  "ADUBRAS",
-  "CARAMURU",
-  "YUKAER AGRO",
-  "DUAL",
-  "AGRONELLI",
-  "BELAGRO",
-  "COOPERNORT",
-  "SIPAL",
-  "H A PIMENTA",
-  "SAFRAS",
-  "SINAGRO",
-  "CAMPO REAL",
-  "AGROSOYA",
-  "COPAGRI",
-  "VMC",
-  "GENERAL MILLS",
-  "CUTRALE",
-  "AGREX",
-  "YARA",
-  "HEDGE",
-  "ALZ",
-  "MARUBENI",
-  "MDNORTE",
-  "FS TRADING",
-  "SJC",
-  "CJ SELECTA",
-  "COOXUPE",
-  "BTG PACTUAL",
-  "FENIX",
-  "FERTIGRAN",
-  "RIFERTIL",
-  "SEMENTES SAO FRANCISCO",
-  "SEMPRE SEMENTES",
-  "GOIASA",
-  "SAO MARTINHO",
-  "AGRO CLUB",
-  "MILHAO ALIMENTOS",
-  "TRATO",
-  "BREJEIRO",
-  "GEN",
-  "ARAGUAIA",
-  "NUTRIEN",
-  "KOWALSKI LDC",
-  "BIORGANICA",
-  "RICARDO MARTINS",
-  "SERGIO GALVAO",
-  "AGROMEN",
-  "PROSOLLO",
-  "USINA DECAL",
-  "COOPERVASS",
-  "SOAMI",
-  "RAFIRA",
-  "CONCEITO AGRICOLA",
-  "AGROBOM",
-  "MOINHO VITORIA",
-  "MMJV GRAOS",
-  "BOA SAFRA",
-  "NOVA GALIA",
-  "CEREAL",
-  "SOMAI ALIMENTOS",
-  "SITARI",
-  "ALENCAR",
-  "AGROMERCANTIL",
-  "OURO SAFRA",
-  "FUTURO",
-  "GRAN MILHO",
-  "HERINGER",
-  "CEREAL OURO",
-  "EUROCHEM",
-  "GRANOL",
-  "AGROAMAZONIA",
-  "AGROMAVE",
-  "CERTANO",
-  "SEEDCORP",
-  "BAUMINAS",
-  "JALLES MACHADO",
-  "ALIMENTOS N1",
-  "ROAN ALIMENTOS",
-  "CERRADINHO",
-  "FAZENDAO AGRO",
-  "IACO",
-  "JATAI CEREAIS",
-  "USINA SERRANOPOLIS",
-  "FAST FRETE",
-  "RIO DOCE",
-  "INTEGRA",
-  "RENATO CARVALHO",
-  "COMIVA",
-  "COMERX",
-  "SCALON E CERHI",
-  "3 TENTOS",
-  "BIOMA",
-  "AGROLESTE",
-  "EDSON CROCHIQUIA",
-  "COPAIBA",
-  "ATVOS",
-  "JRCA"
-];
+  let ocultarFreteEmpresa = false;
+
+  const CLIENTES_FIXOS = [
+    "CARGILL",
+    "VITERRA",
+    "COFCO",
+    "NOVA AGRI",
+    "JBS SEARA",
+    "BRF",
+    "MOSAIC",
+    "AMAGGI",
+    "INGREDION",
+    "LDC",
+    "BRADO",
+    "C VALE",
+    "OLAM BRASIL",
+    "SODRU",
+    "BOM JESUS",
+    "SOYBRASIL",
+    "LAVORO",
+    "AGRIBRASIL",
+    "BOM FUTURO",
+    "CHS",
+    "CIBRAFERTIL",
+    "CJ TRADE",
+    "FERT TOCANTINS",
+    "GAVILON",
+    "GRUPO SCHEFFER",
+    "INPASA",
+    "AGRICOLA ALVORADA",
+    "ABJ AGROPECUARIA",
+    "ADM",
+    "FIAGRIL",
+    "FS",
+    "ALPHAGRAIN",
+    "FERTIMIG",
+    "FERTIPAR",
+    "GIRASSOL",
+    "GRUPO ATTO",
+    "ADUBRAS",
+    "CARAMURU",
+    "YUKAER AGRO",
+    "DUAL",
+    "AGRONELLI",
+    "BELAGRO",
+    "COOPERNORT",
+    "SIPAL",
+    "H A PIMENTA",
+    "SAFRAS",
+    "SINAGRO",
+    "CAMPO REAL",
+    "AGROSOYA",
+    "COPAGRI",
+    "VMC",
+    "GENERAL MILLS",
+    "CUTRALE",
+    "AGREX",
+    "YARA",
+    "HEDGE",
+    "ALZ",
+    "MARUBENI",
+    "MDNORTE",
+    "FS TRADING",
+    "SJC",
+    "CJ SELECTA",
+    "COOXUPE",
+    "BTG PACTUAL",
+    "FENIX",
+    "FERTIGRAN",
+    "RIFERTIL",
+    "SEMENTES SAO FRANCISCO",
+    "SEMPRE SEMENTES",
+    "GOIASA",
+    "SAO MARTINHO",
+    "AGRO CLUB",
+    "MILHAO ALIMENTOS",
+    "TRATO",
+    "BREJEIRO",
+    "GEN",
+    "ARAGUAIA",
+    "NUTRIEN",
+    "KOWALSKI LDC",
+    "BIORGANICA",
+    "RICARDO MARTINS",
+    "SERGIO GALVAO",
+    "AGROMEN",
+    "PROSOLLO",
+    "USINA DECAL",
+    "COOPERVASS",
+    "SOAMI",
+    "RAFIRA",
+    "CONCEITO AGRICOLA",
+    "AGROBOM",
+    "MOINHO VITORIA",
+    "MMJV GRAOS",
+    "BOA SAFRA",
+    "NOVA GALIA",
+    "CEREAL",
+    "SOMAI ALIMENTOS",
+    "SITARI",
+    "ALENCAR",
+    "AGROMERCANTIL",
+    "OURO SAFRA",
+    "FUTURO",
+    "GRAN MILHO",
+    "HERINGER",
+    "CEREAL OURO",
+    "EUROCHEM",
+    "GRANOL",
+    "AGROAMAZONIA",
+    "AGROMAVE",
+    "CERTANO",
+    "SEEDCORP",
+    "BAUMINAS",
+    "JALLES MACHADO",
+    "ALIMENTOS N1",
+    "ROAN ALIMENTOS",
+    "CERRADINHO",
+    "FAZENDAO AGRO",
+    "IACO",
+    "JATAI CEREAIS",
+    "USINA SERRANOPOLIS",
+    "FAST FRETE",
+    "RIO DOCE",
+    "INTEGRA",
+    "RENATO CARVALHO",
+    "COMIVA",
+    "COMERX",
+    "SCALON E CERHI",
+    "3 TENTOS",
+    "BIOMA",
+    "AGROLESTE",
+    "EDSON CROCHIQUIA",
+    "COPAIBA",
+    "ATVOS",
+    "JRCA"
+  ];
 
   function safeText(v) {
     return (v ?? "").toString().trim();
@@ -153,7 +155,16 @@ const CLIENTES_FIXOS = [
   }
 
   function num(v) {
-    const n = Number(String(v).replace(",", "."));
+    const raw = String(v ?? "").trim();
+    if (!raw) return 0;
+
+    const normalized = raw
+      .replace(/\s+/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+      .replace(/[^\d.-]/g, "");
+
+    const n = Number(normalized);
     return isFinite(n) ? n : 0;
   }
 
@@ -166,6 +177,22 @@ const CLIENTES_FIXOS = [
   function statusClass(st) {
     const s = up(st);
     return s === "LIBERADO" ? "liberado" : "suspenso";
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function toggleFreteEmpresa(hide) {
+    const els = document.querySelectorAll(".col-frete-empresa");
+    els.forEach((el) => {
+      el.style.display = hide ? "none" : "";
+    });
   }
 
   function loadFretesRows() {
@@ -192,35 +219,51 @@ const CLIENTES_FIXOS = [
     const a = num(cmhLocal);
     const b = num(cmhTrans);
     if (!a && !b) return "";
-    return (a + b);
+    return a + b;
   }
 
   function buildClientesList(rows) {
-    const fromData = Array.from(new Set(rows.map(r => up(r.cliente)).filter(Boolean)))
-      .sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const fromData = Array.from(new Set(rows.map((r) => up(r.cliente)).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
     const fixed = CLIENTES_FIXOS.map(up).filter(Boolean);
     const merged = Array.from(new Set([...fixed, ...fromData]));
     const ordered = [];
-    fixed.forEach(c => { if (merged.includes(c)) ordered.push(c); });
-    fromData.forEach(c => { if (!ordered.includes(c)) ordered.push(c); });
+
+    fixed.forEach((c) => {
+      if (merged.includes(c)) ordered.push(c);
+    });
+
+    fromData.forEach((c) => {
+      if (!ordered.includes(c)) ordered.push(c);
+    });
+
     return ordered;
   }
 
   function fillSelect(sel, items, { includeAll = false, allLabel = "Todos" } = {}) {
     if (!sel) return;
+
+    const current = sel.value;
     sel.innerHTML = "";
+
     if (includeAll) {
       const op = document.createElement("option");
       op.value = "";
       op.textContent = allLabel;
       sel.appendChild(op);
     }
+
     items.forEach((it) => {
       const op = document.createElement("option");
       op.value = it;
       op.textContent = it;
       sel.appendChild(op);
     });
+
+    if ([...sel.options].some((o) => o.value === current)) {
+      sel.value = current;
+    }
   }
 
   async function setClientLogo(cliente) {
@@ -264,14 +307,25 @@ const CLIENTES_FIXOS = [
 
   function matchesSearch(row, q) {
     if (!q) return true;
-    const blob = [row.origem, row.coleta, row.destino, row.descarga, row.produto, row.obs]
-      .map(safeText).join(" ").toLowerCase();
+
+    const blob = [
+      row.origem,
+      row.coleta,
+      row.destino,
+      row.descarga,
+      row.produto,
+      row.obs
+    ]
+      .map(safeText)
+      .join(" ")
+      .toLowerCase();
+
     return blob.includes(q.toLowerCase());
   }
 
   function buildDestinosList(rows) {
-    return Array.from(new Set(rows.map(r => safeText(r.destino)).filter(Boolean)))
-      .sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    return Array.from(new Set(rows.map((r) => safeText(r.destino)).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
   function setKpis(rowsFiltered) {
@@ -286,16 +340,18 @@ const CLIENTES_FIXOS = [
 
   function setCorredores(rowsFiltered) {
     const map = new Map();
+
     rowsFiltered.forEach((r) => {
       const dest = safeText(r.destino) || "SEM DESTINO";
       map.set(dest, (map.get(dest) || 0) + 1);
     });
 
     const list = Array.from(map.entries())
-      .sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0],"pt-BR"));
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"));
 
     const wrap = $("corrList");
     if (!wrap) return;
+
     wrap.innerHTML = "";
 
     if (list.length === 0) {
@@ -317,6 +373,7 @@ const CLIENTES_FIXOS = [
   function renderTable(rowsFiltered) {
     const tbody = $("tbodyShare");
     if (!tbody) return;
+
     tbody.innerHTML = "";
 
     rowsFiltered.forEach((r) => {
@@ -331,7 +388,7 @@ const CLIENTES_FIXOS = [
         <td>${escapeHtml(safeText(r.coleta))}</td>
         <td>${escapeHtml(safeText(r.destino))}</td>
         <td>${escapeHtml(safeText(r.descarga))}</td>
-        <td class="num">${escapeHtml(formatBRL(r.valorEmpresa))}</td>
+        <td class="num col-frete-empresa">${escapeHtml(formatBRL(num(r.valorEmpresa)))}</td>
         <td>${escapeHtml(safeText(r.produto))}</td>
         <td class="num">${escapeHtml(safeText(cmhL))}</td>
         <td class="num">${escapeHtml(safeText(cmhT))}</td>
@@ -342,44 +399,46 @@ const CLIENTES_FIXOS = [
 
       tbody.appendChild(tr);
     });
+
+    toggleFreteEmpresa(ocultarFreteEmpresa);
   }
 
   async function doPrint() {
     const page = $("pageShare");
     if (!page || typeof html2canvas === "undefined") return;
 
-    document.body.classList.add("printMode");
-    await new Promise(r => setTimeout(r, 80));
+    try {
+      ocultarFreteEmpresa = true;
+      toggleFreteEmpresa(true);
 
-    const canvas = await html2canvas(page, {
-      backgroundColor: null,
-      scale: 2,
-      useCORS: true
-    });
+      document.body.classList.add("printMode");
 
-    document.body.classList.remove("printMode");
+      await new Promise((r) => setTimeout(r, 120));
 
-    const dataUrl = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    const cliente = up($("selCliente")?.value) || "CLIENTE";
-    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
-    a.download = `share-${cliente}-${stamp}.png`;
-    a.href = dataUrl;
-    a.click();
-  }
+      const canvas = await html2canvas(page, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true
+      });
 
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      const cliente = up($("selCliente")?.value) || "CLIENTE";
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+
+      a.download = `share-${cliente}-${stamp}.png`;
+      a.href = dataUrl;
+      a.click();
+    } finally {
+      ocultarFreteEmpresa = false;
+      toggleFreteEmpresa(false);
+      document.body.classList.remove("printMode");
+    }
   }
 
   let state = {
     rowsAll: [],
-    clientes: [],
+    clientes: []
   };
 
   function applyFiltersAndRender() {
@@ -395,10 +454,10 @@ const CLIENTES_FIXOS = [
 
     let list = state.rowsAll.slice();
 
-    if (cliente) list = list.filter(r => up(r.cliente) === cliente);
-    if (st) list = list.filter(r => up(r.status) === st);
-    if (dest) list = list.filter(r => safeText(r.destino) === dest);
-    if (q) list = list.filter(r => matchesSearch(r, q));
+    if (cliente) list = list.filter((r) => up(r.cliente) === cliente);
+    if (st) list = list.filter((r) => up(r.status) === st);
+    if (dest) list = list.filter((r) => safeText(r.destino) === dest);
+    if (q) list = list.filter((r) => matchesSearch(r, q));
 
     setKpis(list);
     setCorredores(list);
@@ -411,28 +470,32 @@ const CLIENTES_FIXOS = [
     if (!selCliente || !selDestino) return;
 
     const cliente = up(selCliente.value);
-    const list = state.rowsAll.filter(r => up(r.cliente) === cliente);
+    const list = state.rowsAll.filter((r) => up(r.cliente) === cliente);
     const destinos = buildDestinosList(list);
+
     fillSelect(selDestino, destinos, { includeAll: true, allLabel: "Todos" });
   }
 
-  function refresh() {
+  async function refresh() {
     state.rowsAll = loadFretesRows();
     state.clientes = buildClientesList(state.rowsAll);
 
     fillSelect($("selCliente"), state.clientes, { includeAll: false });
 
-    const firstWithData = state.clientes.find(c => state.rowsAll.some(r => up(r.cliente) === c));
+    const firstWithData = state.clientes.find((c) =>
+      state.rowsAll.some((r) => up(r.cliente) === c)
+    );
+
     if ($("selCliente") && firstWithData) $("selCliente").value = firstWithData;
 
-    setClientLogo($("selCliente")?.value);
+    await setClientLogo($("selCliente")?.value);
     rebuildDestinosForCliente();
     applyFiltersAndRender();
   }
 
   function init() {
-    $("selCliente")?.addEventListener("change", () => {
-      setClientLogo($("selCliente")?.value);
+    $("selCliente")?.addEventListener("change", async () => {
+      await setClientLogo($("selCliente")?.value);
       rebuildDestinosForCliente();
       applyFiltersAndRender();
     });

@@ -15,7 +15,7 @@
     contatosPorFilial: {
       "MINEIROS": [{ nome: "KIEWERSON", fone: "5564999794586" }],
       "ARAGUARI": [{ nome: "ALFREDO", fone: "5534997911299" }],
-      "ANAPOLIS": [{ nome: "SERGIO", fone: "5564992669136" }],
+      "ANAPOLIS": [{ nome: "WILHANS", fone: "5566996733683" }],
       "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
       "MONTIVIDIU": [{ nome: "ROBSON", fone: "5564999628005" }],
       "RIO VERDE": [{ nome: "ARIEL", fone: "5564992277537" }],

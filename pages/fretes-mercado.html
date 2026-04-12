@@ -1,59 +1,65 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Fretes Mercado | NOVA FROTA</title>
+<meta charset="utf-8">
+<title>Fretes Mercado</title>
 
-<link rel="stylesheet" href="../assets/css/app.css"/>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <style>
-body{
-  background:#0f172a;
-  color:#fff;
-  font-family:Arial;
-}
+body{background:#0f172a;color:#fff;font-family:Arial}
 
-.container{
-  max-width:1600px;
-  margin:auto;
-  padding:20px;
-}
+.container{padding:20px}
 
 .header{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:20px;
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
 }
 
 button{
-  padding:10px 16px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  font-weight:bold;
+padding:8px 14px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
 }
 
-.btn-clear{background:#dc2626;color:#fff;}
-.btn-print{background:#22c55e;color:#000;}
+.btn-save{background:#22c55e}
+.btn-clear{background:#ef4444}
+.btn-print{background:#3b82f6}
 
 .table{
-  width:100%;
-  border-collapse:collapse;
+display:flex;
+gap:10px;
+overflow-x:auto;
 }
 
-.table th,.table td{
-  border:1px solid rgba(255,255,255,.1);
-  padding:6px;
-  text-align:center;
+.regiao{
+background:#1e293b;
+border-radius:10px;
+padding:10px;
+min-width:260px;
 }
 
-.table input{
-  width:100%;
-  background:transparent;
-  border:none;
-  color:#fff;
-  text-align:center;
+.regiao h3{
+text-align:center;
+margin-bottom:8px;
+}
+
+.row{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:4px;
+margin-bottom:4px;
+}
+
+input,select{
+width:100%;
+padding:4px;
+background:#0f172a;
+color:#fff;
+border:1px solid rgba(255,255,255,.1);
 }
 </style>
 </head>
@@ -66,26 +72,17 @@ button{
 <h2>FRETES MERCADO</h2>
 
 <div>
-<button class="btn-clear" onclick="zerar()">Zerar Valores</button>
-<button class="btn-print" onclick="printTela()">Gerar Print</button>
+<button class="btn-save" onclick="salvar()">Salvar</button>
+<button class="btn-clear" onclick="zerar()">Zerar</button>
+<button class="btn-print" onclick="printTela()">Print</button>
 </div>
 </div>
 
-<table class="table" id="tabela">
-<thead>
-<tr>
-<th>Base</th>
-<th>Frete</th>
-<th>Oferta</th>
-<th>Tendência</th>
-</tr>
-</thead>
-
-<tbody id="tbody"></tbody>
-</table>
+<div id="tabela" class="table"></div>
 
 </div>
 
 <script src="../assets/js/fretes-mercado.js"></script>
+
 </body>
 </html>

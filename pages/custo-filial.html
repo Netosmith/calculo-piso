@@ -5,65 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Custo / Filial | NOVA FROTA</title>
 
+  <link rel="stylesheet" href="../assets/css/app.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root{
       --bg:#0f172a;
-      --panel:#162033;
-      --panel-2:#1e293b;
-      --line:rgba(255,255,255,.10);
-      --text:#ffffff;
-      --muted:rgba(255,255,255,.72);
+      --card:#1e293b;
+      --card2:#111827;
+      --line:rgba(255,255,255,.08);
+      --text:#f8fafc;
+      --muted:#94a3b8;
       --green:#22c55e;
-      --blue:#3b82f6;
       --red:#ef4444;
       --yellow:#f59e0b;
-      --shadow:0 14px 34px rgba(0,0,0,.28);
+      --blue:#3b82f6;
+      --purple:#8b5cf6;
+      --shadow:0 12px 32px rgba(0,0,0,.28);
       --radius:18px;
     }
 
-    *{
-      box-sizing:border-box;
-    }
+    *{ box-sizing:border-box; }
 
     body{
       margin:0;
-      background:linear-gradient(180deg, #081225 0%, #0f172a 100%);
+      background:var(--bg);
       color:var(--text);
-      font-family:Arial, Helvetica, sans-serif;
+      font-family:Arial, sans-serif;
     }
+
+    .topbar .actions a.icon-btn{ text-decoration:none; }
 
     .container{
       max-width:1600px;
       margin:auto;
-      padding:22px;
+      padding:20px;
     }
 
     .pageHeader{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
-      gap:16px;
+      gap:14px;
       flex-wrap:wrap;
       margin-bottom:18px;
-      padding:20px;
-      border-radius:20px;
-      background:linear-gradient(135deg, rgba(30,41,59,.95), rgba(15,23,42,.96));
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
     }
 
     .pageHeader h1{
       margin:0;
-      font-size:34px;
-      line-height:1;
+      font-size:28px;
       font-weight:1000;
-      letter-spacing:.02em;
     }
 
     .subTitle{
-      margin:8px 0 0;
+      margin:6px 0 0;
       color:var(--muted);
       font-size:14px;
     }
@@ -79,10 +74,10 @@
       padding:0 16px;
       border:none;
       border-radius:12px;
-      color:#fff;
-      font-weight:900;
       cursor:pointer;
-      box-shadow:0 10px 22px rgba(0,0,0,.18);
+      font-weight:900;
+      color:#fff;
+      box-shadow:var(--shadow);
       transition:transform .12s ease, filter .12s ease;
     }
 
@@ -91,224 +86,346 @@
       filter:brightness(1.06);
     }
 
-    .btnAction.green{
-      background:linear-gradient(135deg, #16a34a, #22c55e);
-    }
+    .btnAction.green{ background:linear-gradient(135deg,#16a34a,#22c55e); }
+    .btnAction.blue{ background:linear-gradient(135deg,#2563eb,#3b82f6); }
+    .btnAction.gray{ background:linear-gradient(135deg,#334155,#475569); }
 
-    .btnAction.blue{
-      background:linear-gradient(135deg, #2563eb, #3b82f6);
-    }
-
-    .btnAction.gray{
-      background:linear-gradient(135deg, #334155, #475569);
-    }
-
-    .topGrid{
-      display:grid;
-      grid-template-columns:repeat(4, minmax(0, 1fr));
-      gap:14px;
+    .syncStatus{
       margin-bottom:16px;
-    }
-
-    .card{
-      background:var(--panel-2);
-      padding:16px;
-      border-radius:var(--radius);
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
-    }
-
-    .kpiLabel{
-      font-size:12px;
-      color:var(--muted);
-      text-transform:uppercase;
+      font-size:13px;
       font-weight:900;
-      letter-spacing:.05em;
+      color:#93c5fd;
     }
 
-    .kpi{
-      font-size:28px;
-      font-weight:1000;
-      margin-top:8px;
-    }
-
-    .kpiFoot{
-      margin-top:8px;
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    .grid{
+    .kpiGrid{
       display:grid;
-      grid-template-columns:repeat(3, 1fr);
+      grid-template-columns:repeat(4,1fr);
       gap:12px;
       margin-bottom:16px;
     }
 
-    .rankingCard{
-      background:linear-gradient(180deg, rgba(30,41,59,.98), rgba(15,23,42,.98));
+    .card{
+      background:var(--card);
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
+      border-radius:var(--radius);
+      padding:16px;
       box-shadow:var(--shadow);
     }
 
-    .rankingTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:8px;
-    }
-
-    .rankingTop h3{
-      margin:0;
-      font-size:16px;
-      font-weight:1000;
-    }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:72px;
-      height:28px;
-      padding:0 10px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:1000;
-      border:1px solid rgba(255,255,255,.10);
-    }
-
-    .badge.ok{
-      background:rgba(34,197,94,.16);
-      color:#86efac;
-    }
-
-    .badge.warn{
-      background:rgba(245,158,11,.16);
-      color:#fcd34d;
-    }
-
-    .badge.alert{
-      background:rgba(239,68,68,.16);
-      color:#fca5a5;
-    }
-
-    .metaLine{
-      margin-top:8px;
-      font-size:13px;
+    .kpiLabel{
       color:var(--muted);
-      line-height:1.45;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.04em;
     }
 
-    .chartGrid{
+    .kpiValue{
+      margin-top:8px;
+      font-size:26px;
+      font-weight:1000;
+      color:#fff;
+    }
+
+    .kpiSub{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .mainGrid{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns: 1.15fr .85fr;
       gap:16px;
       margin-bottom:16px;
     }
 
     .chartCard{
-      background:var(--panel-2);
+      background:var(--card);
       border:1px solid var(--line);
-      border-radius:18px;
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .chartTitle{
+      margin:0 0 12px;
+      font-size:16px;
+      font-weight:1000;
+    }
+
+    .chartBox{
+      height:340px;
+    }
+
+    .alertCard{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+      max-height:340px;
+      overflow:auto;
+    }
+
+    .alertTitle{
+      margin:0 0 12px;
+      font-size:16px;
+      font-weight:1000;
+    }
+
+    .alertItem{
+      padding:10px 12px;
+      border-radius:12px;
+      margin-bottom:8px;
+      font-size:13px;
+      font-weight:800;
+      border:1px solid transparent;
+    }
+
+    .alertItem.ok{
+      background:rgba(34,197,94,.14);
+      color:#86efac;
+      border-color:rgba(34,197,94,.28);
+    }
+
+    .alertItem.warn{
+      background:rgba(245,158,11,.14);
+      color:#fcd34d;
+      border-color:rgba(245,158,11,.28);
+    }
+
+    .alertItem.bad{
+      background:rgba(239,68,68,.14);
+      color:#fca5a5;
+      border-color:rgba(239,68,68,.28);
+    }
+
+    .tableCard{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
       box-shadow:var(--shadow);
       overflow:hidden;
     }
 
-    .chartHead{
+    .tableHead{
       padding:14px 16px;
       border-bottom:1px solid var(--line);
-      font-size:15px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .tableHead h3{
+      margin:0;
+      font-size:16px;
       font-weight:1000;
     }
 
-    .chartBody{
-      padding:16px;
-      height:360px;
+    .tableWrap{
+      overflow:auto;
+      max-height:460px;
     }
 
-    .alertsCard{
-      background:var(--panel-2);
-      border:1px solid var(--line);
-      border-radius:18px;
-      box-shadow:var(--shadow);
-      padding:16px;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1100px;
+      background:transparent;
     }
 
-    .alertsTitle{
-      margin:0 0 12px;
-      font-size:18px;
+    th, td{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      text-align:left;
+      font-size:13px;
+      white-space:nowrap;
+    }
+
+    th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#162033;
+      color:#cbd5e1;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+
+    td.num, th.num{
+      text-align:right;
+    }
+
+    .rankBadge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:28px;
+      height:28px;
+      border-radius:999px;
+      font-size:12px;
       font-weight:1000;
+      background:#334155;
+      color:#fff;
     }
 
-    .alert{
-      color:#fca5a5;
-      font-weight:bold;
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:1000;
+      border:1px solid transparent;
     }
 
-    .ok{
+    .pill.ok{
       color:#86efac;
-      font-weight:bold;
+      background:rgba(34,197,94,.14);
+      border-color:rgba(34,197,94,.28);
     }
 
-    .alertItem{
-      padding:12px 14px;
+    .pill.warn{
+      color:#fcd34d;
+      background:rgba(245,158,11,.14);
+      border-color:rgba(245,158,11,.28);
+    }
+
+    .pill.bad{
+      color:#fca5a5;
+      background:rgba(239,68,68,.14);
+      border-color:rgba(239,68,68,.28);
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.62);
+      backdrop-filter:blur(8px);
+      z-index:9999;
+      padding:18px;
+    }
+
+    .modal.isOpen{
+      display:flex;
+    }
+
+    .modalBox{
+      width:min(520px,100%);
+      background:#111827;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      box-shadow:0 22px 60px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+
+    .modalHead{
+      padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .modalHead h3{
+      margin:0;
+      font-size:16px;
+      font-weight:1000;
+    }
+
+    .modalClose{
+      width:36px;
+      height:36px;
+      border:none;
       border-radius:12px;
-      margin-bottom:10px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
-      font-size:14px;
-      line-height:1.45;
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      cursor:pointer;
+      font-weight:1000;
+    }
+
+    .modalBody{
+      padding:16px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .field.full{
+      grid-column:1 / -1;
+    }
+
+    .field label{
+      display:block;
+      margin:0 0 6px;
+      font-size:11px;
+      font-weight:900;
+      color:#cbd5e1;
+      text-transform:uppercase;
+    }
+
+    .field input{
+      width:100%;
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#0f172a;
+      color:#fff;
+      padding:0 12px;
+      outline:none;
+    }
+
+    .modalFoot{
+      padding:14px 16px;
+      border-top:1px solid rgba(255,255,255,.08);
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
     }
 
     .emptyState{
-      padding:28px;
+      padding:24px;
       text-align:center;
       color:var(--muted);
-      font-weight:700;
-      border:1px dashed rgba(255,255,255,.14);
-      border-radius:14px;
+      font-weight:800;
     }
 
-    @media (max-width: 1200px){
-      .topGrid{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-      }
-
-      .grid{
-        grid-template-columns:1fr 1fr;
-      }
-
-      .chartGrid{
-        grid-template-columns:1fr;
-      }
+    @media (max-width: 1100px){
+      .kpiGrid{ grid-template-columns:repeat(2,1fr); }
+      .mainGrid{ grid-template-columns:1fr; }
     }
 
-    @media (max-width: 760px){
-      .topGrid{
-        grid-template-columns:1fr;
-      }
-
-      .grid{
-        grid-template-columns:1fr;
-      }
-
-      .pageHeader h1{
-        font-size:28px;
-      }
-
-      .chartBody{
-        height:300px;
-      }
+    @media (max-width: 700px){
+      .kpiGrid{ grid-template-columns:1fr; }
+      .modalBody{ grid-template-columns:1fr; }
     }
   </style>
 </head>
+
 <body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="burger" href="./home.html" title="Voltar">🏠</a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
+
+      <div class="actions">
+        <div class="icon-btn" title="Sair" data-logout>SAIR</div>
+      </div>
+    </div>
+  </div>
 
   <div class="container">
-
     <div class="pageHeader">
       <div>
         <h1>CUSTO / FILIAL</h1>
@@ -316,101 +433,172 @@
       </div>
 
       <div class="headerActions">
-        <button class="btnAction green" id="btnNovaMeta" type="button">🎯 Lançar Metas</button>
+        <button class="btnAction green" id="btnNovaMeta" type="button">🎯 Lançar/Editar Metas</button>
         <button class="btnAction blue" id="btnNovoLancamento" type="button">➕ Lançar Produção</button>
+        <button class="btnAction gray" id="btnAtualizar" type="button">🔄 Atualizar</button>
       </div>
     </div>
 
-    <div class="topGrid">
+    <div class="syncStatus" id="syncStatus">🔄 Carregando...</div>
+
+    <div class="kpiGrid">
       <div class="card">
-        <div class="kpiLabel">Meta mensal faturamento</div>
-        <div class="kpi" id="kpiMetaFat">R$ 0,00</div>
-        <div class="kpiFoot">Soma das metas mensais das filiais</div>
+        <div class="kpiLabel">Filiais Monitoradas</div>
+        <div class="kpiValue" id="kpiFiliais">0</div>
+        <div class="kpiSub">Base com meta cadastrada</div>
       </div>
 
       <div class="card">
-        <div class="kpiLabel">Alcançado faturamento</div>
-        <div class="kpi" id="kpiRealFat">R$ 0,00</div>
-        <div class="kpiFoot">Realizado no período</div>
+        <div class="kpiLabel">Faturamento Real</div>
+        <div class="kpiValue" id="kpiFatReal">R$ 0,00</div>
+        <div class="kpiSub">Acumulado do mês</div>
       </div>
 
       <div class="card">
-        <div class="kpiLabel">Meta mensal toneladas</div>
-        <div class="kpi" id="kpiMetaTon">0 t</div>
-        <div class="kpiFoot">Meta de embarque consolidada</div>
+        <div class="kpiLabel">Toneladas Reais</div>
+        <div class="kpiValue" id="kpiTonReal">0 t</div>
+        <div class="kpiSub">Acumulado do mês</div>
       </div>
 
       <div class="card">
-        <div class="kpiLabel">Alcançado toneladas</div>
-        <div class="kpi" id="kpiRealTon">0 t</div>
-        <div class="kpiFoot">Produção acumulada</div>
+        <div class="kpiLabel">Filiais Batendo Meta</div>
+        <div class="kpiValue" id="kpiMetaBatida">0</div>
+        <div class="kpiSub">Com projeção positiva</div>
       </div>
     </div>
 
-    <div class="grid" id="ranking">
-      <div class="rankingCard">
-        <div class="rankingTop">
-          <h3>RIO VERDE</h3>
-          <span class="badge ok">NA META</span>
-        </div>
-        <div class="metaLine">Faturamento: R$ 0,00 / R$ 0,00</div>
-        <div class="metaLine">Toneladas: 0 t / 0 t</div>
-        <div class="metaLine">Tendência: Aguardando dados</div>
-      </div>
-
-      <div class="rankingCard">
-        <div class="rankingTop">
-          <h3>JATAÍ</h3>
-          <span class="badge warn">ATENÇÃO</span>
-        </div>
-        <div class="metaLine">Faturamento: R$ 0,00 / R$ 0,00</div>
-        <div class="metaLine">Toneladas: 0 t / 0 t</div>
-        <div class="metaLine">Tendência: Aguardando dados</div>
-      </div>
-
-      <div class="rankingCard">
-        <div class="rankingTop">
-          <h3>ITUMBIARA</h3>
-          <span class="badge alert">ABAIXO</span>
-        </div>
-        <div class="metaLine">Faturamento: R$ 0,00 / R$ 0,00</div>
-        <div class="metaLine">Toneladas: 0 t / 0 t</div>
-        <div class="metaLine">Tendência: Aguardando dados</div>
-      </div>
-    </div>
-
-    <div class="chartGrid">
+    <div class="mainGrid">
       <div class="chartCard">
-        <div class="chartHead">Faturamento por Filial</div>
-        <div class="chartBody">
+        <h3 class="chartTitle">Faturamento Real x Meta Mensal</h3>
+        <div class="chartBox">
           <canvas id="graficoFaturamento"></canvas>
         </div>
       </div>
 
+      <div class="alertCard">
+        <h3 class="alertTitle">Alertas e Tendências</h3>
+        <div id="alertas"></div>
+      </div>
+    </div>
+
+    <div class="mainGrid">
       <div class="chartCard">
-        <div class="chartHead">Toneladas por Filial</div>
-        <div class="chartBody">
+        <h3 class="chartTitle">Toneladas Reais x Meta Mensal</h3>
+        <div class="chartBox">
           <canvas id="graficoTon"></canvas>
         </div>
       </div>
-    </div>
 
-    <div class="alertsCard">
-      <h3 class="alertsTitle">Alertas e Tendências</h3>
-      <div id="alertas">
-        <div class="emptyState">
-          Nenhum dado carregado ainda. Use os botões acima para lançar metas e produção.
+      <div class="chartCard">
+        <h3 class="chartTitle">Projeção até o fim do mês</h3>
+        <div class="chartBox">
+          <canvas id="graficoProjecao"></canvas>
         </div>
       </div>
     </div>
 
+    <div class="tableCard">
+      <div class="tableHead">
+        <h3>Ranking de Filiais</h3>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Filial</th>
+              <th class="num">Fat. Real</th>
+              <th class="num">Meta Fat.</th>
+              <th class="num">% Fat.</th>
+              <th class="num">Proj. Fat.</th>
+              <th class="num">Ton Real</th>
+              <th class="num">Meta Ton</th>
+              <th class="num">% Ton</th>
+              <th>Tendência</th>
+              <th>Alerta</th>
+            </tr>
+          </thead>
+          <tbody id="ranking"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL META -->
+  <div id="modalMeta" class="modal" aria-hidden="true">
+    <div class="modalBox">
+      <div class="modalHead">
+        <h3>🎯 Lançar / Editar Meta</h3>
+        <button class="modalClose" type="button" data-close="modalMeta">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="field full">
+          <label>Filial</label>
+          <input id="metaFilial" type="text" placeholder="Ex: RIO VERDE" />
+        </div>
+
+        <div class="field">
+          <label>Meta mensal faturamento</label>
+          <input id="metaFat" type="number" step="0.01" placeholder="0,00" />
+        </div>
+
+        <div class="field">
+          <label>Meta mensal toneladas</label>
+          <input id="metaTon" type="number" step="0.01" placeholder="0,00" />
+        </div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btnAction gray" type="button" data-close="modalMeta">Cancelar</button>
+        <button class="btnAction green" type="button" id="btnSalvarMeta">Salvar Meta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LANÇAMENTO -->
+  <div id="modalLanc" class="modal" aria-hidden="true">
+    <div class="modalBox">
+      <div class="modalHead">
+        <h3>➕ Lançar Produção</h3>
+        <button class="modalClose" type="button" data-close="modalLanc">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="field full">
+          <label>Filial</label>
+          <input id="lancFilial" type="text" placeholder="Ex: RIO VERDE" />
+        </div>
+
+        <div class="field">
+          <label>Data</label>
+          <input id="lancData" type="date" />
+        </div>
+
+        <div class="field">
+          <label>Faturamento</label>
+          <input id="lancFat" type="number" step="0.01" placeholder="0,00" />
+        </div>
+
+        <div class="field full">
+          <label>Toneladas</label>
+          <input id="lancTon" type="number" step="0.01" placeholder="0,00" />
+        </div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btnAction gray" type="button" data-close="modalLanc">Cancelar</button>
+        <button class="btnAction blue" type="button" id="btnSalvarLancamento">Salvar Produção</button>
+      </div>
+    </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
-  <script>
-    if (typeof requireHomeAuth === "function") requireHomeAuth();
-    if (typeof bindLogoutButton === "function") bindLogoutButton();
-  </script>
   <script src="../assets/js/custo-filial.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const API = "SUA_URL_APPS_SCRIPT";
+const API = "https://script.google.com/macros/s/AKfycbybdYXsbNcEHCDznZwHL0SaJG-Y56GJ55Nq3DGCVjf8qmoRm-N1LgtrTV9A8Nprs83L/exec";
 
 let metas = [];
 let dados = [];

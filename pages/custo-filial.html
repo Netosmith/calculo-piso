@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Custo Filial</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{background:#0f172a;color:#fff;font-family:Arial}
+.container{max-width:1600px;margin:auto;padding:20px}
+
+.card{
+background:#1e293b;
+padding:16px;
+border-radius:12px;
+margin-bottom:16px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px;
+}
+
+.kpi{
+font-size:22px;
+font-weight:bold;
+}
+
+.alert{
+color:#ef4444;
+font-weight:bold;
+}
+.ok{
+color:#22c55e;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>CUSTO / FILIAL</h2>
+
+<div class="grid" id="ranking"></div>
+
+<canvas id="graficoFaturamento"></canvas>
+<canvas id="graficoTon"></canvas>
+
+<div id="alertas"></div>
+
+</div>
+
+<script src="../assets/js/custo-filial.js"></script>
+</body>
+</html>

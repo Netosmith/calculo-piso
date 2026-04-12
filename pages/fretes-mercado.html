@@ -1,1 +1,91 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Fretes Mercado | NOVA FROTA</title>
 
+<link rel="stylesheet" href="../assets/css/app.css"/>
+
+<style>
+body{
+  background:#0f172a;
+  color:#fff;
+  font-family:Arial;
+}
+
+.container{
+  max-width:1600px;
+  margin:auto;
+  padding:20px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+
+button{
+  padding:10px 16px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.btn-clear{background:#dc2626;color:#fff;}
+.btn-print{background:#22c55e;color:#000;}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.table th,.table td{
+  border:1px solid rgba(255,255,255,.1);
+  padding:6px;
+  text-align:center;
+}
+
+.table input{
+  width:100%;
+  background:transparent;
+  border:none;
+  color:#fff;
+  text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h2>FRETES MERCADO</h2>
+
+<div>
+<button class="btn-clear" onclick="zerar()">Zerar Valores</button>
+<button class="btn-print" onclick="printTela()">Gerar Print</button>
+</div>
+</div>
+
+<table class="table" id="tabela">
+<thead>
+<tr>
+<th>Base</th>
+<th>Frete</th>
+<th>Oferta</th>
+<th>Tendência</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+</table>
+
+</div>
+
+<script src="../assets/js/fretes-mercado.js"></script>
+</body>
+</html>

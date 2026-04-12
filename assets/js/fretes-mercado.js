@@ -1,101 +1,61 @@
+const REGIOES = {
+  "TIUB/TIA": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"],
+  "SANTOS": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"],
+  "PARANAGUA": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"],
+  "CHAP SUL": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"],
+  "RIO VERDE": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"],
+  "SAO SIMAO": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"]
+};
+
 const API = "https://script.google.com/macros/s/AKfycbybdYXsbNcEHCDznZwHL0SaJG-Y56GJ55Nq3DGCVjf8qmoRm-N1LgtrTV9A8Nprs83L/exec";
 
-const REGIOES = [
-"TIUB/TIA",
-"SANTOS",
-"PARANAGUA",
-"CHAP SUL",
-"RIO VERDE",
-"SAO SIMAO"
-];
-
-let dados = [];
-
 async function load(){
-const res = await fetch(API);
-dados = await res.json();
-render();
+
+  const res = await fetch(API + "?action=fretes_mercado_list");
+  const json = await res.json();
+  const dados = json.data || [];
+
+  render(dados);
 }
 
-function render(){
+function render(dados){
 
-const container = document.getElementById("tabela");
+  const container = document.getElementById("tabela");
 
-container.innerHTML = REGIOES.map(r=>{
-const linhas = dados.filter(d=>d.REGIAO === r);
+  container.innerHTML = Object.keys(REGIOES).map(regiao => {
 
-return `
-<div class="regiao">
-<h3>${r}</h3>
+    return `
+    <div class="regiao">
+      <h3>${regiao}</h3>
 
-<div class="row">
-<b>Base</b>
-<b>Frete</b>
-<b>Oferta</b>
-</div>
+      <div class="row">
+        <b>Base</b>
+        <b>Frete</b>
+        <b>Oferta</b>
+      </div>
 
-${linhas.map(l=>`
-<div class="row">
-<input value="${l.BASE}" readonly>
-<input type="number" value="${l.FRETE || ''}">
-<select>
-<option ${l.TENDENCIA=="Alta"?"selected":""}>Alta</option>
-<option ${l.TENDENCIA=="Baixa"?"selected":""}>Baixa</option>
-<option ${l.TENDENCIA=="Estável"?"selected":""}>Estável</option>
-</select>
-</div>
-`).join('')}
+      ${REGIOES[regiao].map(base => {
 
-</div>
-`;
-}).join('');
-}
+        const item = dados.find(d => d.regiao === regiao && d.base === base) || {};
 
-function salvar(){
+        return `
+        <div class="row">
+          <input value="${base}" readonly>
+          <input type="number" value="${item.frete || ''}">
+          <select>
+            <option ${item.tendencia=="ALTA"?"selected":""}>Alta</option>
+            <option ${item.tendencia=="BAIXA"?"selected":""}>Baixa</option>
+            <option ${item.tendencia=="ESTÁVEL"?"selected":""}>Estável</option>
+          </select>
+        </div>
+        `;
 
-const blocos = document.querySelectorAll(".regiao");
+      }).join("")}
 
-let envio = [];
+    </div>
+    `;
 
-blocos.forEach(b=>{
-const regiao = b.querySelector("h3").innerText;
-
-const rows = b.querySelectorAll(".row");
-
-rows.forEach((r,i)=>{
-if(i===0) return;
-
-const inputs = r.querySelectorAll("input,select");
-
-envio.push({
-regiao,
-base:inputs[0].value,
-frete:inputs[1].value,
-oferta:"",
-tendencia:inputs[2].value
-});
-});
-});
-
-fetch(API,{
-method:"POST",
-body:JSON.stringify({action:"salvar",dados:envio})
-});
-
-alert("Salvo com sucesso 🚀");
-}
-
-function zerar(){
-document.querySelectorAll("input[type=number]").forEach(i=>i.value="");
-}
-
-function printTela(){
-html2canvas(document.body).then(canvas=>{
-const link = document.createElement("a");
-link.download="fretes.png";
-link.href=canvas.toDataURL();
-link.click();
-});
+  }).join("");
 }
 
 load();

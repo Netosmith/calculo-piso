@@ -341,10 +341,6 @@
       font-weight:800;
     }
 
-    /* ==========================================
-       PAINÉIS FLUTUANTES
-    ========================================== */
-
     .overlayPanel{
       position:fixed;
       inset:0;
@@ -643,9 +639,6 @@
     </div>
   </div>
 
-  <!-- ==========================================
-       PAINEL FLUTUANTE
-  ========================================== -->
   <div class="overlayPanel" id="crudOverlay">
     <div class="overlayCard">
       <div class="overlayHead">
@@ -659,12 +652,13 @@
       </div>
 
       <div class="overlayBody">
-        <!-- META -->
         <div id="panelMeta" class="crudPanel active">
           <div class="formGrid">
             <div class="field">
               <label>Filial</label>
-              <input id="metaFilial" type="text" placeholder="Ex: RIO VERDE" />
+              <select id="metaFilial">
+                <option value="">Selecione a filial</option>
+              </select>
             </div>
 
             <div class="field">
@@ -739,12 +733,13 @@
           </div>
         </div>
 
-        <!-- LANÇAMENTO -->
         <div id="panelLancamento" class="crudPanel">
           <div class="formGrid">
             <div class="field">
               <label>Filial</label>
-              <input id="lancFilial" type="text" placeholder="Ex: RIO VERDE" />
+              <select id="lancFilial">
+                <option value="">Selecione a filial</option>
+              </select>
             </div>
 
             <div class="field">

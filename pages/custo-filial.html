@@ -6,7 +6,6 @@
   <title>Custo / Filial | NOVA FROTA</title>
 
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root{
@@ -63,10 +62,98 @@
       font-size:14px;
     }
 
-    .headerActions{
+    .syncStatus{
+      margin-bottom:16px;
+      font-size:13px;
+      font-weight:900;
+      color:#93c5fd;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .grid4{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .card h3{
+      margin:0 0 14px;
+      font-size:16px;
+      font-weight:1000;
+    }
+
+    .kpiLabel{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .kpiValue{
+      margin-top:8px;
+      font-size:26px;
+      font-weight:1000;
+      color:#fff;
+    }
+
+    .fieldGrid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .fieldGrid2{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+
+    .field.full{
+      grid-column:1 / -1;
+    }
+
+    .field label{
+      display:block;
+      margin:0 0 6px;
+      font-size:11px;
+      font-weight:900;
+      color:#cbd5e1;
+      text-transform:uppercase;
+    }
+
+    .field input,
+    .field select{
+      width:100%;
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#0f172a;
+      color:#fff;
+      padding:0 12px;
+      outline:none;
+    }
+
+    .actionsRow{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
+      margin-top:14px;
     }
 
     .btnAction{
@@ -89,117 +176,7 @@
     .btnAction.green{ background:linear-gradient(135deg,#16a34a,#22c55e); }
     .btnAction.blue{ background:linear-gradient(135deg,#2563eb,#3b82f6); }
     .btnAction.gray{ background:linear-gradient(135deg,#334155,#475569); }
-
-    .syncStatus{
-      margin-bottom:16px;
-      font-size:13px;
-      font-weight:900;
-      color:#93c5fd;
-    }
-
-    .kpiGrid{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:12px;
-      margin-bottom:16px;
-    }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
-    }
-
-    .kpiLabel{
-      color:var(--muted);
-      font-size:12px;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.04em;
-    }
-
-    .kpiValue{
-      margin-top:8px;
-      font-size:26px;
-      font-weight:1000;
-      color:#fff;
-    }
-
-    .kpiSub{
-      margin-top:6px;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .mainGrid{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:16px;
-      margin-bottom:16px;
-    }
-
-    .chartCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
-    }
-
-    .chartTitle{
-      margin:0 0 12px;
-      font-size:16px;
-      font-weight:1000;
-    }
-
-    .chartBox{
-      height:340px;
-    }
-
-    .alertCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
-      max-height:340px;
-      overflow:auto;
-    }
-
-    .alertTitle{
-      margin:0 0 12px;
-      font-size:16px;
-      font-weight:1000;
-    }
-
-    .alertItem{
-      padding:10px 12px;
-      border-radius:12px;
-      margin-bottom:8px;
-      font-size:13px;
-      font-weight:800;
-      border:1px solid transparent;
-    }
-
-    .alertItem.ok{
-      background:rgba(34,197,94,.14);
-      color:#86efac;
-      border-color:rgba(34,197,94,.28);
-    }
-
-    .alertItem.warn{
-      background:rgba(245,158,11,.14);
-      color:#fcd34d;
-      border-color:rgba(245,158,11,.28);
-    }
-
-    .alertItem.bad{
-      background:rgba(239,68,68,.14);
-      color:#fca5a5;
-      border-color:rgba(239,68,68,.28);
-    }
+    .btnAction.red{ background:linear-gradient(135deg,#dc2626,#ef4444); }
 
     .tableCard{
       background:var(--card);
@@ -207,6 +184,7 @@
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       overflow:hidden;
+      margin-bottom:16px;
     }
 
     .tableHead{
@@ -256,157 +234,34 @@
       letter-spacing:.05em;
     }
 
-    td.num, th.num{
-      text-align:right;
-    }
-
-    .rankBadge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:28px;
-      height:28px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:1000;
-      background:#334155;
-      color:#fff;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:1000;
-      border:1px solid transparent;
-    }
-
-    .pill.ok{
-      color:#86efac;
-      background:rgba(34,197,94,.14);
-      border-color:rgba(34,197,94,.28);
-    }
-
-    .pill.warn{
-      color:#fcd34d;
-      background:rgba(245,158,11,.14);
-      border-color:rgba(245,158,11,.28);
-    }
-
-    .pill.bad{
-      color:#fca5a5;
-      background:rgba(239,68,68,.14);
-      border-color:rgba(239,68,68,.28);
-    }
-
-    .modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background:rgba(0,0,0,.62);
-      backdrop-filter:blur(8px);
-      z-index:9999;
-      padding:18px;
-    }
-
-    .modal.isOpen{
-      display:flex;
-    }
-
-    .modalBox{
-      width:min(520px,100%);
-      background:#111827;
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:18px;
-      box-shadow:0 22px 60px rgba(0,0,0,.45);
-      overflow:hidden;
-    }
-
-    .modalHead{
-      padding:14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-
-    .modalHead h3{
-      margin:0;
-      font-size:16px;
-      font-weight:1000;
-    }
-
-    .modalClose{
-      width:36px;
-      height:36px;
-      border:none;
-      border-radius:12px;
-      background:rgba(255,255,255,.08);
-      color:#fff;
-      cursor:pointer;
-      font-weight:1000;
-    }
-
-    .modalBody{
-      padding:16px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-
-    .field.full{
-      grid-column:1 / -1;
-    }
-
-    .field label{
-      display:block;
-      margin:0 0 6px;
-      font-size:11px;
-      font-weight:900;
-      color:#cbd5e1;
-      text-transform:uppercase;
-    }
-
-    .field input{
-      width:100%;
-      height:42px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:#0f172a;
-      color:#fff;
+    td button{
+      height:34px;
       padding:0 12px;
-      outline:none;
-    }
-
-    .modalFoot{
-      padding:14px 16px;
-      border-top:1px solid rgba(255,255,255,.08);
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-    }
-
-    .emptyState{
-      padding:24px;
-      text-align:center;
-      color:var(--muted);
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
       font-weight:800;
+      color:#fff;
+      background:#334155;
+      margin-right:6px;
     }
 
-    @media (max-width: 1100px){
-      .kpiGrid{ grid-template-columns:repeat(2,1fr); }
-      .mainGrid{ grid-template-columns:1fr; }
+    td button:last-child{
+      background:#7f1d1d;
     }
 
-    @media (max-width: 700px){
-      .kpiGrid{ grid-template-columns:1fr; }
-      .modalBody{ grid-template-columns:1fr; }
+    @media (max-width:1100px){
+      .grid4{ grid-template-columns:repeat(2,1fr); }
+      .grid2{ grid-template-columns:1fr; }
+      .fieldGrid{ grid-template-columns:1fr 1fr; }
+    }
+
+    @media (max-width:700px){
+      .grid4,
+      .fieldGrid,
+      .fieldGrid2{
+        grid-template-columns:1fr;
+      }
     }
   </style>
 </head>
@@ -429,167 +284,211 @@
     <div class="pageHeader">
       <div>
         <h1>CUSTO / FILIAL</h1>
-        <p class="subTitle">Gestão de metas, lançamentos diários e acompanhamento por filial</p>
-      </div>
-
-      <div class="headerActions">
-        <button class="btnAction green" id="btnNovaMeta" type="button">🎯 Lançar/Editar Metas</button>
-        <button class="btnAction blue" id="btnNovoLancamento" type="button">➕ Lançar Produção</button>
-        <button class="btnAction gray" id="btnAtualizar" type="button">🔄 Atualizar</button>
+        <p class="subTitle">Gestão de metas e lançamentos por filial</p>
       </div>
     </div>
 
-    <div class="syncStatus" id="syncStatus">🔄 Carregando...</div>
+    <div class="syncStatus" id="custoFilialStatus">Carregando dados...</div>
 
-    <div class="kpiGrid">
-      <div class="card">
-        <div class="kpiLabel">Filiais Monitoradas</div>
-        <div class="kpiValue" id="kpiFiliais">0</div>
-        <div class="kpiSub">Base com meta cadastrada</div>
-      </div>
-
-      <div class="card">
-        <div class="kpiLabel">Faturamento Real</div>
-        <div class="kpiValue" id="kpiFatReal">R$ 0,00</div>
-        <div class="kpiSub">Acumulado do mês</div>
-      </div>
-
-      <div class="card">
-        <div class="kpiLabel">Toneladas Reais</div>
-        <div class="kpiValue" id="kpiTonReal">0 t</div>
-        <div class="kpiSub">Acumulado do mês</div>
-      </div>
-
-      <div class="card">
-        <div class="kpiLabel">Filiais Batendo Meta</div>
-        <div class="kpiValue" id="kpiMetaBatida">0</div>
-        <div class="kpiSub">Com projeção positiva</div>
-      </div>
-    </div>
-
-    <div class="mainGrid">
-      <div class="chartCard">
-        <h3 class="chartTitle">Faturamento Real x Meta Mensal</h3>
-        <div class="chartBox">
-          <canvas id="graficoFaturamento"></canvas>
+    <!-- FILTROS -->
+    <div class="card">
+      <h3>Filtros</h3>
+      <div class="fieldGrid">
+        <div class="field">
+          <label>Filial</label>
+          <select id="filtroFilial">
+            <option value="">Todas</option>
+          </select>
         </div>
-      </div>
 
-      <div class="alertCard">
-        <h3 class="alertTitle">Alertas e Tendências</h3>
-        <div id="alertas"></div>
-      </div>
-    </div>
-
-    <div class="mainGrid">
-      <div class="chartCard">
-        <h3 class="chartTitle">Toneladas Reais x Meta Mensal</h3>
-        <div class="chartBox">
-          <canvas id="graficoTon"></canvas>
+        <div class="field">
+          <label>Ano</label>
+          <input id="filtroAno" type="number" placeholder="Ex: 2026" />
         </div>
-      </div>
 
-      <div class="chartCard">
-        <h3 class="chartTitle">Projeção até o fim do mês</h3>
-        <div class="chartBox">
-          <canvas id="graficoProjecao"></canvas>
+        <div class="field">
+          <label>Mês</label>
+          <input id="filtroMes" type="number" placeholder="Ex: 4" min="1" max="12" />
         </div>
       </div>
     </div>
 
+    <!-- RESUMO -->
+    <div class="grid4">
+      <div class="card">
+        <div class="kpiLabel">Faturamento</div>
+        <div class="kpiValue" id="resumoFaturamento">R$ 0,00</div>
+      </div>
+
+      <div class="card">
+        <div class="kpiLabel">Toneladas</div>
+        <div class="kpiValue" id="resumoToneladas">0,00</div>
+      </div>
+
+      <div class="card">
+        <div class="kpiLabel">Custo</div>
+        <div class="kpiValue" id="resumoCusto">R$ 0,00</div>
+      </div>
+
+      <div class="card">
+        <div class="kpiLabel">Custo por Tonelada</div>
+        <div class="kpiValue" id="resumoCustoTon">R$ 0,00</div>
+      </div>
+    </div>
+
+    <!-- FORMULÁRIOS -->
+    <div class="grid2">
+      <!-- METAS -->
+      <div class="card">
+        <h3>Metas</h3>
+
+        <div class="fieldGrid">
+          <div class="field full">
+            <label>Filial</label>
+            <input id="metaFilial" type="text" placeholder="Ex: RIO VERDE" />
+          </div>
+
+          <div class="field">
+            <label>Ano</label>
+            <input id="metaAno" type="number" placeholder="2026" />
+          </div>
+
+          <div class="field">
+            <label>Mês</label>
+            <input id="metaMes" type="number" min="1" max="12" placeholder="4" />
+          </div>
+
+          <div class="field">
+            <label>Meta Dia Faturamento</label>
+            <input id="metaDiaFat" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Meta Mês Faturamento</label>
+            <input id="metaMesFat" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Meta Ano Faturamento</label>
+            <input id="metaAnoFat" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Meta Dia Ton</label>
+            <input id="metaDiaTon" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Meta Mês Ton</label>
+            <input id="metaMesTon" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Meta Ano Ton</label>
+            <input id="metaAnoTon" type="number" step="0.01" placeholder="0,00" />
+          </div>
+        </div>
+
+        <div class="actionsRow">
+          <button class="btnAction green" id="btnSalvarMeta" type="button">Salvar Meta</button>
+          <button class="btnAction gray" id="btnLimparMeta" type="button">Limpar</button>
+        </div>
+      </div>
+
+      <!-- LANÇAMENTOS -->
+      <div class="card">
+        <h3>Lançamentos</h3>
+
+        <div class="fieldGrid2">
+          <div class="field full">
+            <label>Filial</label>
+            <input id="lancFilial" type="text" placeholder="Ex: RIO VERDE" />
+          </div>
+
+          <div class="field">
+            <label>Data</label>
+            <input id="lancData" type="date" />
+          </div>
+
+          <div class="field">
+            <label>Faturamento</label>
+            <input id="lancFaturamento" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Toneladas</label>
+            <input id="lancToneladas" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field">
+            <label>Custo</label>
+            <input id="lancCusto" type="number" step="0.01" placeholder="0,00" />
+          </div>
+
+          <div class="field full">
+            <label>Observação</label>
+            <input id="lancObservacao" type="text" placeholder="Observação do lançamento" />
+          </div>
+        </div>
+
+        <div class="actionsRow">
+          <button class="btnAction blue" id="btnSalvarLancamento" type="button">Salvar Lançamento</button>
+          <button class="btnAction gray" id="btnLimparLancamento" type="button">Limpar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA METAS -->
     <div class="tableCard">
       <div class="tableHead">
-        <h3>Ranking de Filiais</h3>
+        <h3>Metas Cadastradas</h3>
       </div>
 
       <div class="tableWrap">
         <table>
           <thead>
             <tr>
-              <th>#</th>
               <th>Filial</th>
-              <th class="num">Fat. Real</th>
-              <th class="num">Meta Fat.</th>
-              <th class="num">% Fat.</th>
-              <th class="num">Proj. Fat.</th>
-              <th class="num">Ton Real</th>
-              <th class="num">Meta Ton</th>
-              <th class="num">% Ton</th>
-              <th>Tendência</th>
-              <th>Alerta</th>
+              <th>Ano</th>
+              <th>Mês</th>
+              <th>Meta Dia Fat</th>
+              <th>Meta Mês Fat</th>
+              <th>Meta Ano Fat</th>
+              <th>Meta Dia Ton</th>
+              <th>Meta Mês Ton</th>
+              <th>Meta Ano Ton</th>
+              <th>Ações</th>
+              <th>Ações</th>
             </tr>
           </thead>
-          <tbody id="ranking"></tbody>
+          <tbody id="tbodyMetas"></tbody>
         </table>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL META -->
-  <div id="modalMeta" class="modal" aria-hidden="true">
-    <div class="modalBox">
-      <div class="modalHead">
-        <h3>🎯 Lançar / Editar Meta</h3>
-        <button class="modalClose" type="button" data-close="modalMeta">✕</button>
+    <!-- TABELA LANÇAMENTOS -->
+    <div class="tableCard">
+      <div class="tableHead">
+        <h3>Lançamentos Cadastrados</h3>
       </div>
 
-      <div class="modalBody">
-        <div class="field full">
-          <label>Filial</label>
-          <input id="metaFilial" type="text" placeholder="Ex: RIO VERDE" />
-        </div>
-
-        <div class="field">
-          <label>Meta mensal faturamento</label>
-          <input id="metaFat" type="number" step="0.01" placeholder="0,00" />
-        </div>
-
-        <div class="field">
-          <label>Meta mensal toneladas</label>
-          <input id="metaTon" type="number" step="0.01" placeholder="0,00" />
-        </div>
-      </div>
-
-      <div class="modalFoot">
-        <button class="btnAction gray" type="button" data-close="modalMeta">Cancelar</button>
-        <button class="btnAction green" type="button" id="btnSalvarMeta">Salvar Meta</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL LANÇAMENTO -->
-  <div id="modalLanc" class="modal" aria-hidden="true">
-    <div class="modalBox">
-      <div class="modalHead">
-        <h3>➕ Lançar Produção</h3>
-        <button class="modalClose" type="button" data-close="modalLanc">✕</button>
-      </div>
-
-      <div class="modalBody">
-        <div class="field full">
-          <label>Filial</label>
-          <input id="lancFilial" type="text" placeholder="Ex: RIO VERDE" />
-        </div>
-
-        <div class="field">
-          <label>Data</label>
-          <input id="lancData" type="date" />
-        </div>
-
-        <div class="field">
-          <label>Faturamento</label>
-          <input id="lancFat" type="number" step="0.01" placeholder="0,00" />
-        </div>
-
-        <div class="field full">
-          <label>Toneladas</label>
-          <input id="lancTon" type="number" step="0.01" placeholder="0,00" />
-        </div>
-      </div>
-
-      <div class="modalFoot">
-        <button class="btnAction gray" type="button" data-close="modalLanc">Cancelar</button>
-        <button class="btnAction blue" type="button" id="btnSalvarLancamento">Salvar Produção</button>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Filial</th>
+              <th>Ano</th>
+              <th>Mês</th>
+              <th>Faturamento</th>
+              <th>Toneladas</th>
+              <th>Custo</th>
+              <th>Observação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyLancamentos"></tbody>
+        </table>
       </div>
     </div>
   </div>

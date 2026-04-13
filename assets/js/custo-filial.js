@@ -1,7 +1,7 @@
 // ==========================================
 // CUSTO / FILIAL - NOVA FROTA
-// Dashboard + Meta + Lançamento
-// Versão robusta
+// HOME = dashboards + gráficos
+// META e LANÇAMENTO = painéis separados
 // ==========================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycbysHSesum5p9FfIA6UY5cQbfzGGIbj-b_ml5vNb_NZsOFMPmzMzW65FRByvNqSML6me/exec";
@@ -33,20 +33,25 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function safeText(id, value) {
+function setText(id, value) {
   const el = $(id);
   if (el) el.textContent = value;
 }
 
-function safeValue(id, value) {
+function setValue(id, value) {
   const el = $(id);
   if (el) el.value = value;
 }
 
-function setStatus(msg, isError) {
+function getValue(id) {
+  const el = $(id);
+  return el ? el.value : "";
+}
+
+function setStatus(msg, isError = false) {
   const el = $("syncStatus");
   if (!el) return;
-  el.textContent = msg || "";
+  el.textContent = msg;
   el.style.color = isError ? "#fca5a5" : "#93c5fd";
 }
 
@@ -67,9 +72,9 @@ function num(v) {
 
   s = s.replace(/\s/g, "");
 
-  if (s.indexOf(",") > -1 && s.indexOf(".") > -1) {
+  if (s.includes(",") && s.includes(".")) {
     s = s.replace(/\./g, "").replace(",", ".");
-  } else if (s.indexOf(",") > -1) {
+  } else if (s.includes(",")) {
     s = s.replace(",", ".");
   }
 
@@ -112,6 +117,12 @@ function ymdToDate(ymd) {
   if (!s) return null;
   const d = new Date(s + "T00:00:00");
   return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDateBR(ymd) {
+  const d = ymdToDate(ymd);
+  if (!d) return ymd || "";
+  return d.toLocaleDateString("pt-BR");
 }
 
 function getHoje() {
@@ -159,6 +170,10 @@ function getFiltroAnoMes() {
   };
 }
 
+// ==========================================
+// MODAIS / PAINÉIS
+// ==========================================
+
 function openModal(id) {
   const el = $(id);
   if (!el) return;
@@ -174,28 +189,10 @@ function closeModal(id) {
 }
 
 function closeAllModals() {
-  const modals = document.querySelectorAll(".modal");
-  for (let i = 0; i < modals.length; i++) {
-    modals[i].classList.remove("isOpen");
-    modals[i].setAttribute("aria-hidden", "true");
-  }
-}
-
-function getFiliaisOrdenadas() {
-  const set = new Set();
-
-  DB.metas.forEach(function (x) {
-    const f = upper(x.filial);
-    if (f) set.add(f);
-  });
-
-  DB.lancamentos.forEach(function (x) {
-    const f = upper(x.filial);
-    if (f) set.add(f);
-  });
-
-  return Array.from(set).sort(function (a, b) {
-    return a.localeCompare(b, "pt-BR");
+  const list = document.querySelectorAll(".modal");
+  list.forEach((el) => {
+    el.classList.remove("isOpen");
+    el.setAttribute("aria-hidden", "true");
   });
 }
 
@@ -204,12 +201,12 @@ function getFiliaisOrdenadas() {
 // ==========================================
 
 async function apiGet(action) {
-  const url = API_URL + "?action=" + encodeURIComponent(action);
+  const url = `${API_URL}?action=${encodeURIComponent(action)}`;
   const res = await fetch(url, { method: "GET" });
   const json = await res.json();
 
   if (!json.ok) {
-    throw new Error(json.error || ("Erro GET: " + action));
+    throw new Error(json.error || `Erro GET: ${action}`);
   }
 
   return json;
@@ -227,7 +224,7 @@ async function apiPost(payload) {
   const json = await res.json();
 
   if (!json.ok) {
-    throw new Error(json.error || ("Erro POST: " + (payload.action || "")));
+    throw new Error(json.error || `Erro POST: ${payload.action || ""}`);
   }
 
   return json;
@@ -241,8 +238,8 @@ function normalizarMeta(x) {
   const ano = Number(x.ano || 0);
   const mes = Number(x.mes || 0);
 
-  const metaMesFat = num(x.metaMesFat || x.metaFat || 0);
-  const metaMesTon = num(x.metaMesTon || x.metaTon || 0);
+  const metaMesFat = num(x.metaMesFat || 0);
+  const metaMesTon = num(x.metaMesTon || 0);
 
   let metaDiaFat = num(x.metaDiaFat || 0);
   let metaDiaTon = num(x.metaDiaTon || 0);
@@ -261,14 +258,14 @@ function normalizarMeta(x) {
   return {
     id: onlyText(x.id),
     filial: upper(x.filial),
-    ano: ano,
-    mes: mes,
-    metaDiaFat: metaDiaFat,
-    metaMesFat: metaMesFat,
-    metaAnoFat: metaAnoFat,
-    metaDiaTon: metaDiaTon,
-    metaMesTon: metaMesTon,
-    metaAnoTon: metaAnoTon,
+    ano,
+    mes,
+    metaDiaFat,
+    metaMesFat,
+    metaAnoFat,
+    metaDiaTon,
+    metaMesTon,
+    metaAnoTon,
     createdAt: x.createdAt || "",
     updatedAt: x.updatedAt || ""
   };
@@ -280,7 +277,7 @@ function normalizarLancamento(x) {
 
   return {
     id: onlyText(x.id),
-    data: data,
+    data,
     ano: Number(x.ano || (d ? d.getFullYear() : 0)),
     mes: Number(x.mes || (d ? d.getMonth() + 1 : 0)),
     filial: upper(x.filial),
@@ -299,9 +296,9 @@ function normalizarLancamento(x) {
 
 async function loadAll() {
   try {
-    setStatus("🔄 Carregando dados...", false);
+    setStatus("🔄 Carregando dados...");
 
-    if (!API_URL || API_URL.indexOf("COLE_AQUI") > -1) {
+    if (!API_URL || API_URL.includes("COLE_AQUI")) {
       throw new Error("Preencha a API_URL no custo-filial.js");
     }
 
@@ -310,15 +307,18 @@ async function loadAll() {
     DB.metas = Array.isArray(json.metas) ? json.metas.map(normalizarMeta) : [];
     DB.lancamentos = Array.isArray(json.lancamentos) ? json.lancamentos.map(normalizarLancamento) : [];
 
-    preencherFiltros();
-    renderAll();
+    preencherFiltroFilial();
+    renderHome();
+    renderMetaTable();
+    renderLancamentosTable();
 
-    setStatus("✅ Dados sincronizados.", false);
+    setStatus("✅ Dados sincronizados.");
   } catch (err) {
-    console.error("loadAll:", err);
-    preencherFiltros();
-    renderAll();
-    setStatus("❌ " + err.message, true);
+    console.error(err);
+    renderHome();
+    renderMetaTable();
+    renderLancamentosTable();
+    setStatus(`❌ ${err.message}`, true);
   }
 }
 
@@ -326,76 +326,78 @@ async function loadAll() {
 // FILTROS
 // ==========================================
 
-function preencherFiltros() {
+function getFiliaisOrdenadas() {
+  const set = new Set();
+
+  DB.metas.forEach((x) => {
+    if (x.filial) set.add(x.filial);
+  });
+
+  DB.lancamentos.forEach((x) => {
+    if (x.filial) set.add(x.filial);
+  });
+
+  return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+function preencherFiltroFilial() {
   const sel = $("filtroFilial");
-  if (sel) {
-    const atual = STATE.filtroFilial || sel.value || "";
-    const filiais = getFiliaisOrdenadas();
+  if (!sel) return;
 
-    sel.innerHTML =
-      '<option value="">Todas</option>' +
-      filiais.map(function (f) {
-        return '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + "</option>";
-      }).join("");
+  const atual = STATE.filtroFilial || "";
+  const filiais = getFiliaisOrdenadas();
 
-    if (filiais.indexOf(atual) > -1) {
-      sel.value = atual;
-      STATE.filtroFilial = atual;
-    } else {
-      sel.value = "";
-      STATE.filtroFilial = "";
-    }
+  sel.innerHTML =
+    `<option value="">Todas</option>` +
+    filiais.map((f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
+
+  if (filiais.includes(atual)) {
+    sel.value = atual;
+  } else {
+    sel.value = "";
+    STATE.filtroFilial = "";
   }
-
-  const am = getAnoMesAtual();
-
-  if ($("filtroAno") && !$("filtroAno").value && !STATE.filtroAno) $("filtroAno").value = String(am.ano);
-  if ($("filtroMes") && !$("filtroMes").value && !STATE.filtroMes) $("filtroMes").value = String(am.mes);
-
-  STATE.filtroAno = onlyText($("filtroAno") ? $("filtroAno").value : (STATE.filtroAno || am.ano));
-  STATE.filtroMes = onlyText($("filtroMes") ? $("filtroMes").value : (STATE.filtroMes || am.mes));
 }
 
-function getMetaPeriodo() {
-  const fm = getFiltroAnoMes();
+function aplicarFiltrosMeta(lista) {
+  const { ano, mes } = getFiltroAnoMes();
 
-  return DB.metas.filter(function (x) {
+  return lista.filter((x) => {
     if (STATE.filtroFilial && x.filial !== STATE.filtroFilial) return false;
-    return Number(x.ano) === Number(fm.ano) && Number(x.mes) === Number(fm.mes);
+    if (Number(x.ano) !== Number(ano)) return false;
+    if (Number(x.mes) !== Number(mes)) return false;
+    return true;
   });
 }
 
-function getLancamentosPeriodo() {
-  const fm = getFiltroAnoMes();
+function aplicarFiltrosLancamento(lista) {
+  const { ano, mes } = getFiltroAnoMes();
 
-  return DB.lancamentos.filter(function (x) {
+  return lista.filter((x) => {
     if (STATE.filtroFilial && x.filial !== STATE.filtroFilial) return false;
-    return Number(x.ano) === Number(fm.ano) && Number(x.mes) === Number(fm.mes);
+    if (Number(x.ano) !== Number(ano)) return false;
+    if (Number(x.mes) !== Number(mes)) return false;
+    return true;
   });
 }
 
 // ==========================================
-// AGREGAÇÃO
+// AGREGAÇÃO HOME
 // ==========================================
 
-function montarBaseFiliais() {
-  const metas = getMetaPeriodo();
-  const lancs = getLancamentosPeriodo();
-  const fm = getFiltroAnoMes();
+function montarBaseHome() {
+  const metas = aplicarFiltrosMeta(DB.metas);
+  const lancs = aplicarFiltrosLancamento(DB.lancamentos);
+  const { ano, mes } = getFiltroAnoMes();
 
   const mapa = new Map();
 
-  metas.forEach(function (m) {
+  metas.forEach((m) => {
     if (!mapa.has(m.filial)) {
       mapa.set(m.filial, {
         filial: m.filial,
-        ano: fm.ano,
-        mes: fm.mes,
-        metaId: m.id,
         metaMesFat: 0,
         metaMesTon: 0,
-        metaDiaFat: 0,
-        metaDiaTon: 0,
         realFat: 0,
         realTon: 0,
         custo: 0
@@ -403,24 +405,16 @@ function montarBaseFiliais() {
     }
 
     const row = mapa.get(m.filial);
-    row.metaId = m.id;
     row.metaMesFat += num(m.metaMesFat);
     row.metaMesTon += num(m.metaMesTon);
-    row.metaDiaFat += num(m.metaDiaFat);
-    row.metaDiaTon += num(m.metaDiaTon);
   });
 
-  lancs.forEach(function (l) {
+  lancs.forEach((l) => {
     if (!mapa.has(l.filial)) {
       mapa.set(l.filial, {
         filial: l.filial,
-        ano: fm.ano,
-        mes: fm.mes,
-        metaId: "",
         metaMesFat: 0,
         metaMesTon: 0,
-        metaDiaFat: 0,
-        metaDiaTon: 0,
         realFat: 0,
         realTon: 0,
         custo: 0
@@ -433,84 +427,74 @@ function montarBaseFiliais() {
     row.custo += num(l.custo);
   });
 
-  const diasMes = diasNoMes(fm.ano, fm.mes);
-  const diasPassados = Math.max(diasPassadosNoMes(fm.ano, fm.mes), 1);
+  const diasMes = diasNoMes(ano, mes);
+  const diasPassados = Math.max(diasPassadosNoMes(ano, mes), 1);
 
-  const arr = Array.from(mapa.values()).map(function (x) {
-    const pctFatVal = x.metaMesFat > 0 ? (x.realFat / x.metaMesFat) * 100 : 0;
-    const pctTonVal = x.metaMesTon > 0 ? (x.realTon / x.metaMesTon) * 100 : 0;
-
+  const base = [...mapa.values()].map((x) => {
+    const pctFat = x.metaMesFat > 0 ? (x.realFat / x.metaMesFat) * 100 : 0;
+    const pctTon = x.metaMesTon > 0 ? (x.realTon / x.metaMesTon) * 100 : 0;
     const projFat = diasPassados > 0 ? (x.realFat / diasPassados) * diasMes : 0;
     const projTon = diasPassados > 0 ? (x.realTon / diasPassados) * diasMes : 0;
+    const custoTon = x.realTon > 0 ? x.custo / x.realTon : 0;
 
-    let tendencia = "SEM META";
-    let alerta = "Sem meta";
     let nivel = "warn";
+    let tendencia = "ATENÇÃO";
 
-    if (x.metaMesFat > 0 || x.metaMesTon > 0) {
-      const bateFat = x.metaMesFat > 0 ? projFat >= x.metaMesFat : true;
-      const bateTon = x.metaMesTon > 0 ? projTon >= x.metaMesTon : true;
-
-      if (bateFat && bateTon) {
-        tendencia = "POSITIVA";
-        alerta = "Ritmo bom";
-        nivel = "ok";
-      } else if (pctFatVal >= 70 || pctTonVal >= 70) {
-        tendencia = "ATENÇÃO";
-        alerta = "Precisa acelerar";
-        nivel = "warn";
-      } else {
-        tendencia = "NEGATIVA";
-        alerta = "Abaixo do esperado";
-        nivel = "bad";
-      }
+    if ((x.metaMesFat > 0 && projFat >= x.metaMesFat) || (x.metaMesTon > 0 && projTon >= x.metaMesTon)) {
+      nivel = "ok";
+      tendencia = "POSITIVA";
+    } else if ((pctFat < 50 && x.metaMesFat > 0) || (pctTon < 50 && x.metaMesTon > 0)) {
+      nivel = "bad";
+      tendencia = "NEGATIVA";
     }
 
     return {
-      filial: x.filial,
-      ano: x.ano,
-      mes: x.mes,
-      metaId: x.metaId,
-      metaMesFat: x.metaMesFat,
-      metaMesTon: x.metaMesTon,
-      metaDiaFat: x.metaDiaFat,
-      metaDiaTon: x.metaDiaTon,
-      realFat: x.realFat,
-      realTon: x.realTon,
-      custo: x.custo,
-      pctFat: pctFatVal,
-      pctTon: pctTonVal,
-      projFat: projFat,
-      projTon: projTon,
-      tendencia: tendencia,
-      alerta: alerta,
-      nivel: nivel
+      ...x,
+      pctFat,
+      pctTon,
+      projFat,
+      projTon,
+      custoTon,
+      nivel,
+      tendencia
     };
   });
 
-  arr.sort(function (a, b) {
-    const pa = Math.max(a.pctFat, a.pctTon);
-    const pb = Math.max(b.pctFat, b.pctTon);
-    return pb - pa;
+  base.sort((a, b) => {
+    const aScore = Math.max(a.pctFat, a.pctTon);
+    const bScore = Math.max(b.pctFat, b.pctTon);
+    return bScore - aScore;
   });
 
-  return arr;
+  return base;
 }
 
 // ==========================================
-// KPIs / ALERTAS / RANKING
+// HOME
 // ==========================================
 
-function renderKPIs(base) {
-  const totalFat = base.reduce(function (s, x) { return s + x.realFat; }, 0);
-  const totalTon = base.reduce(function (s, x) { return s + x.realTon; }, 0);
-  const batendo = base.filter(function (x) { return x.nivel === "ok"; }).length;
-  const comMeta = base.filter(function (x) { return x.metaMesFat > 0 || x.metaMesTon > 0; }).length;
+function renderHome() {
+  const base = montarBaseHome();
 
-  safeText("kpiFiliais", String(comMeta));
-  safeText("kpiFatReal", brl(totalFat));
-  safeText("kpiTonReal", tons(totalTon));
-  safeText("kpiMetaBatida", String(batendo));
+  renderKPIs(base);
+  renderAlertas(base);
+  renderRanking(base);
+  renderCharts(base);
+}
+
+function renderKPIs(base) {
+  const totalFat = base.reduce((s, x) => s + x.realFat, 0);
+  const totalTon = base.reduce((s, x) => s + x.realTon, 0);
+  const totalCusto = base.reduce((s, x) => s + x.custo, 0);
+  const custoTon = totalTon > 0 ? totalCusto / totalTon : 0;
+  const filiais = base.length;
+  const batendo = base.filter((x) => x.nivel === "ok").length;
+
+  setText("kpiFiliais", String(filiais));
+  setText("kpiFatReal", brl(totalFat));
+  setText("kpiTonReal", tons(totalTon));
+  setText("kpiMetaBatida", String(batendo));
+  setText("kpiCustoTon", brl(custoTon));
 }
 
 function renderAlertas(base) {
@@ -518,18 +502,12 @@ function renderAlertas(base) {
   if (!box) return;
 
   if (!base.length) {
-    box.innerHTML = '<div class="emptyState">Sem dados para o período selecionado.</div>';
+    box.innerHTML = `<div class="emptyState">Sem dados para o período selecionado.</div>`;
     return;
   }
 
-  const top = base.slice(0, 12);
-
-  box.innerHTML = top.map(function (x) {
-    const texto = (x.metaMesFat > 0 || x.metaMesTon > 0)
-      ? escapeHtml(x.filial) + " • Fat " + pct(x.pctFat) + " • Ton " + pct(x.pctTon)
-      : escapeHtml(x.filial) + " • Sem meta cadastrada";
-
-    return '<div class="alertItem ' + x.nivel + '">' + texto + "</div>";
+  box.innerHTML = base.slice(0, 10).map((x) => {
+    return `<div class="alertItem ${x.nivel}">${escapeHtml(x.filial)} • ${escapeHtml(x.tendencia)}</div>`;
   }).join("");
 }
 
@@ -538,30 +516,29 @@ function renderRanking(base) {
   if (!tbody) return;
 
   if (!base.length) {
-    tbody.innerHTML = '<tr><td colspan="11" class="emptyState">Sem dados para o período selecionado.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="11" class="emptyState">Sem dados para o período selecionado.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = base.map(function (x, i) {
-    return ''
-      + "<tr>"
-      + '<td><span class="rankBadge">' + (i + 1) + "</span></td>"
-      + "<td>" + escapeHtml(x.filial) + "</td>"
-      + '<td class="num">' + brl(x.realFat) + "</td>"
-      + '<td class="num">' + brl(x.metaMesFat) + "</td>"
-      + '<td class="num">' + pct(x.pctFat) + "</td>"
-      + '<td class="num">' + brl(x.projFat) + "</td>"
-      + '<td class="num">' + tons(x.realTon) + "</td>"
-      + '<td class="num">' + tons(x.metaMesTon) + "</td>"
-      + '<td class="num">' + pct(x.pctTon) + "</td>"
-      + '<td><span class="pill ' + x.nivel + '">' + escapeHtml(x.tendencia) + "</span></td>"
-      + '<td><span class="pill ' + x.nivel + '">' + escapeHtml(x.alerta) + "</span></td>"
-      + "</tr>";
-  }).join("");
+  tbody.innerHTML = base.map((x, i) => `
+    <tr>
+      <td><span class="rankBadge">${i + 1}</span></td>
+      <td>${escapeHtml(x.filial)}</td>
+      <td class="num">${brl(x.realFat)}</td>
+      <td class="num">${brl(x.metaMesFat)}</td>
+      <td class="num">${pct(x.pctFat)}</td>
+      <td class="num">${brl(x.projFat)}</td>
+      <td class="num">${tons(x.realTon)}</td>
+      <td class="num">${tons(x.metaMesTon)}</td>
+      <td class="num">${pct(x.pctTon)}</td>
+      <td><span class="pill ${x.nivel}">${escapeHtml(x.tendencia)}</span></td>
+      <td><span class="pill ${x.nivel}">${x.nivel === "ok" ? "Ritmo bom" : x.nivel === "bad" ? "Abaixo do esperado" : "Atenção"}</span></td>
+    </tr>
+  `).join("");
 }
 
 // ==========================================
-// GRÁFICOS
+// CHARTS
 // ==========================================
 
 function destroyChart(chart) {
@@ -573,18 +550,18 @@ function destroyChart(chart) {
 function renderCharts(base) {
   if (typeof Chart === "undefined") return;
 
-  const labels = base.map(function (x) { return x.filial; });
+  const labels = base.map((x) => x.filial);
 
-  const fatMeta = base.map(function (x) { return x.metaMesFat; });
-  const fatReal = base.map(function (x) { return x.realFat; });
+  const fatMeta = base.map((x) => x.metaMesFat);
+  const fatReal = base.map((x) => x.realFat);
 
-  const tonMeta = base.map(function (x) { return x.metaMesTon; });
-  const tonReal = base.map(function (x) { return x.realTon; });
+  const tonMeta = base.map((x) => x.metaMesTon);
+  const tonReal = base.map((x) => x.realTon);
 
-  const projMeta = base.map(function (x) { return x.metaMesFat; });
-  const projReal = base.map(function (x) { return x.projFat; });
+  const projMeta = base.map((x) => x.metaMesFat);
+  const projReal = base.map((x) => x.projFat);
 
-  const commonOptions = {
+  const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -607,13 +584,13 @@ function renderCharts(base) {
     }
   };
 
-  const elFat = $("graficoFaturamento");
-  if (elFat) {
+  const fatEl = $("graficoFaturamento");
+  if (fatEl) {
     destroyChart(charts.faturamento);
-    charts.faturamento = new Chart(elFat, {
+    charts.faturamento = new Chart(fatEl, {
       type: "bar",
       data: {
-        labels: labels,
+        labels,
         datasets: [
           {
             label: "META",
@@ -633,17 +610,17 @@ function renderCharts(base) {
           }
         ]
       },
-      options: commonOptions
+      options
     });
   }
 
-  const elTon = $("graficoTon");
-  if (elTon) {
+  const tonEl = $("graficoTon");
+  if (tonEl) {
     destroyChart(charts.ton);
-    charts.ton = new Chart(elTon, {
+    charts.ton = new Chart(tonEl, {
       type: "bar",
       data: {
-        labels: labels,
+        labels,
         datasets: [
           {
             label: "META",
@@ -663,17 +640,17 @@ function renderCharts(base) {
           }
         ]
       },
-      options: commonOptions
+      options
     });
   }
 
-  const elProj = $("graficoProjecao");
-  if (elProj) {
+  const projEl = $("graficoProjecao");
+  if (projEl) {
     destroyChart(charts.projecao);
-    charts.projecao = new Chart(elProj, {
+    charts.projecao = new Chart(projEl, {
       type: "bar",
       data: {
-        labels: labels,
+        labels,
         datasets: [
           {
             label: "META MENSAL",
@@ -693,21 +670,9 @@ function renderCharts(base) {
           }
         ]
       },
-      options: commonOptions
+      options
     });
   }
-}
-
-// ==========================================
-// RENDER
-// ==========================================
-
-function renderAll() {
-  const base = montarBaseFiliais();
-  renderKPIs(base);
-  renderAlertas(base);
-  renderRanking(base);
-  renderCharts(base);
 }
 
 // ==========================================
@@ -716,112 +681,153 @@ function renderAll() {
 
 function limparFormMeta() {
   STATE.editMetaId = "";
-  safeValue("metaFilial", STATE.filtroFilial || "");
-  safeValue("metaFat", "");
-  safeValue("metaTon", "");
+  setValue("metaFilial", STATE.filtroFilial || "");
+  setValue("metaAno", STATE.filtroAno || getAnoMesAtual().ano);
+  setValue("metaMes", STATE.filtroMes || getAnoMesAtual().mes);
+  setValue("metaDiaFat", "");
+  setValue("metaMesFat", "");
+  setValue("metaAnoFat", "");
+  setValue("metaDiaTon", "");
+  setValue("metaMesTon", "");
+  setValue("metaAnoTon", "");
 }
 
 function preencherMetaExistenteSeHouver() {
-  const filial = upper($("metaFilial") ? $("metaFilial").value : "");
-  const fm = getFiltroAnoMes();
+  const filial = upper(getValue("metaFilial"));
+  const ano = Number(getValue("metaAno"));
+  const mes = Number(getValue("metaMes"));
 
-  if (!filial) {
+  if (!filial || !ano || !mes) {
     STATE.editMetaId = "";
     return;
   }
 
-  const meta = DB.metas.find(function (x) {
-    return x.filial === filial &&
-      Number(x.ano) === Number(fm.ano) &&
-      Number(x.mes) === Number(fm.mes);
-  });
+  const meta = DB.metas.find((x) =>
+    x.filial === filial &&
+    Number(x.ano) === Number(ano) &&
+    Number(x.mes) === Number(mes)
+  );
 
   if (!meta) {
     STATE.editMetaId = "";
-    safeValue("metaFat", "");
-    safeValue("metaTon", "");
+    setValue("metaDiaFat", "");
+    setValue("metaMesFat", "");
+    setValue("metaAnoFat", "");
+    setValue("metaDiaTon", "");
+    setValue("metaMesTon", "");
+    setValue("metaAnoTon", "");
     return;
   }
 
   STATE.editMetaId = meta.id;
-  safeValue("metaFat", meta.metaMesFat || "");
-  safeValue("metaTon", meta.metaMesTon || "");
+  setValue("metaDiaFat", meta.metaDiaFat || "");
+  setValue("metaMesFat", meta.metaMesFat || "");
+  setValue("metaAnoFat", meta.metaAnoFat || "");
+  setValue("metaDiaTon", meta.metaDiaTon || "");
+  setValue("metaMesTon", meta.metaMesTon || "");
+  setValue("metaAnoTon", meta.metaAnoTon || "");
 }
 
 async function salvarMeta() {
   try {
-    const filial = upper($("metaFilial") ? $("metaFilial").value : "");
-    const metaFat = num($("metaFat") ? $("metaFat").value : 0);
-    const metaTon = num($("metaTon") ? $("metaTon").value : 0);
-    const fm = getFiltroAnoMes();
-
-    if (!filial) throw new Error("Informe a filial.");
-    if (!fm.ano || !fm.mes) throw new Error("Defina ano e mês nos filtros.");
-    if (!metaFat && !metaTon) throw new Error("Informe meta de faturamento ou toneladas.");
-
-    const dim = diasNoMes(fm.ano, fm.mes);
-
     const payload = {
-      filial: filial,
-      ano: fm.ano,
-      mes: fm.mes,
-      metaDiaFat: metaFat ? metaFat / dim : 0,
-      metaMesFat: metaFat,
-      metaAnoFat: metaFat ? metaFat * 12 : 0,
-      metaDiaTon: metaTon ? metaTon / dim : 0,
-      metaMesTon: metaTon,
-      metaAnoTon: metaTon ? metaTon * 12 : 0
+      filial: upper(getValue("metaFilial")),
+      ano: Number(getValue("metaAno")),
+      mes: Number(getValue("metaMes")),
+      metaDiaFat: num(getValue("metaDiaFat")),
+      metaMesFat: num(getValue("metaMesFat")),
+      metaAnoFat: num(getValue("metaAnoFat")),
+      metaDiaTon: num(getValue("metaDiaTon")),
+      metaMesTon: num(getValue("metaMesTon")),
+      metaAnoTon: num(getValue("metaAnoTon"))
     };
 
-    let existente = DB.metas.find(function (x) {
-      return x.filial === filial &&
-        Number(x.ano) === Number(fm.ano) &&
-        Number(x.mes) === Number(fm.mes);
-    });
+    if (!payload.filial) throw new Error("Informe a filial.");
+    if (!payload.ano) throw new Error("Informe o ano.");
+    if (!payload.mes) throw new Error("Informe o mês.");
+
+    let existing = DB.metas.find((x) =>
+      x.filial === payload.filial &&
+      Number(x.ano) === Number(payload.ano) &&
+      Number(x.mes) === Number(payload.mes)
+    );
 
     if (STATE.editMetaId) {
-      const porId = DB.metas.find(function (x) { return x.id === STATE.editMetaId; });
-      if (porId) existente = porId;
+      const byId = DB.metas.find((x) => x.id === STATE.editMetaId);
+      if (byId) existing = byId;
     }
 
-    if (existente && existente.id) {
+    if (existing && existing.id) {
       await apiPost({
         action: "update_meta",
-        id: existente.id,
-        filial: payload.filial,
-        ano: payload.ano,
-        mes: payload.mes,
-        metaDiaFat: payload.metaDiaFat,
-        metaMesFat: payload.metaMesFat,
-        metaAnoFat: payload.metaAnoFat,
-        metaDiaTon: payload.metaDiaTon,
-        metaMesTon: payload.metaMesTon,
-        metaAnoTon: payload.metaAnoTon
+        id: existing.id,
+        ...payload
       });
-      setStatus("✅ Meta atualizada com sucesso.", false);
+      setStatus("✅ Meta atualizada com sucesso.");
     } else {
       await apiPost({
         action: "add_meta",
-        filial: payload.filial,
-        ano: payload.ano,
-        mes: payload.mes,
-        metaDiaFat: payload.metaDiaFat,
-        metaMesFat: payload.metaMesFat,
-        metaAnoFat: payload.metaAnoFat,
-        metaDiaTon: payload.metaDiaTon,
-        metaMesTon: payload.metaMesTon,
-        metaAnoTon: payload.metaAnoTon
+        ...payload
       });
-      setStatus("✅ Meta salva com sucesso.", false);
+      setStatus("✅ Meta salva com sucesso.");
     }
 
-    closeModal("modalMeta");
-    limparFormMeta();
+    STATE.filtroFilial = "";
     await loadAll();
+    renderMetaTable();
   } catch (err) {
-    console.error("salvarMeta:", err);
-    setStatus("❌ " + err.message, true);
+    console.error(err);
+    setStatus(`❌ ${err.message}`, true);
   }
+}
+
+function renderMetaTable() {
+  const tbody = $("tbodyMetas");
+  if (!tbody) return;
+
+  const lista = aplicarFiltrosMeta(DB.metas)
+    .slice()
+    .sort((a, b) => a.filial.localeCompare(b.filial, "pt-BR"));
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="emptyState">Nenhuma meta cadastrada para o período.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map((x) => `
+    <tr>
+      <td>${escapeHtml(x.filial)}</td>
+      <td>${x.ano}</td>
+      <td>${x.mes}</td>
+      <td>${num(x.metaDiaFat).toLocaleString("pt-BR")}</td>
+      <td>${num(x.metaMesFat).toLocaleString("pt-BR")}</td>
+      <td>${num(x.metaAnoFat).toLocaleString("pt-BR")}</td>
+      <td>${num(x.metaDiaTon).toLocaleString("pt-BR")}</td>
+      <td>${num(x.metaMesTon).toLocaleString("pt-BR")}</td>
+      <td>${num(x.metaAnoTon).toLocaleString("pt-BR")}</td>
+      <td>
+        <button type="button" onclick="editarMetaById('${x.id}')">Editar</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function editarMetaById(id) {
+  const x = DB.metas.find((m) => String(m.id) === String(id));
+  if (!x) return;
+
+  STATE.editMetaId = x.id;
+  setValue("metaFilial", x.filial);
+  setValue("metaAno", x.ano);
+  setValue("metaMes", x.mes);
+  setValue("metaDiaFat", x.metaDiaFat);
+  setValue("metaMesFat", x.metaMesFat);
+  setValue("metaAnoFat", x.metaAnoFat);
+  setValue("metaDiaTon", x.metaDiaTon);
+  setValue("metaMesTon", x.metaMesTon);
+  setValue("metaAnoTon", x.metaAnoTon);
+
+  openModal("modalMeta");
 }
 
 // ==========================================
@@ -830,50 +836,77 @@ async function salvarMeta() {
 
 function limparFormLancamento() {
   STATE.editLancId = "";
-  safeValue("lancFilial", STATE.filtroFilial || "");
 
   const hoje = getHoje();
   const yyyy = hoje.getFullYear();
   const mm = String(hoje.getMonth() + 1).padStart(2, "0");
   const dd = String(hoje.getDate()).padStart(2, "0");
 
-  safeValue("lancData", yyyy + "-" + mm + "-" + dd);
-  safeValue("lancFat", "");
-  safeValue("lancTon", "");
+  setValue("lancFilial", STATE.filtroFilial || "");
+  setValue("lancData", `${yyyy}-${mm}-${dd}`);
+  setValue("lancFaturamento", "");
+  setValue("lancToneladas", "");
+  setValue("lancCusto", "");
+  setValue("lancObservacao", "");
 }
 
 async function salvarLancamento() {
   try {
-    const filial = upper($("lancFilial") ? $("lancFilial").value : "");
-    const data = onlyText($("lancData") ? $("lancData").value : "");
-    const faturamento = num($("lancFat") ? $("lancFat").value : 0);
-    const toneladas = num($("lancTon") ? $("lancTon").value : 0);
+    const payload = {
+      filial: upper(getValue("lancFilial")),
+      data: onlyText(getValue("lancData")),
+      faturamento: num(getValue("lancFaturamento")),
+      toneladas: num(getValue("lancToneladas")),
+      custo: num(getValue("lancCusto")),
+      observacao: onlyText(getValue("lancObservacao"))
+    };
 
-    if (!filial) throw new Error("Informe a filial.");
-    if (!data) throw new Error("Informe a data.");
-    if (!faturamento && !toneladas) throw new Error("Informe faturamento ou toneladas.");
-
-    const d = ymdToDate(data);
-    if (!d) throw new Error("Data inválida.");
+    if (!payload.filial) throw new Error("Informe a filial.");
+    if (!payload.data) throw new Error("Informe a data.");
+    if (!payload.faturamento && !payload.toneladas && !payload.custo) {
+      throw new Error("Informe pelo menos faturamento, toneladas ou custo.");
+    }
 
     await apiPost({
       action: "add_lancamento",
-      filial: filial,
-      data: data,
-      faturamento: faturamento,
-      toneladas: toneladas,
-      custo: 0,
-      observacao: ""
+      ...payload
     });
 
-    setStatus("✅ Lançamento salvo com sucesso.", false);
+    setStatus("✅ Lançamento salvo com sucesso.");
+    await loadAll();
+    renderLancamentosTable();
     closeModal("modalLanc");
     limparFormLancamento();
-    await loadAll();
   } catch (err) {
-    console.error("salvarLancamento:", err);
-    setStatus("❌ " + err.message, true);
+    console.error(err);
+    setStatus(`❌ ${err.message}`, true);
   }
+}
+
+function renderLancamentosTable() {
+  const tbody = $("tbodyLancamentos");
+  if (!tbody) return;
+
+  const lista = aplicarFiltrosLancamento(DB.lancamentos)
+    .slice()
+    .sort((a, b) => String(b.data).localeCompare(String(a.data)));
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="emptyState">Nenhum lançamento cadastrado para o período.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map((x) => `
+    <tr>
+      <td>${formatDateBR(x.data)}</td>
+      <td>${escapeHtml(x.filial)}</td>
+      <td>${brl(x.faturamento)}</td>
+      <td>${tons(x.toneladas)}</td>
+      <td>${brl(x.custo)}</td>
+      <td>${escapeHtml(x.observacao || "-")}</td>
+      <td>${x.ano}/${x.mes}</td>
+    </tr>
+  `).join("");
 }
 
 // ==========================================
@@ -881,120 +914,97 @@ async function salvarLancamento() {
 // ==========================================
 
 function bindModalEvents() {
-  const closeBtns = document.querySelectorAll("[data-close]");
-  for (let i = 0; i < closeBtns.length; i++) {
-    closeBtns[i].addEventListener("click", function () {
-      const id = this.getAttribute("data-close");
+  document.querySelectorAll("[data-close]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-close");
       if (id) closeModal(id);
     });
-  }
+  });
 
-  const modals = document.querySelectorAll(".modal");
-  for (let i = 0; i < modals.length; i++) {
-    modals[i].addEventListener("click", function (e) {
-      if (e.target === this) closeModal(this.id);
+  document.querySelectorAll(".modal").forEach((modal) => {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal(modal.id);
     });
-  }
+  });
 
-  document.addEventListener("keydown", function (e) {
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeAllModals();
   });
 }
 
 function bindHeaderButtons() {
-  const btnMeta = $("btnNovaMeta");
-  if (btnMeta) {
-    btnMeta.addEventListener("click", function () {
-      limparFormMeta();
-      openModal("modalMeta");
-      setTimeout(function () {
-        const el = $("metaFilial");
-        if (el) el.focus();
-      }, 30);
-    });
-  }
+  $("btnNovaMeta")?.addEventListener("click", () => {
+    limparFormMeta();
+    openModal("modalMeta");
+    setTimeout(() => $("metaFilial")?.focus(), 30);
+  });
 
-  const btnLanc = $("btnNovoLancamento");
-  if (btnLanc) {
-    btnLanc.addEventListener("click", function () {
-      limparFormLancamento();
-      openModal("modalLanc");
-      setTimeout(function () {
-        const el = $("lancFilial");
-        if (el) el.focus();
-      }, 30);
-    });
-  }
+  $("btnNovoLancamento")?.addEventListener("click", () => {
+    limparFormLancamento();
+    openModal("modalLanc");
+    setTimeout(() => $("lancFilial")?.focus(), 30);
+  });
 
-  const btnAtualizar = $("btnAtualizar");
-  if (btnAtualizar) {
-    btnAtualizar.addEventListener("click", function () {
-      loadAll();
-    });
-  }
+  $("btnAtualizar")?.addEventListener("click", () => {
+    loadAll();
+  });
 
-  const btnSalvarMeta = $("btnSalvarMeta");
-  if (btnSalvarMeta) {
-    btnSalvarMeta.addEventListener("click", function () {
-      salvarMeta();
-    });
-  }
+  $("btnSalvarMeta")?.addEventListener("click", salvarMeta);
+  $("btnLimparMeta")?.addEventListener("click", limparFormMeta);
 
-  const btnSalvarLanc = $("btnSalvarLancamento");
-  if (btnSalvarLanc) {
-    btnSalvarLanc.addEventListener("click", function () {
-      salvarLancamento();
-    });
-  }
+  $("btnSalvarLancamento")?.addEventListener("click", salvarLancamento);
+  $("btnLimparLancamento")?.addEventListener("click", limparFormLancamento);
 }
 
 function bindFiltros() {
-  const fFilial = $("filtroFilial");
-  if (fFilial) {
-    fFilial.addEventListener("change", function (e) {
-      STATE.filtroFilial = upper(e.target.value || "");
-      renderAll();
-    });
-  }
+  $("filtroFilial")?.addEventListener("change", (e) => {
+    STATE.filtroFilial = upper(e.target.value || "");
+    renderHome();
+    renderMetaTable();
+    renderLancamentosTable();
+  });
 
-  const fAno = $("filtroAno");
-  if (fAno) {
-    fAno.addEventListener("input", function (e) {
-      STATE.filtroAno = onlyText(e.target.value || "");
-      renderAll();
-    });
-  }
+  $("filtroAno")?.addEventListener("input", (e) => {
+    STATE.filtroAno = onlyText(e.target.value || "");
+  });
 
-  const fMes = $("filtroMes");
-  if (fMes) {
-    fMes.addEventListener("input", function (e) {
-      STATE.filtroMes = onlyText(e.target.value || "");
-      renderAll();
-    });
-  }
+  $("filtroMes")?.addEventListener("input", (e) => {
+    STATE.filtroMes = onlyText(e.target.value || "");
+  });
+
+  $("btnAplicarFiltros")?.addEventListener("click", () => {
+    renderHome();
+    renderMetaTable();
+    renderLancamentosTable();
+  });
+
+  $("btnLimparFiltros")?.addEventListener("click", () => {
+    const am = getAnoMesAtual();
+    STATE.filtroFilial = "";
+    STATE.filtroAno = String(am.ano);
+    STATE.filtroMes = String(am.mes);
+
+    setValue("filtroAno", STATE.filtroAno);
+    setValue("filtroMes", STATE.filtroMes);
+    if ($("filtroFilial")) $("filtroFilial").value = "";
+
+    renderHome();
+    renderMetaTable();
+    renderLancamentosTable();
+  });
 }
 
 function bindMetaHelpers() {
-  const campo = $("metaFilial");
-  if (!campo) return;
-
-  campo.addEventListener("blur", function () {
-    preencherMetaExistenteSeHouver();
-  });
-
-  campo.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      preencherMetaExistenteSeHouver();
-    }
-  });
+  $("metaFilial")?.addEventListener("blur", preencherMetaExistenteSeHouver);
+  $("metaAno")?.addEventListener("blur", preencherMetaExistenteSeHouver);
+  $("metaMes")?.addEventListener("blur", preencherMetaExistenteSeHouver);
 }
 
 // ==========================================
 // INIT
 // ==========================================
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async () => {
   try {
     bindModalEvents();
     bindHeaderButtons();
@@ -1002,19 +1012,22 @@ document.addEventListener("DOMContentLoaded", function () {
     bindMetaHelpers();
 
     const am = getAnoMesAtual();
-    safeValue("filtroAno", String(am.ano));
-    safeValue("filtroMes", String(am.mes));
-
     STATE.filtroAno = String(am.ano);
     STATE.filtroMes = String(am.mes);
+
+    setValue("filtroAno", STATE.filtroAno);
+    setValue("filtroMes", STATE.filtroMes);
 
     limparFormMeta();
     limparFormLancamento();
 
-    renderAll();
-    loadAll();
+    renderHome();
+    renderMetaTable();
+    renderLancamentosTable();
+
+    await loadAll();
   } catch (err) {
-    console.error("init:", err);
-    setStatus("❌ " + err.message, true);
+    console.error(err);
+    setStatus(`❌ ${err.message}`, true);
   }
 });

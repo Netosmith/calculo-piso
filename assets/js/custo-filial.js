@@ -4,7 +4,7 @@
 // Versão robusta
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwyvX-Yw6qvMKZmo0UPB54w13ULUQDo6DG4qMYLSjx3boiaQWTMcaExR0qMf_Y29qtI/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbysHSesum5p9FfIA6UY5cQbfzGGIbj-b_ml5vNb_NZsOFMPmzMzW65FRByvNqSML6me/exec";
 
 let DB = {
   metas: [],

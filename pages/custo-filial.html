@@ -108,7 +108,7 @@
 
     .filterRow{
       display:grid;
-      grid-template-columns:1.2fr .8fr .8fr auto auto auto;
+      grid-template-columns:1.2fr .8fr .8fr auto auto;
       gap:12px;
       align-items:end;
       margin-bottom:16px;
@@ -334,11 +334,67 @@
       border-color:rgba(239,68,68,.28);
     }
 
-    .panelTabs{
+    .emptyState{
+      padding:24px;
+      text-align:center;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    /* ==========================================
+       PAINÉIS FLUTUANTES
+    ========================================== */
+
+    .overlayPanel{
+      position:fixed;
+      inset:0;
+      background:rgba(3,7,18,.72);
+      backdrop-filter:blur(8px);
+      display:none;
+      z-index:9998;
+      padding:24px;
+      overflow:auto;
+    }
+
+    .overlayPanel.active{
+      display:block;
+    }
+
+    .overlayCard{
+      width:min(1500px, 96vw);
+      margin:0 auto;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:0 24px 70px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+
+    .overlayHead{
+      padding:16px 18px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      background:rgba(11,19,39,.55);
+      position:sticky;
+      top:0;
+      z-index:5;
+    }
+
+    .overlayTitle{
+      font-size:18px;
+      font-weight:1000;
+      margin:0;
+    }
+
+    .overlayActions{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      margin-bottom:12px;
+      align-items:center;
     }
 
     .tabBtn{
@@ -359,6 +415,21 @@
 
     .tabBtn.active.lanc{
       background:linear-gradient(135deg,#2563eb,#3b82f6);
+    }
+
+    .closeBtn{
+      height:42px;
+      padding:0 18px;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+      color:#fff;
+      background:linear-gradient(135deg,#334155,#475569);
+    }
+
+    .overlayBody{
+      padding:18px;
     }
 
     .crudPanel{
@@ -384,6 +455,7 @@
       gap:10px;
       flex-wrap:wrap;
       margin-top:16px;
+      margin-bottom:6px;
     }
 
     .miniBtn{
@@ -399,13 +471,6 @@
 
     .miniBtn.edit{ background:#2563eb; }
     .miniBtn.del{ background:#b91c1c; }
-
-    .emptyState{
-      padding:24px;
-      text-align:center;
-      color:var(--muted);
-      font-weight:800;
-    }
 
     @media (max-width:1200px){
       .filterRow{
@@ -426,6 +491,9 @@
       .filterRow,
       .formGrid{
         grid-template-columns:1fr;
+      }
+      .overlayPanel{
+        padding:10px;
       }
     }
 
@@ -573,151 +641,165 @@
         </table>
       </div>
     </div>
+  </div>
 
-    <div class="card" style="margin-bottom:16px;">
-      <div class="panelTabs">
-        <button class="tabBtn meta active" id="tabMeta" type="button">Tela de Meta</button>
-        <button class="tabBtn lanc" id="tabLancamento" type="button">Tela de Lançamento</button>
-      </div>
+  <!-- ==========================================
+       PAINEL FLUTUANTE
+  ========================================== -->
+  <div class="overlayPanel" id="crudOverlay">
+    <div class="overlayCard">
+      <div class="overlayHead">
+        <h3 class="overlayTitle">Gestão de Metas e Lançamentos</h3>
 
-      <div id="panelMeta" class="crudPanel active">
-        <div class="formGrid">
-          <div class="field">
-            <label>Filial</label>
-            <input id="metaFilial" type="text" placeholder="Ex: RIO VERDE" />
-          </div>
-
-          <div class="field">
-            <label>Ano</label>
-            <input id="metaAno" type="number" placeholder="2026" />
-          </div>
-
-          <div class="field">
-            <label>Mês</label>
-            <input id="metaMes" type="number" min="1" max="12" placeholder="4" />
-          </div>
-
-          <div class="field">
-            <label>Meta Dia Fat</label>
-            <input id="metaDiaFat" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Meta Mês Fat</label>
-            <input id="metaMesFat" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Meta Ano Fat</label>
-            <input id="metaAnoFat" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Meta Dia Ton</label>
-            <input id="metaDiaTon" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Meta Mês Ton</label>
-            <input id="metaMesTon" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Meta Ano Ton</label>
-            <input id="metaAnoTon" type="number" step="0.01" placeholder="0,00" />
-          </div>
-        </div>
-
-        <div class="formActions">
-          <button class="btnAction green" id="btnSalvarMeta" type="button">Salvar Meta</button>
-          <button class="btnAction gray" id="btnLimparMeta" type="button">Limpar</button>
-        </div>
-
-        <div class="tableCard" style="margin-top:16px;">
-          <div class="tableHead">
-            <h3>Metas Cadastradas</h3>
-          </div>
-          <div class="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Filial</th>
-                  <th>Ano</th>
-                  <th>Mês</th>
-                  <th class="num">Meta Dia Fat</th>
-                  <th class="num">Meta Mês Fat</th>
-                  <th class="num">Meta Ano Fat</th>
-                  <th class="num">Meta Dia Ton</th>
-                  <th class="num">Meta Mês Ton</th>
-                  <th class="num">Meta Ano Ton</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyMetas"></tbody>
-            </table>
-          </div>
+        <div class="overlayActions">
+          <button class="tabBtn meta active" id="tabMeta" type="button">Tela de Meta</button>
+          <button class="tabBtn lanc" id="tabLancamento" type="button">Tela de Lançamento</button>
+          <button class="closeBtn" id="btnFecharCrud" type="button">Fechar</button>
         </div>
       </div>
 
-      <div id="panelLancamento" class="crudPanel">
-        <div class="formGrid">
-          <div class="field">
-            <label>Filial</label>
-            <input id="lancFilial" type="text" placeholder="Ex: RIO VERDE" />
+      <div class="overlayBody">
+        <!-- META -->
+        <div id="panelMeta" class="crudPanel active">
+          <div class="formGrid">
+            <div class="field">
+              <label>Filial</label>
+              <input id="metaFilial" type="text" placeholder="Ex: RIO VERDE" />
+            </div>
+
+            <div class="field">
+              <label>Ano</label>
+              <input id="metaAno" type="number" placeholder="2026" />
+            </div>
+
+            <div class="field">
+              <label>Mês</label>
+              <input id="metaMes" type="number" min="1" max="12" placeholder="4" />
+            </div>
+
+            <div class="field">
+              <label>Meta Dia Fat</label>
+              <input id="metaDiaFat" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Meta Mês Fat</label>
+              <input id="metaMesFat" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Meta Ano Fat</label>
+              <input id="metaAnoFat" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Meta Dia Ton</label>
+              <input id="metaDiaTon" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Meta Mês Ton</label>
+              <input id="metaMesTon" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Meta Ano Ton</label>
+              <input id="metaAnoTon" type="number" step="0.01" placeholder="0,00" />
+            </div>
           </div>
 
-          <div class="field">
-            <label>Data</label>
-            <input id="lancData" type="date" />
+          <div class="formActions">
+            <button class="btnAction green" id="btnSalvarMeta" type="button">Salvar Meta</button>
+            <button class="btnAction gray" id="btnLimparMeta" type="button">Limpar</button>
           </div>
 
-          <div class="field">
-            <label>Faturamento</label>
-            <input id="lancFaturamento" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Toneladas</label>
-            <input id="lancToneladas" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field">
-            <label>Custo</label>
-            <input id="lancCusto" type="number" step="0.01" placeholder="0,00" />
-          </div>
-
-          <div class="field full">
-            <label>Observação</label>
-            <input id="lancObservacao" type="text" placeholder="Observação" />
+          <div class="tableCard" style="margin-top:16px;">
+            <div class="tableHead">
+              <h3>Metas Cadastradas</h3>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Filial</th>
+                    <th>Ano</th>
+                    <th>Mês</th>
+                    <th class="num">Meta Dia Fat</th>
+                    <th class="num">Meta Mês Fat</th>
+                    <th class="num">Meta Ano Fat</th>
+                    <th class="num">Meta Dia Ton</th>
+                    <th class="num">Meta Mês Ton</th>
+                    <th class="num">Meta Ano Ton</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyMetas"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <div class="formActions">
-          <button class="btnAction blue" id="btnSalvarLancamento" type="button">Salvar Lançamento</button>
-          <button class="btnAction gray" id="btnLimparLancamento" type="button">Limpar</button>
-        </div>
+        <!-- LANÇAMENTO -->
+        <div id="panelLancamento" class="crudPanel">
+          <div class="formGrid">
+            <div class="field">
+              <label>Filial</label>
+              <input id="lancFilial" type="text" placeholder="Ex: RIO VERDE" />
+            </div>
 
-        <div class="tableCard" style="margin-top:16px;">
-          <div class="tableHead">
-            <h3>Lançamentos Cadastrados</h3>
+            <div class="field">
+              <label>Data</label>
+              <input id="lancData" type="date" />
+            </div>
+
+            <div class="field">
+              <label>Faturamento</label>
+              <input id="lancFaturamento" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Toneladas</label>
+              <input id="lancToneladas" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field">
+              <label>Custo</label>
+              <input id="lancCusto" type="number" step="0.01" placeholder="0,00" />
+            </div>
+
+            <div class="field full">
+              <label>Observação</label>
+              <input id="lancObservacao" type="text" placeholder="Observação" />
+            </div>
           </div>
-          <div class="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Filial</th>
-                  <th>Ano</th>
-                  <th>Mês</th>
-                  <th class="num">Faturamento</th>
-                  <th class="num">Toneladas</th>
-                  <th class="num">Custo</th>
-                  <th>Observação</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyLancamentos"></tbody>
-            </table>
+
+          <div class="formActions">
+            <button class="btnAction blue" id="btnSalvarLancamento" type="button">Salvar Lançamento</button>
+            <button class="btnAction gray" id="btnLimparLancamento" type="button">Limpar</button>
+          </div>
+
+          <div class="tableCard" style="margin-top:16px;">
+            <div class="tableHead">
+              <h3>Lançamentos Cadastrados</h3>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Filial</th>
+                    <th>Ano</th>
+                    <th>Mês</th>
+                    <th class="num">Faturamento</th>
+                    <th class="num">Toneladas</th>
+                    <th class="num">Custo</th>
+                    <th>Observação</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyLancamentos"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -729,6 +811,43 @@
   <script>
     requireHomeAuth();
     bindLogoutButton();
+
+    document.addEventListener("DOMContentLoaded", function(){
+      const overlay = document.getElementById("crudOverlay");
+      const btnMeta = document.getElementById("btnIrMeta");
+      const btnLanc = document.getElementById("btnIrLancamento");
+      const btnFechar = document.getElementById("btnFecharCrud");
+
+      function abrirOverlay() {
+        if (overlay) overlay.classList.add("active");
+      }
+
+      function fecharOverlay() {
+        if (overlay) overlay.classList.remove("active");
+      }
+
+      if (btnMeta) {
+        btnMeta.addEventListener("click", abrirOverlay);
+      }
+
+      if (btnLanc) {
+        btnLanc.addEventListener("click", abrirOverlay);
+      }
+
+      if (btnFechar) {
+        btnFechar.addEventListener("click", fecharOverlay);
+      }
+
+      if (overlay) {
+        overlay.addEventListener("click", function(e){
+          if (e.target === overlay) fecharOverlay();
+        });
+      }
+
+      document.addEventListener("keydown", function(e){
+        if (e.key === "Escape") fecharOverlay();
+      });
+    });
   </script>
 </body>
 </html>

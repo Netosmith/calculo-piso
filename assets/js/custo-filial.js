@@ -1,12 +1,17 @@
+
 // ==========================================
-// CUSTO FILIAL - FRONT
-// Ajustado para Apps Script novo
+// CUSTO / FILIAL - NOVA FROTA
+// Ajustado para custo-filial.html enviado
 // ==========================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycbwyvX-Yw6qvMKZmo0UPB54w13ULUQDo6DG4qMYLSjx3boiaQWTMcaExR0qMf_Y29qtI/exec";
 
 let METAS = [];
 let LANCAMENTOS = [];
+
+let chartFat = null;
+let chartTon = null;
+let chartProj = null;
 
 let META_EDIT_ID = "";
 let LANC_EDIT_ID = "";
@@ -17,39 +22,39 @@ let LANC_EDIT_ID = "";
 
 const $ = (id) => document.getElementById(id);
 
-function normalizarTexto(v) {
+function texto(v) {
   return String(v || "").trim();
 }
 
-function normalizarTextoUpper(v) {
-  return normalizarTexto(v).toUpperCase();
+function textoUpper(v) {
+  return texto(v).toUpperCase();
 }
 
-function toNumberBR(v) {
+function num(v) {
   if (v === null || v === undefined || v === "") return 0;
-  if (typeof v === "number") return v;
-
-  const s = String(v)
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-
-  const n = Number(s);
+  const n = Number(String(v).replace(",", "."));
   return isNaN(n) ? 0 : n;
 }
 
-function moedaBR(v) {
+function moeda(v) {
   return Number(v || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
   });
 }
 
-function numeroBR(v, casas = 2) {
+function numero(v, casas = 0) {
   return Number(v || 0).toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas
   });
+}
+
+function percentual(v) {
+  return `${Number(v || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })}%`;
 }
 
 function escapeHtml(str) {
@@ -61,12 +66,73 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-function formatarDataISOparaBR(dataISO) {
-  if (!dataISO) return "";
-  const d = new Date(dataISO);
-  if (isNaN(d.getTime())) return dataISO;
-  return d.toLocaleDateString("pt-BR");
+function setStatus(msg, erro = false) {
+  const el = $("syncStatus");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = erro ? "#fca5a5" : "#93c5fd";
 }
+
+function hojeInfo() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = agora.getMonth() + 1;
+  const dia = agora.getDate();
+  const diasNoMes = new Date(ano, mes, 0).getDate();
+  return { ano, mes, dia, diasNoMes };
+}
+
+function abrirModal(id) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.add("isOpen");
+  el.setAttribute("aria-hidden", "false");
+}
+
+function fecharModal(id) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.remove("isOpen");
+  el.setAttribute("aria-hidden", "true");
+}
+
+function fecharTodosModais() {
+  document.querySelectorAll(".modal").forEach((m) => {
+    m.classList.remove("isOpen");
+    m.setAttribute("aria-hidden", "true");
+  });
+}
+
+function tendenciaClasse(pct) {
+  if (pct >= 100) return "ok";
+  if (pct >= 75) return "warn";
+  return "bad";
+}
+
+function tendenciaTexto(pct) {
+  if (pct >= 100) return "META BATIDA";
+  if (pct >= 75) return "NO RITMO";
+  return "ABAIXO";
+}
+
+function alertaTexto(pct) {
+  if (pct >= 100) return "Operação acima da meta";
+  if (pct >= 75) return "Acompanhar ritmo";
+  return "Precisa reação imediata";
+}
+
+function daysProjection(realAcumulado, diaAtual) {
+  if (!diaAtual || diaAtual <= 0) return 0;
+  return (realAcumulado / diaAtual) * hojeInfo().diasNoMes;
+}
+
+function normalizarFilial(v) {
+  return textoUpper(v);
+}
+
+// ==========================================
+// API
+// ==========================================
 
 async function apiGet(action) {
   const url = `${API_URL}?action=${encodeURIComponent(action)}`;
@@ -74,7 +140,7 @@ async function apiGet(action) {
   const json = await res.json();
 
   if (!json.ok) {
-    throw new Error(json.error || "Erro na requisição GET");
+    throw new Error(json.error || "Erro ao consultar dados");
   }
 
   return json;
@@ -92,413 +158,567 @@ async function apiPost(payload) {
   const json = await res.json();
 
   if (!json.ok) {
-    throw new Error(json.error || "Erro na requisição POST");
+    throw new Error(json.error || "Erro ao salvar dados");
   }
 
   return json;
 }
 
 // ==========================================
-// LOAD
+// DATA LOAD
 // ==========================================
 
-async function carregarTudoCustoFilial() {
+async function carregarDados() {
   try {
-    mostrarStatus("Carregando dados...");
+    setStatus("🔄 Carregando dados...");
     const json = await apiGet("getAll");
 
     METAS = Array.isArray(json.metas) ? json.metas : [];
     LANCAMENTOS = Array.isArray(json.lancamentos) ? json.lancamentos : [];
 
-    renderMetas();
-    renderLancamentos();
-    renderResumo();
-    preencherFiltrosFilial();
-
-    mostrarStatus("Dados carregados.");
+    renderTudo();
+    setStatus("✅ Dados atualizados com sucesso.");
   } catch (err) {
     console.error(err);
-    mostrarStatus(`Erro ao carregar: ${err.message}`, true);
+    setStatus(`❌ ${err.message}`, true);
   }
 }
 
 // ==========================================
-// STATUS
+// PROCESSAMENTO
 // ==========================================
 
-function mostrarStatus(msg, erro = false) {
-  const el = $("custoFilialStatus");
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = erro ? "#b91c1c" : "";
+function metasMesAtual() {
+  const { ano, mes } = hojeInfo();
+  return METAS.filter(m =>
+    String(m.ano) === String(ano) &&
+    String(m.mes) === String(mes)
+  );
 }
 
-// ==========================================
-// FILTROS
-// ==========================================
-
-function getFiltros() {
-  return {
-    filial: normalizarTextoUpper($("filtroFilial")?.value || ""),
-    ano: normalizarTexto($("filtroAno")?.value || ""),
-    mes: normalizarTexto($("filtroMes")?.value || "")
-  };
+function lancamentosMesAtual() {
+  const { ano, mes } = hojeInfo();
+  return LANCAMENTOS.filter(l =>
+    String(l.ano) === String(ano) &&
+    String(l.mes) === String(mes)
+  );
 }
 
-function preencherFiltrosFilial() {
-  const select = $("filtroFilial");
-  if (!select) return;
+function agruparPainelFiliais() {
+  const metasAtuais = metasMesAtual();
+  const lancsAtuais = lancamentosMesAtual();
+  const { dia } = hojeInfo();
 
-  const atual = select.value;
+  const map = {};
 
-  const filiais = [...new Set([
-    ...METAS.map(x => normalizarTextoUpper(x.filial)),
-    ...LANCAMENTOS.map(x => normalizarTextoUpper(x.filial))
-  ])]
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+  metasAtuais.forEach(m => {
+    const filial = normalizarFilial(m.filial);
+    if (!filial) return;
 
-  select.innerHTML = `<option value="">Todas</option>` +
-    filiais.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
+    if (!map[filial]) {
+      map[filial] = {
+        filial,
+        metaId: "",
+        fatReal: 0,
+        tonReal: 0,
+        metaFat: 0,
+        metaTon: 0,
+        projFat: 0,
+        projTon: 0,
+        pctFat: 0,
+        pctTon: 0
+      };
+    }
 
-  if (filiais.includes(atual)) {
-    select.value = atual;
-  }
-}
-
-function aplicarFiltroLista(lista) {
-  const { filial, ano, mes } = getFiltros();
-
-  return lista.filter(item => {
-    const okFilial = !filial || normalizarTextoUpper(item.filial) === filial;
-    const okAno = !ano || String(item.ano || "") === String(ano);
-    const okMes = !mes || String(item.mes || "") === String(mes);
-    return okFilial && okAno && okMes;
+    map[filial].metaId = m.id || "";
+    map[filial].metaFat += num(m.metaMesFat);
+    map[filial].metaTon += num(m.metaMesTon);
   });
+
+  lancsAtuais.forEach(l => {
+    const filial = normalizarFilial(l.filial);
+    if (!filial) return;
+
+    if (!map[filial]) {
+      map[filial] = {
+        filial,
+        metaId: "",
+        fatReal: 0,
+        tonReal: 0,
+        metaFat: 0,
+        metaTon: 0,
+        projFat: 0,
+        projTon: 0,
+        pctFat: 0,
+        pctTon: 0
+      };
+    }
+
+    map[filial].fatReal += num(l.faturamento);
+    map[filial].tonReal += num(l.toneladas);
+  });
+
+  const lista = Object.values(map).map(item => {
+    const pctFat = item.metaFat > 0 ? (item.fatReal / item.metaFat) * 100 : 0;
+    const pctTon = item.metaTon > 0 ? (item.tonReal / item.metaTon) * 100 : 0;
+    const projFat = daysProjection(item.fatReal, dia);
+    const projTon = daysProjection(item.tonReal, dia);
+
+    return {
+      ...item,
+      pctFat,
+      pctTon,
+      projFat,
+      projTon,
+      tendencia: tendenciaTexto(pctFat),
+      tendenciaClass: tendenciaClasse(pctFat),
+      alerta: alertaTexto(pctFat)
+    };
+  });
+
+  lista.sort((a, b) => b.pctFat - a.pctFat);
+  return lista;
 }
 
 // ==========================================
-// METAS
+// KPI
 // ==========================================
 
-function getMetaFormData() {
-  return {
-    id: META_EDIT_ID || "",
-    filial: normalizarTextoUpper($("metaFilial")?.value),
-    ano: normalizarTexto($("metaAno")?.value),
-    mes: normalizarTexto($("metaMes")?.value),
-    metaDiaFat: toNumberBR($("metaDiaFat")?.value),
-    metaMesFat: toNumberBR($("metaMesFat")?.value),
-    metaAnoFat: toNumberBR($("metaAnoFat")?.value),
-    metaDiaTon: toNumberBR($("metaDiaTon")?.value),
-    metaMesTon: toNumberBR($("metaMesTon")?.value),
-    metaAnoTon: toNumberBR($("metaAnoTon")?.value)
-  };
+function renderKPIs(lista) {
+  const filiaisMonitoradas = lista.filter(x => x.metaFat > 0 || x.metaTon > 0).length;
+  const fatReal = lista.reduce((s, x) => s + x.fatReal, 0);
+  const tonReal = lista.reduce((s, x) => s + x.tonReal, 0);
+  const metaBatida = lista.filter(x => x.projFat >= x.metaFat && x.metaFat > 0).length;
+
+  if ($("kpiFiliais")) $("kpiFiliais").textContent = numero(filiaisMonitoradas, 0);
+  if ($("kpiFatReal")) $("kpiFatReal").textContent = moeda(fatReal);
+  if ($("kpiTonReal")) $("kpiTonReal").textContent = `${numero(tonReal, 0)} t`;
+  if ($("kpiMetaBatida")) $("kpiMetaBatida").textContent = numero(metaBatida, 0);
 }
 
-function validarMeta(data) {
-  if (!data.filial) throw new Error("Informe a filial.");
-  if (!data.ano) throw new Error("Informe o ano.");
-  if (!data.mes) throw new Error("Informe o mês.");
+// ==========================================
+// ALERTAS
+// ==========================================
+
+function renderAlertas(lista) {
+  const el = $("alertas");
+  if (!el) return;
+
+  if (!lista.length) {
+    el.innerHTML = `<div class="emptyState">Sem dados para exibir alertas.</div>`;
+    return;
+  }
+
+  const itens = lista
+    .slice()
+    .sort((a, b) => a.pctFat - b.pctFat)
+    .slice(0, 8);
+
+  el.innerHTML = itens.map(item => `
+    <div class="alertItem ${item.tendenciaClass}">
+      <strong>${escapeHtml(item.filial)}</strong><br>
+      ${escapeHtml(item.alerta)} · ${percentual(item.pctFat)} da meta de faturamento
+    </div>
+  `).join("");
+}
+
+// ==========================================
+// RANKING
+// ==========================================
+
+function renderRanking(lista) {
+  const tbody = $("ranking");
+  if (!tbody) return;
+
+  if (!lista.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11">
+          <div class="emptyState">Nenhuma filial com dados neste mês.</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = lista.map((item, idx) => `
+    <tr>
+      <td><span class="rankBadge">${idx + 1}</span></td>
+      <td>
+        <strong>${escapeHtml(item.filial)}</strong><br>
+        <button
+          type="button"
+          style="margin-top:6px;padding:4px 8px;border:none;border-radius:8px;cursor:pointer;font-weight:800;"
+          onclick="abrirMetaPorFilial('${String(item.metaId || "")}', '${escapeHtml(item.filial)}')"
+        >
+          Editar meta
+        </button>
+      </td>
+      <td class="num">${moeda(item.fatReal)}</td>
+      <td class="num">${moeda(item.metaFat)}</td>
+      <td class="num">${percentual(item.pctFat)}</td>
+      <td class="num">${moeda(item.projFat)}</td>
+      <td class="num">${numero(item.tonReal, 0)}</td>
+      <td class="num">${numero(item.metaTon, 0)}</td>
+      <td class="num">${percentual(item.pctTon)}</td>
+      <td><span class="pill ${item.tendenciaClass}">${escapeHtml(item.tendencia)}</span></td>
+      <td>${escapeHtml(item.alerta)}</td>
+    </tr>
+  `).join("");
+}
+
+// ==========================================
+// CHARTS
+// ==========================================
+
+function destruirGraficos() {
+  if (chartFat) chartFat.destroy();
+  if (chartTon) chartTon.destroy();
+  if (chartProj) chartProj.destroy();
+}
+
+function renderGraficos(lista) {
+  destruirGraficos();
+
+  const labels = lista.map(x => x.filial);
+  const fatReal = lista.map(x => x.fatReal);
+  const fatMeta = lista.map(x => x.metaFat);
+  const tonReal = lista.map(x => x.tonReal);
+  const tonMeta = lista.map(x => x.metaTon);
+  const projFat = lista.map(x => x.projFat);
+
+  const ctxFat = $("graficoFaturamento");
+  const ctxTon = $("graficoTon");
+  const ctxProj = $("graficoProjecao");
+
+  if (ctxFat) {
+    chartFat = new Chart(ctxFat, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Faturamento Real",
+            data: fatReal,
+            backgroundColor: "rgba(59,130,246,0.75)",
+            borderColor: "rgba(59,130,246,1)",
+            borderWidth: 1
+          },
+          {
+            label: "Meta Mensal",
+            data: fatMeta,
+            backgroundColor: "rgba(34,197,94,0.55)",
+            borderColor: "rgba(34,197,94,1)",
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: "#e5e7eb" }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(255,255,255,.06)" }
+          },
+          y: {
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(255,255,255,.06)" }
+          }
+        }
+      }
+    });
+  }
+
+  if (ctxTon) {
+    chartTon = new Chart(ctxTon, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Toneladas Reais",
+            data: tonReal,
+            backgroundColor: "rgba(245,158,11,0.70)",
+            borderColor: "rgba(245,158,11,1)",
+            borderWidth: 1
+          },
+          {
+            label: "Meta Mensal",
+            data: tonMeta,
+            backgroundColor: "rgba(139,92,246,0.55)",
+            borderColor: "rgba(139,92,246,1)",
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: "#e5e7eb" }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(255,255,255,.06)" }
+          },
+          y: {
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(255,255,255,.06)" }
+          }
+        }
+      }
+    });
+  }
+
+  if (ctxProj) {
+    chartProj = new Chart(ctxProj, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Projeção de Faturamento",
+            data: projFat,
+            backgroundColor: "rgba(34,197,94,0.75)",
+            borderColor: "rgba(34,197,94,1)",
+            borderWidth: 1
+          },
+          {
+            label: "Meta Mensal",
+            data: fatMeta,
+            backgroundColor: "rgba(239,68,68,0.45)",
+            borderColor: "rgba(239,68,68,1)",
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: "#e5e7eb" }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(255,255,255,.06)" }
+          },
+          y: {
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(255,255,255,.06)" }
+          }
+        }
+      }
+    });
+  }
+}
+
+// ==========================================
+// META
+// ==========================================
+
+function limparModalMeta() {
+  META_EDIT_ID = "";
+  if ($("metaFilial")) $("metaFilial").value = "";
+  if ($("metaFat")) $("metaFat").value = "";
+  if ($("metaTon")) $("metaTon").value = "";
+}
+
+function buscarMetaAtualPorFilial(filial) {
+  const { ano, mes } = hojeInfo();
+  return METAS.find(m =>
+    normalizarFilial(m.filial) === normalizarFilial(filial) &&
+    String(m.ano) === String(ano) &&
+    String(m.mes) === String(mes)
+  ) || null;
+}
+
+function abrirMetaPorFilial(metaId, filial) {
+  const nomeFilial = textoUpper(filial);
+  const meta = buscarMetaAtualPorFilial(nomeFilial);
+
+  META_EDIT_ID = meta?.id || metaId || "";
+
+  if ($("metaFilial")) $("metaFilial").value = nomeFilial;
+  if ($("metaFat")) $("metaFat").value = meta?.metaMesFat || "";
+  if ($("metaTon")) $("metaTon").value = meta?.metaMesTon || "";
+
+  abrirModal("modalMeta");
 }
 
 async function salvarMeta() {
   try {
-    const data = getMetaFormData();
-    validarMeta(data);
+    const filial = textoUpper($("metaFilial")?.value);
+    const metaMesFat = num($("metaFat")?.value);
+    const metaMesTon = num($("metaTon")?.value);
 
-    if (META_EDIT_ID) {
+    if (!filial) {
+      throw new Error("Informe a filial.");
+    }
+
+    const { ano, mes, diasNoMes } = hojeInfo();
+
+    const payload = {
+      filial,
+      ano,
+      mes,
+      metaDiaFat: metaMesFat / diasNoMes,
+      metaMesFat,
+      metaAnoFat: metaMesFat * 12,
+      metaDiaTon: metaMesTon / diasNoMes,
+      metaMesTon,
+      metaAnoTon: metaMesTon * 12
+    };
+
+    const metaExistente = buscarMetaAtualPorFilial(filial);
+
+    if (META_EDIT_ID || metaExistente?.id) {
       await apiPost({
         action: "update_meta",
-        ...data
+        id: META_EDIT_ID || metaExistente.id,
+        ...payload
       });
-      mostrarStatus("Meta atualizada com sucesso.");
+      setStatus("✅ Meta atualizada com sucesso.");
     } else {
       await apiPost({
         action: "add_meta",
-        ...data
+        ...payload
       });
-      mostrarStatus("Meta cadastrada com sucesso.");
+      setStatus("✅ Meta salva com sucesso.");
     }
 
-    limparFormMeta();
-    await carregarTudoCustoFilial();
+    limparModalMeta();
+    fecharModal("modalMeta");
+    await carregarDados();
   } catch (err) {
     console.error(err);
-    mostrarStatus(err.message, true);
+    setStatus(`❌ ${err.message}`, true);
   }
-}
-
-function editarMeta(id) {
-  const item = METAS.find(x => String(x.id) === String(id));
-  if (!item) return;
-
-  META_EDIT_ID = item.id;
-
-  if ($("metaFilial")) $("metaFilial").value = item.filial || "";
-  if ($("metaAno")) $("metaAno").value = item.ano || "";
-  if ($("metaMes")) $("metaMes").value = item.mes || "";
-  if ($("metaDiaFat")) $("metaDiaFat").value = item.metaDiaFat || "";
-  if ($("metaMesFat")) $("metaMesFat").value = item.metaMesFat || "";
-  if ($("metaAnoFat")) $("metaAnoFat").value = item.metaAnoFat || "";
-  if ($("metaDiaTon")) $("metaDiaTon").value = item.metaDiaTon || "";
-  if ($("metaMesTon")) $("metaMesTon").value = item.metaMesTon || "";
-  if ($("metaAnoTon")) $("metaAnoTon").value = item.metaAnoTon || "";
-
-  mostrarStatus("Editando meta.");
-}
-
-async function excluirMeta(id) {
-  if (!confirm("Deseja excluir esta meta?")) return;
-
-  try {
-    await apiPost({
-      action: "delete_meta",
-      id
-    });
-
-    if (META_EDIT_ID === id) limparFormMeta();
-    await carregarTudoCustoFilial();
-    mostrarStatus("Meta excluída com sucesso.");
-  } catch (err) {
-    console.error(err);
-    mostrarStatus(err.message, true);
-  }
-}
-
-function limparFormMeta() {
-  META_EDIT_ID = "";
-
-  [
-    "metaFilial",
-    "metaAno",
-    "metaMes",
-    "metaDiaFat",
-    "metaMesFat",
-    "metaAnoFat",
-    "metaDiaTon",
-    "metaMesTon",
-    "metaAnoTon"
-  ].forEach(id => {
-    if ($(id)) $(id).value = "";
-  });
-}
-
-function renderMetas() {
-  const tbody = $("tbodyMetas");
-  if (!tbody) return;
-
-  const lista = aplicarFiltroLista(METAS);
-
-  if (!lista.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="11">Nenhuma meta encontrada.</td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = lista.map(item => `
-    <tr>
-      <td>${escapeHtml(item.filial)}</td>
-      <td>${escapeHtml(item.ano)}</td>
-      <td>${escapeHtml(item.mes)}</td>
-      <td>${moedaBR(item.metaDiaFat)}</td>
-      <td>${moedaBR(item.metaMesFat)}</td>
-      <td>${moedaBR(item.metaAnoFat)}</td>
-      <td>${numeroBR(item.metaDiaTon)}</td>
-      <td>${numeroBR(item.metaMesTon)}</td>
-      <td>${numeroBR(item.metaAnoTon)}</td>
-      <td>
-        <button type="button" onclick="editarMeta('${String(item.id)}')">Editar</button>
-      </td>
-      <td>
-        <button type="button" onclick="excluirMeta('${String(item.id)}')">Excluir</button>
-      </td>
-    </tr>
-  `).join("");
 }
 
 // ==========================================
-// LANÇAMENTOS
+// LANÇAMENTO
 // ==========================================
 
-function getLancamentoFormData() {
-  return {
-    id: LANC_EDIT_ID || "",
-    data: normalizarTexto($("lancData")?.value),
-    filial: normalizarTextoUpper($("lancFilial")?.value),
-    faturamento: toNumberBR($("lancFaturamento")?.value),
-    toneladas: toNumberBR($("lancToneladas")?.value),
-    custo: toNumberBR($("lancCusto")?.value),
-    observacao: normalizarTexto($("lancObservacao")?.value)
-  };
-}
-
-function validarLancamento(data) {
-  if (!data.data) throw new Error("Informe a data.");
-  if (!data.filial) throw new Error("Informe a filial.");
+function limparModalLanc() {
+  LANC_EDIT_ID = "";
+  if ($("lancFilial")) $("lancFilial").value = "";
+  if ($("lancData")) $("lancData").value = "";
+  if ($("lancFat")) $("lancFat").value = "";
+  if ($("lancTon")) $("lancTon").value = "";
 }
 
 async function salvarLancamento() {
   try {
-    const data = getLancamentoFormData();
-    validarLancamento(data);
+    const filial = textoUpper($("lancFilial")?.value);
+    const data = texto($("lancData")?.value);
+    const faturamento = num($("lancFat")?.value);
+    const toneladas = num($("lancTon")?.value);
+
+    if (!filial) throw new Error("Informe a filial.");
+    if (!data) throw new Error("Informe a data.");
+
+    const payload = {
+      filial,
+      data,
+      faturamento,
+      toneladas,
+      custo: 0,
+      observacao: ""
+    };
 
     if (LANC_EDIT_ID) {
       await apiPost({
         action: "update_lancamento",
-        ...data
+        id: LANC_EDIT_ID,
+        ...payload
       });
-      mostrarStatus("Lançamento atualizado com sucesso.");
+      setStatus("✅ Produção atualizada com sucesso.");
     } else {
       await apiPost({
         action: "add_lancamento",
-        ...data
+        ...payload
       });
-      mostrarStatus("Lançamento cadastrado com sucesso.");
+      setStatus("✅ Produção lançada com sucesso.");
     }
 
-    limparFormLancamento();
-    await carregarTudoCustoFilial();
+    limparModalLanc();
+    fecharModal("modalLanc");
+    await carregarDados();
   } catch (err) {
     console.error(err);
-    mostrarStatus(err.message, true);
+    setStatus(`❌ ${err.message}`, true);
   }
-}
-
-function editarLancamento(id) {
-  const item = LANCAMENTOS.find(x => String(x.id) === String(id));
-  if (!item) return;
-
-  LANC_EDIT_ID = item.id;
-
-  if ($("lancData")) $("lancData").value = item.data || "";
-  if ($("lancFilial")) $("lancFilial").value = item.filial || "";
-  if ($("lancFaturamento")) $("lancFaturamento").value = item.faturamento || "";
-  if ($("lancToneladas")) $("lancToneladas").value = item.toneladas || "";
-  if ($("lancCusto")) $("lancCusto").value = item.custo || "";
-  if ($("lancObservacao")) $("lancObservacao").value = item.observacao || "";
-
-  mostrarStatus("Editando lançamento.");
-}
-
-async function excluirLancamento(id) {
-  if (!confirm("Deseja excluir este lançamento?")) return;
-
-  try {
-    await apiPost({
-      action: "delete_lancamento",
-      id
-    });
-
-    if (LANC_EDIT_ID === id) limparFormLancamento();
-    await carregarTudoCustoFilial();
-    mostrarStatus("Lançamento excluído com sucesso.");
-  } catch (err) {
-    console.error(err);
-    mostrarStatus(err.message, true);
-  }
-}
-
-function limparFormLancamento() {
-  LANC_EDIT_ID = "";
-
-  [
-    "lancData",
-    "lancFilial",
-    "lancFaturamento",
-    "lancToneladas",
-    "lancCusto",
-    "lancObservacao"
-  ].forEach(id => {
-    if ($(id)) $(id).value = "";
-  });
-}
-
-function renderLancamentos() {
-  const tbody = $("tbodyLancamentos");
-  if (!tbody) return;
-
-  const lista = aplicarFiltroLista(LANCAMENTOS)
-    .slice()
-    .sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
-
-  if (!lista.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="9">Nenhum lançamento encontrado.</td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = lista.map(item => `
-    <tr>
-      <td>${formatarDataISOparaBR(item.data)}</td>
-      <td>${escapeHtml(item.filial)}</td>
-      <td>${escapeHtml(item.ano)}</td>
-      <td>${escapeHtml(item.mes)}</td>
-      <td>${moedaBR(item.faturamento)}</td>
-      <td>${numeroBR(item.toneladas)}</td>
-      <td>${moedaBR(item.custo)}</td>
-      <td>${escapeHtml(item.observacao)}</td>
-      <td>
-        <button type="button" onclick="editarLancamento('${String(item.id)}')">Editar</button>
-        <button type="button" onclick="excluirLancamento('${String(item.id)}')">Excluir</button>
-      </td>
-    </tr>
-  `).join("");
 }
 
 // ==========================================
-// RESUMO
+// RENDER GERAL
 // ==========================================
 
-function renderResumo() {
-  const lista = aplicarFiltroLista(LANCAMENTOS);
-
-  const totalFat = lista.reduce((s, x) => s + Number(x.faturamento || 0), 0);
-  const totalTon = lista.reduce((s, x) => s + Number(x.toneladas || 0), 0);
-  const totalCusto = lista.reduce((s, x) => s + Number(x.custo || 0), 0);
-  const custoPorTon = totalTon > 0 ? totalCusto / totalTon : 0;
-
-  if ($("resumoFaturamento")) $("resumoFaturamento").textContent = moedaBR(totalFat);
-  if ($("resumoToneladas")) $("resumoToneladas").textContent = numeroBR(totalTon);
-  if ($("resumoCusto")) $("resumoCusto").textContent = moedaBR(totalCusto);
-  if ($("resumoCustoTon")) $("resumoCustoTon").textContent = moedaBR(custoPorTon);
+function renderTudo() {
+  const lista = agruparPainelFiliais();
+  renderKPIs(lista);
+  renderAlertas(lista);
+  renderRanking(lista);
+  renderGraficos(lista);
 }
 
 // ==========================================
 // EVENTOS
 // ==========================================
 
-function bindEventosCustoFilial() {
-  if ($("btnSalvarMeta")) {
-    $("btnSalvarMeta").addEventListener("click", salvarMeta);
+function bindEventos() {
+  if ($("btnNovaMeta")) {
+    $("btnNovaMeta").addEventListener("click", () => {
+      limparModalMeta();
+      abrirModal("modalMeta");
+    });
   }
 
-  if ($("btnLimparMeta")) {
-    $("btnLimparMeta").addEventListener("click", limparFormMeta);
+  if ($("btnNovoLancamento")) {
+    $("btnNovoLancamento").addEventListener("click", () => {
+      limparModalLanc();
+      abrirModal("modalLanc");
+    });
+  }
+
+  if ($("btnAtualizar")) {
+    $("btnAtualizar").addEventListener("click", carregarDados);
+  }
+
+  if ($("btnSalvarMeta")) {
+    $("btnSalvarMeta").addEventListener("click", salvarMeta);
   }
 
   if ($("btnSalvarLancamento")) {
     $("btnSalvarLancamento").addEventListener("click", salvarLancamento);
   }
 
-  if ($("btnLimparLancamento")) {
-    $("btnLimparLancamento").addEventListener("click", limparFormLancamento);
-  }
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-close");
+      fecharModal(id);
+    });
+  });
 
-  ["filtroFilial", "filtroAno", "filtroMes"].forEach(id => {
-    if ($(id)) {
-      $(id).addEventListener("change", () => {
-        renderMetas();
-        renderLancamentos();
-        renderResumo();
-      });
-    }
+  document.querySelectorAll(".modal").forEach(modal => {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("isOpen");
+        modal.setAttribute("aria-hidden", "true");
+      }
+    });
   });
 }
 
@@ -507,6 +727,9 @@ function bindEventosCustoFilial() {
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-  bindEventosCustoFilial();
-  await carregarTudoCustoFilial();
+  bindEventos();
+  await carregarDados();
 });
+
+// expõe para uso inline no ranking
+window.abrirMetaPorFilial = abrirMetaPorFilial;

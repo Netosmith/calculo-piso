@@ -1,7 +1,7 @@
 // ==========================================
 // CUSTO / FILIAL - NOVA FROTA
-// HOME = dashboards + gráficos
-// META e LANÇAMENTO = painéis separados
+// Ajustado para o HTML atual
+// Home + painel Meta + painel Lançamento
 // ==========================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycbysHSesum5p9FfIA6UY5cQbfzGGIbj-b_ml5vNb_NZsOFMPmzMzW65FRByvNqSML6me/exec";
@@ -171,32 +171,6 @@ function getFiltroAnoMes() {
 }
 
 // ==========================================
-// MODAIS / PAINÉIS
-// ==========================================
-
-function openModal(id) {
-  const el = $(id);
-  if (!el) return;
-  el.classList.add("isOpen");
-  el.setAttribute("aria-hidden", "false");
-}
-
-function closeModal(id) {
-  const el = $(id);
-  if (!el) return;
-  el.classList.remove("isOpen");
-  el.setAttribute("aria-hidden", "true");
-}
-
-function closeAllModals() {
-  const list = document.querySelectorAll(".modal");
-  list.forEach((el) => {
-    el.classList.remove("isOpen");
-    el.setAttribute("aria-hidden", "true");
-  });
-}
-
-// ==========================================
 // API
 // ==========================================
 
@@ -323,6 +297,44 @@ async function loadAll() {
 }
 
 // ==========================================
+// TABS / PAINÉIS
+// ==========================================
+
+function ativarPainel(tipo) {
+  const isMeta = tipo === "meta";
+
+  const tabMeta = $("tabMeta");
+  const tabLanc = $("tabLancamento");
+  const panelMeta = $("panelMeta");
+  const panelLanc = $("panelLancamento");
+
+  if (tabMeta) tabMeta.classList.toggle("active", isMeta);
+  if (tabLanc) tabLanc.classList.toggle("active", !isMeta);
+
+  if (tabMeta) {
+    tabMeta.classList.toggle("meta", true);
+    if (!isMeta) tabMeta.classList.remove("lanc");
+  }
+
+  if (tabLanc) {
+    tabLanc.classList.toggle("lanc", !isMeta);
+    if (isMeta) tabLanc.classList.remove("active");
+  }
+
+  if (panelMeta) panelMeta.classList.toggle("active", isMeta);
+  if (panelLanc) panelLanc.classList.toggle("active", !isMeta);
+}
+
+function irParaPainel(tipo) {
+  ativarPainel(tipo);
+
+  const alvo = tipo === "meta" ? $("panelMeta") : $("panelLancamento");
+  if (alvo) {
+    alvo.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// ==========================================
 // FILTROS
 // ==========================================
 
@@ -440,10 +452,13 @@ function montarBaseHome() {
     let nivel = "warn";
     let tendencia = "ATENÇÃO";
 
-    if ((x.metaMesFat > 0 && projFat >= x.metaMesFat) || (x.metaMesTon > 0 && projTon >= x.metaMesTon)) {
+    const bateFat = x.metaMesFat > 0 ? projFat >= x.metaMesFat : false;
+    const bateTon = x.metaMesTon > 0 ? projTon >= x.metaMesTon : false;
+
+    if (bateFat || bateTon) {
       nivel = "ok";
       tendencia = "POSITIVA";
-    } else if ((pctFat < 50 && x.metaMesFat > 0) || (pctTon < 50 && x.metaMesTon > 0)) {
+    } else if ((x.metaMesFat > 0 && pctFat < 50) || (x.metaMesTon > 0 && pctTon < 50)) {
       nivel = "bad";
       tendencia = "NEGATIVA";
     }
@@ -475,7 +490,6 @@ function montarBaseHome() {
 
 function renderHome() {
   const base = montarBaseHome();
-
   renderKPIs(base);
   renderAlertas(base);
   renderRanking(base);
@@ -488,12 +502,10 @@ function renderKPIs(base) {
   const totalCusto = base.reduce((s, x) => s + x.custo, 0);
   const custoTon = totalTon > 0 ? totalCusto / totalTon : 0;
   const filiais = base.length;
-  const batendo = base.filter((x) => x.nivel === "ok").length;
 
   setText("kpiFiliais", String(filiais));
   setText("kpiFatReal", brl(totalFat));
   setText("kpiTonReal", tons(totalTon));
-  setText("kpiMetaBatida", String(batendo));
   setText("kpiCustoTon", brl(custoTon));
 }
 
@@ -507,7 +519,8 @@ function renderAlertas(base) {
   }
 
   box.innerHTML = base.slice(0, 10).map((x) => {
-    return `<div class="alertItem ${x.nivel}">${escapeHtml(x.filial)} • ${escapeHtml(x.tendencia)}</div>`;
+    const detalhe = `Fat ${pct(x.pctFat)} • Ton ${pct(x.pctTon)}`;
+    return `<div class="alertItem ${x.nivel}">${escapeHtml(x.filial)} • ${escapeHtml(x.tendencia)} • ${detalhe}</div>`;
   }).join("");
 }
 
@@ -551,13 +564,10 @@ function renderCharts(base) {
   if (typeof Chart === "undefined") return;
 
   const labels = base.map((x) => x.filial);
-
   const fatMeta = base.map((x) => x.metaMesFat);
   const fatReal = base.map((x) => x.realFat);
-
   const tonMeta = base.map((x) => x.metaMesTon);
   const tonReal = base.map((x) => x.realTon);
-
   const projMeta = base.map((x) => x.metaMesFat);
   const projReal = base.map((x) => x.projFat);
 
@@ -772,9 +782,9 @@ async function salvarMeta() {
       setStatus("✅ Meta salva com sucesso.");
     }
 
-    STATE.filtroFilial = "";
     await loadAll();
     renderMetaTable();
+    ativarPainel("meta");
   } catch (err) {
     console.error(err);
     setStatus(`❌ ${err.message}`, true);
@@ -799,14 +809,14 @@ function renderMetaTable() {
       <td>${escapeHtml(x.filial)}</td>
       <td>${x.ano}</td>
       <td>${x.mes}</td>
-      <td>${num(x.metaDiaFat).toLocaleString("pt-BR")}</td>
-      <td>${num(x.metaMesFat).toLocaleString("pt-BR")}</td>
-      <td>${num(x.metaAnoFat).toLocaleString("pt-BR")}</td>
-      <td>${num(x.metaDiaTon).toLocaleString("pt-BR")}</td>
-      <td>${num(x.metaMesTon).toLocaleString("pt-BR")}</td>
-      <td>${num(x.metaAnoTon).toLocaleString("pt-BR")}</td>
+      <td class="num">${num(x.metaDiaFat).toLocaleString("pt-BR")}</td>
+      <td class="num">${num(x.metaMesFat).toLocaleString("pt-BR")}</td>
+      <td class="num">${num(x.metaAnoFat).toLocaleString("pt-BR")}</td>
+      <td class="num">${num(x.metaDiaTon).toLocaleString("pt-BR")}</td>
+      <td class="num">${num(x.metaMesTon).toLocaleString("pt-BR")}</td>
+      <td class="num">${num(x.metaAnoTon).toLocaleString("pt-BR")}</td>
       <td>
-        <button type="button" onclick="editarMetaById('${x.id}')">Editar</button>
+        <button class="miniBtn edit" type="button" onclick="editarMetaById('${x.id}')">Editar</button>
       </td>
     </tr>
   `).join("");
@@ -827,7 +837,9 @@ function editarMetaById(id) {
   setValue("metaMesTon", x.metaMesTon);
   setValue("metaAnoTon", x.metaAnoTon);
 
-  openModal("modalMeta");
+  ativarPainel("meta");
+  const panel = $("panelMeta");
+  if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // ==========================================
@@ -875,8 +887,8 @@ async function salvarLancamento() {
     setStatus("✅ Lançamento salvo com sucesso.");
     await loadAll();
     renderLancamentosTable();
-    closeModal("modalLanc");
     limparFormLancamento();
+    ativarPainel("lanc");
   } catch (err) {
     console.error(err);
     setStatus(`❌ ${err.message}`, true);
@@ -892,7 +904,7 @@ function renderLancamentosTable() {
     .sort((a, b) => String(b.data).localeCompare(String(a.data)));
 
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="emptyState">Nenhum lançamento cadastrado para o período.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="emptyState">Nenhum lançamento cadastrado para o período.</td></tr>`;
     return;
   }
 
@@ -900,11 +912,13 @@ function renderLancamentosTable() {
     <tr>
       <td>${formatDateBR(x.data)}</td>
       <td>${escapeHtml(x.filial)}</td>
-      <td>${brl(x.faturamento)}</td>
-      <td>${tons(x.toneladas)}</td>
-      <td>${brl(x.custo)}</td>
+      <td>${x.ano}</td>
+      <td>${x.mes}</td>
+      <td class="num">${brl(x.faturamento)}</td>
+      <td class="num">${tons(x.toneladas)}</td>
+      <td class="num">${brl(x.custo)}</td>
       <td>${escapeHtml(x.observacao || "-")}</td>
-      <td>${x.ano}/${x.mes}</td>
+      <td>-</td>
     </tr>
   `).join("");
 }
@@ -913,55 +927,33 @@ function renderLancamentosTable() {
 // EVENTOS
 // ==========================================
 
-function bindModalEvents() {
-  document.querySelectorAll("[data-close]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-close");
-      if (id) closeModal(id);
-    });
-  });
-
-  document.querySelectorAll(".modal").forEach((modal) => {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal(modal.id);
-    });
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAllModals();
-  });
-}
-
 function bindHeaderButtons() {
-  $("btnNovaMeta")?.addEventListener("click", () => {
-    limparFormMeta();
-    openModal("modalMeta");
-    setTimeout(() => $("metaFilial")?.focus(), 30);
+  $("btnIrMeta")?.addEventListener("click", () => {
+    irParaPainel("meta");
   });
 
-  $("btnNovoLancamento")?.addEventListener("click", () => {
-    limparFormLancamento();
-    openModal("modalLanc");
-    setTimeout(() => $("lancFilial")?.focus(), 30);
+  $("btnIrLancamento")?.addEventListener("click", () => {
+    irParaPainel("lanc");
   });
 
   $("btnAtualizar")?.addEventListener("click", () => {
     loadAll();
   });
+}
 
-  $("btnSalvarMeta")?.addEventListener("click", salvarMeta);
-  $("btnLimparMeta")?.addEventListener("click", limparFormMeta);
+function bindTabs() {
+  $("tabMeta")?.addEventListener("click", () => {
+    ativarPainel("meta");
+  });
 
-  $("btnSalvarLancamento")?.addEventListener("click", salvarLancamento);
-  $("btnLimparLancamento")?.addEventListener("click", limparFormLancamento);
+  $("tabLancamento")?.addEventListener("click", () => {
+    ativarPainel("lanc");
+  });
 }
 
 function bindFiltros() {
   $("filtroFilial")?.addEventListener("change", (e) => {
     STATE.filtroFilial = upper(e.target.value || "");
-    renderHome();
-    renderMetaTable();
-    renderLancamentosTable();
   });
 
   $("filtroAno")?.addEventListener("input", (e) => {
@@ -994,10 +986,18 @@ function bindFiltros() {
   });
 }
 
-function bindMetaHelpers() {
+function bindMetaEvents() {
+  $("btnSalvarMeta")?.addEventListener("click", salvarMeta);
+  $("btnLimparMeta")?.addEventListener("click", limparFormMeta);
+
   $("metaFilial")?.addEventListener("blur", preencherMetaExistenteSeHouver);
   $("metaAno")?.addEventListener("blur", preencherMetaExistenteSeHouver);
   $("metaMes")?.addEventListener("blur", preencherMetaExistenteSeHouver);
+}
+
+function bindLancamentoEvents() {
+  $("btnSalvarLancamento")?.addEventListener("click", salvarLancamento);
+  $("btnLimparLancamento")?.addEventListener("click", limparFormLancamento);
 }
 
 // ==========================================
@@ -1006,10 +1006,11 @@ function bindMetaHelpers() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    bindModalEvents();
     bindHeaderButtons();
+    bindTabs();
     bindFiltros();
-    bindMetaHelpers();
+    bindMetaEvents();
+    bindLancamentoEvents();
 
     const am = getAnoMesAtual();
     STATE.filtroAno = String(am.ano);
@@ -1020,6 +1021,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     limparFormMeta();
     limparFormLancamento();
+
+    ativarPainel("meta");
 
     renderHome();
     renderMetaTable();

@@ -25,6 +25,15 @@ const STATE = {
   editLancId: ""
 };
 
+const FILIAIS_FIXAS = [
+  "RIO VERDE",
+  "JATAI",
+  "MINEIROS",
+  "SAO SIMAO",
+  "CHAPADAO DO CEU",
+  "MONTIVIDIU"
+];
+
 // ==========================================
 // HELPERS
 // ==========================================
@@ -336,35 +345,32 @@ function irParaPainel(tipo) {
 // ==========================================
 
 function getFiliaisOrdenadas() {
-  const set = new Set();
-
-  DB.metas.forEach((x) => {
-    if (x.filial) set.add(x.filial);
-  });
-
-  DB.lancamentos.forEach((x) => {
-    if (x.filial) set.add(x.filial);
-  });
-
-  return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  return [...FILIAIS_FIXAS].sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 function preencherFiltroFilial() {
-  const sel = $("filtroFilial");
-  if (!sel) return;
+  preencherSelectFilial("filtroFilial", "Todas");
+  preencherSelectFilial("metaFilial", "Selecione a filial");
+  preencherSelectFilial("lancFilial", "Selecione a filial");
 
-  const atual = STATE.filtroFilial || "";
-  const filiais = getFiliaisOrdenadas();
+  const filtro = $("filtroFilial");
+  if (filtro) {
+    if (STATE.filtroFilial && FILIAIS_FIXAS.includes(STATE.filtroFilial)) {
+      filtro.value = STATE.filtroFilial;
+    } else {
+      filtro.value = "";
+      STATE.filtroFilial = "";
+    }
+  }
 
-  sel.innerHTML =
-    `<option value="">Todas</option>` +
-    filiais.map((f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
+  const meta = $("metaFilial");
+  if (meta && STATE.filtroFilial && FILIAIS_FIXAS.includes(STATE.filtroFilial)) {
+    meta.value = STATE.filtroFilial;
+  }
 
-  if (filiais.includes(atual)) {
-    sel.value = atual;
-  } else {
-    sel.value = "";
-    STATE.filtroFilial = "";
+  const lanc = $("lancFilial");
+  if (lanc && STATE.filtroFilial && FILIAIS_FIXAS.includes(STATE.filtroFilial)) {
+    lanc.value = STATE.filtroFilial;
   }
 }
 
@@ -390,6 +396,21 @@ function aplicarFiltrosLancamento(lista) {
   });
 }
 
+function preencherSelectFilial(id, placeholder = "Selecione a filial") {
+  const sel = $(id);
+  if (!sel) return;
+
+  const atual = onlyText(sel.value || "");
+  const filiais = getFiliaisOrdenadas();
+
+  sel.innerHTML =
+    `<option value="">${placeholder}</option>` +
+    filiais.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
+
+  if (filiais.includes(atual)) {
+    sel.value = atual;
+  }
+}
 // ==========================================
 // AGREGAÇÃO HOME
 // ==========================================

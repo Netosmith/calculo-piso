@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const API = "https://script.google.com/macros/s/AKfycbw7JzUswFUn76uHvT-hkrOroGfb35lnQDWkz4nTDoyQschtBta-fDAYAYQeTNkVAKxN/exec";
+  const API = "https://script.google.com/macros/s/AKfycbwyvX-Yw6qvMKZmo0UPB54w13ULUQDo6DG4qMYLSjx3boiaQWTMcaExR0qMf_Y29qtI/exec";
   const $ = (id) => document.getElementById(id);
 
   const STATE = {

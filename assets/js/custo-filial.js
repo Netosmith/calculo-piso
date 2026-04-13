@@ -326,12 +326,9 @@ function ativarPainel(tipo) {
 }
 
 function irParaPainel(tipo) {
+  const overlay = $("crudOverlay");
+  if (overlay) overlay.classList.add("active");
   ativarPainel(tipo);
-
-  const alvo = tipo === "meta" ? $("panelMeta") : $("panelLancamento");
-  if (alvo) {
-    alvo.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 }
 
 // ==========================================
@@ -1021,8 +1018,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     limparFormMeta();
     limparFormLancamento();
-
-    ativarPainel("meta");
 
     renderHome();
     renderMetaTable();

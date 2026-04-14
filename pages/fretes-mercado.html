@@ -1,88 +1,265 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<title>Fretes Mercado</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fretes Mercado | NOVA FROTA</title>
 
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-<style>
-body{background:#0f172a;color:#fff;font-family:Arial}
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:rgba(255,255,255,.08);
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --green:#22c55e;
+      --red:#ef4444;
+      --blue:#3b82f6;
+      --shadow:0 12px 32px rgba(0,0,0,.28);
+      --radius:18px;
+    }
 
-.container{padding:20px}
+    *{ box-sizing:border-box; }
 
-.header{
-display:flex;
-justify-content:space-between;
-margin-bottom:10px;
-}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Arial, sans-serif;
+    }
 
-button{
-padding:8px 14px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-font-weight:bold;
-}
+    .container{
+      padding:20px;
+      max-width:100%;
+    }
 
-.btn-save{background:#22c55e}
-.btn-clear{background:#ef4444}
-.btn-print{background:#3b82f6}
+    .pageHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
 
-.table{
-display:flex;
-gap:10px;
-overflow-x:auto;
-}
+    .titleWrap{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
 
-.regiao{
-background:#1e293b;
-border-radius:10px;
-padding:10px;
-min-width:260px;
-}
+    .titleLogo{
+      height:44px;
+      width:auto;
+      object-fit:contain;
+      filter:drop-shadow(0 6px 18px rgba(0,0,0,.22));
+    }
 
-.regiao h3{
-text-align:center;
-margin-bottom:8px;
-}
+    .pageHeader h1{
+      margin:0;
+      font-size:24px;
+      font-weight:1000;
+      letter-spacing:.02em;
+    }
 
-.row{
-display:grid;
-grid-template-columns:1fr 1fr 1fr;
-gap:4px;
-margin-bottom:4px;
-}
+    .headerActions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
 
-input,select{
-width:100%;
-padding:4px;
-background:#0f172a;
-color:#fff;
-border:1px solid rgba(255,255,255,.1);
-}
-</style>
+    .btnAction{
+      padding:10px 16px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:900;
+      color:#fff;
+      box-shadow:var(--shadow);
+      transition:transform .12s ease, filter .12s ease;
+    }
+
+    .btnAction:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.05);
+    }
+
+    .btnAction.green{ background:linear-gradient(135deg,#16a34a,#22c55e); }
+    .btnAction.red{ background:linear-gradient(135deg,#dc2626,#ef4444); }
+    .btnAction.blue{ background:linear-gradient(135deg,#2563eb,#3b82f6); }
+
+    .statusBar{
+      margin-bottom:14px;
+      font-size:13px;
+      font-weight:900;
+      color:#93c5fd;
+    }
+
+    .table{
+      display:flex;
+      gap:12px;
+      overflow-x:auto;
+      padding-bottom:10px;
+    }
+
+    .regiao{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      min-width:320px;
+      box-shadow:var(--shadow);
+      flex:0 0 auto;
+    }
+
+    .regiao h3{
+      text-align:center;
+      margin:0 0 10px;
+      font-size:18px;
+      font-weight:1000;
+      letter-spacing:.02em;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:6px;
+      margin-bottom:6px;
+      align-items:center;
+    }
+
+    .row.header{
+      margin-bottom:8px;
+    }
+
+    .row.header b{
+      font-size:11px;
+      text-transform:uppercase;
+      color:#cbd5e1;
+      letter-spacing:.05em;
+    }
+
+    input{
+      width:100%;
+      padding:8px 10px;
+      background:#0f172a;
+      color:#fff;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:8px;
+      outline:none;
+      min-height:38px;
+    }
+
+    input[readonly]{
+      opacity:1;
+      background:#0b1327;
+      color:#fff;
+    }
+
+    .baseInput{
+      font-weight:700;
+    }
+
+    .freteInput{
+      text-align:right;
+    }
+
+    @media (max-width: 768px){
+      .pageHeader{
+        align-items:flex-start;
+      }
+
+      .pageHeader h1{
+        font-size:22px;
+      }
+
+      .regiao{
+        min-width:290px;
+      }
+    }
+
+    @media print{
+      body{
+        background:#fff;
+        color:#000;
+      }
+
+      .topbar,
+      .headerActions,
+      .statusBar{
+        display:none !important;
+      }
+
+      .container{
+        padding:0;
+      }
+
+      .table{
+        display:block;
+        overflow:visible;
+      }
+
+      .regiao{
+        break-inside:avoid;
+        page-break-inside:avoid;
+        margin-bottom:12px;
+        color:#000;
+        background:#fff;
+        box-shadow:none;
+        border:1px solid #ddd;
+      }
+
+      input{
+        color:#000;
+        background:#fff;
+        border:1px solid #ccc;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <button id="btnHomeMercado" class="burger" type="button" title="Home">🏠</button>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+      </div>
 
-<div class="container">
+      <div class="actions">
+        <button id="btnSairMercado" class="icon-btn" type="button">SAIR</button>
+      </div>
+    </div>
+  </div>
 
-<div class="header">
-<h2>FRETES MERCADO</h2>
+  <div class="container">
+    <div class="pageHeader">
+      <div class="titleWrap">
+        <img src="../assets/img/logo-novafrota.png" alt="Logo Nova Frota" class="titleLogo">
+        <h1>FRETES MERCADO</h1>
+      </div>
 
-<div>
-<button class="btn-save" onclick="salvar()">Salvar</button>
-<button class="btn-clear" onclick="zerar()">Zerar</button>
-<button class="btn-print" onclick="printTela()">Print</button>
-</div>
-</div>
+      <div class="headerActions">
+        <button id="btnSalvarMercado" class="btnAction green" type="button">Salvar</button>
+        <button id="btnZerarMercado" class="btnAction red" type="button">Zerar</button>
+        <button id="btnPrintMercado" class="btnAction blue" type="button">Print</button>
+      </div>
+    </div>
 
-<div id="tabela" class="table"></div>
+    <div id="statusMercado" class="statusBar">🔄 Carregando...</div>
 
-</div>
+    <div id="tabela" class="table"></div>
+  </div>
 
-<script src="../assets/js/fretes-mercado.js"></script>
-
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/fretes-mercado.js"></script>
+  <script>
+    requireHomeAuth();
+    bindLogoutButton();
+  </script>
 </body>
 </html>

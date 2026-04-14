@@ -32,7 +32,7 @@
     }
 
     .container{
-      padding:20px;
+      padding:16px;
       max-width:100%;
     }
 
@@ -42,7 +42,7 @@
       justify-content:space-between;
       gap:16px;
       flex-wrap:wrap;
-      margin-bottom:14px;
+      margin-bottom:12px;
     }
 
     .titleWrap{
@@ -53,7 +53,7 @@
     }
 
     .titleLogo{
-      height:44px;
+      height:38px;
       width:auto;
       object-fit:contain;
       filter:drop-shadow(0 6px 18px rgba(0,0,0,.22));
@@ -61,7 +61,7 @@
 
     .pageHeader h1{
       margin:0;
-      font-size:24px;
+      font-size:20px;
       font-weight:1000;
       letter-spacing:.02em;
     }
@@ -100,10 +100,10 @@
     }
 
     .table{
-      display:flex;
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
       gap:12px;
-      overflow-x:auto;
-      padding-bottom:10px;
+      align-items:start;
     }
 
     .regiao{
@@ -111,15 +111,14 @@
       border:1px solid var(--line);
       border-radius:16px;
       padding:12px;
-      min-width:320px;
+      min-width:0;
       box-shadow:var(--shadow);
-      flex:0 0 auto;
     }
 
     .regiao h3{
       text-align:center;
       margin:0 0 10px;
-      font-size:18px;
+      font-size:16px;
       font-weight:1000;
       letter-spacing:.02em;
     }
@@ -127,8 +126,8 @@
     .row{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:6px;
-      margin-bottom:6px;
+      gap:8px;
+      margin-bottom:8px;
       align-items:center;
     }
 
@@ -149,9 +148,9 @@
       background:#0f172a;
       color:#fff;
       border:1px solid rgba(255,255,255,.10);
-      border-radius:8px;
+      border-radius:10px;
       outline:none;
-      min-height:38px;
+      min-height:40px;
     }
 
     input[readonly]{
@@ -161,24 +160,24 @@
     }
 
     .baseInput{
-      font-weight:700;
+      font-weight:900;
     }
 
     .freteInput{
       text-align:right;
     }
 
-    @media (max-width: 768px){
+    @media (max-width: 900px){
       .pageHeader{
         align-items:flex-start;
       }
 
       .pageHeader h1{
-        font-size:22px;
+        font-size:18px;
       }
 
-      .regiao{
-        min-width:290px;
+      .table{
+        grid-template-columns:1fr;
       }
     }
 
@@ -200,7 +199,6 @@
 
       .table{
         display:block;
-        overflow:visible;
       }
 
       .regiao{

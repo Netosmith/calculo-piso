@@ -64,6 +64,30 @@ function setStatus(msg, isError = false) {
   el.style.color = isError ? "#fca5a5" : "#93c5fd";
 }
 
+function setButtonLoading(id, loadingText = "Salvando...") {
+  const btn = $(id);
+  if (!btn) return;
+
+  if (!btn.dataset.originalText) {
+    btn.dataset.originalText = btn.textContent;
+  }
+
+  btn.textContent = loadingText;
+  btn.disabled = true;
+  btn.style.opacity = "0.7";
+  btn.style.cursor = "wait";
+}
+
+function resetButtonLoading(id) {
+  const btn = $(id);
+  if (!btn) return;
+
+  btn.textContent = btn.dataset.originalText || btn.textContent;
+  btn.disabled = false;
+  btn.style.opacity = "";
+  btn.style.cursor = "";
+}
+
 function onlyText(v) {
   return String(v == null ? "" : v).trim();
 }
@@ -411,6 +435,7 @@ function preencherSelectFilial(id, placeholder = "Selecione a filial") {
     sel.value = atual;
   }
 }
+
 // ==========================================
 // AGREGAÇÃO HOME
 // ==========================================
@@ -757,6 +782,8 @@ function preencherMetaExistenteSeHouver() {
 }
 
 async function salvarMeta() {
+  setButtonLoading("btnSalvarMeta", "Salvando...");
+
   try {
     const payload = {
       filial: upper(getValue("metaFilial")),
@@ -806,6 +833,8 @@ async function salvarMeta() {
   } catch (err) {
     console.error(err);
     setStatus(`❌ ${err.message}`, true);
+  } finally {
+    resetButtonLoading("btnSalvarMeta");
   }
 }
 
@@ -881,6 +910,8 @@ function limparFormLancamento() {
 }
 
 async function salvarLancamento() {
+  setButtonLoading("btnSalvarLancamento", "Salvando...");
+
   try {
     const payload = {
       filial: upper(getValue("lancFilial")),
@@ -910,6 +941,8 @@ async function salvarLancamento() {
   } catch (err) {
     console.error(err);
     setStatus(`❌ ${err.message}`, true);
+  } finally {
+    resetButtonLoading("btnSalvarLancamento");
   }
 }
 
@@ -1008,7 +1041,7 @@ function bindMetaEvents() {
   $("btnSalvarMeta")?.addEventListener("click", salvarMeta);
   $("btnLimparMeta")?.addEventListener("click", limparFormMeta);
 
-  $("metaFilial")?.addEventListener("blur", preencherMetaExistenteSeHouver);
+  $("metaFilial")?.addEventListener("change", preencherMetaExistenteSeHouver);
   $("metaAno")?.addEventListener("blur", preencherMetaExistenteSeHouver);
   $("metaMes")?.addEventListener("blur", preencherMetaExistenteSeHouver);
 }

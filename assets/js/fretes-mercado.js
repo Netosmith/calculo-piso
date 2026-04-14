@@ -12,7 +12,7 @@ const REGIOES = {
   "SAO SIMAO": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"]
 };
 
-const API = "https://script.google.com/macros/s/AKfycbwyvX-Yw6qvMKZmo0UPB54w13ULUQDo6DG4qMYLSjx3boiaQWTMcaExR0qMf_Y29qtI/exec";
+const API = "https://script.google.com/macros/s/AKfycbx6dBok-h7P9ktdNIsOrzPJGczrx8HTeIPh2kMAQ76NqDhSbx3YcBDxgdOiCv4-dTf6/exec";
 
 // guarda os ids/linhas alteradas
 const DIRTY_KEYS = new Set();

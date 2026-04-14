@@ -18,21 +18,25 @@
       --green:#22c55e;
       --red:#ef4444;
       --blue:#3b82f6;
-      --shadow:0 12px 32px rgba(0,0,0,.28);
-      --radius:18px;
+      --shadow:0 10px 24px rgba(0,0,0,.24);
+      --radius:14px;
     }
 
     *{ box-sizing:border-box; }
 
-    body{
+    html, body{
       margin:0;
       background:var(--bg);
       color:var(--text);
       font-family:Arial, sans-serif;
     }
 
+    body{
+      overflow-x:hidden;
+    }
+
     .container{
-      padding:16px;
+      padding:12px;
       max-width:100%;
     }
 
@@ -40,44 +44,45 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:16px;
+      gap:12px;
       flex-wrap:wrap;
-      margin-bottom:12px;
+      margin-bottom:8px;
     }
 
     .titleWrap{
       display:flex;
       align-items:center;
-      gap:14px;
+      gap:10px;
       flex-wrap:wrap;
     }
 
     .titleLogo{
-      height:38px;
+      height:30px;
       width:auto;
       object-fit:contain;
-      filter:drop-shadow(0 6px 18px rgba(0,0,0,.22));
+      filter:drop-shadow(0 4px 12px rgba(0,0,0,.20));
     }
 
     .pageHeader h1{
       margin:0;
-      font-size:20px;
+      font-size:16px;
       font-weight:1000;
       letter-spacing:.02em;
     }
 
     .headerActions{
       display:flex;
-      gap:10px;
+      gap:8px;
       flex-wrap:wrap;
     }
 
     .btnAction{
-      padding:10px 16px;
+      padding:8px 14px;
       border:none;
       border-radius:10px;
       cursor:pointer;
       font-weight:900;
+      font-size:12px;
       color:#fff;
       box-shadow:var(--shadow);
       transition:transform .12s ease, filter .12s ease;
@@ -93,64 +98,78 @@
     .btnAction.blue{ background:linear-gradient(135deg,#2563eb,#3b82f6); }
 
     .statusBar{
-      margin-bottom:14px;
-      font-size:13px;
+      margin-bottom:10px;
+      font-size:11px;
       font-weight:900;
       color:#93c5fd;
     }
 
     .table{
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
-      gap:12px;
-      align-items:start;
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding-bottom:6px;
+      scroll-behavior:smooth;
+    }
+
+    .table::-webkit-scrollbar{
+      height:8px;
+    }
+
+    .table::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,.18);
+      border-radius:999px;
     }
 
     .regiao{
       background:var(--card);
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:12px;
-      min-width:0;
+      border-radius:12px;
+      padding:8px;
+      min-width:210px;
+      width:210px;
       box-shadow:var(--shadow);
+      flex:0 0 210px;
     }
 
     .regiao h3{
       text-align:center;
-      margin:0 0 10px;
-      font-size:16px;
+      margin:0 0 8px;
+      font-size:12px;
       font-weight:1000;
-      letter-spacing:.02em;
+      letter-spacing:.01em;
     }
 
     .row{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:8px;
-      margin-bottom:8px;
+      gap:6px;
+      margin-bottom:6px;
       align-items:center;
     }
 
     .row.header{
-      margin-bottom:8px;
+      margin-bottom:6px;
     }
 
     .row.header b{
-      font-size:11px;
+      font-size:9px;
       text-transform:uppercase;
       color:#cbd5e1;
-      letter-spacing:.05em;
+      letter-spacing:.04em;
     }
 
     input{
       width:100%;
-      padding:8px 10px;
+      padding:6px 8px;
       background:#0f172a;
       color:#fff;
       border:1px solid rgba(255,255,255,.10);
-      border-radius:10px;
+      border-radius:8px;
       outline:none;
-      min-height:40px;
+      min-height:30px;
+      font-size:10px;
     }
 
     input[readonly]{
@@ -160,11 +179,12 @@
     }
 
     .baseInput{
-      font-weight:900;
+      font-weight:800;
     }
 
     .freteInput{
       text-align:right;
+      font-size:10px;
     }
 
     @media (max-width: 900px){
@@ -173,18 +193,28 @@
       }
 
       .pageHeader h1{
-        font-size:18px;
+        font-size:15px;
       }
 
-      .table{
-        grid-template-columns:1fr;
+      .regiao{
+        min-width:190px;
+        width:190px;
+        flex-basis:190px;
       }
     }
 
+    @page{
+      size: A4 landscape;
+      margin: 6mm;
+    }
+
     @media print{
-      body{
-        background:#fff;
-        color:#000;
+      html, body{
+        background:#fff !important;
+        color:#000 !important;
+        width:297mm;
+        height:210mm;
+        overflow:hidden !important;
       }
 
       .topbar,
@@ -194,27 +224,70 @@
       }
 
       .container{
-        padding:0;
+        padding:0 !important;
+        width:100% !important;
+      }
+
+      .pageHeader{
+        margin-bottom:4mm !important;
+      }
+
+      .titleLogo{
+        height:22px !important;
+        filter:none !important;
+      }
+
+      .pageHeader h1{
+        font-size:14px !important;
+        color:#000 !important;
       }
 
       .table{
-        display:block;
+        display:flex !important;
+        gap:3mm !important;
+        overflow:visible !important;
+        align-items:flex-start !important;
+        width:100% !important;
+        transform:scale(.82);
+        transform-origin:top left;
       }
 
       .regiao{
         break-inside:avoid;
         page-break-inside:avoid;
-        margin-bottom:12px;
-        color:#000;
-        background:#fff;
-        box-shadow:none;
-        border:1px solid #ddd;
+        color:#000 !important;
+        background:#fff !important;
+        box-shadow:none !important;
+        border:1px solid #cfcfcf !important;
+        width:38mm !important;
+        min-width:38mm !important;
+        flex:0 0 38mm !important;
+        padding:2.5mm !important;
+      }
+
+      .regiao h3{
+        font-size:9px !important;
+        margin-bottom:2mm !important;
+        color:#000 !important;
+      }
+
+      .row{
+        gap:1.5mm !important;
+        margin-bottom:1.5mm !important;
+      }
+
+      .row.header b{
+        font-size:6.5px !important;
+        color:#000 !important;
       }
 
       input{
-        color:#000;
-        background:#fff;
-        border:1px solid #ccc;
+        color:#000 !important;
+        background:#fff !important;
+        border:1px solid #bbb !important;
+        min-height:7mm !important;
+        padding:1.2mm 1.6mm !important;
+        font-size:7px !important;
       }
     }
   </style>

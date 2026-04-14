@@ -4,7 +4,7 @@
 // Home + painel Meta + painel Lançamento
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwJZeF8KTtTeeoGVMi5_alv0UF3khZzsntOETsOU76-_oXzhpSbfPKzjRTPQN56YfuV/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx6dBok-h7P9ktdNIsOrzPJGczrx8HTeIPh2kMAQ76NqDhSbx3YcBDxgdOiCv4-dTf6/exec";
 
 let DB = {
   metas: [],

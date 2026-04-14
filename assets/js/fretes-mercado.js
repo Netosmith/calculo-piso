@@ -12,7 +12,10 @@ const REGIOES = {
   "SAO SIMAO": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"]
 };
 
-const API = "https://script.google.com/macros/s/AKfycbx6dBok-h7P9ktdNIsOrzPJGczrx8HTeIPh2kMAQ76NqDhSbx3YcBDxgdOiCv4-dTf6/exec";
+const API = "https://script.google.com/macros/s/AKfycbwyvX-Yw6qvMKZmo0UPB54w13ULUQDo6DG4qMYLSjx3boiaQWTMcaExR0qMf_Y29qtI/exec";
+
+// guarda os ids/linhas alteradas
+const DIRTY_KEYS = new Set();
 
 // ==========================================
 // HELPERS
@@ -31,14 +34,14 @@ function esc(str) {
     .replace(/'/g, "&#039;");
 }
 
-function num(v) {
+function toNumber(v) {
   if (v === null || v === undefined || v === "") return 0;
   if (typeof v === "number") return isFinite(v) ? v : 0;
 
   let s = String(v).trim();
   if (!s) return 0;
 
-  s = s.replace(/\s/g, "");
+  s = s.replace(/[^\d,.-]/g, "");
 
   if (s.includes(",") && s.includes(".")) {
     s = s.replace(/\./g, "").replace(",", ".");
@@ -48,6 +51,13 @@ function num(v) {
 
   const n = Number(s);
   return isFinite(n) ? n : 0;
+}
+
+function formatBRL(v) {
+  return Number(v || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }
 
 function setStatus(msg, isError = false) {
@@ -81,6 +91,10 @@ function resetButtonLoading(id) {
   btn.style.cursor = "";
 }
 
+function makeKey(regiao, base) {
+  return `${regiao}__${base}`;
+}
+
 // ==========================================
 // LOAD
 // ==========================================
@@ -96,6 +110,7 @@ async function load() {
     }
 
     const dados = json.data || [];
+    DIRTY_KEYS.clear();
     render(dados);
     setStatus("✅ Dados sincronizados.");
   } catch (err) {
@@ -124,6 +139,7 @@ function render(dados) {
 
         ${REGIOES[regiao].map((base) => {
           const item = dados.find(d => d.regiao === regiao && d.base === base) || {};
+          const valor = Number(item.frete || 0);
 
           return `
             <div class="row linha-frete"
@@ -132,12 +148,12 @@ function render(dados) {
                  data-id="${esc(item.id || "")}">
               <input value="${esc(base)}" readonly class="baseInput">
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                value="${item.frete || ""}"
+                type="text"
+                inputmode="decimal"
+                value="${valor ? formatBRL(valor) : ""}"
                 class="freteInput"
-                placeholder="0,00"
+                data-original="${valor}"
+                placeholder="R$ 0,00"
               >
             </div>
           `;
@@ -145,14 +161,53 @@ function render(dados) {
       </div>
     `;
   }).join("");
+
+  bindCurrencyInputs();
+}
+
+// ==========================================
+// INPUT DE MOEDA + DIRTY
+// ==========================================
+
+function bindCurrencyInputs() {
+  const inputs = document.querySelectorAll(".freteInput");
+
+  inputs.forEach((input) => {
+    input.addEventListener("focus", () => {
+      const n = toNumber(input.value);
+      input.value = n ? String(n).replace(".", ",") : "";
+    });
+
+    input.addEventListener("blur", () => {
+      const linha = input.closest(".linha-frete");
+      if (!linha) return;
+
+      const regiao = linha.dataset.regiao || "";
+      const base = linha.dataset.base || "";
+      const key = makeKey(regiao, base);
+
+      const valorAtual = toNumber(input.value);
+      const valorOriginal = Number(input.dataset.original || 0);
+
+      input.value = valorAtual ? formatBRL(valorAtual) : "";
+
+      if (valorAtual !== valorOriginal) {
+        DIRTY_KEYS.add(key);
+        linha.dataset.dirty = "1";
+      } else {
+        DIRTY_KEYS.delete(key);
+        linha.dataset.dirty = "";
+      }
+    });
+  });
 }
 
 // ==========================================
 // COLETAR DADOS
 // ==========================================
 
-function coletarDadosTela() {
-  const linhas = document.querySelectorAll(".linha-frete");
+function coletarDadosAlterados() {
+  const linhas = document.querySelectorAll('.linha-frete[data-dirty="1"]');
 
   return [...linhas].map((linha) => {
     const regiao = linha.dataset.regiao || "";
@@ -164,7 +219,8 @@ function coletarDadosTela() {
       id,
       regiao,
       base,
-      frete: num(freteEl ? freteEl.value : 0)
+      frete: toNumber(freteEl ? freteEl.value : 0),
+      linha
     };
   });
 }
@@ -177,10 +233,15 @@ async function salvarTudo() {
   setButtonLoading("btnSalvarMercado", "Salvando...");
 
   try {
-    const itens = coletarDadosTela();
+    const itens = coletarDadosAlterados();
+
+    if (!itens.length) {
+      setStatus("✅ Nenhuma alteração para salvar.");
+      return;
+    }
 
     for (const item of itens) {
-      await fetch(API, {
+      const res = await fetch(API, {
         method: "POST",
         headers: {
           "Content-Type": "text/plain;charset=utf-8"
@@ -193,13 +254,18 @@ async function salvarTudo() {
           frete: item.frete
         })
       });
+
+      const json = await res.json();
+      if (!json.ok) {
+        throw new Error(json.error || `Erro ao salvar ${item.regiao} / ${item.base}`);
+      }
     }
 
-    setStatus("✅ Fretes salvos com sucesso.");
+    setStatus(`✅ ${itens.length} alteração(ões) salva(s) com sucesso.`);
     await load();
   } catch (err) {
     console.error(err);
-    setStatus("❌ Erro ao salvar fretes.", true);
+    setStatus("❌ " + err.message, true);
   } finally {
     resetButtonLoading("btnSalvarMercado");
   }
@@ -219,6 +285,13 @@ async function zerarTudo() {
     const inputs = document.querySelectorAll(".freteInput");
     inputs.forEach((input) => {
       input.value = "";
+    });
+
+    const linhas = document.querySelectorAll(".linha-frete");
+    linhas.forEach((linha) => {
+      linha.dataset.dirty = "1";
+      const key = makeKey(linha.dataset.regiao || "", linha.dataset.base || "");
+      DIRTY_KEYS.add(key);
     });
 
     const res = await fetch(API + "?action=fretes_mercado_clear");

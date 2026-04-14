@@ -1,7 +1,7 @@
 // ==========================================
 // CUSTO / FILIAL - NOVA FROTA
-// Ajustado para o HTML atual
 // Home + painel Meta + painel Lançamento
+// B.I. Fretes embutido
 // ==========================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycbx6dBok-h7P9ktdNIsOrzPJGczrx8HTeIPh2kMAQ76NqDhSbx3YcBDxgdOiCv4-dTf6/exec";
@@ -33,6 +33,9 @@ const FILIAIS_FIXAS = [
   "CHAPADAO DO CEU",
   "MONTIVIDIU"
 ];
+
+const BI_PESO_MEDIO = 38;
+let BI_ROWS = [];
 
 // ==========================================
 // HELPERS
@@ -120,6 +123,17 @@ function brl(v) {
     style: "currency",
     currency: "BRL"
   });
+}
+
+function moneyBR(v) {
+  return (Number(v) || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function intBR(v) {
+  return (Number(v) || 0).toLocaleString("pt-BR");
 }
 
 function tons(v) {
@@ -297,9 +311,42 @@ function normalizarLancamento(x) {
   };
 }
 
+function normalizarFreteBI(r) {
+  return {
+    id: onlyText(r?.id),
+    regional: upper(r?.regional),
+    filial: upper(r?.filial),
+    cliente: upper(r?.cliente),
+    origem: upper(r?.origem),
+    coleta: upper(r?.coleta),
+    contato: upper(r?.contato),
+    destino: upper(r?.destino),
+    uf: upper(r?.uf),
+    descarga: upper(r?.descarga),
+    volume: num(r?.volume),
+    valorEmpresa: num(r?.valorEmpresa),
+    valorMotorista: num(r?.valorMotorista),
+    km: num(r?.km),
+    pedagioEixo: num(r?.pedagioEixo),
+    produto: upper(r?.produto),
+    icms: upper(r?.icms),
+    pedidoSat: onlyText(r?.pedidoSat),
+    porta: num(r?.porta),
+    transito: num(r?.transito),
+    status: upper(r?.status),
+    obs: onlyText(r?.obs)
+  };
+}
+
 // ==========================================
 // LOAD
 // ==========================================
+
+async function loadBiFretesData() {
+  const json = await apiGet("fretes_list");
+  const rows = Array.isArray(json.data) ? json.data : [];
+  BI_ROWS = rows.map(normalizarFreteBI);
+}
 
 async function loadAll() {
   try {
@@ -309,13 +356,17 @@ async function loadAll() {
       throw new Error("Preencha a API_URL no custo-filial.js");
     }
 
-    const json = await apiGet("getAll");
+    const [json] = await Promise.all([
+      apiGet("getAll"),
+      loadBiFretesData()
+    ]);
 
     DB.metas = Array.isArray(json.metas) ? json.metas.map(normalizarMeta) : [];
     DB.lancamentos = Array.isArray(json.lancamentos) ? json.lancamentos.map(normalizarLancamento) : [];
 
     preencherFiltroFilial();
     renderHome();
+    renderBiFretesCards();
     renderMetaTable();
     renderLancamentosTable();
 
@@ -323,6 +374,7 @@ async function loadAll() {
   } catch (err) {
     console.error(err);
     renderHome();
+    renderBiFretesCards();
     renderMetaTable();
     renderLancamentosTable();
     setStatus(`❌ ${err.message}`, true);
@@ -434,6 +486,55 @@ function preencherSelectFilial(id, placeholder = "Selecione a filial") {
   if (filiais.includes(atual)) {
     sel.value = atual;
   }
+}
+
+// ==========================================
+// B.I. FRETES EMBUTIDO
+// ==========================================
+
+function getBiRowsFiltradas() {
+  const filial = upper(getValue("filtroFilial"));
+  return BI_ROWS.filter((r) => {
+    if (filial && upper(r.filial) !== filial) return false;
+    return true;
+  });
+}
+
+function calcBiFretesKPIs(rows) {
+  const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
+  const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
+  const totalVeiculos = porta + transito;
+  const volume = totalVeiculos * BI_PESO_MEDIO;
+
+  const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
+  const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
+  const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
+
+  let margemPercent = 0;
+  if (totalEmpresa > 0) {
+    margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
+  }
+
+  return {
+    porta,
+    transito,
+    totalVeiculos,
+    volume,
+    freteMedio,
+    margemPercent
+  };
+}
+
+function renderBiFretesCards() {
+  const rows = getBiRowsFiltradas();
+  const k = calcBiFretesKPIs(rows);
+
+  setText("biKpiPorta", intBR(k.porta));
+  setText("biKpiTransito", intBR(k.transito));
+  setText("biKpiVeiculos", intBR(k.totalVeiculos));
+  setText("biKpiVolume", `${intBR(k.volume)} t`);
+  setText("biKpiFreteMedio", moneyBR(k.freteMedio));
+  setText("biKpiMargemMedia", `${k.margemPercent.toFixed(2)}%`);
 }
 
 // ==========================================
@@ -567,13 +668,13 @@ function getResumoPeriodo(lancs) {
 // ==========================================
 
 function renderHome() {
-  const { base, metas, lancs } = montarBaseHome();
+  const { base, lancs } = montarBaseHome();
   const resumo = getResumoPeriodo(lancs);
 
   renderKPIs(resumo);
   renderAlertas(base);
   renderRanking(base);
-  renderCharts(base, metas, lancs);
+  renderCharts(base);
 }
 
 function renderKPIs(resumo) {
@@ -1079,6 +1180,7 @@ function bindFiltros() {
 
   $("btnAplicarFiltros")?.addEventListener("click", () => {
     renderHome();
+    renderBiFretesCards();
     renderMetaTable();
     renderLancamentosTable();
   });
@@ -1094,6 +1196,7 @@ function bindFiltros() {
     if ($("filtroFilial")) $("filtroFilial").value = "";
 
     renderHome();
+    renderBiFretesCards();
     renderMetaTable();
     renderLancamentosTable();
   });
@@ -1136,6 +1239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     limparFormLancamento();
 
     renderHome();
+    renderBiFretesCards();
     renderMetaTable();
     renderLancamentosTable();
 

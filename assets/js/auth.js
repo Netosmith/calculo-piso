@@ -38,7 +38,7 @@ const USERS = {
   VIANOPOLIS:   { password: "1234", states: ["GO"] },
   GUILHERME:   { password: "5554", states: ["OPERACIONAL"] },
   INDIARA:   { password: "1234", states: ["GO"] },
-  DANILO:   { password: "7878", states: ["GO"] },
+  DANILO:   { password: "2424", states: ["GO"] },
   MINEIROS:   { password: "1234", states: ["GO"] },
   CHAPCEU:   { password: "1234", states: ["GO"] },
   ITUMBIARA:   { password: "1234", states: ["GO"] },

@@ -261,6 +261,7 @@ function normalizarMeta(x) {
 
   const metaMesFat = num(x.metaMesFat || 0);
   const metaMesTon = num(x.metaMesTon || 0);
+  const metaCustoMes = num(x.metaCustoMes || 0);
 
   let metaDiaFat = num(x.metaDiaFat || 0);
   let metaDiaTon = num(x.metaDiaTon || 0);
@@ -287,6 +288,7 @@ function normalizarMeta(x) {
     metaDiaTon,
     metaMesTon,
     metaAnoTon,
+    metaCustoMes,
     createdAt: x.createdAt || "",
     updatedAt: x.updatedAt || ""
   };
@@ -554,6 +556,7 @@ function montarBaseHome() {
         filial: m.filial,
         metaMesFat: 0,
         metaMesTon: 0,
+        metaCustoMes: 0,
         realFat: 0,
         realTon: 0,
         custo: 0
@@ -563,6 +566,7 @@ function montarBaseHome() {
     const row = mapa.get(m.filial);
     row.metaMesFat += num(m.metaMesFat);
     row.metaMesTon += num(m.metaMesTon);
+    row.metaCustoMes += num(m.metaCustoMes);
   });
 
   lancs.forEach((l) => {
@@ -571,6 +575,7 @@ function montarBaseHome() {
         filial: l.filial,
         metaMesFat: 0,
         metaMesTon: 0,
+        metaCustoMes: 0,
         realFat: 0,
         realTon: 0,
         custo: 0
@@ -819,14 +824,56 @@ function renderCharts(base) {
           {
             label: "ALCANÇADO",
             data: fatReal,
-            backgroundColor: "rgba(34,197,94,.58)",
-            borderColor: "rgba(34,197,94,1)",
+            backgroundColor: base.map((x) => {
+              const custoMes = num(x.metaCustoMes);
+              const faturadoMes = num(x.realFat);
+
+              if (custoMes <= 0) return "rgba(34,197,94,.58)";
+              return faturadoMes >= custoMes
+                ? "rgba(34,197,94,.58)"
+                : "rgba(239,68,68,.58)";
+            }),
+            borderColor: base.map((x) => {
+              const custoMes = num(x.metaCustoMes);
+              const faturadoMes = num(x.realFat);
+
+              if (custoMes <= 0) return "rgba(34,197,94,1)";
+              return faturadoMes >= custoMes
+                ? "rgba(34,197,94,1)"
+                : "rgba(239,68,68,1)";
+            }),
             borderWidth: 1,
             borderRadius: 5
           }
         ]
       },
-      options
+      options: {
+        ...options,
+        plugins: {
+          ...options.plugins,
+          tooltip: {
+            callbacks: {
+              afterBody: function(context) {
+                const item = context && context[0];
+                if (!item) return "";
+
+                const idx = item.dataIndex;
+                const row = base[idx];
+                if (!row) return "";
+
+                const custoMes = num(row.metaCustoMes);
+                const faturadoMes = num(row.realFat);
+                const status = faturadoMes >= custoMes ? "Pagou o custo" : "Abaixo do custo";
+
+                return [
+                  `Custo do mês: ${brl(custoMes)}`,
+                  `Status: ${status}`
+                ];
+              }
+            }
+          }
+        }
+      }
     });
   }
 
@@ -906,6 +953,7 @@ function limparFormMeta() {
   setValue("metaDiaTon", "");
   setValue("metaMesTon", "");
   setValue("metaAnoTon", "");
+  setValue("metaCustoMes", "");
 }
 
 function preencherMetaExistenteSeHouver() {
@@ -932,6 +980,7 @@ function preencherMetaExistenteSeHouver() {
     setValue("metaDiaTon", "");
     setValue("metaMesTon", "");
     setValue("metaAnoTon", "");
+    setValue("metaCustoMes", "");
     return;
   }
 
@@ -942,6 +991,7 @@ function preencherMetaExistenteSeHouver() {
   setValue("metaDiaTon", meta.metaDiaTon || "");
   setValue("metaMesTon", meta.metaMesTon || "");
   setValue("metaAnoTon", meta.metaAnoTon || "");
+  setValue("metaCustoMes", meta.metaCustoMes || "");
 }
 
 async function salvarMeta() {
@@ -957,7 +1007,8 @@ async function salvarMeta() {
       metaAnoFat: num(getValue("metaAnoFat")),
       metaDiaTon: num(getValue("metaDiaTon")),
       metaMesTon: num(getValue("metaMesTon")),
-      metaAnoTon: num(getValue("metaAnoTon"))
+      metaAnoTon: num(getValue("metaAnoTon")),
+      metaCustoMes: num(getValue("metaCustoMes"))
     };
 
     if (!payload.filial) throw new Error("Informe a filial.");
@@ -1010,7 +1061,7 @@ function renderMetaTable() {
     .sort((a, b) => a.filial.localeCompare(b.filial, "pt-BR"));
 
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="emptyState">Nenhuma meta cadastrada para o período.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="emptyState">Nenhuma meta cadastrada para o período.</td></tr>`;
     return;
   }
 
@@ -1025,6 +1076,7 @@ function renderMetaTable() {
       <td class="num">${num(x.metaDiaTon).toLocaleString("pt-BR")}</td>
       <td class="num">${num(x.metaMesTon).toLocaleString("pt-BR")}</td>
       <td class="num">${num(x.metaAnoTon).toLocaleString("pt-BR")}</td>
+      <td class="num">${brl(x.metaCustoMes)}</td>
       <td>
         <button class="miniBtn edit" type="button" onclick="editarMetaById('${x.id}')">Editar</button>
       </td>
@@ -1046,6 +1098,7 @@ function editarMetaById(id) {
   setValue("metaDiaTon", x.metaDiaTon);
   setValue("metaMesTon", x.metaMesTon);
   setValue("metaAnoTon", x.metaAnoTon);
+  setValue("metaCustoMes", x.metaCustoMes);
 
   ativarPainel("meta");
   const panel = $("panelMeta");

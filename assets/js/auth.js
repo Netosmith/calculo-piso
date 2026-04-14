@@ -18,6 +18,7 @@ const USERS = {
   RONE:   { password: "5554", states: ["OPERACIONAL"] },
   EVERALDOJR:   { password: "2000", states: ["OPERACIONAL"] },
   KIEWERSON:   { password: "5554", states: ["OPERACIONAL"] },
+  FABIOLA:   { password: "6464", states: ["OPERACIONAL"] },
   RAFAEL:   { password: "5554", states: ["OPERACIONAL"] },
   MATEUS:   { password: "5554", states: ["OPERACIONAL"] },
   JHONATAN:   { password: "5554", states: ["OPERACIONAL"] },

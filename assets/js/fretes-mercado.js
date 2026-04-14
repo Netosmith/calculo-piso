@@ -12,7 +12,7 @@ const REGIOES = {
   "SAO SIMAO": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","BOM JESUS","MINEIROS","ANAPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"]
 };
 
-const API = "https://script.google.com/macros/s/AKfycbwJZeF8KTtTeeoGVMi5_alv0UF3khZzsntOETsOU76-_oXzhpSbfPKzjRTPQN56YfuV/exec";
+const API = "https://script.google.com/macros/s/AKfycbx6dBok-h7P9ktdNIsOrzPJGczrx8HTeIPh2kMAQ76NqDhSbx3YcBDxgdOiCv4-dTf6/exec";
 
 // ==========================================
 // HELPERS

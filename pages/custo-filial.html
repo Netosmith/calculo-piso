@@ -143,6 +143,11 @@
       margin-bottom:16px;
     }
 
+    .kpiGrid.biCards{
+      grid-template-columns:repeat(6, minmax(0, 1fr));
+      margin-bottom:0;
+    }
+
     .kpiCard{
       display:grid;
       grid-template-columns:minmax(0, 1fr) auto;
@@ -502,6 +507,12 @@
     .miniBtn.edit{ background:#2563eb; }
     .miniBtn.del{ background:#b91c1c; }
 
+    @media (max-width: 1500px){
+      .kpiGrid.biCards{
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width:1400px){
       .chartBox{
         height:270px;
@@ -514,6 +525,10 @@
       }
 
       .kpiGrid{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+
+      .kpiGrid.biCards{
         grid-template-columns:repeat(2, minmax(0, 1fr));
       }
 
@@ -547,7 +562,8 @@
     }
 
     @media (max-width:700px){
-      .kpiGrid{
+      .kpiGrid,
+      .kpiGrid.biCards{
         grid-template-columns:1fr;
       }
 
@@ -619,6 +635,52 @@
 
         <button class="btnAction gray" id="btnAplicarFiltros" type="button">Aplicar</button>
         <button class="btnAction gray" id="btnLimparFiltros" type="button">Limpar</button>
+      </div>
+    </div>
+
+    <div class="tableCard" style="margin-bottom:16px;">
+      <div class="tableHead">
+        <h3>B.I. Fretes</h3>
+      </div>
+
+      <div style="padding:16px;">
+        <div class="kpiGrid biCards" id="biFretesCards" style="margin-bottom:0;">
+          <div class="card kpiCard">
+            <div class="kpiLabel">Veículos Porta</div>
+            <div class="kpiValue" id="biKpiPorta">0</div>
+            <div class="kpiSub">Soma da coluna Porta</div>
+          </div>
+
+          <div class="card kpiCard">
+            <div class="kpiLabel">Veículos Trânsito</div>
+            <div class="kpiValue" id="biKpiTransito">0</div>
+            <div class="kpiSub">Soma da coluna Trânsito</div>
+          </div>
+
+          <div class="card kpiCard">
+            <div class="kpiLabel">Veículos Totais</div>
+            <div class="kpiValue" id="biKpiVeiculos">0</div>
+            <div class="kpiSub">Porta + Trânsito</div>
+          </div>
+
+          <div class="card kpiCard">
+            <div class="kpiLabel">Volume Total</div>
+            <div class="kpiValue" id="biKpiVolume">0 t</div>
+            <div class="kpiSub">38 t por veículo</div>
+          </div>
+
+          <div class="card kpiCard">
+            <div class="kpiLabel">Frete Médio Empresa</div>
+            <div class="kpiValue" id="biKpiFreteMedio">R$ 0,00</div>
+            <div class="kpiSub">Média do Vlr Empresa</div>
+          </div>
+
+          <div class="card kpiCard">
+            <div class="kpiLabel">Margem Média</div>
+            <div class="kpiValue" id="biKpiMargemMedia">0,00%</div>
+            <div class="kpiSub">Empresa - Motorista</div>
+          </div>
+        </div>
       </div>
     </div>
 

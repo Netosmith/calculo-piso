@@ -524,7 +524,42 @@ function montarBaseHome() {
     return bScore - aScore;
   });
 
-  return base;
+  return {
+    base,
+    metas,
+    lancs
+  };
+}
+
+function getResumoPeriodo(lancs) {
+  const mensalFat = lancs.reduce((s, x) => s + num(x.faturamento), 0);
+  const mensalTon = lancs.reduce((s, x) => s + num(x.toneladas), 0);
+
+  if (!lancs.length) {
+    return {
+      fatDia: 0,
+      fatMes: 0,
+      tonDia: 0,
+      tonMes: 0,
+      dataRef: ""
+    };
+  }
+
+  const datasValidas = lancs
+    .map(x => onlyText(x.data))
+    .filter(Boolean)
+    .sort();
+
+  const ultimaData = datasValidas[datasValidas.length - 1] || "";
+  const lancsDia = lancs.filter(x => onlyText(x.data) === ultimaData);
+
+  return {
+    fatDia: lancsDia.reduce((s, x) => s + num(x.faturamento), 0),
+    fatMes: mensalFat,
+    tonDia: lancsDia.reduce((s, x) => s + num(x.toneladas), 0),
+    tonMes: mensalTon,
+    dataRef: ultimaData
+  };
 }
 
 // ==========================================
@@ -532,24 +567,26 @@ function montarBaseHome() {
 // ==========================================
 
 function renderHome() {
-  const base = montarBaseHome();
-  renderKPIs(base);
+  const { base, metas, lancs } = montarBaseHome();
+  const resumo = getResumoPeriodo(lancs);
+
+  renderKPIs(resumo);
   renderAlertas(base);
   renderRanking(base);
-  renderCharts(base);
+  renderCharts(base, metas, lancs);
 }
 
-function renderKPIs(base) {
-  const totalFat = base.reduce((s, x) => s + x.realFat, 0);
-  const totalTon = base.reduce((s, x) => s + x.realTon, 0);
-  const totalCusto = base.reduce((s, x) => s + x.custo, 0);
-  const custoTon = totalTon > 0 ? totalCusto / totalTon : 0;
-  const filiais = base.length;
+function renderKPIs(resumo) {
+  setText("kpiFatDia", brl(resumo.fatDia));
+  setText("kpiFatMes", brl(resumo.fatMes));
+  setText("kpiTonDia", tons(resumo.tonDia));
+  setText("kpiTonMes", tons(resumo.tonMes));
 
-  setText("kpiFiliais", String(filiais));
-  setText("kpiFatReal", brl(totalFat));
-  setText("kpiTonReal", tons(totalTon));
-  setText("kpiCustoTon", brl(custoTon));
+  const sub = resumo.dataRef ? `Ref. ${formatDateBR(resumo.dataRef)}` : "Sem lançamentos no período";
+  setText("kpiFatDiaSub", sub);
+  setText("kpiFatMesSub", "Acumulado do mês");
+  setText("kpiTonDiaSub", sub);
+  setText("kpiTonMesSub", "Acumulado do mês");
 }
 
 function renderAlertas(base) {
@@ -603,6 +640,52 @@ function destroyChart(chart) {
   }
 }
 
+function getChartOptions(labelCount) {
+  const thinBars = labelCount >= 6;
+  const veryThinBars = labelCount >= 10;
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: "#e5e7eb",
+          font: { weight: "bold", size: 11 },
+          boxWidth: 14
+        }
+      }
+    },
+    scales: {
+      x: {
+        offset: true,
+        ticks: {
+          color: "#cbd5e1",
+          autoSkip: false,
+          maxRotation: labelCount > 8 ? 35 : 0,
+          minRotation: labelCount > 8 ? 35 : 0,
+          font: { size: labelCount > 8 ? 10 : 11 }
+        },
+        grid: { color: "rgba(255,255,255,.06)" }
+      },
+      y: {
+        ticks: {
+          color: "#cbd5e1",
+          font: { size: 10 }
+        },
+        grid: { color: "rgba(255,255,255,.06)" }
+      }
+    },
+    datasets: {
+      bar: {
+        categoryPercentage: veryThinBars ? 0.52 : thinBars ? 0.62 : 0.78,
+        barPercentage: veryThinBars ? 0.72 : thinBars ? 0.8 : 0.9,
+        maxBarThickness: veryThinBars ? 26 : thinBars ? 34 : 46
+      }
+    }
+  };
+}
+
 function renderCharts(base) {
   if (typeof Chart === "undefined") return;
 
@@ -614,28 +697,7 @@ function renderCharts(base) {
   const projMeta = base.map((x) => x.metaMesFat);
   const projReal = base.map((x) => x.projFat);
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        labels: {
-          color: "#e5e7eb",
-          font: { weight: "bold" }
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: "#cbd5e1" },
-        grid: { color: "rgba(255,255,255,.06)" }
-      },
-      y: {
-        ticks: { color: "#cbd5e1" },
-        grid: { color: "rgba(255,255,255,.06)" }
-      }
-    }
-  };
+  const options = getChartOptions(labels.length);
 
   const fatEl = $("graficoFaturamento");
   if (fatEl) {
@@ -651,7 +713,7 @@ function renderCharts(base) {
             backgroundColor: "rgba(59,130,246,.72)",
             borderColor: "rgba(59,130,246,1)",
             borderWidth: 1,
-            borderRadius: 6
+            borderRadius: 5
           },
           {
             label: "ALCANÇADO",
@@ -659,7 +721,7 @@ function renderCharts(base) {
             backgroundColor: "rgba(34,197,94,.58)",
             borderColor: "rgba(34,197,94,1)",
             borderWidth: 1,
-            borderRadius: 6
+            borderRadius: 5
           }
         ]
       },
@@ -681,7 +743,7 @@ function renderCharts(base) {
             backgroundColor: "rgba(59,130,246,.72)",
             borderColor: "rgba(59,130,246,1)",
             borderWidth: 1,
-            borderRadius: 6
+            borderRadius: 5
           },
           {
             label: "ALCANÇADO",
@@ -689,7 +751,7 @@ function renderCharts(base) {
             backgroundColor: "rgba(34,197,94,.58)",
             borderColor: "rgba(34,197,94,1)",
             borderWidth: 1,
-            borderRadius: 6
+            borderRadius: 5
           }
         ]
       },
@@ -711,7 +773,7 @@ function renderCharts(base) {
             backgroundColor: "rgba(139,92,246,.72)",
             borderColor: "rgba(139,92,246,1)",
             borderWidth: 1,
-            borderRadius: 6
+            borderRadius: 5
           },
           {
             label: "PROJEÇÃO",
@@ -719,7 +781,7 @@ function renderCharts(base) {
             backgroundColor: "rgba(245,158,11,.62)",
             borderColor: "rgba(245,158,11,1)",
             borderWidth: 1,
-            borderRadius: 6
+            borderRadius: 5
           }
         ]
       },

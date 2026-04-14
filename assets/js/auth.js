@@ -66,7 +66,7 @@ const AUTH = {
 const STATE_FEATURES = {
   GO: ["fretes","divulgacao"],
   GOADM: ["administrativo", "patrimonio"],
-  OPERACIONAL: ["piso","fretes","share","divulgacao"],
+  OPERACIONAL: ["piso","fretes","share","divulgacao","fretes-mercado"],
   COMERCIAL: ["piso","fretes","share","divulgacao","bi","custo-filial","fretes-mercado"],
   PISO: ["piso"],
   SP: ["piso","divulgacao"],

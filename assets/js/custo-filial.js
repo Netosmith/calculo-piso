@@ -107,6 +107,7 @@ function num(v) {
   if (!s) return 0;
 
   s = s.replace(/\s/g, "");
+  s = s.replace(/[^\d.,-]/g, "");
 
   if (s.includes(",") && s.includes(".")) {
     s = s.replace(/\./g, "").replace(",", ".");
@@ -224,7 +225,14 @@ function getFiltroAnoMes() {
 async function apiGet(action) {
   const url = `${API_URL}?action=${encodeURIComponent(action)}`;
   const res = await fetch(url, { method: "GET" });
-  const json = await res.json();
+  const text = await res.text();
+
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Resposta inválida da API para ${action}`);
+  }
 
   if (!json.ok) {
     throw new Error(json.error || `Erro GET: ${action}`);
@@ -242,7 +250,14 @@ async function apiPost(payload) {
     body: JSON.stringify(payload)
   });
 
-  const json = await res.json();
+  const text = await res.text();
+
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Resposta inválida da API para ${payload.action || ""}`);
+  }
 
   if (!json.ok) {
     throw new Error(json.error || `Erro POST: ${payload.action || ""}`);
@@ -397,16 +412,6 @@ function ativarPainel(tipo) {
 
   if (tabMeta) tabMeta.classList.toggle("active", isMeta);
   if (tabLanc) tabLanc.classList.toggle("active", !isMeta);
-
-  if (tabMeta) {
-    tabMeta.classList.toggle("meta", true);
-    if (!isMeta) tabMeta.classList.remove("lanc");
-  }
-
-  if (tabLanc) {
-    tabLanc.classList.toggle("lanc", !isMeta);
-    if (isMeta) tabLanc.classList.remove("active");
-  }
 
   if (panelMeta) panelMeta.classList.toggle("active", isMeta);
   if (panelLanc) panelLanc.classList.toggle("active", !isMeta);
@@ -1144,12 +1149,21 @@ async function salvarLancamento() {
       throw new Error("Informe pelo menos faturamento, toneladas ou custo.");
     }
 
-    await apiPost({
-      action: "add_lancamento",
-      ...payload
-    });
+    if (STATE.editLancId) {
+      await apiPost({
+        action: "update_lancamento",
+        id: STATE.editLancId,
+        ...payload
+      });
+      setStatus("✅ Lançamento atualizado com sucesso.");
+    } else {
+      await apiPost({
+        action: "add_lancamento",
+        ...payload
+      });
+      setStatus("✅ Lançamento salvo com sucesso.");
+    }
 
-    setStatus("✅ Lançamento salvo com sucesso.");
     await loadAll();
     renderLancamentosTable();
     limparFormLancamento();
@@ -1185,9 +1199,49 @@ function renderLancamentosTable() {
       <td class="num">${tons(x.toneladas)}</td>
       <td class="num">${brl(x.custo)}</td>
       <td>${escapeHtml(x.observacao || "-")}</td>
-      <td>-</td>
+      <td>
+        <button class="miniBtn edit" type="button" onclick="editarLancamentoById('${x.id}')">Editar</button>
+      </td>
     </tr>
   `).join("");
+}
+
+function editarLancamentoById(id) {
+  const x = DB.lancamentos.find((l) => String(l.id) === String(id));
+  if (!x) return;
+
+  STATE.editLancId = x.id;
+  setValue("lancFilial", x.filial);
+  setValue("lancData", x.data);
+  setValue("lancFaturamento", x.faturamento);
+  setValue("lancToneladas", x.toneladas);
+  setValue("lancCusto", x.custo);
+  setValue("lancObservacao", x.observacao || "");
+
+  ativarPainel("lanc");
+  const panel = $("panelLancamento");
+  if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ==========================================
+// IMPORTAÇÃO BASE
+// ==========================================
+
+async function importarMetasBase() {
+  const btnId = "btnImportarBase";
+  setButtonLoading(btnId, "Importando...");
+
+  try {
+    await apiGet("importar_metas_base");
+    setStatus("✅ Metas importadas da aba base.");
+    await loadAll();
+    renderMetaTable();
+  } catch (err) {
+    console.error(err);
+    setStatus(`❌ ${err.message}`, true);
+  } finally {
+    resetButtonLoading(btnId);
+  }
 }
 
 // ==========================================
@@ -1205,6 +1259,10 @@ function bindHeaderButtons() {
 
   $("btnAtualizar")?.addEventListener("click", () => {
     loadAll();
+  });
+
+  $("btnImportarBase")?.addEventListener("click", () => {
+    importarMetasBase();
   });
 }
 
@@ -1272,6 +1330,9 @@ function bindLancamentoEvents() {
 // ==========================================
 // INIT
 // ==========================================
+
+window.editarMetaById = editarMetaById;
+window.editarLancamentoById = editarLancamentoById;
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {

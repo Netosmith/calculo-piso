@@ -4,7 +4,7 @@
 // B.I. Fretes embutido
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbx6dBok-h7P9ktdNIsOrzPJGczrx8HTeIPh2kMAQ76NqDhSbx3YcBDxgdOiCv4-dTf6/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx6QhIbOEq-J_26rR3jrGPH99DWEbv2nbWFfXzckE6TJwXB4O_RnjLLC49-77gjtlIg/exec";
 
 let DB = {
   metas: [],

@@ -78,7 +78,7 @@
       font-weight:900;
       color:#fff;
       box-shadow:var(--shadow);
-      transition:transform .12s ease, filter .12s ease;
+      transition:transform .12s ease, filter .12s ease, opacity .12s ease;
     }
 
     .btnAction:hover{
@@ -86,10 +86,17 @@
       filter:brightness(1.05);
     }
 
+    .btnAction:disabled{
+      opacity:.7;
+      cursor:not-allowed;
+      transform:none;
+    }
+
     .btnAction.green{ background:linear-gradient(135deg,#16a34a,#22c55e); }
     .btnAction.blue{ background:linear-gradient(135deg,#2563eb,#3b82f6); }
     .btnAction.gray{ background:linear-gradient(135deg,#334155,#475569); }
     .btnAction.red{ background:linear-gradient(135deg,#b91c1c,#ef4444); }
+    .btnAction.purple{ background:linear-gradient(135deg,#7c3aed,#8b5cf6); }
 
     .syncStatus{
       margin-bottom:16px;
@@ -505,7 +512,6 @@
     }
 
     .miniBtn.edit{ background:#2563eb; }
-    .miniBtn.del{ background:#b91c1c; }
 
     @media (max-width: 1500px){
       .kpiGrid.biCards{
@@ -608,6 +614,7 @@
       <div class="headerActions">
         <button class="btnAction green" id="btnIrMeta" type="button">Meta</button>
         <button class="btnAction blue" id="btnIrLancamento" type="button">Lançamento</button>
+        <button class="btnAction purple" id="btnImportarBase" type="button">Importar Metas Base</button>
         <button class="btnAction gray" id="btnAtualizar" type="button">Atualizar</button>
       </div>
     </div>
@@ -838,6 +845,7 @@
 
           <div class="formActions">
             <button class="btnAction green" id="btnSalvarMeta" type="button">Salvar Meta</button>
+            <button class="btnAction purple" id="btnImportarBaseMeta" type="button">Importar Base</button>
             <button class="btnAction gray" id="btnLimparMeta" type="button">Limpar</button>
           </div>
 
@@ -947,6 +955,12 @@
       const btnMeta = document.getElementById("btnIrMeta");
       const btnLanc = document.getElementById("btnIrLancamento");
       const btnFechar = document.getElementById("btnFecharCrud");
+      const btnImportarTopo = document.getElementById("btnImportarBase");
+      const btnImportarMeta = document.getElementById("btnImportarBaseMeta");
+      const tabMeta = document.getElementById("tabMeta");
+      const tabLanc = document.getElementById("tabLancamento");
+      const panelMeta = document.getElementById("panelMeta");
+      const panelLanc = document.getElementById("panelLancamento");
 
       function abrirOverlay() {
         if (overlay) overlay.classList.add("active");
@@ -956,12 +970,47 @@
         if (overlay) overlay.classList.remove("active");
       }
 
+      function ativarAba(tipo) {
+        const isMeta = tipo === "meta";
+
+        if (tabMeta) {
+          tabMeta.classList.toggle("active", isMeta);
+          tabMeta.classList.toggle("meta", true);
+        }
+
+        if (tabLanc) {
+          tabLanc.classList.toggle("active", !isMeta);
+          tabLanc.classList.toggle("lanc", true);
+        }
+
+        if (panelMeta) panelMeta.classList.toggle("active", isMeta);
+        if (panelLanc) panelLanc.classList.toggle("active", !isMeta);
+      }
+
       if (btnMeta) {
-        btnMeta.addEventListener("click", abrirOverlay);
+        btnMeta.addEventListener("click", function(){
+          abrirOverlay();
+          ativarAba("meta");
+        });
       }
 
       if (btnLanc) {
-        btnLanc.addEventListener("click", abrirOverlay);
+        btnLanc.addEventListener("click", function(){
+          abrirOverlay();
+          ativarAba("lanc");
+        });
+      }
+
+      if (tabMeta) {
+        tabMeta.addEventListener("click", function(){
+          ativarAba("meta");
+        });
+      }
+
+      if (tabLanc) {
+        tabLanc.addEventListener("click", function(){
+          ativarAba("lanc");
+        });
       }
 
       if (btnFechar) {
@@ -977,6 +1026,14 @@
       document.addEventListener("keydown", function(e){
         if (e.key === "Escape") fecharOverlay();
       });
+
+      if (btnImportarTopo && typeof importarMetasBase === "function") {
+        btnImportarTopo.addEventListener("click", importarMetasBase);
+      }
+
+      if (btnImportarMeta && typeof importarMetasBase === "function") {
+        btnImportarMeta.addEventListener("click", importarMetasBase);
+      }
     });
   </script>
 </body>

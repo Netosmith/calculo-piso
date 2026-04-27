@@ -44,6 +44,7 @@ const USERS = {
   MINEIROS:   { password: "1234", states: ["GO"] },
   CHAPCEU:   { password: "1234", states: ["GO"] },
   ITUMBIARA:   { password: "1234", states: ["GO"] },
+  "MESA OPERACIONAL":   { password: "1515", states: ["GO"] },
   CATALAO:   { password: "1234", states: ["GO"] },
   CRISTALINA:   { password: "1234", states: ["GO"] },
   FORMOSA:   { password: "1234", states: ["GO"] },

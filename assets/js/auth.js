@@ -11,6 +11,7 @@ const USERS = {
   "LUDIMILA": { password: "3030", states: ["PISO"] },
   NANEEL: { password: "1212", states: ["PISO"] },
   FABIO: { password: "5707", states: ["OPERACIONAL"] },
+  ADRIELLY: { password: "6584", states: ["OPERACIONAL"] },
   BARIONI: { password: "5707", states: ["COMERCIAL"] },
   ELIEL:   { password: "1234", states: ["COMERCIAL"] },
   ELVIS: { password: "5707", states: ["COMERCIAL"] },

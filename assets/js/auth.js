@@ -42,6 +42,7 @@ const USERS = {
   GUILHERME:   { password: "5554", states: ["OPERACIONAL"] },
   INDIARA:   { password: "1234", states: ["GO"] },
   DANILO:   { password: "2424", states: ["GO"] },
+  ELOISA:   { password: "5760", states: ["GO"] },
   MINEIROS:   { password: "1234", states: ["GO"] },
   CHAPCEU:   { password: "1234", states: ["GO"] },
   ITUMBIARA:   { password: "1234", states: ["GO"] },

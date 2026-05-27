@@ -8,6 +8,7 @@ const USERS = {
   LUZIANO: { password: "5707", states: ["GO","GOADM","COMERCIAL", "PATRIMONIO-BR"] },
   JONATHAN: { password: "2424", states: ["PISO"] },
   "GABRIEL PAIVA": { password: "3030", states: ["PISO"] },
+  "HENRIQUE": { password: "3031", states: ["PISO"] },
   "LUDIMILA": { password: "3030", states: ["PISO"] },
   NANEEL: { password: "1212", states: ["PISO"] },
   MARCIO: { password: "5577", states: ["OPERACIONAL"] },

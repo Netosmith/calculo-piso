@@ -246,6 +246,64 @@
       .tableWrap{max-height:520px;}
     }
 
+
+    /* ==========================================================
+       CORREÇÃO DO VALOR ANTT PRINCIPAL
+       - Aumenta a coluna do valor verde
+       - Diminui cards laterais
+       - Remove corte de texto no resultado oficial
+    ========================================================== */
+    .officialGrid{
+      grid-template-columns:110px minmax(220px,1.25fr) repeat(3,minmax(118px,.85fr)) !important;
+      gap:8px !important;
+      overflow:visible !important;
+    }
+    .bigResult{
+      overflow:visible !important;
+      padding:0 4px !important;
+      min-width:220px !important;
+    }
+    .bigResult .label{
+      font-size:10.5px !important;
+      white-space:nowrap !important;
+    }
+    .bigResult .value{
+      font-size:clamp(24px,1.9vw,30px) !important;
+      line-height:.98 !important;
+      white-space:nowrap !important;
+      letter-spacing:-.03em !important;
+      transform:none !important;
+    }
+    .bigResult .sub{
+      font-size:10px !important;
+      line-height:1.15 !important;
+      max-width:220px;
+      margin:0 auto;
+    }
+    .calcBox{
+      min-width:0 !important;
+      min-height:58px !important;
+      padding:6px 5px !important;
+    }
+    .calcBox .v{
+      font-size:clamp(14px,1.15vw,18px) !important;
+      white-space:nowrap !important;
+    }
+    .calcBox .k{font-size:9.5px !important;}
+    .calcBox .f{font-size:8.8px !important;}
+    @media(max-width:1320px){
+      .officialGrid{
+        grid-template-columns:100px minmax(190px,1.1fr) repeat(3,minmax(102px,.8fr)) !important;
+      }
+      .bigResult{min-width:190px !important;}
+      .bigResult .value{font-size:clamp(22px,1.75vw,26px) !important;}
+      .bigResult .sub{max-width:190px;}
+    }
+    @media(max-width:1180px){
+      .officialGrid{grid-template-columns:1fr 1fr !important;overflow:hidden !important;}
+      .bigResult{min-width:0 !important;}
+    }
+
   </style>
 </head>
 <body>

@@ -313,6 +313,32 @@
     }
     .weightInput.pesoAlterado{border-color:rgba(41,211,145,.8);box-shadow:0 0 0 3px rgba(41,211,145,.13)}
 
+
+    /* SINCRONIZAÇÃO TIPO ⇄ EIXOS */
+    .typeSyncHint{
+      margin-top:6px;color:var(--green2);font-weight:950;font-size:12px;display:flex;align-items:center;gap:6px;
+    }
+    .typeSyncHint::before{content:"↔";font-size:16px;color:#55d16f}
+    .selectedVehicleCard{
+      margin:10px 0 10px;border:1px solid rgba(78,118,210,.48);border-radius:10px;
+      background:linear-gradient(180deg,rgba(8,25,50,.72),rgba(4,14,32,.70));padding:10px;text-align:center;
+      box-shadow:inset 0 0 0 1px rgba(41,211,145,.06);
+    }
+    .selectedVehicleCard .syncLabel{font-size:11px;color:var(--muted);text-align:left;margin-bottom:4px}
+    .selectedVehicleCard .syncVehicleName{font-size:18px;font-weight:950;color:var(--green2);line-height:1.1}
+    .selectedVehicleCard .syncVehicleMeta{display:flex;justify-content:center;gap:16px;color:var(--muted);font-size:12px;font-weight:850;margin-top:7px;flex-wrap:wrap}
+    .syncFooter{
+      margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;
+    }
+    .syncFooter .syncBox{
+      border:1px solid rgba(78,118,210,.35);border-radius:9px;background:rgba(8,25,50,.62);padding:10px;
+      color:var(--muted);font-size:12px;line-height:1.35;
+    }
+    .syncFooter .syncBox b{display:block;color:var(--green2);font-size:13px;margin-bottom:3px;text-transform:uppercase}
+    .syncFooter .syncBox:nth-child(2) b{color:#72a2ff}
+    .syncFooter .syncBox:nth-child(3) b{color:#ffd84d}
+    @media(max-width:760px){.syncFooter{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -345,6 +371,15 @@
             <div class="row">
               <div><label for="eixosInput">Número de Eixos *</label><select id="eixosInput"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option selected>7</option><option>8</option><option>9</option></select></div>
               <div><label for="kmLeft">Distância (km) *</label><input id="kmLeft" type="number" step="0.1" value="500"></div>
+            </div>
+
+            <div class="selectedVehicleCard">
+              <div class="syncLabel">Veículo selecionado</div>
+              <div class="syncVehicleName" id="syncVehicleName">7 Bitrem</div>
+              <div class="syncVehicleMeta">
+                <span id="syncVehicleEixos">7 eixos</span>
+                <span id="syncVehiclePeso">37,000 ton</span>
+              </div>
             </div>
 
             <label>Composição Veicular? <span class="info">ⓘ</span></label>
@@ -423,6 +458,7 @@
 
             <label for="tipoSummary">Tipo</label>
             <select id="tipoSummary"></select>
+            <div class="typeSyncHint" id="summaryTipoHint">7 eixos</div>
 
             <div class="row">
               <div><label for="kmSummary">KM total</label><input id="kmSummary" type="number" step="0.1" value="500"></div>
@@ -454,6 +490,12 @@
           </div>
         </section>
       </aside>
+    </div>
+
+    <div class="syncFooter">
+      <div class="syncBox"><b>Sincronização automática</b>Ao alterar o Tipo no Resumo da Cotação, o Número de Eixos é atualizado automaticamente.</div>
+      <div class="syncBox"><b>Sincronização automática</b>Ao alterar o Número de Eixos nos Parâmetros, o Tipo de Veículo compatível é selecionado automaticamente.</div>
+      <div class="syncBox"><b>Resultado</b>Tipo, eixos, peso e pedágio total ficam consistentes em todo o sistema.</div>
     </div>
 
     <div class="footer">
@@ -515,6 +557,28 @@ function saveVehicles(){ localStorage.setItem("nf_piso_vehicles_v2", JSON.string
 
 function syncKm(source){ const other = source === "left" ? $("kmSummary") : $("kmLeft"); if(other) other.value = source === "left" ? $("kmLeft").value : $("kmSummary").value; }
 function getInputs(){ return { km:val("kmSummary"), pedagio:val("pedagioSummary"), margem:val("margemSummary")/100, icms:val("icmsSummary")/100, eixos:Number($("eixosInput").value||7) }; }
+function selectedRow(){ return vehicles[selectedVehicle] || vehicles[0]; }
+function setEixosFromSelectedVehicle(){
+  const row = selectedRow();
+  if(row && $("eixosInput")) $("eixosInput").value = String(row.eixos);
+}
+function setVehicleFromEixos(){
+  const eixos = Number($("eixosInput")?.value || 0);
+  const idx = vehicles.findIndex(v => Number(v.eixos) === eixos);
+  if(idx >= 0){
+    selectedVehicle = idx;
+    localStorage.setItem("nf_piso_selected_vehicle", String(idx));
+  }
+}
+function renderSyncVehicleCard(){
+  const row = selectedRow();
+  if(!row) return;
+  const name = $("syncVehicleName"), ex = $("syncVehicleEixos"), peso = $("syncVehiclePeso"), hint = $("summaryTipoHint");
+  if(name) name.textContent = row.tipo;
+  if(ex) ex.textContent = `${row.eixos} eixos`;
+  if(peso) peso.textContent = `${brNum(row.peso,3)} ton`;
+  if(hint) hint.textContent = `${row.eixos} eixos`;
+}
 function calcOfficial(){
   const t = TABLES[activeTable]; const {km,eixos}=getInputs(); const c = t.coeffs[eixos];
   if(!t.enabled || !c) return {enabled:false, ccd:0, cc:0, ida:0, retorno:0, total:0};
@@ -590,6 +654,7 @@ function applyPesoChange(input, i, shouldFormat=false){
     const tr = input.closest("tr");
     updateVehicleRowValues(tr, vehicles[i]);
     renderSummary();
+    renderSyncVehicleCard();
     pulsePesoRow(tr, input);
     if(shouldFormat) input.value = brNum(n,3);
   }else if(shouldFormat){
@@ -601,7 +666,7 @@ function renderVehicles(){
   vehicles.forEach((v,i)=>{
     const c=calcCommercial(v); const tr=document.createElement("tr"); tr.className=i===selectedVehicle?"active":"";
     tr.innerHTML=`<td class="vehicleName">${v.tipo}</td><td class="num">${v.eixos}</td><td class="num"><input class="weightInput" data-i="${i}" value="${brNum(v.peso,3)}" inputmode="decimal" autocomplete="off"></td><td class="unit">ton</td><td class="num motor">${brMoney(c.motorista)}</td><td class="num empresa">${Number.isFinite(c.empresa)?brMoney(c.empresa):"Erro"}</td><td class="num trash">🗑</td>`;
-    tr.addEventListener("click",e=>{ if(e.target.classList.contains("weightInput")) return; selectedVehicle=i; localStorage.setItem("nf_piso_selected_vehicle",String(i)); renderAll(); });
+    tr.addEventListener("click",e=>{ if(e.target.classList.contains("weightInput")) return; selectedVehicle=i; localStorage.setItem("nf_piso_selected_vehicle",String(i)); setEixosFromSelectedVehicle(); renderAll(); });
     const input = tr.querySelector(".weightInput");
     input.addEventListener("focus", e => e.target.select());
     input.addEventListener("input", e => applyPesoChange(e.target, i, false));
@@ -619,9 +684,10 @@ function renderVehicles(){
   });
 }
 function renderSummary(){
-  const row=vehicles[selectedVehicle]||vehicles[0]; const c=calcCommercial(row); const {pedagio}=getInputs();
+  const row=selectedRow(); const c=calcCommercial(row); const {pedagio}=getInputs();
   $("sumEixos").textContent=row.eixos; $("sumPedTotal").textContent=brNum(pedagio*row.eixos,2);
   $("sumMotorista").textContent=brMoney(c.motorista); $("sumEmpresa").textContent=Number.isFinite(c.empresa)?brMoney(c.empresa):"Erro";
+  renderSyncVehicleCard();
 }
 function renderAll(){ renderTipoSummary(); renderTabs(); renderOfficial(); renderVehicles(); renderSummary(); }
 function applyToggles(){
@@ -637,16 +703,23 @@ function bind(){
   $("btnQuickQuote")?.addEventListener("click", toggleQuoteMode);
   $("btnHome").onclick=goHome; $("btnCalc").onclick=renderAll; $("btnCalcSummary")?.addEventListener("click", renderAll);
   $("btnClear").onclick=()=>{ if(confirm("Limpar ajustes e voltar ao padrão?")){ localStorage.removeItem("nf_piso_vehicles_v2"); vehicles=structuredClone(VEHICLES_DEFAULT); selectedVehicle=0; $("kmSummary").value=500; $("kmLeft").value=500; $("pedagioSummary").value=216; $("margemSummary").value=10; $("icmsSummary").value=0; renderAll(); } };
-  $("btnAddVehicle").onclick=()=>{ vehicles.push({tipo:"Novo veículo",eixos:Number($("eixosInput").value||7),rkm:8.0855,custoCC:792.30,peso:35}); saveVehicles(); selectedVehicle=vehicles.length-1; renderAll(); };
+  $("btnAddVehicle").onclick=()=>{ vehicles.push({tipo:"Novo veículo",eixos:Number($("eixosInput").value||7),rkm:8.0855,custoCC:792.30,peso:35}); saveVehicles(); selectedVehicle=vehicles.length-1; setEixosFromSelectedVehicle(); renderAll(); };
   $("btnCompare").onclick=()=>alert("Comparação ativa: selecione Tabela A/B/C/D/E. Tabelas sem coeficientes ficam bloqueadas para evitar cálculo errado.");
   $("btnExportPDF").onclick=()=>window.print();
   $("kmLeft").addEventListener("input",()=>{ syncKm("left"); renderAll(); });
   $("kmSummary").addEventListener("input",()=>{ syncKm("summary"); renderAll(); });
-  ["pedagioSummary","margemSummary","icmsSummary","eixosInput","cargoType"].forEach(id=>$(id).addEventListener("input",renderAll));
-  $("tipoSummary")?.addEventListener("change",()=>{ selectedVehicle=Number($("tipoSummary").value||0); localStorage.setItem("nf_piso_selected_vehicle",String(selectedVehicle)); renderAll(); });
+  ["pedagioSummary","margemSummary","icmsSummary","cargoType"].forEach(id=>$(id).addEventListener("input",renderAll));
+  $("eixosInput")?.addEventListener("change",()=>{ setVehicleFromEixos(); renderAll(); });
+  $("eixosInput")?.addEventListener("input",()=>{ setVehicleFromEixos(); renderAll(); });
+  $("tipoSummary")?.addEventListener("change",()=>{
+    selectedVehicle=Number($("tipoSummary").value||0);
+    localStorage.setItem("nf_piso_selected_vehicle",String(selectedVehicle));
+    setEixosFromSelectedVehicle();
+    renderAll();
+  });
   document.querySelectorAll(".seg").forEach(seg=>seg.addEventListener("click",e=>{ if(e.target.tagName!=="BUTTON") return; flags[seg.dataset.toggle]=e.target.dataset.val; applyToggles(); renderAll(); }));
 }
-document.addEventListener("DOMContentLoaded",()=>{ bind(); applyToggles(); applyQuoteMode(); renderAll(); });
+document.addEventListener("DOMContentLoaded",()=>{ bind(); applyToggles(); applyQuoteMode(); setEixosFromSelectedVehicle(); renderAll(); });
 </script>
 </body>
 </html>

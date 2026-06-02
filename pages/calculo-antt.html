@@ -154,6 +154,98 @@
       .panelInner{padding:9px;}
     }
 
+  
+
+    /* ==========================================================
+       AJUSTE FINAL DO BLOCO ANTT OFICIAL
+       - Evita sobreposição entre valor principal e cards
+       - Reduz altura/largura dos cards oficiais
+       - Dá mais espaço para a tabela comercial
+    ========================================================== */
+    .layout{
+      grid-template-columns:minmax(260px,280px) minmax(0,1fr) minmax(260px,280px);
+      gap:10px;
+    }
+    .officialGrid{
+      grid-template-columns:110px minmax(120px,.9fr) repeat(3,minmax(96px,1fr));
+      gap:7px;
+      padding:8px;
+      align-items:stretch;
+    }
+    .tabCard{
+      padding:8px 6px;
+      font-size:12px;
+      min-height:60px;
+    }
+    .tabCard small{
+      font-size:8.5px;
+      line-height:1.1;
+    }
+    .bigResult{
+      min-width:0;
+      overflow:hidden;
+    }
+    .bigResult .label{
+      font-size:11px;
+      white-space:nowrap;
+    }
+    .bigResult .value{
+      font-size:clamp(23px,2vw,28px);
+      line-height:1;
+      white-space:nowrap;
+      letter-spacing:0;
+    }
+    .bigResult .sub{
+      font-size:10px;
+      line-height:1.15;
+    }
+    .calcBox{
+      min-height:60px;
+      padding:6px;
+    }
+    .calcBox .k{
+      font-size:9.5px;
+      line-height:1.1;
+      white-space:nowrap;
+    }
+    .calcBox .v{
+      font-size:clamp(14px,1.1vw,18px);
+      line-height:1.05;
+      margin-top:3px;
+    }
+    .calcBox .f{
+      font-size:8.5px;
+      line-height:1.1;
+      margin-top:3px;
+    }
+    .tabs{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+    .tableWrap{
+      max-height:calc(100vh - 360px);
+      min-height:270px;
+    }
+    @media(max-width:1380px){
+      .layout{
+        grid-template-columns:minmax(250px,270px) minmax(0,1fr) minmax(250px,270px);
+        gap:8px;
+      }
+      .officialGrid{
+        grid-template-columns:95px minmax(112px,.8fr) repeat(3,minmax(82px,1fr));
+        gap:6px;
+      }
+      .bigResult .value{font-size:24px;}
+      .calcBox .v{font-size:15px;}
+      .calcBox .f{font-size:8px;}
+      .tabCard small{font-size:8px;}
+    }
+    @media(max-width:1180px){
+      .layout{grid-template-columns:1fr;grid-template-areas:"summary" "params" "main";}
+      .officialGrid{grid-template-columns:1fr 1fr;}
+      .bigResult .value{font-size:30px;}
+      .tableWrap{max-height:520px;}
+    }
+
   </style>
 </head>
 <body>
@@ -226,7 +318,7 @@
 
             <div class="officialGrid" style="margin-top:14px">
               <div class="tabCard"><div id="selectedTableBig">Tabela A</div><small id="selectedTableDesc">Transporte Rodoviário de Carga e Lotação</small></div>
-              <div class="bigResult"><div class="label">Piso Mínimo de Frete (IDA)</div><div class="value" id="officialMain">R$ 0,00</div><div class="sub">Valor tabela ANTT oficial (sem pedágio)</div></div>
+              <div class="bigResult"><div class="label">Piso Mínimo (IDA)</div><div class="value" id="officialMain">R$ 0,00</div><div class="sub">Valor tabela ANTT oficial (sem pedágio)</div></div>
               <div class="calcBox"><div class="k">Valor Ida (R$)</div><div class="v" id="officialIda">0,00</div><div class="f">(Distância x CCD) + CC</div></div>
               <div class="calcBox"><div class="k">Retorno Vazio (R$)</div><div class="v" id="officialRetorno">0,00</div><div class="f">0,92 x Distância x CCD</div></div>
               <div class="calcBox"><div class="k">Valor Total (R$)</div><div class="v" id="officialTotal">0,00</div><div class="f">Ida + Retorno Vazio</div></div>

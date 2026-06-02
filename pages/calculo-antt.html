@@ -28,7 +28,7 @@
         radial-gradient(1200px 720px at 50% 120%, rgba(37,99,235,.14), transparent 62%),
         var(--bg);
     }
-    .wrap{width:min(100%,1440px);max-width:1440px;margin:0 auto;padding:14px;overflow-x:hidden}
+    .wrap{width:100%;max-width:1500px;margin:0 auto;padding:14px;overflow-x:hidden}
     .topbar{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px;min-width:0}
     .title{text-align:center;flex:1;min-width:220px}
     h1{margin:0;font-size:clamp(22px,2.1vw,30px);letter-spacing:.04em;font-weight:950;text-transform:uppercase;line-height:1.08}
@@ -50,7 +50,7 @@
     }
     .panel::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 180px at 50% -40px,rgba(80,135,255,.13),transparent 72%);pointer-events:none}
     .panelInner{position:relative;padding:12px}
-    .layout{display:grid;grid-template-columns:minmax(270px,305px) minmax(0,1fr) minmax(270px,305px);grid-template-areas:"summary main params";gap:12px;align-items:start;width:100%}
+    .layout{display:grid;grid-template-columns:minmax(285px,330px) minmax(0,1fr) minmax(285px,330px);grid-template-areas:"summary main params";gap:12px;align-items:start;width:100%;min-width:0}
     .leftCol{grid-area:params;min-width:0}.mainCol{grid-area:main;min-width:0}.rightCol{grid-area:summary;min-width:0}
     @media(max-width:1180px){.layout{grid-template-columns:1fr;grid-template-areas:"summary" "params" "main"}.rightCol,.leftCol{display:block}.rightCol .panel{height:auto}}
     @media(max-width:760px){.topbar{display:block}.actions{justify-content:center;margin-top:12px}.rightCol{display:block}.panel{margin-bottom:12px}h1{font-size:22px}}
@@ -66,14 +66,15 @@
     .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(78,118,210,.52);border-radius:10px;overflow:hidden;background:rgba(7,15,36,.56)}
     .seg button{border:0;padding:10px;background:transparent;color:var(--muted);font-weight:850;cursor:pointer}.seg button.active.yes{background:linear-gradient(90deg,#116c39,#0e5136);color:white}.seg button.active.no{background:linear-gradient(90deg,#7c2a33,#4b1a26);color:white}
     .hint{font-size:12px;color:var(--muted);line-height:1.45}.info{color:#60a5fa;font-weight:900}.miniLine{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px dashed rgba(105,145,215,.22);font-size:13px}.miniLine span:last-child{text-align:right;font-weight:850}.blueTxt{color:#72a2ff}.greenTxt{color:var(--green2)}.redTxt{color:#ff9c9c}
-    .official{margin-bottom:14px}.officialGrid{display:grid;grid-template-columns:minmax(145px,180px) minmax(210px,1fr) minmax(135px,170px) minmax(135px,170px) minmax(135px,170px);gap:14px;align-items:center;border:1px solid rgba(78,118,210,.35);border-radius:10px;padding:14px;background:rgba(3,14,30,.36)}
+    .official{margin-bottom:14px}.officialGrid{display:grid;grid-template-columns:minmax(140px,170px) minmax(190px,1fr) repeat(3,minmax(120px,155px));gap:10px;align-items:stretch;border:1px solid rgba(78,118,210,.35);border-radius:10px;padding:12px;background:rgba(3,14,30,.36);min-width:0}.officialGrid>*{min-width:0}
     .tabCard{border:1px solid rgba(78,118,210,.58);border-radius:8px;background:linear-gradient(180deg,rgba(20,88,205,.92),rgba(13,58,150,.88));padding:14px;text-align:center;font-weight:950}.tabCard small{display:block;font-size:10px;color:#dce7ff;margin-top:4px}
     .bigResult{text-align:center}.bigResult .label{font-size:14px;color:var(--muted);text-transform:uppercase}.bigResult .value{font-size:clamp(28px,3vw,39px);font-weight:950;color:var(--green2);letter-spacing:.02em}.bigResult .sub{font-size:13px;color:var(--muted)}
-    .calcBox{border:1px solid rgba(78,118,210,.48);border-radius:8px;padding:12px;text-align:center;min-height:90px;background:rgba(5,15,34,.58)}.calcBox .k{font-size:13px;color:#fff}.calcBox .v{font-size:22px;font-weight:900;margin-top:4px}.calcBox .f{font-size:12px;color:var(--muted);margin-top:4px}
+    .calcBox{border:1px solid rgba(78,118,210,.48);border-radius:8px;padding:10px;text-align:center;min-height:86px;background:rgba(5,15,34,.58);overflow:hidden}.calcBox .k{font-size:12px;color:#fff}.calcBox .v{font-size:clamp(16px,1.45vw,22px);font-weight:900;margin-top:4px;white-space:nowrap}.calcBox .f{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.25}
+    @media(max-width:1500px){.officialGrid{grid-template-columns:1fr 1fr}.bigResult{grid-column:span 1}.tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:1100px){.officialGrid{grid-template-columns:1fr 1fr}.bigResult{grid-column:span 1}}
-    .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:12px}.tabBtn{padding:11px 6px;min-width:0;border:1px solid rgba(78,118,210,.55);border-radius:8px;background:rgba(5,17,38,.76);color:var(--text);font-weight:900;cursor:pointer}.tabBtn small{display:block;font-weight:600;color:var(--muted);margin-top:4px}.tabBtn.active{background:linear-gradient(180deg,rgba(37,99,235,.95),rgba(14,65,160,.95));border-color:#3b82f6}
+    .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:12px}.tabBtn{padding:10px 6px;min-width:0;border:1px solid rgba(78,118,210,.55);border-radius:8px;background:rgba(5,17,38,.76);color:var(--text);font-weight:900;cursor:pointer;overflow:hidden}.tabBtn small{display:block;font-weight:600;color:var(--muted);margin-top:4px;font-size:10px;line-height:1.15}.tabBtn.active{background:linear-gradient(180deg,rgba(37,99,235,.95),rgba(14,65,160,.95));border-color:#3b82f6}
     @media(max-width:900px){.tabs{grid-template-columns:repeat(2,1fr)}}
-    .commercialHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.commercialHead .sectionTitle{margin:0}.tableWrap{overflow:auto;border:1px solid rgba(78,118,210,.36);border-radius:10px;max-height:392px}table{width:100%;border-collapse:collapse;min-width:690px}th,td{border-bottom:1px solid rgba(90,130,220,.20);padding:10px 12px;font-size:13px}th{position:sticky;top:0;background:#07112c;color:#eef5ff;text-transform:uppercase;font-size:12px;z-index:1}td.num,th.num{text-align:right}tr{background:rgba(4,15,33,.38)}tr:nth-child(even){background:rgba(7,22,44,.48)}tr.active{background:linear-gradient(90deg,rgba(28,93,205,.75),rgba(17,47,95,.56))}.vehicleName{white-space:nowrap}.weightInput{max-width:118px;text-align:center;padding:8px;border-radius:8px}.unit{color:var(--muted);font-weight:800}.motor{color:#ff857d;font-weight:950}.empresa{color:#6e93ff;font-weight:950}.trash{color:#ff4d4d;font-size:18px;text-align:center}.addVehicle{max-width:310px;margin:12px auto 0}.summaryCard .sectionTitle{margin-bottom:12px}.summaryInputRow{display:grid;grid-template-columns:minmax(0,1fr) 95px;align-items:center;gap:10px;padding:8px 0}.summaryInputRow label{margin:0;color:#fff}.summaryInputRow input{padding:9px 10px;text-align:right}.summaryInputRow .unitText{font-size:13px;color:var(--muted);font-weight:900;margin-left:4px}.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(110,150,220,.35),transparent);margin:10px 0}.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.kpi{border:1px solid rgba(78,118,210,.42);border-radius:9px;padding:11px;background:rgba(6,16,36,.6);text-align:center}.kpi .t{font-size:12px;color:var(--muted)}.kpi .v{font-size:20px;font-weight:950;margin-top:4px}.formula{font-size:11px;color:var(--muted);line-height:1.45;margin-top:12px}.notes{margin-top:14px}.noteGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.noteText{font-size:12px;color:var(--muted);line-height:1.48}.footer{margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;border:1px solid rgba(78,118,210,.35);border-radius:8px;padding:10px 14px;background:rgba(8,25,50,.72);color:var(--muted);font-size:13px;text-align:center}
+    .commercialHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.commercialHead .sectionTitle{margin:0}.tableWrap{overflow:auto;border:1px solid rgba(78,118,210,.36);border-radius:10px;max-height:392px}table{width:100%;border-collapse:collapse;min-width:620px}th,td{border-bottom:1px solid rgba(90,130,220,.20);padding:10px 12px;font-size:13px}th{position:sticky;top:0;background:#07112c;color:#eef5ff;text-transform:uppercase;font-size:12px;z-index:1}td.num,th.num{text-align:right}tr{background:rgba(4,15,33,.38)}tr:nth-child(even){background:rgba(7,22,44,.48)}tr.active{background:linear-gradient(90deg,rgba(28,93,205,.75),rgba(17,47,95,.56))}.vehicleName{white-space:nowrap}.weightInput{max-width:118px;text-align:center;padding:8px;border-radius:8px}.unit{color:var(--muted);font-weight:800}.motor{color:#ff857d;font-weight:950}.empresa{color:#6e93ff;font-weight:950}.trash{color:#ff4d4d;font-size:18px;text-align:center}.addVehicle{max-width:310px;margin:12px auto 0}.summaryCard .sectionTitle{margin-bottom:12px}.summaryCard .badge{margin-bottom:8px}.summaryMeta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.summaryMeta .mini{border:1px solid rgba(78,118,210,.38);border-radius:9px;padding:9px;background:rgba(6,16,36,.5)}.summaryMeta .mini .t{font-size:11px;color:var(--muted)}.summaryMeta .mini .v{font-size:16px;font-weight:950;margin-top:3px;text-align:right}.summaryInputRow{display:grid;grid-template-columns:minmax(0,1fr) 95px;align-items:center;gap:10px;padding:8px 0}.summaryInputRow label{margin:0;color:#fff}.summaryInputRow input{padding:9px 10px;text-align:right}.summaryInputRow .unitText{font-size:13px;color:var(--muted);font-weight:900;margin-left:4px}.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(110,150,220,.35),transparent);margin:10px 0}.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.kpi{border:1px solid rgba(78,118,210,.42);border-radius:9px;padding:11px;background:rgba(6,16,36,.6);text-align:center}.kpi .t{font-size:12px;color:var(--muted)}.kpi .v{font-size:20px;font-weight:950;margin-top:4px}.formula{font-size:11px;color:var(--muted);line-height:1.45;margin-top:12px}.notes{margin-top:14px}.noteGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.noteText{font-size:12px;color:var(--muted);line-height:1.48}.footer{margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;border:1px solid rgba(78,118,210,.35);border-radius:8px;padding:10px 14px;background:rgba(8,25,50,.72);color:var(--muted);font-size:13px;text-align:center}
     @media(max-width:760px){.noteGrid,.footer{grid-template-columns:1fr}.officialGrid{grid-template-columns:1fr}.row,.row3{grid-template-columns:1fr}.tableWrap table{min-width:680px}}
     .lockedMsg{display:none;margin-top:10px;border:1px solid rgba(255,190,80,.38);background:rgba(255,190,80,.10);color:#ffe0a3;border-radius:8px;padding:10px;font-size:12px;line-height:1.4}.locked .lockedMsg{display:block}.locked .officialGrid,.locked .tableWrap{opacity:.55;filter:saturate(.65)}
   </style>
@@ -180,22 +181,36 @@
       <aside class="rightCol">
         <section class="panel summaryCard">
           <div class="panelInner">
-            <div class="sectionTitle">▤ Resumo da Cotação<br><span style="font-size:12px;color:var(--muted);font-weight:800">(Base para cálculo total)</span></div>
+            <span class="badge">Entrada</span>
+            <div class="sectionTitle" style="margin-top:8px">▤ Resumo da Cotação</div>
 
-            <div class="summaryInputRow"><label for="kmSummary">KM Total</label><div><input id="kmSummary" type="number" step="0.1" value="500"></div></div>
-            <div class="summaryInputRow"><label for="pedagioSummary">Pedágio por eixo (R$) <span class="info">ⓘ</span></label><div><input id="pedagioSummary" type="number" step="0.01" value="216"></div></div>
-            <div class="summaryInputRow"><label>Número de Eixos</label><div style="text-align:right;font-weight:900" id="sumEixos">7</div></div>
-            <div class="summaryInputRow"><label>Pedágio Total (R$)</label><div style="text-align:right;font-weight:900" id="sumPedTotal">0,00</div></div>
-            <div class="divider"></div>
-            <div class="summaryInputRow"><label for="margemSummary">Margem de lucro (%)</label><div><input id="margemSummary" type="number" step="0.01" value="10"></div></div>
-            <div class="summaryInputRow"><label for="icmsSummary">ICMS (%) (opcional)</label><div><input id="icmsSummary" type="number" step="0.01" value="0"></div></div>
+            <label for="tipoSummary">Tipo</label>
+            <select id="tipoSummary"></select>
+
+            <div class="row">
+              <div><label for="kmSummary">KM total</label><input id="kmSummary" type="number" step="0.1" value="500"></div>
+              <div><label for="pedagioSummary">Pedágio por eixo (R$)</label><input id="pedagioSummary" type="number" step="0.01" value="216"></div>
+            </div>
+
+            <div class="row">
+              <div><label for="margemSummary">Margem (%)</label><input id="margemSummary" type="number" step="0.01" value="10"></div>
+              <div><label for="icmsSummary">ICMS (%) (opcional)</label><input id="icmsSummary" type="number" step="0.01" value="0"></div>
+            </div>
+
+            <button class="btn" id="btnCalcSummary">Calcular</button>
 
             <div class="kpis">
-              <div class="kpi"><div class="t">Frete Motorista</div><div class="v motor" id="sumMotorista">R$ 0,00</div></div>
-              <div class="kpi"><div class="t">Frete Empresa</div><div class="v empresa" id="sumEmpresa">R$ 0,00</div></div>
+              <div class="kpi"><div class="t">Frete Motorista (R$/ton)</div><div class="v motor" id="sumMotorista">R$ 0,00</div></div>
+              <div class="kpi"><div class="t">Frete Empresa (R$/ton)</div><div class="v empresa" id="sumEmpresa">R$ 0,00</div></div>
             </div>
+
+            <div class="summaryMeta">
+              <div class="mini"><div class="t">Número de Eixos</div><div class="v" id="sumEixos">7</div></div>
+              <div class="mini"><div class="t">Pedágio Total (R$)</div><div class="v" id="sumPedTotal">0,00</div></div>
+            </div>
+
             <div class="formula">
-              <b>Motorista:</b> ((Base Cálculo + Pedágio) / Peso)<br>
+              <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM × KM) + Custo CC + (Pedágio/Eixo × Eixos)) / Peso; 0)<br>
               <b>Empresa:</b> Motorista / (1 - Margem) / (1 - ICMS)<br>
               <span class="greenTxt">Base principal:</span> KM, Pedágio, Margem e ICMS.
             </div>
@@ -247,13 +262,13 @@ let activeTable = localStorage.getItem("nf_piso_active_table") || "A";
 let flags = {composicao:"sim", alto:"nao", retorno:"nao"};
 
 const VEHICLES_DEFAULT = [
-  {tipo:"9 Rodotrem", eixos:9, rkm:9.2662, custoCC:877.83, peso:49},
-  {tipo:"9 Rodocaçamba", eixos:9, rkm:9.2662, custoCC:877.83, peso:47},
-  {tipo:"8 eixos Graneleiro", eixos:8, rkm:8.0855, custoCC:792.30, peso:45},
-  {tipo:"8 eixos Caçamba", eixos:8, rkm:8.0855, custoCC:792.30, peso:43},
-  {tipo:"4 eixo Graneleiro", eixos:7, rkm:8.0855, custoCC:792.30, peso:39},
-  {tipo:"4 eixo Caçamba", eixos:7, rkm:8.0855, custoCC:792.30, peso:37},
-  {tipo:"7 Bitrem", eixos:7, rkm:8.0855, custoCC:792.30, peso:37},
+  {tipo:"9 Rodotrem", eixos:9, rkm:9.2662, custoCC:877.83, peso:45},
+  {tipo:"9 Rodocaçamba", eixos:9, rkm:9.2662, custoCC:877.83, peso:45},
+  {tipo:"8 eixos Graneleiro", eixos:8, rkm:8.0855, custoCC:792.30, peso:40},
+  {tipo:"8 eixos Caçamba", eixos:8, rkm:8.0855, custoCC:792.30, peso:40},
+  {tipo:"4 eixo Graneleiro", eixos:7, rkm:8.0855, custoCC:792.30, peso:28},
+  {tipo:"4 eixo Caçamba", eixos:7, rkm:8.0855, custoCC:792.30, peso:28},
+  {tipo:"7 Bitrem", eixos:7, rkm:8.0855, custoCC:792.30, peso:35},
   {tipo:"7 Biçamba", eixos:7, rkm:8.0855, custoCC:792.30, peso:35},
   {tipo:"6 LS Graneleiro", eixos:6, rkm:7.4408, custoCC:656.76, peso:31},
   {tipo:"6 LS Caçamba", eixos:6, rkm:7.4408, custoCC:656.76, peso:29},
@@ -307,6 +322,13 @@ function renderOfficial(){
   $("officialPanel").classList.toggle("locked",!r.enabled);
   $("officialMain").textContent=brMoney(r.ida); $("officialIda").textContent=brNum(r.ida,2); $("officialRetorno").textContent=brNum(r.retorno,2); $("officialTotal").textContent=brNum(r.total,2);
 }
+function renderTipoSummary(){
+  const sel=$("tipoSummary"); if(!sel) return;
+  const current=String(selectedVehicle);
+  sel.innerHTML="";
+  vehicles.forEach((v,i)=>{ const op=document.createElement("option"); op.value=String(i); op.textContent=v.tipo; sel.appendChild(op); });
+  sel.value = vehicles[selectedVehicle] ? current : "0";
+}
 function renderVehicles(){
   const tbody=$("vehicleRows"); tbody.innerHTML="";
   vehicles.forEach((v,i)=>{
@@ -322,12 +344,12 @@ function renderSummary(){
   $("sumEixos").textContent=row.eixos; $("sumPedTotal").textContent=brNum(pedagio*row.eixos,2);
   $("sumMotorista").textContent=brMoney(c.motorista); $("sumEmpresa").textContent=Number.isFinite(c.empresa)?brMoney(c.empresa):"Erro";
 }
-function renderAll(){ renderTabs(); renderOfficial(); renderVehicles(); renderSummary(); }
+function renderAll(){ renderTipoSummary(); renderTabs(); renderOfficial(); renderVehicles(); renderSummary(); }
 function applyToggles(){
   document.querySelectorAll(".seg").forEach(seg=>{ const key=seg.dataset.toggle; seg.querySelectorAll("button").forEach(b=>{ b.classList.toggle("active", flags[key]===b.dataset.val); b.classList.toggle("yes", b.dataset.val==="sim"); b.classList.toggle("no", b.dataset.val==="nao"); }); });
 }
 function bind(){
-  $("btnHome").onclick=goHome; $("btnCalc").onclick=renderAll;
+  $("btnHome").onclick=goHome; $("btnCalc").onclick=renderAll; $("btnCalcSummary")?.addEventListener("click", renderAll);
   $("btnClear").onclick=()=>{ if(confirm("Limpar ajustes e voltar ao padrão?")){ localStorage.removeItem("nf_piso_vehicles_v2"); vehicles=structuredClone(VEHICLES_DEFAULT); selectedVehicle=0; $("kmSummary").value=500; $("kmLeft").value=500; $("pedagioSummary").value=216; $("margemSummary").value=10; $("icmsSummary").value=0; renderAll(); } };
   $("btnAddVehicle").onclick=()=>{ vehicles.push({tipo:"Novo veículo",eixos:Number($("eixosInput").value||7),rkm:8.0855,custoCC:792.30,peso:35}); saveVehicles(); selectedVehicle=vehicles.length-1; renderAll(); };
   $("btnCompare").onclick=()=>alert("Comparação ativa: selecione Tabela A/B/C/D/E. Tabelas sem coeficientes ficam bloqueadas para evitar cálculo errado.");
@@ -335,6 +357,7 @@ function bind(){
   $("kmLeft").addEventListener("input",()=>{ syncKm("left"); renderAll(); });
   $("kmSummary").addEventListener("input",()=>{ syncKm("summary"); renderAll(); });
   ["pedagioSummary","margemSummary","icmsSummary","eixosInput","cargoType"].forEach(id=>$(id).addEventListener("input",renderAll));
+  $("tipoSummary")?.addEventListener("change",()=>{ selectedVehicle=Number($("tipoSummary").value||0); localStorage.setItem("nf_piso_selected_vehicle",String(selectedVehicle)); renderAll(); });
   document.querySelectorAll(".seg").forEach(seg=>seg.addEventListener("click",e=>{ if(e.target.tagName!=="BUTTON") return; flags[seg.dataset.toggle]=e.target.dataset.val; applyToggles(); renderAll(); }));
 }
 document.addEventListener("DOMContentLoaded",()=>{ bind(); applyToggles(); renderAll(); });

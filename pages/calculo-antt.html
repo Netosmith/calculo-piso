@@ -304,6 +304,15 @@
       .bigResult{min-width:0 !important;}
     }
 
+
+    /* AJUSTE FINO - peso editável com recalculo automático */
+    tr.pesoAtualizado{animation:destaquePeso 1s ease;}
+    @keyframes destaquePeso{
+      0%{background:rgba(41,211,145,.42);box-shadow:inset 0 0 0 1px rgba(41,211,145,.75)}
+      100%{background:transparent;box-shadow:none}
+    }
+    .weightInput.pesoAlterado{border-color:rgba(41,211,145,.8);box-shadow:0 0 0 3px rgba(41,211,145,.13)}
+
   </style>
 </head>
 <body>
@@ -547,13 +556,65 @@ function renderTipoSummary(){
   vehicles.forEach((v,i)=>{ const op=document.createElement("option"); op.value=String(i); op.textContent=v.tipo; sel.appendChild(op); });
   sel.value = vehicles[selectedVehicle] ? current : "0";
 }
+function parsePesoInput(value){
+  let s = String(value ?? "").trim().replace(/\s+/g, "");
+  if(!s) return NaN;
+  s = s.replace(/[^\d.,-]/g, "");
+  if(s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+function pulsePesoRow(tr, input){
+  if(!tr) return;
+  tr.classList.remove("pesoAtualizado");
+  void tr.offsetWidth;
+  tr.classList.add("pesoAtualizado");
+  if(input){
+    input.classList.add("pesoAlterado");
+    setTimeout(()=>input.classList.remove("pesoAlterado"), 650);
+  }
+}
+function updateVehicleRowValues(tr, row){
+  if(!tr || !row) return;
+  const c = calcCommercial(row);
+  const motorCell = tr.querySelector(".motor");
+  const empresaCell = tr.querySelector(".empresa");
+  if(motorCell) motorCell.textContent = brMoney(c.motorista);
+  if(empresaCell) empresaCell.textContent = Number.isFinite(c.empresa) ? brMoney(c.empresa) : "Erro";
+}
+function applyPesoChange(input, i, shouldFormat=false){
+  const n = parsePesoInput(input.value);
+  if(Number.isFinite(n) && n > 0){
+    vehicles[i].peso = n;
+    saveVehicles();
+    const tr = input.closest("tr");
+    updateVehicleRowValues(tr, vehicles[i]);
+    renderSummary();
+    pulsePesoRow(tr, input);
+    if(shouldFormat) input.value = brNum(n,3);
+  }else if(shouldFormat){
+    input.value = brNum(vehicles[i].peso,3);
+  }
+}
 function renderVehicles(){
   const tbody=$("vehicleRows"); tbody.innerHTML="";
   vehicles.forEach((v,i)=>{
     const c=calcCommercial(v); const tr=document.createElement("tr"); tr.className=i===selectedVehicle?"active":"";
-    tr.innerHTML=`<td class="vehicleName">${v.tipo}</td><td class="num">${v.eixos}</td><td class="num"><input class="weightInput" data-i="${i}" value="${brNum(v.peso,3)}"></td><td class="unit">ton</td><td class="num motor">${brMoney(c.motorista)}</td><td class="num empresa">${Number.isFinite(c.empresa)?brMoney(c.empresa):"Erro"}</td><td class="num trash">🗑</td>`;
+    tr.innerHTML=`<td class="vehicleName">${v.tipo}</td><td class="num">${v.eixos}</td><td class="num"><input class="weightInput" data-i="${i}" value="${brNum(v.peso,3)}" inputmode="decimal" autocomplete="off"></td><td class="unit">ton</td><td class="num motor">${brMoney(c.motorista)}</td><td class="num empresa">${Number.isFinite(c.empresa)?brMoney(c.empresa):"Erro"}</td><td class="num trash">🗑</td>`;
     tr.addEventListener("click",e=>{ if(e.target.classList.contains("weightInput")) return; selectedVehicle=i; localStorage.setItem("nf_piso_selected_vehicle",String(i)); renderAll(); });
-    tr.querySelector(".weightInput").addEventListener("input",e=>{ const n=Number(String(e.target.value).replace(".","").replace(",",".")); if(Number.isFinite(n)&&n>0){ vehicles[i].peso=n; saveVehicles(); renderSummary(); }});
+    const input = tr.querySelector(".weightInput");
+    input.addEventListener("focus", e => e.target.select());
+    input.addEventListener("input", e => applyPesoChange(e.target, i, false));
+    input.addEventListener("blur", e => applyPesoChange(e.target, i, true));
+    input.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === "Tab"){
+        applyPesoChange(e.target, i, true);
+      }
+      if(e.key === "Enter"){
+        e.preventDefault();
+        e.target.blur();
+      }
+    });
     tbody.appendChild(tr);
   });
 }

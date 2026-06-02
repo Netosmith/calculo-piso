@@ -77,6 +77,83 @@
     .commercialHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.commercialHead .sectionTitle{margin:0}.tableWrap{overflow:auto;border:1px solid rgba(78,118,210,.36);border-radius:10px;max-height:392px}table{width:100%;border-collapse:collapse;min-width:620px}th,td{border-bottom:1px solid rgba(90,130,220,.20);padding:10px 12px;font-size:13px}th{position:sticky;top:0;background:#07112c;color:#eef5ff;text-transform:uppercase;font-size:12px;z-index:1}td.num,th.num{text-align:right}tr{background:rgba(4,15,33,.38)}tr:nth-child(even){background:rgba(7,22,44,.48)}tr.active{background:linear-gradient(90deg,rgba(28,93,205,.75),rgba(17,47,95,.56))}.vehicleName{white-space:nowrap}.weightInput{max-width:118px;text-align:center;padding:8px;border-radius:8px}.unit{color:var(--muted);font-weight:800}.motor{color:#ff857d;font-weight:950}.empresa{color:#6e93ff;font-weight:950}.trash{color:#ff4d4d;font-size:18px;text-align:center}.addVehicle{max-width:310px;margin:12px auto 0}.summaryCard .sectionTitle{margin-bottom:12px}.summaryCard .badge{margin-bottom:8px}.summaryMeta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.summaryMeta .mini{border:1px solid rgba(78,118,210,.38);border-radius:9px;padding:9px;background:rgba(6,16,36,.5)}.summaryMeta .mini .t{font-size:11px;color:var(--muted)}.summaryMeta .mini .v{font-size:16px;font-weight:950;margin-top:3px;text-align:right}.summaryInputRow{display:grid;grid-template-columns:minmax(0,1fr) 95px;align-items:center;gap:10px;padding:8px 0}.summaryInputRow label{margin:0;color:#fff}.summaryInputRow input{padding:9px 10px;text-align:right}.summaryInputRow .unitText{font-size:13px;color:var(--muted);font-weight:900;margin-left:4px}.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(110,150,220,.35),transparent);margin:10px 0}.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.kpi{border:1px solid rgba(78,118,210,.42);border-radius:9px;padding:11px;background:rgba(6,16,36,.6);text-align:center}.kpi .t{font-size:12px;color:var(--muted)}.kpi .v{font-size:20px;font-weight:950;margin-top:4px}.formula{font-size:11px;color:var(--muted);line-height:1.45;margin-top:12px}.notes{margin-top:14px}.noteGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.noteText{font-size:12px;color:var(--muted);line-height:1.48}.footer{margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;border:1px solid rgba(78,118,210,.35);border-radius:8px;padding:10px 14px;background:rgba(8,25,50,.72);color:var(--muted);font-size:13px;text-align:center}
     @media(max-width:760px){.noteGrid,.footer{grid-template-columns:1fr}.officialGrid{grid-template-columns:1fr}.row,.row3{grid-template-columns:1fr}.tableWrap table{min-width:680px}}
     .lockedMsg{display:none;margin-top:10px;border:1px solid rgba(255,190,80,.38);background:rgba(255,190,80,.10);color:#ffe0a3;border-radius:8px;padding:10px;font-size:12px;line-height:1.4}.locked .lockedMsg{display:block}.locked .officialGrid,.locked .tableWrap{opacity:.55;filter:saturate(.65)}
+
+
+    /* AJUSTE COMPACTO - sem rolagem horizontal e sem sobreposição */
+    .wrap{max-width:1420px;padding:10px 12px;}
+    .topbar{margin-bottom:10px;gap:8px;}
+    .smallBtn{padding:8px 11px;font-size:13px;}
+    .btn{padding:11px 14px;}
+    .layout{grid-template-columns:minmax(280px,310px) minmax(0,1fr) minmax(280px,310px);gap:10px;align-items:start;}
+    .panel{border-radius:9px;}
+    .panelInner{padding:10px;}
+    .sectionTitle{font-size:14px;margin-bottom:10px;}
+    label{font-size:12px;margin:9px 0 5px;}
+    input,select{padding:9px 11px;font-size:13px;border-radius:9px;}
+    .row{gap:9px;}
+    .seg button{padding:9px 8px;}
+    .hint,.formula,.noteText{font-size:11px;}
+    .miniLine{padding:7px 0;font-size:12px;}
+    .officialGrid{grid-template-columns:128px minmax(150px,1.15fr) repeat(3,minmax(92px,1fr));gap:8px;padding:10px;align-items:stretch;overflow:hidden;}
+    .tabCard{padding:10px 8px;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .tabCard small{font-size:9px;line-height:1.15;}
+    .bigResult{display:flex;flex-direction:column;justify-content:center;min-width:0;}
+    .bigResult .label{font-size:12px;}
+    .bigResult .value{font-size:clamp(25px,2.35vw,34px);line-height:1;white-space:nowrap;}
+    .bigResult .sub{font-size:11px;}
+    .calcBox{padding:8px 6px;min-height:74px;display:flex;flex-direction:column;justify-content:center;}
+    .calcBox .k{font-size:10px;line-height:1.15;}
+    .calcBox .v{font-size:clamp(15px,1.25vw,20px);line-height:1.1;}
+    .calcBox .f{font-size:9px;line-height:1.15;}
+    .tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px;}
+    .tabBtn{padding:8px 4px;font-size:13px;}
+    .tabBtn small{font-size:9px;}
+    .commercialHead{margin-bottom:7px;}
+    .tableWrap{max-height:calc(100vh - 435px);min-height:230px;}
+    table{min-width:590px;}
+    th,td{padding:8px 9px;font-size:12px;}
+    th{font-size:11px;}
+    .weightInput{max-width:104px;padding:7px;}
+    .addVehicle{margin-top:9px;}
+    .summaryCard .sectionTitle{font-size:14px;}
+    .kpis{gap:8px;margin-top:10px;}
+    .kpi{padding:9px 7px;}
+    .kpi .t{font-size:11px;}
+    .kpi .v{font-size:18px;}
+    .summaryMeta{gap:8px;}
+    .summaryMeta .mini{padding:8px;}
+    .summaryMeta .mini .v{font-size:15px;}
+    .quickBtn{border-color:rgba(41,211,145,.65);background:linear-gradient(180deg,rgba(20,44,91,.98),rgba(9,24,52,.98));display:inline-flex;align-items:center;gap:9px;}
+    .miniSwitch{width:34px;height:18px;border-radius:999px;border:1px solid rgba(41,211,145,.7);background:rgba(10,18,38,.9);position:relative;display:inline-block;vertical-align:middle;}
+    .miniSwitch::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#dbeafe;transition:.15s;}
+    body.quoteMode .miniSwitch{background:rgba(41,211,145,.35);}
+    body.quoteMode .miniSwitch::after{left:18px;background:#29d391;}
+    body.quoteMode .layout{grid-template-columns:minmax(290px,340px) minmax(0,1fr);grid-template-areas:"summary main";}
+    body.quoteMode .leftCol, body.quoteMode .official, body.quoteMode .notes, body.quoteMode .footer{display:none!important;}
+    body.quoteMode .tableWrap{max-height:calc(100vh - 250px);min-height:430px;}
+    body.quoteMode .commercialHead .sectionTitle::after{content:"  • MODO COTAÇÃO RÁPIDA";color:var(--green2);}
+    @media(max-width:1320px){
+      .layout{grid-template-columns:minmax(260px,300px) minmax(0,1fr) minmax(260px,300px);gap:8px;}
+      .officialGrid{grid-template-columns:120px minmax(135px,1fr) repeat(3,minmax(82px,1fr));gap:7px;padding:8px;}
+      .bigResult .value{font-size:28px;}
+      .calcBox .v{font-size:16px;}
+      .smallBtn{font-size:12px;padding:7px 9px;}
+      .subtitle{font-size:12px;}
+    }
+    @media(max-width:1180px){
+      .layout{grid-template-columns:1fr;grid-template-areas:"summary" "params" "main";}
+      body.quoteMode .layout{grid-template-columns:1fr;grid-template-areas:"summary" "main";}
+      .tableWrap{max-height:520px;}
+      .officialGrid{grid-template-columns:1fr 1fr;}
+    }
+    @media(max-height:820px) and (min-width:1181px){
+      .notes,.footer{display:none;}
+      .tableWrap{max-height:calc(100vh - 405px);}
+      .sectionTitle{margin-bottom:8px;}
+      label{margin-top:7px;}
+      .panelInner{padding:9px;}
+    }
+
   </style>
 </head>
 <body>
@@ -88,6 +165,7 @@
         <div class="subtitle">Conforme Resolução ANTT nº 5.867/2020 • Atualizada em 20/03/2026 pela Portaria SUROC nº 04/2026</div>
       </div>
       <div class="actions">
+        <button class="smallBtn quickBtn" id="btnQuickQuote" type="button">⚡ Cotação Rápida <span class="miniSwitch"></span></button>
         <button class="smallBtn green" id="btnCompare">⚖️ Comparar Tabelas</button>
         <button class="smallBtn" id="btnExportPDF">▣ Exportar PDF</button>
         <button class="smallBtn danger" id="btnClear">🗑 Limpar</button>
@@ -98,7 +176,7 @@
       <aside class="leftCol">
         <section class="panel">
           <div class="panelInner">
-            <div class="sectionTitle">🚚 1. Parâmetros da Operação</div>
+            <div class="sectionTitle">🚚 2. Parâmetros da Operação</div>
 
             <label for="cargoType">Tipo de Carga</label>
             <select id="cargoType">
@@ -142,7 +220,7 @@
         <section class="panel official" id="officialPanel">
           <div class="panelInner">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
-              <div class="sectionTitle" style="margin:0">🛡 2. Piso Mínimo de Frete (Valores Oficiais ANTT) - Sem Pedágio <span class="info">ⓘ</span></div>
+              <div class="sectionTitle" style="margin:0">🛡 1. Piso Mínimo de Frete (Valores Oficiais ANTT) - Sem Pedágio <span class="info">ⓘ</span></div>
               <span class="badge greenTxt">⚖️ Valores oficiais ANTT</span>
             </div>
 
@@ -338,7 +416,14 @@ function renderAll(){ renderTipoSummary(); renderTabs(); renderOfficial(); rende
 function applyToggles(){
   document.querySelectorAll(".seg").forEach(seg=>{ const key=seg.dataset.toggle; seg.querySelectorAll("button").forEach(b=>{ b.classList.toggle("active", flags[key]===b.dataset.val); b.classList.toggle("yes", b.dataset.val==="sim"); b.classList.toggle("no", b.dataset.val==="nao"); }); });
 }
+
+function quoteModeKey(){ return "nf_piso_quote_mode_v3"; }
+function isQuoteMode(){ return localStorage.getItem(quoteModeKey()) === "1"; }
+function applyQuoteMode(){ document.body.classList.toggle("quoteMode", isQuoteMode()); }
+function toggleQuoteMode(){ localStorage.setItem(quoteModeKey(), isQuoteMode() ? "0" : "1"); applyQuoteMode(); renderAll(); }
+
 function bind(){
+  $("btnQuickQuote")?.addEventListener("click", toggleQuoteMode);
   $("btnHome").onclick=goHome; $("btnCalc").onclick=renderAll; $("btnCalcSummary")?.addEventListener("click", renderAll);
   $("btnClear").onclick=()=>{ if(confirm("Limpar ajustes e voltar ao padrão?")){ localStorage.removeItem("nf_piso_vehicles_v2"); vehicles=structuredClone(VEHICLES_DEFAULT); selectedVehicle=0; $("kmSummary").value=500; $("kmLeft").value=500; $("pedagioSummary").value=216; $("margemSummary").value=10; $("icmsSummary").value=0; renderAll(); } };
   $("btnAddVehicle").onclick=()=>{ vehicles.push({tipo:"Novo veículo",eixos:Number($("eixosInput").value||7),rkm:8.0855,custoCC:792.30,peso:35}); saveVehicles(); selectedVehicle=vehicles.length-1; renderAll(); };
@@ -350,7 +435,7 @@ function bind(){
   $("tipoSummary")?.addEventListener("change",()=>{ selectedVehicle=Number($("tipoSummary").value||0); localStorage.setItem("nf_piso_selected_vehicle",String(selectedVehicle)); renderAll(); });
   document.querySelectorAll(".seg").forEach(seg=>seg.addEventListener("click",e=>{ if(e.target.tagName!=="BUTTON") return; flags[seg.dataset.toggle]=e.target.dataset.val; applyToggles(); renderAll(); }));
 }
-document.addEventListener("DOMContentLoaded",()=>{ bind(); applyToggles(); renderAll(); });
+document.addEventListener("DOMContentLoaded",()=>{ bind(); applyToggles(); applyQuoteMode(); renderAll(); });
 </script>
 </body>
 </html>

@@ -552,27 +552,70 @@
       background:#16a34a;color:#fff;font-size:10px;font-weight:950;margin-bottom:8px;
     }
     .nfArtCard{
-      width:240px;height:400px;margin:0 auto;border-radius:12px;position:relative;overflow:hidden;
-      background:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.20);
-      color:#fff;font-family:Arial,Helvetica,sans-serif;
+      width:240px;
+      aspect-ratio:2/3;
+      height:auto;
+      margin:0 auto;
+      border-radius:12px;
+      position:relative;
+      overflow:hidden;
+      background:#1f2937;
+      box-shadow:0 6px 18px rgba(0,0,0,.20);
+      color:#fff;
+      font-family:Arial,Helvetica,sans-serif;
     }
-    .nfArtCard img.nfArtBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-    .nfArtOverlay{position:absolute;inset:0;text-align:center;text-shadow:0 2px 4px rgba(0,0,0,.65);padding:18px 12px;}
-    .nfArtLogo{font-size:28px;font-weight:950;font-style:italic;letter-spacing:-1px;margin-top:0;}
-    .nfArtLogo span{color:#65c735;}
-    .nfArtSubLogo{font-size:9px;font-weight:800;margin-top:-4px;}
-    .nfArtBar{display:inline-block;background:rgba(111,73,30,.85);border:1px solid rgba(255,216,106,.7);padding:4px 10px;border-radius:4px;margin-top:26px;font-size:12px;font-weight:950;}
-    .nfArtLabel{display:inline-block;background:#c99a18;color:#2b1b00;border:2px solid #7a5200;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:950;margin-top:13px;text-shadow:none;}
-    .nfArtBig{font-size:20px;font-weight:950;line-height:1.05;margin-top:4px;text-transform:uppercase;}
-    .nfArtSmall{font-size:10px;font-weight:800;opacity:.92;}
-    .nfArtProduct{font-size:21px;font-weight:950;margin-top:5px;text-transform:uppercase;}
-    .nfArtPrice{font-size:25px;font-weight:950;margin-top:5px;color:#fff;}
-    .nfArtNote{font-size:9px;font-weight:900;margin-top:0;}
+    .nfArtCard img.nfArtBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+    .nfArtOverlay{position:absolute;inset:0;text-align:center;text-shadow:0 2px 5px rgba(0,0,0,.85);padding:0;z-index:1;}
+
+    /* A imagem de fundo já contém logo, faixas e títulos. Aqui entram apenas os dados variáveis. */
+    .nfArtBig,.nfArtSmall,.nfArtProduct,.nfArtPrice,.nfArtContacts{position:absolute;left:5%;right:30%;}
+    .nfArtBig{
+      font-size:clamp(16px,7.2vw,22px);
+      font-weight:950;
+      line-height:.98;
+      text-transform:uppercase;
+      color:#fff;
+      letter-spacing:-.4px;
+    }
+    .nfArtSmall{
+      font-size:clamp(8px,3.4vw,11px);
+      font-weight:850;
+      line-height:1.05;
+      opacity:.95;
+      text-transform:uppercase;
+      color:#fff;
+    }
+    #nfArtColetaCidade{top:31.5%;}
+    #nfArtColetaLocal{top:37.1%;}
+    #nfArtDescargaCidade{top:45.1%;}
+    #nfArtDescargaLocal{top:50.7%;}
+    .nfArtProduct{
+      top:56.9%;
+      font-size:clamp(16px,7vw,22px);
+      font-weight:950;
+      line-height:1;
+      text-transform:uppercase;
+      color:#fff;
+    }
+    .nfArtPrice{
+      top:65.1%;
+      font-size:clamp(17px,7.6vw,24px);
+      font-weight:950;
+      line-height:1;
+      color:#fff;
+      text-transform:uppercase;
+    }
     .nfArtContacts{
-      position:absolute;left:14px;right:14px;bottom:13px;text-align:left;
-      font-size:9px;line-height:1.35;font-weight:850;
+      left:13.5%;
+      right:34%;
+      top:73.3%;
+      text-align:left;
+      font-size:clamp(7px,3vw,9.5px);
+      line-height:1.16;
+      font-weight:900;
+      color:#fff;
     }
-    .nfArtContacts b{font-size:11px;display:block;margin-bottom:2px;}
+    .nfArtContacts div{min-height:1.18em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .nfPreviewButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
     .nfPreviewButtons button{
       height:32px;border-radius:9px;border:1px solid #d1d5db;font-size:10px;font-weight:950;cursor:pointer;
@@ -580,6 +623,11 @@
     .nfPreviewButtons .green{background:#16a34a;color:#fff;border-color:#16a34a;}
     .nfPreviewButtons .blue{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
     .nfPreviewButtons .wa{grid-column:1/-1;background:#16a34a;color:#fff;border-color:#16a34a;}
+
+    /* ✅ ARTE LIMPA: a imagem de fundo já tem logo/faixas/títulos.
+       Aqui só aparecem os dados variáveis. Qualquer rótulo antigo gerado em HTML é ocultado. */
+    .nfArtLabel,.nfArtTitle,.nfArtTitulo,.nfArtLogo,.nfArtStatic,.nfArtHeader,.nfArtFaixa,.nfArtCaption{display:none!important;}
+    .nfArtCard .label,.nfArtCard .tag,.nfArtCard .caption{display:none!important;}
     .nfReadyMsg{
       margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;color:#0f172a;background:#f8fafc;
       font-size:11px;line-height:1.35;
@@ -600,6 +648,102 @@
       .nf-bulk-panel{width:100%;margin-left:0;overflow:auto;}
       .nfStats{grid-template-columns:1fr 1fr;}
     }
+
+  
+
+    /* ==========================================================
+       MODO RAIO - ARTE LIMPA
+       A imagem de fundo já possui logo, faixas e títulos.
+       Dentro do card aparecem SOMENTE os dados variáveis.
+    ========================================================== */
+    .nfArtCard{
+      width:240px;
+      aspect-ratio:2/3;
+      height:auto;
+      margin:0 auto;
+      border-radius:12px;
+      position:relative;
+      overflow:hidden;
+      background-image:url("../assets/img/SOJATESTE.png");
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+      box-shadow:0 6px 18px rgba(0,0,0,.20);
+      color:#fff;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+    .nfArtCard img.nfArtBg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      z-index:0;
+      border:0;
+      outline:0;
+    }
+    .nfArtOverlay{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      padding:0;
+      pointer-events:none;
+      text-align:center;
+      text-shadow:0 2px 5px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.45);
+    }
+    .nfArtBig,.nfArtSmall,.nfArtProduct,.nfArtPrice,.nfArtContacts{
+      position:absolute;
+      left:7%;
+      right:33%;
+      color:#fff;
+      text-transform:uppercase;
+    }
+    .nfArtBig{
+      font-size:20px;
+      font-weight:950;
+      line-height:.98;
+      letter-spacing:-.4px;
+    }
+    .nfArtSmall{
+      font-size:10px;
+      font-weight:850;
+      line-height:1.05;
+      opacity:.95;
+    }
+    #nfArtColetaCidade{top:29.6%;}
+    #nfArtColetaLocal{top:33.2%;}
+    #nfArtDescargaCidade{top:42.0%;}
+    #nfArtDescargaLocal{top:45.6%;}
+    .nfArtProduct{
+      top:54.7%;
+      font-size:18px;
+      font-weight:950;
+      line-height:1;
+    }
+    .nfArtPrice{
+      top:63.1%;
+      font-size:22px;
+      font-weight:950;
+      line-height:1;
+    }
+    .nfArtContacts{
+      left:15%;
+      right:35%;
+      top:70.6%;
+      text-align:left;
+      font-size:8.4px;
+      line-height:1.16;
+      font-weight:900;
+    }
+    .nfArtContacts div{
+      min-height:1.12em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .nfArtLabel,.nfArtTitle,.nfArtTitulo,.nfArtLogo,.nfArtStatic,.nfArtHeader,.nfArtFaixa,.nfArtCaption,
+    .nfArtCard .label,.nfArtCard .tag,.nfArtCard .caption,
+    .nfArtCard [data-static],.nfArtCard [data-label]{display:none!important;}
 
   </style>
 </head>
@@ -723,34 +867,22 @@
       <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
 
       <div class="nfArtCard" id="nfArtCard">
-        <img class="nfArtBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" />
+        <img class="nfArtBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" onerror="this.style.display='none'" />
         <div class="nfArtOverlay">
-          <div class="nfArtLogo">NOVA<span>FROTA</span></div>
-          <div class="nfArtSubLogo">TRANSPORTES E LOGÍSTICA</div>
+          <div class="nfArtBig" id="nfArtColetaCidade"></div>
+          <div class="nfArtSmall" id="nfArtColetaLocal"></div>
 
-          <div class="nfArtBar">INFORMATIVO DE FRETE</div>
+          <div class="nfArtBig" id="nfArtDescargaCidade"></div>
+          <div class="nfArtSmall" id="nfArtDescargaLocal"></div>
 
-          <div class="nfArtLabel">LOCAL DE COLETA</div>
-          <div class="nfArtBig" id="nfArtColetaCidade">INDIARA-GO</div>
-          <div class="nfArtSmall" id="nfArtColetaLocal">FAZ OURO BRANCO</div>
-
-          <div class="nfArtLabel">LOCAL DE DESCARGA</div>
-          <div class="nfArtBig" id="nfArtDescargaCidade">RIO VERDE-GO</div>
-          <div class="nfArtSmall" id="nfArtDescargaLocal">TERMINAL RUMO</div>
-
-          <div class="nfArtLabel">PRODUTO</div>
-          <div class="nfArtProduct" id="nfArtProduto">SOJA</div>
-
-          <div class="nfArtLabel">VALOR POR TONELADA</div>
-          <div class="nfArtPrice" id="nfArtValor">R$ 90,00</div>
-          <div class="nfArtNote" id="nfArtObs">PAGAMENTO PIX OU CHEQUE</div>
+          <div class="nfArtProduct" id="nfArtProduto"></div>
+          <div class="nfArtPrice" id="nfArtValor"></div>
 
           <div class="nfArtContacts">
-            <b>CONTATOS:</b>
-            <div id="nfArtContato1">• ARIEL (64) 99227-7537</div>
-            <div id="nfArtContato2">• GAUXIM (64) 99300-5771</div>
-            <div id="nfArtContato3">• UANDER (64) 98114-4642</div>
-            <div id="nfArtContato4">• RODRIGO (64) 99603-1200</div>
+            <div id="nfArtContato1"></div>
+            <div id="nfArtContato2"></div>
+            <div id="nfArtContato3"></div>
+            <div id="nfArtContato4"></div>
           </div>
         </div>
       </div>

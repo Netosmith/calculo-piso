@@ -173,7 +173,7 @@
 
 .previewDescarga {
   position: absolute;
-  top: 250px;
+  top: 270px;
   left: 32px;
   width: 215px;
   text-align: center;
@@ -202,7 +202,7 @@
 
 .previewProduct {
   position: absolute;
-  top: 405px;
+  top: 350px;
   left: 32px;
   width: 215px;
   text-align: center;
@@ -220,7 +220,7 @@
 
 .previewPrice {
   position: absolute;
-  top: 488px;
+  top: 400px;
   left: 32px;
   width: 215px;
   text-align: center;

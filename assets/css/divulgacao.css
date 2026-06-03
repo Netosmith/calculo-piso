@@ -144,9 +144,9 @@
 
 .previewColeta {
   position: absolute;
-  top: 205px;
-  left: 25px;
-  width: 205px;
+  top: 198px;
+  left: 32px;
+  width: 215px;
   text-align: center;
   z-index: 2;
 }
@@ -173,9 +173,9 @@
 
 .previewDescarga {
   position: absolute;
-  top: 300px;
-  left: 25px;
-  width: 205px;
+  top: 292px;
+  left: 32px;
+  width: 215px;
   text-align: center;
   z-index: 2;
 }
@@ -202,12 +202,12 @@
 
 .previewProduct {
   position: absolute;
-  top: 415px;
-  left: 25px;
-  width: 205px;
+  top: 405px;
+  left: 32px;
+  width: 215px;
   text-align: center;
   z-index: 2;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
@@ -220,12 +220,12 @@
 
 .previewPrice {
   position: absolute;
-  top: 500px;
-  left: 25px;
-  width: 205px;
+  top: 488px;
+  left: 32px;
+  width: 215px;
   text-align: center;
   z-index: 2;
-  font-size: 27px;
+  font-size: 26px;
   font-weight: 900;
   color: #ffffff;
   line-height: 1;
@@ -237,17 +237,17 @@
 
 .previewContacts {
   position: absolute;
-  left: 50px;
-  width: 190px;
-  bottom: 95px;
+  left: 58px;
+  width: 200px;
+  bottom: 102px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   z-index: 2;
 }
 
 .previewContactLine {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   color: #ffffff;
   line-height: 1.05;
@@ -262,11 +262,11 @@
 
 .previewNote {
   position: absolute;
-  bottom: 65px;
-  left: 25px;
-  width: 205px;
+  bottom: 48px;
+  left: 32px;
+  width: 215px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: #ffffff;
   z-index: 2;

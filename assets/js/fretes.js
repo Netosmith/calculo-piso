@@ -987,10 +987,10 @@
     setText("nfArtProduto", d.produto || "PRODUTO");
     setText("nfArtValor", d.valor || "A COMBINAR");
     setText("nfArtObs", d.obs || "");
-    setText("nfArtContato1", d.contatos[0] ? `• ${d.contatos[0]}` : "");
-    setText("nfArtContato2", d.contatos[1] ? `• ${d.contatos[1]}` : "");
-    setText("nfArtContato3", d.contatos[2] ? `• ${d.contatos[2]}` : "");
-    setText("nfArtContato4", d.contatos[3] ? `• ${d.contatos[3]}` : "");
+    setText("nfArtContato1", d.contatos[0] || "");
+    setText("nfArtContato2", d.contatos[1] || "");
+    setText("nfArtContato3", d.contatos[2] || "");
+    setText("nfArtContato4", d.contatos[3] || "");
 
     const msg = document.getElementById("nfMensagemPronta");
     if (msg) msg.value = buildMessage(row);
@@ -1013,7 +1013,7 @@
       return null;
     }
     await waitForImage(img);
-    return await html2canvas(card, {backgroundColor:null, scale:2, useCORS:true});
+    return await html2canvas(card, {backgroundColor:null, scale:4, useCORS:true});
   }
 
   async function downloadDivulgacaoJPG(row) {

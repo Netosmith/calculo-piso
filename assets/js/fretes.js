@@ -998,29 +998,47 @@
   }
 
   function divulgacaoDataFromRow(row) {
-    const produto = upper(row.produto || "SOJA");
-    const family = productFamilyNF(produto);
-    const contatos = contactsFromFilial(row);
-    const valor = safeText(row.valorMotorista)
-      ? formatMoneyBR(row.valorMotorista)
-      : "A COMBINAR";
+  const produto = upper(row.produto || "SOJA");
+  const family = productFamilyNF(produto);
+  const contatos = contactsFromFilial(row);
 
-    return {
-      coletaCidade: cityUf(row, "origem", "uf"),
-      coletaLocal: upper(row.coleta || ""),
-      descargaCidade: cityUf(row, "destino", "uf"),
-      descargaLocal: upper(row.descarga || ""),
-      produto,
-      productFamily: family,
-      bg: PRODUCT_BG_MAP_NF[family] || PRODUCT_BG_MAP_NF.SOJA,
-      valor,
-      obs: upper(row.obs || ""),
-      contatos,
-      contatoPrincipal: upper(row.contato || ""),
-      phone: extractPhoneBR(row.contato),
-      filename: `${family}_${normalizeKeyNF(row.origem)}_${normalizeKeyNF(row.destino)}_${normalizeKeyNF(valor)}.jpg`
-    };
-  }
+  const valor = safeText(row.valorMotorista)
+    ? formatMoneyBR(row.valorMotorista)
+    : "A COMBINAR";
+
+  return {
+    // COLETA = SOMENTE ORIGEM
+    coletaCidade: upper(row.origem || ""),
+
+    coletaLocal: upper(row.coleta || ""),
+
+    // DESCARGA = DESTINO + UF
+    descargaCidade: cityUf(row, "destino", "uf"),
+
+    descargaLocal: upper(row.descarga || ""),
+
+    produto,
+    productFamily: family,
+
+    bg: PRODUCT_BG_MAP_NF[family] || PRODUCT_BG_MAP_NF.SOJA,
+
+    valor,
+
+    obs: upper(row.obs || ""),
+
+    contatos,
+
+    contatoPrincipal: upper(row.contato || ""),
+
+    phone: extractPhoneBR(row.contato),
+
+    filename:
+      `${family}_` +
+      `${normalizeKeyNF(row.origem)}_` +
+      `${normalizeKeyNF(row.destino)}_` +
+      `${normalizeKeyNF(valor)}.jpg`
+  };
+}
 
   function setText(id, txt) {
     const el = document.getElementById(id);

@@ -371,7 +371,7 @@
 
     const canvas = await html2canvas(preview, {
       backgroundColor: null,
-      scale: 2,
+      scale: 4,
       useCORS: true
     });
 

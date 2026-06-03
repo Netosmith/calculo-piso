@@ -1,4 +1,4 @@
-/* divulgacao.js | */
+/* divulgacao.js | NOVA FROTA */
 (function () {
   "use strict";
 
@@ -24,13 +24,13 @@
       "NIVAIR (64) 99284-4955",
       "--------------------",
       "--------------------"
-      ],
+    ],
     MESAOPERACIONAL: [
       "ELOISA (64) 99232-3415",
       "ERICK (64) 99285-5829",
       "GABRIEL (64) 99266-3603",
       "LUIS.G (64) 99277-4293"
-      ],
+    ],
     BOMJESUS: [
       "MATEUS (64) 99307-0738",
       "EDUARDO (64) 99208-5655",
@@ -77,14 +77,14 @@
       "WILHANS (66) 99673-3683",
       "ANDRE (64) 99995-0112",
       "LUCAS (62) 99318-9816",
-      "EDSON (62) 993405792"
+      "EDSON (62) 99340-5792"
     ],
     URUACU: [
       "GUILHERME (62) 99697-8707",
       "GABRIEL (61) 99846-3585",
       "--------------------",
       "--------------------"
-      ],
+    ],
     SAOPAULO: [
       "DIOGO (15) 99278-4842",
       "--------------------",
@@ -125,86 +125,6 @@
 
   const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
 
-  function getPreview(templateId) {
-    return document.querySelector(`[data-template-preview="${templateId}"]`);
-  }
-
-  function getBgImgEl(preview) {
-    return preview ? preview.querySelector(".previewBg") : null;
-  }
-
-  function normalizeKey(v) {
-    return String(v || "")
-      .trim()
-      .toUpperCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^A-Z0-9]/g, "");
-  }
-
-  function updatePreview(templateId, field, value) {
-    const preview = getPreview(templateId);
-    if (!preview) return;
-    const target = preview.querySelector(`[data-bind="${field}"]`);
-    if (target) target.textContent = value;
-  }
-
-  /* =========================
-     VALOR: aceita número OU texto
-     - sempre MAIÚSCULO
-     - se for número -> formata moeda no BLUR
-     - se for texto -> não formata
-  ========================= */
-
-  function hasLetters(s) {
-    return /[A-ZÀ-Ü]/i.test(String(s || ""));
-  }
-
-  function limparDigitacaoNumerica(valor) {
-    if (valor == null) return "";
-    let v = String(valor);
-    v = v.replace(/R\$\s?/gi, "");
-    // deixa só números e separadores
-    v = v.replace(/[^\d,\.]/g, "");
-    // se tiver ponto e vírgula, mantém só um separador decimal (preferindo vírgula no final)
-    // regra simples: permite só 1 separador decimal (último separador vira o decimal)
-    const parts = v.split(/[,\.]/);
-    if (parts.length <= 1) return v;
-
-    const dec = parts.pop() || "";
-    const intPart = parts.join(""); // junta o resto como inteiro (remove separadores antigos)
-    return intPart + "," + dec;
-  }
-
-  function formatarMoedaBR(valor) {
-    if (valor == null) return "";
-
-    let v = String(valor).trim();
-    if (!v) return "";
-
-    // se tiver letras, não é moeda
-    if (hasLetters(v)) return v.toUpperCase();
-
-    v = v.replace(/R\$\s?/gi, "");
-    v = v.replace(/\./g, "");
-    v = v.replace(/[^\d,]/g, "");
-
-    const partes = v.split(",");
-    let reais = partes[0] || "0";
-    let centavos = partes[1] || "";
-
-    centavos = centavos.substring(0, 2);
-    while (centavos.length < 2) centavos += "0";
-
-    reais = reais.replace(/^0+(?=\d)/, "");
-    reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-
-    return `R$ ${reais || "0"},${centavos}`;
-  }
-
-  /* =========================
-     PRODUTO: aliases / inferência
-  ========================= */
   const PRODUCT_ALIAS = {
     SOJA: "SOJA",
     SOJAEMGRAOS: "SOJA",
@@ -239,6 +159,76 @@
     FERT: "FERTILIZANTE"
   };
 
+  function getPreview(templateId) {
+    return document.querySelector(`[data-template-preview="${templateId}"]`);
+  }
+
+  function getBgImgEl(preview) {
+    return preview ? preview.querySelector(".previewBg") : null;
+  }
+
+  function normalizeKey(value) {
+    return String(value || "")
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9]/g, "");
+  }
+
+  function updatePreview(templateId, field, value) {
+    const preview = getPreview(templateId);
+    if (!preview) return;
+
+    const target = preview.querySelector(`[data-bind="${field}"]`);
+    if (target) target.textContent = value || "";
+  }
+
+  function hasLetters(value) {
+    return /[A-ZÀ-Ü]/i.test(String(value || ""));
+  }
+
+  function limparDigitacaoNumerica(valor) {
+    if (valor == null) return "";
+
+    let v = String(valor);
+    v = v.replace(/R\$\s?/gi, "");
+    v = v.replace(/[^\d,.]/g, "");
+
+    const parts = v.split(/[,.]/);
+    if (parts.length <= 1) return v;
+
+    const dec = parts.pop() || "";
+    const intPart = parts.join("");
+
+    return intPart + "," + dec;
+  }
+
+  function formatarMoedaBR(valor) {
+    if (valor == null) return "";
+
+    let v = String(valor).trim();
+    if (!v) return "";
+
+    if (hasLetters(v)) return v.toUpperCase();
+
+    v = v.replace(/R\$\s?/gi, "");
+    v = v.replace(/\./g, "");
+    v = v.replace(/[^\d,]/g, "");
+
+    const partes = v.split(",");
+    let reais = partes[0] || "0";
+    let centavos = partes[1] || "";
+
+    centavos = centavos.substring(0, 2);
+    while (centavos.length < 2) centavos += "0";
+
+    reais = reais.replace(/^0+(?=\d)/, "");
+    reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    return `R$ ${reais || "0"},${centavos}`;
+  }
+
   function inferProductFamily(normalized) {
     if (normalized.includes("FARELO") && normalized.includes("SOJA")) return "FARELODESOJA";
     if (normalized.includes("SOJA")) return "SOJA";
@@ -251,11 +241,12 @@
   }
 
   function productToImage(productValue) {
-    const n = normalizeKey(productValue);
-    const aliased = PRODUCT_ALIAS[n];
+    const normalized = normalizeKey(productValue);
+    const aliased = PRODUCT_ALIAS[normalized];
+
     if (aliased && PRODUCT_BG_MAP[aliased]) return PRODUCT_BG_MAP[aliased];
 
-    const family = inferProductFamily(n);
+    const family = inferProductFamily(normalized);
     if (family && PRODUCT_BG_MAP[family]) return PRODUCT_BG_MAP[family];
 
     return DEFAULT_BG;
@@ -268,43 +259,41 @@
     const img = productToImage(productValue);
     const bgImg = getBgImgEl(preview);
 
-    if (bgImg) bgImg.src = img;
-    else preview.style.backgroundImage = `url("${img}")`;
+    if (bgImg) {
+      bgImg.src = img;
+    } else {
+      preview.style.backgroundImage = `url("${img}")`;
+    }
   }
 
-  /* =========================
-     FILIAL -> CONTATOS
-  ========================= */
   function preencherContatosFilial(templateId, filialValue) {
     const key = normalizeKey(filialValue);
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
 
-    ["contato1", "contato2", "contato3", "contato4"].forEach((campo, i) => {
+    ["contato1", "contato2", "contato3", "contato4"].forEach((campo, index) => {
       const input = document.querySelector(
         `[data-template="${templateId}"][data-field="${campo}"]`
       );
-      const valor = lista[i] || "";
+
+      const valor = lista[index] || "";
+
       if (input) input.value = valor;
       updatePreview(templateId, campo, valor);
     });
   }
 
-  /* =========================
-     INPUT HANDLER
-  ========================= */
   function handleInput(event) {
     const el = event.target;
     const templateId = el.dataset.template;
     const field = el.dataset.field;
+
     if (!templateId || !field) return;
 
     let value = el.value ?? "";
 
-    // ✅ VALOR: aceita TEXTO também + MAIÚSCULO sempre
     if (field === "valor") {
       let v = String(value).toUpperCase();
 
-      // se for só número/separador, limpa sem formatar moeda (pra digitar livre)
       if (!hasLetters(v)) {
         v = limparDigitacaoNumerica(v);
       }
@@ -314,7 +303,6 @@
       return;
     }
 
-    // Demais campos: só trim e atualiza
     value = String(value).trim();
     updatePreview(templateId, field, value);
 
@@ -327,29 +315,30 @@
     }
   }
 
-  // ✅ Ao sair do campo valor: se for número, vira moeda; se for texto, só mantém maiúsculo
   function handleBlur(event) {
     const el = event.target;
     const templateId = el.dataset.template;
     const field = el.dataset.field;
+
     if (!templateId || field !== "valor") return;
 
     const raw = String(el.value || "").toUpperCase().trim();
-    const finalValue = formatarMoedaBR(raw); // se tiver letras, não formata
+    const finalValue = formatarMoedaBR(raw);
+
     el.value = finalValue;
     updatePreview(templateId, "valor", finalValue);
   }
 
-  /* =========================
-     RESET / SAVE
-  ========================= */
   function resetTemplate(templateId) {
     const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
     if (!card) return;
 
     card.querySelectorAll("input, select").forEach((el) => {
-      if (el.tagName === "SELECT") el.selectedIndex = 0;
-      else el.value = "";
+      if (el.tagName === "SELECT") {
+        el.selectedIndex = 0;
+      } else {
+        el.value = "";
+      }
 
       if (el.dataset.field) updatePreview(templateId, el.dataset.field, "");
     });
@@ -362,6 +351,7 @@
     if (!preview) return;
 
     const bgImg = getBgImgEl(preview);
+
     if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
       await new Promise((resolve) => {
         bgImg.addEventListener("load", resolve, { once: true });
@@ -371,7 +361,7 @@
 
     const canvas = await html2canvas(preview, {
       backgroundColor: null,
-      scale: 4,
+      scale: 2,
       useCORS: true
     });
 
@@ -381,16 +371,14 @@
     link.click();
   }
 
-  /* =========================
-     INIT
-  ========================= */
   function initDefaults() {
-    document.querySelectorAll(`[data-template-preview]`).forEach((preview) => {
+    document.querySelectorAll("[data-template-preview]").forEach((preview) => {
       const templateId = preview.dataset.templatePreview;
 
       const produtoEl = document.querySelector(
         `[data-template="${templateId}"][data-field="produto"]`
       );
+
       const produtoVal = produtoEl ? (produtoEl.value || "").trim() : "";
       setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
 
@@ -402,20 +390,21 @@
       const valorEl = document.querySelector(
         `[data-template="${templateId}"][data-field="valor"]`
       );
+
       if (valorEl && valorEl.value) {
-        // formata só se for número; se for texto, fica maiúsculo
         const raw = String(valorEl.value || "").toUpperCase().trim();
-        const v = formatarMoedaBR(raw);
-        valorEl.value = v;
-        updatePreview(templateId, "valor", v);
+        const value = formatarMoedaBR(raw);
+
+        valorEl.value = value;
+        updatePreview(templateId, "valor", value);
       }
     });
   }
 
   function bindActions() {
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
-      const evt = el.tagName === "SELECT" ? "change" : "input";
-      el.addEventListener(evt, handleInput);
+      const eventName = el.tagName === "SELECT" ? "change" : "input";
+      el.addEventListener(eventName, handleInput);
 
       if (el.dataset.field === "valor") {
         el.addEventListener("blur", handleBlur);
@@ -432,53 +421,14 @@
 
     initDefaults();
 
-    // sincroniza preview com o que já estiver preenchido
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       handleInput({ target: el });
-      if (el.dataset.field === "valor") handleBlur({ target: el });
+
+      if (el.dataset.field === "valor") {
+        handleBlur({ target: el });
+      }
     });
   }
 
-
-  /* =========================
-     PREENCHIMENTO AUTOMÁTICO VIA URL
-     Exemplo:
-     divulgacao.html?coletaCidade=INDIARA-GO&coletaLocal=FAZ...&produto=SOJA&valor=90
-  ========================= */
-  function applyQueryParams() {
-    const params = new URLSearchParams(window.location.search || "");
-    if (!params.toString()) return;
-
-    const templateId = params.get("template") || "1";
-    const map = {
-      origem: "coletaCidade",
-      coleta: "coletaLocal",
-      destino: "descargaCidade",
-      descarga: "descargaLocal",
-      produto: "produto",
-      valor: "valor",
-      obs: "obs",
-      filial: "filial",
-      contato1: "contato1",
-      contato2: "contato2",
-      contato3: "contato3",
-      contato4: "contato4"
-    };
-
-    Object.entries(map).forEach(([param, field]) => {
-      const value = params.get(param) || params.get(field);
-      if (value == null) return;
-      const el = document.querySelector(`[data-template="${templateId}"][data-field="${field}"]`);
-      if (!el) return;
-      el.value = value;
-      handleInput({ target: el });
-      if (field === "valor") handleBlur({ target: el });
-    });
-
-    if (params.get("autosave") === "1") {
-      setTimeout(() => saveTemplate(templateId), 600);
-    }
-  }
-
-  window.addEventListener("DOMContentLoaded", () => { bindActions(); applyQueryParams(); });
+  window.addEventListener("DOMContentLoaded", bindActions);
 })();

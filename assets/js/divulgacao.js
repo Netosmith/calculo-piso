@@ -1,3 +1,4 @@
+/* divulgacao.js | */
 (function () {
   "use strict";
 
@@ -438,5 +439,46 @@
     });
   }
 
-  window.addEventListener("DOMContentLoaded", bindActions);
+
+  /* =========================
+     PREENCHIMENTO AUTOMÁTICO VIA URL
+     Exemplo:
+     divulgacao.html?coletaCidade=INDIARA-GO&coletaLocal=FAZ...&produto=SOJA&valor=90
+  ========================= */
+  function applyQueryParams() {
+    const params = new URLSearchParams(window.location.search || "");
+    if (!params.toString()) return;
+
+    const templateId = params.get("template") || "1";
+    const map = {
+      origem: "coletaCidade",
+      coleta: "coletaLocal",
+      destino: "descargaCidade",
+      descarga: "descargaLocal",
+      produto: "produto",
+      valor: "valor",
+      obs: "obs",
+      filial: "filial",
+      contato1: "contato1",
+      contato2: "contato2",
+      contato3: "contato3",
+      contato4: "contato4"
+    };
+
+    Object.entries(map).forEach(([param, field]) => {
+      const value = params.get(param) || params.get(field);
+      if (value == null) return;
+      const el = document.querySelector(`[data-template="${templateId}"][data-field="${field}"]`);
+      if (!el) return;
+      el.value = value;
+      handleInput({ target: el });
+      if (field === "valor") handleBlur({ target: el });
+    });
+
+    if (params.get("autosave") === "1") {
+      setTimeout(() => saveTemplate(templateId), 600);
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { bindActions(); applyQueryParams(); });
 })();

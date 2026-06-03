@@ -469,8 +469,6 @@
   
     /* =========================
        MODO RAIO - Divulgação automática
-       Ajustado para seguir o padrão da arte do divulgacao.html:
-       imagem pronta no fundo + somente dados variáveis por cima.
     ========================= */
     .fretes-workspace{
       display:grid;
@@ -480,12 +478,10 @@
       flex:1 1 auto;
       min-height:0;
     }
-
     @media(max-width:1250px){
       .fretes-workspace{grid-template-columns:1fr;}
-      .nfPreviewPanel{position:relative!important;top:auto!important;}
+      .nfPreviewPanel{position:relative!important; top:auto!important;}
     }
-
     .nf-bulk-panel{
       margin-left:auto;
       display:flex;
@@ -497,7 +493,6 @@
       background:#fff;
       box-shadow:0 6px 18px rgba(29,78,216,.10);
     }
-
     .nf-bulk-card{
       height:44px;
       min-width:130px;
@@ -513,7 +508,6 @@
       font-weight:900;
       cursor:pointer;
     }
-
     .nf-bulk-card small{
       display:block;
       font-size:9px;
@@ -521,44 +515,23 @@
       margin-top:2px;
       font-weight:800;
     }
-
     .nf-bulk-card.orange{border-color:#f59e0b22;color:#92400e;}
     .nf-bulk-card.green{border-color:#22c55e33;color:#166534;}
     .nf-bulk-card.blue{border-color:#3b82f633;color:#1d4ed8;}
     .nf-bulk-card:hover{filter:brightness(.98);transform:translateY(-1px);}
-
     .nfRowCheck{
-      width:16px;
-      height:16px;
-      accent-color:#2563eb;
-      cursor:pointer;
+      width:16px;height:16px;accent-color:#2563eb;cursor:pointer;
     }
-
-    .nfActionGroup{
-      display:inline-flex;
-      align-items:center;
-      gap:5px;
-    }
-
+    .nfActionGroup{display:inline-flex;align-items:center;gap:5px;}
     .nfIconBtn{
-      width:26px;
-      height:26px;
-      border-radius:8px;
-      border:1px solid #d1d5db;
-      background:#fff;
-      font-size:14px;
-      font-weight:900;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+      width:26px;height:26px;border-radius:8px;border:1px solid #d1d5db;
+      background:#fff;font-size:14px;font-weight:900;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;
     }
-
     .nfIconBtn.raio{border-color:#f59e0b;color:#b45309;background:#fffbeb;}
     .nfIconBtn.eye{border-color:#60a5fa;color:#1d4ed8;background:#eff6ff;}
     .nfIconBtn.wa{border-color:#22c55e;color:#15803d;background:#f0fdf4;}
     .nfIconBtn:hover{filter:brightness(.96);transform:translateY(-1px);}
-
     .nfPreviewPanel{
       position:sticky;
       top:12px;
@@ -569,64 +542,43 @@
       box-shadow:0 6px 18px rgba(0,0,0,.08);
       overflow:hidden;
     }
-
     .nfPreviewHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:8px;
-      margin-bottom:10px;
+      display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;
     }
-
-    .nfPreviewHead h3{
-      margin:0;
-      font-size:13px;
-      font-weight:950;
-      color:#0f172a;
-      text-transform:uppercase;
-    }
-
-    .nfClosePreview{
-      border:0;
-      background:transparent;
-      font-size:22px;
-      line-height:1;
-      cursor:pointer;
-      color:#64748b;
-    }
-
+    .nfPreviewHead h3{margin:0;font-size:13px;font-weight:950;color:#0f172a;text-transform:uppercase;}
+    .nfClosePreview{border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#64748b;}
     .nfProductBadge{
-      display:inline-flex;
-      align-items:center;
-      padding:3px 10px;
-      border-radius:999px;
-      background:#16a34a;
-      color:#fff;
-      font-size:10px;
-      font-weight:950;
-      margin-bottom:8px;
+      display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;
+      background:#16a34a;color:#fff;font-size:10px;font-weight:950;margin-bottom:8px;
     }
-
     /* ==========================================================
-       ARTE DA PRÉVIA
-       O PNG já contém: logo, faixas, títulos e ornamentos.
-       Aqui entram apenas cidade, local, produto, valor e contatos.
-       Proporção 2:3, igual à imagem base.
+       ARTE DA PRÉVIA - MESMO PADRÃO DO DIVULGACAO.HTML
+       Usa a mesma estrutura visual do divulgacao.html, apenas reduzida
+       para caber no painel lateral do Fretes.
     ========================================================== */
     .nfArtCard{
       width:240px;
-      height:360px;
+      height:429px;
       margin:0 auto;
       border-radius:12px;
       position:relative;
       overflow:hidden;
-      background:#1f2937 url("../assets/img/SOJATESTE.png") center/cover no-repeat;
+      background:#1f2937;
       box-shadow:0 6px 18px rgba(0,0,0,.20);
       color:#fff;
       font-family:Arial,Helvetica,sans-serif;
     }
 
-    .nfArtCard img.nfArtBg{
+    .nfArtScale{
+      width:380px;
+      height:680px;
+      position:absolute;
+      inset:0;
+      transform:scale(.63158);
+      transform-origin:top left;
+    }
+
+    .nfArtScale .previewBg{
       position:absolute;
       inset:0;
       width:100%;
@@ -637,204 +589,140 @@
       outline:0;
     }
 
-    .nfArtOverlay{
+    .nfArtScale .previewColeta,
+    .nfArtScale .previewDescarga,
+    .nfArtScale .previewProduct,
+    .nfArtScale .previewPrice,
+    .nfArtScale .previewNote,
+    .nfArtScale .previewContacts{
+      z-index:2;
+    }
+
+    .nfArtScale .previewColeta{
       position:absolute;
-      inset:0;
-      z-index:1;
-      padding:0;
-      pointer-events:none;
+      top:185px;
+      left:32px;
+      width:215px;
       text-align:center;
-      text-shadow:
-        0 2px 5px rgba(0,0,0,.90),
-        0 0 8px rgba(0,0,0,.55);
     }
 
-    .nfArtBig,
-    .nfArtSmall,
-    .nfArtProduct,
-    .nfArtPrice{
+    .nfArtScale .previewDescarga{
       position:absolute;
-      left:33px;
-      width:136px;
+      top:265px;
+      left:32px;
+      width:215px;
       text-align:center;
-      color:#fff;
-      text-transform:uppercase;
-      overflow:hidden;
-      display:block;
     }
 
-    .nfArtBig{
-      font-size:17px;
-      font-weight:950;
-      line-height:.96;
-      letter-spacing:-.35px;
-    }
-
-    .nfArtSmall{
-      font-size:8.5px;
-      font-weight:850;
-      line-height:1;
-      opacity:.97;
-      letter-spacing:-.05px;
-    }
-
-    /* Coleta */
-    #nfArtColetaCidade{top:117px;}
-    #nfArtColetaLocal{top:138px;}
-
-    /* Descarga */
-    #nfArtDescargaCidade{top:194px;}
-    #nfArtDescargaLocal{top:215px;}
-
-    /* Produto */
-    .nfArtProduct{
-      top:272px;
-      font-size:17px;
-      font-weight:950;
-      line-height:1;
-      letter-spacing:-.25px;
-    }
-
-    /* Valor por tonelada */
-    .nfArtPrice{
-      top:318px;
-      font-size:21px;
-      font-weight:950;
-      line-height:1;
-      letter-spacing:-.45px;
-    }
-
-    /* Contatos */
-    .nfArtContacts{
+    .nfArtScale .previewProduct{
       position:absolute;
-      left:39px;
-      width:142px;
-      top:286px;
-      text-align:left;
-      color:#fff;
-      text-transform:uppercase;
-      font-size:7.4px;
-      line-height:1.08;
+      top:350px;
+      left:30px;
+      width:215px;
+      text-align:center;
+      font-size:19px;
       font-weight:900;
-      text-shadow:
-        0 2px 4px rgba(0,0,0,.95),
-        0 0 6px rgba(0,0,0,.65);
+      color:#fff;
+      text-transform:uppercase;
+      line-height:1;
     }
 
-    .nfArtContacts div{
-      min-height:8px;
+    .nfArtScale .previewPrice{
+      position:absolute;
+      top:390px;
+      left:32px;
+      width:215px;
+      text-align:center;
+      font-size:26px;
+      font-weight:900;
+      color:#fff;
+      line-height:1;
+    }
+
+    .nfArtScale .previewContacts{
+      position:absolute;
+      top:455px;
+      left:58px;
+      width:200px;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .nfArtScale .previewNote{
+      position:absolute;
+      top:560px;
+      left:32px;
+      width:215px;
+      text-align:center;
+      font-size:11px;
+      font-weight:800;
+      color:#fff;
+      line-height:1.1;
+    }
+
+    .nfArtScale .previewValue{
+      font-size:21px;
+      font-weight:900;
+      color:#fff;
+      text-transform:uppercase;
+      line-height:1;
+    }
+
+    .nfArtScale .previewSmall{
+      margin-top:4px;
+      font-size:12px;
+      font-weight:800;
+      color:#fff;
+      line-height:1;
+    }
+
+    .nfArtScale .previewContactLine{
+      font-size:10px;
+      font-weight:800;
+      color:#fff;
+      line-height:1.05;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    /*
-      Quando o valor é grande demais, ele não deve invadir o rodapé.
-      O max-width/overflow segura o texto dentro da placa.
-    */
-    #nfArtProduto,
-    #nfArtValor,
-    #nfArtColetaCidade,
-    #nfArtDescargaCidade{
-      white-space:nowrap;
-      text-overflow:ellipsis;
+    .nfArtScale .previewValue,
+    .nfArtScale .previewSmall,
+    .nfArtScale .previewProduct,
+    .nfArtScale .previewPrice,
+    .nfArtScale .previewNote,
+    .nfArtScale .previewContactLine{
+      text-shadow:
+        0 2px 4px rgba(0,0,0,.85),
+        0 0 6px rgba(0,0,0,.50);
     }
 
-    /* Oculta qualquer rótulo antigo. A arte pronta já tem esses títulos no PNG. */
-    .nfArtLabel,
-    .nfArtTitle,
-    .nfArtTitulo,
-    .nfArtLogo,
-    .nfArtStatic,
-    .nfArtHeader,
-    .nfArtFaixa,
-    .nfArtCaption,
-    .nfArtCard .label,
-    .nfArtCard .tag,
-    .nfArtCard .caption,
-    .nfArtCard [data-static],
-    .nfArtCard [data-label]{
-      display:none!important;
-    }
-
-    .nfPreviewButtons{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-      margin-top:10px;
-    }
-
+    .nfPreviewButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
     .nfPreviewButtons button{
-      height:32px;
-      border-radius:9px;
-      border:1px solid #d1d5db;
-      font-size:10px;
-      font-weight:950;
-      cursor:pointer;
+      height:32px;border-radius:9px;border:1px solid #d1d5db;font-size:10px;font-weight:950;cursor:pointer;
     }
-
     .nfPreviewButtons .green{background:#16a34a;color:#fff;border-color:#16a34a;}
     .nfPreviewButtons .blue{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
     .nfPreviewButtons .wa{grid-column:1/-1;background:#16a34a;color:#fff;border-color:#16a34a;}
-
     .nfReadyMsg{
-      margin-top:10px;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:10px;
-      color:#0f172a;
-      background:#f8fafc;
-      font-size:11px;
-      line-height:1.35;
+      margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;color:#0f172a;background:#f8fafc;
+      font-size:11px;line-height:1.35;
     }
-
     .nfReadyMsg textarea{
-      width:100%;
-      min-height:92px;
-      margin-top:6px;
-      border:1px solid #d1d5db;
-      border-radius:9px;
-      padding:8px;
-      font-size:10px;
-      color:#0f172a;
-      background:#fff;
-      text-transform:none;
+      width:100%;min-height:92px;margin-top:6px;border:1px solid #d1d5db;border-radius:9px;padding:8px;
+      font-size:10px;color:#0f172a;background:#fff;text-transform:none;
     }
-
     .nfStats{
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:10px;
-      margin-top:10px;
+      display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px;
     }
-
     .nfStat{
-      background:#f8fafc;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:8px 10px;
-      text-align:center;
-      color:#0f172a;
+      background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;text-align:center;color:#0f172a;
     }
-
-    .nfStat .t{
-      font-size:10px;
-      color:#64748b;
-      font-weight:800;
-    }
-
-    .nfStat .v{
-      font-size:16px;
-      font-weight:950;
-      margin-top:3px;
-    }
-
+    .nfStat .t{font-size:10px;color:#64748b;font-weight:800;}
+    .nfStat .v{font-size:16px;font-weight:950;margin-top:3px;}
     @media(max-width:900px){
-      .nf-bulk-panel{
-        width:100%;
-        margin-left:0;
-        overflow:auto;
-      }
+      .nf-bulk-panel{width:100%;margin-left:0;overflow:auto;}
       .nfStats{grid-template-columns:1fr 1fr;}
     }
 
@@ -960,22 +848,28 @@
       <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
 
       <div class="nfArtCard" id="nfArtCard">
-        <img class="nfArtBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" onerror="this.style.display='none'" />
-        <div class="nfArtOverlay">
-          <div class="nfArtBig" id="nfArtColetaCidade"></div>
-          <div class="nfArtSmall" id="nfArtColetaLocal"></div>
+        <div class="nfArtScale">
+          <img class="previewBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" />
 
-          <div class="nfArtBig" id="nfArtDescargaCidade"></div>
-          <div class="nfArtSmall" id="nfArtDescargaLocal"></div>
+          <div class="previewColeta">
+            <div class="previewValue" id="nfArtColetaCidade"></div>
+            <div class="previewSmall" id="nfArtColetaLocal"></div>
+          </div>
 
-          <div class="nfArtProduct" id="nfArtProduto"></div>
-          <div class="nfArtPrice" id="nfArtValor"></div>
+          <div class="previewDescarga">
+            <div class="previewValue" id="nfArtDescargaCidade"></div>
+            <div class="previewSmall" id="nfArtDescargaLocal"></div>
+          </div>
 
-          <div class="nfArtContacts">
-            <div id="nfArtContato1"></div>
-            <div id="nfArtContato2"></div>
-            <div id="nfArtContato3"></div>
-            <div id="nfArtContato4"></div>
+          <div class="previewProduct" id="nfArtProduto"></div>
+          <div class="previewPrice" id="nfArtValor"></div>
+          <div class="previewNote" id="nfArtObs"></div>
+
+          <div class="previewContacts">
+            <div class="previewContactLine" id="nfArtContato1"></div>
+            <div class="previewContactLine" id="nfArtContato2"></div>
+            <div class="previewContactLine" id="nfArtContato3"></div>
+            <div class="previewContactLine" id="nfArtContato4"></div>
           </div>
         </div>
       </div>

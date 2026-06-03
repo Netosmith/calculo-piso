@@ -1,4 +1,4 @@
-/* fretes.js | NOVA FROTA (COMPLETO AJUSTADO) */
+/* fretes.js | NOVA FROTA - MODO RAIO DIVULGAÇÃO */
 (function () {
   "use strict";
 
@@ -8,30 +8,167 @@
   const DIRECTORY = {
     regionais: ["GOIAS", "MINAS", "SAO PAULO"],
     filiaisPorRegional: {
-      GOIAS: ["ITUMBIARA", "RIO VERDE", "RIO VERDE FERT", "MONTIVIDIU", "ANAPOLIS", "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA", "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"],
+      GOIAS: [
+        "ITUMBIARA", "RIO VERDE", "RIO VERDE FERT", "MONTIVIDIU", "ANAPOLIS",
+        "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA",
+        "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"
+      ],
       MINAS: ["UBERLANDIA", "ARAGUARI"],
       "SAO PAULO": ["SOROCABA"],
     },
-    clientes: ["CARGILL", "COMIGO", "CONCREBEL", "VITERRA", "COFCO", "NOVA AGRI", "JBS SEARA", "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO", "C VALE", "OLAM BRASIL", "SODRU", "BOM JESUS", "SOYBRASIL", "LAVORO", "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE", "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA", "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS", "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO", "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO", "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL", "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX", "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC", "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN", "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA", "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO", "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA", "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL", "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM", "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL", "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA", "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL", "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS", "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO", "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS", "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA", "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE", "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"],
+    clientes: [
+      "CARGILL", "COMIGO", "CONCREBEL", "VITERRA", "COFCO", "NOVA AGRI",
+      "JBS SEARA", "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO",
+      "C VALE", "OLAM BRASIL", "SODRU", "BOM JESUS", "SOYBRASIL", "LAVORO",
+      "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE",
+      "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA",
+      "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS",
+      "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO",
+      "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO",
+      "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL",
+      "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX",
+      "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC",
+      "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN",
+      "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA",
+      "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO",
+      "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA",
+      "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL",
+      "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM",
+      "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL",
+      "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA",
+      "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL",
+      "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS",
+      "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO",
+      "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS",
+      "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA",
+      "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE",
+      "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"
+    ],
     contatosPorFilial: {
-      "MINEIROS": [{ nome: "KIEWERSON", fone: "5564999794586" }],
-      "ARAGUARI": [{ nome: "ALFREDO", fone: "5534997911299" }],
-      "ANAPOLIS": [{ nome: "WILHANS", fone: "5566996733683" }],
+      MINEIROS: [{ nome: "KIEWERSON", fone: "5564999794586" }],
+      ARAGUARI: [{ nome: "ALFREDO", fone: "5534997911299" }],
+      ANAPOLIS: [{ nome: "WILHANS", fone: "5566996733683" }],
       "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
-      "MONTIVIDIU": [{ nome: "ROBSON", fone: "5564999628005" }],
+      MONTIVIDIU: [{ nome: "ROBSON", fone: "5564999628005" }],
       "RIO VERDE": [{ nome: "ARIEL", fone: "5564992277537" }],
-      "INDIARA": [{ nome: "RAFAEL", fone: "5564999108790" }],
-      "ITUMBIARA": [{ nome: "JHONATAN", fone: "5564992251214" }],
-      "JATAI": [{ nome: "RONE", fone: "5564996264511" }],
+      INDIARA: [{ nome: "RAFAEL", fone: "5564999108790" }],
+      ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992251214" }],
+      JATAI: [{ nome: "RONE", fone: "5564996264511" }],
       "CHAP CEU": [{ nome: "RICARDO", fone: "5564999913512" }],
-      "CRISTALINA": [{ nome: "EVERALDO", fone: "5561996924906" }],
+      CRISTALINA: [{ nome: "EVERALDO", fone: "5561996924906" }],
       "RIO VERDE FERT": [{ nome: "NARCISO", fone: "5564999365343" }],
-      "VIANOPOLIS": [{ nome: "FHELLIPE", fone: "5562999307778" }],
-      "FORMOSA": [{ nome: "FABIOLA", fone: "5562996017658" }],
+      VIANOPOLIS: [{ nome: "FHELLIPE", fone: "5562999307778" }],
+      FORMOSA: [{ nome: "FABIOLA", fone: "5562996017658" }],
+      CATAlÃO: [{ nome: "EVERALDO JR", fone: "556492373735" }],
       "CATALÃO": [{ nome: "EVERALDO JR", fone: "556492373735" }],
       "URUAÇU": [{ nome: "GUILHERME", fone: "5562996978707" }],
-      "SOROCABA": [{ nome: "DIOGO", fone: "5515992784842" }],
+      SOROCABA: [{ nome: "DIOGO", fone: "5515992784842" }],
     },
+  };
+
+  const FILIAIS_CONTATOS_ARTE = {
+    RIOVERDE: [
+      "ARIEL (64) 99227-7537",
+      "GAUXIM (64) 99300-5771",
+      "UANDER (64) 98114-4642",
+      "RODRIGO (64) 99603-1200"
+    ],
+    FERTILIZANTE: [
+      "NARCISO (64) 99936-5343",
+      "NIVAIR (64) 99284-4955",
+      "",
+      ""
+    ],
+    BOMJESUS: [
+      "MATEUS (64) 99307-0738",
+      "EDUARDO (64) 99208-5655",
+      "",
+      ""
+    ],
+    MONTIVIDIU: [
+      "ROBSON (64) 99962-8005",
+      "MARCELO (64) 99653-2847",
+      "",
+      ""
+    ],
+    MINEIROS: [
+      "KIEWERSON (64) 99979-4586",
+      "VINICIUS (64) 99939-9946",
+      "",
+      ""
+    ],
+    INDIARA: [
+      "RAFAEL P (64) 99910-8790",
+      "RAFAEL (64) 99937-0131",
+      "",
+      ""
+    ],
+    FORMOSA: [
+      "FABIOLA (62) 99601-7658",
+      "JOAMAR (61) 99628-1922",
+      "",
+      ""
+    ],
+    CRISTALINA: [
+      "EVERALDO (61) 99692-4906",
+      "RAFAELA (61) 99319-6153",
+      "",
+      ""
+    ],
+    CATALAO: [
+      "EVERALDO JR (64) 99237-3735",
+      "",
+      "",
+      ""
+    ],
+    ANAPOLIS: [
+      "WILHANS (66) 99673-3683",
+      "ANDRE (64) 99995-0112",
+      "LUCAS (62) 99318-9816",
+      "EDSON (62) 99340-5792"
+    ],
+    URUACU: [
+      "GUILHERME (62) 99697-8707",
+      "GABRIEL (61) 99846-3585",
+      "",
+      ""
+    ],
+    SAOPAULO: [
+      "DIOGO (15) 99278-4842",
+      "",
+      "",
+      ""
+    ],
+    ITUMBIARA: [
+      "JEFERSON (64) 99263-5363",
+      "NATAL (64) 99322-6440",
+      "GUILHERME (64) 99217-7636",
+      "MAYKON (64) 99254-4094"
+    ],
+    VIANOPOLIS: [
+      "FHELLIPE (62) 99930-7778",
+      "",
+      "",
+      ""
+    ],
+    CHAPEU: [
+      "RICARDO (64) 99991-3512",
+      "JONAS (64) 99607-2391",
+      "",
+      ""
+    ],
+    ARAGUARI: [
+      "GUILHERME (64) 99217-7636",
+      "ADRIELLY (34) 99156-6198",
+      "",
+      ""
+    ],
+    JATAI: [
+      "TRIPA (64) 99982-9980",
+      "HUDSON (64) 99906-2674",
+      "PAULO (64) 99228-4439",
+      "RONE (64) 99626-4511"
+    ]
   };
 
   const CONTACT_PHONE = (() => {
@@ -46,8 +183,6 @@
     return map;
   })();
 
-  const $ = (sel) => document.querySelector(sel);
-
   const STATE = {
     rows: [],
     editingId: "",
@@ -58,93 +193,7 @@
     previewRow: null,
   };
 
-  const FIXED_CLIENT_COLORS = {
-    "LDC":             { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
-    "OURO SAFRA":      { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
-    "CARAMURU":        { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
-    "CARGILL":         { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
-    "COFCO":           { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
-    "MOSAIC":          { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
-    "AMAGGI":          { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
-    "CHS":             { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
-    "BRF":             { bg: "#F3E8FF", fg: "#7E22CE", name: "LILÁS" },
-    "JBS SEARA":       { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
-    "NOVA AGRI":       { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
-    "CONCREBEL":       { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
-  };
-
-  const FIXED_CONTACT_COLORS = {
-    "ARIEL":       { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
-    "ROBSON":      { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
-    "SERGIO":      { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
-    "EVERALDO":    { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
-    "FABIOLA":     { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
-    "RAFAEL":      { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
-    "JHONATAN":    { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
-    "KIEWERSON":   { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
-    "RONE":        { bg: "#F3E8FF", fg: "#7E22CE", name: "LILÁS" },
-    "RICARDO":     { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
-    "GUILHERME":   { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
-    "NARCISO":     { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
-    "ALFREDO":     { bg: "#FEE2E2", fg: "#B91C1C", name: "RUBI" },
-    "MATEUS":      { bg: "#CCFBF1", fg: "#0F766E", name: "TURQUESA" },
-    "FHELLIPE":    { bg: "#F5D0FE", fg: "#A21CAF", name: "MAGENTA" },
-    "EVERALDO JR": { bg: "#CFFAFE", fg: "#0E7490", name: "AQUA" },
-    "DIOGO":      { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
-    
-  };
-
-  const FIXED_PRODUCT_COLORS = {
-    "SOJA":         { bg: "#FEF3C7", fg: "#B45309", name: "AMARELO" },
-    "MILHO":        { bg: "#DBEAFE", fg: "#1D4ED8", name: "AZUL" },
-    "FERTILIZANTE": { bg: "#DCFCE7", fg: "#15803D", name: "VERDE" },
-    "ADUBO":        { bg: "#FCE7F3", fg: "#BE185D", name: "ROSA" },
-    "AÇUCAR":       { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
-    "ACUCAR":       { bg: "#EDE9FE", fg: "#6D28D9", name: "ROXO" },
-    "SORGO":        { bg: "#FFE4E6", fg: "#BE123C", name: "VERMELHO" },
-    "FARELO":       { bg: "#E0F2FE", fg: "#0369A1", name: "CIANO" },
-    "DDG":          { bg: "#ECFCCB", fg: "#4D7C0F", name: "LIMA" },
-    "ETANOL":       { bg: "#FDE68A", fg: "#92400E", name: "DOURADO" },
-    "SEMENTE":      { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
-    "SEMENTES":     { bg: "#D1FAE5", fg: "#047857", name: "ESMERALDA" },
-    "CALCÁRIO":     { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
-    "CALCARIO":     { bg: "#E2E8F0", fg: "#334155", name: "CINZA" },
-    "GESSO":        { bg: "#F5D0FE", fg: "#A21CAF", name: "MAGENTA" },
-    "SAL":          { bg: "#CFFAFE", fg: "#0E7490", name: "AQUA" },
-  };
-
-  const FALLBACK_CLIENT_PALETTE = [
-    ["#DBEAFE", "#1D4ED8", "AZUL"],
-    ["#FEF3C7", "#B45309", "AMARELO"],
-    ["#DCFCE7", "#15803D", "VERDE"],
-    ["#FCE7F3", "#BE185D", "ROSA"],
-    ["#EDE9FE", "#6D28D9", "ROXO"],
-    ["#E0F2FE", "#0369A1", "CIANO"],
-    ["#FFE4E6", "#BE123C", "VERMELHO"],
-    ["#ECFCCB", "#4D7C0F", "LIMA"],
-  ];
-
-  const FALLBACK_CONTACT_PALETTE = [
-    ["#F1F5F9", "#334155", "CINZA"],
-    ["#CCFBF1", "#0F766E", "TURQUESA"],
-    ["#FEE2E2", "#B91C1C", "RUBI"],
-    ["#DBEAFE", "#1D4ED8", "AZUL"],
-    ["#FEF9C3", "#A16207", "MOSTARDA"],
-    ["#E9D5FF", "#7E22CE", "VIOLETA"],
-    ["#D1FAE5", "#047857", "ESMERALDA"],
-    ["#FDE68A", "#92400E", "DOURADO"],
-  ];
-
-  const FALLBACK_PRODUCT_PALETTE = [
-    ["#F3E8FF", "#7E22CE", "ROXO"],
-    ["#E0E7FF", "#4338CA", "ÍNDIGO"],
-    ["#DCFCE7", "#15803D", "VERDE"],
-    ["#FFE4E6", "#BE123C", "VERMELHO"],
-    ["#FCE7F3", "#BE185D", "ROSA"],
-    ["#FEF3C7", "#B45309", "AMARELO"],
-    ["#E0F2FE", "#0369A1", "CIANO"],
-    ["#ECFCCB", "#4D7C0F", "LIMA"],
-  ];
+  const $ = (sel) => document.querySelector(sel);
 
   const COLS = [
     { key: "__select", label: "", isSelect: true },
@@ -180,10 +229,6 @@
   const MODAL = {
     wrap: () => document.getElementById("modal"),
     title: () => document.getElementById("modalTitle"),
-    btnClose: () => document.getElementById("btnCloseModal"),
-    btnCancel: () => document.getElementById("btnCancel"),
-    btnSave: () => document.getElementById("btnSave"),
-
     regional: () => document.getElementById("mRegional"),
     filial: () => document.getElementById("mFilial"),
     cliente: () => document.getElementById("mCliente"),
@@ -205,6 +250,79 @@
     transito: () => document.getElementById("mTransito"),
     status: () => document.getElementById("mStatus"),
     obs: () => document.getElementById("mObs"),
+    btnSave: () => document.getElementById("btnSave"),
+  };
+
+  const FIXED_CLIENT_COLORS = {
+    LDC: { bg: "#DBEAFE", fg: "#1D4ED8" },
+    "OURO SAFRA": { bg: "#FEF3C7", fg: "#B45309" },
+    CARAMURU: { bg: "#DCFCE7", fg: "#15803D" },
+    CARGILL: { bg: "#FDE68A", fg: "#92400E" },
+    COFCO: { bg: "#EDE9FE", fg: "#6D28D9" },
+    MOSAIC: { bg: "#E0F2FE", fg: "#0369A1" },
+    AMAGGI: { bg: "#FFE4E6", fg: "#BE123C" },
+    CHS: { bg: "#ECFCCB", fg: "#4D7C0F" },
+    BRF: { bg: "#F3E8FF", fg: "#7E22CE" },
+    "JBS SEARA": { bg: "#FCE7F3", fg: "#BE185D" },
+    "NOVA AGRI": { bg: "#D1FAE5", fg: "#047857" },
+    CONCREBEL: { bg: "#E2E8F0", fg: "#334155" },
+  };
+
+  const FIXED_CONTACT_COLORS = {
+    ARIEL: { bg: "#DBEAFE", fg: "#1D4ED8" },
+    ROBSON: { bg: "#DCFCE7", fg: "#15803D" },
+    SERGIO: { bg: "#FEF3C7", fg: "#B45309" },
+    EVERALDO: { bg: "#EDE9FE", fg: "#6D28D9" },
+    FABIOLA: { bg: "#FCE7F3", fg: "#BE185D" },
+    RAFAEL: { bg: "#E0F2FE", fg: "#0369A1" },
+    JHONATAN: { bg: "#FFE4E6", fg: "#BE123C" },
+    KIEWERSON: { bg: "#ECFCCB", fg: "#4D7C0F" },
+    RONE: { bg: "#F3E8FF", fg: "#7E22CE" },
+    RICARDO: { bg: "#FDE68A", fg: "#92400E" },
+    GUILHERME: { bg: "#D1FAE5", fg: "#047857" },
+    NARCISO: { bg: "#E2E8F0", fg: "#334155" },
+    ALFREDO: { bg: "#FEE2E2", fg: "#B91C1C" },
+    MATEUS: { bg: "#CCFBF1", fg: "#0F766E" },
+    FHELLIPE: { bg: "#F5D0FE", fg: "#A21CAF" },
+    "EVERALDO JR": { bg: "#CFFAFE", fg: "#0E7490" },
+    DIOGO: { bg: "#DCFCE7", fg: "#15803D" },
+  };
+
+  const FIXED_PRODUCT_COLORS = {
+    SOJA: { bg: "#FEF3C7", fg: "#B45309" },
+    MILHO: { bg: "#DBEAFE", fg: "#1D4ED8" },
+    FERTILIZANTE: { bg: "#DCFCE7", fg: "#15803D" },
+    ADUBO: { bg: "#FCE7F3", fg: "#BE185D" },
+    AÇUCAR: { bg: "#EDE9FE", fg: "#6D28D9" },
+    ACUCAR: { bg: "#EDE9FE", fg: "#6D28D9" },
+    SORGO: { bg: "#FFE4E6", fg: "#BE123C" },
+    FARELO: { bg: "#E0F2FE", fg: "#0369A1" },
+    DDG: { bg: "#ECFCCB", fg: "#4D7C0F" },
+    ETANOL: { bg: "#FDE68A", fg: "#92400E" },
+    SEMENTE: { bg: "#D1FAE5", fg: "#047857" },
+    SEMENTES: { bg: "#D1FAE5", fg: "#047857" },
+    CALCÁRIO: { bg: "#E2E8F0", fg: "#334155" },
+    CALCARIO: { bg: "#E2E8F0", fg: "#334155" },
+    GESSO: { bg: "#F5D0FE", fg: "#A21CAF" },
+    SAL: { bg: "#CFFAFE", fg: "#0E7490" },
+  };
+
+  const PRODUCT_BG_MAP_NF = {
+    SOJA: "../assets/img/SOJATESTE.png",
+    MILHO: "../assets/img/MILHOTESTE.png",
+    ACUCAR: "../assets/img/ACUCARTESTE.png",
+    CALCARIO: "../assets/img/CALCARIOTESTE.png",
+    FARELODESOJA: "../assets/img/FARELODESOJA.png",
+    SORGO: "../assets/img/SORGOTESTE.png",
+    FERTILIZANTE: "../assets/img/FERTILIZANTE.png",
+  };
+
+  const PISO_PARAMS = {
+    e9: { eixos: 9, rkm: 9.2662, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
+    e4: { eixos: 4, rkm: 8.0855, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
+    e7: { eixos: 7, rkm: 8.0855, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
+    e6: { eixos: 6, rkm: 7.4408, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
+    e5: { eixos: 5, rkm: 6.7381, custoCC: 642.1, weightInputId: "w5", defaultPeso: 26 },
   };
 
   function safeText(v) {
@@ -219,18 +337,25 @@
     return String(v ?? "").toUpperCase();
   }
 
+  function normalizeKeyNF(v) {
+    return String(v || "")
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9]/g, "");
+  }
+
+  function setStatus(text) {
+    const el = document.querySelector("[data-sync-status]") || document.querySelector("#syncStatus");
+    if (el) el.textContent = text;
+  }
+
   function normalizeFreteStatus(value) {
     const s = upper(value);
     if (s === "EM ANALISE") return "FINALIZANDO";
     if (s === "BLOQUEADO") return "SUSPENSO";
     return s;
-  }
-
-  function setStatus(text) {
-    const el =
-      document.querySelector("[data-sync-status]") ||
-      document.querySelector("#syncStatus");
-    if (el) el.textContent = text;
   }
 
   function parsePtNumber(value) {
@@ -242,6 +367,7 @@
 
     s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
     if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+
     const n = Number(s);
     return Number.isFinite(n) ? n : NaN;
   }
@@ -272,10 +398,6 @@
     });
   }
 
-  function ceil0(n) {
-    return Math.ceil(n);
-  }
-
   function escapeHtml(str) {
     return String(str ?? "")
       .replaceAll("&", "&amp;")
@@ -285,26 +407,8 @@
       .replaceAll("'", "&#039;");
   }
 
-  function extractPhoneBR(text) {
-    const s = safeText(text);
-    if (!s) return "";
-
-    let digits = s.replace(/\D/g, "");
-    if (digits) {
-      if (digits.startsWith("55")) return digits;
-      if (digits.length === 10 || digits.length === 11) return "55" + digits;
-    }
-
-    const phone = CONTACT_PHONE[upper(s)] || "";
-    if (!phone) return "";
-
-    const p = phone.replace(/\D/g, "");
-    return p.startsWith("55") ? p : "55" + p;
-  }
-
-  function whatsappLinkFromContato(contato) {
-    const phone = extractPhoneBR(contato);
-    return phone ? "https://wa.me/" + phone : "";
+  function ceil0(n) {
+    return Math.ceil(n);
   }
 
   function jsonp(url, timeoutMs = 30000) {
@@ -315,7 +419,7 @@
 
       const t = setTimeout(() => {
         cleanup();
-        reject(new Error("Timeout (JSONP)"));
+        reject(new Error("Timeout JSONP"));
       }, timeoutMs);
 
       function cleanup() {
@@ -332,7 +436,7 @@
       s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
       s.onerror = () => {
         cleanup();
-        reject(new Error("Erro ao carregar script (JSONP)"));
+        reject(new Error("Erro ao carregar JSONP"));
       };
 
       document.head.appendChild(s);
@@ -341,27 +445,15 @@
 
   function buildUrl(paramsObj) {
     const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => {
-      url.searchParams.set(k, v);
-    });
+    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
     return url.toString();
   }
 
   async function apiGet(paramsObj) {
     const res = await jsonp(buildUrl(paramsObj), 35000);
-    if (!res || res.ok === false) {
-      throw new Error(res?.error || "Falha na API");
-    }
+    if (!res || res.ok === false) throw new Error(res?.error || "Falha na API");
     return res;
   }
-
-  const PISO_PARAMS = {
-    e9: { eixos: 9, rkm: 9.2662, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
-    e4: { eixos: 4, rkm: 8.0855, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
-    e7: { eixos: 7, rkm: 8.0855, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
-    e6: { eixos: 6, rkm: 7.4408, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
-    e5: { eixos: 5, rkm: 6.7381, custoCC: 642.1, weightInputId: "w5", defaultPeso: 26 },
-  };
 
   function getPesoFromUI(id, fallback) {
     const el = document.getElementById(id);
@@ -372,8 +464,7 @@
   function calcMinRPorTon(param, km, pedagioPorEixo) {
     const peso = getPesoFromUI(param.weightInputId, param.defaultPeso);
     const numerador = param.rkm * km + param.custoCC + pedagioPorEixo * param.eixos;
-    const base = numerador / peso;
-    return ceil0(base);
+    return ceil0(numerador / peso);
   }
 
   function sn(valueMotoristaTon, minTon) {
@@ -398,30 +489,12 @@
     });
   }
 
-  function hashCode(text) {
-    const s = upper(text);
-    let h = 0;
-    for (let i = 0; i < s.length; i++) {
-      h = ((h << 5) - h) + s.charCodeAt(i);
-      h |= 0;
-    }
-    return Math.abs(h);
-  }
-
   function getFixedColorConfig(value, kind) {
     const key = upper(value);
-
     if (kind === "cliente" && FIXED_CLIENT_COLORS[key]) return FIXED_CLIENT_COLORS[key];
     if (kind === "contato" && FIXED_CONTACT_COLORS[key]) return FIXED_CONTACT_COLORS[key];
     if (kind === "produto" && FIXED_PRODUCT_COLORS[key]) return FIXED_PRODUCT_COLORS[key];
-
-    return null;
-  }
-
-  function getFallbackPalette(kind) {
-    if (kind === "cliente") return FALLBACK_CLIENT_PALETTE;
-    if (kind === "contato") return FALLBACK_CONTACT_PALETTE;
-    return FALLBACK_PRODUCT_PALETTE;
+    return { bg: "#F1F5F9", fg: "#334155" };
   }
 
   function createColorTag(text, kind) {
@@ -433,24 +506,8 @@
       return span;
     }
 
-    const fixed = getFixedColorConfig(value, kind);
-    let bg, fg, colorName;
-
-    if (fixed) {
-      bg = fixed.bg;
-      fg = fixed.fg;
-      colorName = fixed.name;
-    } else {
-      const palette = getFallbackPalette(kind);
-      const item = palette[hashCode(value) % palette.length];
-      bg = item[0];
-      fg = item[1];
-      colorName = item[2];
-    }
-
+    const c = getFixedColorConfig(value, kind);
     span.textContent = value;
-    span.title = `${colorName} • ${value}`;
-    span.setAttribute("data-color-name", colorName);
     span.style.display = "inline-flex";
     span.style.alignItems = "center";
     span.style.maxWidth = "100%";
@@ -459,18 +516,40 @@
     span.style.fontWeight = "800";
     span.style.fontSize = "11px";
     span.style.lineHeight = "1.2";
-    span.style.background = bg;
-    span.style.color = fg;
-    span.style.border = `1px solid ${fg}22`;
+    span.style.background = c.bg;
+    span.style.color = c.fg;
+    span.style.border = `1px solid ${c.fg}22`;
     span.style.whiteSpace = "nowrap";
 
     return span;
   }
 
+  function extractPhoneBR(text) {
+    const s = safeText(text);
+    if (!s) return "";
+
+    let digits = s.replace(/\D/g, "");
+    if (digits) {
+      if (digits.startsWith("55")) return digits;
+      if (digits.length === 10 || digits.length === 11) return "55" + digits;
+    }
+
+    const phone = CONTACT_PHONE[upper(s)] || "";
+    if (!phone) return "";
+
+    const p = phone.replace(/\D/g, "");
+    return p.startsWith("55") ? p : "55" + p;
+  }
+
+  function whatsappLinkFromContato(contato) {
+    const phone = extractPhoneBR(contato);
+    return phone ? "https://wa.me/" + phone : "";
+  }
+
   function buildContatoCell(contatoText) {
     const td = document.createElement("td");
-
     const wrap = document.createElement("div");
+
     wrap.style.display = "flex";
     wrap.style.alignItems = "center";
     wrap.style.justifyContent = "space-between";
@@ -518,10 +597,10 @@
 
   function buildStatusCell(value) {
     const td = document.createElement("td");
-
     const status = normalizeFreteStatus(value);
     const span = document.createElement("span");
 
+    span.textContent = status || "-";
     span.style.display = "inline-flex";
     span.style.alignItems = "center";
     span.style.justifyContent = "center";
@@ -531,24 +610,13 @@
     span.style.borderRadius = "999px";
     span.style.fontWeight = "900";
     span.style.fontSize = "10px";
-    span.style.letterSpacing = ".02em";
-    span.style.color = "#FFFFFF";
-    span.style.textTransform = "uppercase";
-    span.style.whiteSpace = "nowrap";
-    span.style.border = "1px solid rgba(0,0,0,.08)";
-    span.style.boxShadow = "0 2px 8px rgba(0,0,0,.08)";
+    span.style.color = "#fff";
 
-    if (status === "LIBERADO") {
-      span.style.background = "#15803D";
-    } else if (status === "FINALIZANDO") {
-      span.style.background = "#1D4ED8";
-    } else if (status === "SUSPENSO") {
-      span.style.background = "#B91C1C";
-    } else {
-      span.style.background = "#64748B";
-    }
+    if (status === "LIBERADO") span.style.background = "#15803D";
+    else if (status === "FINALIZANDO") span.style.background = "#1D4ED8";
+    else if (status === "SUSPENSO") span.style.background = "#B91C1C";
+    else span.style.background = "#64748B";
 
-    span.textContent = status || "-";
     td.appendChild(span);
     return td;
   }
@@ -557,9 +625,6 @@
     const td = document.createElement("td");
     td.className = "num";
 
-    const wrap = document.createElement("div");
-    wrap.className = "inlineCellWrap";
-
     const input = document.createElement("input");
     input.type = "text";
     input.className = "inlineCellInput";
@@ -567,89 +632,73 @@
     input.setAttribute("inputmode", "numeric");
     input.setAttribute("autocomplete", "off");
 
-    const saveId = `${safeText(row.id)}::${key}`;
-
     let originalValue = safeText(row[key] || "");
     let isSaving = false;
 
     async function commit() {
       const newValue = safeText(input.value);
-
-      if (isSaving) return;
-      if (newValue === originalValue) return;
-      if (!safeText(row.id)) return;
+      if (isSaving || newValue === originalValue || !safeText(row.id)) return;
 
       isSaving = true;
-      STATE.inlineSaving.add(saveId);
-      wrap.classList.add("isSaving");
       input.disabled = true;
 
       try {
-        setStatus(`💾 Salvando ${key === "porta" ? "porta" : "trânsito"}...`);
-
-        await apiGet({
-          action: "fretes_update",
-          id: safeText(row.id),
-          [key]: newValue
-        });
+        setStatus(`💾 Salvando ${key}...`);
+        await apiGet({ action: "fretes_update", id: safeText(row.id), [key]: newValue });
 
         const idx = STATE.rows.findIndex((r) => safeText(r.id) === safeText(row.id));
-        if (idx >= 0) {
-          STATE.rows[idx][key] = newValue;
-        }
+        if (idx >= 0) STATE.rows[idx][key] = newValue;
 
         originalValue = newValue;
         setStatus("✅ Atualizado");
       } catch (e) {
-        console.error(`[fretes] erro ao salvar ${key}:`, e);
         input.value = originalValue;
         setStatus("❌ Erro ao atualizar");
         alert(e.message || `Falha ao salvar ${key}.`);
       } finally {
         isSaving = false;
-        STATE.inlineSaving.delete(saveId);
-        wrap.classList.remove("isSaving");
         input.disabled = false;
       }
     }
 
     input.addEventListener("blur", commit);
-
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         input.blur();
       }
-
       if (e.key === "Escape") {
         input.value = originalValue;
         input.blur();
       }
     });
 
-    wrap.appendChild(input);
-    td.appendChild(wrap);
+    td.appendChild(input);
     return td;
   }
-
 
   function buildSelectCell(row) {
     const td = document.createElement("td");
     td.className = "num";
+
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.className = "nfRowCheck";
     cb.checked = STATE.selectedIds.has(safeText(row.id));
     cb.title = "Selecionar para pacote de divulgação";
+
     cb.addEventListener("click", (e) => {
       e.stopPropagation();
       const id = safeText(row.id);
       if (!id) return;
+
       if (cb.checked) STATE.selectedIds.add(id);
       else STATE.selectedIds.delete(id);
+
       updateBulkUI();
       renderPreview(row);
     });
+
     td.appendChild(cb);
     return td;
   }
@@ -658,11 +707,13 @@
     const td = document.createElement("td");
     td.className = "num";
 
+    const wrap = document.createElement("div");
+    wrap.className = "nfActionGroup";
+
     const btnEdit = document.createElement("button");
     btnEdit.type = "button";
     btnEdit.className = "btnTiny ghost";
     btnEdit.textContent = "Editar";
-    btnEdit.style.marginRight = "6px";
     btnEdit.addEventListener("click", () => openEditModal(row));
 
     const btnDel = document.createElement("button");
@@ -679,7 +730,6 @@
         await atualizar();
         setStatus("✅ Excluído");
       } catch (e) {
-        console.error("[fretes] erro ao excluir:", e);
         setStatus("❌ Falha ao excluir");
         alert(e.message || "Falha ao excluir.");
       }
@@ -699,7 +749,7 @@
     const btnEye = document.createElement("button");
     btnEye.type = "button";
     btnEye.className = "nfIconBtn eye";
-    btnEye.title = "Ver prévia da divulgação";
+    btnEye.title = "Ver prévia";
     btnEye.textContent = "👁";
     btnEye.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -717,13 +767,12 @@
       enviarWhatsAppRow(row);
     });
 
-    const wrap = document.createElement("div");
-    wrap.className = "nfActionGroup";
     wrap.appendChild(btnEdit);
     wrap.appendChild(btnDel);
     wrap.appendChild(btnRaio);
     wrap.appendChild(btnEye);
     wrap.appendChild(btnWa);
+
     td.appendChild(wrap);
     return td;
   }
@@ -733,6 +782,7 @@
     if (!tbody) return;
 
     tbody.innerHTML = "";
+
     if (!rowsRaw || !rowsRaw.length) {
       syncFloatingHorizontalBar();
       return;
@@ -741,8 +791,10 @@
     const rows = applyPisoSN(rowsRaw).slice().sort((a, b) => {
       const fa = safeText(a.filial).localeCompare(safeText(b.filial));
       if (fa !== 0) return fa;
+
       const ca = safeText(a.cliente).localeCompare(safeText(b.cliente));
       if (ca !== 0) return ca;
+
       return safeText(a.destino).localeCompare(safeText(b.destino));
     });
 
@@ -754,9 +806,11 @@
 
         const trGroup = document.createElement("tr");
         trGroup.className = "groupRow";
+
         const td = document.createElement("td");
         td.colSpan = COLS.length;
         td.textContent = filialAtual || "SEM FILIAL";
+
         trGroup.appendChild(td);
         tbody.appendChild(trGroup);
       }
@@ -779,7 +833,7 @@
           return;
         }
 
-        if (["e5","e6","e7","e4","e9"].includes(col.key)) {
+        if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
           return;
         }
@@ -796,7 +850,7 @@
 
         const td = document.createElement("td");
 
-        if (["volume","valorEmpresa","valorMotorista","km","pedagioEixo","pedidoSat","porta","transito"].includes(col.key)) {
+        if (["volume", "valorEmpresa", "valorMotorista", "km", "pedagioEixo", "pedidoSat", "porta", "transito"].includes(col.key)) {
           td.className = "num";
         }
 
@@ -811,313 +865,13 @@
         tr.appendChild(td);
       });
 
+      tr.addEventListener("click", () => renderPreview(row));
       tbody.appendChild(tr);
     });
 
     syncFloatingHorizontalBar();
     updateBulkUI();
     renderStats(getFilteredRows());
-  }
-
-
-  function getSelectedRows() {
-    const ids = STATE.selectedIds;
-    return STATE.rows.filter((r) => ids.has(safeText(r.id)));
-  }
-
-  function updateBulkUI() {
-    const selected = getSelectedRows();
-    const n = selected.length;
-    const a = document.getElementById("nfSelecionadosTxt");
-    const b = document.getElementById("nfArtesTxt");
-    const c = document.getElementById("nfMsgsTxt");
-    if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
-    if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
-    if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
-
-    const selectAll = document.getElementById("nfSelectAll");
-    if (selectAll) {
-      const visible = getFilteredRows().filter((r) => safeText(r.id));
-      selectAll.checked = visible.length > 0 && visible.every((r) => ids.has(safeText(r.id)));
-      selectAll.indeterminate = visible.some((r) => ids.has(safeText(r.id))) && !selectAll.checked;
-    }
-  }
-
-  function renderStats(rows) {
-    rows = rows || [];
-    const sum = (key) => rows.reduce((acc, r) => acc + (parsePtNumber(r[key]) || 0), 0);
-    const avg = (key) => {
-      const nums = rows.map((r) => parsePtNumber(r[key])).filter(Number.isFinite);
-      return nums.length ? nums.reduce((a,b)=>a+b,0) / nums.length : 0;
-    };
-    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-    set("nfStatVolume", `${sum("volume").toLocaleString("pt-BR",{maximumFractionDigits:0})} t`);
-    set("nfStatEmpresa", `${formatMoneyBR(avg("valorEmpresa"))} / t`);
-    set("nfStatMotorista", `${formatMoneyBR(avg("valorMotorista"))} / t`);
-    set("nfStatKm", `${sum("km").toLocaleString("pt-BR",{maximumFractionDigits:0})} km`);
-    const pedTotal = rows.reduce((acc, r) => acc + ((parsePtNumber(r.pedagioEixo)||0) * (parsePtNumber(r.km)||0 > 0 ? 1 : 1)), 0);
-    set("nfStatPedagio", formatMoneyBR(pedTotal));
-  }
-
-  const PRODUCT_BG_MAP_NF = {
-    SOJA: "../assets/img/SOJATESTE.png",
-    MILHO: "../assets/img/MILHOTESTE.png",
-    ACUCAR: "../assets/img/ACUCARTESTE.png",
-    CALCARIO: "../assets/img/CALCARIOTESTE.png",
-    FARELODESOJA: "../assets/img/FARELODESOJA.png",
-    SORGO: "../assets/img/SORGOTESTE.png",
-    FERTILIZANTE: "../assets/img/FERTILIZANTE.png"
-  };
-
-  function normalizeKeyNF(v) {
-    return String(v || "")
-      .trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
-  }
-
-  function productFamilyNF(produto) {
-    const n = normalizeKeyNF(produto);
-    if (n.includes("FARELO") && n.includes("SOJA")) return "FARELODESOJA";
-    if (n.includes("SOJA")) return "SOJA";
-    if (n.includes("MILHO")) return "MILHO";
-    if (n.includes("ACUCAR")) return "ACUCAR";
-    if (n.includes("CALCARIO")) return "CALCARIO";
-    if (n.includes("SORGO")) return "SORGO";
-    if (n.includes("FERT") || n.includes("ADUBO")) return "FERTILIZANTE";
-    return "SOJA";
-  }
-
-  function normalizeFilialKeyNF(filial) {
-    const k = normalizeKeyNF(filial);
-    if (k === "RIOVERDE" || k === "RIOVERDEFERT") return k === "RIOVERDEFERT" ? "FERTILIZANTE" : "RIOVERDE";
-    if (k === "SAOPAULO" || k === "SOROCABA") return "SAOPAULO";
-    if (k === "CHAPCEU" || k === "CHAPAOD OCEU") return "CHAPEU";
-    return k;
-  }
-
-  function contactsFromFilial(row) {
-    const filial = upper(row.filial);
-    const contatos = (DIRECTORY.contatosPorFilial && DIRECTORY.contatosPorFilial[filial]) || [];
-    if (contatos.length) return contatos.map((c) => `${c.nome} ${formatPhoneNF(c.fone)}`).slice(0,4);
-
-    const contato = safeText(row.contato);
-    const phone = CONTACT_PHONE[upper(contato)] || "";
-    return [
-      contato ? `${contato} ${formatPhoneNF(phone)}` : "",
-      "",
-      "",
-      ""
-    ];
-  }
-
-  function formatPhoneNF(phone) {
-    const d = String(phone || "").replace(/\D/g, "");
-    const p = d.startsWith("55") ? d.slice(2) : d;
-    if (p.length === 11) return `(${p.slice(0,2)}) ${p.slice(2,7)}-${p.slice(7)}`;
-    if (p.length === 10) return `(${p.slice(0,2)}) ${p.slice(2,6)}-${p.slice(6)}`;
-    return phone || "";
-  }
-
-  function cityUf(row, cityKey, ufKey) {
-    const city = safeText(row[cityKey]);
-    const uf = safeText(row[ufKey]);
-    if (!city) return "";
-    if (city.includes("-")) return upper(city);
-    return uf ? `${upper(city)}-${upper(uf)}` : upper(city);
-  }
-
-  function divulgacaoDataFromRow(row) {
-    const produto = upper(row.produto || "SOJA");
-    const family = productFamilyNF(produto);
-    const contatos = contactsFromFilial(row);
-    const valor = safeText(row.valorMotorista) ? formatMoneyBR(row.valorMotorista) : "A COMBINAR";
-    return {
-      coletaCidade: cityUf(row, "origem", "uf"),
-      coletaLocal: upper(row.coleta || ""),
-      descargaCidade: cityUf(row, "destino", "uf"),
-      descargaLocal: upper(row.descarga || ""),
-      produto,
-      productFamily: family,
-      bg: PRODUCT_BG_MAP_NF[family] || PRODUCT_BG_MAP_NF.SOJA,
-      valor,
-      obs: upper(row.obs || "PAGAMENTO PIX OU CHEQUE"),
-      contatos,
-      contatoPrincipal: upper(row.contato || ""),
-      phone: extractPhoneBR(row.contato),
-      filename: `${family}_${normalizeKeyNF(row.origem)}_${normalizeKeyNF(row.destino)}_${normalizeKeyNF(valor)}.jpg`
-    };
-  }
-
-  function setText(id, txt) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = txt || "";
-  }
-
-  function buildMessage(row) {
-    const d = divulgacaoDataFromRow(row);
-    return [
-      "🚚 FRETE DISPONÍVEL",
-      "",
-      `COLETA: ${d.coletaCidade}`,
-      d.coletaLocal ? `LOCAL: ${d.coletaLocal}` : "",
-      `DESCARGA: ${d.descargaCidade}`,
-      d.descargaLocal ? `LOCAL DESCARGA: ${d.descargaLocal}` : "",
-      `PRODUTO: ${d.produto}`,
-      `VALOR: ${d.valor} / TON`,
-      d.obs ? `OBS: ${d.obs}` : "",
-      d.contatoPrincipal ? `CONTATO: ${d.contatoPrincipal}` : ""
-    ].filter(Boolean).join("\n");
-  }
-
-  function renderPreview(row) {
-    if (!row) row = STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
-    if (!row) return;
-    STATE.previewRow = row;
-
-    const d = divulgacaoDataFromRow(row);
-    const bg = document.getElementById("nfArtBg");
-    if (bg) bg.src = d.bg;
-
-    const badge = document.getElementById("nfPreviewProdutoBadge");
-    if (badge) badge.textContent = d.productFamily;
-
-    setText("nfArtColetaCidade", d.coletaCidade || "-CIDADE-UF");
-    setText("nfArtColetaLocal", d.coletaLocal || "Local");
-    setText("nfArtDescargaCidade", d.descargaCidade || "-CIDADE-UF");
-    setText("nfArtDescargaLocal", d.descargaLocal || "Local");
-    setText("nfArtProduto", d.produto || "PRODUTO");
-    setText("nfArtValor", d.valor || "A COMBINAR");
-    setText("nfArtObs", d.obs || "");
-    setText("nfArtContato1", d.contatos[0] || "");
-    setText("nfArtContato2", d.contatos[1] || "");
-    setText("nfArtContato3", d.contatos[2] || "");
-    setText("nfArtContato4", d.contatos[3] || "");
-
-    const msg = document.getElementById("nfMensagemPronta");
-    if (msg) msg.value = buildMessage(row);
-  }
-
-  function waitForImage(img) {
-    if (!img || img.complete) return Promise.resolve();
-    return new Promise((resolve) => {
-      img.addEventListener("load", resolve, {once:true});
-      img.addEventListener("error", resolve, {once:true});
-    });
-  }
-
-  async function canvasFromPreview(row) {
-    renderPreview(row);
-    const card = document.getElementById("nfArtCard");
-    const img = document.getElementById("nfArtBg");
-    if (!card || typeof html2canvas !== "function") {
-      alert("html2canvas não carregou. Verifique a internet ou o script CDN.");
-      return null;
-    }
-    await waitForImage(img);
-    return await html2canvas(card, {backgroundColor:null, scale:4, useCORS:true});
-  }
-
-  async function downloadDivulgacaoJPG(row) {
-    const d = divulgacaoDataFromRow(row);
-    const canvas = await canvasFromPreview(row);
-    if (!canvas) return;
-    const link = document.createElement("a");
-    link.download = d.filename;
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
-  }
-
-  async function copyPreviewImage(row) {
-    try {
-      const canvas = await canvasFromPreview(row || STATE.previewRow);
-      if (!canvas || !navigator.clipboard || !window.ClipboardItem) throw new Error("Clipboard indisponível");
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-      await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
-      setStatus("✅ Imagem copiada");
-    } catch (e) {
-      console.warn(e);
-      alert("Não consegui copiar a imagem neste navegador. Use Baixar JPG.");
-    }
-  }
-
-  async function copyMessage(row) {
-    const msg = buildMessage(row || STATE.previewRow || getFilteredRows()[0] || {});
-    try {
-      await navigator.clipboard.writeText(msg);
-      setStatus("✅ Mensagem copiada");
-    } catch {
-      prompt("Copie a mensagem:", msg);
-    }
-  }
-
-  async function enviarWhatsAppRow(row) {
-    await copyMessage(row);
-    const phone = extractPhoneBR(row.contato);
-    const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(buildMessage(row))}` : `https://wa.me/?text=${encodeURIComponent(buildMessage(row))}`;
-    window.open(url, "_blank");
-  }
-
-  async function gerarPacoteJPG() {
-    const rows = getSelectedRows();
-    if (!rows.length) {
-      alert("Selecione uma ou mais linhas para gerar o pacote JPG.");
-      return;
-    }
-    setStatus(`⚡ Gerando ${rows.length} artes...`);
-    for (let i=0; i<rows.length; i++) {
-      await downloadDivulgacaoJPG(rows[i]);
-      await new Promise((r)=>setTimeout(r, 250));
-    }
-    setStatus("✅ Pacote JPG gerado");
-  }
-
-  async function enviarWhatsAppPacote() {
-    const rows = getSelectedRows();
-    if (!rows.length) {
-      alert("Selecione uma ou mais linhas.");
-      return;
-    }
-    const msg = rows.map((r, i) => `#${i+1}\n${buildMessage(r)}`).join("\n\n----------------\n\n");
-    try { await navigator.clipboard.writeText(msg); } catch {}
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-  }
-
-  function bindModoRaio() {
-    document.getElementById("btnSelecionarTodosVisiveis")?.addEventListener("click", () => {
-      const visible = getFilteredRows().filter((r) => safeText(r.id));
-      const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
-      visible.forEach((r) => {
-        if (allSelected) STATE.selectedIds.delete(safeText(r.id));
-        else STATE.selectedIds.add(safeText(r.id));
-      });
-      applyFilters();
-      updateBulkUI();
-    });
-
-    document.getElementById("nfSelectAll")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      getFilteredRows().forEach((r) => {
-        const id = safeText(r.id);
-        if (!id) return;
-        if (checked) STATE.selectedIds.add(id);
-        else STATE.selectedIds.delete(id);
-      });
-      applyFilters();
-      updateBulkUI();
-    });
-
-    document.getElementById("btnGerarPacoteJPG")?.addEventListener("click", gerarPacoteJPG);
-    document.getElementById("btnEnviarWhatsAppPacote")?.addEventListener("click", enviarWhatsAppPacote);
-    document.getElementById("nfBaixarJPG")?.addEventListener("click", () => downloadDivulgacaoJPG(STATE.previewRow || getFilteredRows()[0]));
-    document.getElementById("nfCopiarImagem")?.addEventListener("click", () => copyPreviewImage(STATE.previewRow || getFilteredRows()[0]));
-    document.getElementById("nfEnviarWhatsapp")?.addEventListener("click", () => {
-      const row = STATE.previewRow || getFilteredRows()[0];
-      if (row) enviarWhatsAppRow(row);
-    });
-    document.getElementById("nfCopiarMensagem")?.addEventListener("click", () => copyMessage(STATE.previewRow || getFilteredRows()[0]));
-    document.getElementById("nfClosePreview")?.addEventListener("click", () => {
-      const panel = document.getElementById("nfPreviewPanel");
-      if (panel) panel.style.display = panel.style.display === "none" ? "" : "none";
-    });
   }
 
   function getFilteredRows() {
@@ -1142,13 +896,15 @@
 
   function applyFilters() {
     render(getFilteredRows());
+    renderPreview(getFilteredRows()[0] || STATE.rows[0]);
   }
 
   function setSelectOptions(selectEl, options, placeholderText) {
     if (!selectEl) return;
-    const current = selectEl.value;
 
+    const current = selectEl.value;
     selectEl.innerHTML = "";
+
     const ph = document.createElement("option");
     ph.value = "";
     ph.textContent = placeholderText;
@@ -1176,15 +932,429 @@
     setSelectOptions($("#fContato"), contatos, "Todos os contatos");
   }
 
+  function productFamilyNF(produto) {
+    const n = normalizeKeyNF(produto);
+
+    if (n.includes("FARELO") && n.includes("SOJA")) return "FARELODESOJA";
+    if (n.includes("SOJA")) return "SOJA";
+    if (n.includes("MILHO")) return "MILHO";
+    if (n.includes("ACUCAR")) return "ACUCAR";
+    if (n.includes("CALCARIO")) return "CALCARIO";
+    if (n.includes("SORGO")) return "SORGO";
+    if (n.includes("FERT") || n.includes("ADUBO")) return "FERTILIZANTE";
+
+    return "SOJA";
+  }
+
+  function normalizeFilialKeyNF(filial) {
+    const k = normalizeKeyNF(filial);
+
+    if (k === "RIOVERDE") return "RIOVERDE";
+    if (k === "RIOVERDEFERT") return "FERTILIZANTE";
+    if (k === "SAOPAULO" || k === "SOROCABA") return "SAOPAULO";
+    if (k === "CHAPCEU" || k === "CHAPEU") return "CHAPEU";
+    if (k === "CATALAO") return "CATALAO";
+    if (k === "URUAÇU" || k === "URUACU") return "URUACU";
+    if (k === "BOMJESUS") return "BOMJESUS";
+
+    return k;
+  }
+
+  function formatPhoneNF(phone) {
+    const d = String(phone || "").replace(/\D/g, "");
+    const p = d.startsWith("55") ? d.slice(2) : d;
+
+    if (p.length === 11) return `(${p.slice(0, 2)}) ${p.slice(2, 7)}-${p.slice(7)}`;
+    if (p.length === 10) return `(${p.slice(0, 2)}) ${p.slice(2, 6)}-${p.slice(6)}`;
+
+    return phone || "";
+  }
+
+  function contactsFromFilial(row) {
+    const filialKey = normalizeFilialKeyNF(row.filial);
+    const lista = FILIAIS_CONTATOS_ARTE[filialKey];
+
+    if (lista && lista.length) return lista.slice(0, 4);
+
+    const contato = safeText(row.contato);
+    const phone = CONTACT_PHONE[upper(contato)] || "";
+
+    return [
+      contato ? `${contato} ${formatPhoneNF(phone)}` : "",
+      "",
+      "",
+      ""
+    ];
+  }
+
+  function cityUf(row, cityKey, ufKey) {
+    const city = safeText(row[cityKey]);
+    const uf = safeText(row[ufKey]);
+
+    if (!city) return "";
+    if (city.includes("-")) return upper(city);
+
+    return uf ? `${upper(city)}-${upper(uf)}` : upper(city);
+  }
+
+  function divulgacaoDataFromRow(row) {
+    const produto = upper(row.produto || "SOJA");
+    const family = productFamilyNF(produto);
+    const contatos = contactsFromFilial(row);
+    const valor = safeText(row.valorMotorista)
+      ? formatMoneyBR(row.valorMotorista)
+      : "A COMBINAR";
+
+    return {
+      coletaCidade: cityUf(row, "origem", "uf"),
+      coletaLocal: upper(row.coleta || ""),
+      descargaCidade: cityUf(row, "destino", "uf"),
+      descargaLocal: upper(row.descarga || ""),
+      produto,
+      productFamily: family,
+      bg: PRODUCT_BG_MAP_NF[family] || PRODUCT_BG_MAP_NF.SOJA,
+      valor,
+      obs: upper(row.obs || ""),
+      contatos,
+      contatoPrincipal: upper(row.contato || ""),
+      phone: extractPhoneBR(row.contato),
+      filename: `${family}_${normalizeKeyNF(row.origem)}_${normalizeKeyNF(row.destino)}_${normalizeKeyNF(valor)}.jpg`
+    };
+  }
+
+  function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt || "";
+  }
+
+  function renderPreview(row) {
+    if (!row) row = STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
+    if (!row) return;
+
+    STATE.previewRow = row;
+    const d = divulgacaoDataFromRow(row);
+
+    const bg = document.getElementById("nfArtBg");
+    if (bg) bg.src = d.bg;
+
+    const badge = document.getElementById("nfPreviewProdutoBadge");
+    if (badge) badge.textContent = d.productFamily;
+
+    setText("nfArtColetaCidade", d.coletaCidade);
+    setText("nfArtColetaLocal", d.coletaLocal);
+    setText("nfArtDescargaCidade", d.descargaCidade);
+    setText("nfArtDescargaLocal", d.descargaLocal);
+    setText("nfArtProduto", d.produto);
+    setText("nfArtValor", d.valor);
+    setText("nfArtObs", d.obs);
+
+    setText("nfArtContato1", d.contatos[0] || "");
+    setText("nfArtContato2", d.contatos[1] || "");
+    setText("nfArtContato3", d.contatos[2] || "");
+    setText("nfArtContato4", d.contatos[3] || "");
+
+    const msg = document.getElementById("nfMensagemPronta");
+    if (msg) msg.value = buildMessage(row);
+  }
+
+  function buildMessage(row) {
+    const d = divulgacaoDataFromRow(row);
+
+    return [
+      "🚚 FRETE DISPONÍVEL",
+      "",
+      `COLETA: ${d.coletaCidade}`,
+      d.coletaLocal ? `LOCAL: ${d.coletaLocal}` : "",
+      `DESCARGA: ${d.descargaCidade}`,
+      d.descargaLocal ? `LOCAL DESCARGA: ${d.descargaLocal}` : "",
+      `PRODUTO: ${d.produto}`,
+      `VALOR: ${d.valor} / TON`,
+      d.obs ? `OBS: ${d.obs}` : "",
+      d.contatoPrincipal ? `CONTATO: ${d.contatoPrincipal}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  function waitForImage(img) {
+    if (!img || img.complete) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    });
+  }
+
+  async function canvasFromPreview(row) {
+    renderPreview(row);
+
+    const card = document.getElementById("nfArtCard");
+    const img = document.getElementById("nfArtBg");
+
+    if (!card || typeof html2canvas !== "function") {
+      alert("html2canvas não carregou. Verifique o script CDN.");
+      return null;
+    }
+
+    await waitForImage(img);
+
+    return await html2canvas(card, {
+      backgroundColor: null,
+      scale: 4,
+      useCORS: true
+    });
+  }
+
+  async function downloadDivulgacaoJPG(row) {
+    const d = divulgacaoDataFromRow(row);
+    const canvas = await canvasFromPreview(row);
+
+    if (!canvas) return;
+
+    const link = document.createElement("a");
+    link.download = d.filename;
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  }
+
+  async function copyPreviewImage(row) {
+    try {
+      const canvas = await canvasFromPreview(row || STATE.previewRow);
+
+      if (!canvas || !navigator.clipboard || !window.ClipboardItem) {
+        throw new Error("Clipboard indisponível");
+      }
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+
+      setStatus("✅ Imagem copiada");
+    } catch (e) {
+      alert("Não consegui copiar a imagem neste navegador. Use Baixar JPG.");
+    }
+  }
+
+  async function copyMessage(row) {
+    const msg = buildMessage(row || STATE.previewRow || getFilteredRows()[0] || {});
+
+    try {
+      await navigator.clipboard.writeText(msg);
+      setStatus("✅ Mensagem copiada");
+    } catch {
+      prompt("Copie a mensagem:", msg);
+    }
+  }
+
+  async function enviarWhatsAppRow(row) {
+    await copyMessage(row);
+
+    const phone = extractPhoneBR(row.contato);
+    const msg = buildMessage(row);
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+    window.open(url, "_blank");
+  }
+
+  function getSelectedRows() {
+    return STATE.rows.filter((r) => STATE.selectedIds.has(safeText(r.id)));
+  }
+
+  function updateBulkUI() {
+    const selected = getSelectedRows();
+    const n = selected.length;
+
+    const a = document.getElementById("nfSelecionadosTxt");
+    const b = document.getElementById("nfArtesTxt");
+    const c = document.getElementById("nfMsgsTxt");
+
+    if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
+    if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
+    if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
+
+    const selectAll = document.getElementById("nfSelectAll");
+    if (selectAll) {
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
+      selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
+      selectAll.indeterminate =
+        visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
+    }
+  }
+
+  function renderStats(rows) {
+    rows = rows || [];
+
+    const sum = (key) => rows.reduce((acc, r) => acc + (parsePtNumber(r[key]) || 0), 0);
+    const avg = (key) => {
+      const nums = rows.map((r) => parsePtNumber(r[key])).filter(Number.isFinite);
+      return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+    };
+
+    const set = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    set("nfStatVolume", `${sum("volume").toLocaleString("pt-BR", { maximumFractionDigits: 0 })} t`);
+    set("nfStatEmpresa", `${formatMoneyBR(avg("valorEmpresa"))} / t`);
+    set("nfStatMotorista", `${formatMoneyBR(avg("valorMotorista"))} / t`);
+    set("nfStatKm", `${sum("km").toLocaleString("pt-BR", { maximumFractionDigits: 0 })} km`);
+    set("nfStatPedagio", formatMoneyBR(sum("pedagioEixo")));
+  }
+
+  async function gerarPacoteJPG() {
+    const rows = getSelectedRows();
+
+    if (!rows.length) {
+      alert("Selecione uma ou mais linhas para gerar o pacote JPG.");
+      return;
+    }
+
+    setStatus(`⚡ Gerando ${rows.length} artes...`);
+
+    for (let i = 0; i < rows.length; i++) {
+      await downloadDivulgacaoJPG(rows[i]);
+      await new Promise((r) => setTimeout(r, 250));
+    }
+
+    setStatus("✅ Pacote JPG gerado");
+  }
+
+  async function enviarWhatsAppPacote() {
+    const rows = getSelectedRows();
+
+    if (!rows.length) {
+      alert("Selecione uma ou mais linhas.");
+      return;
+    }
+
+    const msg = rows
+      .map((r, i) => `#${i + 1}\n${buildMessage(r)}`)
+      .join("\n\n----------------\n\n");
+
+    try {
+      await navigator.clipboard.writeText(msg);
+    } catch {}
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  }
+
+  function buildDivulgacaoHtml(rows) {
+    const linhas = rows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.regional)}</td>
+        <td>${escapeHtml(row.filial)}</td>
+        <td>${escapeHtml(row.origem)}</td>
+        <td>${escapeHtml(row.coleta)}</td>
+        <td>${escapeHtml(row.destino)}</td>
+        <td>${escapeHtml(row.uf)}</td>
+        <td>${escapeHtml(row.descarga)}</td>
+        <td>${escapeHtml(row.produto)}</td>
+        <td class="freteCol">${escapeHtml(formatMoneyBR(row.valorMotorista))}</td>
+        <td>${escapeHtml(row.contato)}</td>
+      </tr>
+    `).join("");
+
+    const hoje = new Date().toLocaleDateString("pt-BR");
+
+    return `
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<title>Divulgação de Frete</title>
+<style>
+@page { size: A4 landscape; margin: 10mm; }
+body{ margin:0; font-family:Arial,sans-serif; color:#222; background:#fff; }
+.page{ width:100%; padding:8px 10px; }
+.head{ text-align:center; margin-bottom:10px; border:1px solid #cfd8dc; padding:12px 10px; }
+.head img{ max-width:420px; max-height:75px; object-fit:contain; display:block; margin:0 auto 6px; }
+.bar{ height:24px; background:#3B7D23; border:1px solid #2f661b; border-bottom:none; }
+table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:10px; }
+thead th{ background:#F6D96B; color:#1f2937; border:1px solid #666; padding:4px 3px; text-align:center; font-weight:900; }
+tbody td{ border:1px solid #666; padding:2px 3px; font-size:9px; }
+tbody tr:nth-child(even){ background:#f8f8f8; }
+.freteCol{ color:#c62828; font-weight:900; text-align:right; }
+.foot{ margin-top:8px; font-size:11px; color:#555; display:flex; justify-content:space-between; }
+@media print { .printHint { display:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
+  </div>
+  <div class="bar"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>REGIONAL</th>
+        <th>FILIAL</th>
+        <th>ORIGEM</th>
+        <th>LOCAL DE CARREGAMENTO</th>
+        <th>DESTINO</th>
+        <th>UF</th>
+        <th>DESCARGA</th>
+        <th>PRODUTO</th>
+        <th>FRETE</th>
+        <th>CONTATO</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${linhas || `<tr><td colspan="10" style="text-align:center;padding:18px;font-weight:700;">NENHUM FRETE LIBERADO ENCONTRADO</td></tr>`}
+    </tbody>
+  </table>
+  <div class="foot">
+    <div><b>Data:</b> ${hoje}</div>
+    <div><b>Total de fretes:</b> ${rows.length}</div>
+  </div>
+</div>
+</body>
+</html>`;
+  }
+
+  function getDivulgacaoRows() {
+    return getFilteredRows().filter((row) => normalizeFreteStatus(row.status) === "LIBERADO");
+  }
+
+  function openDivulgacaoFrete() {
+    const rows = getDivulgacaoRows();
+
+    if (!rows.length) {
+      alert("Não há fretes LIBERADO para divulgar com os filtros atuais.");
+      return;
+    }
+
+    const html = buildDivulgacaoHtml(rows);
+    const win = window.open("", "_blank");
+
+    if (!win) {
+      alert("O navegador bloqueou a nova janela. Libere pop-up para continuar.");
+      return;
+    }
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+    win.onload = () => {
+      setTimeout(() => {
+        win.focus();
+        win.print();
+      }, 400);
+    };
+  }
+
   function modalShow(show) {
     const el = MODAL.wrap();
     if (!el) return;
+
     el.style.display = show ? "flex" : "none";
     el.setAttribute("aria-hidden", show ? "false" : "true");
   }
 
   function clearModalFields() {
     STATE.editingId = "";
+
     if (MODAL.title()) MODAL.title().textContent = "Novo Frete";
 
     [
@@ -1192,7 +1362,9 @@
       MODAL.produto(), MODAL.km(), MODAL.ped(), MODAL.volume(), MODAL.icms(),
       MODAL.empresa(), MODAL.motorista(), MODAL.sat(), MODAL.porta(),
       MODAL.transito(), MODAL.obs()
-    ].forEach((el) => { if (el) el.value = ""; });
+    ].forEach((el) => {
+      if (el) el.value = "";
+    });
 
     if (MODAL.status()) MODAL.status().value = "LIBERADO";
     if (MODAL.regional()) MODAL.regional().value = "";
@@ -1217,13 +1389,18 @@
     MODAL.filial()?.addEventListener("change", () => {
       const filial = upper(MODAL.filial()?.value);
       const contatos = (DIRECTORY.contatosPorFilial?.[filial] || []).map((c) => upper(c.nome));
+
       setSelectOptions(MODAL.contato(), contatos, "SELECIONE O CONTATO");
-      if (contatos.length === 1 && MODAL.contato()) MODAL.contato().value = contatos[0];
+
+      if (contatos.length === 1 && MODAL.contato()) {
+        MODAL.contato().value = contatos[0];
+      }
     });
   }
 
   function fillModalFromRow(row) {
     STATE.editingId = safeText(row.id);
+
     if (MODAL.title()) MODAL.title().textContent = "Editar Frete";
 
     if (MODAL.regional()) MODAL.regional().value = upper(row.regional);
@@ -1282,6 +1459,7 @@
 
   function validateModalPayload(p) {
     const missing = [];
+
     if (!p.regional) missing.push("REGIONAL");
     if (!p.filial) missing.push("FILIAL");
     if (!p.cliente) missing.push("CLIENTE");
@@ -1296,105 +1474,39 @@
       alert("Preencha: " + missing.join(", "));
       return false;
     }
+
     return true;
-  }
-
-  function ensureLoading() {
-    if (document.getElementById("freteLoading")) return;
-
-    const el = document.createElement("div");
-    el.id = "freteLoading";
-    el.innerHTML = `
-      <div class="freteLoadingBox">
-        <div class="freteSpinner"></div>
-        <div class="freteLoadingText">SALVANDO FRETE...</div>
-      </div>
-    `;
-    document.body.appendChild(el);
-
-    const style = document.createElement("style");
-    style.textContent = `
-      #freteLoading{
-        position:fixed;
-        inset:0;
-        display:none;
-        align-items:center;
-        justify-content:center;
-        background:rgba(3,8,20,.45);
-        backdrop-filter:blur(8px);
-        z-index:10050;
-      }
-      #freteLoading.isOpen{display:flex}
-      .freteLoadingBox{
-        width:min(280px,90vw);
-        padding:28px 20px;
-        border-radius:22px;
-        border:1px solid rgba(255,255,255,.14);
-        background:rgba(17,26,51,.95);
-        box-shadow:0 24px 60px rgba(0,0,0,.45);
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:16px;
-      }
-      .freteSpinner{
-        width:58px;
-        height:58px;
-        border-radius:999px;
-        border:5px solid rgba(255,255,255,.10);
-        border-top-color:rgba(79,209,255,.95);
-        border-right-color:rgba(79,209,255,.65);
-        animation:freteSpin .8s linear infinite;
-      }
-      .freteLoadingText{
-        color:#e9eefc;
-        font-size:15px;
-        font-weight:800;
-        text-align:center;
-      }
-      @keyframes freteSpin{to{transform:rotate(360deg)}}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function showLoading() {
-    ensureLoading();
-    document.getElementById("freteLoading")?.classList.add("isOpen");
-  }
-
-  function hideLoading() {
-    document.getElementById("freteLoading")?.classList.remove("isOpen");
   }
 
   async function saveFrete(payload) {
     if (STATE.editingId) {
       return await apiGet({ action: "fretes_update", id: STATE.editingId, ...payload });
     }
+
     return await apiGet({ action: "fretes_add", ...payload });
   }
 
   async function handleSave() {
     const payload = collectModalPayload();
+
     if (!validateModalPayload(payload)) return;
 
     const btn = MODAL.btnSave();
 
     try {
       if (btn) btn.disabled = true;
-      showLoading();
-      setStatus("💾 Salvando...");
 
+      setStatus("💾 Salvando...");
       await saveFrete(payload);
 
       closeModal();
       await atualizar();
+
       setStatus("✅ Salvo");
     } catch (e) {
-      console.error("[fretes] erro salvar:", e);
       setStatus("❌ Erro ao salvar");
       alert(e.message || "Falha ao salvar.");
     } finally {
-      hideLoading();
       if (btn) btn.disabled = false;
     }
   }
@@ -1417,145 +1529,23 @@
   async function atualizar() {
     try {
       setStatus("🔄 Carregando...");
+
       const res = await apiGet({ action: "fretes_list" });
+
       STATE.rows = Array.isArray(res.data)
-        ? res.data.map((row) => ({
-            ...row,
-            status: normalizeFreteStatus(row.status)
-          }))
+        ? res.data.map((row) => ({ ...row, status: normalizeFreteStatus(row.status) }))
         : [];
+
       fillTopFilters(STATE.rows);
       applyFilters();
       renderPreview(getFilteredRows()[0] || STATE.rows[0]);
       updateBulkUI();
+
       setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
       setStatus("❌ Erro ao sincronizar");
     }
-  }
-
-  function getDivulgacaoRows() {
-    return getFilteredRows().filter((row) => normalizeFreteStatus(row.status) === "LIBERADO");
-  }
-
-  function getFreteDivulgacaoValue(row) {
-    return formatMoneyBR(row.valorMotorista);
-  }
-
-  function buildDivulgacaoHtml(rows) {
-    const linhas = rows.map((row) => `
-      <tr>
-        <td>${escapeHtml(row.regional)}</td>
-        <td>${escapeHtml(row.filial)}</td>
-        <td>${escapeHtml(row.origem)}</td>
-        <td>${escapeHtml(row.coleta)}</td>
-        <td>${escapeHtml(row.destino)}</td>
-        <td>${escapeHtml(row.uf)}</td>
-        <td>${escapeHtml(row.descarga)}</td>
-        <td>${escapeHtml(row.produto)}</td>
-        <td class="freteCol">${escapeHtml(getFreteDivulgacaoValue(row))}</td>
-        <td>${escapeHtml(row.contato)}</td>
-      </tr>
-    `).join("");
-
-    const hoje = new Date().toLocaleDateString("pt-BR");
-
-    return `
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <title>Divulgação de Frete</title>
-  <style>
-    @page { size: A4 landscape; margin: 10mm; }
-    * { box-sizing: border-box; }
-    body{ margin:0; font-family: Arial, Helvetica, sans-serif; color:#222; background:#fff; }
-    .page{ width:100%; padding:8px 10px; }
-    .head{ text-align:center; margin-bottom:10px; border:1px solid #cfd8dc; padding:12px 10px; }
-    .head img{ max-width:420px; max-height:75px; object-fit:contain; display:block; margin:0 auto 6px; }
-    .bar{ height:24px; background:#3B7D23; margin-bottom:0; border:1px solid #2f661b; border-bottom:none; }
-    table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:10px; }
-    thead th{ background:#F6D96B; color:#1f2937; border:1px solid #666; padding:4px 3px; text-align:center; font-weight:900; font-size:10px; line-height:1.05 }
-    tbody td{ border:1px solid #666; padding:2px 3px; vertical-align:middle; word-wrap:break-word; font-size:9px; line-height:1.05; }
-    tbody tr:nth-child(even){ background:#f8f8f8; }
-    .freteCol{ color:#c62828; font-weight:900; text-align:right; }
-    .colRegional{width:6%}.colFilial{width:9%}.colOrigem{width:13%}.colColeta{width:14%}.colDestino{width:13%}.colUf{width:4%}.colDescarga{width:8%}.colProduto{width:8%}.colFrete{width:9%}.colContato{width:16%}
-    .foot{ margin-top:8px; font-size:11px; color:#555; display:flex; justify-content:space-between; gap:10px; }
-    .printHint{ margin-top:10px; font-size:11px; color:#666; text-align:right; }
-    @media print { .printHint { display:none; } }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="head">
-      <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
-    </div>
-    <div class="bar"></div>
-    <table>
-      <thead>
-        <tr>
-          <th class="colRegional">REGIONAL</th>
-          <th class="colFilial">FILIAL</th>
-          <th class="colOrigem">ORIGEM</th>
-          <th class="colColeta">LOCAL DE CARREGAMENTO</th>
-          <th class="colDestino">DESTINO</th>
-          <th class="colUf">UF</th>
-          <th class="colDescarga">DESCARGA</th>
-          <th class="colProduto">PRODUTO</th>
-          <th class="colFrete">FRETE</th>
-          <th class="colContato">CONTATO</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${linhas || `
-          <tr>
-            <td colspan="10" style="text-align:center;padding:18px;font-weight:700;">
-              NENHUM FRETE LIBERADO ENCONTRADO
-            </td>
-          </tr>
-        `}
-      </tbody>
-    </table>
-    <div class="foot">
-      <div><b>Data:</b> ${hoje}</div>
-      <div><b>Total de fretes:</b> ${rows.length}</div>
-    </div>
-    <div class="printHint">
-      Use "Salvar como PDF" e mantenha em modo paisagem.
-    </div>
-  </div>
-</body>
-</html>
-    `;
-  }
-
-  function openDivulgacaoFrete() {
-    const rows = getDivulgacaoRows();
-
-    if (!rows.length) {
-      alert("Não há fretes LIBERADO para divulgar com os filtros atuais.");
-      return;
-    }
-
-    const html = buildDivulgacaoHtml(rows);
-    const win = window.open("", "_blank");
-
-    if (!win) {
-      alert("O navegador bloqueou a nova janela. Libere pop-up para continuar.");
-      return;
-    }
-
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-
-    win.onload = () => {
-      setTimeout(() => {
-        win.focus();
-        win.print();
-      }, 400);
-    };
   }
 
   function ensureFloatingHorizontalBar() {
@@ -1585,9 +1575,7 @@
         overflow-y:hidden;
         backdrop-filter:blur(6px);
       }
-      #nfFloatingHBarInner{
-        height:1px;
-      }
+      #nfFloatingHBarInner{ height:1px; }
     `;
     document.head.appendChild(style);
 
@@ -1618,9 +1606,7 @@
     inner.style.width = wrap.scrollWidth + "px";
     bar.style.display = "block";
 
-    if (!STATE.floatingSyncing) {
-      bar.scrollLeft = wrap.scrollLeft;
-    }
+    if (!STATE.floatingSyncing) bar.scrollLeft = wrap.scrollLeft;
   }
 
   function bindFloatingHorizontalBar() {
@@ -1633,6 +1619,7 @@
 
     wrap.addEventListener("scroll", () => {
       if (STATE.floatingSyncing) return;
+
       STATE.floatingSyncing = true;
       bar.scrollLeft = wrap.scrollLeft;
       STATE.floatingSyncing = false;
@@ -1640,6 +1627,7 @@
 
     bar.addEventListener("scroll", () => {
       if (STATE.floatingSyncing) return;
+
       STATE.floatingSyncing = true;
       wrap.scrollLeft = bar.scrollLeft;
       STATE.floatingSyncing = false;
@@ -1647,16 +1635,6 @@
 
     window.addEventListener("resize", syncFloatingHorizontalBar, { passive: true });
     window.addEventListener("scroll", syncFloatingHorizontalBar, { passive: true });
-
-    const observer = new MutationObserver(() => {
-      syncFloatingHorizontalBar();
-    });
-
-    observer.observe(wrap, {
-      childList: true,
-      subtree: true,
-      attributes: true
-    });
   }
 
   function bindFilters() {
@@ -1664,6 +1642,39 @@
     $("#fFilial")?.addEventListener("change", applyFilters);
     $("#fContato")?.addEventListener("change", applyFilters);
     $("#fBusca")?.addEventListener("input", applyFilters);
+  }
+
+  function bindMoneyMask(inputEl) {
+    if (!inputEl) return;
+
+    inputEl.addEventListener("blur", () => {
+      inputEl.value = normalizeMoneyInput(inputEl.value);
+    });
+  }
+
+  function initUppercaseFields() {
+    [
+      MODAL.origem(), MODAL.coleta(), MODAL.destino(), MODAL.uf(),
+      MODAL.descarga(), MODAL.produto(), MODAL.sat(), MODAL.obs()
+    ].forEach((el) => {
+      if (!el) return;
+
+      el.addEventListener("input", () => {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+
+        el.value = upperKeepSpaces(el.value);
+
+        if (start !== null && end !== null) {
+          el.setSelectionRange(start, end);
+        }
+      });
+    });
+  }
+
+  function initMasks() {
+    bindMoneyMask(MODAL.empresa());
+    bindMoneyMask(MODAL.motorista());
   }
 
   function bindButtons() {
@@ -1701,38 +1712,51 @@
     });
   }
 
-  function bindMoneyMask(inputEl) {
-    if (!inputEl) return;
+  function bindModoRaio() {
+    document.getElementById("btnSelecionarTodosVisiveis")?.addEventListener("click", () => {
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
+      const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
 
-    inputEl.addEventListener("blur", () => {
-      inputEl.value = normalizeMoneyInput(inputEl.value);
-    });
-  }
-
-  function initUppercaseFields() {
-    [
-      MODAL.origem(), MODAL.coleta(), MODAL.destino(), MODAL.uf(),
-      MODAL.descarga(), MODAL.produto(), MODAL.sat(), MODAL.obs()
-    ].forEach((el) => {
-      if (!el) return;
-      el.addEventListener("input", () => {
-        const start = el.selectionStart;
-        const end = el.selectionEnd;
-        el.value = upperKeepSpaces(el.value);
-        if (start !== null && end !== null) {
-          el.setSelectionRange(start, end);
-        }
+      visible.forEach((r) => {
+        if (allSelected) STATE.selectedIds.delete(safeText(r.id));
+        else STATE.selectedIds.add(safeText(r.id));
       });
-    });
-  }
 
-  function initMasks() {
-    bindMoneyMask(MODAL.empresa());
-    bindMoneyMask(MODAL.motorista());
+      applyFilters();
+      updateBulkUI();
+    });
+
+    document.getElementById("nfSelectAll")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+
+      getFilteredRows().forEach((r) => {
+        const id = safeText(r.id);
+        if (!id) return;
+
+        if (checked) STATE.selectedIds.add(id);
+        else STATE.selectedIds.delete(id);
+      });
+
+      applyFilters();
+      updateBulkUI();
+    });
+
+    document.getElementById("btnGerarPacoteJPG")?.addEventListener("click", gerarPacoteJPG);
+    document.getElementById("btnEnviarWhatsAppPacote")?.addEventListener("click", enviarWhatsAppPacote);
+    document.getElementById("nfBaixarJPG")?.addEventListener("click", () => downloadDivulgacaoJPG(STATE.previewRow || getFilteredRows()[0]));
+    document.getElementById("nfCopiarImagem")?.addEventListener("click", () => copyPreviewImage(STATE.previewRow || getFilteredRows()[0]));
+    document.getElementById("nfEnviarWhatsapp")?.addEventListener("click", () => {
+      const row = STATE.previewRow || getFilteredRows()[0];
+      if (row) enviarWhatsAppRow(row);
+    });
+    document.getElementById("nfCopiarMensagem")?.addEventListener("click", () => copyMessage(STATE.previewRow || getFilteredRows()[0]));
+    document.getElementById("nfClosePreview")?.addEventListener("click", () => {
+      const panel = document.getElementById("nfPreviewPanel");
+      if (panel) panel.style.display = panel.style.display === "none" ? "" : "none";
+    });
   }
 
   function init() {
-    ensureLoading();
     ensureFloatingHorizontalBar();
     fillModalSelectors();
     initUppercaseFields();
@@ -1742,6 +1766,7 @@
     bindFloatingHorizontalBar();
     bindModoRaio();
     atualizar();
+
     setTimeout(syncFloatingHorizontalBar, 200);
     setTimeout(syncFloatingHorizontalBar, 600);
   }

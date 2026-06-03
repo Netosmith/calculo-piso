@@ -469,6 +469,8 @@
   
     /* =========================
        MODO RAIO - Divulgação automática
+       Ajustado para seguir o padrão da arte do divulgacao.html:
+       imagem pronta no fundo + somente dados variáveis por cima.
     ========================= */
     .fretes-workspace{
       display:grid;
@@ -478,10 +480,12 @@
       flex:1 1 auto;
       min-height:0;
     }
+
     @media(max-width:1250px){
       .fretes-workspace{grid-template-columns:1fr;}
-      .nfPreviewPanel{position:relative!important; top:auto!important;}
+      .nfPreviewPanel{position:relative!important;top:auto!important;}
     }
+
     .nf-bulk-panel{
       margin-left:auto;
       display:flex;
@@ -493,6 +497,7 @@
       background:#fff;
       box-shadow:0 6px 18px rgba(29,78,216,.10);
     }
+
     .nf-bulk-card{
       height:44px;
       min-width:130px;
@@ -508,6 +513,7 @@
       font-weight:900;
       cursor:pointer;
     }
+
     .nf-bulk-card small{
       display:block;
       font-size:9px;
@@ -515,23 +521,44 @@
       margin-top:2px;
       font-weight:800;
     }
+
     .nf-bulk-card.orange{border-color:#f59e0b22;color:#92400e;}
     .nf-bulk-card.green{border-color:#22c55e33;color:#166534;}
     .nf-bulk-card.blue{border-color:#3b82f633;color:#1d4ed8;}
     .nf-bulk-card:hover{filter:brightness(.98);transform:translateY(-1px);}
+
     .nfRowCheck{
-      width:16px;height:16px;accent-color:#2563eb;cursor:pointer;
+      width:16px;
+      height:16px;
+      accent-color:#2563eb;
+      cursor:pointer;
     }
-    .nfActionGroup{display:inline-flex;align-items:center;gap:5px;}
+
+    .nfActionGroup{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+    }
+
     .nfIconBtn{
-      width:26px;height:26px;border-radius:8px;border:1px solid #d1d5db;
-      background:#fff;font-size:14px;font-weight:900;cursor:pointer;
-      display:inline-flex;align-items:center;justify-content:center;
+      width:26px;
+      height:26px;
+      border-radius:8px;
+      border:1px solid #d1d5db;
+      background:#fff;
+      font-size:14px;
+      font-weight:900;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
     }
+
     .nfIconBtn.raio{border-color:#f59e0b;color:#b45309;background:#fffbeb;}
     .nfIconBtn.eye{border-color:#60a5fa;color:#1d4ed8;background:#eff6ff;}
     .nfIconBtn.wa{border-color:#22c55e;color:#15803d;background:#f0fdf4;}
     .nfIconBtn:hover{filter:brightness(.96);transform:translateY(-1px);}
+
     .nfPreviewPanel{
       position:sticky;
       top:12px;
@@ -542,136 +569,63 @@
       box-shadow:0 6px 18px rgba(0,0,0,.08);
       overflow:hidden;
     }
+
     .nfPreviewHead{
-      display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:10px;
     }
-    .nfPreviewHead h3{margin:0;font-size:13px;font-weight:950;color:#0f172a;text-transform:uppercase;}
-    .nfClosePreview{border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#64748b;}
+
+    .nfPreviewHead h3{
+      margin:0;
+      font-size:13px;
+      font-weight:950;
+      color:#0f172a;
+      text-transform:uppercase;
+    }
+
+    .nfClosePreview{
+      border:0;
+      background:transparent;
+      font-size:22px;
+      line-height:1;
+      cursor:pointer;
+      color:#64748b;
+    }
+
     .nfProductBadge{
-      display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;
-      background:#16a34a;color:#fff;font-size:10px;font-weight:950;margin-bottom:8px;
-    }
-    .nfArtCard{
-      width:240px;
-      aspect-ratio:2/3;
-      height:auto;
-      margin:0 auto;
-      border-radius:12px;
-      position:relative;
-      overflow:hidden;
-      background:#1f2937;
-      box-shadow:0 6px 18px rgba(0,0,0,.20);
+      display:inline-flex;
+      align-items:center;
+      padding:3px 10px;
+      border-radius:999px;
+      background:#16a34a;
       color:#fff;
-      font-family:Arial,Helvetica,sans-serif;
-    }
-    .nfArtCard img.nfArtBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
-    .nfArtOverlay{position:absolute;inset:0;text-align:center;text-shadow:0 2px 5px rgba(0,0,0,.85);padding:0;z-index:1;}
-
-    /* A imagem de fundo já contém logo, faixas e títulos. Aqui entram apenas os dados variáveis. */
-    .nfArtBig,.nfArtSmall,.nfArtProduct,.nfArtPrice,.nfArtContacts{position:absolute;left:5%;right:30%;}
-    .nfArtBig{
-      font-size:clamp(16px,7.2vw,22px);
+      font-size:10px;
       font-weight:950;
-      line-height:.98;
-      text-transform:uppercase;
-      color:#fff;
-      letter-spacing:-.4px;
+      margin-bottom:8px;
     }
-    .nfArtSmall{
-      font-size:clamp(8px,3.4vw,11px);
-      font-weight:850;
-      line-height:1.05;
-      opacity:.95;
-      text-transform:uppercase;
-      color:#fff;
-    }
-    #nfArtColetaCidade{top:31.5%;}
-    #nfArtColetaLocal{top:37.1%;}
-    #nfArtDescargaCidade{top:45.1%;}
-    #nfArtDescargaLocal{top:50.7%;}
-    .nfArtProduct{
-      top:56.9%;
-      font-size:clamp(16px,7vw,22px);
-      font-weight:950;
-      line-height:1;
-      text-transform:uppercase;
-      color:#fff;
-    }
-    .nfArtPrice{
-      top:65.1%;
-      font-size:clamp(17px,7.6vw,24px);
-      font-weight:950;
-      line-height:1;
-      color:#fff;
-      text-transform:uppercase;
-    }
-    .nfArtContacts{
-      left:13.5%;
-      right:34%;
-      top:73.3%;
-      text-align:left;
-      font-size:clamp(7px,3vw,9.5px);
-      line-height:1.16;
-      font-weight:900;
-      color:#fff;
-    }
-    .nfArtContacts div{min-height:1.18em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .nfPreviewButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
-    .nfPreviewButtons button{
-      height:32px;border-radius:9px;border:1px solid #d1d5db;font-size:10px;font-weight:950;cursor:pointer;
-    }
-    .nfPreviewButtons .green{background:#16a34a;color:#fff;border-color:#16a34a;}
-    .nfPreviewButtons .blue{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
-    .nfPreviewButtons .wa{grid-column:1/-1;background:#16a34a;color:#fff;border-color:#16a34a;}
-
-    /* ✅ ARTE LIMPA: a imagem de fundo já tem logo/faixas/títulos.
-       Aqui só aparecem os dados variáveis. Qualquer rótulo antigo gerado em HTML é ocultado. */
-    .nfArtLabel,.nfArtTitle,.nfArtTitulo,.nfArtLogo,.nfArtStatic,.nfArtHeader,.nfArtFaixa,.nfArtCaption{display:none!important;}
-    .nfArtCard .label,.nfArtCard .tag,.nfArtCard .caption{display:none!important;}
-    .nfReadyMsg{
-      margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;color:#0f172a;background:#f8fafc;
-      font-size:11px;line-height:1.35;
-    }
-    .nfReadyMsg textarea{
-      width:100%;min-height:92px;margin-top:6px;border:1px solid #d1d5db;border-radius:9px;padding:8px;
-      font-size:10px;color:#0f172a;background:#fff;text-transform:none;
-    }
-    .nfStats{
-      display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px;
-    }
-    .nfStat{
-      background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;text-align:center;color:#0f172a;
-    }
-    .nfStat .t{font-size:10px;color:#64748b;font-weight:800;}
-    .nfStat .v{font-size:16px;font-weight:950;margin-top:3px;}
-    @media(max-width:900px){
-      .nf-bulk-panel{width:100%;margin-left:0;overflow:auto;}
-      .nfStats{grid-template-columns:1fr 1fr;}
-    }
-
-  
 
     /* ==========================================================
-       MODO RAIO - ARTE LIMPA
-       A imagem de fundo já possui logo, faixas e títulos.
-       Dentro do card aparecem SOMENTE os dados variáveis.
+       ARTE DA PRÉVIA
+       O PNG já contém: logo, faixas, títulos e ornamentos.
+       Aqui entram apenas cidade, local, produto, valor e contatos.
+       Proporção 2:3, igual à imagem base.
     ========================================================== */
     .nfArtCard{
       width:240px;
-      aspect-ratio:2/3;
-      height:auto;
+      height:360px;
       margin:0 auto;
       border-radius:12px;
       position:relative;
       overflow:hidden;
-      background-image:url("../assets/img/SOJATESTE.png");
-      background-size:cover;
-      background-position:center;
-      background-repeat:no-repeat;
+      background:#1f2937 url("../assets/img/SOJATESTE.png") center/cover no-repeat;
       box-shadow:0 6px 18px rgba(0,0,0,.20);
       color:#fff;
       font-family:Arial,Helvetica,sans-serif;
     }
+
     .nfArtCard img.nfArtBg{
       position:absolute;
       inset:0;
@@ -682,6 +636,7 @@
       border:0;
       outline:0;
     }
+
     .nfArtOverlay{
       position:absolute;
       inset:0;
@@ -689,61 +644,199 @@
       padding:0;
       pointer-events:none;
       text-align:center;
-      text-shadow:0 2px 5px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.45);
+      text-shadow:
+        0 2px 5px rgba(0,0,0,.90),
+        0 0 8px rgba(0,0,0,.55);
     }
-    .nfArtBig,.nfArtSmall,.nfArtProduct,.nfArtPrice,.nfArtContacts{
+
+    .nfArtBig,
+    .nfArtSmall,
+    .nfArtProduct,
+    .nfArtPrice{
       position:absolute;
-      left:7%;
-      right:33%;
+      left:33px;
+      width:136px;
+      text-align:center;
       color:#fff;
       text-transform:uppercase;
+      overflow:hidden;
+      display:block;
     }
+
     .nfArtBig{
-      font-size:20px;
+      font-size:17px;
       font-weight:950;
-      line-height:.98;
-      letter-spacing:-.4px;
+      line-height:.96;
+      letter-spacing:-.35px;
     }
+
     .nfArtSmall{
-      font-size:10px;
+      font-size:8.5px;
       font-weight:850;
-      line-height:1.05;
-      opacity:.95;
+      line-height:1;
+      opacity:.97;
+      letter-spacing:-.05px;
     }
-    #nfArtColetaCidade{top:29.6%;}
-    #nfArtColetaLocal{top:33.2%;}
-    #nfArtDescargaCidade{top:42.0%;}
-    #nfArtDescargaLocal{top:45.6%;}
+
+    /* Coleta */
+    #nfArtColetaCidade{top:117px;}
+    #nfArtColetaLocal{top:138px;}
+
+    /* Descarga */
+    #nfArtDescargaCidade{top:194px;}
+    #nfArtDescargaLocal{top:215px;}
+
+    /* Produto */
     .nfArtProduct{
-      top:54.7%;
-      font-size:18px;
+      top:272px;
+      font-size:17px;
       font-weight:950;
       line-height:1;
+      letter-spacing:-.25px;
     }
+
+    /* Valor por tonelada */
     .nfArtPrice{
-      top:63.1%;
-      font-size:22px;
+      top:318px;
+      font-size:21px;
       font-weight:950;
       line-height:1;
+      letter-spacing:-.45px;
     }
+
+    /* Contatos */
     .nfArtContacts{
-      left:15%;
-      right:35%;
-      top:70.6%;
+      position:absolute;
+      left:39px;
+      width:142px;
+      top:286px;
       text-align:left;
-      font-size:8.4px;
-      line-height:1.16;
+      color:#fff;
+      text-transform:uppercase;
+      font-size:7.4px;
+      line-height:1.08;
       font-weight:900;
+      text-shadow:
+        0 2px 4px rgba(0,0,0,.95),
+        0 0 6px rgba(0,0,0,.65);
     }
+
     .nfArtContacts div{
-      min-height:1.12em;
+      min-height:8px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .nfArtLabel,.nfArtTitle,.nfArtTitulo,.nfArtLogo,.nfArtStatic,.nfArtHeader,.nfArtFaixa,.nfArtCaption,
-    .nfArtCard .label,.nfArtCard .tag,.nfArtCard .caption,
-    .nfArtCard [data-static],.nfArtCard [data-label]{display:none!important;}
+
+    /*
+      Quando o valor é grande demais, ele não deve invadir o rodapé.
+      O max-width/overflow segura o texto dentro da placa.
+    */
+    #nfArtProduto,
+    #nfArtValor,
+    #nfArtColetaCidade,
+    #nfArtDescargaCidade{
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    /* Oculta qualquer rótulo antigo. A arte pronta já tem esses títulos no PNG. */
+    .nfArtLabel,
+    .nfArtTitle,
+    .nfArtTitulo,
+    .nfArtLogo,
+    .nfArtStatic,
+    .nfArtHeader,
+    .nfArtFaixa,
+    .nfArtCaption,
+    .nfArtCard .label,
+    .nfArtCard .tag,
+    .nfArtCard .caption,
+    .nfArtCard [data-static],
+    .nfArtCard [data-label]{
+      display:none!important;
+    }
+
+    .nfPreviewButtons{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .nfPreviewButtons button{
+      height:32px;
+      border-radius:9px;
+      border:1px solid #d1d5db;
+      font-size:10px;
+      font-weight:950;
+      cursor:pointer;
+    }
+
+    .nfPreviewButtons .green{background:#16a34a;color:#fff;border-color:#16a34a;}
+    .nfPreviewButtons .blue{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
+    .nfPreviewButtons .wa{grid-column:1/-1;background:#16a34a;color:#fff;border-color:#16a34a;}
+
+    .nfReadyMsg{
+      margin-top:10px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:10px;
+      color:#0f172a;
+      background:#f8fafc;
+      font-size:11px;
+      line-height:1.35;
+    }
+
+    .nfReadyMsg textarea{
+      width:100%;
+      min-height:92px;
+      margin-top:6px;
+      border:1px solid #d1d5db;
+      border-radius:9px;
+      padding:8px;
+      font-size:10px;
+      color:#0f172a;
+      background:#fff;
+      text-transform:none;
+    }
+
+    .nfStats{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .nfStat{
+      background:#f8fafc;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:8px 10px;
+      text-align:center;
+      color:#0f172a;
+    }
+
+    .nfStat .t{
+      font-size:10px;
+      color:#64748b;
+      font-weight:800;
+    }
+
+    .nfStat .v{
+      font-size:16px;
+      font-weight:950;
+      margin-top:3px;
+    }
+
+    @media(max-width:900px){
+      .nf-bulk-panel{
+        width:100%;
+        margin-left:0;
+        overflow:auto;
+      }
+      .nfStats{grid-template-columns:1fr 1fr;}
+    }
 
   </style>
 </head>

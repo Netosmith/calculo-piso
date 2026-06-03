@@ -1,3 +1,4 @@
+<!-- fretes.html -->
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -465,6 +466,141 @@
       font-size:10px;
       font-weight:900;
     }
+  
+    /* =========================
+       MODO RAIO - Divulgação automática
+    ========================= */
+    .fretes-workspace{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 300px;
+      gap:12px;
+      align-items:start;
+      flex:1 1 auto;
+      min-height:0;
+    }
+    @media(max-width:1250px){
+      .fretes-workspace{grid-template-columns:1fr;}
+      .nfPreviewPanel{position:relative!important; top:auto!important;}
+    }
+    .nf-bulk-panel{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px;
+      border:3px solid #1d4ed8;
+      border-radius:14px;
+      background:#fff;
+      box-shadow:0 6px 18px rgba(29,78,216,.10);
+    }
+    .nf-bulk-card{
+      height:44px;
+      min-width:130px;
+      border:1px solid #dbe3f0;
+      border-radius:10px;
+      background:#fff;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      font-size:10px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .nf-bulk-card small{
+      display:block;
+      font-size:9px;
+      opacity:.7;
+      margin-top:2px;
+      font-weight:800;
+    }
+    .nf-bulk-card.orange{border-color:#f59e0b22;color:#92400e;}
+    .nf-bulk-card.green{border-color:#22c55e33;color:#166534;}
+    .nf-bulk-card.blue{border-color:#3b82f633;color:#1d4ed8;}
+    .nf-bulk-card:hover{filter:brightness(.98);transform:translateY(-1px);}
+    .nfRowCheck{
+      width:16px;height:16px;accent-color:#2563eb;cursor:pointer;
+    }
+    .nfActionGroup{display:inline-flex;align-items:center;gap:5px;}
+    .nfIconBtn{
+      width:26px;height:26px;border-radius:8px;border:1px solid #d1d5db;
+      background:#fff;font-size:14px;font-weight:900;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;
+    }
+    .nfIconBtn.raio{border-color:#f59e0b;color:#b45309;background:#fffbeb;}
+    .nfIconBtn.eye{border-color:#60a5fa;color:#1d4ed8;background:#eff6ff;}
+    .nfIconBtn.wa{border-color:#22c55e;color:#15803d;background:#f0fdf4;}
+    .nfIconBtn:hover{filter:brightness(.96);transform:translateY(-1px);}
+    .nfPreviewPanel{
+      position:sticky;
+      top:12px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      padding:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    .nfPreviewHead{
+      display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;
+    }
+    .nfPreviewHead h3{margin:0;font-size:13px;font-weight:950;color:#0f172a;text-transform:uppercase;}
+    .nfClosePreview{border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#64748b;}
+    .nfProductBadge{
+      display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;
+      background:#16a34a;color:#fff;font-size:10px;font-weight:950;margin-bottom:8px;
+    }
+    .nfArtCard{
+      width:240px;height:400px;margin:0 auto;border-radius:12px;position:relative;overflow:hidden;
+      background:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.20);
+      color:#fff;font-family:Arial,Helvetica,sans-serif;
+    }
+    .nfArtCard img.nfArtBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .nfArtOverlay{position:absolute;inset:0;text-align:center;text-shadow:0 2px 4px rgba(0,0,0,.65);padding:18px 12px;}
+    .nfArtLogo{font-size:28px;font-weight:950;font-style:italic;letter-spacing:-1px;margin-top:0;}
+    .nfArtLogo span{color:#65c735;}
+    .nfArtSubLogo{font-size:9px;font-weight:800;margin-top:-4px;}
+    .nfArtBar{display:inline-block;background:rgba(111,73,30,.85);border:1px solid rgba(255,216,106,.7);padding:4px 10px;border-radius:4px;margin-top:26px;font-size:12px;font-weight:950;}
+    .nfArtLabel{display:inline-block;background:#c99a18;color:#2b1b00;border:2px solid #7a5200;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:950;margin-top:13px;text-shadow:none;}
+    .nfArtBig{font-size:20px;font-weight:950;line-height:1.05;margin-top:4px;text-transform:uppercase;}
+    .nfArtSmall{font-size:10px;font-weight:800;opacity:.92;}
+    .nfArtProduct{font-size:21px;font-weight:950;margin-top:5px;text-transform:uppercase;}
+    .nfArtPrice{font-size:25px;font-weight:950;margin-top:5px;color:#fff;}
+    .nfArtNote{font-size:9px;font-weight:900;margin-top:0;}
+    .nfArtContacts{
+      position:absolute;left:14px;right:14px;bottom:13px;text-align:left;
+      font-size:9px;line-height:1.35;font-weight:850;
+    }
+    .nfArtContacts b{font-size:11px;display:block;margin-bottom:2px;}
+    .nfPreviewButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+    .nfPreviewButtons button{
+      height:32px;border-radius:9px;border:1px solid #d1d5db;font-size:10px;font-weight:950;cursor:pointer;
+    }
+    .nfPreviewButtons .green{background:#16a34a;color:#fff;border-color:#16a34a;}
+    .nfPreviewButtons .blue{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
+    .nfPreviewButtons .wa{grid-column:1/-1;background:#16a34a;color:#fff;border-color:#16a34a;}
+    .nfReadyMsg{
+      margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;color:#0f172a;background:#f8fafc;
+      font-size:11px;line-height:1.35;
+    }
+    .nfReadyMsg textarea{
+      width:100%;min-height:92px;margin-top:6px;border:1px solid #d1d5db;border-radius:9px;padding:8px;
+      font-size:10px;color:#0f172a;background:#fff;text-transform:none;
+    }
+    .nfStats{
+      display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px;
+    }
+    .nfStat{
+      background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;text-align:center;color:#0f172a;
+    }
+    .nfStat .t{font-size:10px;color:#64748b;font-weight:800;}
+    .nfStat .v{font-size:16px;font-weight:950;margin-top:3px;}
+    @media(max-width:900px){
+      .nf-bulk-panel{width:100%;margin-left:0;overflow:auto;}
+      .nfStats{grid-template-columns:1fr 1fr;}
+    }
+
   </style>
 </head>
 
@@ -529,14 +665,22 @@
         </select>
 
         <input class="ft-search ft-search-wide" id="fBusca" placeholder="Buscar (cliente, origem, destino, produto, contato)..." />
+
+        <div class="nf-bulk-panel" aria-label="Bandeja de divulgação">
+          <button class="nf-bulk-card blue" id="btnSelecionarTodosVisiveis" type="button">✅ SELECIONAR<small id="nfSelecionadosTxt">0 selecionados</small></button>
+          <button class="nf-bulk-card orange" id="btnGerarPacoteJPG" type="button">⚡ GERAR PACOTE JPG<small id="nfArtesTxt">0 artes</small></button>
+          <button class="nf-bulk-card green" id="btnEnviarWhatsAppPacote" type="button">🟢 ENVIAR WHATSAPP<small id="nfMsgsTxt">0 mensagens</small></button>
+        </div>
       </div>
     </div>
 
+    <div class="fretes-workspace">
     <div class="card tableFull">
       <div class="tableWrap">
         <table>
           <thead>
             <tr>
+              <th><input type="checkbox" id="nfSelectAll" class="nfRowCheck" title="Selecionar todos" /></th>
               <th>Regional</th>
               <th>Filial</th>
               <th>Cliente</th>
@@ -569,6 +713,68 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
+    </div>
+
+    <aside class="nfPreviewPanel" id="nfPreviewPanel">
+      <div class="nfPreviewHead">
+        <h3>Prévia da Divulgação</h3>
+        <button class="nfClosePreview" id="nfClosePreview" type="button">×</button>
+      </div>
+      <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
+
+      <div class="nfArtCard" id="nfArtCard">
+        <img class="nfArtBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" />
+        <div class="nfArtOverlay">
+          <div class="nfArtLogo">NOVA<span>FROTA</span></div>
+          <div class="nfArtSubLogo">TRANSPORTES E LOGÍSTICA</div>
+
+          <div class="nfArtBar">INFORMATIVO DE FRETE</div>
+
+          <div class="nfArtLabel">LOCAL DE COLETA</div>
+          <div class="nfArtBig" id="nfArtColetaCidade">INDIARA-GO</div>
+          <div class="nfArtSmall" id="nfArtColetaLocal">FAZ OURO BRANCO</div>
+
+          <div class="nfArtLabel">LOCAL DE DESCARGA</div>
+          <div class="nfArtBig" id="nfArtDescargaCidade">RIO VERDE-GO</div>
+          <div class="nfArtSmall" id="nfArtDescargaLocal">TERMINAL RUMO</div>
+
+          <div class="nfArtLabel">PRODUTO</div>
+          <div class="nfArtProduct" id="nfArtProduto">SOJA</div>
+
+          <div class="nfArtLabel">VALOR POR TONELADA</div>
+          <div class="nfArtPrice" id="nfArtValor">R$ 90,00</div>
+          <div class="nfArtNote" id="nfArtObs">PAGAMENTO PIX OU CHEQUE</div>
+
+          <div class="nfArtContacts">
+            <b>CONTATOS:</b>
+            <div id="nfArtContato1">• ARIEL (64) 99227-7537</div>
+            <div id="nfArtContato2">• GAUXIM (64) 99300-5771</div>
+            <div id="nfArtContato3">• UANDER (64) 98114-4642</div>
+            <div id="nfArtContato4">• RODRIGO (64) 99603-1200</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nfPreviewButtons">
+        <button class="green" id="nfBaixarJPG" type="button">⬇ BAIXAR JPG</button>
+        <button class="blue" id="nfCopiarImagem" type="button">▣ COPIAR IMAGEM</button>
+        <button class="wa" id="nfEnviarWhatsapp" type="button">🟢 ENVIAR POR WHATSAPP</button>
+      </div>
+
+      <div class="nfReadyMsg">
+        <b>MENSAGEM PRONTA</b>
+        <textarea id="nfMensagemPronta" readonly></textarea>
+        <button class="btnTiny blue" id="nfCopiarMensagem" type="button" style="width:100%;margin-top:8px">COPIAR MENSAGEM</button>
+      </div>
+    </aside>
+    </div>
+
+    <div class="nfStats">
+      <div class="nfStat"><div class="t">Total Volume</div><div class="v" id="nfStatVolume">0 t</div></div>
+      <div class="nfStat"><div class="t">Média Valor Empresa</div><div class="v" id="nfStatEmpresa">R$ 0,00 / t</div></div>
+      <div class="nfStat"><div class="t">Média Valor Motorista</div><div class="v" id="nfStatMotorista">R$ 0,00 / t</div></div>
+      <div class="nfStat"><div class="t">Total KM</div><div class="v" id="nfStatKm">0 km</div></div>
+      <div class="nfStat"><div class="t">Total Pedágio</div><div class="v" id="nfStatPedagio">R$ 0,00</div></div>
     </div>
   </div>
 
@@ -647,6 +853,7 @@
   </div>
 
   <script src="../assets/js/auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="../assets/js/fretes.js"></script>
 
   <script>

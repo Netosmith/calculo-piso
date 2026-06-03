@@ -54,6 +54,8 @@
     inlineSaving: new Set(),
     floatingBarReady: false,
     floatingSyncing: false,
+    selectedIds: new Set(),
+    previewRow: null,
   };
 
   const FIXED_CLIENT_COLORS = {
@@ -145,6 +147,7 @@
   ];
 
   const COLS = [
+    { key: "__select", label: "", isSelect: true },
     { key: "regional", label: "Regional" },
     { key: "filial", label: "Filial" },
     { key: "cliente", label: "Cliente", isColorTag: "cliente" },
@@ -629,6 +632,28 @@
     return td;
   }
 
+
+  function buildSelectCell(row) {
+    const td = document.createElement("td");
+    td.className = "num";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "nfRowCheck";
+    cb.checked = STATE.selectedIds.has(safeText(row.id));
+    cb.title = "Selecionar para pacote de divulgação";
+    cb.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = safeText(row.id);
+      if (!id) return;
+      if (cb.checked) STATE.selectedIds.add(id);
+      else STATE.selectedIds.delete(id);
+      updateBulkUI();
+      renderPreview(row);
+    });
+    td.appendChild(cb);
+    return td;
+  }
+
   function buildAcoesCell(row) {
     const td = document.createElement("td");
     td.className = "num";
@@ -660,8 +685,46 @@
       }
     });
 
-    td.appendChild(btnEdit);
-    td.appendChild(btnDel);
+    const btnRaio = document.createElement("button");
+    btnRaio.type = "button";
+    btnRaio.className = "nfIconBtn raio";
+    btnRaio.title = "Gerar JPG automático";
+    btnRaio.textContent = "⚡";
+    btnRaio.addEventListener("click", (e) => {
+      e.stopPropagation();
+      renderPreview(row);
+      downloadDivulgacaoJPG(row);
+    });
+
+    const btnEye = document.createElement("button");
+    btnEye.type = "button";
+    btnEye.className = "nfIconBtn eye";
+    btnEye.title = "Ver prévia da divulgação";
+    btnEye.textContent = "👁";
+    btnEye.addEventListener("click", (e) => {
+      e.stopPropagation();
+      renderPreview(row);
+    });
+
+    const btnWa = document.createElement("button");
+    btnWa.type = "button";
+    btnWa.className = "nfIconBtn wa";
+    btnWa.title = "Copiar mensagem e abrir WhatsApp";
+    btnWa.textContent = "🟢";
+    btnWa.addEventListener("click", (e) => {
+      e.stopPropagation();
+      renderPreview(row);
+      enviarWhatsAppRow(row);
+    });
+
+    const wrap = document.createElement("div");
+    wrap.className = "nfActionGroup";
+    wrap.appendChild(btnEdit);
+    wrap.appendChild(btnDel);
+    wrap.appendChild(btnRaio);
+    wrap.appendChild(btnEye);
+    wrap.appendChild(btnWa);
+    td.appendChild(wrap);
     return td;
   }
 
@@ -701,6 +764,11 @@
       const tr = document.createElement("tr");
 
       COLS.forEach((col) => {
+        if (col.isSelect) {
+          tr.appendChild(buildSelectCell(row));
+          return;
+        }
+
         if (col.isContato) {
           tr.appendChild(buildContatoCell(row.contato || ""));
           return;
@@ -747,6 +815,309 @@
     });
 
     syncFloatingHorizontalBar();
+    updateBulkUI();
+    renderStats(getFilteredRows());
+  }
+
+
+  function getSelectedRows() {
+    const ids = STATE.selectedIds;
+    return STATE.rows.filter((r) => ids.has(safeText(r.id)));
+  }
+
+  function updateBulkUI() {
+    const selected = getSelectedRows();
+    const n = selected.length;
+    const a = document.getElementById("nfSelecionadosTxt");
+    const b = document.getElementById("nfArtesTxt");
+    const c = document.getElementById("nfMsgsTxt");
+    if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
+    if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
+    if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
+
+    const selectAll = document.getElementById("nfSelectAll");
+    if (selectAll) {
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
+      selectAll.checked = visible.length > 0 && visible.every((r) => ids.has(safeText(r.id)));
+      selectAll.indeterminate = visible.some((r) => ids.has(safeText(r.id))) && !selectAll.checked;
+    }
+  }
+
+  function renderStats(rows) {
+    rows = rows || [];
+    const sum = (key) => rows.reduce((acc, r) => acc + (parsePtNumber(r[key]) || 0), 0);
+    const avg = (key) => {
+      const nums = rows.map((r) => parsePtNumber(r[key])).filter(Number.isFinite);
+      return nums.length ? nums.reduce((a,b)=>a+b,0) / nums.length : 0;
+    };
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    set("nfStatVolume", `${sum("volume").toLocaleString("pt-BR",{maximumFractionDigits:0})} t`);
+    set("nfStatEmpresa", `${formatMoneyBR(avg("valorEmpresa"))} / t`);
+    set("nfStatMotorista", `${formatMoneyBR(avg("valorMotorista"))} / t`);
+    set("nfStatKm", `${sum("km").toLocaleString("pt-BR",{maximumFractionDigits:0})} km`);
+    const pedTotal = rows.reduce((acc, r) => acc + ((parsePtNumber(r.pedagioEixo)||0) * (parsePtNumber(r.km)||0 > 0 ? 1 : 1)), 0);
+    set("nfStatPedagio", formatMoneyBR(pedTotal));
+  }
+
+  const PRODUCT_BG_MAP_NF = {
+    SOJA: "../assets/img/SOJATESTE.png",
+    MILHO: "../assets/img/MILHOTESTE.png",
+    ACUCAR: "../assets/img/ACUCARTESTE.png",
+    CALCARIO: "../assets/img/CALCARIOTESTE.png",
+    FARELODESOJA: "../assets/img/FARELODESOJA.png",
+    SORGO: "../assets/img/SORGOTESTE.png",
+    FERTILIZANTE: "../assets/img/FERTILIZANTE.png"
+  };
+
+  function normalizeKeyNF(v) {
+    return String(v || "")
+      .trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  }
+
+  function productFamilyNF(produto) {
+    const n = normalizeKeyNF(produto);
+    if (n.includes("FARELO") && n.includes("SOJA")) return "FARELODESOJA";
+    if (n.includes("SOJA")) return "SOJA";
+    if (n.includes("MILHO")) return "MILHO";
+    if (n.includes("ACUCAR")) return "ACUCAR";
+    if (n.includes("CALCARIO")) return "CALCARIO";
+    if (n.includes("SORGO")) return "SORGO";
+    if (n.includes("FERT") || n.includes("ADUBO")) return "FERTILIZANTE";
+    return "SOJA";
+  }
+
+  function normalizeFilialKeyNF(filial) {
+    const k = normalizeKeyNF(filial);
+    if (k === "RIOVERDE" || k === "RIOVERDEFERT") return k === "RIOVERDEFERT" ? "FERTILIZANTE" : "RIOVERDE";
+    if (k === "SAOPAULO" || k === "SOROCABA") return "SAOPAULO";
+    if (k === "CHAPCEU" || k === "CHAPAOD OCEU") return "CHAPEU";
+    return k;
+  }
+
+  function contactsFromFilial(row) {
+    const filial = upper(row.filial);
+    const contatos = (DIRECTORY.contatosPorFilial && DIRECTORY.contatosPorFilial[filial]) || [];
+    if (contatos.length) return contatos.map((c) => `${c.nome} ${formatPhoneNF(c.fone)}`).slice(0,4);
+
+    const contato = safeText(row.contato);
+    const phone = CONTACT_PHONE[upper(contato)] || "";
+    return [
+      contato ? `${contato} ${formatPhoneNF(phone)}` : "",
+      "",
+      "",
+      ""
+    ];
+  }
+
+  function formatPhoneNF(phone) {
+    const d = String(phone || "").replace(/\D/g, "");
+    const p = d.startsWith("55") ? d.slice(2) : d;
+    if (p.length === 11) return `(${p.slice(0,2)}) ${p.slice(2,7)}-${p.slice(7)}`;
+    if (p.length === 10) return `(${p.slice(0,2)}) ${p.slice(2,6)}-${p.slice(6)}`;
+    return phone || "";
+  }
+
+  function cityUf(row, cityKey, ufKey) {
+    const city = safeText(row[cityKey]);
+    const uf = safeText(row[ufKey]);
+    if (!city) return "";
+    if (city.includes("-")) return upper(city);
+    return uf ? `${upper(city)}-${upper(uf)}` : upper(city);
+  }
+
+  function divulgacaoDataFromRow(row) {
+    const produto = upper(row.produto || "SOJA");
+    const family = productFamilyNF(produto);
+    const contatos = contactsFromFilial(row);
+    const valor = safeText(row.valorMotorista) ? formatMoneyBR(row.valorMotorista) : "A COMBINAR";
+    return {
+      coletaCidade: cityUf(row, "origem", "uf"),
+      coletaLocal: upper(row.coleta || ""),
+      descargaCidade: cityUf(row, "destino", "uf"),
+      descargaLocal: upper(row.descarga || ""),
+      produto,
+      productFamily: family,
+      bg: PRODUCT_BG_MAP_NF[family] || PRODUCT_BG_MAP_NF.SOJA,
+      valor,
+      obs: upper(row.obs || "PAGAMENTO PIX OU CHEQUE"),
+      contatos,
+      contatoPrincipal: upper(row.contato || ""),
+      phone: extractPhoneBR(row.contato),
+      filename: `${family}_${normalizeKeyNF(row.origem)}_${normalizeKeyNF(row.destino)}_${normalizeKeyNF(valor)}.jpg`
+    };
+  }
+
+  function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt || "";
+  }
+
+  function buildMessage(row) {
+    const d = divulgacaoDataFromRow(row);
+    return [
+      "🚚 FRETE DISPONÍVEL",
+      "",
+      `COLETA: ${d.coletaCidade}`,
+      d.coletaLocal ? `LOCAL: ${d.coletaLocal}` : "",
+      `DESCARGA: ${d.descargaCidade}`,
+      d.descargaLocal ? `LOCAL DESCARGA: ${d.descargaLocal}` : "",
+      `PRODUTO: ${d.produto}`,
+      `VALOR: ${d.valor} / TON`,
+      d.obs ? `OBS: ${d.obs}` : "",
+      d.contatoPrincipal ? `CONTATO: ${d.contatoPrincipal}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  function renderPreview(row) {
+    if (!row) row = STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
+    if (!row) return;
+    STATE.previewRow = row;
+
+    const d = divulgacaoDataFromRow(row);
+    const bg = document.getElementById("nfArtBg");
+    if (bg) bg.src = d.bg;
+
+    const badge = document.getElementById("nfPreviewProdutoBadge");
+    if (badge) badge.textContent = d.productFamily;
+
+    setText("nfArtColetaCidade", d.coletaCidade || "-CIDADE-UF");
+    setText("nfArtColetaLocal", d.coletaLocal || "Local");
+    setText("nfArtDescargaCidade", d.descargaCidade || "-CIDADE-UF");
+    setText("nfArtDescargaLocal", d.descargaLocal || "Local");
+    setText("nfArtProduto", d.produto || "PRODUTO");
+    setText("nfArtValor", d.valor || "A COMBINAR");
+    setText("nfArtObs", d.obs || "");
+    setText("nfArtContato1", d.contatos[0] ? `• ${d.contatos[0]}` : "");
+    setText("nfArtContato2", d.contatos[1] ? `• ${d.contatos[1]}` : "");
+    setText("nfArtContato3", d.contatos[2] ? `• ${d.contatos[2]}` : "");
+    setText("nfArtContato4", d.contatos[3] ? `• ${d.contatos[3]}` : "");
+
+    const msg = document.getElementById("nfMensagemPronta");
+    if (msg) msg.value = buildMessage(row);
+  }
+
+  function waitForImage(img) {
+    if (!img || img.complete) return Promise.resolve();
+    return new Promise((resolve) => {
+      img.addEventListener("load", resolve, {once:true});
+      img.addEventListener("error", resolve, {once:true});
+    });
+  }
+
+  async function canvasFromPreview(row) {
+    renderPreview(row);
+    const card = document.getElementById("nfArtCard");
+    const img = document.getElementById("nfArtBg");
+    if (!card || typeof html2canvas !== "function") {
+      alert("html2canvas não carregou. Verifique a internet ou o script CDN.");
+      return null;
+    }
+    await waitForImage(img);
+    return await html2canvas(card, {backgroundColor:null, scale:2, useCORS:true});
+  }
+
+  async function downloadDivulgacaoJPG(row) {
+    const d = divulgacaoDataFromRow(row);
+    const canvas = await canvasFromPreview(row);
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = d.filename;
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  }
+
+  async function copyPreviewImage(row) {
+    try {
+      const canvas = await canvasFromPreview(row || STATE.previewRow);
+      if (!canvas || !navigator.clipboard || !window.ClipboardItem) throw new Error("Clipboard indisponível");
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+      setStatus("✅ Imagem copiada");
+    } catch (e) {
+      console.warn(e);
+      alert("Não consegui copiar a imagem neste navegador. Use Baixar JPG.");
+    }
+  }
+
+  async function copyMessage(row) {
+    const msg = buildMessage(row || STATE.previewRow || getFilteredRows()[0] || {});
+    try {
+      await navigator.clipboard.writeText(msg);
+      setStatus("✅ Mensagem copiada");
+    } catch {
+      prompt("Copie a mensagem:", msg);
+    }
+  }
+
+  async function enviarWhatsAppRow(row) {
+    await copyMessage(row);
+    const phone = extractPhoneBR(row.contato);
+    const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(buildMessage(row))}` : `https://wa.me/?text=${encodeURIComponent(buildMessage(row))}`;
+    window.open(url, "_blank");
+  }
+
+  async function gerarPacoteJPG() {
+    const rows = getSelectedRows();
+    if (!rows.length) {
+      alert("Selecione uma ou mais linhas para gerar o pacote JPG.");
+      return;
+    }
+    setStatus(`⚡ Gerando ${rows.length} artes...`);
+    for (let i=0; i<rows.length; i++) {
+      await downloadDivulgacaoJPG(rows[i]);
+      await new Promise((r)=>setTimeout(r, 250));
+    }
+    setStatus("✅ Pacote JPG gerado");
+  }
+
+  async function enviarWhatsAppPacote() {
+    const rows = getSelectedRows();
+    if (!rows.length) {
+      alert("Selecione uma ou mais linhas.");
+      return;
+    }
+    const msg = rows.map((r, i) => `#${i+1}\n${buildMessage(r)}`).join("\n\n----------------\n\n");
+    try { await navigator.clipboard.writeText(msg); } catch {}
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  }
+
+  function bindModoRaio() {
+    document.getElementById("btnSelecionarTodosVisiveis")?.addEventListener("click", () => {
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
+      const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
+      visible.forEach((r) => {
+        if (allSelected) STATE.selectedIds.delete(safeText(r.id));
+        else STATE.selectedIds.add(safeText(r.id));
+      });
+      applyFilters();
+      updateBulkUI();
+    });
+
+    document.getElementById("nfSelectAll")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      getFilteredRows().forEach((r) => {
+        const id = safeText(r.id);
+        if (!id) return;
+        if (checked) STATE.selectedIds.add(id);
+        else STATE.selectedIds.delete(id);
+      });
+      applyFilters();
+      updateBulkUI();
+    });
+
+    document.getElementById("btnGerarPacoteJPG")?.addEventListener("click", gerarPacoteJPG);
+    document.getElementById("btnEnviarWhatsAppPacote")?.addEventListener("click", enviarWhatsAppPacote);
+    document.getElementById("nfBaixarJPG")?.addEventListener("click", () => downloadDivulgacaoJPG(STATE.previewRow || getFilteredRows()[0]));
+    document.getElementById("nfCopiarImagem")?.addEventListener("click", () => copyPreviewImage(STATE.previewRow || getFilteredRows()[0]));
+    document.getElementById("nfEnviarWhatsapp")?.addEventListener("click", () => {
+      const row = STATE.previewRow || getFilteredRows()[0];
+      if (row) enviarWhatsAppRow(row);
+    });
+    document.getElementById("nfCopiarMensagem")?.addEventListener("click", () => copyMessage(STATE.previewRow || getFilteredRows()[0]));
+    document.getElementById("nfClosePreview")?.addEventListener("click", () => {
+      const panel = document.getElementById("nfPreviewPanel");
+      if (panel) panel.style.display = panel.style.display === "none" ? "" : "none";
+    });
   }
 
   function getFilteredRows() {
@@ -1055,6 +1426,8 @@
         : [];
       fillTopFilters(STATE.rows);
       applyFilters();
+      renderPreview(getFilteredRows()[0] || STATE.rows[0]);
+      updateBulkUI();
       setStatus("✅ Atualizado");
     } catch (e) {
       console.error("[fretes] erro ao atualizar:", e);
@@ -1367,6 +1740,7 @@
     bindButtons();
     bindFilters();
     bindFloatingHorizontalBar();
+    bindModoRaio();
     atualizar();
     setTimeout(syncFloatingHorizontalBar, 200);
     setTimeout(syncFloatingHorizontalBar, 600);

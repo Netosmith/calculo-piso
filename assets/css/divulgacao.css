@@ -1,162 +1,268 @@
 /* ==============================
+   PÁGINA
+============================== */
+
+.divulgacao-page {
+  padding: 24px 0 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ==============================
+   HEADER
+============================== */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #0f172a;
+  color: #fff;
+  padding: 18px 22px;
+  border-radius: 16px;
+}
+
+.page-header h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.page-header p {
+  margin: 0;
+  opacity: 0.85;
+}
+
+/* ==============================
+   CARD DO MODELO
+============================== */
+
+.templateCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.templateHeader h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.templateHeader p {
+  margin: 0;
+  color: #64748b;
+}
+
+/* ==============================
+   GRID
+============================== */
+
+.templateBody {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(360px, 420px);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .templateBody {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   FORM
+============================== */
+
+.templateForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.templateForm label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.templateForm input,
+.templateForm select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #cbd5f5;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
+  background: #fff;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.templateForm input:focus,
+.templateForm select:focus {
+  border-color: #22c55e;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* ==============================
    PREVIEW ARTE OFICIAL
 ============================== */
 
-.templatePreview{
-  width:380px;
-  height:680px;
-  position:relative;
-  overflow:hidden;
-  border-radius:26px;
-  box-shadow:0 18px 35px rgba(15,23,42,.45);
+.templatePreview {
+  width: 380px;
+  height: 680px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.45);
 }
 
-.previewBg{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  z-index:0;
+.previewBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
 }
 
-/* remove qualquer escurecimento */
-.templatePreview::before{
-  display:none;
+.templatePreview::before {
+  display: none;
 }
 
 /* ==============================
    COLETA
 ============================== */
 
-.previewColeta{
-  position:absolute;
-  top:178px;
-  left:40px;
-  width:230px;
-  text-align:center;
-  z-index:2;
+.previewColeta {
+  position: absolute;
+  top: 178px;
+  left: 40px;
+  width: 230px;
+  text-align: center;
+  z-index: 2;
 }
 
-.previewColeta .previewValue{
-  font-size:20px;
-  font-weight:900;
-  color:#ffffff;
-  text-transform:uppercase;
-  line-height:1;
+.previewColeta .previewValue {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
-.previewColeta .previewSmall{
-  margin-top:4px;
-  font-size:12px;
-  font-weight:800;
-  color:#ffffff;
+.previewColeta .previewSmall {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
 /* ==============================
    DESCARGA
 ============================== */
 
-.previewDescarga{
-  position:absolute;
-  top:268px;
-  left:40px;
-  width:230px;
-  text-align:center;
-  z-index:2;
+.previewDescarga {
+  position: absolute;
+  top: 268px;
+  left: 40px;
+  width: 230px;
+  text-align: center;
+  z-index: 2;
 }
 
-.previewDescarga .previewValue{
-  font-size:20px;
-  font-weight:900;
-  color:#ffffff;
-  text-transform:uppercase;
-  line-height:1;
+.previewDescarga .previewValue {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
-.previewDescarga .previewSmall{
-  margin-top:4px;
-  font-size:12px;
-  font-weight:800;
-  color:#ffffff;
+.previewDescarga .previewSmall {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
 /* ==============================
    PRODUTO
 ============================== */
 
-.previewProduct{
-  position:absolute;
-  top:382px;
-  left:40px;
-  width:230px;
-  text-align:center;
-  z-index:2;
-
-  font-size:18px;
-  font-weight:900;
-  color:#ffffff;
-  text-transform:uppercase;
+.previewProduct {
+  position: absolute;
+  top: 382px;
+  left: 40px;
+  width: 230px;
+  text-align: center;
+  z-index: 2;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
 }
 
 /* ==============================
    VALOR
 ============================== */
 
-.previewPrice{
-  position:absolute;
-  top:455px;
-  left:40px;
-  width:230px;
-  text-align:center;
-  z-index:2;
-
-  font-size:28px;
-  font-weight:900;
-  color:#ffffff;
+.previewPrice {
+  position: absolute;
+  top: 455px;
+  left: 40px;
+  width: 230px;
+  text-align: center;
+  z-index: 2;
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
 }
 
 /* ==============================
    CONTATOS
 ============================== */
 
-.previewContacts{
-  position:absolute;
-  left:55px;
-  width:220px;
-  bottom:118px;
-
-  display:flex;
-  flex-direction:column;
-  gap:3px;
-
-  z-index:2;
+.previewContacts {
+  position: absolute;
+  left: 55px;
+  width: 220px;
+  bottom: 118px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 2;
 }
 
-.previewContactLine{
-  font-size:11px;
-  font-weight:800;
-  color:#ffffff;
-  line-height:1.05;
+.previewContactLine {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.05;
 }
 
 /* ==============================
    OBSERVAÇÃO
 ============================== */
 
-.previewNote{
-  position:absolute;
-  bottom:38px;
-  left:40px;
-  width:230px;
-
-  text-align:center;
-
-  font-size:12px;
-  font-weight:800;
-  color:#ffffff;
-
-  z-index:2;
+.previewNote {
+  position: absolute;
+  bottom: 38px;
+  left: 40px;
+  width: 230px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  z-index: 2;
 }
 
 /* ==============================
@@ -168,7 +274,7 @@
 .previewProduct,
 .previewPrice,
 .previewNote,
-.previewContactLine{
+.previewContactLine {
   text-shadow:
     0 2px 4px rgba(0,0,0,.85),
     0 0 6px rgba(0,0,0,.50);
@@ -183,7 +289,16 @@
 .previewProduct:empty::before,
 .previewPrice:empty::before,
 .previewNote:empty::before,
-.previewContactLine:empty::before{
-  content:attr(data-placeholder);
-  color:rgba(255,255,255,.35);
+.previewContactLine:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,.35);
+}
+
+/* ==============================
+   BOTÕES
+============================== */
+
+.templateActions {
+  display: flex;
+  gap: 10px;
 }

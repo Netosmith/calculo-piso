@@ -144,15 +144,15 @@
 
 .previewColeta {
   position: absolute;
-  top: 178px;
-  left: 40px;
-  width: 230px;
+  top: 205px;
+  left: 25px;
+  width: 205px;
   text-align: center;
   z-index: 2;
 }
 
 .previewColeta .previewValue {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
@@ -164,6 +164,7 @@
   font-size: 12px;
   font-weight: 800;
   color: #ffffff;
+  line-height: 1;
 }
 
 /* ==============================
@@ -172,15 +173,15 @@
 
 .previewDescarga {
   position: absolute;
-  top: 268px;
-  left: 40px;
-  width: 230px;
+  top: 300px;
+  left: 25px;
+  width: 205px;
   text-align: center;
   z-index: 2;
 }
 
 .previewDescarga .previewValue {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
@@ -192,6 +193,7 @@
   font-size: 12px;
   font-weight: 800;
   color: #ffffff;
+  line-height: 1;
 }
 
 /* ==============================
@@ -200,15 +202,16 @@
 
 .previewProduct {
   position: absolute;
-  top: 382px;
-  left: 40px;
-  width: 230px;
+  top: 415px;
+  left: 25px;
+  width: 205px;
   text-align: center;
   z-index: 2;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 /* ==============================
@@ -217,14 +220,15 @@
 
 .previewPrice {
   position: absolute;
-  top: 455px;
-  left: 40px;
-  width: 230px;
+  top: 500px;
+  left: 25px;
+  width: 205px;
   text-align: center;
   z-index: 2;
-  font-size: 28px;
+  font-size: 27px;
   font-weight: 900;
   color: #ffffff;
+  line-height: 1;
 }
 
 /* ==============================
@@ -233,9 +237,9 @@
 
 .previewContacts {
   position: absolute;
-  left: 55px;
-  width: 220px;
-  bottom: 118px;
+  left: 50px;
+  width: 190px;
+  bottom: 95px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -247,6 +251,9 @@
   font-weight: 800;
   color: #ffffff;
   line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ==============================
@@ -255,14 +262,15 @@
 
 .previewNote {
   position: absolute;
-  bottom: 38px;
-  left: 40px;
-  width: 230px;
+  bottom: 65px;
+  left: 25px;
+  width: 205px;
   text-align: center;
   font-size: 12px;
   font-weight: 800;
   color: #ffffff;
   z-index: 2;
+  line-height: 1.1;
 }
 
 /* ==============================

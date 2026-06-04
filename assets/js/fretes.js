@@ -1075,22 +1075,45 @@
     if (msg) msg.value = buildMessage(row);
   }
 
-  function buildMessage(row) {
-    const d = divulgacaoDataFromRow(row);
+  function buildFreteBloco(row) {
+  const origem = upper(row.origem || "");
+  const coleta = upper(row.coleta || "");
+  const destino = cityUf(row, "destino", "uf");
+  const descarga = upper(row.descarga || "");
+  const produto = upper(row.produto || "");
 
-    return [
-      "🚚 FRETE DISPONÍVEL",
-      "",
-      `COLETA: ${d.coletaCidade}`,
-      d.coletaLocal ? `LOCAL: ${d.coletaLocal}` : "",
-      `DESCARGA: ${d.descargaCidade}`,
-      d.descargaLocal ? `LOCAL DESCARGA: ${d.descargaLocal}` : "",
-      `PRODUTO: ${d.produto}`,
-      `VALOR: ${d.valor} / TON`,
-      d.obs ? `OBS: ${d.obs}` : "",
-      d.contatoPrincipal ? `CONTATO: ${d.contatoPrincipal}` : ""
-    ].filter(Boolean).join("\n");
-  }
+  const valor = safeText(row.valorMotorista)
+    ? formatMoneyBR(row.valorMotorista)
+    : "A COMBINAR";
+
+  return [
+    `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`,
+    `🏁 ${destino}${descarga ? ` (${descarga})` : ""}`,
+    `💢 ${produto}`,
+    `💰${valor}`
+  ].join("\n");
+}
+
+function buildMessage(row) {
+  const selected = getSelectedRows();
+
+  const rows = selected.length
+    ? selected
+    : row
+      ? [row]
+      : STATE.previewRow
+        ? [STATE.previewRow]
+        : [];
+
+  if (!rows.length) return "";
+
+  return [
+    "🇸🇱🇸🇱🇸🇱 NOVA FROTA 🇸🇱🇸🇱🇸🇱",
+    "✅ FRETES LIBERADOS",
+    "",
+    rows.map(buildFreteBloco).join("\n🟰🟰🟰🟰🟰🟰🟰🟰🟰\n")
+  ].join("\n");
+}
 
   function waitForImage(img) {
     if (!img || img.complete) return Promise.resolve();
@@ -1178,26 +1201,34 @@
   }
 
   function updateBulkUI() {
-    const selected = getSelectedRows();
-    const n = selected.length;
+  const selected = getSelectedRows();
+  const n = selected.length;
 
-    const a = document.getElementById("nfSelecionadosTxt");
-    const b = document.getElementById("nfArtesTxt");
-    const c = document.getElementById("nfMsgsTxt");
+  const a = document.getElementById("nfSelecionadosTxt");
+  const b = document.getElementById("nfArtesTxt");
+  const c = document.getElementById("nfMsgsTxt");
 
-    if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
-    if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
-    if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
+  if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
+  if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
+  if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
 
-    const selectAll = document.getElementById("nfSelectAll");
-    if (selectAll) {
-      const visible = getFilteredRows().filter((r) => safeText(r.id));
-      selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
-      selectAll.indeterminate =
-        visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
-    }
+  const selectAll = document.getElementById("nfSelectAll");
+  if (selectAll) {
+    const visible = getFilteredRows().filter((r) => safeText(r.id));
+    selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
+    selectAll.indeterminate =
+      visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
   }
 
+  const msg = document.getElementById("nfMensagemPronta");
+  if (msg) {
+    msg.value = selected.length
+      ? buildMessage()
+      : STATE.previewRow
+        ? buildMessage(STATE.previewRow)
+        : "";
+  }
+}
   function renderStats(rows) {
     rows = rows || [];
 
@@ -1238,23 +1269,21 @@
   }
 
   async function enviarWhatsAppPacote() {
-    const rows = getSelectedRows();
+  const rows = getSelectedRows();
 
-    if (!rows.length) {
-      alert("Selecione uma ou mais linhas.");
-      return;
-    }
-
-    const msg = rows
-      .map((r, i) => `#${i + 1}\n${buildMessage(r)}`)
-      .join("\n\n----------------\n\n");
-
-    try {
-      await navigator.clipboard.writeText(msg);
-    } catch {}
-
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  if (!rows.length) {
+    alert("Selecione uma ou mais linhas.");
+    return;
   }
+
+  const msg = buildMessage();
+
+  try {
+    await navigator.clipboard.writeText(msg);
+  } catch {}
+
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+}
 
   function buildDivulgacaoHtml(rows) {
     const linhas = rows.map((row) => `

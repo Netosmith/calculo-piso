@@ -22,7 +22,7 @@ const USERS = {
   ELVIS: { password: "5707", states: ["COMERCIAL"] },
   EVERALDO:   { password: "5000", states: ["OPERACIONAL"] },
   MARCELO:   { password: "8888", states: ["OPERACIONAL"] },
-  WILHANS:   { password: "5858", states: ["OPERACIONAL"] },
+  WILHANS:   { password: "5858", states: ["COMERCIAL"] },
   RONE:   { password: "5554", states: ["OPERACIONAL"] },
   EVERALDOJR:   { password: "2000", states: ["OPERACIONAL"] },
   KIEWERSON:   { password: "5554", states: ["OPERACIONAL"] },

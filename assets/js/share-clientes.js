@@ -12,6 +12,7 @@
 
   const CLIENTES_FIXOS = [
     "CARGILL",
+    "TERRA ROXA",
     "VITERRA",
     "COFCO",
     "NOVA AGRI",

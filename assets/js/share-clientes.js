@@ -8,143 +8,35 @@
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
 
-  let ocultarFreteEmpresa = false;
+  let ocultarFreteEmpresa = true;
 
   const CLIENTES_FIXOS = [
-    "CARGILL",
-    "TERRA ROXA",
-    "VITERRA",
-    "COFCO",
-    "NOVA AGRI",
-    "JBS SEARA",
-    "BRF",
-    "MOSAIC",
-    "AMAGGI",
-    "INGREDION",
-    "LDC",
-    "BRADO",
-    "C VALE",
-    "OLAM BRASIL",
-    "SODRU",
-    "BOM JESUS",
-    "SOYBRASIL",
-    "LAVORO",
-    "AGRIBRASIL",
-    "BOM FUTURO",
-    "CHS",
-    "CIBRAFERTIL",
-    "CJ TRADE",
-    "FERT TOCANTINS",
-    "GAVILON",
-    "GRUPO SCHEFFER",
-    "INPASA",
-    "AGRICOLA ALVORADA",
-    "ABJ AGROPECUARIA",
-    "ADM",
-    "FIAGRIL",
-    "FS",
-    "ALPHAGRAIN",
-    "FERTIMIG",
-    "FERTIPAR",
-    "GIRASSOL",
-    "GRUPO ATTO",
-    "ADUBRAS",
-    "CARAMURU",
-    "YUKAER AGRO",
-    "DUAL",
-    "AGRONELLI",
-    "BELAGRO",
-    "COOPERNORT",
-    "SIPAL",
-    "H A PIMENTA",
-    "SAFRAS",
-    "SINAGRO",
-    "CAMPO REAL",
-    "AGROSOYA",
-    "COPAGRI",
-    "VMC",
-    "GENERAL MILLS",
-    "CUTRALE",
-    "AGREX",
-    "YARA",
-    "HEDGE",
-    "ALZ",
-    "MARUBENI",
-    "MDNORTE",
-    "FS TRADING",
-    "SJC",
-    "CJ SELECTA",
-    "COOXUPE",
-    "BTG PACTUAL",
-    "FENIX",
-    "FERTIGRAN",
-    "RIFERTIL",
-    "SEMENTES SAO FRANCISCO",
-    "SEMPRE SEMENTES",
-    "GOIASA",
-    "SAO MARTINHO",
-    "AGRO CLUB",
-    "MILHAO ALIMENTOS",
-    "TRATO",
-    "BREJEIRO",
-    "GEN",
-    "ARAGUAIA",
-    "NUTRIEN",
-    "KOWALSKI LDC",
-    "BIORGANICA",
-    "RICARDO MARTINS",
-    "SERGIO GALVAO",
-    "AGROMEN",
-    "PROSOLLO",
-    "USINA DECAL",
-    "COOPERVASS",
-    "SOAMI",
-    "RAFIRA",
-    "CONCEITO AGRICOLA",
-    "AGROBOM",
-    "MOINHO VITORIA",
-    "MMJV GRAOS",
-    "BOA SAFRA",
-    "NOVA GALIA",
-    "CEREAL",
-    "SOMAI ALIMENTOS",
-    "SITARI",
-    "ALENCAR",
-    "AGROMERCANTIL",
-    "OURO SAFRA",
-    "FUTURO",
-    "GRAN MILHO",
-    "HERINGER",
-    "CEREAL OURO",
-    "EUROCHEM",
-    "GRANOL",
-    "AGROAMAZONIA",
-    "AGROMAVE",
-    "CERTANO",
-    "SEEDCORP",
-    "BAUMINAS",
-    "JALLES MACHADO",
-    "ALIMENTOS N1",
-    "ROAN ALIMENTOS",
-    "CERRADINHO",
-    "FAZENDAO AGRO",
-    "IACO",
-    "JATAI CEREAIS",
-    "USINA SERRANOPOLIS",
-    "FAST FRETE",
-    "RIO DOCE",
-    "INTEGRA",
-    "RENATO CARVALHO",
-    "COMIVA",
-    "COMERX",
-    "SCALON E CERHI",
-    "3 TENTOS",
-    "BIOMA",
-    "AGROLESTE",
-    "EDSON CROCHIQUIA",
-    "COPAIBA",
-    "ATVOS",
-    "JRCA"
+    "CARGILL", "TERRA ROXA", "VITERRA", "COFCO", "NOVA AGRI", "JBS SEARA",
+    "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO", "C VALE",
+    "OLAM BRASIL", "SODRU", "BOM JESUS", "SOYBRASIL", "LAVORO",
+    "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE",
+    "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA",
+    "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS",
+    "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO",
+    "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO",
+    "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL",
+    "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX",
+    "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC",
+    "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN",
+    "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA",
+    "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO",
+    "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA",
+    "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL",
+    "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM",
+    "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL",
+    "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA",
+    "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL",
+    "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS",
+    "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO",
+    "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS",
+    "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA",
+    "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE",
+    "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"
   ];
 
   function safeText(v) {
@@ -189,11 +81,26 @@
       .replaceAll("'", "&#039;");
   }
 
+  function getToggleButton() {
+    return $("btnToggleFreteEmpresa") || $("btnOcultarFreteEmpresa");
+  }
+
+  function updateToggleButtonText() {
+    const btn = getToggleButton();
+    if (!btn) return;
+
+    btn.textContent = ocultarFreteEmpresa
+      ? "MOSTRAR FRETE EMPRESA"
+      : "OCULTAR FRETE EMPRESA";
+  }
+
   function toggleFreteEmpresa(hide) {
     const els = document.querySelectorAll(".col-frete-empresa");
     els.forEach((el) => {
       el.style.display = hide ? "none" : "";
     });
+
+    updateToggleButtonText();
   }
 
   function loadFretesRows() {
@@ -408,6 +315,8 @@
     const page = $("pageShare");
     if (!page || typeof html2canvas === "undefined") return;
 
+    const estadoAntesPrint = ocultarFreteEmpresa;
+
     try {
       ocultarFreteEmpresa = true;
       toggleFreteEmpresa(true);
@@ -431,8 +340,8 @@
       a.href = dataUrl;
       a.click();
     } finally {
-      ocultarFreteEmpresa = false;
-      toggleFreteEmpresa(false);
+      ocultarFreteEmpresa = estadoAntesPrint;
+      toggleFreteEmpresa(ocultarFreteEmpresa);
       document.body.classList.remove("printMode");
     }
   }
@@ -492,6 +401,8 @@
     await setClientLogo($("selCliente")?.value);
     rebuildDestinosForCliente();
     applyFiltersAndRender();
+    toggleFreteEmpresa(ocultarFreteEmpresa);
+    updateToggleButtonText();
   }
 
   function init() {
@@ -499,6 +410,7 @@
       await setClientLogo($("selCliente")?.value);
       rebuildDestinosForCliente();
       applyFiltersAndRender();
+      toggleFreteEmpresa(ocultarFreteEmpresa);
     });
 
     $("inpBusca")?.addEventListener("input", applyFiltersAndRender);
@@ -507,6 +419,15 @@
 
     $("btnReload")?.addEventListener("click", refresh);
     $("btnPrint")?.addEventListener("click", doPrint);
+
+    const btnToggle = getToggleButton();
+    if (btnToggle) {
+      btnToggle.addEventListener("click", () => {
+        ocultarFreteEmpresa = !ocultarFreteEmpresa;
+        toggleFreteEmpresa(ocultarFreteEmpresa);
+      });
+      updateToggleButtonText();
+    }
 
     $("btnVoltarFretes")?.addEventListener("click", () => {
       window.location.href = "./fretes.html";

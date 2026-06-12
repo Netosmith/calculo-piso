@@ -360,7 +360,7 @@
     (function(){
       const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
 
-      let ocultarFreteEmpresa = false;
+      let ocultarFreteEmpresa = true;
 
       function onReady(fn){
         if(document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
@@ -496,17 +496,18 @@
         return data;
       }
 
-      function toggleFreteEmpresa(hide){
-        const page = document.getElementById('pageShare');
-        if (!page) return;
+function toggleFreteEmpresa(hide){
+  const page = document.getElementById('pageShare');
+  if (!page) return;
 
-        page.classList.toggle('hideFreteEmpresa', !!hide);
+  page.classList.toggle('hideFreteEmpresa', !!hide);
 
-        const btn = document.getElementById('btnToggleFreteEmpresa');
-        if (btn) {
-          btn.textContent = hide ? 'Most' : 'Ocult';
-        }
-      }
+  const btn = document.getElementById('btnToggleFreteEmpresa');
+  if (btn) {
+    btn.textContent = hide ? 'Mostrar' : 'Ocultar';
+    btn.title = hide ? 'Most' : 'Ocult';
+  }
+}
 
       onReady(function(){
         const selCliente = document.getElementById('selCliente');
@@ -682,14 +683,17 @@
             }catch(e){
               console.error(e);
               alert('Não foi possível gerar o print. Veja o console.');
-            }finally{
-              document.body.classList.remove('printMode');
+            } finally {
+            ocultarFreteEmpresa = true;
+            toggleFreteEmpresa(true);
+
+            document.body.classList.remove('printMode');
               window.scrollTo(0, prevScrollY);
             }
           });
         }
 
-        toggleFreteEmpresa(false);
+        toggleFreteEmpresa(true);
         hydrate();
       });
     })();

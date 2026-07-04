@@ -160,3 +160,75 @@ async function iniciar() {
 }
 
 iniciar();
+
+const btnImportar = document.getElementById("btnImportar");
+const inputExcel = document.getElementById("arquivoExcel");
+
+btnImportar.addEventListener("click", () => {
+  inputExcel.click();
+});
+
+inputExcel.addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  btnImportar.textContent = "⏳ Lendo arquivo...";
+  btnImportar.disabled = true;
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    const primeiraAba = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[primeiraAba];
+
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      defval: ""
+    });
+
+    if (!rows.length) {
+      alert("A planilha está vazia.");
+      return;
+    }
+
+    btnImportar.textContent = "⏳ Importando...";
+
+    const resposta = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ rows })
+    });
+
+    const resultado = await resposta.json();
+
+    if (!resultado.ok) {
+      alert("Erro na importação: " + resultado.message);
+      return;
+    }
+
+    alert(`Importação concluída!\nLinhas importadas: ${resultado.linhas}`);
+
+    dados = rows;
+
+    limparFiltros();
+    preencherFiltro("filtroFilial", campos.filial);
+    preencherFiltro("filtroProduto", campos.produto);
+    preencherFiltro("filtroUF", campos.uf);
+    preencherFiltro("filtroLocal", campos.local);
+
+    atualizar();
+
+  } catch (error) {
+    alert("Erro ao importar arquivo: " + error.message);
+  } finally {
+    btnImportar.textContent = "📂 Importar Excel";
+    btnImportar.disabled = false;
+    inputExcel.value = "";
+  }
+});
+
+function limparFiltros() {
+  ["filtroFilial", "filtroProduto", "filtroUF", "filtroLocal"].forEach(id => {
+    const select = document.getElementById(id);
+    select.innerHTML = select.options[0].outerHTML;
+  });
+}

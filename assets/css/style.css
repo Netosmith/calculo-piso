@@ -103,3 +103,61 @@ th:first-child, td:first-child {
     grid-template-columns: 1fr;
   }
 }
+
+.importPanel{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    background:#fff;
+
+    padding:20px;
+
+    margin-bottom:20px;
+
+    border-radius:18px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.importLeft h2{
+
+    margin:0;
+
+    color:#16355D;
+
+}
+
+.importLeft p{
+
+    margin-top:6px;
+
+    color:#666;
+
+}
+
+.importRight button{
+
+    background:#0E8A46;
+
+    color:#fff;
+
+    border:none;
+
+    padding:14px 28px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+}
+
+.importRight button:hover{
+
+    background:#087339;
+
+}

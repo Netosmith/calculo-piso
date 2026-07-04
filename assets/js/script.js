@@ -63,7 +63,7 @@ function agrupar(lista, campo, valorCampo) {
     .slice(0, 12);
 }
 
-function criarGrafico(id, tipo, labels, valores) {
+function criarGrafico(id, tipo, labels, valores, horizontal = false) {
   if (charts[id]) charts[id].destroy();
 
   charts[id] = new Chart(document.getElementById(id), {
@@ -76,9 +76,15 @@ function criarGrafico(id, tipo, labels, valores) {
       }]
     },
     options: {
+      indexAxis: horizontal ? "y" : "x",
       responsive: true,
       plugins: {
         legend: { display: tipo === "pie" }
+      },
+      scales: tipo === "pie" ? {} : {
+        x: {
+          beginAtZero: true
+        }
       }
     }
   });
@@ -105,8 +111,8 @@ function atualizar() {
   const produto = agrupar(lista, campos.produto, campos.contratada);
   criarGrafico("graficoProduto", "pie", produto.map(x => x[0]), produto.map(x => x[1]));
 
-  const local = agrupar(lista, campos.local, campos.contratada);
-  criarGrafico("graficoLocal", "bar", local.map(x => x[0]), local.map(x => x[1]));
+  const local = agrupar(lista, campos.local, campos.contratada).slice(0, 10);
+criarGrafico("graficoLocal", "bar", local.map(x => x[0]), local.map(x => x[1]), true);
 
   const data = agrupar(lista, campos.data, campos.restante);
   criarGrafico("graficoData", "bar", data.map(x => x[0]), data.map(x => x[1]));

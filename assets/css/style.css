@@ -1,0 +1,105 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #172033;
+}
+
+.app {
+  max-width: 1400px;
+  margin: auto;
+  padding: 24px;
+}
+
+header {
+  background: #0f2f57;
+  color: white;
+  padding: 24px;
+  border-radius: 18px;
+  margin-bottom: 18px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+header p {
+  margin: 6px 0 0;
+  opacity: .85;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+select {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #d6deea;
+  background: white;
+  font-weight: bold;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.card, .box {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 25px rgba(15,47,87,.08);
+}
+
+.card span {
+  display: block;
+  color: #667085;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.card strong {
+  font-size: 25px;
+  color: #0f2f57;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.box h2 {
+  margin-top: 0;
+  font-size: 17px;
+  color: #0f2f57;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 11px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: right;
+}
+
+th:first-child, td:first-child {
+  text-align: left;
+}
+
+@media (max-width: 900px) {
+  .filters, .cards, .grid {
+    grid-template-columns: 1fr;
+  }
+}

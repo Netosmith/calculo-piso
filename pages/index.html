@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Expedição</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Dashboard de Expedição</h1>
+      <p>Soja, Milho e Sorgo • Projeção mensal</p>
+    </header>
+
+    <section class="filters">
+      <select id="filtroFilial"><option value="">Todas as filiais</option></select>
+      <select id="filtroProduto"><option value="">Todos os produtos</option></select>
+      <select id="filtroUF"><option value="">Todas as UFs</option></select>
+      <select id="filtroLocal"><option value="">Todos os locais</option></select>
+    </section>
+
+    <section class="cards">
+      <div class="card"><span>Contratada</span><strong id="totalContratada">0</strong></div>
+      <div class="card"><span>Faturada</span><strong id="totalFaturada">0</strong></div>
+      <div class="card"><span>Restante</span><strong id="totalRestante">0</strong></div>
+      <div class="card"><span>Contratos</span><strong id="totalContratos">0</strong></div>
+      <div class="card"><span>Viagens</span><strong id="totalViagens">0</strong></div>
+    </section>
+
+    <section class="grid">
+      <div class="box"><h2>Volume por Filial</h2><canvas id="graficoFilial"></canvas></div>
+      <div class="box"><h2>Volume por Produto</h2><canvas id="graficoProduto"></canvas></div>
+      <div class="box"><h2>Locais de Embarque</h2><canvas id="graficoLocal"></canvas></div>
+      <div class="box"><h2>Volume Restante por Data</h2><canvas id="graficoData"></canvas></div>
+    </section>
+
+    <section class="box">
+      <h2>Resumo por Filial</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Filial</th>
+            <th>Contratada</th>
+            <th>Faturada</th>
+            <th>Restante</th>
+            <th>Viagens</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaResumo"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

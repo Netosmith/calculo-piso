@@ -537,6 +537,22 @@
       width:16px;height:16px;accent-color:#2563eb;cursor:pointer;
     }
 
+
+    .tdUltimaAlteracao{
+      font-variant-numeric:tabular-nums;
+      font-size:10px;
+      color:#334155;
+      min-width:118px;
+    }
+
+    th.thUltimaAlteracao{
+      min-width:118px;
+    }
+
+    th.thAcoes{
+      min-width:116px;
+    }
+
     .nfActionGroup{display:inline-flex;align-items:center;gap:5px;}
 
     .nfIconBtn{
@@ -858,8 +874,8 @@
                 <th class="num">Trânsito</th>
                 <th>Status</th>
                 <th>Observações</th>
-                <th>Última Alteração</th>
-                <th class="num">Ações</th>
+                <th class="thUltimaAlteracao">Última Alteração</th>
+                <th class="num thAcoes">Ações</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>

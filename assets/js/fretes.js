@@ -385,25 +385,24 @@
   }
 
   function formatDateTimeBR(value) {
-  if (!value) return "";
+    const raw = safeText(value);
+    if (!raw) return "";
 
-  // Se vier no formato ISO (Google Sheets)
-  const d = new Date(value);
+    // Se já vier no padrão Brasil, mantém como está
+    if (/^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}$/.test(raw)) return raw;
+    if (/^\d{2}\/\d{2}\/\d{2},\s*\d{2}:\d{2}$/.test(raw)) return raw;
 
-  if (!isNaN(d.getTime())) {
+    const d = new Date(raw);
 
-    const dia = String(d.getDate()).padStart(2,"0");
-    const mes = String(d.getMonth()+1).padStart(2,"0");
-    const ano = String(d.getFullYear()).slice(-2);
+    if (!Number.isNaN(d.getTime())) {
+      const dia = String(d.getDate()).padStart(2, "0");
+      const mes = String(d.getMonth() + 1).padStart(2, "0");
+      const ano = String(d.getFullYear()).slice(-2);
+      const hora = String(d.getHours()).padStart(2, "0");
+      const minuto = String(d.getMinutes()).padStart(2, "0");
 
-    const hora = String(d.getHours()).padStart(2,"0");
-    const minuto = String(d.getMinutes()).padStart(2,"0");
-
-    return `${dia}/${mes}/${ano}, ${hora}:${minuto}`;
-  }
-
-  return value;
-}
+      return `${dia}/${mes}/${ano}, ${hora}:${minuto}`;
+    }
 
     return raw;
   }

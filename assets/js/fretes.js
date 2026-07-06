@@ -223,7 +223,7 @@
     { key: "transito", label: "Trânsito", isInlineEditable: true },
     { key: "status", label: "Status" },
     { key: "obs", label: "Observações" },
-    { key: "__acoes", label: "Ações", isAcoes: true },
+    { key: "ultimaAlteracao", label: "Última Alteração" },
   ];
 
   const MODAL = {
@@ -828,11 +828,7 @@
           return;
         }
 
-        if (col.isAcoes) {
-          tr.appendChild(buildAcoesCell(row));
-          return;
-        }
-
+        
         if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
           return;
@@ -1798,8 +1794,12 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     });
     document.getElementById("nfCopiarMensagem")?.addEventListener("click", () => copyMessage(STATE.previewRow || getFilteredRows()[0]));
     document.getElementById("nfClosePreview")?.addEventListener("click", () => {
-      const panel = document.getElementById("nfPreviewPanel");
-      if (panel) panel.style.display = panel.style.display === "none" ? "" : "none";
+      const panel=document.getElementById("nfPreviewPanel");
+      const main=document.querySelector(".tableArea")||document.querySelector(".content")||document.querySelector(".main");
+      const hide=panel && panel.style.display!=="none";
+      if(panel) panel.style.display=hide?"none":"";
+      if(main) main.classList.toggle("previewHidden",hide);
+      syncFloatingHorizontalBar();
     });
   }
 

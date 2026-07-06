@@ -444,6 +444,21 @@
     return td;
   }
 
+
+  function nowUltimaAlteracaoBR() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+
+    return [
+      pad(d.getDate()),
+      pad(d.getMonth() + 1),
+      d.getFullYear()
+    ].join("/") + " " + [
+      pad(d.getHours()),
+      pad(d.getMinutes())
+    ].join(":");
+  }
+
   function normalizeMoneyInput(value) {
     const text = String(value ?? "").trim();
     if (!text) return "";
@@ -705,12 +720,27 @@
 
       try {
         setStatus(`💾 Salvando ${key}...`);
-        await apiGet({ action: "fretes_update", id: safeText(row.id), [key]: newValue });
+
+        const ultimaAlteracao = nowUltimaAlteracaoBR();
+        const res = await apiGet({
+          action: "fretes_update",
+          id: safeText(row.id),
+          [key]: newValue,
+          ultimaAlteracao
+        });
 
         const idx = STATE.rows.findIndex((r) => safeText(r.id) === safeText(row.id));
-        if (idx >= 0) STATE.rows[idx][key] = newValue;
+        if (idx >= 0) {
+          STATE.rows[idx][key] = newValue;
+          STATE.rows[idx].ultimaAlteracao = res?.data?.ultimaAlteracao || ultimaAlteracao;
+          STATE.rows[idx].updatedAt = res?.data?.updatedAt || STATE.rows[idx].updatedAt;
+        }
+
+        row[key] = newValue;
+        row.ultimaAlteracao = res?.data?.ultimaAlteracao || ultimaAlteracao;
 
         originalValue = newValue;
+        applyFilters();
         setStatus("✅ Atualizado");
       } catch (e) {
         input.value = originalValue;
@@ -1538,6 +1568,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       transito: safeText(MODAL.transito()?.value),
       status: normalizeFreteStatus(MODAL.status()?.value),
       obs: upperKeepSpaces(MODAL.obs()?.value).trim(),
+      ultimaAlteracao: nowUltimaAlteracaoBR(),
     };
   }
 

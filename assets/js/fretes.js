@@ -385,22 +385,31 @@
   }
   
 function formatDateTimeBR(value) {
-  const raw = safeText(value);
-  if (!raw) return "";
+    const raw = safeText(value);
+    if (!raw) return "";
 
-  if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) return raw;
+    // A partir de agora, o Apps Script deve gravar a coluna ultimaAlteracao
+    // já formatada como dd/MM/yyyy HH:mm. Então, quando vier nesse padrão,
+    // apenas mostramos o texto como está.
+    if (/^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}/.test(raw)) return raw;
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) return raw;
+    if (/^\d{2}\/\d{2}\/\d{2}/.test(raw)) return raw;
 
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw;
+    // Evita mostrar timestamps antigos do updatedAt/Date.now como números soltos.
+    if (/^\d{12,}$/.test(raw)) return "";
 
-  const dia = String(d.getDate()).padStart(2, "0");
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  const ano = String(d.getFullYear()).slice(-2);
-  const hora = String(d.getHours()).padStart(2, "0");
-  const minuto = String(d.getMinutes()).padStart(2, "0");
+    // Compatibilidade: se algum retorno vier como ISO, exibe em pt-BR.
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw;
 
-  return `${dia}/${mes}/${ano}, ${hora}:${minuto}`;
-}
+    const dia = String(d.getDate()).padStart(2, "0");
+    const mes = String(d.getMonth() + 1).padStart(2, "0");
+    const ano = String(d.getFullYear());
+    const hora = String(d.getHours()).padStart(2, "0");
+    const minuto = String(d.getMinutes()).padStart(2, "0");
+
+    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
+  }
 
   function getUltimaAlteracao(row) {
     if (!row) return "";
@@ -418,14 +427,7 @@ function formatDateTimeBR(value) {
       "dataAtualizacao",
       "data_atualizacao",
       "Data Atualizacao",
-      "Data Atualização",
-      "updatedAt",
-      "updated_at",
-      "modifiedAt",
-      "modified_at",
-      "timestamp",
-      "data",
-      "Data"
+      "Data Atualização"
     ];
 
     for (const key of possibleKeys) {
@@ -725,8 +727,7 @@ function formatDateTimeBR(value) {
         const res = await apiGet({
           action: "fretes_update",
           id: safeText(row.id),
-          [key]: newValue,
-          ultimaAlteracao
+          [key]: newValue
         });
 
         const idx = STATE.rows.findIndex((r) => safeText(r.id) === safeText(row.id));
@@ -1568,7 +1569,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       transito: safeText(MODAL.transito()?.value),
       status: normalizeFreteStatus(MODAL.status()?.value),
       obs: upperKeepSpaces(MODAL.obs()?.value).trim(),
-      ultimaAlteracao: nowUltimaAlteracaoBR(),
     };
   }
 

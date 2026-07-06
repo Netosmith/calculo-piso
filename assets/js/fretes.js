@@ -223,7 +223,8 @@
     { key: "transito", label: "Trânsito", isInlineEditable: true },
     { key: "status", label: "Status" },
     { key: "obs", label: "Observações" },
-    { key: "ultimaAlteracao", label: "Última Alteração" },
+    { key: "__ultimaAlteracao", label: "Última Alteração", isUltimaAlteracao: true },
+    { key: "__acoes", label: "Ações", isAcoes: true },
   ];
 
   const MODAL = {
@@ -381,6 +382,66 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+  }
+
+  function formatDateTimeBR(value) {
+    const raw = safeText(value);
+    if (!raw) return "";
+
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    return raw;
+  }
+
+  function getUltimaAlteracao(row) {
+    if (!row) return "";
+
+    const possibleKeys = [
+      "ultimaAlteracao",
+      "ultima_alteracao",
+      "UltimaAlteracao",
+      "Ultima Alteracao",
+      "Última Alteração",
+      "dataAlteracao",
+      "data_alteracao",
+      "Data Alteracao",
+      "Data Alteração",
+      "dataAtualizacao",
+      "data_atualizacao",
+      "Data Atualizacao",
+      "Data Atualização",
+      "updatedAt",
+      "updated_at",
+      "modifiedAt",
+      "modified_at",
+      "timestamp",
+      "data",
+      "Data"
+    ];
+
+    for (const key of possibleKeys) {
+      if (row[key] !== undefined && row[key] !== null && safeText(row[key])) {
+        return formatDateTimeBR(row[key]);
+      }
+    }
+
+    return "";
+  }
+
+  function buildUltimaAlteracaoCell(row) {
+    const td = document.createElement("td");
+    td.className = "num";
+    td.textContent = getUltimaAlteracao(row) || "-";
+    return td;
   }
 
   function normalizeMoneyInput(value) {
@@ -714,13 +775,18 @@
     btnEdit.type = "button";
     btnEdit.className = "btnTiny ghost";
     btnEdit.textContent = "Editar";
-    btnEdit.addEventListener("click", () => openEditModal(row));
+    btnEdit.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openEditModal(row);
+    });
 
     const btnDel = document.createElement("button");
     btnDel.type = "button";
     btnDel.className = "btnTiny";
     btnDel.textContent = "Excluir";
-    btnDel.addEventListener("click", async () => {
+    btnDel.addEventListener("click", async (e) => {
+      e.stopPropagation();
+
       if (!row.id) return;
       if (!confirm("Excluir este frete?")) return;
 
@@ -735,43 +801,8 @@
       }
     });
 
-    const btnRaio = document.createElement("button");
-    btnRaio.type = "button";
-    btnRaio.className = "nfIconBtn raio";
-    btnRaio.title = "Gerar JPG automático";
-    btnRaio.textContent = "⚡";
-    btnRaio.addEventListener("click", (e) => {
-      e.stopPropagation();
-      renderPreview(row);
-      downloadDivulgacaoJPG(row);
-    });
-
-    const btnEye = document.createElement("button");
-    btnEye.type = "button";
-    btnEye.className = "nfIconBtn eye";
-    btnEye.title = "Ver prévia";
-    btnEye.textContent = "👁";
-    btnEye.addEventListener("click", (e) => {
-      e.stopPropagation();
-      renderPreview(row);
-    });
-
-    const btnWa = document.createElement("button");
-    btnWa.type = "button";
-    btnWa.className = "nfIconBtn wa";
-    btnWa.title = "Copiar mensagem e abrir WhatsApp";
-    btnWa.textContent = "🟢";
-    btnWa.addEventListener("click", (e) => {
-      e.stopPropagation();
-      renderPreview(row);
-      enviarWhatsAppRow(row);
-    });
-
     wrap.appendChild(btnEdit);
     wrap.appendChild(btnDel);
-    wrap.appendChild(btnRaio);
-    wrap.appendChild(btnEye);
-    wrap.appendChild(btnWa);
 
     td.appendChild(wrap);
     return td;
@@ -825,6 +856,16 @@
 
         if (col.isContato) {
           tr.appendChild(buildContatoCell(row.contato || ""));
+          return;
+        }
+
+        if (col.isUltimaAlteracao) {
+          tr.appendChild(buildUltimaAlteracaoCell(row));
+          return;
+        }
+
+        if (col.isAcoes) {
+          tr.appendChild(buildAcoesCell(row));
           return;
         }
 
@@ -1605,11 +1646,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       #nfFloatingHBar{
         position:fixed;
         left:12px;
-        right:12px;
+        right:330px;
         bottom:8px;
         height:18px;
         display:none;
-        z-index:999;
+        z-index:9999;
         background:rgba(255,255,255,.96);
         border:1px solid rgba(15,23,42,.12);
         border-radius:999px;
@@ -1618,7 +1659,20 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         overflow-y:hidden;
         backdrop-filter:blur(6px);
       }
-      #nfFloatingHBarInner{ height:1px; }
+
+      body.preview-hidden #nfFloatingHBar{
+        right:12px;
+      }
+
+      #nfFloatingHBarInner{
+        height:1px;
+      }
+
+      @media(max-width:1250px){
+        #nfFloatingHBar{
+          right:12px;
+        }
+      }
     `;
     document.head.appendChild(style);
 
@@ -1794,12 +1848,18 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     });
     document.getElementById("nfCopiarMensagem")?.addEventListener("click", () => copyMessage(STATE.previewRow || getFilteredRows()[0]));
     document.getElementById("nfClosePreview")?.addEventListener("click", () => {
-      const panel=document.getElementById("nfPreviewPanel");
-      const main=document.querySelector(".tableArea")||document.querySelector(".content")||document.querySelector(".main");
-      const hide=panel && panel.style.display!=="none";
-      if(panel) panel.style.display=hide?"none":"";
-      if(main) main.classList.toggle("previewHidden",hide);
-      syncFloatingHorizontalBar();
+      const workspace = document.querySelector(".fretes-workspace");
+      if (!workspace) return;
+
+      workspace.classList.toggle("preview-hidden");
+
+      document.body.classList.toggle(
+        "preview-hidden",
+        workspace.classList.contains("preview-hidden")
+      );
+
+      setTimeout(syncFloatingHorizontalBar, 80);
+      setTimeout(syncFloatingHorizontalBar, 240);
     });
   }
 

@@ -385,19 +385,25 @@
   }
 
   function formatDateTimeBR(value) {
-    const raw = safeText(value);
-    if (!raw) return "";
+  if (!value) return "";
 
-    const d = new Date(raw);
-    if (!Number.isNaN(d.getTime())) {
-      return d.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
+  // Se vier no formato ISO (Google Sheets)
+  const d = new Date(value);
+
+  if (!isNaN(d.getTime())) {
+
+    const dia = String(d.getDate()).padStart(2,"0");
+    const mes = String(d.getMonth()+1).padStart(2,"0");
+    const ano = String(d.getFullYear()).slice(-2);
+
+    const hora = String(d.getHours()).padStart(2,"0");
+    const minuto = String(d.getMinutes()).padStart(2,"0");
+
+    return `${dia}/${mes}/${ano}, ${hora}:${minuto}`;
+  }
+
+  return value;
+}
 
     return raw;
   }

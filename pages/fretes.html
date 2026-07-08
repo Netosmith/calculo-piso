@@ -16,7 +16,7 @@
       overflow:auto;
       border:1px solid rgba(43,58,114,.35);
       border-radius:14px;
-      height: calc(100vh - 210px);
+      height: calc(100vh - 150px);
       min-height: 520px;
       background:#fff;
     }
@@ -67,9 +67,9 @@
     .container.pageFretes{
       display:flex;
       flex-direction:column;
-      gap:8px;
+      gap:6px;
       min-height:calc(100vh - 72px);
-      padding: 8px 12px 12px;
+      padding:4px 10px 10px;
       background:#F5F7FA;
     }
 
@@ -77,7 +77,7 @@
       flex:1 1 auto;
       display:flex;
       flex-direction:column;
-      min-height: calc(100vh - 210px);
+      min-height: calc(100vh - 150px);
       background:#FFFFFF;
       border:1px solid #E5E7EB;
       box-shadow:0 4px 12px rgba(0,0,0,.04);
@@ -92,11 +92,11 @@
 
     .fretes-top{
       display:flex;
-      align-items:flex-end;
+      align-items:center;
       justify-content:space-between;
       gap:8px;
       flex-wrap:wrap;
-      padding:8px 12px;
+      padding:6px 10px;
       background:#FFFFFF;
       border:1px solid #E5E7EB;
       border-radius:18px;
@@ -111,14 +111,14 @@
 
     .fretes-top .title h1{
       margin:0;
-      font-size:16px;
+      font-size:15px;
       font-weight:900;
       letter-spacing:.2px;
       color:#0F172A;
     }
 
     .fretes-top .title .sub{
-      font-size:11px;
+      font-size:10px;
       color: rgba(17,24,39,.70);
       max-width:980px;
       line-height:1.2;
@@ -127,8 +127,8 @@
     .fretes-toolbar{
       display:flex;
       flex-direction:column;
-      gap:6px;
-      padding:8px 10px;
+      gap:5px;
+      padding:6px 10px;
       border-radius:18px;
       border:1px solid #E5E7EB;
       background:#FFFFFF;
@@ -723,67 +723,6 @@
     .nfStat .t{font-size:10px;color:#64748b;font-weight:800;}
     .nfStat .v{font-size:16px;font-weight:950;margin-top:3px;}
 
-    /* KPI Dashboard Styles */
-    .kpiGrid{
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap:8px;
-      margin-bottom:8px;
-    }
-
-    .kpiCard{
-      background:#fff;
-      border:1px solid #E5E7EB;
-      border-radius:12px;
-      box-shadow:0 4px 12px rgba(0,0,0,.04);
-      padding:10px 12px;
-      min-height:90px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-    }
-
-    .kpiLabel{
-      font-size:9px;
-      font-weight:1000;
-      color:#64748b;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      line-height:1.2;
-    }
-
-    .kpiValue{
-      font-size:16px;
-      font-weight:1000;
-      color:#0F172A;
-      margin-top:3px;
-    }
-
-    .kpiFoot{
-      font-size:10px;
-      color:#64748b;
-      margin-top:2px;
-      line-height:1.2;
-    }
-
-    @media (max-width: 1400px){
-      .kpiGrid{
-        grid-template-columns: repeat(3,1fr);
-      }
-    }
-
-    @media (max-width: 980px){
-      .kpiGrid{
-        grid-template-columns: repeat(2,1fr);
-      }
-    }
-
-    @media (max-width: 640px){
-      .kpiGrid{
-        grid-template-columns:1fr;
-      }
-    }
-
 
     /* =========================
        Overlay de processamento do modal
@@ -902,40 +841,6 @@
       <div class="title">
         <h1>Fretes (Operacional) <span id="syncStatus" data-sync-status style="font-size:11px; opacity:0.7; margin-left:8px;">🔄 Carregando...</span></h1>
         <div class="sub">Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque. <b>Dados sincronizados com Google Sheets em tempo real.</b></div>
-      </div>
-    </div>
-
-    <!-- KPI Dashboard de Volumes -->
-    <div class="kpiGrid">
-      <div class="kpiCard">
-        <div class="kpiLabel">Veículos Porta</div>
-        <div class="kpiValue" id="kpiPorta">0</div>
-        <div class="kpiFoot">Soma da coluna Porta</div>
-      </div>
-      <div class="kpiCard">
-        <div class="kpiLabel">Veículos Trânsito</div>
-        <div class="kpiValue" id="kpiTransito">0</div>
-        <div class="kpiFoot">Soma da coluna Trânsito</div>
-      </div>
-      <div class="kpiCard">
-        <div class="kpiLabel">Veículos Totais</div>
-        <div class="kpiValue" id="kpiVeiculos">0</div>
-        <div class="kpiFoot">Porta + Trânsito</div>
-      </div>
-      <div class="kpiCard">
-        <div class="kpiLabel">Volume Total</div>
-        <div class="kpiValue" id="kpiVolume">0 t</div>
-        <div class="kpiFoot">38 t por veículo</div>
-      </div>
-      <div class="kpiCard">
-        <div class="kpiLabel">Frete Médio Empresa</div>
-        <div class="kpiValue" id="kpiFreteMedio">R$ 0,00</div>
-        <div class="kpiFoot">Média do Vlr Empresa</div>
-      </div>
-      <div class="kpiCard">
-        <div class="kpiLabel">Margem Média</div>
-        <div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div>
-        <div class="kpiFoot">Empresa - Motorista</div>
       </div>
     </div>
 
@@ -1123,7 +1028,7 @@
   </div>
 
   <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/fretes.js?v=9"></script>
+  <script src="../assets/js/fretes.js?v=10"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

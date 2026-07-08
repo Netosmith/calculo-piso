@@ -1184,12 +1184,46 @@ function buildMessage(row) {
   ].join("\n");
 }
 
+
+  function loadHtml2CanvasNF() {
+    return new Promise((resolve, reject) => {
+      if (typeof window.html2canvas === "function") {
+        resolve(window.html2canvas);
+        return;
+      }
+
+      const existing = document.querySelector('script[data-nf-html2canvas="1"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.html2canvas), { once: true });
+        existing.addEventListener("error", () => reject(new Error("Falha ao carregar html2canvas.")), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+      script.async = true;
+      script.defer = true;
+      script.dataset.nfHtml2canvas = "1";
+
+      script.onload = () => {
+        if (typeof window.html2canvas === "function") resolve(window.html2canvas);
+        else reject(new Error("html2canvas carregou, mas não ficou disponível."));
+      };
+
+      script.onerror = () => reject(new Error("Não foi possível carregar html2canvas. Verifique internet/CDN."));
+      document.head.appendChild(script);
+    });
+  }
+
   function waitForImage(img) {
-    if (!img || img.complete) return Promise.resolve();
+    if (!img) return Promise.resolve();
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
 
     return new Promise((resolve) => {
-      img.addEventListener("load", resolve, { once: true });
-      img.addEventListener("error", resolve, { once: true });
+      const done = () => resolve();
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+      setTimeout(done, 2500);
     });
   }
 
@@ -1199,45 +1233,81 @@ function buildMessage(row) {
     const card = document.getElementById("nfArtCard");
     const img = document.getElementById("nfArtBg");
 
-    if (!card || typeof html2canvas !== "function") {
-      alert("html2canvas não carregou. Verifique o script CDN.");
+    if (!card) {
+      alert("Prévia da divulgação não encontrada na página.");
       return null;
     }
 
-    await waitForImage(img);
+    try {
+      setStatus("🖼️ Gerando imagem...");
+      const html2canvasLib = await loadHtml2CanvasNF();
 
-    return await html2canvas(card, {
-      backgroundColor: null,
-      scale: 4,
-      useCORS: true
-    });
+      await waitForImage(img);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      return await html2canvasLib(card, {
+        backgroundColor: null,
+        scale: 4,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        imageTimeout: 8000
+      });
+    } catch (e) {
+      console.error("[fretes] erro ao gerar canvas:", e);
+      alert(e.message || "Não foi possível gerar a imagem. Tente baixar novamente.");
+      return null;
+    }
   }
 
   async function downloadDivulgacaoJPG(row) {
-    const d = divulgacaoDataFromRow(row);
-    const canvas = await canvasFromPreview(row);
+    const chosenRow = row || STATE.previewRow || getFilteredRows()[0];
+    if (!chosenRow) {
+      alert("Selecione um frete para baixar a imagem.");
+      return;
+    }
+
+    const d = divulgacaoDataFromRow(chosenRow);
+    const canvas = await canvasFromPreview(chosenRow);
 
     if (!canvas) return;
 
-    const link = document.createElement("a");
-    link.download = d.filename;
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
+    try {
+      const link = document.createElement("a");
+      link.download = d.filename || "divulgacao-frete.jpg";
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setStatus("✅ JPG baixado");
+    } catch (e) {
+      console.error("[fretes] erro ao baixar JPG:", e);
+      alert("Não foi possível baixar o JPG neste navegador.");
+    }
   }
 
   async function copyPreviewImage(row) {
-    try {
-      const canvas = await canvasFromPreview(row || STATE.previewRow);
+    const chosenRow = row || STATE.previewRow || getFilteredRows()[0];
+    if (!chosenRow) {
+      alert("Selecione um frete para copiar a imagem.");
+      return;
+    }
 
-      if (!canvas || !navigator.clipboard || !window.ClipboardItem) {
-        throw new Error("Clipboard indisponível");
+    try {
+      const canvas = await canvasFromPreview(chosenRow);
+      if (!canvas) return;
+
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        throw new Error("Clipboard indisponível neste navegador.");
       }
 
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      if (!blob) throw new Error("Não foi possível gerar o PNG para copiar.");
 
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
       setStatus("✅ Imagem copiada");
     } catch (e) {
+      console.warn("[fretes] copiar imagem falhou:", e);
       alert("Não consegui copiar a imagem neste navegador. Use Baixar JPG.");
     }
   }

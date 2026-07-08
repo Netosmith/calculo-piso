@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <label class="label" for="user">UsuÃ¡rio</label>
+      <label class="label" for="user">Usuario</label>
       <input class="input" id="user" placeholder="Ex.: Joao" autocomplete="username" />
 
       <label class="label" for="pass">Senha</label>
@@ -53,8 +53,8 @@
 
       <button class="btn" id="btnLogin" type="button">Entrar</button>
 
-      <div class="err" id="err">UsuÃ¡rio ou senha invÃ¡lidos.</div>
-      <div class="small">Sistema Operacional Unificado â</div>
+      <div class="err" id="err">Usuario ou senha invalidos.</div>
+      <div class="small">Sistema Operacional Unificado</div>
     </div>
   </div>
 
@@ -89,16 +89,16 @@
     let selectedUF = "";
 
     const UF_META = {
-      GO:{label:"GoiÃ¡s", cls:"go"},
+      GO:{label:"Goiás", cls:"go"},
       GOADM:{label:"Administrativo", cls:"goadm"},
       MT:{label:"Mato Grosso", cls:"mt"},
       MG:{label:"Minas Gerais", cls:"mg"},
-      SP:{label:"SÃ£o Paulo", cls:"sp"},
-      PR:{label:"ParanÃ¡", cls:"pr"},
+      SP:{label:"Sãoo Paulo", cls:"sp"},
+      PR:{label:"Paraná¡", cls:"pr"},
       SC:{label:"Santa Catarina", cls:"sc"},
       TO:{label:"Tocantins", cls:"to"},
-      PA:{label:"ParÃ¡", cls:"pa"},
-      MA:{label:"MaranhÃ£o", cls:"ma"},
+      PA:{label:"Pará¡", cls:"pa"},
+      MA:{label:"Maranhão", cls:"ma"},
       BA:{label:"Bahia", cls:"ba"}
     };
 
@@ -108,7 +108,7 @@
       grid.innerHTML = "";
 
       if(!pendingStates.length){
-        err.textContent = "UsuÃ¡rio sem estado liberado na aba USUARIOS.";
+        err.textContent = "Usuario sem estado liberado na aba USUARIOS.";
         err.style.display = "block";
         return;
       }
@@ -142,13 +142,13 @@
 
     async function doLogin(){
       err.style.display = "none";
-      err.textContent = "UsuÃ¡rio ou senha invÃ¡lidos.";
+      err.textContent = "Usuario ou senha inválidos.";
 
       const u = (userEl.value || "").trim();
       const p = (passEl.value || "").trim();
 
       if(!u || !p){
-        err.textContent = "Informe usuÃ¡rio e senha.";
+        err.textContent = "Informe Usuario e senha.";
         err.style.display = "block";
         return;
       }
@@ -159,7 +159,7 @@
       try{
         const result = await validateLogin(u, p);
         if(!result || !result.ok){
-          err.textContent = result?.error || "UsuÃ¡rio ou senha invÃ¡lidos.";
+          err.textContent = result?.error || "Usuario ou senha inválidos.";
           err.style.display = "block";
           return;
         }

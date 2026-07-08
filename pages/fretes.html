@@ -763,6 +763,65 @@
     .nfStat .t{font-size:10px;color:#64748b;font-weight:800;}
     .nfStat .v{font-size:16px;font-weight:950;margin-top:3px;}
 
+    /* KPI Dashboard Styles */
+    .kpiGrid{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .kpiCard{
+      background:#fff;
+      border:1px solid #E5E7EB;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.04);
+      padding:16px;
+      min-height:110px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    .kpiLabel{
+      font-size:11px;
+      font-weight:1000;
+      color:#64748b;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .kpiValue{
+      font-size:20px;
+      font-weight:1000;
+      color:#0F172A;
+      margin-top:6px;
+    }
+
+    .kpiFoot{
+      font-size:12px;
+      color:#64748b;
+      margin-top:4px;
+    }
+
+    @media (max-width: 1400px){
+      .kpiGrid{
+        grid-template-columns: repeat(3,1fr);
+      }
+    }
+
+    @media (max-width: 980px){
+      .kpiGrid{
+        grid-template-columns: repeat(2,1fr);
+      }
+    }
+
+    @media (max-width: 640px){
+      .kpiGrid{
+        grid-template-columns:1fr;
+      }
+    }
+
     @media(max-width:900px){
       .nf-bulk-panel{width:100%;margin-left:0;overflow:auto;}
       .nfStats{grid-template-columns:1fr 1fr;}
@@ -795,6 +854,45 @@
           Permissão Frete Mínimo: indica quais tipos (eixos) atendem o piso mínimo ANTT por embarque.
           <b>Dados sincronizados com Google Sheets em tempo real.</b>
         </div>
+      </div>
+    </div>
+
+    <!-- KPI Dashboard de Volumes -->
+    <div class="kpiGrid">
+      <div class="kpiCard">
+        <div class="kpiLabel">Veículos Porta</div>
+        <div class="kpiValue" id="kpiPorta">0</div>
+        <div class="kpiFoot">Soma da coluna Porta</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Veículos Trânsito</div>
+        <div class="kpiValue" id="kpiTransito">0</div>
+        <div class="kpiFoot">Soma da coluna Trânsito</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Veículos Totais</div>
+        <div class="kpiValue" id="kpiVeiculos">0</div>
+        <div class="kpiFoot">Porta + Trânsito</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Volume Total</div>
+        <div class="kpiValue" id="kpiVolume">0 t</div>
+        <div class="kpiFoot">38 t por veículo</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Frete Médio Empresa</div>
+        <div class="kpiValue" id="kpiFreteMedio">R$ 0,00</div>
+        <div class="kpiFoot">Média do Vlr Empresa</div>
+      </div>
+
+      <div class="kpiCard">
+        <div class="kpiLabel">Margem Média</div>
+        <div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div>
+        <div class="kpiFoot">Empresa - Motorista</div>
       </div>
     </div>
 
@@ -999,29 +1097,18 @@
         </div>
 
         <div class="modalFoot">
-          <button class="btnTiny ghost" id="btnCancel" type="button">Cancelar</button>
-          <button class="btnTiny green" id="btnSave" type="button">Salvar</button>
+          <button class="btnTiny ghost" id="btnCancelModal" type="button">Cancelar</button>
+          <button class="btnTiny green" id="btnSaveModal" type="button">Salvar Frete</button>
         </div>
       </div>
     </div>
   </div>
 
   <script src="../assets/js/auth.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="../assets/js/fretes.js"></script>
-
   <script>
     requireHomeAuth();
     bindLogoutButton();
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("btnShareClientes");
-      if(btn){
-        btn.addEventListener("click", () => {
-          window.location.href = "./share-clientes.html";
-        });
-      }
-    });
   </script>
 </body>
 </html>

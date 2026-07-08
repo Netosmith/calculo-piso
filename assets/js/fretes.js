@@ -1656,7 +1656,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     if (!validateModalPayload(payload)) return;
 
     try {
-      showModalLoading("Salvando Frete...", "Sincronizando com Google Sheets. Aguarde alguns segundos.");
+      showModalLoading("Salvando Frete...", "Sincronizando. Aguarde alguns segundos.");
       setStatus("💾 Salvando...");
 
       await saveFrete(payload);

@@ -191,6 +191,7 @@
     floatingSyncing: false,
     selectedIds: new Set(),
     previewRow: null,
+    modalBusy: false,
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -1467,6 +1468,52 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     el.setAttribute("aria-hidden", show ? "false" : "true");
   }
 
+
+  function getModalLoadingElements() {
+    return {
+      overlay: document.getElementById("nfModalLoading"),
+      title: document.getElementById("nfModalLoadingTitle"),
+      sub: document.getElementById("nfModalLoadingSub"),
+      btnSave: document.getElementById("btnSave"),
+      btnCancel: document.getElementById("btnCancel"),
+      btnClose: document.getElementById("btnCloseModal"),
+    };
+  }
+
+  function setModalButtonsDisabled(disabled) {
+    const els = getModalLoadingElements();
+    [els.btnSave, els.btnCancel, els.btnClose].forEach((btn) => {
+      if (btn) btn.disabled = !!disabled;
+    });
+  }
+
+  function showModalLoading(title, sub) {
+    STATE.modalBusy = true;
+    const els = getModalLoadingElements();
+
+    if (els.title) els.title.textContent = title || "Aguarde...";
+    if (els.sub) els.sub.textContent = sub || "Processando informações.";
+
+    if (els.overlay) {
+      els.overlay.classList.add("show");
+      els.overlay.setAttribute("aria-hidden", "false");
+    }
+
+    setModalButtonsDisabled(true);
+  }
+
+  function hideModalLoading() {
+    const els = getModalLoadingElements();
+
+    if (els.overlay) {
+      els.overlay.classList.remove("show");
+      els.overlay.setAttribute("aria-hidden", "true");
+    }
+
+    setModalButtonsDisabled(false);
+    STATE.modalBusy = false;
+  }
+
   function clearModalFields() {
     STATE.editingId = "";
 
@@ -1602,27 +1649,28 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   async function handleSave() {
+    if (STATE.modalBusy) return;
+
     const payload = collectModalPayload();
 
     if (!validateModalPayload(payload)) return;
 
-    const btn = MODAL.btnSave();
-
     try {
-      if (btn) btn.disabled = true;
-
+      showModalLoading("Salvando Frete...", "Sincronizando com Google Sheets. Aguarde alguns segundos.");
       setStatus("💾 Salvando...");
+
       await saveFrete(payload);
 
-      closeModal();
+      showModalLoading("Frete salvo com sucesso ✓", "Atualizando a lista de fretes.");
       await atualizar();
 
+      modalShow(false);
       setStatus("✅ Salvo");
     } catch (e) {
       setStatus("❌ Erro ao salvar");
       alert(e.message || "Falha ao salvar.");
     } finally {
-      if (btn) btn.disabled = false;
+      hideModalLoading();
     }
   }
 
@@ -1637,8 +1685,15 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     modalShow(true);
   }
 
-  function closeModal() {
-    modalShow(false);
+  function closeModal(force) {
+    if (STATE.modalBusy && !force) return;
+
+    showModalLoading("Cancelando...", "Fechando a janela com segurança.");
+
+    setTimeout(() => {
+      modalShow(false);
+      hideModalLoading();
+    }, 180);
   }
 
   async function atualizar() {
@@ -1862,11 +1917,18 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     }
 
     MODAL.wrap()?.addEventListener("click", (e) => {
+      if (STATE.modalBusy) return;
       if (e.target === MODAL.wrap()) closeModal();
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape") {
+        if (STATE.modalBusy) {
+          e.preventDefault();
+          return;
+        }
+        closeModal();
+      }
     });
 
     ["#w9", "#w4", "#w7", "#w6", "#w5"].forEach((sel) => {

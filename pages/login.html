@@ -178,25 +178,32 @@
       modal.setAttribute("aria-hidden","true");
     }
 
-    function doLogin(){
-      err.style.display = "none";
+    async function doLogin(){
+  err.style.display = "none";
 
-      const u = (userEl.value||"").trim();
-      const p = (passEl.value||"").trim();
+  const u = (userEl.value || "").trim();
+  const p = (passEl.value || "").trim();
 
-      const result = validateLogin(u, p);
+  const result = await validateLogin(u, p);
 
-      if(!result.ok){
-        err.style.display = "block";
-        return;
-      }
+  if(!result.ok){
+    err.textContent = result.error || "Usuário ou senha inválidos.";
+    err.style.display = "block";
+    return;
+  }
+
+  openStateModal(result.states || []);
+}
 
       // abre seletor só com os estados permitidos para este usuário
       openStateModal(result.states || []);
     }
 
-    btn.addEventListener("click", doLogin);
-    passEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
+btn.addEventListener("click", doLogin);
+
+passEl.addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") doLogin();
+});
 
     btnCancel.addEventListener("click", ()=>{
       closeStateModal();

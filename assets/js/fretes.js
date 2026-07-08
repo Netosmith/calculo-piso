@@ -1806,12 +1806,60 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   function bindButtons() {
+    // Amarração direta dos botões principais
     $("#btnReloadFromSheets")?.addEventListener("click", atualizar);
     $("#btnNew")?.addEventListener("click", openNewModal);
     $("#btnCloseModal")?.addEventListener("click", closeModal);
     $("#btnCancel")?.addEventListener("click", closeModal);
     $("#btnSave")?.addEventListener("click", handleSave);
     $("#btnDivulgacaoFrete")?.addEventListener("click", openDivulgacaoFrete);
+
+    // Segurança extra: captura por delegação.
+    // Isso resolve casos de botão recriado, botão duplicado ou listener perdido.
+    if (!document.body.dataset.nfFretesDelegatedClicks) {
+      document.body.dataset.nfFretesDelegatedClicks = "1";
+
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+
+        const id = btn.id || "";
+
+        if (id === "btnSave") {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSave();
+          return;
+        }
+
+        if (id === "btnCancel" || id === "btnCloseModal") {
+          e.preventDefault();
+          e.stopPropagation();
+          closeModal();
+          return;
+        }
+
+        if (id === "btnNew") {
+          e.preventDefault();
+          e.stopPropagation();
+          openNewModal();
+          return;
+        }
+
+        if (id === "btnReloadFromSheets") {
+          e.preventDefault();
+          e.stopPropagation();
+          atualizar();
+          return;
+        }
+
+        if (id === "btnDivulgacaoFrete") {
+          e.preventDefault();
+          e.stopPropagation();
+          openDivulgacaoFrete();
+        }
+      });
+    }
 
     MODAL.wrap()?.addEventListener("click", (e) => {
       if (e.target === MODAL.wrap()) closeModal();

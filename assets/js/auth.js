@@ -1,79 +1,15 @@
 // =====================================================
 // auth.js | NOVA FROTA
-// Login por usuário + seleção de estado + permissões
+// Login via Google Apps Script + seleção de estado
+// Senhas removidas do navegador
 // =====================================================
 
-// ======== USUÁRIOS ========
-const USERS = {
-  LUZIANO: { password: "5707", states: ["ADMINISTRADOR"] },
-  NETO: { password: "5022", states: ["PISO"] },
-  EDUARDO: { password: "3605", states: ["OPERACIONAL"] },
-  NARCISO: { password: "2659", states: ["OPERACIONAL"] },
-  JONATHAN: { password: "2424", states: ["PISO"] },
-  "GABRIEL PAIVA": { password: "3030", states: ["PISO"] },
-  "HENRIQUE": { password: "3031", states: ["PISO"] },
-  "LUDIMILA": { password: "3030", states: ["PISO"] },
-  NANEEL: { password: "1212", states: ["PISO"] },
-  MARCIO: { password: "5577", states: ["OPERACIONAL"] },
-  LUCAS: { password: "5007", states: ["OPERACIONAL"] },
-  DANILO: { password: "5008", states: ["OPERACIONAL"] },
-  EDSON: { password: "5009", states: ["OPERACIONAL"] },
-  ADRIELLY: { password: "6584", states: ["OPERACIONAL"] },
-  DIOGO: { password: "5707", states: ["OPERACIONAL"] },
-  BARIONI: { password: "5707", states: ["COMERCIAL"] },
-  ELIEL:   { password: "1234", states: ["COMERCIAL"] },
-  ELVIS: { password: "5707", states: ["COMERCIAL"] },
-  EVERALDO:   { password: "5000", states: ["OPERACIONAL"] },
-  MARCELO:   { password: "8888", states: ["OPERACIONAL"] },
-  WILHANS:   { password: "5858", states: ["COMERCIAL"] },
-  RONE:   { password: "5554", states: ["COMERCIAL"] },
-  EVERALDOJR:   { password: "2000", states: ["OPERACIONAL"] },
-  KIEWERSON:   { password: "5554", states: ["OPERACIONAL"] },
-  FABIOLA:   { password: "6464", states: ["OPERACIONAL"] },
-  RAFAEL:   { password: "5554", states: ["OPERACIONAL"] },
-  JHONATAN:   { password: "5554", states: ["OPERACIONAL"] },
-  "GUILHERME RAFAEL":   { password: "1212", states: ["OPERACIONAL"] },
-  FHELLIPE:   { password: "5554", states: ["OPERACIONAL"] },
-  FERNANDO:   { password: "2020", states: ["OPERACIONAL"] },
-  ROBSON:   { password: "5554", states: ["OPERACIONAL"] },
-  RICARDO:   { password: "5554", states: ["OPERACIONAL"] },
-    LUIS:    { password: "1234", states: ["COMERCIAL"] },
-  VALDEMI: { password: "1234", states: ["COMERCIAL"] },
-  ARIEL:   { password: "1987", states: ["COMERCIAL"] },
-  "RIO VERDE":   { password: "1234", states: ["GO"] },
-  JATAI:   { password: "5050", states: ["GO"] },
-  MONTIVIDIU:   { password: "5554", states: ["GO"] },
-  ANAPOLIS:   { password: "5402", states: ["GO"] },
-  VIANOPOLIS:   { password: "1234", states: ["GO"] },
-  GUILHERME:   { password: "4646", states: ["OPERACIONAL"] },
-  INDIARA:   { password: "1234", states: ["GO"] },
-  ELOISA:   { password: "5760", states: ["GO"] },
-  MINEIROS:   { password: "1234", states: ["GO"] },
-  CHAPCEU:   { password: "1234", states: ["GO"] },
-  ITUMBIARA:   { password: "1234", states: ["GO"] },
-  "MESA OPERACIONAL":   { password: "1515", states: ["GO"] },
-  "CGO MG":   { password: "1052", states: ["OPERACIONAL"] },
-  CRISTALINA:   { password: "1234", states: ["GO"] },
-  FORMOSA:   { password: "1234", states: ["GO"] },
-  YASMIN:   { password: "5707", states: ["GOADM"] },
-  JAKELINE:   { password: "5707", states: ["GOADM"] },
-  OUROSAFRA: { password: "1234", states: ["SP"] },
-  GOIAS:   { password: "1234", states: ["GO"] },
-  MATOGROSSO: { password: "5554", states: ["MT"] },
-  "MINAS GERAIS":{ password: "5554", states: ["MG"] },
-  TOCANTINS:{ password: "5554", states: ["TO"] },
-  BAHIA:{ password: "5554", states: ["BA"] },
-  MARANHAO:{ password: "5554", states: ["MA"] },
-  PARA:{ password: "5554", states: ["PA"] },
-  PARANA:  { password: "5554", states: ["PR"] }
-};
+// Use aqui a URL publicada do seu Apps Script.
+const AUTH_API_URL =
+  "https://script.google.com/macros/s/AKfycbz1VSM_cT2qD_GYNxqU5VmGaT_75xDkfQQTUrhF9SmiPXY6pR7I3kiLdNW8fYTY7BGJ/exec";
 
-// ======== SENHA EXTRA DO PISO ========
-const AUTH = {
-  PISO_PASSWORD: "1010"
-};
-
-// ======== PERMISSÕES POR ESTADO ========
+// ======== PERMISSÕES POR PERFIL ========
+// Estados ficam na aba USUARIOS, coluna Estados: GO,MT,PR,MA...
 const STATE_FEATURES = {
   GO: ["fretes","divulgacao"],
   GOADM: ["administrativo", "patrimonio"],
@@ -93,19 +29,27 @@ const STATE_FEATURES = {
 };
 
 // ======== KEYS ========
-const KEY_HOME  = "nf_auth_home";
-const KEY_USER  = "nf_auth_user";
-const KEY_STATE = "nf_auth_state";
-const KEY_PISO  = "nf_auth_piso";
+const KEY_HOME   = "nf_auth_home";
+const KEY_USER   = "nf_auth_user";
+const KEY_NAME   = "nf_auth_name";
+const KEY_PROFILE = "nf_auth_profile";
+const KEY_STATES = "nf_auth_states";
+const KEY_STATE  = "nf_auth_state";
+const KEY_PISO   = "nf_auth_piso";
 
 // ======== HELPERS ========
 function normalizeUpper(v){
-  return String(v || "").trim().toUpperCase();
+  return String(v || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function setAuthHome(ok=true){
   localStorage.setItem(KEY_HOME, ok ? "1" : "0");
 }
+
 function isAuthedHome(){
   return localStorage.getItem(KEY_HOME) === "1";
 }
@@ -113,13 +57,48 @@ function isAuthedHome(){
 function setUser(user){
   localStorage.setItem(KEY_USER, normalizeUpper(user));
 }
+
 function getUser(){
   return normalizeUpper(localStorage.getItem(KEY_USER));
+}
+
+function setPortalUserName(name){
+  localStorage.setItem(KEY_NAME, String(name || "").trim());
+}
+
+function getPortalUserName(){
+  return localStorage.getItem(KEY_NAME) || getUser();
+}
+
+function setProfile(profile){
+  localStorage.setItem(KEY_PROFILE, normalizeUpper(profile || "OPERACIONAL"));
+}
+
+function getProfile(){
+  return normalizeUpper(localStorage.getItem(KEY_PROFILE) || "OPERACIONAL");
+}
+
+function setUserStates(states){
+  const arr = Array.isArray(states)
+    ? states.map(normalizeUpper).filter(Boolean)
+    : [];
+
+  localStorage.setItem(KEY_STATES, JSON.stringify(arr));
+}
+
+function getUserStates(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(KEY_STATES) || "[]");
+    return Array.isArray(arr) ? arr.map(normalizeUpper).filter(Boolean) : [];
+  }catch{
+    return [];
+  }
 }
 
 function setSelectedState(uf){
   localStorage.setItem(KEY_STATE, normalizeUpper(uf));
 }
+
 function getSelectedState(){
   return normalizeUpper(localStorage.getItem(KEY_STATE));
 }
@@ -127,6 +106,7 @@ function getSelectedState(){
 function setAuth(key, value=true){
   localStorage.setItem(key, value ? "1" : "0");
 }
+
 function isAuthed(key){
   return localStorage.getItem(key) === "1";
 }
@@ -135,49 +115,107 @@ function logoutAll(){
   localStorage.clear();
 }
 
-// ✅ NOVO → usado pela CALCULADORA
-function getPortalUserName(){
-  return getUser();
+// ======== JSONP ========
+function authJsonp(paramsObj, timeoutMs = 30000){
+  return new Promise((resolve, reject) => {
+    const cb = "auth_cb_" + Math.random().toString(36).slice(2);
+    const url = new URL(AUTH_API_URL);
+
+    Object.entries(paramsObj || {}).forEach(([k, v]) => {
+      url.searchParams.set(k, v);
+    });
+
+    url.searchParams.set("callback", cb);
+    url.searchParams.set("_", Date.now());
+
+    const script = document.createElement("script");
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Tempo esgotado ao validar login."));
+    }, timeoutMs);
+
+    function cleanup(){
+      clearTimeout(timer);
+      try{ delete window[cb]; }catch{}
+      try{ script.remove(); }catch{}
+    }
+
+    window[cb] = (data) => {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Falha ao conectar ao servidor de login."));
+    };
+
+    script.src = url.toString();
+    document.head.appendChild(script);
+  });
 }
 
 // ======== LOGIN ========
-function validateLogin(username, password){
-
+// IMPORTANTE: esta função agora é assíncrona.
+// No login.html, use: const result = await validateLogin(u, p);
+async function validateLogin(username, password){
   const u = normalizeUpper(username);
   const p = String(password || "").trim();
 
-  const data = USERS[u];
+  if(!u || !p) return { ok:false, error:"Informe usuário e senha." };
 
-  if(!data) return { ok:false };
-  if(data.password !== p) return { ok:false };
+  try{
+    const res = await authJsonp({
+      action: "login",
+      usuario: u,
+      senha: p
+    });
 
-  setAuthHome(true);
-  setUser(u);
+    if(!res || res.ok !== true){
+      return { ok:false, error: res?.error || "Usuário ou senha inválidos." };
+    }
 
-  return { ok:true, states:data.states };
+    const states = Array.isArray(res.states) ? res.states.map(normalizeUpper) : [];
+
+    setAuthHome(true);
+    setUser(res.usuario || u);
+    setPortalUserName(res.nome || res.usuario || u);
+    setProfile(res.perfil || "");
+    setUserStates(states);
+
+    return {
+      ok:true,
+      usuario: res.usuario || u,
+      nome: res.nome || res.usuario || u,
+      perfil: res.perfil || "",
+      states: states
+    };
+  }catch(err){
+    return { ok:false, error: err?.message || "Erro ao validar login." };
+  }
 }
 
 // ======== ESTADOS DO USUÁRIO ========
 function userAllowedStates(){
-  return USERS[getUser()]?.states || [];
+  return getUserStates();
 }
 
 function isStateAllowedForUser(uf){
   return userAllowedStates().includes(normalizeUpper(uf));
 }
 
-// ======== FEATURES ========
-function featuresForState(uf){
-  return STATE_FEATURES[normalizeUpper(uf)] || [];
+// ======== FEATURES POR PERFIL ========
+function featuresForProfile(profile){
+  return STATE_FEATURES[normalizeUpper(profile)] || [];
 }
 
 function canAccessFeature(featureKey){
-  return featuresForState(getSelectedState()).includes(featureKey);
+  return featuresForProfile(getProfile()).includes(featureKey);
 }
 
 // ======== GUARDS ========
 function requireHomeAuth(){
-
   if(!isAuthedHome()){
     window.location.href = "../pages/login.html";
     return;
@@ -189,7 +227,7 @@ function requireHomeAuth(){
   }
 
   if(!isStateAllowedForUser(getSelectedState())){
-    alert("Sem acesso a este estado");
+    alert("Sem acesso a este estado.");
     logoutAll();
     window.location.href = "../pages/login.html";
   }
@@ -197,26 +235,17 @@ function requireHomeAuth(){
 
 // ======== GUARD DO PISO ========
 function requirePisoAuth(){
-
   requireHomeAuth();
 
   if(!canAccessFeature("piso")){
-    alert("Cálculo de Piso não liberado para este estado.");
+    alert("Cálculo de Piso não liberado para este perfil.");
     window.location.href = "../pages/home.html";
     return;
   }
 
-  if(isAuthed(KEY_PISO)) return;
-
-  const ok = prompt("Senha do Piso:");
-
-  if(ok === AUTH.PISO_PASSWORD){
-    setAuth(KEY_PISO,true);
-    return;
-  }
-
-  alert("Senha inválida");
-  window.location.href = "../pages/home.html";
+  // A senha extra do piso foi removida do navegador.
+  // O acesso agora depende do perfil/estado liberado na aba USUARIOS.
+  setAuth(KEY_PISO, true);
 }
 
 // ======== LOGOUT ========
@@ -229,3 +258,4 @@ function bindLogoutButton(){
     };
   }
 }
+

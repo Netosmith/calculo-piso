@@ -49,7 +49,7 @@
       ARAGUARI: [{ nome: "GUILHERME", fone: "5564992177636" }],
       ANAPOLIS: [{ nome: "WILHANS", fone: "5566996733683" }],
       "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
-      MONTIVIDIU: [{ nome: "ROBSON", fone: "5564999628005" }],
+      MONTIVIDIU: [{ nome: "MARCELO", fone: "5564996532847" }],
       "RIO VERDE": [{ nome: "ARIEL", fone: "5564992277537" }],
       INDIARA: [{ nome: "RAFAEL", fone: "5564999108790" }],
       ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992251214" }],
@@ -86,7 +86,6 @@
       ""
     ],
     MONTIVIDIU: [
-      "ROBSON (64) 99962-8005",
       "MARCELO (64) 99653-2847",
       "",
       ""

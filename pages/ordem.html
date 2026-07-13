@@ -1,0 +1,279 @@
+<!DOCTYPE html><html lang="pt-BR" class="light" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Work+Sans:wght@600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#f9f9ff",
+                      "primary-fixed": "#d6e3ff",
+                      "on-tertiary-fixed": "#181c1e",
+                      "on-tertiary": "#ffffff",
+                      "outline": "#74777f",
+                      "primary-container": "#112b4e",
+                      "surface": "#f9f9ff",
+                      "inverse-surface": "#263142",
+                      "on-secondary-container": "#00734c",
+                      "secondary": "#006c47",
+                      "outline-variant": "#c4c6cf",
+                      "tertiary-fixed": "#e0e3e6",
+                      "background": "#f9f9ff",
+                      "on-secondary-fixed-variant": "#005235",
+                      "primary-fixed-dim": "#b0c7f3",
+                      "secondary-container": "#85f9bf",
+                      "on-background": "#111c2c",
+                      "on-surface-variant": "#44474e",
+                      "on-primary-fixed-variant": "#30476c",
+                      "surface-container-high": "#dee8ff",
+                      "tertiary-fixed-dim": "#c3c7ca",
+                      "surface-dim": "#cfdaf1",
+                      "surface-container-low": "#f0f3ff",
+                      "surface-container-highest": "#d8e3fa",
+                      "on-primary-container": "#7c93bc",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "secondary-fixed": "#85f9bf",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#43474a",
+                      "on-primary-fixed": "#001b3c",
+                      "primary": "#001633",
+                      "on-tertiary-container": "#8e9295",
+                      "surface-variant": "#d8e3fa",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#111c2c",
+                      "surface-tint": "#485f85",
+                      "inverse-primary": "#b0c7f3",
+                      "error-container": "#ffdad6",
+                      "on-secondary-fixed": "#002113",
+                      "tertiary-container": "#272b2d",
+                      "secondary-fixed-dim": "#68dca5",
+                      "on-secondary": "#ffffff",
+                      "surface-container": "#e7eeff",
+                      "inverse-on-surface": "#ebf1ff",
+                      "tertiary": "#131719"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "16px",
+                      "margin-desktop": "32px",
+                      "base": "8px",
+                      "container-max-width": "1280px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "label-caps": ["Inter"],
+                      "headline-lg": ["Work Sans"],
+                      "headline-sm": ["Work Sans"],
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Work Sans"],
+                      "body-md": ["Inter"],
+                      "headline-md-mobile": ["Work Sans"],
+                      "data-mono": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    }catch(_e){}</script><meta charset="utf-8"></head><body class="bg-surface-bright text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+
+<main class="flex-grow flex flex-col">
+<!-- TopAppBar (Shared Component) -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 bg-surface-container-lowest border-b border-outline-variant no-print">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined text-primary">menu</span>
+<h2 class="font-headline-md text-headline-md-mobile md:text-headline-md font-bold text-primary">Ordem de Carregamento</h2>
+</div>
+<div class="flex items-center gap-4"><div class="flex items-center gap-3"><button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button><button class="px-4 py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded font-bold flex items-center gap-2 hover:opacity-90 transition-all"><span class="material-symbols-outlined text-sm">add</span>+ NOVA ORDEM</button></div></div>
+</header>
+<!-- Main Form Canvas -->
+<div class="flex-grow p-4 md:p-8 overflow-y-auto">
+<div class="max-w-5xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm print-container overflow-hidden">
+<!-- HEADER SECTOR (Ref: Image Section 1) -->
+<div class="grid grid-cols-1 md:grid-cols-2 border-b border-outline">
+<div class="p-6 flex items-center justify-center md:border-r border-outline bg-surface-container-low">
+<img class="w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgQxERrd_f6nqKVQsXrtUGmy9nLCFOMg14En51CLtzur1s6mIvp-bz1XDpVlDcHrSlXwcT3xIkWc8oUBch_mhp00Rk8Liw7tLVkicran5UCP4rQdvvVuhCBPsw3NLPH1X-Rw3iMTw_uNCAWhmHbwlr4Ww5qfH5Vti45FPU64Vebte60n0-DRFW5w30a1iLkyJ8r-3t_FXgok5OZZLO-D4sJBeXA-jEd7-qpiKTst7gkNyt4LhUVQJT3jTadIWmz3y_k_TuvuDcTFmI" alt="Nova Frota Transportes e Logística Logo">
+</div>
+<div class="p-6 flex flex-col justify-center text-center md:text-left space-y-1">
+<h3 class="font-headline-sm text-headline-sm text-primary uppercase">Nova Frota Transportes</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">ROD BR 060, SN KM 388 SALA 156</p>
+<div class="flex flex-wrap justify-center md:justify-start gap-x-4 text-xs font-data-mono uppercase text-on-surface">
+<span class="">CNPJ: 21.984.393/0002-76</span>
+<span class="">IE: 20.214.849-1</span>
+</div>
+<p class="font-body-md text-body-md text-primary font-bold">comercialgoias@novafrotalogistica.com.br</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">FILIAL:</span>
+<input class="flex-grow border-b border-outline-variant focus:border-primary px-2 py-1 bg-surface-container-high rounded text-error font-bold form-input-focus" type="text" value="GOIÂNIA">
+</div>
+</div>
+</div>
+<!-- ROUTE SECTION (Ref: Image Section 2) -->
+<div class="bg-surface-container-low px-6 py-2 border-b border-outline flex items-center gap-2 no-print">
+<span class="material-symbols-outlined text-primary text-sm">route</span>
+<span class="font-label-caps text-label-caps text-primary">Informações de Rota</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline">
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Remetente (Local de Coleta)</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="FAZENDA SANTA MARIA - SILOS PRINCIPAL">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cidade de Origem</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="RIO VERDE - GO">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Recebedor (Local de Descarga)</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="PORTO DE SANTOS - TERMINAL 12">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cidade de Destino</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="SANTOS - SP">
+</div>
+</div>
+<!-- CARGO SECTION (Ref: Image Section 3) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-outline border-t border-outline">
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Peso (Ton)</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="48.500">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Produto</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="SOJA EM GRÃOS">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cliente</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="CARGILL AGRÍCOLA S/A">
+</div>
+</div>
+<!-- VEHICLE SECTION (Ref: Image Section 4) -->
+<div class="bg-surface-container-low px-6 py-2 border-y border-outline flex items-center gap-2 no-print">
+<span class="material-symbols-outlined text-primary text-sm">local_shipping</span>
+<span class="font-label-caps text-label-caps text-primary">Dados do Veículo</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-px bg-outline">
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Cavalo</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="ABC-1234">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Carreta 1</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="DEF-5678">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Dolly 2</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="GHI-9012">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Carreta 3</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="JKL-3456">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cidade Empl.</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-bold form-input-focus" type="text" value="GOIÂNIA-GO">
+</div>
+</div>
+<!-- DRIVER SECTION (Ref: Image Section 5) -->
+<div class="bg-surface-container-low px-6 py-2 border-y border-outline flex items-center gap-2 no-print">
+<span class="material-symbols-outlined text-primary text-sm">person</span>
+<span class="font-label-caps text-label-caps text-primary">Dados do Motorista</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-px bg-outline">
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1 md:col-span-3">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Motorista</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-bold form-input-focus" type="text" value="JOÃO DA SILVA TRANSPORTADOR">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Fone</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="(62) 99999-0000">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">CPF</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="000.000.000-00">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">RG</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="1234567-SSP/GO">
+</div>
+<div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline md:col-span-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">CNH</label>
+<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="9876543210-CAT E">
+</div>
+</div>
+<!-- FOOTER SECTION (Ref: Image Footer) -->
+<div class="bg-primary p-4 border-t border-outline flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-primary">LOCAL DE COLETA:</span>
+<span class="font-headline-sm text-headline-sm text-on-primary uppercase">FAZENDA SANTA MARIA - SILO 01</span>
+</div>
+<div class="p-6 bg-surface-container-lowest flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Observações Gerais</label>
+<textarea class="w-full border border-outline-variant rounded p-3 text-error font-body-md form-input-focus resize-none uppercase" rows="3">VEÍCULO DEVE ESTAR COM AS TAMPAS VEDADAS. REALIZAR PESAGEM NA BALANÇA 02 DO TERMINAL. MOTORISTA CIENTE DAS NORMAS DE SEGURANÇA.</textarea>
+</div>
+<!-- SIGNATURES -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-12 bg-surface-container-lowest border-t border-outline-variant">
+<div class="flex flex-col items-center">
+<div class="w-full border-t border-on-surface-variant mt-8"></div>
+<span class="mt-2 font-label-caps text-label-caps text-on-surface-variant">ASSINATURA MOTORISTA</span>
+<input class="w-full border-none text-center font-bold text-primary focus:ring-0" type="text" value="JOÃO DA SILVA TRANSPORTADOR">
+</div>
+<div class="flex flex-col items-center">
+<div class="w-full border-t border-on-surface-variant mt-8"></div>
+<span class="mt-2 font-label-caps text-label-caps text-on-surface-variant">EMBARCADOR RESPONSÁVEL</span>
+<input class="w-full border-none text-center font-bold text-primary focus:ring-0 uppercase" type="text" value="NOVA FROTA LOGÍSTICA">
+</div>
+</div>
+</div>
+<!-- Print Action (Mobile FAB logic) -->
+<div class="fixed bottom-6 right-6 no-print">
+<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all" onclick="window.print()">
+<span class="material-symbols-outlined">print</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center bg-surface-container-lowest pb-safe border-t border-outline-variant md:hidden no-print">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 active:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] uppercase font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary-fixed-dim bg-primary-container rounded-full p-2 scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-[10px] uppercase font-bold">Ordens</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 active:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-original-icon="truck">circle</span>
+<span class="text-[10px] uppercase font-bold">Frota</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 active:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] uppercase font-bold">Perfil</span>
+</a>
+</nav>
+</main>
+<script class="">
+        // Micro-interaction for input fields
+        document.querySelectorAll('input, textarea').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('bg-surface-container-high');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('bg-surface-container-high');
+            });
+        });
+    </script>
+
+</body></html>

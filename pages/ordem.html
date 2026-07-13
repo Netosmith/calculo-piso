@@ -98,7 +98,7 @@
 <span class="md:hidden material-symbols-outlined text-primary">menu</span>
 <h2 class="font-headline-md text-headline-md-mobile md:text-headline-md font-bold text-primary">Ordem de Carregamento</h2>
 </div>
-<div class="flex items-center gap-4"><div class="flex items-center gap-3"><button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button><button class="px-4 py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded font-bold flex items-center gap-2 hover:opacity-90 transition-all"><span class="material-symbols-outlined text-sm">add</span>+ NOVA ORDEM</button></div></div>
+<div class="flex items-center gap-4"><div class="flex items-center gap-3"><button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all flex items-center gap-2" onclick="window.print()"><span class="material-symbols-outlined text-sm">print</span> IMPRIMIR</button><button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button><button class="px-4 py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded font-bold flex items-center gap-2 hover:opacity-90 transition-all"><span class="material-symbols-outlined text-sm">add</span>+ NOVA ORDEM</button></div></div>
 </header>
 <!-- Main Form Canvas -->
 <div class="flex-grow p-4 md:p-8 overflow-y-auto">
@@ -215,10 +215,7 @@
 </div>
 </div>
 <!-- FOOTER SECTION (Ref: Image Footer) -->
-<div class="bg-primary p-4 border-t border-outline flex items-center justify-between">
-<span class="font-label-caps text-label-caps text-on-primary">LOCAL DE COLETA:</span>
-<span class="font-headline-sm text-headline-sm text-on-primary uppercase">FAZENDA SANTA MARIA - SILO 01</span>
-</div>
+<div class="bg-primary p-4 border-t border-outline flex items-center justify-between px-6"><div class="flex-1 flex justify-start"><span class="font-label-caps text-label-caps text-on-primary">LOCAL DE COLETA:</span></div><div class="flex-1 flex justify-center"><span class="font-headline-sm text-headline-sm text-on-primary uppercase">FAZENDA SANTA MARIA - SILO&nbsp;</span></div><div class="flex-1"></div></div>
 <div class="p-6 bg-surface-container-lowest flex flex-col gap-2">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Observações Gerais</label>
 <textarea class="w-full border border-outline-variant rounded p-3 text-error font-body-md form-input-focus resize-none uppercase" rows="3">VEÍCULO DEVE ESTAR COM AS TAMPAS VEDADAS. REALIZAR PESAGEM NA BALANÇA 02 DO TERMINAL. MOTORISTA CIENTE DAS NORMAS DE SEGURANÇA.</textarea>
@@ -238,11 +235,7 @@
 </div>
 </div>
 <!-- Print Action (Mobile FAB logic) -->
-<div class="fixed bottom-6 right-6 no-print">
-<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all" onclick="window.print()">
-<span class="material-symbols-outlined">print</span>
-</button>
-</div>
+
 </div>
 <!-- BottomNavBar (Shared Component - Mobile Only) -->
 <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center bg-surface-container-lowest pb-safe border-t border-outline-variant md:hidden no-print">

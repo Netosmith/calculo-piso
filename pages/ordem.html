@@ -88,17 +88,133 @@
             }
           }
         }
-    }catch(_e){}</script><meta charset="utf-8"></head><body class="bg-surface-bright text-on-surface font-body-md min-h-screen flex">
+    }catch(_e){}</script><meta charset="utf-8">
+<style>
+  .state-selector-wrap{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:380px;
+  }
+
+  .state-selector{
+    width:100%;
+    min-width:320px;
+    height:42px;
+    padding:0 14px;
+    border:2px solid #ef4444;
+    border-radius:4px;
+    background:#ffffff;
+    color:#dc2626;
+    font-size:14px;
+    font-weight:900;
+    text-align:center;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    outline:none;
+    cursor:pointer;
+  }
+
+  .state-selector:focus{
+    border-color:#001633;
+    box-shadow:0 0 0 3px rgba(0,22,51,.12);
+  }
+
+  .company-info-line{
+    font-size:14px;
+    line-height:20px;
+    color:#44474e;
+  }
+
+  .company-docs{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:0 16px;
+    font-family:"JetBrains Mono", monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    color:#111c2c;
+  }
+
+  .company-email{
+    font-size:14px;
+    line-height:20px;
+    color:#001633;
+    font-weight:700;
+  }
+
+  @media (min-width:768px){
+    .company-docs{
+      justify-content:flex-start;
+    }
+  }
+
+  @media (max-width:900px){
+    .state-selector-wrap{
+      width:100%;
+      min-width:100%;
+      order:3;
+    }
+
+    .state-selector{
+      width:100%;
+      min-width:0;
+    }
+  }
+
+  @media print{
+    .no-print{
+      display:none !important;
+    }
+
+    .print-container{
+      box-shadow:none !important;
+      border:1px solid #74777f !important;
+    }
+  }
+</style>
+
+</head><body class="bg-surface-bright text-on-surface font-body-md min-h-screen flex">
 <!-- SideNavBar (Shared Component) -->
 
 <main class="flex-grow flex flex-col">
 <!-- TopAppBar (Shared Component) -->
-<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 bg-surface-container-lowest border-b border-outline-variant no-print">
-<div class="flex items-center gap-4">
-<span class="md:hidden material-symbols-outlined text-primary">menu</span>
-<h2 class="font-headline-md text-headline-md-mobile md:text-headline-md font-bold text-primary">Ordem de Carregamento</h2>
-</div>
-<div class="flex items-center gap-4"><div class="flex items-center gap-3"><button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all flex items-center gap-2" onclick="window.print()"><span class="material-symbols-outlined text-sm">print</span> IMPRIMIR</button><button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button><button class="px-4 py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded font-bold flex items-center gap-2 hover:opacity-90 transition-all"><span class="material-symbols-outlined text-sm">add</span>+ NOVA ORDEM</button></div></div>
+<header class="sticky top-0 z-50 flex flex-wrap justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 bg-surface-container-lowest border-b border-outline-variant no-print gap-4">
+  <div class="flex items-center gap-4">
+    <span class="md:hidden material-symbols-outlined text-primary">menu</span>
+    <h2 class="font-headline-md text-headline-md-mobile md:text-headline-md font-bold text-primary">Ordem de Carregamento</h2>
+  </div>
+
+  <div class="state-selector-wrap">
+    <select id="seletorEstado" class="state-selector" aria-label="Selecionar estado">
+      <option value="">SELECIONE O ESTADO</option>
+      <option value="GO">GOIÁS</option>
+      <option value="MG">MINAS GERAIS</option>
+      <option value="SP">SÃO PAULO</option>
+      <option value="MT">MATO GROSSO</option>
+      <option value="PR">PARANÁ</option>
+      <option value="SC">SANTA CATARINA</option>
+      <option value="TO">TOCANTINS</option>
+      <option value="PA">PARÁ</option>
+      <option value="MA">MARANHÃO</option>
+      <option value="BA">BAHIA</option>
+    </select>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3">
+      <button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all flex items-center gap-2" onclick="window.print()">
+        <span class="material-symbols-outlined text-sm">print</span>
+        IMPRIMIR
+      </button>
+      <button id="btnLimpar" class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button>
+      <button id="btnNovaOrdem" class="px-4 py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded font-bold flex items-center gap-2 hover:opacity-90 transition-all">
+        <span class="material-symbols-outlined text-sm">add</span>
+        + NOVA ORDEM
+      </button>
+    </div>
+  </div>
 </header>
 <!-- Main Form Canvas -->
 <div class="flex-grow p-4 md:p-8 overflow-y-auto">
@@ -109,16 +225,22 @@
 <img class="w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgQxERrd_f6nqKVQsXrtUGmy9nLCFOMg14En51CLtzur1s6mIvp-bz1XDpVlDcHrSlXwcT3xIkWc8oUBch_mhp00Rk8Liw7tLVkicran5UCP4rQdvvVuhCBPsw3NLPH1X-Rw3iMTw_uNCAWhmHbwlr4Ww5qfH5Vti45FPU64Vebte60n0-DRFW5w30a1iLkyJ8r-3t_FXgok5OZZLO-D4sJBeXA-jEd7-qpiKTst7gkNyt4LhUVQJT3jTadIWmz3y_k_TuvuDcTFmI" alt="Nova Frota Transportes e Logística Logo">
 </div>
 <div class="p-6 flex flex-col justify-center text-center md:text-left space-y-1">
-<h3 class="font-headline-sm text-headline-sm text-primary uppercase">Nova Frota Transportes</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">ROD BR 060, SN KM 388 SALA 156</p>
-<div class="flex flex-wrap justify-center md:justify-start gap-x-4 text-xs font-data-mono uppercase text-on-surface">
-<span class="">CNPJ: 21.984.393/0002-76</span>
-<span class="">IE: 20.214.849-1</span>
-</div>
-<p class="font-body-md text-body-md text-primary font-bold">regionalgoias@novafrotalogistica.com.br</p>
-<div class="mt-2 flex items-center gap-2">
-<span class="font-label-caps text-label-caps text-on-surface-variant">FILIAL:</span>
-<input class="flex-grow border-b border-outline-variant focus:border-primary px-2 py-1 bg-surface-container-high rounded text-error font-bold form-input-focus" type="text" value="XXXXX">
+  <h3 id="empresaNome" class="font-headline-sm text-headline-sm text-primary uppercase">Nova Frota Transportes</h3>
+  <p id="empresaEndereco" class="company-info-line">SELECIONE UM ESTADO</p>
+
+  <div class="company-docs">
+    <span>CNPJ: <strong id="empresaCnpj">--</strong></span>
+    <span>IE: <strong id="empresaIe">--</strong></span>
+  </div>
+
+  <p id="empresaEmail" class="company-email">--</p>
+
+  <div class="mt-2 flex items-center gap-2">
+    <span class="font-label-caps text-label-caps text-on-surface-variant">FILIAL:</span>
+    <div id="empresaFilial" class="flex-grow border-b border-outline-variant px-2 py-1 bg-surface-container-high rounded text-error font-bold min-h-[34px] flex items-center">
+      SELECIONE UM ESTADO
+    </div>
+  </div>
 </div>
 </div>
 </div>
@@ -257,16 +379,175 @@
 </a>
 </nav>
 </main>
-<script class="">
-        // Micro-interaction for input fields
-        document.querySelectorAll('input, textarea').forEach(input => {
-            input.addEventListener('focus', () => {
-                input.parentElement.classList.add('bg-surface-container-high');
-            });
-            input.addEventListener('blur', () => {
-                input.parentElement.classList.remove('bg-surface-container-high');
-            });
-        });
-    </script>
+<script>
+  const EMPRESAS_POR_ESTADO = {
+    GO: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "GOIÁS",
+      cnpj: "21.984.393/0002-76",
+      ie: "20.214.849-1",
+      endereco: "ROD BR 060, SN KM 388 SALA 156",
+      email: "regionalgoias@novafrotalogistica.com.br"
+    },
+    MG: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "MINAS GERAIS",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    SP: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "SÃO PAULO",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    MT: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "MATO GROSSO",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    PR: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "PARANÁ",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    SC: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "SANTA CATARINA",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    TO: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "TOCANTINS",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    PA: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "PARÁ",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    MA: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "MARANHÃO",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    },
+    BA: {
+      nome: "NOVA FROTA TRANSPORTES",
+      filial: "BAHIA",
+      cnpj: "PREENCHER",
+      ie: "PREENCHER",
+      endereco: "PREENCHER",
+      email: "PREENCHER"
+    }
+  };
+
+  const STORAGE_KEY_ESTADO_ORDEM = "nf_ordem_estado";
+
+  function preencherDadosEmpresa(uf){
+    const dados = EMPRESAS_POR_ESTADO[uf];
+
+    const nomeEl = document.getElementById("empresaNome");
+    const enderecoEl = document.getElementById("empresaEndereco");
+    const cnpjEl = document.getElementById("empresaCnpj");
+    const ieEl = document.getElementById("empresaIe");
+    const emailEl = document.getElementById("empresaEmail");
+    const filialEl = document.getElementById("empresaFilial");
+
+    if(!dados){
+      if(nomeEl) nomeEl.textContent = "NOVA FROTA TRANSPORTES";
+      if(enderecoEl) enderecoEl.textContent = "SELECIONE UM ESTADO";
+      if(cnpjEl) cnpjEl.textContent = "--";
+      if(ieEl) ieEl.textContent = "--";
+      if(emailEl) emailEl.textContent = "--";
+      if(filialEl) filialEl.textContent = "SELECIONE UM ESTADO";
+      return;
+    }
+
+    if(nomeEl) nomeEl.textContent = dados.nome;
+    if(enderecoEl) enderecoEl.textContent = dados.endereco;
+    if(cnpjEl) cnpjEl.textContent = dados.cnpj;
+    if(ieEl) ieEl.textContent = dados.ie;
+    if(emailEl) emailEl.textContent = dados.email;
+    if(filialEl) filialEl.textContent = dados.filial;
+  }
+
+  function iniciarSeletorEstado(){
+    const seletor = document.getElementById("seletorEstado");
+    if(!seletor) return;
+
+    const estadoSalvo = localStorage.getItem(STORAGE_KEY_ESTADO_ORDEM) || "";
+
+    if(estadoSalvo && EMPRESAS_POR_ESTADO[estadoSalvo]){
+      seletor.value = estadoSalvo;
+      preencherDadosEmpresa(estadoSalvo);
+    }else{
+      preencherDadosEmpresa("");
+    }
+
+    seletor.addEventListener("change", function(){
+      const uf = String(this.value || "").trim().toUpperCase();
+
+      if(uf){
+        localStorage.setItem(STORAGE_KEY_ESTADO_ORDEM, uf);
+      }else{
+        localStorage.removeItem(STORAGE_KEY_ESTADO_ORDEM);
+      }
+
+      preencherDadosEmpresa(uf);
+    });
+  }
+
+  function limparOrdem(){
+    document.querySelectorAll("input, textarea").forEach((campo) => {
+      campo.value = "";
+    });
+
+    document.querySelectorAll("select").forEach((select) => {
+      if(select.id !== "seletorEstado") select.selectedIndex = 0;
+    });
+  }
+
+  function novaOrdem(){
+    limparOrdem();
+    window.scrollTo({ top:0, behavior:"smooth" });
+  }
+
+  document.querySelectorAll("input, textarea").forEach((input) => {
+    input.addEventListener("focus", () => {
+      input.parentElement?.classList.add("bg-surface-container-high");
+    });
+
+    input.addEventListener("blur", () => {
+      input.parentElement?.classList.remove("bg-surface-container-high");
+    });
+  });
+
+  document.getElementById("btnLimpar")?.addEventListener("click", limparOrdem);
+  document.getElementById("btnNovaOrdem")?.addEventListener("click", novaOrdem);
+
+  window.addEventListener("DOMContentLoaded", iniciarSeletorEstado);
+</script>
 
 </body></html>

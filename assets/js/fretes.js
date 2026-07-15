@@ -1929,6 +1929,14 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     bindMoneyMask(MODAL.motorista());
   }
 
+  function abrirOrdemOff() {
+    window.location.href = "./ordem.html";
+  }
+
+  function abrirShareClientes() {
+    window.location.href = "./share-clientes.html";
+  }
+
   function bindButtons() {
     // Amarração direta dos botões principais
     $("#btnReloadFromSheets")?.addEventListener("click", atualizar);
@@ -1937,6 +1945,10 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     $("#btnCancel")?.addEventListener("click", closeModal);
     $("#btnSave")?.addEventListener("click", handleSave);
     $("#btnDivulgacaoFrete")?.addEventListener("click", openDivulgacaoFrete);
+    $("#btnOrdem")?.addEventListener("click", abrirOrdemOff);
+    $("#btnShareClientes")?.addEventListener("click", abrirShareClientes);
+    $("#btnShareCliente")?.addEventListener("click", abrirShareClientes);
+    $("#btnShare")?.addEventListener("click", abrirShareClientes);
 
     // Segurança extra: captura por delegação.
     // Isso resolve casos de botão recriado, botão duplicado ou listener perdido.
@@ -1974,6 +1986,20 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
           e.preventDefault();
           e.stopPropagation();
           atualizar();
+          return;
+        }
+
+        if (id === "btnOrdem") {
+          e.preventDefault();
+          e.stopPropagation();
+          abrirOrdemOff();
+          return;
+        }
+
+        if (id === "btnShareClientes" || id === "btnShareCliente" || id === "btnShare") {
+          e.preventDefault();
+          e.stopPropagation();
+          abrirShareClientes();
           return;
         }
 

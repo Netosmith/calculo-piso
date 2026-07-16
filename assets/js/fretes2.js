@@ -3,7 +3,7 @@
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbyIeygrlaQVPq0puz1uxztLHSg0bsjxBcGFuZ9IR4CXqB2DqWMf3gPPFVk4FI0B-i45/exec";
+    "https://script.google.com/macros/s/AKfycbw-Jpj-4uBrAAWC5J7HEeVcf0Dmb3FgZKt8vgCv2R1xq3jSfRBVwcArOGck9n5cCXtX/exec";
 
   const DIRECTORY = {
     regionais: ["GOIAS", "MINAS", "SAO PAULO"],

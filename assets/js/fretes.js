@@ -1,11 +1,11 @@
-/* fretes.js | NOVA FROTA - MODO RAIO DIVULGAÇÃO */
+/* fretes.js | NOVA FROTA - CADASTROS VIA GOOGLE SHEETS */
 (function () {
   "use strict";
 
   const API_URL =
     "https://script.google.com/macros/s/AKfycbxTAWU6PgapFKXqdy7do_xIT13rRy5F5zkgJMKlLIk5a3xqMqPUm0S5wzF55ie3yd6_/exec";
 
-  const DIRECTORY = {
+  let DIRECTORY = {
     regionais: ["GOIAS", "MINAS", "SAO PAULO"],
     filiaisPorRegional: {
       GOIAS: [
@@ -170,17 +170,24 @@
     ]
   };
 
-  const CONTACT_PHONE = (() => {
+  let CONTACT_PHONE = {};
+
+  function rebuildContactPhoneMap() {
     const map = {};
+
     Object.values(DIRECTORY.contatosPorFilial || {}).forEach((arr) => {
       (arr || []).forEach((c) => {
-        if (c?.nome && c?.fone) {
-          map[String(c.nome).toUpperCase().trim()] = String(c.fone).trim();
+        const nome = upper(c?.nome);
+        const fone = safeText(c?.fone);
+
+        if (nome && fone) {
+          map[nome] = fone;
         }
       });
     });
-    return map;
-  })();
+
+    CONTACT_PHONE = map;
+  }
 
   const STATE = {
     rows: [],
@@ -531,6 +538,71 @@ function formatDateTimeBR(value) {
     const res = await jsonp(buildUrl(paramsObj), 35000);
     if (!res || res.ok === false) throw new Error(res?.error || "Falha na API");
     return res;
+  }
+
+
+  function normalizeDirectoryData(data) {
+    const regionais = Array.isArray(data?.regionais)
+      ? data.regionais.map(upper).filter(Boolean)
+      : [];
+
+    const filiaisPorRegional = {};
+    Object.entries(data?.filiaisPorRegional || {}).forEach(([regional, filiais]) => {
+      const key = upper(regional);
+      filiaisPorRegional[key] = Array.isArray(filiais)
+        ? filiais.map(upper).filter(Boolean)
+        : [];
+    });
+
+    const clientes = Array.isArray(data?.clientes)
+      ? data.clientes.map(upper).filter(Boolean)
+      : [];
+
+    const contatosPorFilial = {};
+    Object.entries(data?.contatosPorFilial || {}).forEach(([filial, contatos]) => {
+      const key = upper(filial);
+      contatosPorFilial[key] = Array.isArray(contatos)
+        ? contatos
+            .map((contato) => ({
+              nome: upper(contato?.nome),
+              fone: safeText(contato?.fone)
+            }))
+            .filter((contato) => contato.nome)
+        : [];
+    });
+
+    return {
+      regionais,
+      filiaisPorRegional,
+      clientes,
+      contatosPorFilial
+    };
+  }
+
+  async function carregarCadastrosFretes() {
+    setStatus("🔄 Carregando cadastros...");
+
+    try {
+      const res = await apiGet({ action: "cadastros_fretes_list" });
+      const novosCadastros = normalizeDirectoryData(res?.data || {});
+
+      const possuiDados =
+        novosCadastros.regionais.length ||
+        novosCadastros.clientes.length ||
+        Object.keys(novosCadastros.filiaisPorRegional).length ||
+        Object.keys(novosCadastros.contatosPorFilial).length;
+
+      if (possuiDados) {
+        DIRECTORY = novosCadastros;
+      } else {
+        console.warn("[fretes] cadastros da planilha vazios; mantendo dados de contingência do arquivo.");
+      }
+    } catch (e) {
+      console.error("[fretes] erro ao carregar cadastros:", e);
+      console.warn("[fretes] usando cadastros de contingência existentes no arquivo.");
+    }
+
+    rebuildContactPhoneMap();
   }
 
   function getPesoFromUI(id, fallback) {
@@ -1610,23 +1682,37 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     setSelectOptions(MODAL.filial(), [], "SELECIONE A FILIAL");
     setSelectOptions(MODAL.contato(), [], "SELECIONE O CONTATO");
 
-    MODAL.regional()?.addEventListener("change", () => {
-      const reg = upper(MODAL.regional()?.value);
-      const filiais = (DIRECTORY.filiaisPorRegional?.[reg] || []).map(upper);
-      setSelectOptions(MODAL.filial(), filiais, "SELECIONE A FILIAL");
-      setSelectOptions(MODAL.contato(), [], "SELECIONE O CONTATO");
-    });
+    const regionalEl = MODAL.regional();
+    const filialEl = MODAL.filial();
 
-    MODAL.filial()?.addEventListener("change", () => {
-      const filial = upper(MODAL.filial()?.value);
-      const contatos = (DIRECTORY.contatosPorFilial?.[filial] || []).map((c) => upper(c.nome));
+    if (regionalEl && !regionalEl.dataset.nfCadastrosBound) {
+      regionalEl.dataset.nfCadastrosBound = "1";
 
-      setSelectOptions(MODAL.contato(), contatos, "SELECIONE O CONTATO");
+      regionalEl.addEventListener("change", () => {
+        const reg = upper(regionalEl.value);
+        const filiais = (DIRECTORY.filiaisPorRegional?.[reg] || []).map(upper);
 
-      if (contatos.length === 1 && MODAL.contato()) {
-        MODAL.contato().value = contatos[0];
-      }
-    });
+        setSelectOptions(MODAL.filial(), filiais, "SELECIONE A FILIAL");
+        setSelectOptions(MODAL.contato(), [], "SELECIONE O CONTATO");
+      });
+    }
+
+    if (filialEl && !filialEl.dataset.nfCadastrosBound) {
+      filialEl.dataset.nfCadastrosBound = "1";
+
+      filialEl.addEventListener("change", () => {
+        const filial = upper(filialEl.value);
+        const contatos = (DIRECTORY.contatosPorFilial?.[filial] || [])
+          .map((c) => upper(c.nome))
+          .filter(Boolean);
+
+        setSelectOptions(MODAL.contato(), contatos, "SELECIONE O CONTATO");
+
+        if (contatos.length === 1 && MODAL.contato()) {
+          MODAL.contato().value = contatos[0];
+        }
+      });
+    }
   }
 
   function fillModalFromRow(row) {
@@ -2099,20 +2185,29 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     });
   }
 
-  function init() {
+  async function init() {
     ensureFloatingHorizontalBar();
+
+    await carregarCadastrosFretes();
     fillModalSelectors();
+
     initUppercaseFields();
     initMasks();
     bindButtons();
     bindFilters();
     bindFloatingHorizontalBar();
     bindModoRaio();
-    atualizar();
+
+    await atualizar();
 
     setTimeout(syncFloatingHorizontalBar, 200);
     setTimeout(syncFloatingHorizontalBar, 600);
   }
 
-  window.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("DOMContentLoaded", () => {
+    init().catch((e) => {
+      console.error("[fretes] falha na inicialização:", e);
+      setStatus("❌ Erro ao iniciar");
+    });
+  });
 })();

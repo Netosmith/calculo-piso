@@ -823,7 +823,7 @@ function formatDateTimeBR(value) {
 
       try {
         setStatus("🗑 Excluindo...");
-        await apiGet({ action: "fretes_delete", id: row.id });
+        await apiGet({ action: "fretes2_delete", id: row.id });
         await atualizar();
         setStatus("✅ Excluído");
       } catch (e) {
@@ -1711,10 +1711,10 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
   async function saveFrete(payload) {
     if (STATE.editingId) {
-      return await apiGet({ action: "fretes_update", id: STATE.editingId, ...payload });
+      return await apiGet({ action: "fretes2_update", id: STATE.editingId, ...payload });
     }
 
-    return await apiGet({ action: "fretes_add", ...payload });
+    return await apiGet({ action: "fretes2_add", ...payload });
   }
 
   async function handleSave() {
@@ -1769,7 +1769,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     try {
       setStatus("🔄 Carregando...");
 
-      const res = await apiGet({ action: "fretes_list" });
+      const res = await apiGet({ action: "fretes2_list" });
 
       STATE.rows = Array.isArray(res.data)
         ? res.data.map((row) => ({ ...row, status: normalizeFreteStatus(row.status) }))

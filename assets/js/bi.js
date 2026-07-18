@@ -3,7 +3,7 @@
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbw-Jpj-4uBrAAWC5J7HEeVcf0Dmb3FgZKt8vgCv2R1xq3jSfRBVwcArOGck9n5cCXtX/exec";
+    "https://script.google.com/macros/s/AKfycbxTAWU6PgapFKXqdy7do_xIT13rRy5F5zkgJMKlLIk5a3xqMqPUm0S5wzF55ie3yd6_/exec";
 
   const PESO_MEDIO = 38;
   const AUTO_REFRESH_MS = 60000;

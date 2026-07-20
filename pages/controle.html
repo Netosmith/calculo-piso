@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-br" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controle de Embarque | Nova Frota</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Hanken+Grotesk:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script>
+tailwind.config={darkMode:"class",theme:{extend:{colors:{
+background:"#051424",surface:"#122131",surface2:"#1c2b3c",line:"#464555",
+primary:"#c1c1ff",primary2:"#5d5fef",yellow:"#eec200",text:"#d4e4fa",muted:"#c7c4d7"
+},fontFamily:{sans:["Inter"],head:["Hanken Grotesk"]}}}}
+</script>
+<style>
+body{background:#051424;color:#d4e4fa}.view{display:none}.view.active{display:block}
+.modal{display:none}.modal.show{display:flex}.pulse{animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}.scrollbar{scrollbar-width:thin}
+</style>
+</head>
+<body class="min-h-screen font-sans">
+<header class="sticky top-0 z-40 bg-surface border-b border-line px-4 md:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+  <div class="flex items-center gap-4">
+    <a href="./home.html" class="px-3 py-2 rounded-lg bg-surface2 hover:bg-primary2"><span class="material-symbols-outlined">home</span></a>
+    <div><div class="text-xs uppercase font-bold">Nova Frota</div><h1 class="font-head text-2xl font-black text-primary">Controle de Embarque</h1></div>
+  </div>
+  <div class="flex items-center gap-3"><span id="sync" class="text-xs text-muted">✅ Pronto</span><button id="btnNovoTop" class="px-4 py-2 rounded-lg bg-primary text-blue-950 font-bold text-xs uppercase">+ Criar embarque</button></div>
+</header>
+
+<main>
+<section id="view-dashboard" class="view active">
+  <div class="px-4 md:px-8 py-4 bg-primary2/20 border-b border-line flex flex-wrap gap-3">
+    <select id="fFilial" class="bg-surface border-line rounded-lg text-sm"><option value="">Todas as filiais</option></select>
+    <input id="fBusca" class="flex-1 min-w-[240px] bg-surface border-line rounded-lg text-sm" placeholder="Buscar filial, cliente, rota ou status">
+    <button id="btnAtualizar" class="px-4 py-2 border border-line rounded-lg text-xs font-bold uppercase">Atualizar</button>
+  </div>
+  <div class="p-4 md:p-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Filiais</div><div id="sFiliais" class="text-3xl font-black mt-2">0</div></div>
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Ativos</div><div id="sAtivos" class="text-3xl font-black mt-2 text-yellow">0</div></div>
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Veículos</div><div id="sVeiculos" class="text-3xl font-black mt-2 text-primary">0</div></div>
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Finalizados</div><div id="sFinalizados" class="text-3xl font-black mt-2 text-green-400">0</div></div>
+    </div>
+    <div id="gridFiliais" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+  </div>
+</section>
+
+<section id="view-filial" class="view">
+  <div class="p-4 md:p-8 space-y-5">
+    <button id="btnVoltarPainel" class="text-primary text-xs uppercase">&lt; Voltar ao painel</button>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div><h2 id="tituloFilial" class="font-head text-3xl font-black">Filial</h2><div class="text-xs text-muted mt-2"><span id="fAtivos">0</span> ativos · <span id="fTotal">0</span> total · <span id="fFinalizados">0</span> finalizados</div></div>
+      <div class="flex gap-2"><input id="buscaFilial" class="bg-surface border-line rounded-lg text-sm" placeholder="Filtrar embarques"><button id="btnNovoFilial" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold text-xs uppercase">+ Criar</button></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Eficiência</div><div id="mEficiencia" class="text-2xl font-bold mt-2">0%</div></div>
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Saídas</div><div id="mSaidas" class="text-2xl font-bold mt-2">0</div></div>
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Volume</div><div id="mVolume" class="text-2xl font-bold mt-2">0 t</div></div>
+      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Saldo</div><div id="mSaldo" class="text-2xl font-bold mt-2 text-yellow">0 t</div></div>
+    </div>
+    <div class="bg-surface border border-line rounded-xl overflow-hidden">
+      <div class="overflow-x-auto scrollbar">
+        <table class="w-full min-w-[1050px] text-left">
+          <thead class="bg-surface2 text-xs uppercase text-muted"><tr><th class="p-4">Data</th><th class="p-4">Cliente</th><th class="p-4">Origem</th><th class="p-4">Local</th><th class="p-4">Destino</th><th class="p-4">Volume</th><th class="p-4">Saldo</th><th class="p-4">Status</th><th class="p-4 text-right">Ações</th></tr></thead>
+          <tbody id="tbodyEmbarques" class="divide-y divide-line/40"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="view-detalhe" class="view">
+  <div class="p-4 md:p-8 space-y-5">
+    <button id="btnVoltarFilial" class="text-primary text-xs uppercase">&lt; Voltar à filial</button>
+    <div class="bg-surface border border-line rounded-xl p-5 flex flex-wrap gap-8 items-center">
+      <div><div class="text-xs text-muted uppercase">Cliente</div><div id="dCliente" class="font-bold mt-1">-</div></div>
+      <div><div class="text-xs text-muted uppercase">Rota</div><div id="dRota" class="font-bold mt-1">-</div></div>
+      <div><div class="text-xs text-muted uppercase">Produto</div><div id="dProduto" class="font-bold mt-1">-</div></div>
+      <span id="dStatus" class="ml-auto px-3 py-2 rounded-full border text-xs font-bold">-</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-surface border border-line rounded-xl p-5"><div class="text-xs text-muted uppercase">Contratado</div><div id="dVolume" class="text-3xl font-bold mt-2">0 t</div></div>
+      <div class="bg-surface border border-line rounded-xl p-5"><div class="text-xs text-muted uppercase">Embarcado</div><div id="dEmbarcado" class="text-3xl font-bold mt-2 text-primary">0 t</div></div>
+      <div class="bg-surface border border-line rounded-xl p-5 border-l-4 border-l-yellow"><div class="text-xs text-muted uppercase">Saldo</div><div id="dSaldo" class="text-3xl font-bold mt-2 text-yellow">0 t</div></div>
+    </div>
+    <div class="bg-surface border border-line rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-line flex justify-between"><h3 class="text-xs uppercase font-bold">Veículos</h3><button id="btnNovoVeiculo" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold text-xs uppercase">+ Veículo</button></div>
+      <div class="overflow-x-auto"><table class="w-full min-w-[850px]"><thead class="bg-surface2 text-xs uppercase text-muted"><tr><th class="p-4 text-left">Data/Hora</th><th class="p-4 text-left">Placa</th><th class="p-4 text-left">Motorista</th><th class="p-4 text-left">Tipo</th><th class="p-4 text-left">Peso</th><th class="p-4 text-left">Situação</th><th class="p-4 text-right">Ações</th></tr></thead><tbody id="tbodyVeiculos" class="divide-y divide-line/40"></tbody></table></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="modalEmbarque" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60 p-4">
+  <div class="w-full max-w-3xl bg-surface border border-line rounded-2xl">
+    <div class="p-4 border-b border-line flex justify-between"><h2 class="font-head text-xl font-bold">Criar embarque</h2><button id="fecharEmbarque">✕</button></div>
+    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <input id="eFilial" class="bg-surface2 border-line rounded-lg" placeholder="FILIAL">
+      <input id="eCliente" class="bg-surface2 border-line rounded-lg" placeholder="CLIENTE">
+      <input id="eOrigem" class="bg-surface2 border-line rounded-lg" placeholder="ORIGEM">
+      <input id="eLocal" class="bg-surface2 border-line rounded-lg" placeholder="LOCAL DE EMBARQUE">
+      <input id="eDestino" class="bg-surface2 border-line rounded-lg" placeholder="DESTINO">
+      <input id="eProduto" class="bg-surface2 border-line rounded-lg" placeholder="PRODUTO">
+      <input id="eVolume" type="number" step="0.01" class="bg-surface2 border-line rounded-lg" placeholder="VOLUME (T)">
+      <select id="eStatus" class="bg-surface2 border-line rounded-lg"><option>AGENDADO</option><option>EM ANDAMENTO</option><option>CONCLUÍDO</option><option>EM ATRASO</option></select>
+    </div>
+    <div class="p-4 border-t border-line flex justify-end gap-2"><button id="cancelarEmbarque" class="px-4 py-2 border border-line rounded-lg">Cancelar</button><button id="salvarEmbarque" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold">Salvar</button></div>
+  </div>
+</div>
+
+<div id="modalVeiculo" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60 p-4">
+  <div class="w-full max-w-2xl bg-surface border border-line rounded-2xl">
+    <div class="p-4 border-b border-line flex justify-between"><h2 class="font-head text-xl font-bold">Adicionar veículo</h2><button id="fecharVeiculo">✕</button></div>
+    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <input id="vPlaca" class="bg-surface2 border-line rounded-lg" placeholder="PLACA">
+      <input id="vMotorista" class="bg-surface2 border-line rounded-lg" placeholder="MOTORISTA">
+      <input id="vTipo" class="bg-surface2 border-line rounded-lg" placeholder="TIPO DO VEÍCULO">
+      <input id="vPeso" type="number" step="0.01" class="bg-surface2 border-line rounded-lg" placeholder="PESO (T)">
+      <select id="vSituacao" class="md:col-span-2 bg-surface2 border-line rounded-lg"><option>PORTA</option><option>CARREGANDO</option><option>CARREGADO</option><option>TRÂNSITO</option><option>FINALIZADO</option></select>
+    </div>
+    <div class="p-4 border-t border-line flex justify-end gap-2"><button id="cancelarVeiculo" class="px-4 py-2 border border-line rounded-lg">Cancelar</button><button id="salvarVeiculo" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold">Salvar</button></div>
+  </div>
+</div>
+
+<script src="../assets/js/auth.js?v=3"></script>
+<script src="../assets/js/controle.js?v=1"></script>
+<script>if(typeof requireHomeAuth==="function")requireHomeAuth();if(typeof bindLogoutButton==="function")bindLogoutButton();</script>
+</body>
+</html>

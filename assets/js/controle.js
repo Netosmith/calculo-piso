@@ -20,6 +20,33 @@ const num = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 const ton = (v) => num(v).toLocaleString("pt-BR",{maximumFractionDigits:2}) + " t";
+const STATUS_EMBARQUE = ["AGENDADO","EM ANDAMENTO","EM ATRASO","CONCLUÍDO","CANCELADO"];
+const STATUS_VEICULO = ["PORTA","CARREGANDO","CARREGADO","TRÂNSITO","FINALIZADO","CANCELADO"];
+
+function escapeHtml(value){
+  return safe(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+function optionList(values, selected){
+  const atual = upper(selected);
+  return values.map(value => `<option value="${escapeHtml(value)}"${upper(value)===atual?" selected":""}>${escapeHtml(value)}</option>`).join("");
+}
+function setButtonSaving(button, saving, text="SALVANDO..."){
+  if(!button) return;
+  if(saving){
+    button.dataset.originalText = button.dataset.originalText || button.textContent;
+    button.disabled = true;
+    button.textContent = text;
+  }else{
+    button.disabled = false;
+    button.textContent = button.dataset.originalText || "Salvar";
+  }
+}
+function fmtDataHora(v){
+  if(!v) return "-";
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? safe(v) : d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+
 const fmtData = (v) => {
   if(!v) return "-";
   const raw = String(v);
@@ -43,9 +70,7 @@ function setLoading(on, text){
     "#btnNovoTop",
     "#btnNovoFilial",
     "#btnNovoVeiculo",
-    "#btnAtualizar",
-    "#salvarEmbarque",
-    "#salvarVeiculo"
+    "#btnAtualizar"
   ].forEach(sel => {
     const el = $(sel);
     if(el) el.disabled = !!on;
@@ -396,9 +421,9 @@ function renderFilial(){
       <td class="p-4">${ton(e.volume)}</td>
       <td class="p-4">${ton(saldo(e))}</td>
       <td class="p-4">
-        <span class="px-3 py-1 rounded-full border text-xs font-bold ${cls(e.status)}">
-          ${e.status}
-        </span>
+        <select data-status-embarque="${e.id}" class="status-select bg-surface2 border rounded-lg px-3 py-2 text-xs font-bold uppercase ${cls(e.status)}">
+          ${optionList(STATUS_EMBARQUE,e.status)}
+        </select>
       </td>
       <td class="p-4 text-right">
         <button data-open="${e.id}" class="material-symbols-outlined hover:text-primary">
@@ -415,6 +440,10 @@ function renderFilial(){
 
   tbody.querySelectorAll("[data-open]").forEach(btn => {
     btn.onclick = () => openDetalhe(btn.dataset.open);
+  });
+
+  tbody.querySelectorAll("[data-status-embarque]").forEach(select => {
+    select.onchange = () => atualizarStatusEmbarque(select.dataset.statusEmbarque,select.value,select);
   });
 
   tbody.querySelectorAll("[data-del]").forEach(btn => {
@@ -450,9 +479,11 @@ function openDetalhe(id, changeView = true){
   $("#dCliente").textContent = e.cliente;
   $("#dRota").textContent = e.origem + " → " + e.destino;
   $("#dProduto").textContent = e.produto;
-  $("#dStatus").textContent = e.status;
-  $("#dStatus").className =
-    "ml-auto px-3 py-2 rounded-full border text-xs font-bold " + cls(e.status);
+  const statusDetalhe = $("#dStatus");
+  statusDetalhe.innerHTML = optionList(STATUS_EMBARQUE,e.status);
+  statusDetalhe.value = e.status;
+  statusDetalhe.className = "w-full bg-surface2 border rounded-lg text-xs font-bold uppercase " + cls(e.status);
+  statusDetalhe.dataset.id = e.id;
   $("#dVolume").textContent = ton(e.volume);
   $("#dEmbarcado").textContent = ton(embarcado(e));
   $("#dSaldo").textContent = ton(saldo(e));
@@ -482,15 +513,15 @@ function renderVeiculos(e){
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td class="p-4">${v.dataHora || "-"}</td>
+      <td class="p-4">${fmtDataHora(v.dataHora)}</td>
       <td class="p-4 font-bold">${v.placa}</td>
       <td class="p-4">${v.motorista || "-"}</td>
       <td class="p-4">${v.tipo || "-"}</td>
       <td class="p-4">${ton(v.peso)}</td>
       <td class="p-4">
-        <span class="px-3 py-1 rounded-full border text-xs font-bold ${cls(v.situacao)}">
-          ${v.situacao}
-        </span>
+        <select data-status-veiculo="${v.id}" class="status-select bg-surface2 border rounded-lg px-3 py-2 text-xs font-bold uppercase ${cls(v.situacao)}">
+          ${optionList(STATUS_VEICULO,v.situacao)}
+        </select>
       </td>
       <td class="p-4 text-right">
         <button data-vdel="${v.id}" class="material-symbols-outlined hover:text-red-300">
@@ -502,12 +533,64 @@ function renderVeiculos(e){
     tbody.appendChild(tr);
   });
 
+  tbody.querySelectorAll("[data-status-veiculo]").forEach(select => {
+    select.onchange = () => atualizarSituacaoVeiculo(select.dataset.statusVeiculo,select.value,select);
+  });
+
   tbody.querySelectorAll("[data-vdel]").forEach(btn => {
     btn.onclick = () => deleteVeiculo(btn.dataset.vdel);
   });
 }
 
+
+async function atualizarStatusEmbarque(id, novoStatus, select){
+  const embarque = S.rows.find(x => x.id === id);
+  if(!embarque) return;
+  const anterior = embarque.status;
+  select.disabled = true;
+  sync("⏳ Atualizando status...");
+  try{
+    await api({action:"controle_embarques_update",id,status:upper(novoStatus)});
+    embarque.status = upper(novoStatus);
+    await carregarDados();
+    if(S.filial) renderFilial();
+    if(S.id === id) openDetalhe(id,false);
+    sync("✅ Status atualizado");
+  }catch(err){
+    console.error(err);
+    select.value = anterior;
+    alert("Erro ao atualizar o status do embarque.\n\n" + err.message);
+    sync("⚠️ Erro ao atualizar");
+  }finally{
+    select.disabled = false;
+  }
+}
+
+async function atualizarSituacaoVeiculo(id, novaSituacao, select){
+  const embarque = S.rows.find(x => x.id === S.id);
+  const veiculo = embarque?.veiculos?.find(v => v.id === id);
+  if(!veiculo) return;
+  const anterior = veiculo.situacao;
+  select.disabled = true;
+  sync("⏳ Atualizando veículo...");
+  try{
+    await api({action:"controle_veiculos_update",id,situacao:upper(novaSituacao)});
+    veiculo.situacao = upper(novaSituacao);
+    await carregarDados();
+    if(S.id) openDetalhe(S.id,false);
+    sync("✅ Situação atualizada");
+  }catch(err){
+    console.error(err);
+    select.value = anterior;
+    alert("Erro ao atualizar a situação do veículo.\n\n" + err.message);
+    sync("⚠️ Erro ao atualizar");
+  }finally{
+    select.disabled = false;
+  }
+}
+
 function modal(id,on){
+  if(S.loading && !on) return;
   $("#" + id).classList.toggle("show",on);
 }
 
@@ -544,6 +627,8 @@ async function salvarEmbarque(){
     return;
   }
 
+  const btnSalvar = $("#salvarEmbarque");
+  setButtonSaving(btnSalvar,true,"SALVANDO...");
   setLoading(true,"⏳ Salvando embarque...");
 
   try{
@@ -562,6 +647,7 @@ async function salvarEmbarque(){
     console.error(err);
     alert("Erro ao salvar embarque.\n\n" + err.message);
   }finally{
+    setButtonSaving(btnSalvar,false);
     setLoading(false);
   }
 }
@@ -624,6 +710,8 @@ async function salvarVeiculo(){
     return;
   }
 
+  const btnSalvar = $("#salvarVeiculo");
+  setButtonSaving(btnSalvar,true,"SALVANDO...");
   setLoading(true,"⏳ Salvando veículo...");
 
   try{
@@ -640,6 +728,7 @@ async function salvarVeiculo(){
     console.error(err);
     alert("Erro ao salvar veículo.\n\n" + err.message);
   }finally{
+    setButtonSaving(btnSalvar,false);
     setLoading(false);
   }
 }
@@ -691,6 +780,11 @@ function bind(){
   $("#buscaFilial").oninput = renderFilial;
 
   $("#btnAtualizar").onclick = carregarDados;
+
+  $("#dStatus").onchange = e => {
+    const id = e.target.dataset.id || S.id;
+    if(id) atualizarStatusEmbarque(id,e.target.value,e.target);
+  };
 
   $("#fecharEmbarque").onclick =
   $("#cancelarEmbarque").onclick = () => modal("modalEmbarque",false);

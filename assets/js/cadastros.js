@@ -24,7 +24,7 @@
         { key:"Usuario", label:"Usuário", required:true },
         { key:"Senha", label:"Senha", type:"password", requiredOnCreate:true, hint:"Na edição, deixe vazio para manter a senha atual." },
         { key:"Nome", label:"Nome", required:true },
-        { key:"Perfil", label:"Perfil", type:"select", options:["ADMINISTRADOR","OPERACIONAL","COMERCIAL","PISO","GOADM"], required:true },
+        { key:"Perfil", label:"Perfil", type:"select", options:["ADMINISTRADOR","OPERACIONAL","COMERCIAL","PISO","GOADM", "MT", "PR"], required:true },
         { key:"Estados", label:"Estados / acessos", required:true, hint:"Exemplo: GO,MT ou ADMINISTRADOR" },
         { key:"Ativo", label:"Ativo", type:"select", options:["SIM","NÃO"], required:true }
       ]

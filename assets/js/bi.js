@@ -1,4 +1,4 @@
-/* bi.js | NOVA FROTA */
+/* bi.js | NOVA FROTA | ATUAL + HISTÓRICO */
 (function () {
   "use strict";
 
@@ -48,6 +48,28 @@
     return (Number(v) || 0).toLocaleString("pt-BR");
   }
 
+  function isoDate(date) {
+    const d = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function setDefaultDates() {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - 30);
+
+    if ($("#fDataInicio") && !$("#fDataInicio").value) {
+      $("#fDataInicio").value = isoDate(inicio);
+    }
+    if ($("#fDataFim") && !$("#fDataFim").value) {
+      $("#fDataFim").value = isoDate(hoje);
+    }
+  }
+
   function setStatus(text, ok = true) {
     const el = $("#syncStatus");
     if (!el) return;
@@ -55,7 +77,7 @@
     el.style.color = ok ? "#067647" : "#b42318";
   }
 
-  function jsonp(url, timeoutMs = 30000) {
+  function jsonp(url, timeoutMs = 35000) {
     return new Promise((resolve, reject) => {
       const cb = "cb_" + Math.random().toString(36).slice(2);
       const script = document.createElement("script");
@@ -99,28 +121,35 @@
   function buildUrl(paramsObj) {
     const url = new URL(API_URL);
     Object.entries(paramsObj || {}).forEach(([k, v]) => {
-      url.searchParams.set(k, v);
+      if (v !== undefined && v !== null && v !== "") {
+        url.searchParams.set(k, String(v));
+      }
     });
     return url.toString();
   }
 
   async function apiGet(paramsObj) {
-    const res = await jsonp(buildUrl(paramsObj), 35000);
+    const res = await jsonp(buildUrl(paramsObj));
 
-    if (!res) {
-      throw new Error("Resposta vazia da API");
-    }
-
-    if (res.ok === false) {
-      throw new Error(res.error || "Falha na API");
-    }
+    if (!res) throw new Error("Resposta vazia da API");
+    if (res.ok === false) throw new Error(res.error || "Falha na API");
 
     return res;
   }
 
-  function normalizeRow(r) {
+  function extractRows(res) {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.rows)) return res.rows;
+    if (Array.isArray(res?.fretes)) return res.fretes;
+    return [];
+  }
+
+  function normalizeRow(r, origemPadrao = "") {
     return {
-      id: safeText(r?.id),
+      id: safeText(r?.id || r?.idFrete || r?.idSnapshot),
+      dataReferencia: safeText(r?.dataReferencia),
+      origemDados: upper(r?.origemDados || origemPadrao),
       regional: upper(r?.regional),
       filial: upper(r?.filial),
       cliente: upper(r?.cliente),
@@ -149,12 +178,7 @@
     if (!el) return;
 
     const current = el.value;
-    el.innerHTML = "";
-
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = placeholder;
-    el.appendChild(first);
+    el.innerHTML = `<option value="">${placeholder}</option>`;
 
     values.forEach((v) => {
       const op = document.createElement("option");
@@ -169,9 +193,9 @@
   }
 
   function loadFilterOptions(rows) {
-    const filiais = [...new Set(rows.map(r => upper(r.filial)).filter(Boolean))].sort();
-    const clientes = [...new Set(rows.map(r => upper(r.cliente)).filter(Boolean))].sort();
-    const status = [...new Set(rows.map(r => upper(r.status)).filter(Boolean))].sort();
+    const filiais = [...new Set(rows.map(r => r.filial).filter(Boolean))].sort();
+    const clientes = [...new Set(rows.map(r => r.cliente).filter(Boolean))].sort();
+    const status = [...new Set(rows.map(r => r.status).filter(Boolean))].sort();
 
     fillSelect($("#fFilial"), filiais, "Todas as filiais");
     fillSelect($("#fCliente"), clientes, "Todos os clientes");
@@ -179,20 +203,24 @@
   }
 
   function getFilteredRows() {
-    const filial = upper($("#fFilial")?.value || "");
-    const cliente = upper($("#fCliente")?.value || "");
-    const status = upper($("#fStatus")?.value || "");
-    const busca = upper($("#fBusca")?.value || "");
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
 
     return STATE.rows.filter((r) => {
-      if (filial && upper(r.filial) !== filial) return false;
-      if (cliente && upper(r.cliente) !== cliente) return false;
-      if (status && upper(r.status) !== status) return false;
+      if (filial && r.filial !== filial) return false;
+      if (cliente && r.cliente !== cliente) return false;
+      if (status && r.status !== status) return false;
+      if (origemDados && r.origemDados !== origemDados) return false;
 
       if (busca) {
         const blob = [
-          r.filial, r.cliente, r.origem, r.destino, r.produto, r.contato, r.descarga, r.obs
+          r.filial, r.cliente, r.origem, r.destino, r.produto,
+          r.contato, r.descarga, r.obs, r.origemDados
         ].join(" ");
+
         if (!upper(blob).includes(busca)) return false;
       }
 
@@ -204,26 +232,19 @@
     const porta = rows.reduce((acc, r) => acc + num(r.porta), 0);
     const transito = rows.reduce((acc, r) => acc + num(r.transito), 0);
     const totalVeiculos = porta + transito;
-    const volume = totalVeiculos * PESO_MEDIO;
+    const volumeInformado = rows.reduce((acc, r) => acc + num(r.volume), 0);
+    const volume = volumeInformado > 0 ? volumeInformado : totalVeiculos * PESO_MEDIO;
 
-    const totalEmpresa = rows.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
-    const totalMotorista = rows.reduce((acc, r) => acc + num(r.valorMotorista), 0);
+    const validEmpresa = rows.filter(r => num(r.valorEmpresa) > 0);
+    const totalEmpresa = validEmpresa.reduce((acc, r) => acc + num(r.valorEmpresa), 0);
+    const totalMotorista = validEmpresa.reduce((acc, r) => acc + num(r.valorMotorista), 0);
 
-    const freteMedio = rows.length ? totalEmpresa / rows.length : 0;
+    const freteMedio = validEmpresa.length ? totalEmpresa / validEmpresa.length : 0;
+    const margemPercent = totalEmpresa > 0
+      ? ((totalEmpresa - totalMotorista) / totalEmpresa) * 100
+      : 0;
 
-    let margemPercent = 0;
-    if (totalEmpresa > 0) {
-      margemPercent = ((totalEmpresa - totalMotorista) / totalEmpresa) * 100;
-    }
-
-    return {
-      porta,
-      transito,
-      totalVeiculos,
-      volume,
-      freteMedio,
-      margemPercent
-    };
+    return { porta, transito, totalVeiculos, volume, freteMedio, margemPercent };
   }
 
   function renderKPIs(rows) {
@@ -255,23 +276,18 @@
       const porta = list.reduce((a, r) => a + num(r.porta), 0);
       const transito = list.reduce((a, r) => a + num(r.transito), 0);
       const veiculos = porta + transito;
-      const volume = veiculos * PESO_MEDIO;
-      const freteMedio = list.length
-        ? list.reduce((a, r) => a + num(r.valorEmpresa), 0) / list.length
+      const volumeInformado = list.reduce((a, r) => a + num(r.volume), 0);
+      const volume = volumeInformado > 0 ? volumeInformado : veiculos * PESO_MEDIO;
+
+      const valid = list.filter(r => num(r.valorEmpresa) > 0);
+      const freteMedio = valid.length
+        ? valid.reduce((a, r) => a + num(r.valorEmpresa), 0) / valid.length
         : 0;
-      const margemMedia = list.length
-        ? list.reduce((a, r) => a + (num(r.valorEmpresa) - num(r.valorMotorista)), 0) / list.length
+      const margemMedia = valid.length
+        ? valid.reduce((a, r) => a + (num(r.valorEmpresa) - num(r.valorMotorista)), 0) / valid.length
         : 0;
 
-      arr.push({
-        filial,
-        porta,
-        transito,
-        veiculos,
-        volume,
-        freteMedio,
-        margemMedia
-      });
+      arr.push({ filial, porta, transito, veiculos, volume, freteMedio, margemMedia });
     });
 
     return arr.sort((a, b) => b.veiculos - a.veiculos || a.filial.localeCompare(b.filial));
@@ -285,18 +301,36 @@
       const porta = list.reduce((a, r) => a + num(r.porta), 0);
       const transito = list.reduce((a, r) => a + num(r.transito), 0);
       const veiculos = porta + transito;
-      const margemMedia = list.length
-        ? list.reduce((a, r) => a + (num(r.valorEmpresa) - num(r.valorMotorista)), 0) / list.length
+      const valid = list.filter(r => num(r.valorEmpresa) > 0);
+      const margemMedia = valid.length
+        ? valid.reduce((a, r) => a + (num(r.valorEmpresa) - num(r.valorMotorista)), 0) / valid.length
         : 0;
 
-      arr.push({
-        cliente,
-        veiculos,
-        margemMedia
-      });
+      arr.push({ cliente, veiculos, margemMedia });
     });
 
     return arr.sort((a, b) => b.veiculos - a.veiculos || a.cliente.localeCompare(b.cliente));
+  }
+
+  function buildEvolucaoDiaria(rows) {
+    const map = new Map();
+
+    rows.forEach((r) => {
+      const data = safeText(r.dataReferencia);
+      if (!data) return;
+
+      if (!map.has(data)) {
+        map.set(data, { data, porta: 0, transito: 0, veiculos: 0, volume: 0 });
+      }
+
+      const item = map.get(data);
+      item.porta += num(r.porta);
+      item.transito += num(r.transito);
+      item.veiculos += num(r.porta) + num(r.transito);
+      item.volume += num(r.volume);
+    });
+
+    return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
   }
 
   function renderIndicativoFilial(rows) {
@@ -328,9 +362,7 @@
 
   function destroyCharts() {
     Object.values(STATE.charts).forEach((chart) => {
-      if (chart && typeof chart.destroy === "function") {
-        chart.destroy();
-      }
+      if (chart && typeof chart.destroy === "function") chart.destroy();
     });
     STATE.charts = {};
   }
@@ -342,10 +374,7 @@
       plugins: {
         legend: {
           position: "top",
-          labels: {
-            color: "#334155",
-            font: { weight: "700" }
-          }
+          labels: { color: "#334155", font: { weight: "700" } }
         }
       },
       scales: {
@@ -364,170 +393,155 @@
 
   function renderCharts(rows) {
     destroyCharts();
-
-    if (typeof Chart === "undefined") {
-      console.warn("[bi] Chart.js não carregou.");
-      return;
-    }
+    if (typeof Chart === "undefined") return;
 
     const resumoFilial = buildResumoFilial(rows);
     const resumoCliente = buildResumoCliente(rows);
+    const evolucao = buildEvolucaoDiaria(rows);
 
     const labelsFilial = resumoFilial.map(r => r.filial);
-    const veiculosFilial = resumoFilial.map(r => r.veiculos);
-    const volumeFilial = resumoFilial.map(r => r.volume);
-    const portaFilial = resumoFilial.map(r => r.porta);
-    const transitoFilial = resumoFilial.map(r => r.transito);
-
     const labelsCliente = resumoCliente.map(r => r.cliente);
-    const veiculosCliente = resumoCliente.map(r => r.veiculos);
-    const margemCliente = resumoCliente.map(r => Number(r.margemMedia.toFixed(2)));
 
-    const c1 = document.getElementById("chartVeiculosFilial");
-    const c2 = document.getElementById("chartVeiculosCliente");
-    const c3 = document.getElementById("chartVolumeFilial");
-    const c4 = document.getElementById("chartPortaTransito");
-    const c5 = document.getElementById("chartMargemCliente");
+    const make = (id, config) => {
+      const canvas = document.getElementById(id);
+      if (canvas) STATE.charts[id] = new Chart(canvas, config);
+    };
 
-    if (c1) {
-      STATE.charts.chartVeiculosFilial = new Chart(c1, {
-        type: "bar",
-        data: {
-          labels: labelsFilial,
-          datasets: [{
-            label: "Veículos",
-            data: veiculosFilial,
-            backgroundColor: "rgba(59,130,246,.65)",
-            borderColor: "rgba(59,130,246,1)",
-            borderWidth: 1.5,
-            borderRadius: 8
-          }]
-        },
-        options: chartBaseOptions()
-      });
-    }
+    make("chartVeiculosFilial", {
+      type: "bar",
+      data: {
+        labels: labelsFilial,
+        datasets: [{
+          label: "Veículos",
+          data: resumoFilial.map(r => r.veiculos),
+          backgroundColor: "rgba(59,130,246,.65)",
+          borderColor: "rgba(59,130,246,1)",
+          borderWidth: 1.5,
+          borderRadius: 8
+        }]
+      },
+      options: chartBaseOptions()
+    });
 
-    if (c2) {
-      STATE.charts.chartVeiculosCliente = new Chart(c2, {
-        type: "doughnut",
-        data: {
-          labels: labelsCliente,
-          datasets: [{
-            data: veiculosCliente,
-            backgroundColor: [
-              "#3b82f6", "#16a34a", "#8b5cf6", "#f59e0b", "#ec4899",
-              "#0ea5e9", "#14b8a6", "#ef4444", "#84cc16", "#6366f1"
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: "bottom",
-              labels: {
-                color: "#334155",
-                font: { weight: "700" }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    if (c3) {
-      STATE.charts.chartVolumeFilial = new Chart(c3, {
-        type: "bar",
-        data: {
-          labels: labelsFilial,
-          datasets: [{
-            label: "Volume (toneladas)",
-            data: volumeFilial,
-            backgroundColor: "rgba(22,163,74,.65)",
-            borderColor: "rgba(22,163,74,1)",
-            borderWidth: 1.5,
-            borderRadius: 10
-          }]
-        },
-        options: {
-          ...chartBaseOptions(),
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(ctx){
-                  return " " + ctx.raw.toLocaleString("pt-BR") + " toneladas";
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    if (c4) {
-      STATE.charts.chartPortaTransito = new Chart(c4, {
-        type: "bar",
-        data: {
-          labels: labelsFilial,
-          datasets: [
-            {
-              label: "Porta",
-              data: portaFilial,
-              backgroundColor: "rgba(59,130,246,.62)",
-              borderColor: "rgba(59,130,246,1)",
-              borderWidth: 1.2,
-              borderRadius: 8
-            },
-            {
-              label: "Trânsito",
-              data: transitoFilial,
-              backgroundColor: "rgba(22,163,74,.52)",
-              borderColor: "rgba(22,163,74,1)",
-              borderWidth: 1.2,
-              borderRadius: 8
-            }
+    make("chartVeiculosCliente", {
+      type: "doughnut",
+      data: {
+        labels: labelsCliente,
+        datasets: [{
+          data: resumoCliente.map(r => r.veiculos),
+          backgroundColor: [
+            "#3b82f6","#16a34a","#8b5cf6","#f59e0b","#ec4899",
+            "#0ea5e9","#14b8a6","#ef4444","#84cc16","#6366f1"
           ]
-        },
-        options: chartBaseOptions()
-      });
-    }
-
-    if (c5) {
-      STATE.charts.chartMargemCliente = new Chart(c5, {
-        type: "polarArea",
-        data: {
-          labels: labelsCliente,
-          datasets: [{
-            data: margemCliente,
-            backgroundColor: [
-              "rgba(59,130,246,.50)",
-              "rgba(22,163,74,.50)",
-              "rgba(139,92,246,.50)",
-              "rgba(245,158,11,.50)",
-              "rgba(236,72,153,.50)",
-              "rgba(14,165,233,.50)",
-              "rgba(20,184,166,.50)",
-              "rgba(239,68,68,.50)"
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: "right",
-              labels: {
-                color: "#334155",
-                font: { weight: "700" }
-              }
-            }
-          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom", labels: { color: "#334155", font: { weight: "700" } } }
         }
-      });
-    }
+      }
+    });
+
+    make("chartVolumeFilial", {
+      type: "bar",
+      data: {
+        labels: labelsFilial,
+        datasets: [{
+          label: "Volume (t)",
+          data: resumoFilial.map(r => r.volume),
+          backgroundColor: "rgba(22,163,74,.65)",
+          borderColor: "rgba(22,163,74,1)",
+          borderWidth: 1.5,
+          borderRadius: 10
+        }]
+      },
+      options: chartBaseOptions()
+    });
+
+    make("chartPortaTransito", {
+      type: "bar",
+      data: {
+        labels: labelsFilial,
+        datasets: [
+          {
+            label: "Porta",
+            data: resumoFilial.map(r => r.porta),
+            backgroundColor: "rgba(59,130,246,.62)",
+            borderColor: "rgba(59,130,246,1)",
+            borderWidth: 1.2,
+            borderRadius: 8
+          },
+          {
+            label: "Trânsito",
+            data: resumoFilial.map(r => r.transito),
+            backgroundColor: "rgba(22,163,74,.52)",
+            borderColor: "rgba(22,163,74,1)",
+            borderWidth: 1.2,
+            borderRadius: 8
+          }
+        ]
+      },
+      options: chartBaseOptions()
+    });
+
+    make("chartMargemCliente", {
+      type: "polarArea",
+      data: {
+        labels: labelsCliente,
+        datasets: [{
+          data: resumoCliente.map(r => Number(r.margemMedia.toFixed(2))),
+          backgroundColor: [
+            "rgba(59,130,246,.50)","rgba(22,163,74,.50)",
+            "rgba(139,92,246,.50)","rgba(245,158,11,.50)",
+            "rgba(236,72,153,.50)","rgba(14,165,233,.50)",
+            "rgba(20,184,166,.50)","rgba(239,68,68,.50)"
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "right", labels: { color: "#334155", font: { weight: "700" } } }
+        }
+      }
+    });
+
+    make("chartEvolucaoDiaria", {
+      type: "line",
+      data: {
+        labels: evolucao.map(r => r.data.split("-").reverse().join("/")),
+        datasets: [
+          {
+            label: "Porta",
+            data: evolucao.map(r => r.porta),
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59,130,246,.15)",
+            tension: .25,
+            fill: false
+          },
+          {
+            label: "Trânsito",
+            data: evolucao.map(r => r.transito),
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22,163,74,.15)",
+            tension: .25,
+            fill: false
+          },
+          {
+            label: "Total",
+            data: evolucao.map(r => r.veiculos),
+            borderColor: "#8b5cf6",
+            backgroundColor: "rgba(139,92,246,.12)",
+            tension: .25,
+            fill: false
+          }
+        ]
+      },
+      options: chartBaseOptions()
+    });
   }
 
   function renderAll() {
@@ -537,6 +551,26 @@
     renderCharts(rows);
   }
 
+  async function loadCurrentRows() {
+    const [fretesRes, fretes2Res] = await Promise.all([
+      apiGet({ action: "fretes_list" }),
+      apiGet({ action: "fretes2_list" })
+    ]);
+
+    return [
+      ...extractRows(fretesRes).map(r => normalizeRow(r, "FRETES")),
+      ...extractRows(fretes2Res).map(r => normalizeRow(r, "FRETES2"))
+    ];
+  }
+
+  async function loadHistoricalRows() {
+    return extractRows(await apiGet({
+      action: "historico_diario_list",
+      dataInicio: $("#fDataInicio")?.value || "",
+      dataFim: $("#fDataFim")?.value || ""
+    })).map(r => normalizeRow(r));
+  }
+
   async function loadData(showStatus = true) {
     if (STATE.isLoading) return;
 
@@ -544,48 +578,45 @@
       STATE.isLoading = true;
       if (showStatus) setStatus("🔄 Carregando...", true);
 
-      const res = await apiGet({ action: "fretes_list" });
-      let rows = [];
-
-      if (Array.isArray(res)) {
-        rows = res;
-      } else if (Array.isArray(res.data)) {
-        rows = res.data;
-      } else if (Array.isArray(res.rows)) {
-        rows = res.rows;
-      } else if (Array.isArray(res.fretes)) {
-        rows = res.fretes;
-      }
-
-      STATE.rows = rows.map(normalizeRow);
+      const modo = upper($("#fModo")?.value || "ATUAL");
+      STATE.rows = modo === "HISTORICO"
+        ? await loadHistoricalRows()
+        : await loadCurrentRows();
 
       loadFilterOptions(STATE.rows);
       renderAll();
 
       if (!STATE.rows.length) {
-        setStatus("⚠️ Sem dados em Fretes", false);
+        setStatus(modo === "HISTORICO"
+          ? "⚠️ Sem snapshots no período"
+          : "⚠️ Sem dados em Fretes/Fretes2", false);
       } else {
         const agora = new Date().toLocaleTimeString("pt-BR");
-        setStatus(`✅ Atualizado às ${agora}`, true);
+        setStatus(`✅ ${modo === "HISTORICO" ? "Histórico" : "Atual"} carregado às ${agora}`, true);
       }
     } catch (e) {
       console.error("[bi] erro ao carregar:", e);
       setStatus("❌ Falha ao carregar", false);
-      if (showStatus) {
-        alert("Erro ao carregar o B.I.: " + (e.message || "Erro desconhecido"));
-      }
+      if (showStatus) alert("Erro ao carregar o B.I.: " + (e.message || "Erro desconhecido"));
     } finally {
       STATE.isLoading = false;
     }
   }
 
+  function updateDateAvailability() {
+    const historico = upper($("#fModo")?.value) === "HISTORICO";
+    if ($("#fDataInicio")) $("#fDataInicio").disabled = !historico;
+    if ($("#fDataFim")) $("#fDataFim").disabled = !historico;
+  }
+
   function startAutoRefresh() {
-    if (STATE.autoRefreshTimer) {
-      clearInterval(STATE.autoRefreshTimer);
-    }
+    if (STATE.autoRefreshTimer) clearInterval(STATE.autoRefreshTimer);
 
     STATE.autoRefreshTimer = setInterval(() => {
-      if (document.visibilityState === "visible") {
+      if (
+        document.visibilityState === "visible" &&
+        upper($("#fModo")?.value) === "ATUAL"
+      ) {
         loadData(false);
       }
     }, AUTO_REFRESH_MS);
@@ -595,6 +626,7 @@
     if ($("#fFilial")) $("#fFilial").value = "";
     if ($("#fCliente")) $("#fCliente").value = "";
     if ($("#fStatus")) $("#fStatus").value = "";
+    if ($("#fOrigemDados")) $("#fOrigemDados").value = "";
     if ($("#fBusca")) $("#fBusca").value = "";
     renderAll();
   }
@@ -603,13 +635,29 @@
     $("#btnAtualizar")?.addEventListener("click", () => loadData(true));
     $("#btnLimpar")?.addEventListener("click", clearFilters);
 
+    $("#fModo")?.addEventListener("change", () => {
+      updateDateAvailability();
+      loadData(true);
+    });
+
+    $("#fDataInicio")?.addEventListener("change", () => {
+      if (upper($("#fModo")?.value) === "HISTORICO") loadData(true);
+    });
+
+    $("#fDataFim")?.addEventListener("change", () => {
+      if (upper($("#fModo")?.value) === "HISTORICO") loadData(true);
+    });
+
     $("#fFilial")?.addEventListener("change", renderAll);
     $("#fCliente")?.addEventListener("change", renderAll);
     $("#fStatus")?.addEventListener("change", renderAll);
+    $("#fOrigemDados")?.addEventListener("change", renderAll);
     $("#fBusca")?.addEventListener("input", renderAll);
   }
 
   function init() {
+    setDefaultDates();
+    updateDateAvailability();
     bindEvents();
     loadData(true);
     startAutoRefresh();

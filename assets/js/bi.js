@@ -567,8 +567,11 @@
     const porta = rows.reduce((acc, row) => acc + num(row.porta), 0);
     const transito = rows.reduce((acc, row) => acc + num(row.transito), 0);
     const totalVeiculos = porta + transito;
-    const volumeInformado = rows.reduce((acc, row) => acc + num(row.volume), 0);
-    const volume = volumeInformado > 0 ? volumeInformado : totalVeiculos * PESO_MEDIO;
+
+    // O campo "volume" da planilha representa a demanda/saldo do frete.
+    // Ele não deve ser somado para medir o volume operacional dos veículos.
+    // No B.I., o volume operacional é calculado por veículo: Porta + Trânsito × 38 t.
+    const volume = totalVeiculos * PESO_MEDIO;
 
     const valid = rows.filter((row) => row.valorEmpresa > 0);
     const freteMedio = average(valid.map((row) => row.valorEmpresa));
@@ -624,7 +627,7 @@
       item.porta += row.porta;
       item.transito += row.transito;
       item.veiculos += row.porta + row.transito;
-      item.volume += row.volume > 0 ? row.volume : (row.porta + row.transito) * PESO_MEDIO;
+      item.volume += (row.porta + row.transito) * PESO_MEDIO;
     });
 
     return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
@@ -955,7 +958,7 @@
     const filialResumo = [...filialMap.entries()].map(([filial, list]) => ({
       filial,
       volume: list.reduce((sum, row) =>
-        sum + (row.volume > 0 ? row.volume : (row.porta + row.transito) * PESO_MEDIO), 0)
+        sum + ((row.porta + row.transito) * PESO_MEDIO), 0)
     })).sort((a, b) => b.volume - a.volume);
 
     makeChart("chartHistoricoFilial", {

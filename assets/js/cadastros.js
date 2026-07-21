@@ -3,7 +3,7 @@
   "use strict";
 
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbxTAWU6PgapFKXqdy7do_xIT13rRy5F5zkgJMKlLIk5a3xqMqPUm0S5wzF55ie3yd6_/exec";
+    "https://script.google.com/macros/s/AKfycbwACeACFRMk6SCJV8ciGMEcOSXhGTBpOZ_kkHkBYmKkzIxIp6Txbpt_Nyodl6VUrwJx/exec";
 
   const CONFIG = {
     usuarios: {

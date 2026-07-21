@@ -10,476 +10,132 @@
 
   <style>
     :root{
-      --bg:#f5f7fb;
-      --card:#ffffff;
-      --line:#e2e8f0;
-      --text:#0f172a;
-      --muted:#64748b;
-      --shadow:0 8px 24px rgba(15,23,42,.08);
-      --radius:20px;
-      --blue:#3b82f6;
-      --blue-soft:rgba(59,130,246,.20);
-      --green:#16a34a;
-      --green-soft:rgba(22,163,74,.18);
-      --purple:#8b5cf6;
-      --purple-soft:rgba(139,92,246,.18);
-      --orange:#f59e0b;
-      --orange-soft:rgba(245,158,11,.18);
-      --pink:#ec4899;
-      --pink-soft:rgba(236,72,153,.18);
+      --bg:#f5f7fb; --card:#fff; --line:#e2e8f0; --text:#0f172a; --muted:#64748b;
+      --shadow:0 8px 24px rgba(15,23,42,.08); --blue:#2563eb; --blue-dark:#102a6b;
+      --green:#16a34a; --purple:#7c3aed; --orange:#f59e0b; --red:#dc2626; --cyan:#0891b2;
     }
-
-    *{ box-sizing:border-box; }
-
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .topbar .actions a.icon-btn{
-      text-decoration:none;
-    }
-
-    .pageBI{
-      max-width:1700px;
-      margin:0 auto;
-      padding:18px;
-    }
-
-    .heroBI{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:24px;
-      box-shadow:var(--shadow);
-      padding:18px;
-      margin-bottom:14px;
-    }
-
-    .heroBITop{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-
-    .heroBITitle h1{
-      margin:0;
-      font-size:30px;
-      line-height:1;
-      font-weight:1000;
-      color:var(--text);
-      letter-spacing:.01em;
-    }
-
-    .heroBITitle p{
-      margin:6px 0 0;
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .syncStatus{
-      font-size:12px;
-      font-weight:900;
-      color:#067647;
-      white-space:nowrap;
-      padding-top:4px;
-    }
-
-    .filtersBI{
-      margin-top:16px;
-      display:grid;
-      grid-template-columns: 190px 190px 190px 190px 160px 160px 1fr auto auto;
-      gap:10px;
-    }
-
-    .filtersBI select,
-    .filtersBI input{
-      height:42px;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      outline:none;
-      padding:0 12px;
-      font-size:14px;
-    }
-
-    .filtersBI select:focus,
-    .filtersBI input:focus{
-      border-color:#93c5fd;
-      box-shadow:0 0 0 3px rgba(59,130,246,.14);
-    }
-
-    .btnBI{
-      height:42px;
-      padding:0 16px;
-      border-radius:12px;
-      border:1px solid transparent;
-      font-weight:900;
-      cursor:pointer;
-      white-space:nowrap;
-      transition:transform .12s ease, filter .12s ease;
-    }
-
-    .btnBI:hover{
-      transform:translateY(-1px);
-      filter:brightness(1.03);
-    }
-
-    .btnBI.primary{
-      background:#102a6b;
-      color:#fff;
-    }
-
-    .btnBI.ghost{
-      background:#fff;
-      color:#0f172a;
-      border-color:var(--line);
-    }
-
-    .kpiGrid{
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap:12px;
-      margin-bottom:14px;
-    }
-
-    .kpiCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:18px;
-      box-shadow:var(--shadow);
-      padding:16px;
-      min-height:110px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-    }
-
-    .kpiLabel{
-      font-size:11px;
-      font-weight:1000;
-      color:var(--muted);
-      letter-spacing:.08em;
-      text-transform:uppercase;
-    }
-
-    .kpiValue{
-      font-size:20px;
-      font-weight:1000;
-      color:var(--text);
-      margin-top:6px;
-    }
-
-    .kpiFoot{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:4px;
-    }
-
-    .biGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:14px;
-    }
-
-    .chartCard,
-    .tableCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:20px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-
-    .chartHead,
-    .tableHead{
-      padding:14px 16px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .chartHead h3,
-    .tableHead h3{
-      margin:0;
-      font-size:16px;
-      font-weight:1000;
-      color:var(--text);
-    }
-
-    .chartBody{
-      padding:14px 16px 10px;
-      height:320px;
-    }
-
-    .chartBody.tall{
-      height:360px;
-    }
-
-    .tableWrap{
-      overflow:auto;
-      max-height:430px;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:820px;
-      background:#fff;
-    }
-
-    th, td{
-      padding:10px 12px;
-      border-bottom:1px solid #edf2f7;
-      font-size:13px;
-      white-space:nowrap;
-      color:#0f172a;
-    }
-
-    th{
-      position:sticky;
-      top:0;
-      z-index:2;
-      background:#f8fafc;
-      text-align:left;
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-      color:#64748b;
-    }
-
-    td.num, th.num{
-      text-align:right;
-    }
-
-    .empty{
-      padding:28px;
-      text-align:center;
-      color:#64748b;
-      font-weight:800;
-    }
-
-    @media (max-width: 1400px){
-      .filtersBI{
-        grid-template-columns: 1fr 1fr 1fr;
-      }
-      .kpiGrid{
-        grid-template-columns: repeat(3,1fr);
-      }
-    }
-
-    @media (max-width: 980px){
-      .biGrid{
-        grid-template-columns:1fr;
-      }
-      .filtersBI{
-        grid-template-columns:1fr;
-      }
-      .kpiGrid{
-        grid-template-columns: repeat(2,1fr);
-      }
-      .heroBITitle h1{
-        font-size:24px;
-      }
-    }
-
-    @media (max-width: 640px){
-      .kpiGrid{
-        grid-template-columns:1fr;
-      }
-    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .pageBI{max-width:1760px;margin:0 auto;padding:18px}.heroBI,.panelCard,.chartCard,.tableCard,.kpiCard,.insightCard{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+    .heroBI{border-radius:24px;padding:18px;margin-bottom:14px}.heroBITop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .heroBITitle h1{margin:0;font-size:30px;line-height:1;font-weight:1000}.heroBITitle p{margin:7px 0 0;color:var(--muted);font-size:13px}.syncStatus{font-size:12px;font-weight:900;color:#067647;white-space:nowrap;padding-top:4px}
+    .modeNav{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;padding:6px;border-radius:14px;background:#eef2f7;width:max-content;max-width:100%}.modeBtn{border:0;border-radius:10px;min-height:38px;padding:0 14px;background:transparent;color:#475569;font-weight:900;cursor:pointer}.modeBtn.active{background:#fff;color:var(--blue-dark);box-shadow:0 3px 10px rgba(15,23,42,.08)}
+    .filtersBI{margin-top:14px;display:grid;grid-template-columns:repeat(4,minmax(150px,1fr)) 1.4fr auto auto;gap:10px}.filtersCommercial{margin-top:10px;display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px}.fieldBox{display:flex;flex-direction:column;gap:5px}.fieldBox label{font-size:10px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+    .filtersBI select,.filtersBI input,.filtersCommercial select,.filtersCommercial input{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--text);outline:none;padding:0 12px;font-size:14px}.btnBI{height:42px;padding:0 16px;border-radius:12px;border:1px solid transparent;font-weight:900;cursor:pointer;white-space:nowrap;align-self:end}.btnBI.primary{background:var(--blue-dark);color:#fff}.btnBI.success{background:var(--green);color:#fff}.btnBI.ghost{background:#fff;color:#0f172a;border-color:var(--line)}
+    .modeSection{display:none}.modeSection.active{display:block}.sectionHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0 10px}.sectionHeader h2{margin:0;font-size:19px;font-weight:1000}.sectionHeader p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+    .kpiGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}.kpiCard{border-radius:18px;padding:16px;min-height:110px;display:flex;flex-direction:column;justify-content:space-between}.kpiLabel{font-size:11px;font-weight:1000;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.kpiValue{font-size:21px;font-weight:1000;margin-top:6px}.kpiFoot{font-size:12px;color:var(--muted);margin-top:4px}
+    .biGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.biGrid.three{grid-template-columns:repeat(3,1fr)}.chartCard,.tableCard,.panelCard,.insightCard{border-radius:20px;overflow:hidden}.chartHead,.tableHead,.panelHead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.chartHead h3,.tableHead h3,.panelHead h3{margin:0;font-size:16px;font-weight:1000}.headNote{font-size:11px;color:var(--muted);font-weight:800}.chartBody{padding:14px 16px 10px;height:320px}.chartBody.tall{height:380px}.chartBody.large{height:430px}
+    .tableWrap{overflow:auto;max-height:480px}table{width:100%;border-collapse:collapse;min-width:980px;background:#fff}th,td{padding:10px 12px;border-bottom:1px solid #edf2f7;font-size:13px;white-space:nowrap;color:#0f172a}th{position:sticky;top:0;z-index:2;background:#f8fafc;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}td.num,th.num{text-align:right}.empty{padding:28px;text-align:center;color:#64748b;font-weight:800}
+    .routeSummary{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:12px;margin-bottom:14px}.routeHero{background:linear-gradient(135deg,#102a6b,#1d4ed8);color:#fff;border-radius:20px;padding:18px;min-height:150px;box-shadow:var(--shadow)}.routeHero small{display:block;opacity:.76;text-transform:uppercase;letter-spacing:.08em;font-weight:900;margin-bottom:8px}.routeHero h2{margin:0;font-size:26px;font-weight:1000}.routeHero p{margin:10px 0 0;opacity:.84;font-size:13px}.miniStat{border-radius:18px;padding:16px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}.miniStat .label{font-size:10px;font-weight:1000;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.miniStat .value{font-size:20px;font-weight:1000;margin-top:8px}.miniStat .sub{margin-top:4px;font-size:12px;color:var(--muted)}
+    .insightsGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.insightCard{padding:15px}.insightIcon{font-size:22px}.insightTitle{font-size:12px;font-weight:1000;margin-top:8px}.insightText{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}.toolbarInline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.smallSelect{height:34px;border:1px solid var(--line);border-radius:9px;padding:0 9px;background:#fff}.badge{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:1000;background:#eef2f7;color:#475569}
+    @media(max-width:1450px){.filtersBI{grid-template-columns:repeat(3,1fr)}.filtersCommercial{grid-template-columns:repeat(3,1fr)}.kpiGrid{grid-template-columns:repeat(3,1fr)}.routeSummary{grid-template-columns:repeat(2,1fr)}.routeHero{grid-column:span 2}.insightsGrid{grid-template-columns:repeat(2,1fr)}.biGrid.three{grid-template-columns:1fr 1fr}}
+    @media(max-width:980px){.biGrid,.biGrid.three{grid-template-columns:1fr}.filtersBI,.filtersCommercial{grid-template-columns:1fr}.kpiGrid{grid-template-columns:repeat(2,1fr)}.routeSummary{grid-template-columns:1fr}.routeHero{grid-column:auto}.insightsGrid{grid-template-columns:1fr}.heroBITitle h1{font-size:24px}}
+    @media(max-width:640px){.kpiGrid{grid-template-columns:1fr}.modeNav{width:100%}.modeBtn{flex:1}}
   </style>
 </head>
-
 <body>
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <a class="burger" href="./home.html" title="Voltar">🏠</a>
-        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
-      </div>
-
-      <div class="actions">
-        <div class="icon-btn" title="Sair" data-logout>↩️</div>
-      </div>
-    </div>
-  </div>
+  <div class="topbar"><div class="topbar-inner"><div class="brand"><a class="burger" href="./home.html" title="Voltar">🏠</a><img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" /></div><div class="actions"><div class="icon-btn" title="Sair" data-logout>↩️</div></div></div></div>
 
   <div class="pageBI">
     <div class="heroBI">
-      <div class="heroBITop">
-        <div class="heroBITitle">
-          <h1>B.I. Fretes</h1>
-          <p>Indicadores atuais e históricos, com filtros por período, filial, cliente e status inicio 21/07/2026.</p>
-        </div>
-
-        <div class="syncStatus" id="syncStatus">🔄 Carregando...</div>
-      </div>
-
+      <div class="heroBITop"><div class="heroBITitle"><h1>B.I. Fretes</h1><p>Operação, histórico diário e inteligência comercial de valores praticados.</p></div><div class="syncStatus" id="syncStatus">🔄 Carregando...</div></div>
+      <div class="modeNav"><button class="modeBtn active" type="button" data-mode="ATUAL">🚛 Operação atual</button><button class="modeBtn" type="button" data-mode="HISTORICO">📅 Histórico diário</button><button class="modeBtn" type="button" data-mode="COMERCIAL">💰 Análise comercial</button></div>
+      <input id="fModo" type="hidden" value="ATUAL" />
       <div class="filtersBI">
-        <select id="fModo">
-          <option value="ATUAL">Operação atual</option>
-          <option value="HISTORICO">Histórico diário</option>
-        </select>
-
-        <input id="fDataInicio" type="date" title="Data inicial" />
-        <input id="fDataFim" type="date" title="Data final" />
-
-        <select id="fOrigemDados">
-          <option value="">GO + MT</option>
-          <option value="FRETES">GO</option>
-          <option value="FRETES2">MT</option>
-        </select>
-
-        <select id="fFilial">
-          <option value="">Todas as filiais</option>
-        </select>
-
-        <select id="fCliente">
-          <option value="">Todos os clientes</option>
-        </select>
-
-        <select id="fStatus">
-          <option value="">Todos os status</option>
-        </select>
-
-        <input id="fBusca" placeholder="Buscar por origem, destino, produto, contato..." />
-
-        <button class="btnBI primary" id="btnAtualizar" type="button">🔄 Atualizar</button>
-        <button class="btnBI ghost" id="btnLimpar" type="button">Limpar filtros</button>
+        <div class="fieldBox"><label for="fDataInicio">Data inicial</label><input id="fDataInicio" type="date" /></div>
+        <div class="fieldBox"><label for="fDataFim">Data final</label><input id="fDataFim" type="date" /></div>
+        <div class="fieldBox"><label for="fOrigemDados">Base</label><select id="fOrigemDados"><option value="">GO + MT</option><option value="FRETES">GO</option><option value="FRETES2">MT</option></select></div>
+        <div class="fieldBox"><label for="fFilial">Filial</label><select id="fFilial"><option value="">Todas as filiais</option></select></div>
+        <div class="fieldBox"><label for="fCliente">Cliente</label><select id="fCliente"><option value="">Todos os clientes</option></select></div>
+        <div class="fieldBox"><label for="fStatus">Status</label><select id="fStatus"><option value="">Todos os status</option></select></div>
+        <div class="fieldBox"><label for="fBusca">Busca geral</label><input id="fBusca" placeholder="Origem, destino, produto, contato..." /></div>
+        <button class="btnBI primary" id="btnAtualizar" type="button">🔄 Atualizar</button><button class="btnBI ghost" id="btnLimpar" type="button">Limpar</button>
+      </div>
+      <div class="filtersCommercial" id="filtersCommercial" hidden>
+        <div class="fieldBox"><label for="fOrigem">Origem</label><select id="fOrigem"><option value="">Todas as origens</option></select></div>
+        <div class="fieldBox"><label for="fDestino">Destino</label><select id="fDestino"><option value="">Todos os destinos</option></select></div>
+        <div class="fieldBox"><label for="fProduto">Produto</label><select id="fProduto"><option value="">Todos os produtos</option></select></div>
+        <div class="fieldBox"><label for="fTipoEvento">Evento de preço</label><select id="fTipoEvento"><option value="">Todos</option><option value="CRIADO">Criado</option><option value="ATUALIZADO">Atualizado</option></select></div>
       </div>
     </div>
 
-    <div class="kpiGrid">
-      <div class="kpiCard">
-        <div class="kpiLabel">Veículos Porta</div>
-        <div class="kpiValue" id="kpiPorta">0</div>
-        <div class="kpiFoot">Soma da coluna Porta</div>
+    <section class="modeSection active" data-section="ATUAL">
+      <div class="kpiGrid">
+        <div class="kpiCard"><div class="kpiLabel">Veículos Porta</div><div class="kpiValue" id="kpiPorta">0</div><div class="kpiFoot">Soma da coluna Porta</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Veículos Trânsito</div><div class="kpiValue" id="kpiTransito">0</div><div class="kpiFoot">Soma da coluna Trânsito</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Veículos Totais</div><div class="kpiValue" id="kpiVeiculos">0</div><div class="kpiFoot">Porta + Trânsito</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Volume Total</div><div class="kpiValue" id="kpiVolume">0 t</div><div class="kpiFoot">38 t por veículo</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Frete Médio Empresa</div><div class="kpiValue" id="kpiFreteMedio">R$ 0,00</div><div class="kpiFoot">Média do valor empresa</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Margem Média</div><div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div><div class="kpiFoot">Empresa - Motorista</div></div>
       </div>
-
-      <div class="kpiCard">
-        <div class="kpiLabel">Veículos Trânsito</div>
-        <div class="kpiValue" id="kpiTransito">0</div>
-        <div class="kpiFoot">Soma da coluna Trânsito</div>
+      <div class="biGrid">
+        <div class="chartCard"><div class="chartHead"><h3>Veículos por Filial</h3></div><div class="chartBody"><canvas id="chartVeiculosFilial"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Veículos por Cliente</h3></div><div class="chartBody"><canvas id="chartVeiculosCliente"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Volume por Filial</h3></div><div class="chartBody"><canvas id="chartVolumeFilial"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Porta x Trânsito por Filial</h3></div><div class="chartBody"><canvas id="chartPortaTransito"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Margem Média por Cliente</h3></div><div class="chartBody tall"><canvas id="chartMargemCliente"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Evolução Diária de Veículos</h3></div><div class="chartBody tall"><canvas id="chartEvolucaoDiaria"></canvas></div></div>
+        <div class="tableCard" style="grid-column:1/-1"><div class="tableHead"><h3>Indicativo Fixo por Filial</h3></div><div class="tableWrap"><table><thead><tr><th>Filial</th><th class="num">Porta</th><th class="num">Trânsito</th><th class="num">Veículos</th><th class="num">Volume (t)</th><th class="num">Frete Médio</th><th class="num">Margem Média</th></tr></thead><tbody id="tbodyIndicativo"></tbody></table></div></div>
       </div>
+    </section>
 
-      <div class="kpiCard">
-        <div class="kpiLabel">Veículos Totais</div>
-        <div class="kpiValue" id="kpiVeiculos">0</div>
-        <div class="kpiFoot">Porta + Trânsito</div>
+    <section class="modeSection" data-section="HISTORICO">
+      <div class="sectionHeader"><div><h2>Histórico operacional diário</h2><p>Fotografia da operação por data, filial, cliente, porta, trânsito e volume.</p></div></div>
+      <div class="kpiGrid">
+        <div class="kpiCard"><div class="kpiLabel">Média diária de veículos</div><div class="kpiValue" id="kpiHistMediaVeiculos">0</div><div class="kpiFoot">Média no período</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Pico de veículos</div><div class="kpiValue" id="kpiHistPicoVeiculos">0</div><div class="kpiFoot" id="kpiHistPicoData">Sem dados</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Volume acumulado</div><div class="kpiValue" id="kpiHistVolume">0 t</div><div class="kpiFoot">Soma das posições diárias</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Média Porta</div><div class="kpiValue" id="kpiHistPorta">0</div><div class="kpiFoot">Média diária</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Média Trânsito</div><div class="kpiValue" id="kpiHistTransito">0</div><div class="kpiFoot">Média diária</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Dias analisados</div><div class="kpiValue" id="kpiHistDias">0</div><div class="kpiFoot">Datas com snapshot</div></div>
       </div>
+      <div class="biGrid"><div class="chartCard" style="grid-column:1/-1"><div class="chartHead"><h3>Evolução diária da operação</h3></div><div class="chartBody large"><canvas id="chartHistoricoOperacao"></canvas></div></div><div class="chartCard"><div class="chartHead"><h3>Volume diário por filial</h3></div><div class="chartBody tall"><canvas id="chartHistoricoFilial"></canvas></div></div><div class="chartCard"><div class="chartHead"><h3>Participação por cliente</h3></div><div class="chartBody tall"><canvas id="chartHistoricoCliente"></canvas></div></div></div>
+    </section>
 
-      <div class="kpiCard">
-        <div class="kpiLabel">Volume Total</div>
-        <div class="kpiValue" id="kpiVolume">0 t</div>
-        <div class="kpiFoot">38 t por veículo</div>
+    <section class="modeSection" data-section="COMERCIAL">
+      <div class="sectionHeader"><div><h2>Inteligência comercial de fretes</h2><p>Consulta valores empresa e motorista praticados por rota, período, cliente, produto e filial.</p></div><div class="toolbarInline"><button class="btnBI success" id="btnConsultarMercado" type="button">🔎 Consultar mercado</button><button class="btnBI ghost" id="btnExportarComercial" type="button">⬇️ Exportar CSV</button></div></div>
+      <div class="routeSummary">
+        <div class="routeHero"><small>Rota analisada</small><h2 id="rotaSelecionada">Todas as rotas</h2><p id="periodoSelecionado">Selecione origem, destino e período para uma leitura precisa do mercado.</p></div>
+        <div class="miniStat"><div class="label">Empresa médio</div><div class="value" id="kpiComEmpresaMedio">R$ 0,00</div><div class="sub" id="kpiComEmpresaFaixa">Mín. R$ 0,00 | Máx. R$ 0,00</div></div>
+        <div class="miniStat"><div class="label">Motorista médio</div><div class="value" id="kpiComMotoristaMedio">R$ 0,00</div><div class="sub" id="kpiComMotoristaFaixa">Mín. R$ 0,00 | Máx. R$ 0,00</div></div>
+        <div class="miniStat"><div class="label">Margem média</div><div class="value" id="kpiComMargemMedia">R$ 0,00</div><div class="sub" id="kpiComMargemPercentual">0,00%</div></div>
+        <div class="miniStat"><div class="label">Registros de preço</div><div class="value" id="kpiComNegociacoes">0</div><div class="sub" id="kpiComAlteracoes">0 alterações reais</div></div>
       </div>
-
-      <div class="kpiCard">
-        <div class="kpiLabel">Frete Médio Empresa</div>
-        <div class="kpiValue" id="kpiFreteMedio">R$ 0,00</div>
-        <div class="kpiFoot">Média do Vlr Empresa</div>
+      <div class="insightsGrid"><div class="insightCard"><div class="insightIcon">📈</div><div class="insightTitle">Tendência do período</div><div class="insightText" id="insightTendencia">Aguardando dados.</div></div><div class="insightCard"><div class="insightIcon">🏆</div><div class="insightTitle">Cliente com melhor valor</div><div class="insightText" id="insightMelhorCliente">Sem dados suficientes.</div></div><div class="insightCard"><div class="insightIcon">💹</div><div class="insightTitle">Melhor margem</div><div class="insightText" id="insightMelhorMargem">Sem dados suficientes.</div></div><div class="insightCard"><div class="insightIcon">⚠️</div><div class="insightTitle">Alerta comercial</div><div class="insightText" id="insightAlerta">Nenhum alerta calculado.</div></div></div>
+      <div class="biGrid">
+        <div class="chartCard" style="grid-column:1/-1"><div class="chartHead"><div><h3>Evolução dos valores praticados</h3><div class="headNote">Empresa x Motorista por data</div></div><select class="smallSelect" id="fAgrupamentoComercial"><option value="EVENTO">Por evento</option><option value="DIA">Por dia</option><option value="SEMANA">Por semana</option><option value="MES">Por mês</option></select></div><div class="chartBody large"><canvas id="chartEvolucaoValores"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Margem por período</h3></div><div class="chartBody tall"><canvas id="chartMargemPeriodo"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Distribuição de preços</h3></div><div class="chartBody tall"><canvas id="chartDistribuicaoValores"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Ranking de rotas por valor médio</h3></div><div class="chartBody tall"><canvas id="chartRankingRotas"></canvas></div></div>
+        <div class="chartCard"><div class="chartHead"><h3>Ranking de clientes por margem</h3></div><div class="chartBody tall"><canvas id="chartRankingClientes"></canvas></div></div>
       </div>
-
-      <div class="kpiCard">
-        <div class="kpiLabel">Margem Média</div>
-        <div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div>
-        <div class="kpiFoot">Empresa - Motorista</div>
+      <div class="tableCard" style="margin-top:14px"><div class="tableHead"><div><h3>Histórico de valores praticados</h3><div class="headNote">Somente criações e alterações reais de preço</div></div><span class="badge" id="badgeResultados">0 registros</span></div><div class="tableWrap" style="max-height:560px"><table><thead><tr><th>Data</th><th>Evento</th><th>Base</th><th>Filial</th><th>Origem</th><th>Destino</th><th>Cliente</th><th>Produto</th><th class="num">Empresa</th><th class="num">Motorista</th><th class="num">Margem R$</th><th class="num">Margem %</th><th>Status</th></tr></thead><tbody id="tbodyHistoricoValores"><tr><td colspan="13" class="empty">Use os filtros e clique em “Consultar mercado”.</td></tr></tbody></table></div></div>
+      <div class="biGrid three" style="margin-top:14px">
+        <div class="tableCard"><div class="tableHead"><h3>Rotas mais rentáveis</h3></div><div class="tableWrap"><table style="min-width:620px"><thead><tr><th>Rota</th><th class="num">Média Empresa</th><th class="num">Margem</th><th class="num">Registros</th></tr></thead><tbody id="tbodyRotasRentaveis"></tbody></table></div></div>
+        <div class="tableCard"><div class="tableHead"><h3>Clientes que melhor pagam</h3></div><div class="tableWrap"><table style="min-width:620px"><thead><tr><th>Cliente</th><th class="num">Empresa Médio</th><th class="num">Motorista Médio</th><th class="num">Margem</th></tr></thead><tbody id="tbodyClientesPagamMelhor"></tbody></table></div></div>
+        <div class="tableCard"><div class="tableHead"><h3>Variações relevantes</h3></div><div class="tableWrap"><table style="min-width:620px"><thead><tr><th>Rota</th><th class="num">Primeiro</th><th class="num">Último</th><th class="num">Variação</th></tr></thead><tbody id="tbodyVariacoesRelevantes"></tbody></table></div></div>
       </div>
-    </div>
-
-    <div class="biGrid">
-      <div class="chartCard">
-        <div class="chartHead">
-          <h3>Veículos por Filial</h3>
-        </div>
-        <div class="chartBody">
-          <canvas id="chartVeiculosFilial"></canvas>
-        </div>
-      </div>
-
-      <div class="chartCard">
-        <div class="chartHead">
-          <h3>Veículos por Cliente</h3>
-        </div>
-        <div class="chartBody">
-          <canvas id="chartVeiculosCliente"></canvas>
-        </div>
-      </div>
-
-      <div class="chartCard">
-        <div class="chartHead">
-          <h3>Volume por Filial</h3>
-        </div>
-        <div class="chartBody">
-          <canvas id="chartVolumeFilial"></canvas>
-        </div>
-      </div>
-
-      <div class="chartCard">
-        <div class="chartHead">
-          <h3>Porta x Trânsito por Filial</h3>
-        </div>
-        <div class="chartBody">
-          <canvas id="chartPortaTransito"></canvas>
-        </div>
-      </div>
-
-      <div class="chartCard">
-        <div class="chartHead">
-          <h3>Margem Média por Cliente</h3>
-        </div>
-        <div class="chartBody tall">
-          <canvas id="chartMargemCliente"></canvas>
-        </div>
-      </div>
-
-
-      <div class="chartCard">
-        <div class="chartHead">
-          <h3>Evolução Diária de Veículos</h3>
-        </div>
-        <div class="chartBody tall">
-          <canvas id="chartEvolucaoDiaria"></canvas>
-        </div>
-      </div>
-
-      <div class="tableCard">
-        <div class="tableHead">
-          <h3>Indicativo Fixo por Filial</h3>
-        </div>
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Filial</th>
-                <th class="num">Porta</th>
-                <th class="num">Trânsito</th>
-                <th class="num">Veículos</th>
-                <th class="num">Volume (t)</th>
-                <th class="num">Frete Médio</th>
-                <th class="num">Margem Média</th>
-              </tr>
-            </thead>
-            <tbody id="tbodyIndicativo"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    </section>
   </div>
 
   <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/bi.js?v=2"></script>
+  <script src="../assets/js/bi.js?v=3"></script>
   <script>
-    requireHomeAuth();
-    bindLogoutButton();
+    requireHomeAuth(); bindLogoutButton();
+    (function(){
+      const hiddenMode=document.getElementById('fModo');
+      const filtersCommercial=document.getElementById('filtersCommercial');
+      const buttons=[...document.querySelectorAll('.modeBtn')];
+      const sections=[...document.querySelectorAll('.modeSection')];
+      function ativarModo(mode){
+        hiddenMode.value=mode;
+        buttons.forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));
+        sections.forEach(sec=>sec.classList.toggle('active',sec.dataset.section===mode));
+        filtersCommercial.hidden=mode!=='COMERCIAL';
+        window.dispatchEvent(new CustomEvent('bi:modechange',{detail:{mode}}));
+      }
+      buttons.forEach(btn=>btn.addEventListener('click',()=>ativarModo(btn.dataset.mode)));
+      ativarModo(hiddenMode.value||'ATUAL');
+    })();
   </script>
 </body>
 </html>

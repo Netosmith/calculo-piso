@@ -1,4 +1,4 @@
-/* fretes.js | NOVA FROTA - CADASTROS VIA GOOGLE SHEETS */
+/* fretes.js | NOVA FROTA - CADASTROS VIA GOOGLE SHEETSs */
 (function () {
   "use strict";
 

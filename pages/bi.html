@@ -91,7 +91,7 @@
     .filtersBI{
       margin-top:16px;
       display:grid;
-      grid-template-columns: 220px 220px 220px 1fr auto auto;
+      grid-template-columns: 190px 190px 190px 190px 160px 160px 1fr auto auto;
       gap:10px;
     }
 
@@ -317,13 +317,27 @@
       <div class="heroBITop">
         <div class="heroBITitle">
           <h1>B.I. Fretes</h1>
-          <p>Indicadores operacionais da base Fretes, com foco em veículos porta, trânsito, volume, frete médio e margem média.</p>
+          <p>Indicadores atuais e históricos das bases Fretes e Fretes2, com filtros por período, filial, cliente e status.</p>
         </div>
 
         <div class="syncStatus" id="syncStatus">🔄 Carregando...</div>
       </div>
 
       <div class="filtersBI">
+        <select id="fModo">
+          <option value="ATUAL">Operação atual</option>
+          <option value="HISTORICO">Histórico diário</option>
+        </select>
+
+        <input id="fDataInicio" type="date" title="Data inicial" />
+        <input id="fDataFim" type="date" title="Data final" />
+
+        <select id="fOrigemDados">
+          <option value="">Fretes + Fretes2</option>
+          <option value="FRETES">Fretes</option>
+          <option value="FRETES2">Fretes2</option>
+        </select>
+
         <select id="fFilial">
           <option value="">Todas as filiais</option>
         </select>
@@ -427,6 +441,16 @@
         </div>
       </div>
 
+
+      <div class="chartCard">
+        <div class="chartHead">
+          <h3>Evolução Diária de Veículos</h3>
+        </div>
+        <div class="chartBody tall">
+          <canvas id="chartEvolucaoDiaria"></canvas>
+        </div>
+      </div>
+
       <div class="tableCard">
         <div class="tableHead">
           <h3>Indicativo Fixo por Filial</h3>
@@ -452,7 +476,7 @@
   </div>
 
   <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/bi.js"></script>
+  <script src="../assets/js/bi.js?v=2"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

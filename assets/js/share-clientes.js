@@ -8,7 +8,7 @@
   const LS_KEY_BASE = "nf_share_clientes_base_v1";
 
   const SHEETS_API_URL =
-    "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
+    "https://script.google.com/macros/s/AKfycbyyzuVwlXJeuZcIcr6mCoqA8I-7_3jrXrEd02zVj8nYLjJZagLHLnK9EdLuAv2k7ro/exec";
 
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];

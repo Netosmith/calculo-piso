@@ -97,8 +97,8 @@
     if (!btn) return;
 
     btn.textContent = ocultarFreteEmpresa
-      ? "MOSTRAR FRETE EMPRESA"
-      : "OCULTAR FRETE EMPRESA";
+      ? "MOSTRAR"
+      : "OCULTAR";
   }
 
   function toggleFreteEmpresa(hide) {

@@ -4,6 +4,7 @@
 
 const API_URL="https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
 const ADMIN_USER="LUZIANO";
+const QUICK_QUOTE_KEY=`piso_${userSafeKey_()}_cotacao_rapida_v1`;
 
 /* PARÂMETROS FIXOS ANTT 6.084, DE 16/07/2026 */
 const DATA=[
@@ -24,6 +25,141 @@ const DATA=[
 
 const $=id=>document.getElementById(id);
 let pesos={},selected=0,chart=null;
+
+
+/* =========================================================
+   MODO COTAÇÃO RÁPIDA
+   Mantém somente a entrada essencial e a tabela de fretes.
+   O CSS é criado pelo próprio JS, sem exigir alteração no HTML.
+   ========================================================= */
+function userSafeKey_(){
+ try{
+  const raw=(typeof getUser==="function"&&getUser())?getUser():localStorage.getItem("nf_auth_user");
+  return String(raw||"DEFAULT").trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"_");
+ }catch(e){
+  return "DEFAULT";
+ }
+}
+
+function injectQuickQuoteStyles(){
+ if(document.getElementById("nfQuickQuoteStyles"))return;
+ const style=document.createElement("style");
+ style.id="nfQuickQuoteStyles";
+ style.textContent=`
+  body.quickQuoteMode .dashboard{
+    display:block!important;
+  }
+  body.quickQuoteMode .dashboard>.mapPanel,
+  body.quickQuoteMode .dashboard>.historyPanel{
+    display:none!important;
+  }
+  body.quickQuoteMode .dashboard>article:first-child{
+    width:100%!important;
+    max-width:none!important;
+  }
+  body.quickQuoteMode .dashboard>article:first-child .panelBody{
+    padding:16px!important;
+  }
+  body.quickQuoteMode .dashboard>article:first-child .formGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  body.quickQuoteMode .dashboard>article:first-child .field:has(#tipoTabela),
+  body.quickQuoteMode .dashboard>article:first-child .field:has(#tipo),
+  body.quickQuoteMode .dashboard>article:first-child .field:has(#eixos),
+  body.quickQuoteMode .dashboard>article:first-child .field:has(#origemRota),
+  body.quickQuoteMode .dashboard>article:first-child .field:has(#destinoRota),
+  body.quickQuoteMode .dashboard>article:first-child .field:has(#pesoSelecionado),
+  body.quickQuoteMode #btnCalc,
+  body.quickQuoteMode .quoteResults,
+  body.quickQuoteMode .formula{
+    display:none!important;
+  }
+  body.quickQuoteMode .dashboard>article:first-child .hint{
+    display:block!important;
+    margin:12px 0 0!important;
+    color:#91a8c8!important;
+  }
+  body.quickQuoteMode .bottomGrid{
+    display:block!important;
+    margin-top:14px!important;
+  }
+  body.quickQuoteMode .bottomGrid>article:nth-child(2),
+  body.quickQuoteMode .bottomGrid>article:nth-child(3){
+    display:none!important;
+  }
+  body.quickQuoteMode .bottomGrid>article:first-child{
+    width:100%!important;
+    max-width:none!important;
+  }
+  body.quickQuoteMode .freightTableWrap{
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.quickQuoteMode .freightTable th:nth-child(5),
+  body.quickQuoteMode .freightTable td:nth-child(5){
+    display:none!important;
+  }
+  body.quickQuoteMode .freightTable th,
+  body.quickQuoteMode .freightTable td{
+    padding:11px 12px!important;
+  }
+  body.quickQuoteMode #btnQuoteMode{
+    border-color:#60a5fa!important;
+    box-shadow:0 0 0 3px rgba(59,130,246,.16)!important;
+  }
+  body.quickQuoteMode #toggleQuote{
+    background:#1d4ed8!important;
+  }
+  body.quickQuoteMode #toggleQuote:after{
+    right:3px!important;
+  }
+  @media(max-width:700px){
+    body.quickQuoteMode .dashboard>article:first-child .formGrid{
+      grid-template-columns:1fr!important;
+    }
+  }
+ `;
+ document.head.appendChild(style);
+}
+
+function setQuickQuoteMode(enabled,save=true){
+ injectQuickQuoteStyles();
+ document.body.classList.toggle("quickQuoteMode",!!enabled);
+
+ const toggle=$("toggleQuote");
+ if(toggle)toggle.classList.toggle("off",!enabled);
+
+ const btn=$("btnQuoteMode");
+ if(btn){
+  btn.setAttribute("aria-pressed",enabled?"true":"false");
+  btn.title=enabled?"Desativar Cotação Rápida":"Ativar Cotação Rápida";
+ }
+
+ const title=document.querySelector(".dashboard>article:first-child .panelTitle");
+ if(title){
+  if(!title.dataset.normalTitle)title.dataset.normalTitle=title.innerHTML;
+  title.innerHTML=enabled?'<span class="icon">▣</span>ENTRADA':title.dataset.normalTitle;
+ }
+
+ const hint=document.querySelector(".dashboard>article:first-child .hint");
+ if(hint){
+  if(!hint.dataset.normalHint)hint.dataset.normalHint=hint.innerHTML;
+  hint.innerHTML=enabled
+   ?'Dica: selecione o <b>Tipo</b> clicando direto na tabela. Ative novamente o botão para voltar ao painel completo.'
+   :hint.dataset.normalHint;
+ }
+
+ if(save)localStorage.setItem(QUICK_QUOTE_KEY,enabled?"1":"0");
+}
+
+function toggleQuickQuoteMode(){
+ setQuickQuoteMode(!document.body.classList.contains("quickQuoteMode"));
+}
+
+function restoreQuickQuoteMode(){
+ setQuickQuoteMode(localStorage.getItem(QUICK_QUOTE_KEY)==="1",false);
+}
 
 function txt(v){return String(v??"").trim()}
 function up(v){return txt(v).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
@@ -179,7 +315,7 @@ function debounce(fn,ms=600){let t;return(...a)=>{clearTimeout(t);t=setTimeout((
 function init(){
  try{if(typeof requirePisoAuth==="function")requirePisoAuth();else if(typeof requireHomeAuth==="function")requireHomeAuth()}catch(e){}
  $("userName").textContent=user();$("userRole").textContent=role();
- pesos=loadPesos();fillTipos();renderPesos();renderAll();renderHistory([]);
+ pesos=loadPesos();fillTipos();renderPesos();renderAll();renderHistory([]);restoreQuickQuoteMode();
  $("tipo").onchange=()=>{selected=+$("tipo").value||0;renderAll()};
  ["km","pedagio","margem","icms"].forEach(id=>$(id).oninput=renderAll);
  const route=debounce(()=>{renderMap();loadHistory()});
@@ -188,6 +324,7 @@ function init(){
  $("btnOpenMaps").onclick=openMaps;$("btnCopy").onclick=copyQuote;$("btnSave").onclick=saveQuote;
  $("btnPublish").onclick=()=>location.href="./fretes.html";$("btnWhatsApp").onclick=whatsapp;
  $("btnExportCSV").onclick=exportCSV;$("btnExportJPG").onclick=exportJPG;
+ $("btnQuoteMode").onclick=toggleQuickQuoteMode;
  $("btnHome").onclick=()=>location.href="./home.html";
  $("btnLogout").onclick=()=>{try{if(typeof logoutAll==="function")return logoutAll()}catch(e){}location.href="../pages/login.html"};
  $("btnAdmin").onclick=()=>$("adminModal").classList.add("show");

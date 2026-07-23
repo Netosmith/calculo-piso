@@ -249,10 +249,39 @@ function jsonp(params,timeout=35000){
   s.src=u.toString();document.head.appendChild(s);
  });
 }
-function normPlace(v){return up(v).replace(/\bBRASIL\b/g,"").replace(/\s+/g," ").trim()}
+const UFS_BR="AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO";
+
+function normPlace(v){
+ return up(v)
+  .replace(/\bBRASIL\b/g," ")
+  .replace(new RegExp("\\s*-\\s*("+UFS_BR+")\\b","g")," ")
+  .replace(new RegExp("\\b("+UFS_BR+")\\b$","g")," ")
+  .replace(/[.,;:/\\()[\]{}]/g," ")
+  .replace(/[-_]+/g," ")
+  .replace(/\s+/g," ")
+  .trim();
+}
+
+function placeMatch(valorHistorico,valorDigitado){
+ const historico=normPlace(valorHistorico);
+ const digitado=normPlace(valorDigitado);
+
+ if(!historico||!digitado)return false;
+ if(historico===digitado)return true;
+ if(historico.includes(digitado))return true;
+ if(digitado.includes(historico))return true;
+
+ const histTokens=historico.split(" ").filter(Boolean);
+ const digTokens=digitado.split(" ").filter(Boolean);
+
+ return digTokens.every(token=>histTokens.includes(token)) ||
+        histTokens.every(token=>digTokens.includes(token));
+}
+
 function routeMatch(r,o,d){
- const ro=normPlace(r.origem),rd=normPlace(r.destino);
- return ro&&rd&&((ro===o&&rd===d)||(ro.includes(o)&&rd.includes(d))||(o.includes(ro)&&d.includes(rd)));
+ const origemOk=placeMatch(r.origem,o)||placeMatch(r.coleta,o);
+ const destinoOk=placeMatch(r.destino,d)||placeMatch(r.descarga,d);
+ return origemOk&&destinoOk;
 }
 function dateVal(r){
  const v=r.dataHora||r.ultimaAlteracao||r.dataReferencia||r.updatedAt||r.createdAt;
@@ -282,16 +311,47 @@ function renderChart(rows){
  chart=new Chart($("trendChart"),{type:"line",data:{labels:ordered.map(r=>new Date(dateVal(r)).toLocaleDateString("pt-BR")),datasets:[{data:vals,label:"Frete Empresa",tension:.28,borderWidth:2,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{display:false},grid:{display:false}},y:{ticks:{callback:v=>`R$ ${v}`}}}}});
 }
 async function loadHistory(){
- const o=normPlace($("origemRota").value),d=normPlace($("destinoRota").value);
- if(!o||!d){$("historyStatus").textContent="Aguardando rota";renderHistory([]);return}
+ const o=txt($("origemRota").value);
+ const d=txt($("destinoRota").value);
+
+ if(!o||!d){
+  $("historyStatus").textContent="Aguardando rota";
+  renderHistory([]);
+  return;
+ }
+
  $("historyStatus").textContent="Consultando B.I...";
+
  try{
   const res=await jsonp({action:"historico_fretes_list"});
   if(!res||res.ok===false)throw new Error(res?.error||"Falha na API");
+
   let rows=Array.isArray(res.data)?res.data:[];
-  rows=rows.filter(r=>routeMatch(r,o,d)).sort((a,b)=>dateVal(b)-dateVal(a));
-  renderHistory(rows);$("historyStatus").textContent=rows.length?`${rows.length} registros encontrados`:"Nenhum histórico para esta rota";
- }catch(e){console.error(e);renderHistory([]);$("historyStatus").textContent="Falha ao consultar B.I."}
+  const totalRecebido=rows.length;
+
+  rows=rows
+   .filter(r=>routeMatch(r,o,d))
+   .sort((a,b)=>dateVal(b)-dateVal(a));
+
+  console.info("[CÁLCULO PISO] Histórico recebido:",totalRecebido);
+  console.info("[CÁLCULO PISO] Rota pesquisada:",{
+   origemDigitada:o,
+   destinoDigitado:d,
+   origemNormalizada:normPlace(o),
+   destinoNormalizado:normPlace(d),
+   encontrados:rows.length
+  });
+
+  renderHistory(rows);
+  $("historyStatus").textContent=rows.length
+   ?`${rows.length} registros encontrados`
+   :`Nenhum histórico para esta rota (${totalRecebido} registros analisados)`;
+
+ }catch(e){
+  console.error("[CÁLCULO PISO] Erro ao consultar histórico:",e);
+  renderHistory([]);
+  $("historyStatus").textContent="Falha ao consultar B.I.";
+ }
 }
 
 function quote(){

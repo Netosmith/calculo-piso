@@ -2,7 +2,7 @@
 (function(){
 "use strict";
 
-const API_URL="https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbxqYIjETvyUF3DF_ovqQQ5NORRePQw2dxH2dgrERigGsEitSLH1qbLwO3kVrpTYoUfG/exec";
 const ADMIN_USER="LUZIANO";
 const QUICK_QUOTE_KEY=`piso_${userSafeKey_()}_cotacao_rapida_v1`;
 

@@ -6,7 +6,7 @@
 
 // Use aqui a URL publicada do seu Apps Script.
 const AUTH_API_URL =
-  "https://script.google.com/macros/s/AKfycbyIeygrlaQVPq0puz1uxztLHSg0bsjxBcGFuZ9IR4CXqB2DqWMf3gPPFVk4FI0B-i45/exec";
+  "https://script.google.com/macros/s/AKfycbxqYIjETvyUF3DF_ovqQQ5NORRePQw2dxH2dgrERigGsEitSLH1qbLwO3kVrpTYoUfG/exec";
 
 // ======== PERMISSÕES POR PERFIL ========
 // Estados ficam na aba USUARIOS, coluna Estados: GO,MT,PR,MA...

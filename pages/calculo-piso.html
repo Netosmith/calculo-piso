@@ -1,925 +1,1085 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cálculo de Frete ANTT 6.067/2025</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cálculo do Piso | Nova Frota</title>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-  <!-- ✅ LOGIN DO PORTAL (HOME + ESTADO + PERMISSÕES DO PISO) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="../assets/js/auth.js"></script>
 
   <style>
     :root{
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      --bg:#0b1020; --cardBorder:rgba(34,48,94,.9);
-      --ink:#e9eefc; --muted:rgba(233,238,252,.72);
-      --blue:#5b7cfa; --neon:rgba(60,255,160,.70);
-      --neonSoft:rgba(60,255,160,.18); --neonBorder:rgba(60,255,160,.45);
+      --bg:#06101f;
+      --bg2:#071426;
+      --panel:#0a1a31;
+      --panel2:#0c213d;
+      --line:#234875;
+      --line-soft:#18365d;
+      --text:#f6f8ff;
+      --muted:#90a6c4;
+      --blue:#3b82f6;
+      --blue-2:#1d4ed8;
+      --green:#22c55e;
+      --green-2:#15803d;
+      --red:#fb7185;
+      --orange:#f59e0b;
+      --purple:#a855f7;
+      --cyan:#38bdf8;
+      --shadow:0 18px 44px rgba(0,0,0,.34);
+      --radius:16px;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     }
-    *,*::before,*::after{box-sizing:border-box}
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
     body{
-      margin:0;color:var(--ink);
-      background: radial-gradient(1200px 700px at 20% 15%, rgba(91,124,250,.18), transparent 55%),
-                  radial-gradient(900px 600px at 85% 10%, rgba(60,255,160,.10), transparent 55%),
-                  radial-gradient(1200px 700px at 50% 120%, rgba(120,80,255,.12), transparent 60%),
-                  var(--bg);
-      min-height:100vh;
+      margin:0;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 640px at 14% 4%,rgba(29,78,216,.18),transparent 62%),
+        radial-gradient(900px 540px at 86% 2%,rgba(34,197,94,.07),transparent 60%),
+        linear-gradient(180deg,#040b16 0%,#06111f 45%,#071426 100%);
     }
-    .wrap{max-width:980px;margin:0 auto;padding:20px}
-    .card{
-      background:linear-gradient(180deg, rgba(17,26,51,.86), rgba(13,20,48,.78));
-      border:1px solid var(--cardBorder);border-radius:16px;padding:16px;
-      backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.25);
-      position:relative;overflow:hidden;
+
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{
+      width:100%;
+      max-width:1920px;
+      margin:0 auto;
+      padding:14px;
     }
-    .card::before{
-      content:"";position:absolute;left:-20%;top:-40px;width:140%;height:80px;
-      background:radial-gradient(closest-side, rgba(91,124,250,.20), transparent 70%);
-      opacity:.65;pointer-events:none;
+
+    /* HEADER */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      min-height:56px;
+      margin-bottom:12px;
     }
-    h1{margin:0 0 8px;font-size:20px;letter-spacing:.2px}
-    .grid{display:grid;grid-template-columns:1fr;gap:14px}
-    @media (min-width:860px){.grid{grid-template-columns:1.1fr .9fr}}
-    label{display:block;font-size:12px;opacity:.92;margin:10px 0 6px}
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:255px;
+    }
+
+    .brand img{
+      width:38px;
+      height:38px;
+      object-fit:contain;
+    }
+
+    .brandFallback{
+      width:38px;
+      height:38px;
+      display:grid;
+      place-items:center;
+      font-size:28px;
+    }
+
+    .brandText strong{
+      display:block;
+      font-size:18px;
+      line-height:1;
+      letter-spacing:.03em;
+    }
+
+    .brandText span{
+      display:block;
+      margin-top:4px;
+      font-size:9px;
+      color:#c9d6e9;
+      letter-spacing:.04em;
+    }
+
+    .topActions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      gap:9px;
+    }
+
+    .topBtn,.dateBox,.userBox{
+      height:39px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:linear-gradient(180deg,rgba(13,33,62,.98),rgba(7,21,42,.98));
+      color:#fff;
+      padding:0 13px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:11px;
+      font-weight:900;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    .topBtn.green{
+      border-color:rgba(34,197,94,.58);
+      color:#e1ffea;
+    }
+
+    .topBtn.home{border-color:#345d96}
+
+    .dateBox small,.userBox small{
+      display:block;
+      color:var(--muted);
+      font-size:8px;
+      font-weight:800;
+      line-height:1.1;
+    }
+
+    .dateBox strong,.userBox strong{
+      display:block;
+      font-size:11px;
+      line-height:1.15;
+    }
+
+    .toggle{
+      width:39px;
+      height:21px;
+      border-radius:999px;
+      background:#1d4ed8;
+      position:relative;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+
+    .toggle::after{
+      content:"";
+      position:absolute;
+      width:15px;
+      height:15px;
+      border-radius:50%;
+      background:#fff;
+      top:3px;
+      right:3px;
+      box-shadow:0 3px 9px rgba(0,0,0,.35);
+    }
+
+    .toggle.off{background:#26344e}
+    .toggle.off::after{right:21px}
+
+    /* PANELS */
+    .dashboard{
+      display:grid;
+      grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr) minmax(440px,1.12fr);
+      gap:11px;
+      align-items:stretch;
+    }
+
+    .panel{
+      min-width:0;
+      overflow:hidden;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,rgba(10,26,49,.98),rgba(6,19,38,.98));
+      box-shadow:var(--shadow);
+    }
+
+    .panelHead{
+      height:45px;
+      padding:0 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid var(--line-soft);
+      background:linear-gradient(180deg,rgba(18,42,74,.56),rgba(8,24,46,.22));
+    }
+
+    .panelTitle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      font-weight:1000;
+      letter-spacing:.015em;
+    }
+
+    .panelTitle .icon{
+      color:var(--cyan);
+      font-size:17px;
+    }
+
+    .panelBody{padding:13px}
+
+    /* FORM */
+    .formGrid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:11px 12px;
+    }
+
+    .field label{
+      display:block;
+      margin:0 0 5px;
+      font-size:9px;
+      color:#c6d4e8;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.055em;
+    }
+
     input,select{
-      width:100%;max-width:100%;padding:10px 12px;border-radius:12px;
-      border:1px solid rgba(43,58,114,.95);background:rgba(13,20,48,.92);
-      color:var(--ink);outline:none;transition:box-shadow .18s,border-color .18s,transform .08s;
+      width:100%;
+      height:38px;
+      border-radius:9px;
+      border:1px solid #234879;
+      background:#07162b;
+      color:#fff;
+      padding:0 11px;
+      outline:none;
+      transition:.15s;
     }
-    input:focus,select:focus{border-color:rgba(91,124,250,.95);box-shadow:0 0 0 3px rgba(91,124,250,.25)}
-    .editingGlow{
-      border-color:var(--neonBorder)!important;
-      box-shadow:0 0 0 3px rgba(60,255,160,.18), 0 0 26px rgba(60,255,160,.14)!important;
+
+    input:focus,select:focus{
+      border-color:#60a5fa;
+      box-shadow:0 0 0 3px rgba(59,130,246,.14);
     }
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-    .k{
-      background:rgba(13,20,48,.92);border:1px solid rgba(43,58,114,.95);
-      border-radius:14px;padding:12px;position:relative;overflow:hidden;
+
+    input[readonly]{
+      background:#0a1c34;
+      color:#9ec3ff;
     }
-    .k::after{
-      content:"";position:absolute;inset:-40% -40% auto -40%;height:110px;
-      background:radial-gradient(closest-side, rgba(60,255,160,.12), transparent 70%);
-      opacity:.55;pointer-events:none;
+
+    .calcBtn{
+      width:100%;
+      height:45px;
+      margin-top:14px;
+      border:1px solid #315da7;
+      border-radius:10px;
+      background:linear-gradient(180deg,#244b98,#173879);
+      color:#fff;
+      font-weight:1000;
+      font-size:14px;
+      box-shadow:0 10px 20px rgba(29,78,216,.22);
     }
-    .k .t{font-size:12px;opacity:.85}
-    .k .v{font-size:18px;font-weight:800;margin-top:6px}
-    .muted{opacity:.78;font-size:12px;margin-top:8px;color:var(--muted)}
-    .btn{
-      margin-top:12px;width:100%;padding:10px 12px;border-radius:14px;
-      border:1px solid rgba(58,83,168,.95);
-      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color:var(--ink);cursor:pointer;font-weight:800;letter-spacing:.2px;
-      transition:transform .08s, filter .15s;
+
+    .quoteResults{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
     }
-    .btn:hover{filter:brightness(1.08)} .btn:active{transform:translateY(1px)}
-    .pill{
-      display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;
-      background:rgba(91,124,250,.16);border:1px solid rgba(91,124,250,.35);
+
+    .resultCard{
+      min-height:80px;
+      border:1px solid var(--line-soft);
+      border-radius:11px;
+      background:#08182d;
+      padding:13px;
+      text-align:center;
     }
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid rgba(31,43,85,.85);font-size:13px}
+
+    .resultCard .label{
+      color:var(--muted);
+      font-size:9px;
+      font-weight:950;
+      text-transform:uppercase;
+    }
+
+    .resultCard .value{
+      margin-top:10px;
+      font-size:20px;
+      font-weight:1000;
+    }
+
+    .resultCard.motor .value{color:var(--red)}
+    .resultCard.company .value{color:#89baff}
+
+    .formula{
+      margin-top:10px;
+      color:#aebdd1;
+      font-size:9px;
+      line-height:1.55;
+    }
+
+    .hint{
+      margin-top:8px;
+      color:#9fb0c8;
+      font-size:9px;
+    }
+
+    .hint b{color:#ffd966}
+
+    /* MAP */
+    .mapPanel{
+      position:relative;
+      min-height:550px;
+    }
+
+    .mapToolbar{
+      position:absolute;
+      z-index:4;
+      left:13px;
+      top:58px;
+      width:min(270px,calc(100% - 26px));
+      padding:11px;
+      border:1px solid #294f81;
+      border-radius:11px;
+      background:rgba(4,17,34,.92);
+      backdrop-filter:blur(8px);
+      box-shadow:0 12px 28px rgba(0,0,0,.28);
+    }
+
+    .mapToolbar strong{
+      display:block;
+      font-size:11px;
+    }
+
+    .mapToolbar span{
+      display:block;
+      margin-top:5px;
+      font-size:9px;
+      color:#b5c5dc;
+    }
+
+    .mapFrame{
+      position:absolute;
+      left:9px;
+      right:9px;
+      top:54px;
+      bottom:9px;
+      overflow:hidden;
+      border:1px solid #244a7d;
+      border-radius:13px;
+      background:#07162b;
+    }
+
+    .mapFrame iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      filter:invert(.92) hue-rotate(180deg) saturate(.72) brightness(.81) contrast(1.08);
+    }
+
+    .mapOverlay{
+      position:absolute;
+      left:17px;
+      bottom:20px;
+      z-index:4;
+      padding:9px 12px;
+      border:1px solid #294e7f;
+      border-radius:10px;
+      background:rgba(5,18,36,.92);
+    }
+
+    .mapOverlay small{
+      display:block;
+      margin-bottom:2px;
+      color:var(--muted);
+      font-size:8px;
+    }
+
+    .mapOverlay b{font-size:15px}
+
+    .openMaps{
+      position:absolute;
+      right:17px;
+      bottom:20px;
+      z-index:4;
+      border:1px solid #315da7;
+      border-radius:9px;
+      background:#123c8a;
+      color:#fff;
+      padding:9px 12px;
+      font-size:10px;
+      font-weight:900;
+    }
+
+    /* HISTORY */
+    .statsGrid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:7px;
+    }
+
+    .stat{
+      min-width:0;
+      padding:9px;
+      border:1px solid var(--line-soft);
+      border-radius:9px;
+      background:#0a1b33;
+    }
+
+    .stat span{
+      display:block;
+      color:var(--muted);
+      font-size:8px;
+      font-weight:950;
+      text-transform:uppercase;
+    }
+
+    .stat strong{
+      display:block;
+      margin-top:6px;
+      font-size:15px;
+      white-space:nowrap;
+    }
+
+    .stat.blue strong{color:#70aaff}
+    .stat.red strong{color:var(--red)}
+    .stat.green strong{color:#55df82}
+    .stat.orange strong{color:#ffbe46}
+
+    .historyBlock{
+      margin-top:9px;
+      overflow:hidden;
+      border:1px solid var(--line-soft);
+      border-radius:10px;
+    }
+
+    .subHead{
+      padding:8px 10px;
+      border-bottom:1px solid var(--line-soft);
+      color:#dce7f7;
+      font-size:9px;
+      font-weight:950;
+      text-transform:uppercase;
+    }
+
+    .scrollTable{
+      max-height:180px;
+      overflow:auto;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      padding:7px 9px;
+      border-bottom:1px solid #173254;
+      font-size:9px;
+      text-align:left;
+      white-space:nowrap;
+    }
+
     th{
-      font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.92;
-      background:rgba(13,20,48,.96);position:sticky;top:0;z-index:1;
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#08182d;
+      color:#aebed5;
+      text-transform:uppercase;
     }
+
     td.num,th.num{text-align:right}
-    tr.rowItem{cursor:pointer} tr.rowItem:hover{background:rgba(91,124,250,.10)}
-    tr.active{background:rgba(91,124,250,.16)}
-    .motorCol{color:#ffb3b3;font-weight:800} .empresaCol{color:#b7d4ff;font-weight:800}
-    .pesoInput{max-width:160px;text-align:right;padding:8px 10px;border-radius:12px;font-variant-numeric:tabular-nums;background:rgba(10,16,40,.92)}
+    .motorValue{color:var(--red);font-weight:900}
+    .companyValue{color:#8fbeff;font-weight:900}
 
-    .topbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .topRight{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-    .smallBtn{
-      padding:8px 10px;border-radius:12px;border:1px solid rgba(58,83,168,.95);
-      background:linear-gradient(180deg, rgba(27,42,90,.95), rgba(18,30,70,.95));
-      color:var(--ink);cursor:pointer;font-weight:800;font-size:12px;max-width:100%;
-      transition:transform .08s, filter .15s;white-space:nowrap;
-    }
-    .smallBtn:hover{filter:brightness(1.08)} .smallBtn:active{transform:translateY(1px)}
-    .smallBtn.green{border-color:rgba(60,255,160,.45);background:linear-gradient(180deg, rgba(14,40,32,.85), rgba(10,24,20,.85))}
-    .smallBtn.green:hover{box-shadow:0 0 0 3px rgba(60,255,160,.12)}
-    .smallBtn.home{
-      border-color:rgba(91,124,250,.95);
-      background:linear-gradient(180deg, rgba(45,68,145,.95), rgba(25,40,92,.95));
+    .historyBottom{
+      display:grid;
+      grid-template-columns:.92fr 1.08fr;
+      gap:9px;
+      margin-top:9px;
     }
 
-    /* Toggle */
-    .toggleWrap{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:12px;border:1px solid rgba(58,83,168,.75);background:rgba(13,20,48,.55);user-select:none}
-    .toggleWrap .lbl{font-size:12px;font-weight:800;opacity:.9}
-    .toggle{width:44px;height:24px;border-radius:999px;border:1px solid rgba(91,124,250,.45);background:rgba(91,124,250,.18);position:relative;cursor:pointer;flex:0 0 auto}
-    .toggle::after{content:"";position:absolute;top:50%;left:3px;width:18px;height:18px;border-radius:999px;transform:translateY(-50%);background:rgba(233,238,252,.92);box-shadow:0 6px 14px rgba(0,0,0,.25);transition:left .15s, background .15s}
-    .toggle.on{border-color:rgba(60,255,160,.55);background:rgba(60,255,160,.14)}
-    .toggle.on::after{left:22px;background:rgba(60,255,160,.92)}
+    .miniPanel{
+      overflow:hidden;
+      border:1px solid var(--line-soft);
+      border-radius:10px;
+      background:#08182d;
+    }
 
-    /* Export shot */
-    .exportShot{display:none;margin-top:12px}
-    .shotGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    @media (max-width:640px){.shotGrid{grid-template-columns:1fr}}
-    .shotCell{background:rgba(13,20,48,.92);border:1px solid rgba(43,58,114,.95);border-radius:14px;padding:12px;position:relative;overflow:hidden}
-    .shotCell::after{content:"";position:absolute;inset:-40% -40% auto -40%;height:120px;background:radial-gradient(closest-side, rgba(60,255,160,.10), transparent 70%);opacity:.5;pointer-events:none}
-    .shotLabel{font-size:12px;opacity:.8}
-    .shotValue{margin-top:4px;font-size:18px;font-weight:900;letter-spacing:.2px;font-variant-numeric:tabular-nums}
-    .shotTableWrap{margin-top:12px;overflow:hidden;border:1px solid rgba(43,58,114,.95);border-radius:14px}
-    .shotTableWrap table th{position:static}
+    .clientList{padding:7px 10px}
 
-    /* Quote mode */
-    body.quoteMode .grid{grid-template-columns:1fr!important}
-    body.quoteMode .quoteHide{display:none!important}
-    body.quoteMode .quoteTableGrow{max-height:none!important;height:calc(100vh - 280px);min-height:420px}
-    @media (max-width:860px){body.quoteMode .quoteTableGrow{height:calc(100vh - 330px);min-height:380px}}
-    body.quoteMode .quoteEntrada{display:block!important}
-    body.quoteMode .normalEntrada{display:none!important}
+    .clientRow{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:6px 0;
+      border-bottom:1px solid #153152;
+      font-size:9px;
+    }
 
-    /* Admin modal */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:18px}
+    .clientRow:last-child{border-bottom:0}
+
+    .trendHeader{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      padding:7px 11px 0;
+      font-size:8px;
+    }
+
+    .trendHeader strong{color:#56df84}
+    .trendWrap{height:138px;padding:5px 8px 8px}
+
+    .routeKpis{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+      margin-top:9px;
+    }
+
+    .routeKpi{
+      padding:8px;
+      border:1px solid var(--line-soft);
+      border-radius:8px;
+      background:#08182d;
+      text-align:center;
+    }
+
+    .routeKpi small{
+      display:block;
+      color:var(--muted);
+      font-size:7px;
+      text-transform:uppercase;
+    }
+
+    .routeKpi strong{
+      display:block;
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    /* BOTTOM */
+    .bottomGrid{
+      display:grid;
+      grid-template-columns:minmax(0,1.78fr) minmax(290px,.6fr) minmax(245px,.58fr);
+      gap:11px;
+      margin-top:11px;
+    }
+
+    .freightTableWrap{
+      max-height:248px;
+      overflow:auto;
+    }
+
+    .freightTable th,.freightTable td{
+      padding:8px 10px;
+      font-size:10px;
+    }
+
+    .freightTable tr{cursor:pointer}
+    .freightTable tr:hover,.freightTable tr.active{background:rgba(37,99,235,.16)}
+
+    .weightWrap{
+      max-height:248px;
+      overflow:auto;
+    }
+
+    .weightRow{
+      display:grid;
+      grid-template-columns:1fr 115px;
+      gap:8px;
+      align-items:center;
+      padding:8px 11px;
+      border-bottom:1px solid #173254;
+      font-size:10px;
+    }
+
+    .pesoInput{
+      max-width:112px;
+      height:32px;
+      text-align:right;
+    }
+
+    .actionStack{
+      display:grid;
+      gap:8px;
+    }
+
+    .actionBtn{
+      min-height:50px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:7px 11px;
+      border:1px solid;
+      border-radius:10px;
+      color:#fff;
+      text-align:left;
+      font-weight:900;
+    }
+
+    .actionBtn span{
+      display:block;
+      margin-top:2px;
+      font-size:8px;
+      font-weight:600;
+      opacity:.8;
+    }
+
+    .actionBtn.blue{
+      background:linear-gradient(180deg,#1d4ed8,#143a8c);
+      border-color:#3b82f6;
+    }
+
+    .actionBtn.green{
+      background:linear-gradient(180deg,#15803d,#0d5a2b);
+      border-color:#22c55e;
+    }
+
+    .actionBtn.purple{
+      background:linear-gradient(180deg,#6b21a8,#4b1777);
+      border-color:#a855f7;
+    }
+
+    .statusLine{
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .empty{
+      padding:20px;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    /* MODAL */
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      background:rgba(0,0,0,.6);
+      backdrop-filter:blur(6px);
+    }
+
     .modal.show{display:flex}
+
     .modalCard{
-      width:min(760px,100%);background:linear-gradient(180deg, rgba(17,26,51,.92), rgba(13,20,48,.88));
-      border:1px solid rgba(34,48,94,.95);border-radius:18px;padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.35);position:relative;overflow:hidden;
+      width:min(620px,100%);
+      padding:16px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:linear-gradient(180deg,#0b1a31,#071427);
+      box-shadow:var(--shadow);
     }
-    .modalCard::before{content:"";position:absolute;inset:-40px -40px auto -40px;height:140px;background:radial-gradient(closest-side, rgba(60,255,160,.10), transparent 70%);opacity:.55;pointer-events:none}
-    .modalHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .modalTitle{font-weight:900;font-size:16px;margin:0}
-    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    @media (max-width:720px){.twoCol{grid-template-columns:1fr}}
-    .miniCard{background:rgba(13,20,48,.92);border:1px solid rgba(43,58,114,.95);border-radius:14px;padding:12px}
-    .danger{border-color:rgba(255,120,120,.45)!important}
-    .small{font-size:12px;opacity:.8}
-    .userList{margin-top:10px;max-height:260px;overflow:auto;border:1px solid rgba(43,58,114,.95);border-radius:12px}
-    .userList table th{position:sticky}
-    .tagAdmin{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;border:1px solid rgba(60,255,160,.45);background:rgba(60,255,160,.10);font-size:11px;font-weight:900}
+
+    .modalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .modalHead h3{margin:0}
+
+    .modalClose{
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:#0b1d36;
+      color:#fff;
+    }
+
+    .modalActions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    @media(max-width:1450px){
+      .dashboard{grid-template-columns:1fr 1.08fr}
+      .historyPanel{grid-column:1/-1}
+      .bottomGrid{grid-template-columns:1.4fr .7fr}
+      .actionsPanel{grid-column:1/-1}
+      .actionStack{grid-template-columns:repeat(4,1fr)}
+    }
+
+    @media(max-width:900px){
+      .dashboard,.bottomGrid{grid-template-columns:1fr}
+      .historyPanel,.actionsPanel{grid-column:auto}
+      .topbar{align-items:flex-start}
+      .topActions{justify-content:flex-start}
+      .formGrid{grid-template-columns:1fr}
+      .statsGrid,.routeKpis{grid-template-columns:repeat(2,1fr)}
+      .historyBottom{grid-template-columns:1fr}
+      .actionStack{grid-template-columns:1fr}
+      .mapPanel{min-height:500px}
+      .modalActions{grid-template-columns:1fr}
+    }
   </style>
 </head>
+
 <body>
-
-  <!-- ADMIN MODAL -->
-  <div class="modal" id="adminModal" aria-hidden="true">
-    <div class="modalCard">
-      <div class="modalHead">
-        <div>
-          <p class="modalTitle">🛠 Admin (LUZIANO)</p>
-          <div class="muted">Gerencie usuários e senhas (salvo neste navegador).</div>
-        </div>
-        <button class="smallBtn" id="btnAdminClose">Fechar</button>
-      </div>
-
-      <div class="twoCol">
-        <div class="miniCard">
-          <div class="pill">Criar / Atualizar usuário</div>
-
-          <label for="admUserName">Usuário</label>
-          <input id="admUserName" placeholder="Ex: JOÃO" />
-
-          <label for="admUserPass">Senha</label>
-          <input id="admUserPass" placeholder="Ex: 2026" />
-
-          <button class="btn" id="btnAdminSaveUser">Salvar usuário</button>
-          <div class="muted" id="admMsg" style="display:none;"></div>
-        </div>
-
-        <div class="miniCard danger">
-          <div class="pill">Ações rápidas</div>
-          <button class="btn" id="btnAdminResetAllPesos">Resetar pesos de TODOS</button>
-          <div class="muted small">Apaga os pesos customizados salvos por usuário neste navegador.</div>
+  <main class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <img src="../assets/img/logo-novafrota.png" alt="Nova Frota"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+        <div class="brandFallback" style="display:none">🚚</div>
+        <div class="brandText">
+          <strong>NOVA FROTA</strong>
+          <span>TRANSPORTES E LOGÍSTICA</span>
         </div>
       </div>
 
-      <div class="miniCard" style="margin-top:12px;">
-        <div class="pill">Usuários cadastrados</div>
-        <div class="userList">
-          <table>
-            <thead>
-              <tr>
-                <th>Usuário</th>
-                <th class="num">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="admUserTable"></tbody>
-          </table>
-        </div>
-        <div class="muted small">Obs: não é possível excluir o usuário LUZIANO.</div>
-      </div>
-    </div>
-  </div>
+      <div class="topActions">
+        <button class="topBtn" id="btnQuoteMode">
+          ⚡ Cotação Rápida
+          <span class="toggle" id="toggleQuote"></span>
+        </button>
 
-  <div class="wrap" id="app">
-    <div class="card">
-      <div class="topbar">
-        <div>
-          <h1>🚚 NOVA FROTA TRANSPORTES E LOGISTICA LTDA</h1>
-          <div class="muted">Site exclusivo para Nova Frota - ANTT 6.067/2025 ©️Luziano Neto.</div>
-        </div>
+        <button class="topBtn" id="btnAdmin">🛠 Admin</button>
+        <button class="topBtn green" id="btnExportCSV">⬇ Exportar CSV</button>
+        <button class="topBtn green" id="btnExportJPG">▣ Exportar JPEG</button>
 
-        <div class="topRight">
-          <div class="toggleWrap" title="Tabela como principal (cotação rápida)">
-            <span class="lbl">⚡ Cotação Rápida</span>
-            <div class="toggle" id="toggleQuote" role="switch" aria-checked="false" tabindex="0"></div>
-          </div>
-
-          <button class="smallBtn" id="btnAdmin" style="display:none">🛠 Admin</button>
-          <button class="smallBtn green" id="btnExportCSV">⬇️ Exportar CSV</button>
-          <button class="smallBtn green" id="btnExportJPG">🖼️ Exportar JPEG</button>
-          <span class="pill" id="userBadge">Deslogado</span>
-          <button class="smallBtn home" id="btnHome">🏠 Início</button>
-          <button class="smallBtn" id="btnLogout">Sair</button>
-        </div>
-      </div>
-
-      <div class="exportShot" id="exportShot">
-        <div class="pill">Resumo + Tabela (Exportação)</div>
-        <div class="shotGrid">
-          <div class="shotCell"><div class="shotLabel">KM TOTAL</div><div class="shotValue" id="shotKM">-</div></div>
-          <div class="shotCell"><div class="shotLabel">PEDÁGIO POR EIXO (R$)</div><div class="shotValue" id="shotPed">-</div></div>
-          <div class="shotCell"><div class="shotLabel">MARGEM (%)</div><div class="shotValue" id="shotMargem">-</div></div>
-          <div class="shotCell"><div class="shotLabel">ICMS (%)</div><div class="shotValue" id="shotICMS">-</div></div>
-        </div>
-        <div class="shotTableWrap">
-          <table>
-            <thead><tr><th>Tipo</th><th class="num">Frete Motorista</th><th class="num">Frete Empresa</th></tr></thead>
-            <tbody id="shotTable"></tbody>
-          </table>
-        </div>
-        <div class="muted" style="margin-top:10px;">Gerado por: <b id="shotUser">-</b></div>
-      </div>
-    </div>
-
-    <div style="height:14px"></div>
-
-    <div class="grid">
-      <!-- ENTRADA -->
-      <div class="card">
-        <div class="pill">Entrada</div>
-
-        <div class="normalEntrada">
-          <label for="tipo">Tipo</label>
-          <select id="tipo"></select>
-        </div>
-
-        <div class="quoteEntrada" style="display:none;">
-          <div class="muted">Modo cotação: selecione o <b>Tipo</b> clicando direto na tabela.</div>
-        </div>
-
-        <div class="row">
+        <div class="dateBox">
+          📅
           <div>
-            <label for="km">KM total</label>
-            <input id="km" type="number" step="0.1" value="500" />
+            <small>Tabela ANTT</small>
+            <strong>16/07/2026</strong>
           </div>
+        </div>
+
+        <div class="userBox">
+          👤
           <div>
-            <label for="pedagio">Pedágio por eixo (R$)</label>
-            <input id="pedagio" type="number" step="0.01" value="0" />
+            <strong id="userName">LUZIANO</strong>
+            <small id="userRole">ADMINISTRADOR</small>
           </div>
         </div>
 
-        <div class="row">
-          <div>
-            <label for="margem">Margem (%)</label>
-            <input id="margem" type="number" step="0.01" value="10" />
-          </div>
-          <div>
-            <label for="icms">ICMS (%) (opcional)</label>
-            <input id="icms" type="number" step="0.01" value="0" />
-          </div>
-        </div>
-
-        <button class="btn quoteHide" id="btnCalc">Calcular</button>
-
-        <div class="kpi quoteHide">
-          <div class="k"><div class="t">Frete Motorista (R$)</div><div class="v" id="outMotorista">-</div></div>
-          <div class="k"><div class="t">Frete Empresa (R$)</div><div class="v" id="outEmpresa">-</div></div>
-        </div>
-
-        <div class="muted quoteHide">
-          <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM×KM)+CustoCC+(Pedágio/Eixo×Eixos))/Peso;0)<br/>
-          <b>Empresa:</b> Motorista/(1-Margem)/(1-ICMS) <span style="opacity:.9">(sem arredondar)</span>
-        </div>
-
-        <div class="muted" style="margin-top:10px;">
-          Dica: Ative <b>⚡ Cotação Rápida</b> para usar a tabela como painel principal.
-        </div>
+        <button class="topBtn home" id="btnHome">🏠 Início</button>
+        <button class="topBtn" id="btnLogout">Sair</button>
       </div>
+    </header>
 
-      <!-- TABELAS -->
-      <div class="card">
-        <div class="pill">Tabela de Fretes (por tipo)</div>
+    <section class="dashboard">
+      <!-- DADOS DA COTAÇÃO -->
+      <article class="panel">
+        <div class="panelHead">
+          <div class="panelTitle">
+            <span class="icon">▣</span>
+            DADOS DA COTAÇÃO
+          </div>
+        </div>
 
-        <div class="quoteTableGrow" style="overflow:auto; margin-top:10px; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height: 320px;">
-          <table>
+        <div class="panelBody">
+          <div class="formGrid">
+            <div class="field">
+              <label>Tipo de tabela</label>
+              <select id="tipoTabela">
+                <option>Tabela ANTT 16/07/2026</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Tipo de veículo</label>
+              <select id="tipo"></select>
+            </div>
+
+            <div class="field">
+              <label>Nº de eixos</label>
+              <input id="eixos" readonly>
+            </div>
+
+            <div class="field">
+              <label>Origem da rota</label>
+              <input id="origemRota" placeholder="Ex.: Rio Verde - GO">
+            </div>
+
+            <div class="field">
+              <label>Destino da rota</label>
+              <input id="destinoRota" placeholder="Ex.: Santos - SP">
+            </div>
+
+            <div class="field">
+              <label>KM total</label>
+              <input id="km" type="number" step="0.1" value="500">
+            </div>
+
+            <div class="field">
+              <label>Pedágio por eixo (R$)</label>
+              <input id="pedagio" type="number" step="0.01" value="0">
+            </div>
+
+            <div class="field">
+              <label>Margem de lucro (%)</label>
+              <input id="margem" type="number" step="0.01" value="10">
+            </div>
+
+            <div class="field">
+              <label>ICMS (%) opcional</label>
+              <input id="icms" type="number" step="0.01" value="0">
+            </div>
+
+            <div class="field">
+              <label>Peso médio (t)</label>
+              <input id="pesoSelecionado" readonly>
+            </div>
+          </div>
+
+          <button class="calcBtn" id="btnCalc">▦ Calcular</button>
+
+          <div class="quoteResults">
+            <div class="resultCard motor">
+              <div class="label">Frete Motorista (R$)</div>
+              <div class="value" id="outMotorista">R$ 0,00</div>
+            </div>
+
+            <div class="resultCard company">
+              <div class="label">Frete Empresa (R$)</div>
+              <div class="value" id="outEmpresa">R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="formula">
+            <b>Motorista:</b> ARREDONDAR.PARA.CIMA(((R$/KM × KM) + Custo CC + (Pedágio/Eixo × Eixos)) / Peso; 0)<br>
+            <b>Empresa:</b> Motorista / (1 - Margem) / (1 - ICMS)
+          </div>
+
+          <div class="hint">
+            💡 Dica: informe origem e destino para visualizar a rota e consultar o histórico comercial.
+          </div>
+        </div>
+      </article>
+
+      <!-- MAPA -->
+      <article class="panel mapPanel">
+        <div class="panelHead">
+          <div class="panelTitle">
+            <span class="icon">▣</span>
+            VISUALIZAÇÃO DA ROTA
+          </div>
+          <span class="statusLine" id="mapStatus">Mapa pronto</span>
+        </div>
+
+        <div class="mapToolbar">
+          <strong id="routeTitle">Informe origem e destino</strong>
+          <span id="routeDistance">📍 KM manual: 500 km</span>
+          <span id="routeRoads">🛣 Visualização pelo Google Maps</span>
+        </div>
+
+        <div class="mapFrame">
+          <iframe
+            id="mapIframe"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Mapa da rota">
+          </iframe>
+        </div>
+
+        <div class="mapOverlay">
+          <small>Distância utilizada no cálculo</small>
+          <b id="mapKm">500 km</b>
+        </div>
+
+        <button class="openMaps" id="btnOpenMaps">▣ Ver detalhes da rota</button>
+      </article>
+
+      <!-- HISTÓRICO -->
+      <article class="panel historyPanel">
+        <div class="panelHead">
+          <div class="panelTitle">
+            <span class="icon">▥</span>
+            HISTÓRICO COMERCIAL DA ROTA
+          </div>
+          <span class="statusLine" id="historyStatus">Aguardando rota</span>
+        </div>
+
+        <div class="panelBody">
+          <div class="statsGrid">
+            <div class="stat blue">
+              <span>Média Empresa</span>
+              <strong id="histEmpresaAvg">R$ 0,00</strong>
+            </div>
+
+            <div class="stat red">
+              <span>Média Motorista</span>
+              <strong id="histMotorAvg">R$ 0,00</strong>
+            </div>
+
+            <div class="stat green">
+              <span>Maior Valor</span>
+              <strong id="histMax">R$ 0,00</strong>
+            </div>
+
+            <div class="stat orange">
+              <span>Menor Valor</span>
+              <strong id="histMin">R$ 0,00</strong>
+            </div>
+          </div>
+
+          <div class="historyBlock">
+            <div class="subHead">Últimos fretes praticados</div>
+            <div class="scrollTable">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th class="num">Empresa</th>
+                    <th class="num">Motorista</th>
+                    <th>Cliente</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTable">
+                  <tr>
+                    <td colspan="4" class="empty">Informe origem e destino.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="historyBottom">
+            <div class="miniPanel">
+              <div class="subHead">Top clientes nesta rota</div>
+              <div class="clientList" id="topClients">
+                <div class="empty">Sem dados</div>
+              </div>
+            </div>
+
+            <div class="miniPanel">
+              <div class="subHead">Tendência de preço</div>
+              <div class="trendHeader">
+                <small>Últimos registros</small>
+                <strong id="trendValue">0,0%</strong>
+              </div>
+              <div class="trendWrap">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="routeKpis">
+            <div class="routeKpi">
+              <small>Fretes realizados</small>
+              <strong id="histCount">0</strong>
+            </div>
+
+            <div class="routeKpi">
+              <small>Clientes</small>
+              <strong id="histClients">0</strong>
+            </div>
+
+            <div class="routeKpi">
+              <small>KM médio</small>
+              <strong id="histKmAvg">0 km</strong>
+            </div>
+
+            <div class="routeKpi">
+              <small>Com pedágio</small>
+              <strong id="histTollPct">0%</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- LINHA INFERIOR -->
+    <section class="bottomGrid">
+      <article class="panel">
+        <div class="panelHead">
+          <div class="panelTitle">
+            <span class="icon">▦</span>
+            TABELA DE FRETES (POR TIPO DE VEÍCULO)
+          </div>
+        </div>
+
+        <div class="freightTableWrap">
+          <table class="freightTable">
             <thead>
               <tr>
                 <th>Tipo</th>
                 <th class="num">Frete Motorista</th>
                 <th class="num">Frete Empresa</th>
                 <th class="num">Eixos</th>
+                <th class="num">Peso Médio (t)</th>
               </tr>
             </thead>
             <tbody id="tblFretes"></tbody>
           </table>
         </div>
+      </article>
 
-        <div class="quoteHide">
-          <div class="pill" style="margin-top:12px;">Peso médio (editável)</div>
-          <div style="overflow:auto; margin-top:10px; border:1px solid rgba(43,58,114,.95); border-radius:12px; max-height: 260px;">
-            <table>
-              <thead><tr><th>Tipo</th><th class="num">Peso médio</th></tr></thead>
-              <tbody id="tblPesos"></tbody>
-            </table>
-          </div>
-
-          <div class="muted">
-            Os pesos alterados ficam salvos neste navegador (por usuário). Para voltar ao padrão:
-            <div style="margin-top:8px;"><button class="btn" id="btnResetPesos" style="margin-top:0;">Resetar pesos</button></div>
-          </div>
-
-          <div class="pill" style="margin-top:14px;">Dados do Tipo selecionado</div>
-          <div class="kpi">
-            <div class="k"><div class="t">R$ / KM</div><div class="v" id="outRkm">-</div></div>
-            <div class="k"><div class="t">Custo CC</div><div class="v" id="outCC">-</div></div>
-            <div class="k"><div class="t">Peso médio (usado)</div><div class="v" id="outPeso">-</div></div>
-            <div class="k"><div class="t">Observação</div><div class="v" style="font-size:14px;font-weight:700" id="outObs">-</div></div>
-          </div>
-          <div class="muted">Clique em uma linha da tabela para selecionar o tipo.</div>
+      <article class="panel">
+        <div class="panelHead">
+          <div class="panelTitle">PESO MÉDIO (EDITÁVEL)</div>
         </div>
+        <div class="weightWrap" id="tblPesos"></div>
+      </article>
+
+      <article class="panel actionsPanel">
+        <div class="panelHead">
+          <div class="panelTitle">AÇÕES RÁPIDAS</div>
+        </div>
+
+        <div class="panelBody actionStack">
+          <button class="actionBtn blue" id="btnCopy">
+            ▣
+            <div>
+              Copiar Cotação
+              <span>Copia os valores para a área de transferência</span>
+            </div>
+          </button>
+
+          <button class="actionBtn green" id="btnSave">
+            ▣
+            <div>
+              Salvar Cotação
+              <span>Salva esta cotação no navegador</span>
+            </div>
+          </button>
+
+          <button class="actionBtn purple" id="btnPublish">
+            🚚
+            <div>
+              Publicar Frete
+              <span>Abre a página de fretes para captação</span>
+            </div>
+          </button>
+
+          <button class="actionBtn green" id="btnWhatsApp">
+            ◉
+            <div>
+              Enviar WhatsApp
+              <span>Envia a cotação via WhatsApp</span>
+            </div>
+          </button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- MODAL ADMIN -->
+  <div class="modal" id="adminModal" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalHead">
+        <h3>🛠 Administração do Cálculo</h3>
+        <button class="modalClose" id="btnAdminClose">Fechar</button>
+      </div>
+
+      <p class="statusLine">
+        Os pesos personalizados ficam salvos por usuário neste navegador.
+      </p>
+
+      <div class="modalActions">
+        <button class="actionBtn blue" id="btnResetPesos">
+          ↺
+          <div>
+            Resetar meus pesos
+            <span>Volta aos pesos padrão</span>
+          </div>
+        </button>
+
+        <button class="actionBtn purple" id="btnResetAllPesos">
+          ↺
+          <div>
+            Resetar todos
+            <span>Somente administrador</span>
+          </div>
+        </button>
       </div>
     </div>
   </div>
 
-<script>
-/* ==========================================================
-   ✅ Integração com auth.js (portal)
-   - usuário vem do getUser()
-   - admin = LUZIANO
-========================================================== */
-
-const ADMIN_USER = "LUZIANO";
-
-/** garante auth.js carregado + login + estado + permissão do piso */
-function enforcePisoAuth(){
-  try{
-    if (typeof requirePisoAuth === "function") {
-      requirePisoAuth();
-      return true;
-    }
-    if (typeof requireHomeAuth === "function") {
-      requireHomeAuth();
-      console.warn("[PISO] requirePisoAuth não existe, usando requireHomeAuth.");
-      return true;
-    }
-    console.warn("[PISO] auth.js não carregou (funções não encontradas).");
-    return false;
-  } catch (e){
-    console.warn("[PISO] erro enforcePisoAuth:", e);
-    return false;
-  }
-}
-
-/** usuário do portal */
-function portalUser(){
-  try{
-    if (typeof getUser === "function") return String(getUser() || "").trim().toUpperCase();
-  }catch(e){}
-  return String(localStorage.getItem("nf_auth_user") || "").trim().toUpperCase();
-}
-
-/** estado selecionado */
-function portalUF(){
-  try{
-    if (typeof getSelectedState === "function") return String(getSelectedState() || "").trim().toUpperCase();
-  }catch(e){}
-  return String(localStorage.getItem("nf_auth_state") || "").trim().toUpperCase();
-}
-
-function isAdmin(){ return portalUser() === ADMIN_USER; }
-
-function goHome(){
-  window.location.href = "./home.html";
-}
-
-/** logout do portal */
-function logoutPortal(){
-  try{
-    if (typeof logoutAll === "function") logoutAll();
-    else{
-      localStorage.removeItem("nf_auth_home");
-      localStorage.removeItem("nf_auth_user");
-      localStorage.removeItem("nf_auth_state");
-      localStorage.removeItem("nf_auth_piso");
-    }
-  }catch(e){}
-  window.location.href = "../pages/login.html";
-}
-
-/* ================== MODO COTAÇÃO ================== */
-function quoteModeKey(){
-  const u = portalUser() || "DEFAULT";
-  return `piso_${u}_quote_mode_v1`;
-}
-function isQuoteMode(){ return localStorage.getItem(quoteModeKey())==="1"; }
-function setQuoteMode(on){ localStorage.setItem(quoteModeKey(), on?"1":"0"); }
-function applyQuoteModeUI(){
-  const on = isQuoteMode();
-  document.body.classList.toggle("quoteMode", on);
-  const t = document.getElementById("toggleQuote");
-  if (t){ t.classList.toggle("on", on); t.setAttribute("aria-checked", on?"true":"false"); }
-}
-
-/* ==RESOLUÇÃO ANTT Nº 6.084, DE 16 DE JULHO DE 2026 === */
-const DATA = [
-  { tipo:"9 Rodotrem",         rkm:9.2231, custoCC:908.91, peso:49 },
-  { tipo:"9 Rodocaçamba",      rkm:9.2231, custoCC:908.91, peso:47 },
-  { tipo:"8 eixos Graneleiro", rkm:8.0516, custoCC:820.34, peso:45 },
-  { tipo:"8 eixos Caçamba",    rkm:8.0516, custoCC:820.34, peso:43 },
-  { tipo:"4 eixo Graneleiro",  rkm:8.0516, custoCC:820.34, peso:39 },
-  { tipo:"4 eixo Caçamba",     rkm:8.0516, custoCC:820.34, peso:37 },
-  { tipo:"7 Bitrem",           rkm:8.0516, custoCC:820.34, peso:36 },
-  { tipo:"7 Biçamba",          rkm:8.0516, custoCC:820.34, peso:35 },
-  { tipo:"6 LS Graneleiro",    rkm:7.3841, custoCC:680.01, peso:31 },
-  { tipo:"6 LS Caçamba",       rkm:7.3841, custoCC:680.01, peso:29 },
-  { tipo:"5 LS Graneleiro",    rkm:6.6983, custoCC:664.83, peso:26 },
-  { tipo:"5 LS TOCO Caçamba",  rkm:6.6983, custoCC:664.83, peso:25 },
-  { tipo:"3 Truck Graneleiro",  rkm:5.1355, custoCC:552.24, peso:14 },
-];
-
-const $ = (id)=>document.getElementById(id);
-const money=(n)=>Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const numpt=(n,d=4)=>Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
-
-function parsePtNumber(value){
-  let s=String(value??"").trim().replace(/\s+/g,"");
-  if(!s) return NaN;
-  s=s.replace(/[^\d.,-]/g,"");
-  if(s.includes(",")) s=s.replace(/\./g,"").replace(",",".");
-  const n=Number(s);
-  return Number.isFinite(n)?n:NaN;
-}
-function fmtPeso(n){
-  const nn = Number(n);
-  if(!Number.isFinite(nn)) return "0,000";
-  return nn.toLocaleString("pt-BR",{minimumFractionDigits:3,maximumFractionDigits:3});
-}
-function fillTipos(){
-  const sel=$("tipo");
-  if (!sel) return;
-  sel.innerHTML="";
-  DATA.forEach((r,idx)=>{
-    const op=document.createElement("option");
-    op.value=idx; op.textContent=r.tipo;
-    sel.appendChild(op);
-  });
-  sel.value = sel.value || "0";
-}
-function extrairEixos(tipo){
-  const m = String(tipo).trim().match(/^(\d+)/);
-  const n = m ? Number(m[1]) : 0;
-
-  if (n === 4) return 7;
-
-  return n;
-}
-function ceil0(n){ return Math.ceil(n); }
-
-function bindGlow(el){
-  if(!el) return;
-  el.addEventListener("focus",()=>el.classList.add("editingGlow"));
-  el.addEventListener("blur", ()=>el.classList.remove("editingGlow"));
-}
-
-function getInputs(){
-  const km=Number($("km")?.value||0);
-  const pedagioPorEixo=Number($("pedagio")?.value||0);
-  const margem=Number($("margem")?.value||0)/100;
-  const icms=Number($("icms")?.value||0)/100;
-  return {km,pedagioPorEixo,margem,icms};
-}
-
-/* ================== PESOS POR USUÁRIO (PORTAL) ================== */
-function scopePrefix(){
-  const u = portalUser() || "DEFAULT";
-  return `piso_${u}_`;
-}
-function pesosKey(){ return scopePrefix()+"pesos_custom_v1"; }
-function loadPesosCustom(){
-  try{
-    const raw=localStorage.getItem(pesosKey());
-    const obj=raw?JSON.parse(raw):{};
-    return (obj && typeof obj==="object")?obj:{};
-  }catch(e){ return {}; }
-}
-function savePesosCustom(obj){ localStorage.setItem(pesosKey(), JSON.stringify(obj)); }
-
-let pesosCustom={};
-let isEditingPeso=false;
-
-function getPeso(row){
-  const v=pesosCustom[row.tipo];
-  const n=Number(v);
-  return (Number.isFinite(n)&&n>0)?n:row.peso;
-}
-
-function renderTabelaPesos(){
-  const tbody=$("tblPesos");
-  if(!tbody) return;
-  tbody.innerHTML="";
-  const idxSel=Number($("tipo")?.value||0);
-
-  DATA.forEach((row,idx)=>{
-    const tr=document.createElement("tr");
-    tr.className="rowItem"+(idx===idxSel?" active":"");
-    const pesoAtual=getPeso(row);
-    tr.innerHTML=`
-      <td style="white-space:nowrap">${row.tipo}</td>
-      <td class="num">
-        <input class="pesoInput" data-tipo="${row.tipo}" type="text" inputmode="decimal"
-          autocomplete="off" autocapitalize="off" spellcheck="false" value="${fmtPeso(pesoAtual)}" />
-      </td>`;
-    const input=tr.querySelector("input[data-tipo]");
-
-    input.addEventListener("focus",(ev)=>{
-      isEditingPeso=true; input.classList.add("editingGlow");
-      requestAnimationFrame(()=>ev.target.select());
-    });
-    input.addEventListener("input",(ev)=>{
-      const tipo=ev.target.getAttribute("data-tipo");
-      const val=parsePtNumber(ev.target.value);
-      if(Number.isFinite(val)&&val>0) pesosCustom[tipo]=val; else delete pesosCustom[tipo];
-      savePesosCustom(pesosCustom);
-      calc({skipPesosRender:true});
-    });
-    input.addEventListener("blur",(ev)=>{
-      const tipo=ev.target.getAttribute("data-tipo");
-      const val=parsePtNumber(ev.target.value);
-      if(Number.isFinite(val)&&val>0){ pesosCustom[tipo]=val; ev.target.value=fmtPeso(val); }
-      else{ delete pesosCustom[tipo]; ev.target.value=fmtPeso(getPeso(row)); }
-      savePesosCustom(pesosCustom);
-      isEditingPeso=false; input.classList.remove("editingGlow");
-      calc();
-    });
-
-    tbody.appendChild(tr);
-  });
-}
-
-function resetPesos(){
-  pesosCustom={};
-  localStorage.removeItem(pesosKey());
-  calc();
-}
-
-function resetAllPesos(){
-  const keys=[];
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k && k.startsWith("piso_") && k.endsWith("_pesos_custom_v1")) keys.push(k);
-  }
-  keys.forEach(k=>localStorage.removeItem(k));
-}
-
-/* ================== CÁLCULO ================== */
-function calcFretes(row, km, pedagioPorEixo, margem, icms){
-  const eixos=extrairEixos(row.tipo);
-  const numerador=(row.rkm*km)+row.custoCC+(pedagioPorEixo*eixos);
-
-  const pesoUsado=getPeso(row);
-  const base=numerador/pesoUsado;
-
-  const freteMotorista=ceil0(base);
-
-  const denomMargem=(1-margem);
-  const denomIcms=(1-icms);
-
-  const freteEmpresa=(denomMargem<=0||denomIcms<=0)?NaN:(freteMotorista/denomMargem/denomIcms);
-
-  return {eixos,pesoUsado,freteMotorista,freteEmpresa,numerador};
-}
-
-function renderTabela(km, pedagioPorEixo, margem, icms){
-  const tbody=$("tblFretes");
-  if(!tbody) return;
-  tbody.innerHTML="";
-  const idxSel=Number($("tipo")?.value||0);
-
-  DATA.forEach((row,idx)=>{
-    const r=calcFretes(row,km,pedagioPorEixo,margem,icms);
-    const tr=document.createElement("tr");
-    tr.className="rowItem"+(idx===idxSel?" active":"");
-    tr.innerHTML=`
-      <td style="white-space:nowrap">${row.tipo}</td>
-      <td class="num motorCol">${money(r.freteMotorista)}</td>
-      <td class="num empresaCol">${Number.isFinite(r.freteEmpresa)?money(r.freteEmpresa):"Erro"}</td>
-      <td class="num" style="opacity:.85">${r.eixos}</td>`;
-    tr.addEventListener("click", ()=>{
-      const tipoEl = $("tipo");
-      if (tipoEl) tipoEl.value=String(idx);
-      calc();
-    });
-    tbody.appendChild(tr);
-  });
-}
-
-/* ================== EXPORT CSV ================== */
-function csvEscape(v){
-  const s=String(v??"");
-  if(/[;"\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-  return s;
-}
-function toPt(v,d=3){
-  const n=Number(v); if(!Number.isFinite(n)) return "";
-  return n.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
-}
-function toIntPt(v){
-  const n=Number(v); if(!Number.isFinite(n)) return "";
-  return n.toLocaleString("pt-BR",{maximumFractionDigits:0});
-}
-function toMoneyPt(v){
-  const n=Number(v); if(!Number.isFinite(n)) return "";
-  return n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-}
-function buildExportRows(){
-  const {km,pedagioPorEixo,margem,icms}=getInputs();
-  return DATA.map((row)=>{
-    const r=calcFretes(row,km,pedagioPorEixo,margem,icms);
-    return {
-      "Tipo":row.tipo,"Eixos":r.eixos,"KM":km,"Pedágio por eixo (R$)":pedagioPorEixo,
-      "R$/KM":row.rkm,"Custo CC":row.custoCC,"Peso padrão":row.peso,"Peso usado":r.pesoUsado,
-      "Motorista (R$)":r.freteMotorista,"Empresa (R$)":r.freteEmpresa,"Margem (%)":margem*100,"ICMS (%)":icms*100,
-    };
-  });
-}
-function exportCSV(){
-  const u = portalUser();
-  if(!u){ alert("Você não está logado no portal."); return; }
-
-  const rows=buildExportRows();
-  const headers=Object.keys(rows[0]||{});
-  const lines=[];
-  const {km,pedagioPorEixo,margem,icms}=getInputs();
-  lines.push(csvEscape("NOVA FROTA - Exportação ANTT 6.067/2025"));
-  lines.push(csvEscape(`Usuário: ${u} | UF: ${portalUF()} | KM: ${km} | Pedágio/eixo: ${pedagioPorEixo} | Margem: ${(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}% | ICMS: ${(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`));
-  lines.push("");
-  lines.push(headers.map(csvEscape).join(";"));
-  for(const r of rows){
-    lines.push(headers.map((h)=>{
-      const v=r[h];
-      if(h==="R$/KM") return csvEscape(toPt(v,4));
-      if(h==="Custo CC") return csvEscape(toPt(v,2));
-      if(h==="Peso padrão"||h==="Peso usado") return csvEscape(toPt(v,3));
-      if(h==="Motorista (R$)"||h==="Empresa (R$)") return csvEscape(toMoneyPt(v));
-      if(h==="Margem (%)"||h==="ICMS (%)") return csvEscape(toPt(v,2));
-      if(h==="Eixos") return csvEscape(toIntPt(v));
-      if(h==="KM") return csvEscape(toPt(v,1));
-      if(h==="Pedágio por eixo (R$)") return csvEscape(toPt(v,2));
-      return csvEscape(v);
-    }).join(";"));
-  }
-  const csv=lines.join("\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  const url=URL.createObjectURL(blob);
-  const d=new Date();
-  const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
-  const filename=`antt_export_${u}_${stamp}.csv`;
-  const a=document.createElement("a"); a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1200);
-}
-
-/* ================== EXPORT JPEG ================== */
-function renderShotTable(){
-  const tbody=$("shotTable"); if(!tbody) return;
-  tbody.innerHTML="";
-  const {km,pedagioPorEixo,margem,icms}=getInputs();
-  for(const row of DATA){
-    const r=calcFretes(row,km,pedagioPorEixo,margem,icms);
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td style="white-space:nowrap">${row.tipo}</td>
-      <td class="num motorCol">${money(r.freteMotorista)}</td>
-      <td class="num empresaCol">${Number.isFinite(r.freteEmpresa)?money(r.freteEmpresa):"Erro"}</td>`;
-    tbody.appendChild(tr);
-  }
-}
-function exportJPG(){
-  const u = portalUser();
-  if(!u){ alert("Você não está logado no portal."); return; }
-
-  const shot=$("exportShot");
-  if(!shot) return;
-
-  const {km,pedagioPorEixo,margem,icms}=getInputs();
-  $("shotKM").textContent=km.toLocaleString("pt-BR",{maximumFractionDigits:1});
-  $("shotPed").textContent=pedagioPorEixo.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  $("shotMargem").textContent=(margem*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  $("shotICMS").textContent=(icms*100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  $("shotUser").textContent=u;
-
-  renderShotTable();
-  shot.style.display="block";
-
-  html2canvas(shot,{backgroundColor:null,scale:2}).then((canvas)=>{
-    const d=new Date();
-    const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
-    const filename=`antt_resumo_${u}_${stamp}.jpg`;
-    canvas.toBlob((blob)=>{
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a"); a.href=url; a.download=filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),1200);
-      shot.style.display="none";
-    },"image/jpeg",0.92);
-  }).catch(()=>{
-    shot.style.display="none";
-    alert("Não consegui gerar a imagem. Se estiver offline, o html2canvas não carrega.");
-  });
-}
-
-/* ================== CALC ================== */
-function calc(opts={}){
-  const tipoEl = $("tipo");
-  if (!tipoEl) return;
-
-  if (!tipoEl.options || tipoEl.options.length===0){
-    fillTipos();
-  }
-
-  const idx = Number(tipoEl.value || 0);
-  const row = DATA[idx] || DATA[0];
-
-  const {km,pedagioPorEixo,margem,icms}=getInputs();
-  const {eixos,pesoUsado,freteMotorista,freteEmpresa}=calcFretes(row,km,pedagioPorEixo,margem,icms);
-
-  $("outRkm").textContent="R$ "+numpt(row.rkm,4);
-  $("outCC").textContent="R$ "+numpt(row.custoCC,3);
-  $("outPeso").textContent=fmtPeso(pesoUsado);
-  $("outObs").textContent=`${row.tipo} | Eixos: ${eixos}`;
-  $("outMotorista").textContent=money(freteMotorista);
-  $("outEmpresa").textContent=Number.isFinite(freteEmpresa)?money(freteEmpresa):"Erro (margem/ICMS 100%)";
-
-  renderTabela(km,pedagioPorEixo,margem,icms);
-
-  if(!opts.skipPesosRender && !isEditingPeso){
-    renderTabelaPesos();
-  }
-}
-
-/* ================== ADMIN UI ================== */
-const USERS_KEY = "piso_users_v1";
-function loadUsers(){
-  try{
-    const raw = localStorage.getItem(USERS_KEY);
-    const u = raw ? JSON.parse(raw) : {};
-    return (u && typeof u==="object") ? u : {};
-  }catch(e){ return {}; }
-}
-function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
-
-function showAdmin(show){
-  const m=$("adminModal");
-  if(!m) return;
-  m.classList.toggle("show", !!show);
-  m.setAttribute("aria-hidden", show ? "false" : "true");
-  if(show) renderAdminUsers();
-}
-function renderAdminUsers(){
-  const USERS = loadUsers();
-  const tbody=$("admUserTable");
-  if(!tbody) return;
-  tbody.innerHTML="";
-  const names = Object.keys(USERS).sort();
-
-  if(!names.includes(ADMIN_USER)) names.unshift(ADMIN_USER);
-
-  names.forEach((u)=>{
-    const tr=document.createElement("tr");
-    const isAdm = (u===ADMIN_USER);
-    tr.innerHTML=`
-      <td style="white-space:nowrap">${u}${isAdm?`<span class="tagAdmin">ADMIN</span>`:""}</td>
-      <td class="num">
-        ${isAdm?`<span class="muted">---</span>`:`<button class="smallBtn" data-del="${u}">Excluir</button>`}
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll("button[data-del]").forEach((b)=>{
-    b.addEventListener("click", ()=>{
-      const u=b.getAttribute("data-del");
-      if(!u || u===ADMIN_USER) return;
-      if(confirm(`Excluir o usuário ${u}?`)){
-        const USERS = loadUsers();
-        delete USERS[u];
-        saveUsers(USERS);
-        renderAdminUsers();
-        toastAdmin("Usuário excluído.", true);
-      }
-    });
-  });
-}
-function toastAdmin(txt, ok){
-  const el=$("admMsg");
-  if(!el) return;
-  el.style.display="block";
-  el.style.color = ok ? "#b7ffd7" : "#ffb3b3";
-  el.textContent = txt;
-  setTimeout(()=>{ el.style.display="none"; }, 2200);
-}
-
-/* ================== INIT ================== */
-document.addEventListener("DOMContentLoaded", ()=>{
-  const ok = enforcePisoAuth();
-  if(!ok){
-    alert("auth.js não carregou. Confira o caminho: ../assets/js/auth.js");
-    return;
-  }
-
-  const u = portalUser();
-  const uf = portalUF();
-  $("userBadge").textContent = u ? `Logado: ${u} (${uf||"--"})` : "Deslogado";
-  $("btnAdmin").style.display = isAdmin() ? "" : "none";
-
-  $("btnHome")?.addEventListener("click", (e)=>{
-    e.preventDefault();
-    goHome();
-  });
-
-  $("btnLogout").addEventListener("click", (e)=>{
-    e.preventDefault();
-    logoutPortal();
-  });
-
-  fillTipos();
-  pesosCustom = loadPesosCustom();
-  applyQuoteModeUI();
-  calc();
-
-  $("btnResetPesos")?.addEventListener("click", resetPesos);
-  $("btnCalc")?.addEventListener("click", ()=>calc());
-  $("tipo")?.addEventListener("change", ()=>calc());
-
-  ["km","pedagio","margem","icms"].forEach(id=>{
-    const el=$(id);
-    if(el) el.addEventListener("input", ()=>calc());
-  });
-
-  ["km","pedagio","margem","icms","tipo","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
-
-  $("btnExportCSV")?.addEventListener("click", exportCSV);
-  $("btnExportJPG")?.addEventListener("click", exportJPG);
-
-  const tgl=$("toggleQuote");
-  function toggleQuote(){
-    const next=!isQuoteMode();
-    setQuoteMode(next);
-    applyQuoteModeUI();
-    calc();
-  }
-  if(tgl){
-    tgl.addEventListener("click", toggleQuote);
-    tgl.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter"||e.key===" "){
-        e.preventDefault();
-        toggleQuote();
-      }
-    });
-  }
-
-  $("btnAdminClose")?.addEventListener("click", ()=>showAdmin(false));
-  $("adminModal")?.addEventListener("click",(e)=>{
-    if(e.target && e.target.id==="adminModal") showAdmin(false);
-  });
-  $("btnAdmin")?.addEventListener("click", ()=>{
-    if(isAdmin()) showAdmin(true);
-  });
-
-  $("btnAdminSaveUser")?.addEventListener("click", ()=>{
-    if(!isAdmin()) return;
-    let name = String($("admUserName")?.value||"").trim().toUpperCase();
-    const pass = String($("admUserPass")?.value||"").trim();
-    if(!name) return toastAdmin("Informe o nome do usuário.", false);
-    if(!pass) return toastAdmin("Informe a senha.", false);
-
-    name = name.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
-
-    const USERS = loadUsers();
-    USERS[name]=pass;
-    saveUsers(USERS);
-
-    $("admUserName").value="";
-    $("admUserPass").value="";
-    renderAdminUsers();
-    toastAdmin("Usuário salvo/atualizado.", true);
-  });
-
-  $("btnAdminResetAllPesos")?.addEventListener("click", ()=>{
-    if(!isAdmin()) return;
-    if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
-      resetAllPesos();
-      pesosCustom = loadPesosCustom();
-      calc();
-      toastAdmin("Pesos resetados (todos).", true);
-    }
-  });
-});
-</script>
+  <script src="../assets/js/calculo-piso.js?v=2"></script>
 </body>
 </html>

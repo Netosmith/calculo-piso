@@ -42,6 +42,43 @@
     body.shareLight .hTitle{font-weight:1000; font-size:18px; margin:0; color:#111827; line-height:1.1;}
 
     .btnRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+
+    .baseSelector{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      height:34px;
+      padding:0 10px;
+      border:1px solid rgba(15,23,42,.14);
+      border-radius:12px;
+      background:linear-gradient(180deg, #ffffff, #f3f4f6);
+      white-space:nowrap;
+    }
+    .baseSelector label{
+      margin:0 !important;
+      font-size:12px !important;
+      font-weight:900 !important;
+      color:#374151 !important;
+      opacity:1 !important;
+      white-space:nowrap;
+    }
+    .baseSelector select{
+      width:auto !important;
+      min-width:132px;
+      height:28px;
+      padding:0 30px 0 10px !important;
+      border-radius:9px !important;
+      border:1px solid rgba(15,23,42,.14) !important;
+      background:#ffffff !important;
+      color:#111827 !important;
+      font-size:12px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .baseSelector.is-loading{
+      opacity:.65;
+      pointer-events:none;
+    }
     body.shareLight .btnSmall{
       height:34px; padding:0 12px; border-radius:12px;
       border:1px solid rgba(15,23,42,.14);
@@ -271,18 +308,19 @@
         </div>
 
         <div class="btnRow">
-          <button class="btnSmall blue" id="btnVoltarFretes" title="Voltar para Fretes">← Voltar para Fretes</button>
-          <button class="btnSmall" id="btnReload" title="Recarrega dados do Fretes">🔄 Atualizar</button>
-          <button class="btnSmall" id="btnToggleFreteEmpresa" title="Ocultar ou mostrar a coluna Frete Empresa">Ocult</button>
-          <button class="btnSmall green" id="btnPrint" title="Gera uma imagem (PNG) desta tela">🖼️ Gerar Print</button>
+          <button class="btnSmall blue" id="btnVoltarFretes" title="Voltar para a base de fretes selecionada">← Voltar para Fretes</button>
+          <button class="btnSmall" id="btnReload" title="Recarregar os dados da base selecionada">🔄 Atualizar</button>
+          <button class="btnSmall" id="btnToggleFreteEmpresa" title="Ocultar ou mostrar a coluna Frete Empresa">Mostrar</button>
+          <button class="btnSmall green" id="btnPrint" title="Gerar uma imagem PNG desta tela">🖼️ Gerar Print</button>
+
+          <div class="baseSelector" id="baseSelectorWrap">
+            <label for="selBase">🗂️ Base:</label>
+            <select id="selBase" aria-label="Selecionar base de fretes">
+              <option value="fretes">FRETES GO</option>
+              <option value="fretes2">FRETES MT</option>
+            </select>
+          </div>
         </div>
-        <div class="baseSelector">
-    <label>🗂️ Base</label>
-    <select id="selBase">
-        <option value="fretes" selected>FRETES GO</option>
-        <option value="fretes2">FRETES MT</option>
-    </select>
-</div>
       </div>
     </div>
 
@@ -363,347 +401,7 @@
   <script>
     requireHomeAuth();
     bindLogoutButton();
-
-    (function(){
-      const SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
-
-      let ocultarFreteEmpresa = true;
-
-      function onReady(fn){
-        if(document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn, 0);
-        else document.addEventListener('DOMContentLoaded', fn);
-      }
-
-      function num(v){
-        if(v == null) return 0;
-        if(typeof v === 'number') return isFinite(v) ? v : 0;
-        const s = String(v).replace(/\./g,'').replace(',','.').replace(/[^\d.-]/g,'');
-        const n = parseFloat(s);
-        return isFinite(n) ? n : 0;
-      }
-      function int(v){ const n = num(v); return isFinite(n) ? Math.round(n) : 0; }
-
-      function fmtInt(n){ return (Number(n) || 0).toLocaleString('pt-BR'); }
-      function fmtTon(n){ return (Number(n) || 0).toLocaleString('pt-BR') + ' t'; }
-      function moneyBR(n){
-        return (Number(n) || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-      }
-
-      function setText(id, value){
-        const el = document.getElementById(id);
-        if(el) el.textContent = value;
-      }
-      
-      function updateSyncStatus(status, message) {
-        const el = document.getElementById('syncStatus');
-        if (!el) return;
-        
-        if (status === 'loading') {
-          el.textContent = '🔄 ' + (message || 'Carregando...');
-          el.style.color = '#5B7CFA';
-        } else if (status === 'success') {
-          el.textContent = '✅ ' + (message || 'Sincronizado');
-          el.style.color = '#067647';
-        } else if (status === 'error') {
-          el.textContent = '❌ ' + (message || 'Erro');
-          el.style.color = '#991B1B';
-        }
-      }
-      
-      function canon(s){ return String(s || '').trim().toUpperCase(); }
-
-      function getField(row, names){
-        if(!row) return undefined;
-
-        for(const n of names){
-          if(row[n] !== undefined && row[n] !== null && row[n] !== '') return row[n];
-        }
-
-        const keys = Object.keys(row);
-        const norm = (s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-        const wanted = names.map(norm);
-
-        for(const k of keys){
-          const nk = norm(k);
-          if(wanted.includes(nk)) return row[k];
-        }
-        return undefined;
-      }
-
-      function getPorta(row){ return getField(row, ['porta','qtdPorta','qtPorta','Qtd Porta','qtd_porta','qtdPortas','qtdporta','qtdLocal','cmhLocal','cmhsLocal']); }
-      function getTransito(row){ return getField(row, ['transito','qtdTransito','Qtd Trânsito','qtd_transito','qtdTrans','qtdtrânsito','qtdtransito','cmhTrans','cmhsTrans']); }
-      function getValorEmpresa(row){ return getField(row, ['valorEmpresa','Vlr Empresa','vlrEmpresa','empresa','valor_empresa','vlr_empresa']); }
-      function getObs(row){ return getField(row, ['obs','Observações','observacao','observação','observacoes','observações']); }
-
-      function setLogo(displayName){
-        const img = document.getElementById('imgLogo');
-        const fb  = document.getElementById('logoFallback');
-        if(!img || !fb) return;
-
-        const base = '../assets/img/clientes/';
-        const name = String(displayName || '').trim();
-        if(!name){
-          img.style.display = 'none';
-          fb.style.display = 'block';
-          fb.textContent = 'SEM LOGO';
-          return;
-        }
-        const src = base + name + '.png';
-        img.src = src;
-        img.onload = () => { fb.style.display = 'none'; img.style.display = 'block'; };
-        img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; fb.textContent = name; };
-      }
-
-      function makeStatusPillHTML(st){
-        const s = String(st||'').trim().toUpperCase();
-        let cls = '';
-        if(s.includes('LIBER')) cls = 'liberado';
-        return `<span class="statusPill ${cls}">${s || '—'}</span>`;
-      }
-
-      function jsonp(url, timeoutMs = 30000) {
-        return new Promise((resolve, reject) => {
-          const cb = "cb_" + Math.random().toString(36).slice(2);
-          const s = document.createElement("script");
-          const sep = url.includes("?") ? "&" : "?";
-
-          const t = setTimeout(() => {
-            cleanup();
-            reject(new Error("Timeout ao carregar dados (30s)"));
-          }, timeoutMs);
-
-          function cleanup() {
-            clearTimeout(t);
-            try { delete window[cb]; } catch {}
-            s.remove();
-          }
-
-          window[cb] = (data) => {
-            cleanup();
-            resolve(data);
-          };
-
-          s.src = url + sep + "callback=" + encodeURIComponent(cb);
-          s.onerror = () => {
-            cleanup();
-            reject(new Error("Erro ao carregar script do Google Sheets"));
-          };
-
-          document.head.appendChild(s);
-        });
-      }
-
-      async function loadFromSheets(){
-        const response = await jsonp(SHEETS_API_URL + "?action=list");
-        if (response.ok === false) throw new Error(response.error || "Erro no Apps Script");
-
-        let data = response.data || response;
-        if (!Array.isArray(data)) data = data.rows || data.fretes || data.items || [];
-        if (!Array.isArray(data)) return [];
-        return data;
-      }
-
-function toggleFreteEmpresa(hide){
-  const page = document.getElementById('pageShare');
-  if (!page) return;
-
-  page.classList.toggle('hideFreteEmpresa', !!hide);
-
-  const btn = document.getElementById('btnToggleFreteEmpresa');
-  if (btn) {
-    btn.textContent = hide ? 'Mostrar' : 'Ocultar';
-    btn.title = hide ? 'Most' : 'Ocult';
-  }
-}
-
-      onReady(function(){
-        const selCliente = document.getElementById('selCliente');
-        const corrList   = document.getElementById('corrList');
-        const tbody      = document.getElementById('tbodyShare');
-        const btnReload  = document.getElementById('btnReload');
-        const btnPrint   = document.getElementById('btnPrint');
-        const btnVoltarFretes = document.getElementById('btnVoltarFretes');
-        const btnToggleFreteEmpresa = document.getElementById('btnToggleFreteEmpresa');
-        const pageShare  = document.getElementById('pageShare');
-
-        if(!selCliente || !corrList || !tbody) return;
-
-        let BASE = [];
-        let clientIndex = new Map();
-
-        function buildClientIndex(){
-          clientIndex.clear();
-          BASE.forEach(r=>{
-            const display = String(r.cliente || '').trim();
-            const key = canon(display);
-            if(!key) return;
-            if(!clientIndex.has(key)) clientIndex.set(key, display);
-          });
-        }
-
-        function fillClients(){
-          buildClientIndex();
-          const keys = Array.from(clientIndex.keys()).sort((a,b)=>a.localeCompare(b,'pt-BR'));
-          selCliente.innerHTML = keys.map(k=>{
-            const display = clientIndex.get(k) || k;
-            return `<option value="${k}">${display}</option>`;
-          }).join('');
-          if(keys[0]) selCliente.value = keys[0];
-        }
-
-        function renderForClient(clientKey){
-          const key = canon(clientKey);
-          const displayName = clientIndex.get(key) || key;
-          const rows = BASE.filter(r => canon(r.cliente) === key);
-
-          const totalLotes = rows.length;
-          const totalCaminhoes = rows.reduce((acc, r) => acc + (int(getPorta(r)) + int(getTransito(r))), 0);
-          const projTon = totalCaminhoes * 38;
-
-          setText('kLotes', fmtInt(totalLotes));
-          setText('kCaminhao', fmtInt(totalCaminhoes));
-          setText('kVolume', fmtTon(projTon));
-          setLogo(displayName);
-
-          const map = new Map();
-          rows.forEach(r=>{
-            const destinoKey = canon(r.destino);
-            if(!destinoKey) return;
-            const total = int(getPorta(r)) + int(getTransito(r));
-            map.set(destinoKey, (map.get(destinoKey) || 0) + total);
-          });
-
-          const corredores = Array.from(map.entries()).sort((a,b)=>b[1]-a[1]);
-          corrList.innerHTML = corredores.map(([name,total])=>`
-            <div class="corrItem" title="${name}">
-              <span class="name">${name}</span>
-              <span class="qty">${fmtInt(total)}</span>
-            </div>
-          `).join('');
-
-          tbody.innerHTML = rows.map(r=>{
-            const frete = num(getValorEmpresa(r));
-            const cmhL  = int(getPorta(r));
-            const cmhT  = int(getTransito(r));
-            const total = cmhL + cmhT;
-
-            return `
-              <tr>
-                <td>${r.origem ?? ''}</td>
-                <td>${r.coleta ?? ''}</td>
-                <td>${r.destino ?? ''}</td>
-                <td>${r.descarga ?? ''}</td>
-                <td class="num td-frete-empresa">${moneyBR(frete)}</td>
-                <td>${r.produto ?? ''}</td>
-                <td class="num">${cmhL ? fmtInt(cmhL) : ''}</td>
-                <td class="num">${cmhT ? fmtInt(cmhT) : ''}</td>
-                <td class="num">${(cmhL || cmhT) ? fmtInt(total) : ''}</td>
-                <td>${makeStatusPillHTML(r.status)}</td>
-                <td>${getObs(r) ?? ''}</td>
-              </tr>
-            `;
-          }).join('');
-
-          toggleFreteEmpresa(ocultarFreteEmpresa);
-        }
-
-        async function hydrate(){
-          try{
-            updateSyncStatus('loading', 'Carregando...');
-            BASE = await loadFromSheets();
-
-            if(!Array.isArray(BASE) || BASE.length === 0){
-              updateSyncStatus('success', 'Nenhum frete cadastrado');
-              selCliente.innerHTML = '<option value="">Nenhum cliente encontrado</option>';
-              corrList.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Nenhum dado disponível</div>';
-              tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;">Nenhum frete cadastrado</td></tr>';
-              setLogo('');
-              setText('kLotes','0');
-              setText('kCaminhao','0');
-              setText('kVolume','0 t');
-              toggleFreteEmpresa(ocultarFreteEmpresa);
-              return;
-            }
-
-            if(selCliente.options.length === 0) fillClients();
-            else buildClientIndex();
-
-            const key = selCliente.value || (selCliente.options[0] ? selCliente.options[0].value : '');
-            if(key) renderForClient(key);
-
-            updateSyncStatus('success', 'Dados atualizados');
-
-          }catch(err){
-            updateSyncStatus('error', 'Falha ao carregar');
-            alert("❌ Falha ao carregar dados do Google Sheets.\n\nErro: " + err.message);
-          }
-        }
-
-        selCliente.addEventListener('change', () => {
-          const key = selCliente.value;
-          if(key) renderForClient(key);
-        });
-
-        if(btnReload) btnReload.addEventListener('click', hydrate);
-
-        if(btnToggleFreteEmpresa){
-          btnToggleFreteEmpresa.addEventListener('click', () => {
-            ocultarFreteEmpresa = !ocultarFreteEmpresa;
-            toggleFreteEmpresa(ocultarFreteEmpresa);
-          });
-        }
-
-        if(btnVoltarFretes){
-          btnVoltarFretes.addEventListener('click', () => {
-            window.location.href = './fretes.html';
-          });
-        }
-
-        if(btnPrint && pageShare){
-          btnPrint.addEventListener('click', async function(){
-            const prevScrollY = window.scrollY || 0;
-
-            try{
-              document.body.classList.add('printMode');
-              window.scrollTo(0, 0);
-              await new Promise(r=>setTimeout(r, 250));
-
-              const W = 1650;
-              const H = pageShare.scrollHeight;
-
-              const canvas = await html2canvas(pageShare, {
-                backgroundColor: '#f4f6fb',
-                useCORS: true,
-                scale: 2,
-                windowWidth: W,
-                windowHeight: H,
-                width: W,
-                height: H,
-                scrollX: 0,
-                scrollY: 0
-              });
-
-              const link = document.createElement('a');
-              link.download = 'share-clientes.png';
-              link.href = canvas.toDataURL('image/png');
-              link.click();
-            }catch(e){
-              console.error(e);
-              alert('Não foi possível gerar o print. Veja o console.');
-            } finally {
-            ocultarFreteEmpresa = true;
-            toggleFreteEmpresa(true);
-
-            document.body.classList.remove('printMode');
-              window.scrollTo(0, prevScrollY);
-            }
-          });
-        }
-
-        toggleFreteEmpresa(true);
-        hydrate();
-      });
-    })();
   </script>
+  <script src="../assets/js/share-clientes.js?v=3"></script>
 </body>
 </html>

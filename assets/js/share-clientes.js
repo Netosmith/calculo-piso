@@ -5,8 +5,15 @@
   const $ = (id) => document.getElementById(id);
 
   const LS_KEY_FRETES_ROWS = "nf_fretes_rows_v1";
+  const LS_KEY_BASE = "nf_share_clientes_base_v1";
+
+  const SHEETS_API_URL =
+    "https://script.google.com/macros/s/AKfycbzbRKO6O7RdN50TKkXGKWu8vyISGVBGVRnnx561Su2MnIzOINHeU1TqV86N7LS2C8o/exec";
+
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
+
+  let BASE_ATUAL = "fretes";
 
   let ocultarFreteEmpresa = true;
 
@@ -103,16 +110,99 @@
     updateToggleButtonText();
   }
 
-  function loadFretesRows() {
-    try {
-      const raw = localStorage.getItem(LS_KEY_FRETES_ROWS);
-      if (!raw) return [];
-      const rows = JSON.parse(raw);
-      if (!Array.isArray(rows)) return [];
-      return rows;
-    } catch {
-      return [];
+  function updateSyncStatus(status, message) {
+    const el = $("syncStatus");
+    if (!el) return;
+
+    if (status === "loading") {
+      el.textContent = `🔄 ${message || "Carregando..."}`;
+      el.style.color = "#5B7CFA";
+    } else if (status === "success") {
+      el.textContent = `✅ ${message || "Sincronizado"}`;
+      el.style.color = "#067647";
+    } else if (status === "error") {
+      el.textContent = `❌ ${message || "Erro"}`;
+      el.style.color = "#991B1B";
     }
+  }
+
+  function getBaseLabel(base) {
+    return base === "fretes2" ? "FRETES MT" : "FRETES GO";
+  }
+
+  function getPaginaFretes(base) {
+    return base === "fretes2" ? "./fretes2.html" : "./fretes.html";
+  }
+
+  function salvarBaseSelecionada(base) {
+    try {
+      localStorage.setItem(LS_KEY_BASE, base);
+    } catch {}
+  }
+
+  function carregarBaseSelecionada() {
+    try {
+      return localStorage.getItem(LS_KEY_BASE) === "fretes2"
+        ? "fretes2"
+        : "fretes";
+    } catch {
+      return "fretes";
+    }
+  }
+
+  function jsonp(url, timeoutMs = 30000) {
+    return new Promise((resolve, reject) => {
+      const callback = `cb_${Math.random().toString(36).slice(2)}`;
+      const script = document.createElement("script");
+      const separator = url.includes("?") ? "&" : "?";
+
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error("Tempo limite excedido ao carregar os dados."));
+      }, timeoutMs);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        try {
+          delete window[callback];
+        } catch {}
+        script.remove();
+      }
+
+      window[callback] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+
+      script.src =
+        `${url}${separator}callback=${encodeURIComponent(callback)}`;
+
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("Erro de comunicação com o Google Sheets."));
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadFretesRows() {
+    const url =
+      `${SHEETS_API_URL}?action=list&base=${encodeURIComponent(BASE_ATUAL)}`;
+
+    const response = await jsonp(url);
+
+    if (response && response.ok === false) {
+      throw new Error(response.error || "Erro retornado pelo Apps Script.");
+    }
+
+    let rows = response?.data ?? response;
+
+    if (!Array.isArray(rows)) {
+      rows = rows?.rows || rows?.fretes || rows?.items || [];
+    }
+
+    return Array.isArray(rows) ? rows : [];
   }
 
   function getCmhLocal(row) {
@@ -336,7 +426,8 @@
       const cliente = up($("selCliente")?.value) || "CLIENTE";
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
 
-      a.download = `share-${cliente}-${stamp}.png`;
+      const baseNome = BASE_ATUAL === "fretes2" ? "MT" : "GO";
+      a.download = `share-${baseNome}-${cliente}-${stamp}.png`;
       a.href = dataUrl;
       a.click();
     } finally {
@@ -386,26 +477,78 @@
     fillSelect(selDestino, destinos, { includeAll: true, allLabel: "Todos" });
   }
 
-  async function refresh() {
-    state.rowsAll = loadFretesRows();
-    state.clientes = buildClientesList(state.rowsAll);
+  async function refresh({ preserveClient = true } = {}) {
+    const selCliente = $("selCliente");
+    const clienteAnterior = preserveClient ? up(selCliente?.value) : "";
+    const baseLabel = getBaseLabel(BASE_ATUAL);
 
-    fillSelect($("selCliente"), state.clientes, { includeAll: false });
+    try {
+      updateSyncStatus("loading", `Carregando ${baseLabel}...`);
 
-    const firstWithData = state.clientes.find((c) =>
-      state.rowsAll.some((r) => up(r.cliente) === c)
-    );
+      state.rowsAll = await loadFretesRows();
+      state.clientes = buildClientesList(state.rowsAll);
 
-    if ($("selCliente") && firstWithData) $("selCliente").value = firstWithData;
+      fillSelect(selCliente, state.clientes, { includeAll: false });
 
-    await setClientLogo($("selCliente")?.value);
-    rebuildDestinosForCliente();
-    applyFiltersAndRender();
-    toggleFreteEmpresa(ocultarFreteEmpresa);
-    updateToggleButtonText();
+      const clienteValido = state.clientes.includes(clienteAnterior)
+        ? clienteAnterior
+        : state.clientes.find((c) =>
+            state.rowsAll.some((r) => up(r.cliente) === c)
+          ) || state.clientes[0] || "";
+
+      if (selCliente) selCliente.value = clienteValido;
+
+      await setClientLogo(selCliente?.value);
+      rebuildDestinosForCliente();
+      applyFiltersAndRender();
+      toggleFreteEmpresa(ocultarFreteEmpresa);
+      updateToggleButtonText();
+
+      updateSyncStatus(
+        "success",
+        state.rowsAll.length
+          ? `${baseLabel} atualizado`
+          : `${baseLabel}: nenhum frete cadastrado`
+      );
+    } catch (err) {
+      console.error(err);
+
+      state.rowsAll = [];
+      state.clientes = buildClientesList([]);
+
+      fillSelect(selCliente, state.clientes, { includeAll: false });
+
+      if (selCliente && state.clientes.length) {
+        selCliente.value = state.clientes[0];
+      }
+
+      await setClientLogo(selCliente?.value);
+      rebuildDestinosForCliente();
+      applyFiltersAndRender();
+
+      updateSyncStatus("error", `Falha em ${baseLabel}`);
+
+      alert(
+        `❌ Falha ao carregar ${baseLabel}.\n\nErro: ${err.message}`
+      );
+    }
   }
 
   function init() {
+    const selBase = $("selBase");
+
+    BASE_ATUAL = carregarBaseSelecionada();
+
+    if (selBase) {
+      selBase.value = BASE_ATUAL;
+
+      selBase.addEventListener("change", async () => {
+        BASE_ATUAL = selBase.value === "fretes2" ? "fretes2" : "fretes";
+        salvarBaseSelecionada(BASE_ATUAL);
+        await refresh({ preserveClient: false });
+      });
+    }
+
     $("selCliente")?.addEventListener("change", async () => {
       await setClientLogo($("selCliente")?.value);
       rebuildDestinosForCliente();
@@ -417,7 +560,10 @@
     $("selStatus")?.addEventListener("change", applyFiltersAndRender);
     $("selDestino")?.addEventListener("change", applyFiltersAndRender);
 
-    $("btnReload")?.addEventListener("click", refresh);
+    $("btnReload")?.addEventListener("click", () => {
+      refresh({ preserveClient: true });
+    });
+
     $("btnPrint")?.addEventListener("click", doPrint);
 
     const btnToggle = getToggleButton();
@@ -430,10 +576,10 @@
     }
 
     $("btnVoltarFretes")?.addEventListener("click", () => {
-      window.location.href = "./fretes.html";
+      window.location.href = getPaginaFretes(BASE_ATUAL);
     });
 
-    refresh();
+    refresh({ preserveClient: false });
   }
 
   window.addEventListener("DOMContentLoaded", init);

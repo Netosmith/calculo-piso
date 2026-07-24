@@ -13,7 +13,7 @@ const AUTH_API_URL =
 const STATE_FEATURES = {
   GO: ["fretes","divulgacao"],
   GOADM: ["administrativo", "patrimonio"],
-  OPERACIONAL: ["piso","fretes","share","divulgacao","fretes-mercado","bi", "controle"],
+  OPERACIONAL: ["piso","piso2","fretes","share","divulgacao","fretes-mercado","bi", "controle"],
   COMERCIAL: ["piso","piso2","fretes","share","divulgacao","bi","fretes-mercado", "controle", "fretes2"],
   ADMINISTRADOR: ["piso","piso2","fretes","share","divulgacao","bi","custo-filial","fretes-mercado","administrativo", "patrimonio", "cadastros", "fretes2", "controle"],
   PISO: ["piso2"],

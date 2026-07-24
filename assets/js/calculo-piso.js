@@ -190,8 +190,11 @@ function calc(r){
 }
 
 function fillTipos(){
- $("tipo").innerHTML=DATA.map((r,i)=>`<option value="${i}">${esc(r.tipo)}</option>`).join("");
- $("tipo").value=String(selected);
+ const tipoEl=$("tipo");
+ if(!tipoEl)return;
+
+ tipoEl.innerHTML=DATA.map((r,i)=>`<option value="${i}">${esc(r.tipo)}</option>`).join("");
+ tipoEl.value=String(selected);
 }
 function renderPesos(){
  const w=$("tblPesos"); w.innerHTML="";
@@ -323,6 +326,11 @@ function renderHistory(rows){
  renderChart(rows);
 }
 function renderChart(rows){
+ if(typeof Chart==="undefined"){
+  console.warn("[PISO] Chart.js não foi carregado.");
+  return;
+ }
+
  const ordered=[...rows].sort((a,b)=>dateVal(a)-dateVal(b)).slice(-20),vals=ordered.map(r=>num(r.valorEmpresa));
  const first=vals.find(v=>v>0)||0,last=[...vals].reverse().find(v=>v>0)||0,tr=first?((last-first)/first)*100:0;
  $("trendValue").textContent=`${tr>=0?"+":""}${dec(tr,1)}%`;
@@ -482,7 +490,7 @@ function init(){
    console.error("[PISO] Erro ao encerrar sessão:",e);
   }
 
-  location.href="../pages/login.html";
+  window.location.href="../pages/login.html";
  };
 
  $("btnAdmin").onclick=()=>{
@@ -498,3 +506,4 @@ function init(){
 }
 
 window.addEventListener("DOMContentLoaded",init);
+})();

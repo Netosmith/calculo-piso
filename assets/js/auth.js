@@ -4,57 +4,31 @@
 // Senhas removidas do navegador
 // =====================================================
 
-// Use aqui a URL publicada do seu Apps Script.
 const AUTH_API_URL =
   "https://script.google.com/macros/s/AKfycbxqYIjETvyUF3DF_ovqQQ5NORRePQw2dxH2dgrERigGsEitSLH1qbLwO3kVrpTYoUfG/exec";
 
 // ======== PERMISSÕES POR PERFIL ========
-// O perfil vem da aba USUARIOS, coluna Perfil.
-// Os estados permitidos vêm da coluna Estados.
 const STATE_FEATURES = {
   GO: ["fretes","divulgacao"],
   GOADM: ["administrativo","patrimonio"],
 
   OPERACIONAL: [
-    "piso",
-    "piso2",
-    "fretes",
-    "share",
-    "divulgacao",
-    "fretes-mercado",
-    "bi",
-    "controle"
+    "piso","piso2","fretes","share","divulgacao",
+    "fretes-mercado","bi","controle"
   ],
 
   COMERCIAL: [
-    "piso",
-    "piso2",
-    "fretes",
-    "share",
-    "divulgacao",
-    "bi",
-    "fretes-mercado",
-    "controle",
-    "fretes2"
+    "piso","piso2","fretes","share","divulgacao",
+    "bi","fretes-mercado","controle","fretes2"
   ],
 
   ADMINISTRADOR: [
-    "piso",
-    "piso2",
-    "fretes",
-    "share",
-    "divulgacao",
-    "bi",
-    "custo-filial",
-    "fretes-mercado",
-    "administrativo",
-    "patrimonio",
-    "cadastros",
-    "fretes2",
-    "controle"
+    "piso","piso2","fretes","share","divulgacao","bi",
+    "custo-filial","fretes-mercado","administrativo",
+    "patrimonio","cadastros","fretes2","controle"
   ],
 
-  // Perfil exclusivo: acessa somente o novo cálculo de piso.
+  // Perfil exclusivo para o Piso 2.
   PISO: ["piso2"],
 
   SP: ["piso","divulgacao"],
@@ -134,14 +108,12 @@ function setUserStates(states){
 
 function getUserStates(){
   try{
-    const arr = JSON.parse(
-      localStorage.getItem(KEY_STATES) || "[]"
-    );
-
+    const arr = JSON.parse(localStorage.getItem(KEY_STATES) || "[]");
     return Array.isArray(arr)
       ? arr.map(normalizeUpper).filter(Boolean)
       : [];
-  }catch{
+  }catch(e){
+    console.error("[AUTH] Estados inválidos no localStorage:", e);
     return [];
   }
 }
@@ -169,10 +141,9 @@ function logoutAll(){
 // ======== JSONP ========
 function authJsonp(paramsObj, timeoutMs = 30000){
   return new Promise((resolve, reject) => {
-    const cb =
-      "auth_cb_" + Math.random().toString(36).slice(2);
-
+    const cb = "auth_cb_" + Math.random().toString(36).slice(2);
     const url = new URL(AUTH_API_URL);
+    const script = document.createElement("script");
 
     Object.entries(paramsObj || {}).forEach(([k, v]) => {
       url.searchParams.set(k, v);
@@ -181,37 +152,25 @@ function authJsonp(paramsObj, timeoutMs = 30000){
     url.searchParams.set("callback", cb);
     url.searchParams.set("_", Date.now());
 
-    const script = document.createElement("script");
-
     const timer = setTimeout(() => {
       cleanup();
-      reject(
-        new Error("Tempo esgotado ao validar login.")
-      );
+      reject(new Error("Tempo esgotado ao validar login."));
     }, timeoutMs);
 
     function cleanup(){
       clearTimeout(timer);
-
-      try{
-        delete window[cb];
-      }catch{}
-
-      try{
-        script.remove();
-      }catch{}
+      try{ delete window[cb]; }catch(e){}
+      try{ script.remove(); }catch(e){}
     }
 
-    window[cb] = (data) => {
+    window[cb] = data => {
       cleanup();
       resolve(data);
     };
 
     script.onerror = () => {
       cleanup();
-      reject(
-        new Error("Falha ao conectar ao servidor de login.")
-      );
+      reject(new Error("Falha ao conectar ao servidor de login."));
     };
 
     script.src = url.toString();
@@ -220,17 +179,12 @@ function authJsonp(paramsObj, timeoutMs = 30000){
 }
 
 // ======== LOGIN ========
-// No login.html, use:
-// const result = await validateLogin(usuario, senha);
 async function validateLogin(username, password){
   const u = normalizeUpper(username);
   const p = String(password || "").trim();
 
   if(!u || !p){
-    return {
-      ok:false,
-      error:"Informe usuário e senha."
-    };
+    return {ok:false, error:"Informe usuário e senha."};
   }
 
   try{
@@ -248,25 +202,22 @@ async function validateLogin(username, password){
     }
 
     const states = Array.isArray(res.states)
-      ? res.states.map(normalizeUpper)
+      ? res.states.map(normalizeUpper).filter(Boolean)
       : [];
 
     setAuthHome(true);
     setUser(res.usuario || u);
-    setPortalUserName(
-      res.nome || res.usuario || u
-    );
-    setProfile(res.perfil || "");
+    setPortalUserName(res.nome || res.usuario || u);
+    setProfile(res.perfil || "OPERACIONAL");
     setUserStates(states);
 
     return {
       ok:true,
       usuario:res.usuario || u,
       nome:res.nome || res.usuario || u,
-      perfil:res.perfil || "",
-      states:states
+      perfil:res.perfil || "OPERACIONAL",
+      states
     };
-
   }catch(err){
     return {
       ok:false,
@@ -281,9 +232,7 @@ function userAllowedStates(){
 }
 
 function isStateAllowedForUser(uf){
-  return userAllowedStates().includes(
-    normalizeUpper(uf)
-  );
+  return userAllowedStates().includes(normalizeUpper(uf));
 }
 
 // ======== FEATURES POR PERFIL ========
@@ -306,12 +255,14 @@ function requireHomeAuth(){
     return false;
   }
 
-  if(!getSelectedState()){
+  const state = getSelectedState();
+
+  if(!state){
     window.location.href = "../pages/login.html";
     return false;
   }
 
-  if(!isStateAllowedForUser(getSelectedState())){
+  if(!isStateAllowedForUser(state)){
     alert("Sem acesso a este estado.");
     logoutAll();
     window.location.href = "../pages/login.html";
@@ -321,7 +272,7 @@ function requireHomeAuth(){
   return true;
 }
 
-// ======== GUARD GENÉRICO DE FEATURE ========
+// ======== GUARD GENÉRICO ========
 function requireFeatureAuth(featureKey, deniedMessage){
   if(requireHomeAuth() !== true){
     return false;
@@ -340,14 +291,12 @@ function requireFeatureAuth(featureKey, deniedMessage){
   return true;
 }
 
-// ======== GUARD DO PISO ANTIGO ========
+// ======== PISO ANTIGO ========
 function requirePisoAuth(){
-  const allowed = requireFeatureAuth(
+  if(requireFeatureAuth(
     "piso",
     "Cálculo de Piso não liberado para este perfil."
-  );
-
-  if(!allowed){
+  ) !== true){
     return false;
   }
 
@@ -355,14 +304,12 @@ function requirePisoAuth(){
   return true;
 }
 
-// ======== GUARD DO PISO 2 ========
+// ======== PISO 2 ========
 function requirePiso2Auth(){
-  const allowed = requireFeatureAuth(
+  if(requireFeatureAuth(
     "piso2",
     "Cálculo de Piso 2 não liberado para este perfil."
-  );
-
-  if(!allowed){
+  ) !== true){
     return false;
   }
 
@@ -374,10 +321,10 @@ function requirePiso2Auth(){
 function bindLogoutButton(){
   const btn = document.querySelector("[data-logout]");
 
-  if(btn){
-    btn.onclick = () => {
-      logoutAll();
-      window.location.href = "../pages/login.html";
-    };
-  }
+  if(!btn)return;
+
+  btn.onclick = () => {
+    logoutAll();
+    window.location.href = "../pages/login.html";
+  };
 }

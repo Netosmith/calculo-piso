@@ -295,7 +295,26 @@ function renderHistory(rows){
  const emp=rows.map(r=>num(r.valorEmpresa)).filter(v=>v>0),mot=rows.map(r=>num(r.valorMotorista)).filter(v=>v>0),all=[...emp,...mot];
  $("histEmpresaAvg").textContent=money(avg(emp));$("histMotorAvg").textContent=money(avg(mot));
  $("histMax").textContent=money(all.length?Math.max(...all):0);$("histMin").textContent=money(all.length?Math.min(...all):0);
- $("historyTable").innerHTML=rows.length?rows.slice(0,60).map(r=>`<tr><td>${new Date(dateVal(r)).toLocaleDateString("pt-BR")}</td><td class="num companyValue">${money(r.valorEmpresa)}</td><td class="num motorValue">${money(r.valorMotorista)}</td><td>${esc(r.cliente||"-")}</td></tr>`).join(""):`<tr><td colspan="4" class="empty">Nenhum frete encontrado para esta rota.</td></tr>`;
+ $("historyTable").innerHTML=rows.length
+  ?rows.slice(0,60).map(r=>{
+    const dataValor=dateVal(r);
+    const dataTexto=dataValor
+      ?new Date(dataValor).toLocaleDateString("pt-BR")
+      :"-";
+
+    const coleta=txt(r.coleta)||"-";
+    const produto=txt(r.produto)||"-";
+
+    return `<tr>
+      <td>${dataTexto}</td>
+      <td title="${esc(coleta)}">${esc(coleta)}</td>
+      <td title="${esc(produto)}">${esc(produto)}</td>
+      <td class="num companyValue">${money(r.valorEmpresa)}</td>
+      <td class="num motorValue">${money(r.valorMotorista)}</td>
+      <td title="${esc(r.cliente||"-")}">${esc(r.cliente||"-")}</td>
+    </tr>`;
+   }).join("")
+  :`<tr><td colspan="6" class="empty">Nenhum frete encontrado para esta rota.</td></tr>`;
  const cm=new Map();rows.forEach(r=>cm.set(up(r.cliente)||"SEM CLIENTE",(cm.get(up(r.cliente)||"SEM CLIENTE")||0)+1));
  $("topClients").innerHTML=cm.size?[...cm].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([c,n])=>`<div class="clientRow"><span>${esc(c)}</span><strong>${n} frete(s)</strong></div>`).join(""):`<div class="empty">Sem dados</div>`;
  $("histCount").textContent=rows.length;$("histClients").textContent=cm.size;
@@ -376,22 +395,28 @@ function init(){
  let acessoLiberado=false;
 
  try{
-  if(typeof requirePiso2Auth==="function"){
-   acessoLiberado=requirePiso2Auth()===true;
+  if(typeof requirePisoAuth==="function"){
+   acessoLiberado=requirePisoAuth()===true;
   }else{
-   console.error("[PISO2] A função requirePiso2Auth não foi encontrada no auth.js.");
-   alert("Não foi possível validar o acesso ao Cálculo de Piso 2.");
+   console.error(
+    "[PISO] A função requirePisoAuth não foi encontrada no auth.js."
+   );
+
+   alert("Não foi possível validar o acesso ao Cálculo de Piso.");
    window.location.href="../pages/home.html";
    return;
   }
  }catch(e){
-  console.error("[PISO2] Erro ao validar acesso:",e);
-  alert("Erro ao validar o acesso ao Cálculo de Piso 2.");
+  console.error("[PISO] Erro ao validar acesso:",e);
+
+  alert("Erro ao validar o acesso ao Cálculo de Piso.");
   window.location.href="../pages/home.html";
   return;
  }
 
- if(!acessoLiberado)return;
+ if(!acessoLiberado){
+  return;
+ }
 
  $("userName").textContent=user();
  $("userRole").textContent=role();
@@ -409,7 +434,11 @@ function init(){
  };
 
  ["km","pedagio","margem","icms"].forEach(id=>{
-  $(id).oninput=renderAll;
+  const elemento=$(id);
+
+  if(elemento){
+   elemento.oninput=renderAll;
+  }
  });
 
  const route=debounce(()=>{
@@ -429,32 +458,43 @@ function init(){
  $("btnCopy").onclick=copyQuote;
  $("btnSave").onclick=saveQuote;
 
- $("btnPublish").onclick=()=>location.href="./fretes.html";
- $("btnWhatsApp").onclick=whatsapp;
+ $("btnPublish").onclick=()=>{
+  location.href="./fretes.html";
+ };
 
+ $("btnWhatsApp").onclick=whatsapp;
  $("btnExportCSV").onclick=exportCSV;
  $("btnExportJPG").onclick=exportJPG;
-
  $("btnQuoteMode").onclick=toggleQuickQuoteMode;
- $("btnHome").onclick=()=>location.href="./home.html";
+
+ $("btnHome").onclick=()=>{
+  location.href="./home.html";
+ };
 
  $("btnLogout").onclick=()=>{
   try{
    if(typeof logoutAll==="function"){
     logoutAll();
+   }else{
+    localStorage.clear();
    }
   }catch(e){
-   console.error("[PISO2] Erro ao limpar sessão:",e);
+   console.error("[PISO] Erro ao encerrar sessão:",e);
   }
 
   location.href="../pages/login.html";
  };
 
- $("btnAdmin").onclick=()=>$("adminModal").classList.add("show");
- $("btnAdminClose").onclick=()=>$("adminModal").classList.remove("show");
+ $("btnAdmin").onclick=()=>{
+  $("adminModal").classList.add("show");
+ };
+
+ $("btnAdminClose").onclick=()=>{
+  $("adminModal").classList.remove("show");
+ };
 
  $("btnResetPesos").onclick=resetMine;
  $("btnResetAllPesos").onclick=resetAll;
 }
+
 window.addEventListener("DOMContentLoaded",init);
-})();

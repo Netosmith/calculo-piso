@@ -16,7 +16,7 @@ const STATE_FEATURES = {
   OPERACIONAL: ["piso","fretes","share","divulgacao","fretes-mercado","bi", "controle"],
   COMERCIAL: ["piso","piso2","fretes","share","divulgacao","bi","fretes-mercado", "controle", "fretes2"],
   ADMINISTRADOR: ["piso","piso2","fretes","share","divulgacao","bi","custo-filial","fretes-mercado","administrativo", "patrimonio", "cadastros", "fretes2", "controle"],
-  PISO: ["piso"],
+  PISO: ["piso2"],
   SP: ["piso","divulgacao"],
   MG: ["piso","divulgacao"],
   MT: ["piso","divulgacao", "fretes2", "controle", "share"],

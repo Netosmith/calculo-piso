@@ -473,6 +473,38 @@
       text-transform:uppercase;
     }
 
+    .historyBlock table th:nth-child(1),
+    .historyBlock table td:nth-child(1){width:82px}
+
+    .historyBlock table th:nth-child(2),
+    .historyBlock table td:nth-child(2){
+      min-width:125px;
+      max-width:190px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .historyBlock table th:nth-child(3),
+    .historyBlock table td:nth-child(3){
+      min-width:90px;
+      max-width:145px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .historyBlock table th:nth-child(4),
+    .historyBlock table td:nth-child(4),
+    .historyBlock table th:nth-child(5),
+    .historyBlock table td:nth-child(5){width:92px}
+
+    .historyBlock table th:nth-child(6),
+    .historyBlock table td:nth-child(6){
+      min-width:85px;
+      max-width:130px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
     td.num,th.num{text-align:right}
     .motorValue{color:var(--red);font-weight:900}
     .companyValue{color:#8fbeff;font-weight:900}
@@ -915,6 +947,8 @@
                 <thead>
                   <tr>
                     <th>Data</th>
+                    <th>Coleta</th>
+                    <th>Produto</th>
                     <th class="num">Empresa</th>
                     <th class="num">Motorista</th>
                     <th>Cliente</th>
@@ -922,7 +956,7 @@
                 </thead>
                 <tbody id="historyTable">
                   <tr>
-                    <td colspan="4" class="empty">Informe origem e destino.</td>
+                    <td colspan="6" class="empty">Informe origem e destino.</td>
                   </tr>
                 </tbody>
               </table>
@@ -1081,6 +1115,6 @@
     </div>
   </div>
 
-  <script src="../assets/js/calculo-piso.js?v=2"></script>
+  <script src="../assets/js/calculo-piso.js?v=3"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <!-- ✅ LOGIN DO PORTAL (HOME + ESTADO + PERMISSÕES DO PISO) -->
-  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/auth.js?v=2"></script>
 
   <style>
     :root{
@@ -359,19 +359,19 @@ const ADMIN_USER = "LUZIANO";
 /** garante auth.js carregado + login + estado + permissão do piso */
 function enforcePisoAuth(){
   try{
-    if (typeof requirePisoAuth === "function") {
-      requirePisoAuth();
-      return true;
+    if(typeof requirePiso2Auth==="function"){
+      return requirePiso2Auth()===true;
     }
-    if (typeof requireHomeAuth === "function") {
-      requireHomeAuth();
-      console.warn("[PISO] requirePisoAuth não existe, usando requireHomeAuth.");
-      return true;
-    }
-    console.warn("[PISO] auth.js não carregou (funções não encontradas).");
+
+    console.error("[PISO2] requirePiso2Auth não encontrado.");
+    alert("Não foi possível validar o acesso ao Piso 2.");
+    window.location.href="../pages/home.html";
     return false;
-  } catch (e){
-    console.warn("[PISO] erro enforcePisoAuth:", e);
+
+  }catch(e){
+    console.error("[PISO2] Erro:",e);
+    alert("Erro ao validar acesso ao Piso 2.");
+    window.location.href="../pages/home.html";
     return false;
   }
 }
@@ -401,15 +401,19 @@ function goHome(){
 /** logout do portal */
 function logoutPortal(){
   try{
-    if (typeof logoutAll === "function") logoutAll();
-    else{
+    if(typeof logoutAll==="function"){
+      logoutAll();
+    }else{
       localStorage.removeItem("nf_auth_home");
       localStorage.removeItem("nf_auth_user");
       localStorage.removeItem("nf_auth_state");
       localStorage.removeItem("nf_auth_piso");
+      localStorage.removeItem("nf_auth_piso2");
     }
-  }catch(e){}
-  window.location.href = "../pages/login.html";
+  }catch(e){
+    console.error(e);
+  }
+  window.location.href="../pages/login.html";
 }
 
 /* ================== MODO COTAÇÃO ================== */
@@ -828,7 +832,6 @@ function toastAdmin(txt, ok){
 document.addEventListener("DOMContentLoaded", ()=>{
   const ok = enforcePisoAuth();
   if(!ok){
-    alert("auth.js não carregou. Confira o caminho: ../assets/js/auth.js");
     return;
   }
 

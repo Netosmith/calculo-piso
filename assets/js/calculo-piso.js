@@ -373,23 +373,88 @@ function resetAll(){if(user()!==ADMIN_USER&&!role().includes("ADMIN"))return ale
 function debounce(fn,ms=600){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
 
 function init(){
- try{if(typeof requirePisoAuth==="function")requirePisoAuth();else if(typeof requireHomeAuth==="function")requireHomeAuth()}catch(e){}
- $("userName").textContent=user();$("userRole").textContent=role();
- pesos=loadPesos();fillTipos();renderPesos();renderAll();renderHistory([]);restoreQuickQuoteMode();
- $("tipo").onchange=()=>{selected=+$("tipo").value||0;renderAll()};
- ["km","pedagio","margem","icms"].forEach(id=>$(id).oninput=renderAll);
- const route=debounce(()=>{renderMap();loadHistory()});
- $("origemRota").oninput=route;$("destinoRota").oninput=route;
- $("btnCalc").onclick=()=>{renderAll();loadHistory()};
- $("btnOpenMaps").onclick=openMaps;$("btnCopy").onclick=copyQuote;$("btnSave").onclick=saveQuote;
- $("btnPublish").onclick=()=>location.href="./fretes.html";$("btnWhatsApp").onclick=whatsapp;
- $("btnExportCSV").onclick=exportCSV;$("btnExportJPG").onclick=exportJPG;
+ let acessoLiberado=false;
+
+ try{
+  if(typeof requirePiso2Auth==="function"){
+   acessoLiberado=requirePiso2Auth()===true;
+  }else{
+   console.error("[PISO2] A função requirePiso2Auth não foi encontrada no auth.js.");
+   alert("Não foi possível validar o acesso ao Cálculo de Piso 2.");
+   window.location.href="../pages/home.html";
+   return;
+  }
+ }catch(e){
+  console.error("[PISO2] Erro ao validar acesso:",e);
+  alert("Erro ao validar o acesso ao Cálculo de Piso 2.");
+  window.location.href="../pages/home.html";
+  return;
+ }
+
+ if(!acessoLiberado)return;
+
+ $("userName").textContent=user();
+ $("userRole").textContent=role();
+
+ pesos=loadPesos();
+ fillTipos();
+ renderPesos();
+ renderAll();
+ renderHistory([]);
+ restoreQuickQuoteMode();
+
+ $("tipo").onchange=()=>{
+  selected=+$("tipo").value||0;
+  renderAll();
+ };
+
+ ["km","pedagio","margem","icms"].forEach(id=>{
+  $(id).oninput=renderAll;
+ });
+
+ const route=debounce(()=>{
+  renderMap();
+  loadHistory();
+ });
+
+ $("origemRota").oninput=route;
+ $("destinoRota").oninput=route;
+
+ $("btnCalc").onclick=()=>{
+  renderAll();
+  loadHistory();
+ };
+
+ $("btnOpenMaps").onclick=openMaps;
+ $("btnCopy").onclick=copyQuote;
+ $("btnSave").onclick=saveQuote;
+
+ $("btnPublish").onclick=()=>location.href="./fretes.html";
+ $("btnWhatsApp").onclick=whatsapp;
+
+ $("btnExportCSV").onclick=exportCSV;
+ $("btnExportJPG").onclick=exportJPG;
+
  $("btnQuoteMode").onclick=toggleQuickQuoteMode;
  $("btnHome").onclick=()=>location.href="./home.html";
- $("btnLogout").onclick=()=>{try{if(typeof logoutAll==="function")return logoutAll()}catch(e){}location.href="../pages/login.html"};
+
+ $("btnLogout").onclick=()=>{
+  try{
+   if(typeof logoutAll==="function"){
+    logoutAll();
+   }
+  }catch(e){
+   console.error("[PISO2] Erro ao limpar sessão:",e);
+  }
+
+  location.href="../pages/login.html";
+ };
+
  $("btnAdmin").onclick=()=>$("adminModal").classList.add("show");
  $("btnAdminClose").onclick=()=>$("adminModal").classList.remove("show");
- $("btnResetPesos").onclick=resetMine;$("btnResetAllPesos").onclick=resetAll;
+
+ $("btnResetPesos").onclick=resetMine;
+ $("btnResetAllPesos").onclick=resetAll;
 }
 window.addEventListener("DOMContentLoaded",init);
 })();

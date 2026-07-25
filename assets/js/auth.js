@@ -1,5 +1,5 @@
 // =====================================================
-// auth.js | NOVA FROTA
+// auth.js | NOVA FROTA-
 // Login via Google Apps Script + seleção de estado
 // Senhas removidas do navegador
 // =====================================================

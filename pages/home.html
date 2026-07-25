@@ -163,18 +163,27 @@
     .nf-stat{
       --accent:var(--home-blue);
       position:relative;
-      min-height:126px;
-      display:flex;
-      align-items:center;
-      gap:22px;
-      padding:20px 24px;
+      min-height:178px;
+      padding:18px 20px 16px;
       overflow:hidden;
-      border:1px solid var(--home-line);
-      border-radius:16px;
-      background:linear-gradient(135deg,rgba(42,67,103,.80),rgba(23,43,72,.72));
-      box-shadow:0 14px 34px rgba(0,0,0,.15);
-      backdrop-filter:blur(14px);
+      border:1px solid color-mix(in srgb,var(--accent) 34%,rgba(173,204,240,.18));
+      border-radius:18px;
+      background:
+        radial-gradient(circle at 88% 10%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 42%),
+        linear-gradient(145deg,rgba(18,42,75,.92),rgba(8,25,49,.86));
+      box-shadow:0 18px 38px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.05);
+      backdrop-filter:blur(16px);
+      cursor:default;
     }
+
+    .nf-stat::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:linear-gradient(120deg,rgba(255,255,255,.035),transparent 42%);
+    }
+
     .nf-stat::after{
       content:"";
       position:absolute;
@@ -184,26 +193,94 @@
       height:4px;
       border-radius:10px 10px 0 0;
       background:var(--accent);
-      box-shadow:0 0 14px color-mix(in srgb,var(--accent) 55%,transparent);
+      box-shadow:0 0 18px color-mix(in srgb,var(--accent) 62%,transparent);
     }
+
     .nf-stat.green{ --accent:var(--home-green); }
     .nf-stat.gold{ --accent:var(--home-gold); }
     .nf-stat.purple{ --accent:var(--home-purple); }
+
+    .nf-stat-head{
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      gap:11px;
+    }
+
     .nf-stat-icon{
-      width:66px;
-      height:66px;
+      width:44px;
+      height:44px;
       display:grid;
       place-items:center;
       flex:0 0 auto;
-      border:1px solid color-mix(in srgb,var(--accent) 70%,white 10%);
-      border-radius:16px;
+      border:1px solid color-mix(in srgb,var(--accent) 72%,white 8%);
+      border-radius:13px;
       color:#fff;
-      background:color-mix(in srgb,var(--accent) 45%,transparent);
+      background:color-mix(in srgb,var(--accent) 34%,transparent);
+      box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 16%,transparent);
     }
-    .nf-stat-icon svg{ width:34px; height:34px; }
-    .nf-stat-value{ display:block; font-size:34px; line-height:1; font-weight:800; }
-    .nf-stat-label{ display:block; margin-top:7px; color:#d7e1ed; font-size:15px; font-weight:500; }
-    .nf-stat-update{ display:block; margin-top:7px; color:#8fa3bb; font-size:12px; }
+
+    .nf-stat-icon svg{ width:24px; height:24px; }
+
+    .nf-stat-label{
+      display:block;
+      color:#eef5ff;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.055em;
+      text-transform:uppercase;
+    }
+
+    .nf-stat-value{
+      position:relative;
+      z-index:1;
+      display:block;
+      margin-top:14px;
+      color:#fff;
+      font-size:42px;
+      line-height:1;
+      font-weight:800;
+      letter-spacing:-1.5px;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .nf-stat-detail{
+      position:relative;
+      z-index:1;
+      display:block;
+      min-height:18px;
+      margin-top:10px;
+      color:#d1deee;
+      font-size:12px;
+      font-weight:600;
+    }
+
+    .nf-stat-detail strong{
+      color:#fff;
+      font-weight:800;
+    }
+
+    .nf-stat-update{
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-top:8px;
+      color:#8fa3bb;
+      font-size:11px;
+    }
+
+    .nf-stat-update::before{
+      content:"";
+      width:6px;
+      height:6px;
+      flex:0 0 auto;
+      border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 8px color-mix(in srgb,var(--accent) 75%,transparent);
+    }
 
     .nf-tools{
       display:grid;
@@ -320,8 +397,8 @@
       .nf-welcome h1{ font-size:31px; }
       .nf-welcome p{ font-size:14px; }
       .nf-stats{ grid-template-columns:1fr; gap:12px; }
-      .nf-stat{ min-height:104px; padding:16px 18px; }
-      .nf-stat-icon{ width:56px; height:56px; }
+      .nf-stat{ min-height:164px; padding:16px 18px 15px; }
+      .nf-stat-value{ font-size:38px; }
       .nf-tools{ grid-template-columns:1fr; }
       .nf-tool{ min-height:150px; padding:22px; }
       .nf-tool-icon{ width:52px; height:52px; margin-bottom:13px; }
@@ -371,20 +448,69 @@
 
       <section class="nf-stats" aria-label="Resumo operacional">
         <article class="nf-stat">
-          <div class="nf-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></div>
-          <div><strong class="nf-stat-value" id="homeFretesAtivos">0</strong><span class="nf-stat-label">Fretes ativos</span><small class="nf-stat-update">Atualizado agora</small></div>
+          <div class="nf-stat-head">
+            <div class="nf-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/>
+                <circle cx="7" cy="18" r="2"/>
+                <circle cx="18" cy="18" r="2"/>
+              </svg>
+            </div>
+            <span class="nf-stat-label">Fretes ativos</span>
+          </div>
+          <strong class="nf-stat-value" id="homeFretesAtivos">0</strong>
+          <span class="nf-stat-detail" id="homeFretesDetalhe">
+            GO: <strong id="homeFretesGO">0</strong> • MT: <strong id="homeFretesMT">0</strong>
+          </span>
+          <small class="nf-stat-update" id="homeFretesAtualizacao">Aguardando atualização</small>
         </article>
+
         <article class="nf-stat green">
-          <div class="nf-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
-          <div><strong class="nf-stat-value" id="homeEmTransito">0</strong><span class="nf-stat-label">Em trânsito</span><small class="nf-stat-update">Atualizado agora</small></div>
+          <div class="nf-stat-head">
+            <div class="nf-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/>
+                <circle cx="7" cy="18" r="2"/>
+                <circle cx="18" cy="18" r="2"/>
+                <path d="M8 4h8"/>
+              </svg>
+            </div>
+            <span class="nf-stat-label">Veículos totais</span>
+          </div>
+          <strong class="nf-stat-value" id="homeVeiculosTotais">0</strong>
+          <span class="nf-stat-detail" id="homeVeiculosDetalhe">
+            GO: <strong id="homeVeiculosGO">0</strong> • MT: <strong id="homeVeiculosMT">0</strong>
+          </span>
+          <small class="nf-stat-update" id="homeVeiculosAtualizacao">Aguardando atualização</small>
         </article>
+
         <article class="nf-stat gold">
-          <div class="nf-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10l3 3v15H4V3z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
-          <div><strong class="nf-stat-value" id="homeSolicStat">0</strong><span class="nf-stat-label">Solicitações</span><small class="nf-stat-update">Atualizado agora</small></div>
+          <div class="nf-stat-head">
+            <div class="nf-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M7 3h10l3 3v15H4V3z"/>
+                <path d="M8 9h8M8 13h8M8 17h5"/>
+              </svg>
+            </div>
+            <span class="nf-stat-label">Solicitações</span>
+          </div>
+          <strong class="nf-stat-value" id="homeSolicStat">0</strong>
+          <span class="nf-stat-detail">Solicitações abertas</span>
+          <small class="nf-stat-update" id="homeSolicAtualizacao">Atualizado agora</small>
         </article>
+
         <article class="nf-stat purple">
-          <div class="nf-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8h7v13M11 21V3h9v18M7 12h1M7 16h1M15 7h1M15 11h1M15 15h1"/></svg></div>
-          <div><strong class="nf-stat-value" id="homeFiliais">0</strong><span class="nf-stat-label">Filiais</span><small class="nf-stat-update">Cadastradas no portal</small></div>
+          <div class="nf-stat-head">
+            <div class="nf-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 21V8h7v13M11 21V3h9v18M7 12h1M7 16h1M15 7h1M15 11h1M15 15h1"/>
+              </svg>
+            </div>
+            <span class="nf-stat-label">Filiais</span>
+          </div>
+          <strong class="nf-stat-value" id="homeFiliais">0</strong>
+          <span class="nf-stat-detail">Cadastradas no portal</span>
+          <small class="nf-stat-update" id="homeFiliaisAtualizacao">Atualizado agora</small>
         </article>
       </section>
 
@@ -464,18 +590,60 @@
     function definirNumero(id, valor) {
       const el = document.getElementById(id);
       const numero = Number(valor);
-      if (el && Number.isFinite(numero)) el.textContent = String(numero);
+      if (el && Number.isFinite(numero)) {
+        el.textContent = String(Math.max(0, Math.round(numero)));
+      }
+    }
+
+    function horarioAtualizacao(valor) {
+      if (valor) return String(valor);
+      const agora = new Date();
+      return `${String(agora.getHours()).padStart(2,"0")}:${String(agora.getMinutes()).padStart(2,"0")}`;
+    }
+
+    function definirAtualizacao(id, horario) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = `Atualizado às ${horarioAtualizacao(horario)}`;
     }
 
     function atualizarMetricasHome(metricas = {}) {
-      definirNumero("homeFretesAtivos", metricas.fretesAtivos);
-      definirNumero("homeEmTransito", metricas.emTransito);
+      const fretesGO = Number(metricas.fretesGO ?? 0);
+      const fretesMT = Number(metricas.fretesMT ?? 0);
+      const veiculosGO = Number(metricas.veiculosGO ?? 0);
+      const veiculosMT = Number(metricas.veiculosMT ?? 0);
+
+      const totalFretes = metricas.fretesAtivos != null
+        ? Number(metricas.fretesAtivos)
+        : fretesGO + fretesMT;
+
+      const totalVeiculos = metricas.veiculosTotais != null
+        ? Number(metricas.veiculosTotais)
+        : metricas.emTransito != null
+          ? Number(metricas.emTransito)
+          : veiculosGO + veiculosMT;
+
+      definirNumero("homeFretesAtivos", totalFretes);
+      definirNumero("homeFretesGO", fretesGO);
+      definirNumero("homeFretesMT", fretesMT);
+
+      definirNumero("homeVeiculosTotais", totalVeiculos);
+      definirNumero("homeVeiculosGO", veiculosGO);
+      definirNumero("homeVeiculosMT", veiculosMT);
+
       definirNumero("homeFiliais", metricas.filiais);
+
       if (metricas.solicitacoes != null) {
         definirNumero("homeSolicOpen", metricas.solicitacoes);
         definirNumero("homeSolicStat", metricas.solicitacoes);
       }
+
+      const horario = horarioAtualizacao(metricas.ultimaAtualizacao);
+      definirAtualizacao("homeFretesAtualizacao", horario);
+      definirAtualizacao("homeVeiculosAtualizacao", horario);
+      definirAtualizacao("homeSolicAtualizacao", horario);
+      definirAtualizacao("homeFiliaisAtualizacao", horario);
     }
+
     window.atualizarMetricasHome = atualizarMetricasHome;
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -510,7 +678,10 @@
       /* Mantém o total de solicitações sincronizado com o script existente. */
       const solicitOpen = document.getElementById("homeSolicOpen");
       if (solicitOpen) {
-        const syncSolicitacoes = () => definirNumero("homeSolicStat", solicitOpen.textContent);
+        const syncSolicitacoes = () => {
+          definirNumero("homeSolicStat", solicitOpen.textContent);
+          definirAtualizacao("homeSolicAtualizacao");
+        };
         new MutationObserver(syncSolicitacoes).observe(solicitOpen,{childList:true,subtree:true,characterData:true});
         syncSolicitacoes();
       }
@@ -520,7 +691,10 @@
       if (filialSelect) {
         const contarFiliais = () => {
           const total = [...filialSelect.options].filter((opcao) => opcao.value && !/selecione/i.test(opcao.textContent)).length;
-          if (total) definirNumero("homeFiliais",total);
+          if (total) {
+            definirNumero("homeFiliais",total);
+            definirAtualizacao("homeFiliaisAtualizacao");
+          }
         };
         new MutationObserver(contarFiliais).observe(filialSelect,{childList:true,subtree:true});
         contarFiliais();

@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx6QhIbOEq-J_26rR3jrGPH99DWEbv2nbWFfXzckE6TJwXB4O_RnjLLC49-77gjtlIg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
 
 async function salvarPatrimonio(){
 

@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzz4TBd-h-ywYBJTFJ0R_jKoAf84TJHcrMPlPRpz6rTzFcSBK3VRTKL20xoqAgBvVbjsA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
 
 let dados = [];
 let charts = {};

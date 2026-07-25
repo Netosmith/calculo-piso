@@ -646,6 +646,50 @@
 
     window.atualizarMetricasHome = atualizarMetricasHome;
 
+
+    async function carregarMetricasHome() {
+      try {
+        if (typeof API_URL === "undefined" || !API_URL) {
+          throw new Error("API_URL não encontrada.");
+        }
+
+        const url = `${API_URL}?action=home_dashboard&_=${Date.now()}`;
+
+        const resposta = await fetch(url, {
+          method: "GET",
+          cache: "no-store"
+        });
+
+        if (!resposta.ok) {
+          throw new Error(`Erro HTTP ${resposta.status}`);
+        }
+
+        const resultado = await resposta.json();
+
+        if (!resultado || resultado.ok !== true) {
+          throw new Error(resultado?.error || "A API não retornou os dados da Home.");
+        }
+
+        const metricas = resultado.data || resultado;
+
+        atualizarMetricasHome(metricas);
+
+        const footer = document.querySelector(".nf-footer-status");
+        if (footer) {
+          footer.textContent =
+            `Dados atualizados às ${horarioAtualizacao(metricas.ultimaAtualizacao)}`;
+        }
+
+      } catch (erro) {
+        console.error("Erro ao carregar métricas da Home:", erro);
+
+        const footer = document.querySelector(".nf-footer-status");
+        if (footer) {
+          footer.textContent = "Não foi possível atualizar os indicadores";
+        }
+      }
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       const uf = typeof getSelectedState === "function" ? (getSelectedState() || "") : "";
       const user = typeof getUser === "function" ? (getUser() || "Usuário") : "Usuário";
@@ -672,8 +716,7 @@
         if (typeof canAccessFeature === "function" && !canAccessFeature(feature)) card.style.display = "none";
       });
 
-      /* Permite que o portal injete números reais sem alterar este layout. */
-      if (window.HOME_METRICS) atualizarMetricasHome(window.HOME_METRICS);
+      carregarMetricasHome();
 
       /* Mantém o total de solicitações sincronizado com o script existente. */
       const solicitOpen = document.getElementById("homeSolicOpen");

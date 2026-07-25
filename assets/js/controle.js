@@ -3,7 +3,7 @@
 "use strict";
 
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbyKag83EBMpZA7sOu6yGxeFJw0ERayG7s7piMlMwV0_4csaEf6Oqq70J0Q7RhLBI-1W/exec";
+  "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
 
 const S = {
   rows: [],

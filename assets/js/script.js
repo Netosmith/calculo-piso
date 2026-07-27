@@ -59,6 +59,17 @@ function atualizarStatus(mensagem) {
   if (el) el.textContent = mensagem;
 }
 
+function definirTexto(id, valor) {
+  const elemento = document.getElementById(id);
+
+  if (!elemento) {
+    console.warn(`Elemento não encontrado no HTML: #${id}`);
+    return;
+  }
+
+  elemento.textContent = valor;
+}
+
 function atualizarCabecalho() {
   const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   const ultimaAtualizacao = document.getElementById("ultimaAtualizacao");
@@ -153,11 +164,11 @@ function atualizar() {
   const contratos = new Set(lista.map(i=>normalizarTexto(i[campos.contratoAS400])).filter(Boolean)).size;
   const viagens = Math.ceil(restante / PESO_MEDIO_VIAGEM);
 
-  document.getElementById("totalContratada").textContent = moedaTon(contratada);
-  document.getElementById("totalRecebida").textContent = moedaTon(recebida);
-  document.getElementById("totalRestante").textContent = moedaTon(restante);
-  document.getElementById("totalContratos").textContent = contratos.toLocaleString("pt-BR");
-  document.getElementById("totalViagens").textContent = viagens.toLocaleString("pt-BR");
+  definirTexto("totalContratada", moedaTon(contratada));
+  definirTexto("totalRecebida", moedaTon(recebida));
+  definirTexto("totalRestante", moedaTon(restante));
+  definirTexto("totalContratos", contratos.toLocaleString("pt-BR"));
+  definirTexto("totalViagens", viagens.toLocaleString("pt-BR"));
 
   const porFilial = agrupar(lista,campos.filial,campos.contratada);
   criarGrafico("graficoFilial","bar",porFilial.map(x=>x[0]),porFilial.map(x=>x[1]));
@@ -220,41 +231,112 @@ async function iniciar() {
   }
 }
 
-const btnImportar = document.getElementById("btnImportar");
-const inputExcel = document.getElementById("arquivoExcel");
-btnImportar?.addEventListener("click",()=>inputExcel?.click());
-inputExcel?.addEventListener("change",async event=>{
-  const file = event.target.files?.[0];
-  if (!file) return;
-  btnImportar.textContent = "⏳ Lendo arquivo...";
-  btnImportar.disabled = true;
-  try {
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer,{type:"array"});
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet,{defval:"",raw:false});
-    if (!rows.length) throw new Error("A planilha está vazia.");
-    const obrigatorias = [campos.contratoAS400,campos.produto,campos.local,campos.contratada,campos.recebida,campos.data,campos.uf,campos.filial];
-    const encontradas = Object.keys(rows[0]||{});
-    const ausentes = obrigatorias.filter(coluna=>!encontradas.includes(coluna));
-    if (ausentes.length) throw new Error("Colunas não encontradas: "+ausentes.join(", "));
-    btnImportar.textContent = "⏳ Importando...";
-    const resposta = await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({rows})});
-    if (!resposta.ok) throw new Error(`Erro HTTP ${resposta.status}`);
-    const resultado = await resposta.json();
-    if (resultado?.ok === false) throw new Error(resultado.message||resultado.error||"Erro na importação.");
-    dados = rows;
-    reconstruirFiltros();
-    atualizar();
-    alert(`Importação concluída!\nLinhas importadas: ${Number(resultado?.linhas ?? rows.length).toLocaleString("pt-BR")}`);
-  } catch (erro) {
-    console.error("Erro ao importar arquivo:",erro);
-    alert("Erro ao importar arquivo: "+erro.message);
-  } finally {
-    btnImportar.textContent = "📂 Importar Excel";
-    btnImportar.disabled = false;
-    inputExcel.value = "";
-  }
-});
+function configurarImportacao() {
+  const btnImportar = document.getElementById("btnImportar");
+  const inputExcel = document.getElementById("arquivoExcel");
 
-window.addEventListener("DOMContentLoaded",iniciar);
+  if (!btnImportar || !inputExcel) {
+    console.error("Elementos da importação não encontrados no HTML.");
+    atualizarStatus("Erro de configuração: elementos de importação não encontrados.");
+    return;
+  }
+
+  btnImportar.addEventListener("click", () => {
+    inputExcel.click();
+  });
+
+  inputExcel.addEventListener("change", async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    btnImportar.textContent = "⏳ Lendo arquivo...";
+    btnImportar.disabled = true;
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const primeiraAba = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[primeiraAba];
+
+      const rows = XLSX.utils.sheet_to_json(sheet, {
+        defval: "",
+        raw: false
+      });
+
+      if (!rows.length) {
+        throw new Error("A planilha está vazia.");
+      }
+
+      const obrigatorias = [
+        campos.contratoAS400,
+        campos.produto,
+        campos.local,
+        campos.contratada,
+        campos.recebida,
+        campos.data,
+        campos.uf,
+        campos.filial
+      ];
+
+      const encontradas = Object.keys(rows[0] || {});
+      const ausentes = obrigatorias.filter(
+        coluna => !encontradas.includes(coluna)
+      );
+
+      if (ausentes.length) {
+        throw new Error(
+          "Colunas não encontradas: " + ausentes.join(", ")
+        );
+      }
+
+      btnImportar.textContent = "⏳ Importando...";
+
+      const resposta = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({ rows })
+      });
+
+      if (!resposta.ok) {
+        throw new Error(`Erro HTTP ${resposta.status}`);
+      }
+
+      const resultado = await resposta.json();
+
+      if (resultado?.ok === false) {
+        throw new Error(
+          resultado.message ||
+          resultado.error ||
+          "Erro na importação."
+        );
+      }
+
+      dados = rows;
+      reconstruirFiltros();
+      atualizar();
+
+      const linhasImportadas = Number(
+        resultado?.linhas ?? rows.length
+      );
+
+      alert(
+        `Importação concluída!\nLinhas importadas: ${linhasImportadas.toLocaleString("pt-BR")}`
+      );
+
+    } catch (erro) {
+      console.error("Erro ao importar arquivo:", erro);
+      alert("Erro ao importar arquivo: " + erro.message);
+    } finally {
+      btnImportar.textContent = "📂 Importar Excel";
+      btnImportar.disabled = false;
+      inputExcel.value = "";
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  configurarImportacao();
+  iniciar();
+});

@@ -38,6 +38,67 @@ function numero(valor) {
   return Number.isFinite(resultado) ? resultado : 0;
 }
 
+function normalizarNumeroImportacao(valor) {
+  if (valor === null || valor === undefined || valor === "") return "";
+
+  // Quando o Excel armazena o dado como número, raw:true entrega o valor real.
+  // Ex.: uma célula exibida como 1.200 chega aqui como 1200.
+  if (typeof valor === "number") {
+    return Number.isFinite(valor) ? valor : "";
+  }
+
+  let texto = String(valor)
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^\d,.-]/g, "");
+
+  if (!texto) return "";
+
+  const temVirgula = texto.includes(",");
+  const temPonto = texto.includes(".");
+
+  if (temVirgula && temPonto) {
+    // Formato brasileiro: 1.250,75
+    if (texto.lastIndexOf(",") > texto.lastIndexOf(".")) {
+      texto = texto.replace(/\./g, "").replace(",", ".");
+    } else {
+      // Formato internacional: 1,250.75
+      texto = texto.replace(/,/g, "");
+    }
+  } else if (temVirgula) {
+    // Vírgula sem ponto é tratada como separador decimal.
+    texto = texto.replace(",", ".");
+  } else if (temPonto) {
+    const partes = texto.split(".");
+
+    // Um único ponto seguido de exatamente três dígitos é milhar.
+    // Ex.: "1.200" -> 1200.
+    if (
+      partes.length > 2 ||
+      (partes.length === 2 && partes[1].length === 3)
+    ) {
+      texto = partes.join("");
+    }
+  }
+
+  const resultado = Number(texto);
+  return Number.isFinite(resultado) ? resultado : "";
+}
+
+function normalizarDataImportacao(valor) {
+  if (valor === null || valor === undefined || valor === "") return "";
+
+  if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
+    const dia = String(valor.getDate()).padStart(2, "0");
+    const mes = String(valor.getMonth() + 1).padStart(2, "0");
+    const ano = valor.getFullYear();
+
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  return String(valor).trim();
+}
+
 function restanteItem(item) {
   return Math.max(0, numero(item[campos.contratada]) - numero(item[campos.recebida]));
 }
@@ -254,13 +315,36 @@ function configurarImportacao() {
 
     try {
       const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: "array" });
+
+      // cellDates mantém datas como datas, enquanto raw:true preserva
+      // os valores numéricos reais do Excel. Ex.: 1.200 continua 1200.
+      const workbook = XLSX.read(buffer, {
+        type: "array",
+        cellDates: true
+      });
+
       const primeiraAba = workbook.SheetNames[0];
       const sheet = workbook.Sheets[primeiraAba];
 
       const rows = XLSX.utils.sheet_to_json(sheet, {
         defval: "",
-        raw: false
+        raw: true
+      });
+
+      // Padroniza apenas as colunas numéricas antes de enviá-las à API.
+      // Números reais vindos do Excel são mantidos sem alteração.
+      const colunasNumericas = [
+        campos.contratada,
+        campos.faturada,
+        campos.recebida
+      ];
+
+      rows.forEach(item => {
+        colunasNumericas.forEach(coluna => {
+          item[coluna] = normalizarNumeroImportacao(item[coluna]);
+        });
+
+        item[campos.data] = normalizarDataImportacao(item[campos.data]);
       });
 
       if (!rows.length) {

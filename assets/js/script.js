@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxjMOTlOMWlEAD-nwY62RxWT-dXF0Lq9AaJUnCB5FWPO_EbOEV1nmgn-DF1CUoVbiD4QA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxZ2ktdYH4j50Xi-n9H1TN8JLI4yDmN0xShDqHKxWQUqXO8ik5BAq_e7G9Nd7YmQUjB/exec";
 const PESO_MEDIO_VIAGEM = 37;
 let dados = [];
 let charts = {};

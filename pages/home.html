@@ -465,7 +465,7 @@
           <small class="nf-stat-update" id="homeFretesAtualizacao">Aguardando atualização</small>
         </article>
 
-        <article class="nf-stat green">
+        <article class="nf-stat green nf-stat-veiculos">
           <div class="nf-stat-head">
             <div class="nf-stat-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -477,10 +477,36 @@
             </div>
             <span class="nf-stat-label">Veículos totais</span>
           </div>
-          <strong class="nf-stat-value" id="homeVeiculosTotais">0</strong>
-          <span class="nf-stat-detail" id="homeVeiculosDetalhe">
-            GO: <strong id="homeVeiculosGO">0</strong> • MT: <strong id="homeVeiculosMT">0</strong>
-          </span>
+
+          <div class="nf-veiculos-resumo" aria-label="Veículos por estado">
+            <div class="nf-veiculos-totais">
+              <span>GO: <strong id="homeVeiculosGO">0</strong></span>
+              <span>MT: <strong id="homeVeiculosMT">0</strong></span>
+            </div>
+
+            <div class="nf-veiculos-divisor"></div>
+
+            <div class="nf-veiculos-linha">
+              <strong class="nf-veiculos-uf">GO</strong>
+              <span class="nf-veiculos-status porta">
+                <i aria-hidden="true"></i> Porta <b id="homeVeiculosGOPorta">0</b>
+              </span>
+              <span class="nf-veiculos-status transito">
+                <i aria-hidden="true"></i> Trânsito <b id="homeVeiculosGOTransito">0</b>
+              </span>
+            </div>
+
+            <div class="nf-veiculos-linha">
+              <strong class="nf-veiculos-uf">MT</strong>
+              <span class="nf-veiculos-status porta">
+                <i aria-hidden="true"></i> Porta <b id="homeVeiculosMTPorta">0</b>
+              </span>
+              <span class="nf-veiculos-status transito">
+                <i aria-hidden="true"></i> Trânsito <b id="homeVeiculosMTTransito">0</b>
+              </span>
+            </div>
+          </div>
+
           <small class="nf-stat-update" id="homeVeiculosAtualizacao">Aguardando atualização</small>
         </article>
 
@@ -607,28 +633,65 @@
     }
 
     function atualizarMetricasHome(metricas = {}) {
-      const fretesGO = Number(metricas.fretesGO ?? 0);
-      const fretesMT = Number(metricas.fretesMT ?? 0);
-      const veiculosGO = Number(metricas.veiculosGO ?? 0);
-      const veiculosMT = Number(metricas.veiculosMT ?? 0);
+      const numeroSeguro = (...valores) => {
+        for (const valor of valores) {
+          if (valor !== undefined && valor !== null && valor !== "") {
+            const numero = Number(valor);
+            if (Number.isFinite(numero)) return numero;
+          }
+        }
+        return 0;
+      };
+
+      const fretesGO = numeroSeguro(metricas.fretesGO);
+      const fretesMT = numeroSeguro(metricas.fretesMT);
+
+      const goPorta = numeroSeguro(
+        metricas.goPorta,
+        metricas.veiculosGOPorta,
+        metricas.portaGO
+      );
+
+      const goTransito = numeroSeguro(
+        metricas.goTransito,
+        metricas.veiculosGOTransito,
+        metricas.transitoGO
+      );
+
+      const mtPorta = numeroSeguro(
+        metricas.mtPorta,
+        metricas.veiculosMTPorta,
+        metricas.portaMT
+      );
+
+      const mtTransito = numeroSeguro(
+        metricas.mtTransito,
+        metricas.veiculosMTTransito,
+        metricas.transitoMT
+      );
+
+      const veiculosGO = metricas.veiculosGO != null
+        ? numeroSeguro(metricas.veiculosGO)
+        : goPorta + goTransito;
+
+      const veiculosMT = metricas.veiculosMT != null
+        ? numeroSeguro(metricas.veiculosMT)
+        : mtPorta + mtTransito;
 
       const totalFretes = metricas.fretesAtivos != null
-        ? Number(metricas.fretesAtivos)
+        ? numeroSeguro(metricas.fretesAtivos)
         : fretesGO + fretesMT;
-
-      const totalVeiculos = metricas.veiculosTotais != null
-        ? Number(metricas.veiculosTotais)
-        : metricas.emTransito != null
-          ? Number(metricas.emTransito)
-          : veiculosGO + veiculosMT;
 
       definirNumero("homeFretesAtivos", totalFretes);
       definirNumero("homeFretesGO", fretesGO);
       definirNumero("homeFretesMT", fretesMT);
 
-      definirNumero("homeVeiculosTotais", totalVeiculos);
       definirNumero("homeVeiculosGO", veiculosGO);
       definirNumero("homeVeiculosMT", veiculosMT);
+      definirNumero("homeVeiculosGOPorta", goPorta);
+      definirNumero("homeVeiculosGOTransito", goTransito);
+      definirNumero("homeVeiculosMTPorta", mtPorta);
+      definirNumero("homeVeiculosMTTransito", mtTransito);
 
       definirNumero("homeFiliais", metricas.filiais);
 

@@ -340,10 +340,18 @@
 
     rowsFiltered.forEach((r) => {
       const dest = safeText(r.destino) || "SEM DESTINO";
-      map.set(dest, (map.get(dest) || 0) + 1);
+      const quantidadeVeiculos =
+        num(getCmhLocal(r)) +
+        num(getCmhTrans(r));
+
+      map.set(
+        dest,
+        (map.get(dest) || 0) + quantidadeVeiculos
+      );
     });
 
     const list = Array.from(map.entries())
+      .filter(([, quantidade]) => quantidade > 0)
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"));
 
     const wrap = $("corrList");

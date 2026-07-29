@@ -9,383 +9,83 @@
 
   <style>
     :root{
-      --nf-blue:#0f172a;
-      --nf-blue-2:#102a6b;
-      --nf-green:#047857;
-      --nf-red:#b91c1c;
-      --nf-bg:#f3f6fb;
-      --nf-card:#ffffff;
-      --nf-border:#dbe2ea;
-      --nf-text:#111827;
-      --nf-muted:#64748b;
+      --navy:#0b1530;--navy2:#102a6b;--blue:#2563eb;--green:#16a34a;
+      --purple:#7c3aed;--orange:#f97316;--red:#dc2626;--bg:#f3f6fb;
+      --card:#fff;--border:#dbe3ee;--text:#111827;--muted:#64748b;
+      --shadow:0 10px 30px rgba(15,23,42,.07);--radius:16px;
     }
-
     *{box-sizing:border-box}
-
-    body{
-      margin:0;
-      background:var(--nf-bg);
-      color:var(--nf-text);
-      font-family:Arial,Helvetica,sans-serif;
-    }
-
+    html,body{min-height:100%}
+    body{margin:0;background:linear-gradient(180deg,#f8fafc 0%,var(--bg) 100%);
+      color:var(--text);font-family:Inter,Arial,Helvetica,sans-serif}
     button,input,select{font:inherit}
-
-    .topbar{
-      height:58px;
-      background:#0b1120;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:sticky;
-      top:0;
-      z-index:100;
-    }
-
-    .topbar-inner{
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 16px;
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
-    .brand img{
-      height:34px;
-      max-width:180px;
-      object-fit:contain;
-    }
-
-    .icon-btn{
-      width:36px;
-      height:36px;
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#fff;
-      cursor:pointer;
-      background:rgba(255,255,255,.05);
-      text-decoration:none;
-    }
-
-    .page{
-      max-width:1500px;
-      margin:0 auto;
-      padding:14px;
-    }
-
-    .pageHead{
-      background:#fff;
-      border:1px solid var(--nf-border);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 6px 18px rgba(15,23,42,.06);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-
-    .pageHead h1{
-      margin:0;
-      font-size:20px;
-      color:var(--nf-blue);
-    }
-
-    .pageHead p{
-      margin:5px 0 0;
-      color:var(--nf-muted);
-      font-size:12px;
-    }
-
-    .status{
-      font-size:12px;
-      font-weight:800;
-      color:var(--nf-muted);
-    }
-
-    .tabs{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:12px;
-      background:#fff;
-      border:1px solid var(--nf-border);
-      border-radius:16px;
-      padding:8px;
-    }
-
-    .tabBtn{
-      height:34px;
-      padding:0 13px;
-      border:1px solid var(--nf-border);
-      border-radius:10px;
-      background:#fff;
-      color:var(--nf-blue);
-      font-size:11px;
-      font-weight:900;
-      cursor:pointer;
-    }
-
-    .tabBtn.active{
-      background:var(--nf-blue-2);
-      color:#fff;
-      border-color:var(--nf-blue-2);
-    }
-
-    .toolbar{
-      margin-top:12px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-      background:#fff;
-      border:1px solid var(--nf-border);
-      border-radius:16px;
-      padding:10px;
-    }
-
-    .search{
-      height:34px;
-      min-width:260px;
-      flex:1 1 340px;
-      border:1px solid var(--nf-border);
-      border-radius:10px;
-      padding:0 11px;
-      outline:none;
-    }
-
-    .search:focus{
-      border-color:#3b82f6;
-      box-shadow:0 0 0 3px rgba(59,130,246,.15);
-    }
-
-    .btn{
-      height:34px;
-      border:0;
-      border-radius:10px;
-      padding:0 13px;
-      font-size:11px;
-      font-weight:900;
-      cursor:pointer;
-      color:#fff;
-      background:var(--nf-blue);
-    }
-
-    .btn.green{background:var(--nf-green)}
-    .btn.blue{background:var(--nf-blue-2)}
-    .btn.ghost{
-      color:var(--nf-blue);
-      background:#fff;
-      border:1px solid var(--nf-border);
-    }
-    .btn.red{background:var(--nf-red)}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-
-    .card{
-      margin-top:12px;
-      background:#fff;
-      border:1px solid var(--nf-border);
-      border-radius:18px;
-      box-shadow:0 6px 18px rgba(15,23,42,.06);
-      overflow:hidden;
-    }
-
-    .tableWrap{
-      overflow:auto;
-      min-height:420px;
-      max-height:calc(100vh - 260px);
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:900px;
-    }
-
-    th,td{
-      padding:9px 10px;
-      border-bottom:1px solid #e5e7eb;
-      font-size:11px;
-      text-align:left;
-      white-space:nowrap;
-    }
-
-    th{
-      position:sticky;
-      top:0;
-      z-index:2;
-      background:var(--nf-blue);
-      color:#fff;
-      font-size:10px;
-      text-transform:uppercase;
-    }
-
-    tbody tr:nth-child(even){background:#f8fafc}
-    tbody tr:hover{background:#eef4ff}
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:62px;
-      height:23px;
-      padding:0 8px;
-      border-radius:999px;
-      font-size:10px;
-      font-weight:900;
-    }
-
-    .pill.on{background:#dcfce7;color:#166534}
-    .pill.off{background:#fee2e2;color:#991b1b}
-
-    .actionsCell{
-      display:flex;
-      align-items:center;
-      gap:5px;
-    }
-
-    .mini{
-      height:27px;
-      border-radius:8px;
-      border:1px solid var(--nf-border);
-      background:#fff;
-      color:var(--nf-blue);
-      font-size:10px;
-      font-weight:900;
-      cursor:pointer;
-      padding:0 9px;
-    }
-
-    .mini.edit{border-color:#93c5fd;color:#1d4ed8;background:#eff6ff}
-    .mini.toggle{border-color:#fca5a5;color:#991b1b;background:#fff1f2}
-
-    .empty{
-      text-align:center;
-      padding:35px;
-      color:var(--nf-muted);
-      font-weight:800;
-    }
-
-    .modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      background:rgba(15,23,42,.58);
-      backdrop-filter:blur(5px);
-      z-index:1000;
-    }
-
-    .modal.show{display:flex}
-
-    .modalCard{
-      width:min(760px,100%);
-      max-height:calc(100vh - 36px);
-      overflow:hidden;
-      background:#fff;
-      border-radius:18px;
-      box-shadow:0 24px 60px rgba(0,0,0,.28);
-      display:flex;
-      flex-direction:column;
-    }
-
-    .modalHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:14px 16px;
-      border-bottom:1px solid var(--nf-border);
-      background:#f8fafc;
-    }
-
-    .modalHead h2{
-      margin:0;
-      font-size:16px;
-      color:var(--nf-blue);
-    }
-
-    .close{
-      width:34px;
-      height:34px;
-      border:1px solid var(--nf-border);
-      border-radius:10px;
-      background:#fff;
-      font-weight:900;
-      cursor:pointer;
-    }
-
-    .modalBody{
-      padding:16px;
-      overflow:auto;
-    }
-
-    .formGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-
-    .field.full{grid-column:1/-1}
-
-    .field label{
-      display:block;
-      margin-bottom:5px;
-      font-size:11px;
-      font-weight:900;
-      color:var(--nf-blue);
-    }
-
-    .field input,.field select{
-      width:100%;
-      height:36px;
-      border:1px solid var(--nf-border);
-      border-radius:10px;
-      padding:0 10px;
-      outline:none;
-      text-transform:uppercase;
-    }
-
-    .field input[type="email"]{text-transform:none}
-
-    .field input:focus,.field select:focus{
-      border-color:#3b82f6;
-      box-shadow:0 0 0 3px rgba(59,130,246,.14);
-    }
-
-    .hint{
-      margin-top:5px;
-      font-size:10px;
-      color:var(--nf-muted);
-    }
-
-    .modalFoot{
-      display:flex;
-      justify-content:flex-end;
-      gap:8px;
-      padding:12px 16px;
-      border-top:1px solid var(--nf-border);
-      background:#f8fafc;
-    }
-
-    @media(max-width:700px){
-      .formGrid{grid-template-columns:1fr}
-      .field.full{grid-column:auto}
-      .page{padding:8px}
-      .search{min-width:100%}
-    }
+    .topbar{height:64px;background:linear-gradient(90deg,#071226,#0d1b38 55%,#0b1530);
+      border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;
+      position:sticky;top:0;z-index:100;box-shadow:0 8px 24px rgba(2,8,23,.18)}
+    .topbar-inner{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+    .brand,.topRight{display:flex;align-items:center;gap:12px}
+    .brand img{height:34px;max-width:180px;object-fit:contain}
+    .icon-btn{width:38px;height:38px;border:1px solid rgba(255,255,255,.12);border-radius:11px;
+      display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
+      background:rgba(255,255,255,.06);text-decoration:none}
+    .userMini{display:flex;align-items:center;gap:9px;padding:5px 10px 5px 6px;
+      border:1px solid rgba(255,255,255,.10);border-radius:12px;background:rgba(255,255,255,.05);color:#fff}
+    .userAvatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);font-size:12px;font-weight:1000}
+    .userMini strong{display:block;font-size:11px}.userMini span{display:block;margin-top:3px;font-size:9px;color:#cbd5e1}
+    .page{max-width:1520px;margin:0 auto;padding:18px}
+    .pageHead,.tabsCard,.toolbar,.card,.statCard{background:#fff;border:1px solid var(--border);box-shadow:var(--shadow)}
+    .pageHead{border-radius:20px;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .pageHeadMain{display:flex;align-items:flex-start;gap:13px}.pageHeadIcon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#eaf1ff;color:var(--blue);font-size:20px}
+    .pageHead h1{margin:0;font-size:24px;letter-spacing:-.02em;color:var(--navy)}
+    .pageHead p{margin:6px 0 0;color:var(--muted);font-size:12px}
+    .pageHeadActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .status{height:38px;display:flex;align-items:center;padding:0 12px;border:1px solid var(--border);
+      border-radius:11px;background:#f8fafc;font-size:11px;font-weight:900;color:#475569}
+    .tabsCard{margin-top:14px;border-radius:16px;padding:8px}
+    .tabs{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:8px}
+    .tabBtn{height:42px;padding:0 14px;border:1px solid transparent;border-radius:11px;
+      background:#f8fafc;color:#334155;font-size:11px;font-weight:950;cursor:pointer}
+    .tabBtn.active{background:linear-gradient(180deg,#2f6df4,#1e4fd6);color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.22)}
+    .statsGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+    .statCard{min-height:104px;padding:16px;border-radius:16px;display:flex;align-items:center;gap:14px}
+    .statIcon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:22px}
+    .green .statIcon{background:#e9f9ef;color:var(--green)}.purple .statIcon{background:#f1ebff;color:var(--purple)}
+    .orange .statIcon{background:#fff1e8;color:var(--orange)}.blue .statIcon{background:#eaf1ff;color:var(--blue)}
+    .statLabel{color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase}
+    .statValue{margin-top:5px;color:var(--navy);font-size:24px;font-weight:1000;line-height:1}
+    .statMeta{margin-top:6px;color:#94a3b8;font-size:10px}
+    .toolbar{margin-top:14px;border-radius:16px;padding:12px;display:grid;grid-template-columns:minmax(280px,1fr) 180px auto auto;gap:10px;align-items:center}
+    .searchWrap{position:relative}.searchIcon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
+    .search{width:100%;height:40px;border:1px solid var(--border);border-radius:11px;padding:0 12px 0 38px;outline:none;background:#fbfdff}
+    .filterSelect{height:40px;border:1px solid var(--border);border-radius:11px;padding:0 10px;background:#fff;color:#334155;font-size:11px;font-weight:800}
+    .btn{height:40px;border:0;border-radius:11px;padding:0 15px;font-size:11px;font-weight:950;cursor:pointer;color:#fff;background:var(--navy);white-space:nowrap}
+    .btn.green{background:linear-gradient(180deg,#16a34a,#15803d)}.btn.blue{background:linear-gradient(180deg,#2563eb,#1d4ed8)}
+    .btn.ghost{color:var(--navy);background:#fff;border:1px solid var(--border)}.btn.red{background:var(--red)}.btn:disabled{opacity:.6}
+    .card{margin-top:14px;border-radius:18px;overflow:hidden}
+    .tableHeaderBar{min-height:48px;padding:0 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fff,#f8fafc)}
+    .tableHeaderBar strong{font-size:12px;color:var(--navy)}.tableHeaderBar span{font-size:10px;color:#64748b}
+    .tableWrap{overflow:auto;min-height:440px;max-height:calc(100vh - 390px)}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    th,td{padding:11px 12px;border-bottom:1px solid #e8edf4;font-size:11px;text-align:left;white-space:nowrap}
+    th{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,#0f1a32,#0a1428);color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:.045em}
+    tbody tr:nth-child(even){background:#fbfcfe}tbody tr:hover{background:#eef4ff}
+    .pill{display:inline-flex;align-items:center;justify-content:center;min-width:68px;height:24px;padding:0 9px;border-radius:999px;font-size:9px;font-weight:1000}
+    .pill.on{background:#dcfce7;color:#166534}.pill.off{background:#fee2e2;color:#991b1b}
+    .actionsCell{display:flex;gap:6px}.mini{height:29px;min-width:29px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:10px;font-weight:900;cursor:pointer;padding:0 9px}
+    .mini.edit{border-color:#bfdbfe;color:#1d4ed8;background:#eff6ff}.mini.toggle{border-color:#fecaca;color:#b91c1c;background:#fff1f2}
+    .empty{text-align:center;padding:42px;color:var(--muted);font-weight:800}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.64);backdrop-filter:blur(6px);z-index:1000}
+    .modal.show{display:flex}.modalCard{width:min(760px,100%);max-height:calc(100vh - 36px);overflow:hidden;background:#fff;border-radius:18px;box-shadow:0 28px 70px rgba(0,0,0,.30);display:flex;flex-direction:column}
+    .modalHead{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--border);background:#f8fafc}
+    .modalHead h2{margin:0;font-size:17px;color:var(--navy)}.close{width:34px;height:34px;border:1px solid var(--border);border-radius:10px;background:#fff;font-weight:900;cursor:pointer}
+    .modalBody{padding:18px;overflow:auto}.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field.full{grid-column:1/-1}
+    .field label{display:block;margin-bottom:6px;font-size:10px;font-weight:950;color:var(--navy)}
+    .field input,.field select{width:100%;height:39px;border:1px solid var(--border);border-radius:10px;padding:0 11px;outline:none;text-transform:uppercase;background:#fff}
+    .field input[type=email]{text-transform:none}.hint{margin-top:5px;font-size:10px;color:var(--muted)}
+    .modalFoot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--border);background:#f8fafc}
+    @media(max-width:1100px){.tabs{grid-template-columns:repeat(3,1fr)}.statsGrid{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 160px auto}}
+    @media(max-width:700px){.page{padding:10px}.tabs{grid-template-columns:1fr 1fr}.statsGrid,.toolbar,.formGrid{grid-template-columns:1fr}.userMini{display:none}}
   </style>
 </head>
 
@@ -396,35 +96,61 @@
         <a class="icon-btn" href="./home.html" title="Voltar">🏠</a>
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
-      <div class="icon-btn" data-logout title="Sair">↩️</div>
+      <div class="topRight">
+        <div class="userMini">
+          <div class="userAvatar" id="userInitials">NF</div>
+          <div><strong id="userDisplayName">USUÁRIO</strong><span id="userDisplayRole">PERFIL</span></div>
+        </div>
+        <div class="icon-btn" data-logout title="Sair">↩️</div>
+      </div>
     </div>
   </div>
 
   <main class="page">
     <section class="pageHead">
-      <div>
-        <h1>Cadastros do Sistema</h1>
-        <p>Gerencie usuários, regionais, filiais, clientes, contatos e funcionários.</p>
+      <div class="pageHeadMain">
+        <div class="pageHeadIcon">🗂️</div>
+        <div>
+          <h1>Cadastros do Sistema</h1>
+          <p>Gerencie usuários, regionais, filiais, clientes, contatos e funcionários.</p>
+        </div>
       </div>
-      <div class="status" id="cadStatus">🔄 Carregando...</div>
+      <div class="pageHeadActions">
+        <div class="status" id="cadStatus">🔄 Carregando...</div>
+        <button class="btn green" id="btnNovo" type="button">+ Novo cadastro</button>
+      </div>
     </section>
 
-    <nav class="tabs" id="tabs">
-      <button class="tabBtn active" data-tab="usuarios" type="button">Usuários</button>
-      <button class="tabBtn" data-tab="regionais" type="button">Regionais</button>
-      <button class="tabBtn" data-tab="filiais" type="button">Filiais</button>
-      <button class="tabBtn" data-tab="clientes" type="button">Clientes</button>
-      <button class="tabBtn" data-tab="contatos" type="button">Contatos</button>
-      <button class="tabBtn" data-tab="funcionarios" type="button">Funcionários</button>
-    </nav>
+    <section class="tabsCard">
+      <nav class="tabs" id="tabs">
+        <button class="tabBtn active" data-tab="usuarios" type="button">👤 Usuários</button>
+        <button class="tabBtn" data-tab="regionais" type="button">🗺️ Regionais</button>
+        <button class="tabBtn" data-tab="filiais" type="button">🏢 Filiais</button>
+        <button class="tabBtn" data-tab="clientes" type="button">🏭 Clientes</button>
+        <button class="tabBtn" data-tab="contatos" type="button">☎️ Contatos</button>
+        <button class="tabBtn" data-tab="funcionarios" type="button">👥 Funcionários</button>
+      </nav>
+    </section>
+
+    <section class="statsGrid">
+      <article class="statCard green"><div class="statIcon">👥</div><div><div class="statLabel">Registros ativos</div><div class="statValue" id="statAtivos">0</div><div class="statMeta">No cadastro atual</div></div></article>
+      <article class="statCard purple"><div class="statIcon">🛡️</div><div><div class="statLabel">Administradores</div><div class="statValue" id="statAdmins">0</div><div class="statMeta">Perfis administrativos</div></div></article>
+      <article class="statCard orange"><div class="statIcon">🧩</div><div><div class="statLabel">Perfis diferentes</div><div class="statValue" id="statPerfis">0</div><div class="statMeta">Tipos cadastrados</div></div></article>
+      <article class="statCard blue"><div class="statIcon">📅</div><div><div class="statLabel">Última atualização</div><div class="statValue" id="statAtualizacao" style="font-size:18px">Agora</div><div class="statMeta">Sistema sincronizado</div></div></article>
+    </section>
 
     <section class="toolbar">
-      <input class="search" id="buscaCadastro" placeholder="Buscar no cadastro atual..." />
+      <div class="searchWrap"><span class="searchIcon">🔎</span><input class="search" id="buscaCadastro" placeholder="Buscar por usuário, nome ou perfil..." /></div>
+      <select class="filterSelect" id="statusCadastroFilter"><option value="">Todos os status</option><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option></select>
       <button class="btn ghost" id="btnAtualizar" type="button">🔄 Atualizar</button>
-      <button class="btn green" id="btnNovo" type="button">+ Novo cadastro</button>
+      <button class="btn blue" id="btnNovoAtalho" type="button">+ Novo</button>
     </section>
 
     <section class="card">
+      <div class="tableHeaderBar">
+        <div><strong id="tableCurrentTitle">Usuários cadastrados</strong><span id="tableCurrentMeta">Gerencie os registros desta categoria.</span></div>
+        <span id="tableCounter">0 registro(s)</span>
+      </div>
       <div class="tableWrap">
         <table>
           <thead id="cadHead"></thead>
@@ -455,10 +181,56 @@
   </div>
 
   <script src="../assets/js/auth.js?v=3"></script>
-  <script src="../assets/js/cadastros.js?v=1"></script>
+  <script src="../assets/js/cadastros.js?v=2"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
   </script>
+
+  <script>
+    (function(){
+      const $=id=>document.getElementById(id);
+      function auth(keys,fallback){for(const k of keys){const v=localStorage.getItem(k);if(v)return v}return fallback}
+      function setUser(){
+        const n=auth(["nf_auth_nome","nf_auth_user","nf_user_name","usuario"],"USUÁRIO");
+        const r=auth(["nf_auth_profile","nf_auth_perfil","perfil"],"PERFIL");
+        if($("userDisplayName"))$("userDisplayName").textContent=String(n).toUpperCase();
+        if($("userDisplayRole"))$("userDisplayRole").textContent=String(r).toUpperCase();
+        const i=String(n).trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"NF";
+        if($("userInitials"))$("userInitials").textContent=i;
+      }
+      function rows(){return [...document.querySelectorAll("#cadBody tr")].filter(r=>!r.querySelector(".empty"))}
+      function cards(){
+        const rs=rows(), texts=rs.map(r=>r.innerText.toUpperCase());
+        if($("statAtivos"))$("statAtivos").textContent=texts.filter(t=>t.includes("ATIVO")&&!t.includes("INATIVO")).length;
+        if($("statAdmins"))$("statAdmins").textContent=texts.filter(t=>t.includes("ADMIN")).length;
+        const perfis=new Set(rs.map(r=>r.querySelectorAll("td")[2]?.textContent.trim().toUpperCase()).filter(Boolean));
+        if($("statPerfis"))$("statPerfis").textContent=perfis.size;
+        if($("statAtualizacao"))$("statAtualizacao").textContent=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+        if($("tableCounter"))$("tableCounter").textContent=`${rs.length} registro(s)`;
+      }
+      function tabTitle(){
+        const a=document.querySelector(".tabBtn.active");if(!a)return;
+        const label=a.textContent.replace(/^[^\p{L}\p{N}]+/u,"").trim();
+        if($("tableCurrentTitle"))$("tableCurrentTitle").textContent=`${label} cadastrados`;
+        if($("buscaCadastro"))$("buscaCadastro").placeholder=`Buscar em ${label.toLowerCase()}...`;
+      }
+      function filter(){
+        const v=$("statusCadastroFilter")?.value||"";
+        rows().forEach(r=>{const t=r.innerText.toUpperCase(),off=t.includes("INATIVO"),on=t.includes("ATIVO")&&!off;
+          r.style.display=!v||(v==="ATIVO"&&on)||(v==="INATIVO"&&off)?"":"none"});
+      }
+      addEventListener("DOMContentLoaded",()=>{
+        setUser();
+        $("btnNovoAtalho")?.addEventListener("click",()=>$("btnNovo")?.click());
+        $("statusCadastroFilter")?.addEventListener("change",filter);
+        $("tabs")?.addEventListener("click",()=>setTimeout(()=>{tabTitle();cards();filter()},80));
+        $("btnAtualizar")?.addEventListener("click",()=>setTimeout(()=>{cards();filter()},250));
+        const b=$("cadBody");if(b)new MutationObserver(()=>{cards();filter()}).observe(b,{childList:true,subtree:true,characterData:true});
+        setTimeout(()=>{tabTitle();cards();filter()},500);
+      });
+    })();
+  </script>
+
 </body>
 </html>

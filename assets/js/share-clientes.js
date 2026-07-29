@@ -221,22 +221,13 @@
   }
 
   function buildClientesList(rows) {
-    const fromData = Array.from(new Set(rows.map((r) => up(r.cliente)).filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-    const fixed = CLIENTES_FIXOS.map(up).filter(Boolean);
-    const merged = Array.from(new Set([...fixed, ...fromData]));
-    const ordered = [];
-
-    fixed.forEach((c) => {
-      if (merged.includes(c)) ordered.push(c);
-    });
-
-    fromData.forEach((c) => {
-      if (!ordered.includes(c)) ordered.push(c);
-    });
-
-    return ordered;
+    return Array.from(
+      new Set(
+        (rows || [])
+          .map((r) => up(r.cliente))
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
   function fillSelect(sel, items, { includeAll = false, allLabel = "Todos" } = {}) {
@@ -327,13 +318,21 @@
   }
 
   function setKpis(rowsFiltered) {
+    const PESO_MEDIO_TON = 38;
+
     const lotes = rowsFiltered.length;
-    const cam = rowsFiltered.reduce((acc, r) => acc + num(getCmhLocal(r)) + num(getCmhTrans(r)), 0);
-    const vol = rowsFiltered.reduce((acc, r) => acc + num(r.volume), 0);
+    const cam = rowsFiltered.reduce(
+      (acc, r) => acc + num(getCmhLocal(r)) + num(getCmhTrans(r)),
+      0
+    );
+
+    const vol = cam * PESO_MEDIO_TON;
 
     if ($("kLotes")) $("kLotes").textContent = String(lotes);
     if ($("kCaminhao")) $("kCaminhao").textContent = String(cam);
-    if ($("kVolume")) $("kVolume").textContent = String(vol);
+    if ($("kVolume")) {
+      $("kVolume").textContent = `${vol.toLocaleString("pt-BR")} t`;
+    }
   }
 
   function setCorredores(rowsFiltered) {

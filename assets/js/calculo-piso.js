@@ -25,6 +25,7 @@ const DATA=[
 
 const $=id=>document.getElementById(id);
 let pesos={},selected=0,chart=null;
+let historyRouteRows=[];
 
 
 /* =========================================================
@@ -293,11 +294,60 @@ function dateVal(r){
  if(m)return new Date(+m[3],+m[2]-1,+m[1]).getTime();
  return Date.parse(v)||0;
 }
+function inputDateStartValue(id){
+ const valor=txt($(id)?.value);
+ if(!valor)return 0;
+ const partes=valor.split("-").map(Number);
+ if(partes.length!==3||!partes[0]||!partes[1]||!partes[2])return 0;
+ return new Date(partes[0],partes[1]-1,partes[2],0,0,0,0).getTime();
+}
+function inputDateEndValue(id){
+ const valor=txt($(id)?.value);
+ if(!valor)return 0;
+ const partes=valor.split("-").map(Number);
+ if(partes.length!==3||!partes[0]||!partes[1]||!partes[2])return 0;
+ return new Date(partes[0],partes[1]-1,partes[2],23,59,59,999).getTime();
+}
+function applyHistoryDateFilter(){
+ const inicio=inputDateStartValue("historyDateFrom");
+ const fim=inputDateEndValue("historyDateTo");
+
+ if(inicio&&fim&&inicio>fim){
+  alert("A data inicial não pode ser maior que a data final.");
+  return;
+ }
+
+ const filtrados=historyRouteRows.filter(r=>{
+  const data=dateVal(r);
+  if(inicio&&data<inicio)return false;
+  if(fim&&data>fim)return false;
+  return true;
+ });
+
+ renderHistory(filtrados);
+
+ const status=$("historyStatus");
+ if(status){
+  status.textContent=(inicio||fim)
+   ?`${filtrados.length} de ${historyRouteRows.length} registros no período`
+   :`${historyRouteRows.length} registros encontrados`;
+ }
+}
+function clearHistoryDateFilter(){
+ if($("historyDateFrom"))$("historyDateFrom").value="";
+ if($("historyDateTo"))$("historyDateTo").value="";
+ applyHistoryDateFilter();
+}
 function avg(a){const v=a.filter(x=>x>0);return v.length?v.reduce((x,y)=>x+y,0)/v.length:0}
 function renderHistory(rows){
- const emp=rows.map(r=>num(r.valorEmpresa)).filter(v=>v>0),mot=rows.map(r=>num(r.valorMotorista)).filter(v=>v>0),all=[...emp,...mot];
- $("histEmpresaAvg").textContent=money(avg(emp));$("histMotorAvg").textContent=money(avg(mot));
- $("histMax").textContent=money(all.length?Math.max(...all):0);$("histMin").textContent=money(all.length?Math.min(...all):0);
+ const emp=rows.map(r=>num(r.valorEmpresa)).filter(v=>v>0);
+ const mot=rows.map(r=>num(r.valorMotorista)).filter(v=>v>0);
+ const all=[...emp,...mot];
+
+ $("histEmpresaAvg").textContent=money(avg(emp));
+ $("histMotorAvg").textContent=money(avg(mot));
+ $("histMax").textContent=money(all.length?Math.max(...all):0);
+ $("histMin").textContent=money(emp.length?Math.min(...emp):0);
  $("historyTable").innerHTML=rows.length
   ?rows.slice(0,60).map(r=>{
     const dataValor=dateVal(r);
@@ -342,6 +392,7 @@ async function loadHistory(){
  const d=txt($("destinoRota").value);
 
  if(!o||!d){
+  historyRouteRows=[];
   $("historyStatus").textContent="Aguardando rota";
   renderHistory([]);
   return;
@@ -360,6 +411,8 @@ async function loadHistory(){
    .filter(r=>routeMatch(r,o,d))
    .sort((a,b)=>dateVal(b)-dateVal(a));
 
+  historyRouteRows=rows;
+
   console.info("[CÁLCULO PISO] Histórico recebido:",totalRecebido);
   console.info("[CÁLCULO PISO] Rota pesquisada:",{
    origemDigitada:o,
@@ -369,13 +422,16 @@ async function loadHistory(){
    encontrados:rows.length
   });
 
-  renderHistory(rows);
-  $("historyStatus").textContent=rows.length
-   ?`${rows.length} registros encontrados`
-   :`Nenhum histórico para esta rota (${totalRecebido} registros analisados)`;
+  applyHistoryDateFilter();
+
+  if(!rows.length){
+   $("historyStatus").textContent=
+    `Nenhum histórico para esta rota (${totalRecebido} registros analisados)`;
+  }
 
  }catch(e){
   console.error("[CÁLCULO PISO] Erro ao consultar histórico:",e);
+  historyRouteRows=[];
   renderHistory([]);
   $("historyStatus").textContent="Falha ao consultar B.I.";
  }
@@ -461,6 +517,11 @@ function init(){
   renderAll();
   loadHistory();
  };
+
+ if($("btnHistoryFilter"))$("btnHistoryFilter").onclick=applyHistoryDateFilter;
+ if($("btnHistoryClear"))$("btnHistoryClear").onclick=clearHistoryDateFilter;
+ if($("historyDateFrom"))$("historyDateFrom").onchange=applyHistoryDateFilter;
+ if($("historyDateTo"))$("historyDateTo").onchange=applyHistoryDateFilter;
 
  $("btnOpenMaps").onclick=openMaps;
  $("btnCopy").onclick=copyQuote;

@@ -309,28 +309,66 @@ function inputDateEndValue(id){
  return new Date(partes[0],partes[1]-1,partes[2],23,59,59,999).getTime();
 }
 function applyHistoryDateFilter(){
+ const campoInicio=$("historyDateFrom");
+ const campoFim=$("historyDateTo");
+
+ const valorInicio=txt(campoInicio?.value);
+ const valorFim=txt(campoFim?.value);
+
+ /*
+  O filtro só será executado quando pelo menos uma data
+  estiver completamente preenchida.
+ */
+ if(!valorInicio&&!valorFim){
+  renderHistory(historyRouteRows);
+
+  if($("historyStatus")){
+   $("historyStatus").textContent=
+    `${historyRouteRows.length} registros encontrados`;
+  }
+
+  return;
+ }
+
  const inicio=inputDateStartValue("historyDateFrom");
  const fim=inputDateEndValue("historyDateTo");
 
+ /*
+  Não valida enquanto o navegador ainda não reconhece
+  o conteúdo como uma data completa.
+ */
+ if(valorInicio&&!inicio){
+  alert("Preencha corretamente a data inicial.");
+  campoInicio?.focus();
+  return;
+ }
+
+ if(valorFim&&!fim){
+  alert("Preencha corretamente a data final.");
+  campoFim?.focus();
+  return;
+ }
+
  if(inicio&&fim&&inicio>fim){
   alert("A data inicial não pode ser maior que a data final.");
+  campoInicio?.focus();
   return;
  }
 
  const filtrados=historyRouteRows.filter(r=>{
   const data=dateVal(r);
+
   if(inicio&&data<inicio)return false;
   if(fim&&data>fim)return false;
+
   return true;
  });
 
  renderHistory(filtrados);
 
- const status=$("historyStatus");
- if(status){
-  status.textContent=(inicio||fim)
-   ?`${filtrados.length} de ${historyRouteRows.length} registros no período`
-   :`${historyRouteRows.length} registros encontrados`;
+ if($("historyStatus")){
+  $("historyStatus").textContent=
+   `${filtrados.length} de ${historyRouteRows.length} registros no período`;
  }
 }
 function clearHistoryDateFilter(){
@@ -520,8 +558,6 @@ function init(){
 
  if($("btnHistoryFilter"))$("btnHistoryFilter").onclick=applyHistoryDateFilter;
  if($("btnHistoryClear"))$("btnHistoryClear").onclick=clearHistoryDateFilter;
- if($("historyDateFrom"))$("historyDateFrom").onchange=applyHistoryDateFilter;
- if($("historyDateTo"))$("historyDateTo").onchange=applyHistoryDateFilter;
 
  $("btnOpenMaps").onclick=openMaps;
  $("btnCopy").onclick=copyQuote;

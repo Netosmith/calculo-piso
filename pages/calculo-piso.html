@@ -402,6 +402,50 @@
       gap:7px;
     }
 
+    .historyDateFilter{
+      display:grid;
+      grid-template-columns:1fr 1fr auto auto;
+      gap:8px;
+      align-items:end;
+      margin-top:9px;
+      padding:10px;
+      border:1px solid var(--line-soft);
+      border-radius:10px;
+      background:#08182d;
+    }
+
+    .historyDateField label{
+      display:block;
+      margin:0 0 5px;
+      color:#aebed5;
+      font-size:8px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+
+    .historyDateField input{
+      height:34px;
+      font-size:10px;
+    }
+
+    .historyDateBtn{
+      height:34px;
+      padding:0 12px;
+      border:1px solid #315da7;
+      border-radius:9px;
+      background:#123c8a;
+      color:#fff;
+      font-size:9px;
+      font-weight:950;
+    }
+
+    .historyDateBtn.clear{
+      border-color:var(--line);
+      background:#0a1b33;
+      color:#c7d5e8;
+    }
+
     .stat{
       min-width:0;
       padding:9px;
@@ -732,6 +776,7 @@
       .topActions{justify-content:flex-start}
       .formGrid{grid-template-columns:1fr}
       .statsGrid,.routeKpis{grid-template-columns:repeat(2,1fr)}
+      .historyDateFilter{grid-template-columns:1fr 1fr}
       .historyBottom{grid-template-columns:1fr}
       .actionStack{grid-template-columns:1fr}
       .mapPanel{min-height:500px}
@@ -938,6 +983,26 @@
               <span>Menor Valor</span>
               <strong id="histMin">R$ 0,00</strong>
             </div>
+          </div>
+
+          <div class="historyDateFilter" aria-label="Filtro de período do histórico">
+            <div class="historyDateField">
+              <label for="historyDateFrom">Data inicial</label>
+              <input id="historyDateFrom" type="date">
+            </div>
+
+            <div class="historyDateField">
+              <label for="historyDateTo">Data final</label>
+              <input id="historyDateTo" type="date">
+            </div>
+
+            <button class="historyDateBtn" id="btnHistoryFilter" type="button">
+              Filtrar
+            </button>
+
+            <button class="historyDateBtn clear" id="btnHistoryClear" type="button">
+              Limpar
+            </button>
           </div>
 
           <div class="historyBlock">

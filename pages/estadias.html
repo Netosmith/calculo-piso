@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Controle de Estadias | Nova Frota</title>
+
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <script src="../assets/js/auth.js?v=4"></script>
+
+  <style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --navy:#07152f;
+      --navy-2:#0d2f69;
+      --blue:#2563eb;
+      --green:#119c61;
+      --green-soft:#e8f8ef;
+      --orange:#f59e0b;
+      --orange-soft:#fff5df;
+      --red:#e43d45;
+      --red-soft:#ffebed;
+      --purple:#7c3aed;
+      --line:#dfe6ef;
+      --text:#13213a;
+      --muted:#68778e;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:16px;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{margin:0;background:var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    a{text-decoration:none;color:inherit}
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:50;
+      min-height:66px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:10px 20px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      box-shadow:0 4px 18px rgba(15,23,42,.05);
+    }
+
+    .brandArea,.topActions,.userBox,.titleArea{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .brandArea img{height:38px;max-width:190px;object-fit:contain}
+    .titleArea h1{margin:0;font-size:20px;color:var(--navy)}
+    .titleArea small{display:block;margin-top:3px;color:var(--muted);font-size:10px}
+
+    .stateChip{
+      min-width:170px;
+      height:38px;
+      border:1px solid #ef4444;
+      border-radius:9px;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      color:#dc2626;
+      font-size:11px;
+      font-weight:950;
+      letter-spacing:.04em;
+    }
+
+    .userBox{
+      padding:5px 10px 5px 6px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+    }
+
+    .avatar{
+      width:34px;height:34px;border-radius:50%;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg,var(--navy-2),var(--blue));
+      color:#fff;font-weight:950;font-size:11px;
+    }
+
+    .userBox strong{display:block;font-size:11px}
+    .userBox span{display:block;margin-top:2px;font-size:9px;color:var(--muted)}
+
+    .page{max-width:1840px;margin:0 auto;padding:16px}
+
+    .hero{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:14px;
+    }
+
+    .hero h2{margin:0;color:var(--navy);font-size:24px}
+    .hero p{margin:5px 0 0;color:var(--muted);font-size:12px}
+
+    .btn{
+      min-height:38px;
+      border:0;
+      border-radius:10px;
+      padding:0 14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      font-size:10px;
+      font-weight:950;
+      color:#fff;
+      background:var(--navy);
+      transition:.15s ease;
+      white-space:nowrap;
+    }
+
+    .btn:hover{transform:translateY(-1px);filter:brightness(1.04)}
+    .btn.blue{background:var(--navy-2)}
+    .btn.green{background:var(--green)}
+    .btn.red{background:var(--red)}
+    .btn.orange{background:var(--orange);color:#3b2500}
+    .btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .kpi{
+      min-height:104px;
+      padding:15px;
+      display:flex;
+      align-items:center;
+      gap:13px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:#fff;
+      box-shadow:var(--shadow);
+    }
+
+    .kpiIcon{
+      width:52px;height:52px;border-radius:50%;
+      display:grid;place-items:center;
+      flex:0 0 auto;
+      font-size:22px;
+      font-weight:900;
+    }
+
+    .kpi.blue .kpiIcon{background:#e8efff;color:#3f68df}
+    .kpi.orange .kpiIcon{background:var(--orange-soft);color:var(--orange)}
+    .kpi.green .kpiIcon{background:var(--green-soft);color:var(--green)}
+    .kpi.red .kpiIcon{background:var(--red-soft);color:var(--red)}
+    .kpi.money .kpiIcon{background:#e7f8ef;color:#008f57}
+
+    .kpiLabel{
+      color:#52627a;
+      font-size:9px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .kpiValue{
+      margin-top:6px;
+      color:var(--navy);
+      font-size:24px;
+      line-height:1;
+      font-weight:1000;
+    }
+
+    .kpiMeta{margin-top:7px;color:var(--muted);font-size:9px}
+
+    .filtersCard{
+      margin-bottom:14px;
+      padding:15px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:#fff;
+      box-shadow:var(--shadow);
+    }
+
+    .filterTop{
+      display:grid;
+      grid-template-columns:minmax(300px,1fr) auto auto;
+      gap:10px;
+      align-items:end;
+    }
+
+    .filterGrid{
+      display:grid;
+      grid-template-columns:1.15fr 1fr 1.25fr 1fr 1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .field label{
+      display:block;
+      margin-bottom:5px;
+      color:#32435e;
+      font-size:9px;
+      font-weight:950;
+    }
+
+    .control{
+      width:100%;
+      height:38px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:#fff;
+      color:var(--text);
+      padding:0 11px;
+      outline:none;
+      font-size:10px;
+    }
+
+    textarea.control{height:auto;min-height:76px;padding:10px;resize:vertical}
+
+    .control:focus{
+      border-color:#4d83f3;
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    .searchWrap{position:relative}
+    .searchWrap input{padding-left:38px}
+    .searchIcon{
+      position:absolute;left:13px;bottom:10px;
+      color:#8190a7;font-size:15px;pointer-events:none;
+    }
+
+    .workspace{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 390px;
+      gap:14px;
+      align-items:start;
+    }
+
+    .tableCard,.detailsPanel{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:#fff;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .tableTop,.detailsHead{
+      min-height:52px;
+      padding:10px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .tableTop strong,.detailsHead h3{font-size:12px;color:var(--navy)}
+    .tableTop span{color:var(--muted);font-size:9px}
+
+    .tableWrap{
+      overflow:auto;
+      min-height:560px;
+      max-height:calc(100vh - 335px);
+    }
+
+    table{
+      width:100%;
+      min-width:1480px;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      padding:9px 10px;
+      border-bottom:1px solid #e8edf4;
+      font-size:9px;
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    th{
+      position:sticky;top:0;z-index:2;
+      background:#f5f7fb;
+      color:#41516a;
+      text-transform:uppercase;
+      font-size:8px;
+      letter-spacing:.035em;
+    }
+
+    tbody tr{cursor:pointer}
+    tbody tr:nth-child(even){background:#fbfcfe}
+    tbody tr:hover,tbody tr.selected{background:#eef4ff}
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:78px;
+      height:22px;
+      padding:0 8px;
+      border-radius:999px;
+      font-size:8px;
+      font-weight:1000;
+      text-transform:uppercase;
+    }
+
+    .badge.wait{background:var(--orange-soft);color:#b36a00;border:1px solid #ffd27d}
+    .badge.ok{background:var(--green-soft);color:#087e4b;border:1px solid #9be0bf}
+    .badge.no{background:var(--red-soft);color:#c9212b;border:1px solid #ffb2b8}
+    .badge.analysis{background:#e8efff;color:#255bd0}
+    .badge.correct{background:#f1ebff;color:#6b35d0}
+
+    .moneyCell{font-weight:900;color:#086f47}
+    .empty{padding:45px;text-align:center;color:var(--muted);font-size:11px}
+
+    .pagination{
+      min-height:54px;
+      padding:8px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-top:1px solid var(--line);
+    }
+
+    .paginationControls{display:flex;align-items:center;gap:6px}
+    .pageBtn{
+      width:32px;height:32px;border:1px solid var(--line);border-radius:8px;
+      background:#fff;color:var(--navy);font-size:10px;font-weight:900;
+    }
+    .pageBtn.active{background:var(--navy);color:#fff}
+    .pageBtn:disabled{opacity:.4;cursor:not-allowed}
+
+    .detailsPanel{
+      position:sticky;
+      top:82px;
+      min-height:650px;
+    }
+
+    .detailsHead h3{margin:0}
+    .detailsBody{padding:14px}
+    .detailStatusRow{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding-bottom:12px;border-bottom:1px solid var(--line);
+    }
+
+    .detailId{font-size:9px;color:#52627a;font-weight:900}
+    .detailGrid{
+      display:grid;
+      grid-template-columns:120px 1fr;
+      gap:8px 10px;
+      margin-top:14px;
+      font-size:10px;
+    }
+
+    .detailGrid dt{color:#66768d}
+    .detailGrid dd{margin:0;color:#10213c;font-weight:800;word-break:break-word}
+
+    .detailDivider{
+      margin:14px 0;border:0;border-top:1px solid var(--line);
+    }
+
+    .attachment{
+      margin-top:12px;
+      padding:10px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#f8fafc;
+    }
+
+    .attachment strong{font-size:9px}
+    .attachment a{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
+      margin-top:8px;padding:9px;border-radius:8px;background:#fff;
+      color:var(--navy);font-size:9px;font-weight:800;
+    }
+
+    .detailsActions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    .detailsActions .btn:last-child{grid-column:1/-1}
+
+    .modal{
+      position:fixed;inset:0;z-index:1000;
+      display:none;align-items:center;justify-content:center;
+      padding:18px;background:rgba(7,21,47,.62);backdrop-filter:blur(5px);
+    }
+
+    .modal.show{display:flex}
+
+    .modalCard{
+      width:min(980px,100%);
+      max-height:calc(100vh - 36px);
+      display:flex;flex-direction:column;
+      overflow:hidden;background:#fff;border-radius:18px;
+      box-shadow:0 28px 80px rgba(0,0,0,.3);
+    }
+
+    .modalHead,.modalFoot{
+      padding:14px 16px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .modalHead h3{margin:0;color:var(--navy);font-size:15px}
+    .modalBody{padding:16px;overflow:auto}
+    .modalFoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}
+
+    .formGrid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .span2{grid-column:span 2}
+    .span4{grid-column:1/-1}
+
+    .closeBtn{
+      width:34px;height:34px;border:1px solid var(--line);border-radius:9px;
+      background:#fff;color:var(--navy);font-weight:900;
+    }
+
+    .loading{
+      position:fixed;inset:0;z-index:1500;display:none;
+      align-items:center;justify-content:center;
+      background:rgba(255,255,255,.72);backdrop-filter:blur(2px);
+    }
+    .loading.show{display:flex}
+    .loadingBox{
+      padding:16px 20px;border:1px solid var(--line);border-radius:12px;
+      background:#fff;box-shadow:var(--shadow);font-size:11px;font-weight:900;color:var(--navy);
+    }
+
+    @media(max-width:1350px){
+      .workspace{grid-template-columns:1fr}
+      .detailsPanel{position:relative;top:auto}
+      .kpis{grid-template-columns:repeat(3,1fr)}
+      .filterGrid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    @media(max-width:820px){
+      .topbar{align-items:flex-start;flex-wrap:wrap}
+      .stateChip{order:3;width:100%}
+      .kpis{grid-template-columns:1fr 1fr}
+      .filterTop,.filterGrid,.formGrid{grid-template-columns:1fr}
+      .span2,.span4{grid-column:auto}
+      .hero{align-items:flex-start;flex-direction:column}
+      .userBox{display:none}
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brandArea">
+      <a href="./home.html" class="btn ghost" title="Voltar para Home">ð </a>
+      <img src="../assets/img/logo-novafrota.png" alt="Nova Frota">
+      <div class="titleArea">
+        <div>
+          <h1>Controle de Estadias</h1>
+          <small>Acompanhamento de solicitaÃ§Ãµes por cliente</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="stateChip">GOIÃS</div>
+
+    <div class="topActions">
+      <div class="userBox">
+        <div class="avatar" id="userInitials">NF</div>
+        <div>
+          <strong id="userName">USUÃRIO</strong>
+          <span id="userRole">PERFIL</span>
+        </div>
+      </div>
+      <button class="btn green" id="btnNovaEstadia">ï¼ Nova solicitaÃ§Ã£o</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h2>GestÃ£o de estadias</h2>
+        <p>Dados sincronizados com a planilha Google Sheets para consulta de toda a equipe.</p>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" id="btnAtualizar">â» Atualizar</button>
+        <button class="btn blue" id="btnExportar">â© Exportar CSV</button>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi blue">
+        <div class="kpiIcon">â¤</div>
+        <div><div class="kpiLabel">Total solicitaÃ§Ãµes</div><div class="kpiValue" id="kpiTotal">0</div><div class="kpiMeta">Todas as solicitaÃ§Ãµes</div></div>
+      </article>
+
+      <article class="kpi orange">
+        <div class="kpiIcon">â·</div>
+        <div><div class="kpiLabel">Aguardando</div><div class="kpiValue" id="kpiAguardando">0</div><div class="kpiMeta">Aguardando anÃ¡lise</div></div>
+      </article>
+
+      <article class="kpi green">
+        <div class="kpiIcon">â</div>
+        <div><div class="kpiLabel">Liberadas</div><div class="kpiValue" id="kpiLiberadas">0</div><div class="kpiMeta">Estadias liberadas</div></div>
+      </article>
+
+      <article class="kpi red">
+        <div class="kpiIcon">â</div>
+        <div><div class="kpiLabel">Negadas</div><div class="kpiValue" id="kpiNegadas">0</div><div class="kpiMeta">Estadias negadas</div></div>
+      </article>
+
+      <article class="kpi money">
+        <div class="kpiIcon">$</div>
+        <div><div class="kpiLabel">Valor total</div><div class="kpiValue" id="kpiValor">R$ 0,00</div><div class="kpiMeta">Total no filtro atual</div></div>
+      </article>
+    </section>
+
+    <section class="filtersCard">
+      <div class="filterTop">
+        <div class="field searchWrap">
+          <label>Busca rÃ¡pida</label>
+          <span class="searchIcon">â</span>
+          <input class="control" id="busca" placeholder="Buscar por Placa, CTe, NF, Cliente, Motorista, Origem ou Destino...">
+        </div>
+        <button class="btn ghost" id="btnLimparFiltros">Limpar</button>
+        <button class="btn blue" id="btnFiltrar">â· Filtrar</button>
+      </div>
+
+      <div class="filterGrid">
+        <div class="field"><label>Cliente</label><select class="control" id="filtroCliente"><option value="">Todos</option></select></div>
+        <div class="field"><label>Status</label>
+          <select class="control" id="filtroStatus">
+            <option value="">Todos</option>
+            <option>AGUARDANDO</option>
+            <option>EM ANÃLISE</option>
+            <option>LIBERADA</option>
+            <option>NEGADA CLIENTE</option>
+            <option>SOLICITAR CORREÃÃO</option>
+          </select>
+        </div>
+        <div class="field"><label>PerÃ­odo inicial</label><input class="control" id="dataInicio" type="date"></div>
+        <div class="field"><label>PerÃ­odo final</label><input class="control" id="dataFim" type="date"></div>
+        <div class="field"><label>Produto</label><select class="control" id="filtroProduto"><option value="">Todos</option></select></div>
+        <div class="field"><label>ResponsÃ¡vel</label><select class="control" id="filtroResponsavel"><option value="">Todos</option></select></div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <article class="tableCard">
+        <div class="tableTop">
+          <div><strong id="tableTitle">SolicitaÃ§Ãµes encontradas</strong><br><span id="tableMeta">0 registro(s)</span></div>
+          <span id="syncStatus">Aguardando atualizaÃ§Ã£o</span>
+        </div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th><th>Cliente</th><th>CTe</th><th>NF</th><th>Placa</th>
+                <th>Origem</th><th>Destino</th><th>Chegada</th><th>SaÃ­da</th>
+                <th>Horas</th><th>Valor</th><th>SituaÃ§Ã£o</th><th>ResponsÃ¡vel</th><th>AÃ§Ãµes</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaEstadias">
+              <tr><td colspan="14" class="empty">Carregando dados...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <div class="field" style="display:flex;align-items:center;gap:7px">
+            <span style="font-size:9px;color:var(--muted)">Exibir</span>
+            <select class="control" id="porPagina" style="width:74px;height:32px"><option>10</option><option>20</option><option>50</option></select>
+          </div>
+          <div class="paginationControls" id="paginacao"></div>
+        </div>
+      </article>
+
+      <aside class="detailsPanel">
+        <div class="detailsHead">
+          <h3>Detalhes da Estadia</h3>
+          <button class="closeBtn" id="btnFecharDetalhes">â</button>
+        </div>
+
+        <div class="detailsBody" id="detalhesBody">
+          <div class="empty">Selecione uma solicitaÃ§Ã£o na tabela.</div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="modal" id="modalEstadia">
+    <div class="modalCard">
+      <div class="modalHead">
+        <h3 id="modalTitulo">Nova solicitaÃ§Ã£o de estadia</h3>
+        <button class="closeBtn" id="btnFecharModal">â</button>
+      </div>
+
+      <div class="modalBody">
+        <form id="formEstadia">
+          <input type="hidden" id="registroId">
+
+          <div class="formGrid">
+            <div class="field"><label>Cliente *</label><input class="control" id="cliente" required></div>
+            <div class="field"><label>CTe *</label><input class="control" id="cte" required></div>
+            <div class="field"><label>NF</label><input class="control" id="nf"></div>
+            <div class="field"><label>Data da NF</label><input class="control" id="dataNf" type="date"></div>
+
+            <div class="field"><label>Placa *</label><input class="control" id="placa" required></div>
+            <div class="field"><label>Motorista</label><input class="control" id="motorista"></div>
+            <div class="field"><label>Origem *</label><input class="control" id="origem" required></div>
+            <div class="field"><label>Destino *</label><input class="control" id="destino" required></div>
+
+            <div class="field"><label>Produto</label><input class="control" id="produto"></div>
+            <div class="field"><label>Peso destino (kg)</label><input class="control" id="pesoDestino" type="number" step="0.01"></div>
+            <div class="field"><label>Data/Hora chegada *</label><input class="control" id="dataHoraChegada" type="datetime-local" required></div>
+            <div class="field"><label>Data/Hora saÃ­da</label><input class="control" id="dataHoraSaida" type="datetime-local"></div>
+
+            <div class="field"><label>Tempo retroativo (h)</label><input class="control" id="tempoRetroativo" type="number" step="0.01" value="0"></div>
+            <div class="field"><label>Valor estadia por hora</label><input class="control" id="valorHora" type="number" step="0.01" value="0"></div>
+            <div class="field"><label>Status</label>
+              <select class="control" id="status">
+                <option>AGUARDANDO</option>
+                <option>EM ANÃLISE</option>
+                <option>LIBERADA</option>
+                <option>NEGADA CLIENTE</option>
+                <option>SOLICITAR CORREÃÃO</option>
+              </select>
+            </div>
+            <div class="field"><label>ResponsÃ¡vel</label><input class="control" id="responsavel"></div>
+
+            <div class="field span2"><label>Motivo da estadia</label><textarea class="control" id="motivo"></textarea></div>
+            <div class="field span2"><label>ObservaÃ§Ãµes</label><textarea class="control" id="observacoes"></textarea></div>
+            <div class="field span4"><label>Link do anexo (e-mail, PDF ou Drive)</label><input class="control" id="anexoUrl" type="url" placeholder="https://..."></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btn ghost" id="btnCancelarModal">Cancelar</button>
+        <button class="btn green" id="btnSalvarEstadia">Salvar solicitaÃ§Ã£o</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading"><div class="loadingBox" id="loadingText">Processando...</div></div>
+
+  <script src="../assets/js/estadias.js?v=1"></script>
+  <script>
+    try{
+      if(typeof requireHomeAuth==="function") requireHomeAuth();
+      if(typeof bindLogoutButton==="function") bindLogoutButton();
+    }catch(e){
+      console.warn("[ESTADIAS] Auth ainda nÃ£o disponÃ­vel.",e);
+    }
+  </script>
+</body>
+</html>

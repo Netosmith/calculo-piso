@@ -6,7 +6,7 @@
   <title>Controle de Estadias | Nova Frota</title>
 
   <link rel="stylesheet" href="../assets/css/app.css">
-  <script src="../assets/js/auth.js?v=4"></script>
+  <script src="../assets/js/auth.js?v=5"></script>
 
   <style>
     :root{
@@ -247,13 +247,11 @@
     }
 
     .workspace{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) 390px;
-      gap:14px;
-      align-items:start;
+      display:block;
+      width:100%;
     }
 
-    .tableCard,.detailsPanel{
+    .tableCard{
       border:1px solid var(--line);
       border-radius:var(--radius);
       background:#fff;
@@ -261,7 +259,7 @@
       overflow:hidden;
     }
 
-    .tableTop,.detailsHead{
+    .tableTop{
       min-height:52px;
       padding:10px 14px;
       display:flex;
@@ -271,7 +269,7 @@
       border-bottom:1px solid var(--line);
     }
 
-    .tableTop strong,.detailsHead h3{font-size:12px;color:var(--navy)}
+    .tableTop strong{font-size:12px;color:var(--navy)}
     .tableTop span{color:var(--muted);font-size:9px}
 
     .tableWrap{
@@ -327,6 +325,28 @@
     .badge.correct{background:#f1ebff;color:#6b35d0}
 
     .moneyCell{font-weight:900;color:#086f47}
+
+    .statusSelect{min-width:132px;height:28px;padding:0 28px 0 9px;border:1px solid var(--line);border-radius:999px;outline:none;font-size:8px;font-weight:1000;text-transform:uppercase;cursor:pointer;background:#fff}
+    .statusSelect.wait{background:var(--orange-soft);color:#a85f00;border-color:#ffd27d}
+    .statusSelect.analysis{background:#e8efff;color:#255bd0;border-color:#b8cbff}
+    .statusSelect.ok{background:var(--green-soft);color:#087e4b;border-color:#9be0bf}
+    .statusSelect.no{background:var(--red-soft);color:#c9212b;border-color:#ffb2b8}
+    .statusSelect.correct{background:#f1ebff;color:#6b35d0;border-color:#d9c8ff}
+    .statusSelect.paid{background:#e7f8ef;color:#006b44;border-color:#8ed8b4}
+
+    .accessNotice{display:none;align-items:center;gap:8px;min-height:38px;padding:0 12px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:10px;font-weight:850}
+    body.estadiasReadOnly .accessNotice{display:flex}
+    body.estadiasReadOnly [data-estadias-write]{display:none!important}
+
+    .calcPreview{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;border:1px solid #cdd9ea;border-radius:12px;background:#f8fbff}
+    .calcCard{min-height:68px;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .calcCard span{display:block;color:var(--muted);font-size:8px;font-weight:900;text-transform:uppercase}
+    .calcCard strong{display:block;margin-top:7px;color:var(--navy);font-size:17px;font-weight:1000}
+    .calcCard.money strong{color:var(--green)}
+
+    .modalReadOnlyNote{display:none;margin-bottom:12px;padding:10px 12px;border:1px solid #fde68a;border-radius:10px;background:#fffbeb;color:#92400e;font-size:10px;font-weight:800}
+    body.estadiasReadOnly .modalReadOnlyNote{display:block}
+
     .empty{padding:45px;text-align:center;color:var(--muted);font-size:11px}
 
     .pagination{
@@ -347,58 +367,6 @@
     .pageBtn.active{background:var(--navy);color:#fff}
     .pageBtn:disabled{opacity:.4;cursor:not-allowed}
 
-    .detailsPanel{
-      position:sticky;
-      top:82px;
-      min-height:650px;
-    }
-
-    .detailsHead h3{margin:0}
-    .detailsBody{padding:14px}
-    .detailStatusRow{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding-bottom:12px;border-bottom:1px solid var(--line);
-    }
-
-    .detailId{font-size:9px;color:#52627a;font-weight:900}
-    .detailGrid{
-      display:grid;
-      grid-template-columns:120px 1fr;
-      gap:8px 10px;
-      margin-top:14px;
-      font-size:10px;
-    }
-
-    .detailGrid dt{color:#66768d}
-    .detailGrid dd{margin:0;color:#10213c;font-weight:800;word-break:break-word}
-
-    .detailDivider{
-      margin:14px 0;border:0;border-top:1px solid var(--line);
-    }
-
-    .attachment{
-      margin-top:12px;
-      padding:10px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      background:#f8fafc;
-    }
-
-    .attachment strong{font-size:9px}
-    .attachment a{
-      display:flex;align-items:center;justify-content:space-between;gap:8px;
-      margin-top:8px;padding:9px;border-radius:8px;background:#fff;
-      color:var(--navy);font-size:9px;font-weight:800;
-    }
-
-    .detailsActions{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-      margin-top:14px;
-    }
-
-    .detailsActions .btn:last-child{grid-column:1/-1}
 
     .modal{
       position:fixed;inset:0;z-index:1000;
@@ -452,8 +420,6 @@
     }
 
     @media(max-width:1350px){
-      .workspace{grid-template-columns:1fr}
-      .detailsPanel{position:relative;top:auto}
       .kpis{grid-template-columns:repeat(3,1fr)}
       .filterGrid{grid-template-columns:repeat(3,1fr)}
     }
@@ -497,7 +463,8 @@
         <p>Solicitações registradas no Google Sheets e disponíveis para acompanhamento de toda a equipe.</p>
       </div>
 
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="accessNotice" id="accessNotice">🔒 Perfil com acesso somente para consulta</div>
         <button class="btn ghost" id="btnAtualizar">↻ Atualizar</button>
         <button class="btn blue" id="btnExportar">⇩ Exportar CSV</button>
       </div>
@@ -549,8 +516,10 @@
             <option>AGUARDANDO</option>
             <option>EM ANÁLISE</option>
             <option>LIBERADA</option>
-            <option>NEGADA CLIENTE</option>
+            <option>NEGADA PELO CLIENTE</option>
             <option>SOLICITAR CORREÇÃO</option>
+                <option>PAGA</option>
+            <option>PAGA</option>
           </select>
         </div>
         <div class="field"><label>Período inicial</label><input class="control" id="dataInicio" type="date"></div>
@@ -573,11 +542,11 @@
               <tr>
                 <th>Status</th><th>Cliente</th><th>CTe</th><th>NF</th><th>Placa</th>
                 <th>Origem</th><th>Destino</th><th>Chegada</th><th>Saída</th>
-                <th>Horas</th><th>Valor</th><th>Situação</th><th>Responsável</th><th>Ações</th>
+                <th>Horas a pagar</th><th>Valor</th><th>Responsável</th><th>Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaEstadias">
-              <tr><td colspan="14" class="empty">Carregando dados...</td></tr>
+              <tr><td colspan="13" class="empty">Carregando dados...</td></tr>
             </tbody>
           </table>
         </div>
@@ -590,17 +559,6 @@
           <div class="paginationControls" id="paginacao"></div>
         </div>
       </article>
-
-      <aside class="detailsPanel">
-        <div class="detailsHead">
-          <h3>Detalhes da Estadia</h3>
-          <button class="closeBtn" id="btnFecharDetalhes">✕</button>
-        </div>
-
-        <div class="detailsBody" id="detalhesBody">
-          <div class="empty">Selecione uma solicitação na tabela.</div>
-        </div>
-      </aside>
     </section>
   </main>
 
@@ -612,6 +570,7 @@
       </div>
 
       <div class="modalBody">
+        <div class="modalReadOnlyNote">Este perfil possui acesso somente para consulta. Os campos não podem ser alterados.</div>
         <form id="formEstadia">
           <input type="hidden" id="registroId">
 
@@ -634,15 +593,21 @@
             <div class="field"><label>Tempo retroativo (h)</label><input class="control" id="tempoRetroativo" type="number" step="0.01" value="0"></div>
             <div class="field"><label>Valor da estadia por hora</label><input class="control" id="valorHora" type="number" step="0.01" value="0"></div>
             <div class="field"><label>Status</label>
-              <select class="control" id="status">
+              <select class="control" id="status" data-estadias-write>
                 <option>AGUARDANDO</option>
                 <option>EM ANÁLISE</option>
                 <option>LIBERADA</option>
-                <option>NEGADA CLIENTE</option>
+                <option>NEGADA PELO CLIENTE</option>
                 <option>SOLICITAR CORREÇÃO</option>
               </select>
             </div>
             <div class="field"><label>Responsável</label><input class="control" id="responsavel"></div>
+
+            <div class="calcPreview">
+              <div class="calcCard"><span>Tempo total de espera</span><strong id="calcTempoEspera">0,00 h</strong></div>
+              <div class="calcCard"><span>Horas a pagar</span><strong id="calcHorasPagar">0,00 h</strong></div>
+              <div class="calcCard money"><span>Valor calculado</span><strong id="calcValorTotal">R$ 0,00</strong></div>
+            </div>
 
             <div class="field span2"><label>Motivo da estadia</label><textarea class="control" id="motivo"></textarea></div>
             <div class="field span2"><label>Observações</label><textarea class="control" id="observacoes"></textarea></div>
@@ -653,17 +618,21 @@
 
       <div class="modalFoot">
         <button class="btn ghost" id="btnCancelarModal">Cancelar</button>
-        <button class="btn green" id="btnSalvarEstadia">Salvar Solicitação</button>
+        <button class="btn green" id="btnSalvarEstadia" data-estadias-write>Salvar Solicitação</button>
       </div>
     </div>
   </div>
 
   <div class="loading" id="loading"><div class="loadingBox" id="loadingText">Processando...</div></div>
 
-  <script src="../assets/js/estadias.js?v=2"></script>
+  <script src="../assets/js/estadias.js?v=3"></script>
   <script>
     try{
-      if(typeof requireHomeAuth==="function") requireHomeAuth();
+      if(typeof requireFeatureAuth==="function"){
+        requireFeatureAuth("estadias","Controle de Estadias não liberado para este perfil.");
+      }else if(typeof requireHomeAuth==="function"){
+        requireHomeAuth();
+      }
       if(typeof bindLogoutButton==="function") bindLogoutButton();
     }catch(e){
       console.warn("[ESTADIAS] Auth ainda não disponível.",e);

@@ -147,6 +147,7 @@ const STATE_FEATURES = {
 // Somente estes perfis podem incluir, editar ou alterar status.
 const ESTADIAS_WRITE_PROFILES = [
   "ADMINISTRADOR",
+  "GOADM",
   "ESTADIAS_ADMIN",
   "ESTADIAS_EDITOR"
 ];
@@ -155,6 +156,7 @@ const ESTADIAS_WRITE_PROFILES = [
 // A exclusão não será exibida para ESTADIAS_EDITOR.
 const ESTADIAS_DELETE_PROFILES = [
   "ADMINISTRADOR",
+  "GOADM",
   "ESTADIAS_ADMIN"
 ];
 

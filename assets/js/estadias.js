@@ -121,6 +121,32 @@ function statusClass(status){
   if(s.includes("ANAL"))return "analysis";
   return "wait";
 }
+
+function readonlyStatusStyle(status){
+  const s=up(status);
+
+  if(s.includes("PAGA")){
+    return "background:#e7f8ef;color:#006b44;border:1px solid #8ed8b4;";
+  }
+
+  if(s.includes("LIBER")){
+    return "background:#e8f8ef;color:#087e4b;border:1px solid #9be0bf;";
+  }
+
+  if(s.includes("NEGAD")){
+    return "background:#ffebed;color:#c9212b;border:1px solid #ffb2b8;";
+  }
+
+  if(s.includes("CORRE")){
+    return "background:#f1ebff;color:#6b35d0;border:1px solid #d9c8ff;";
+  }
+
+  if(s.includes("ANAL")){
+    return "background:#e8efff;color:#255bd0;border:1px solid #b8cbff;";
+  }
+
+  return "background:#fff5df;color:#a85f00;border:1px solid #ffd27d;";
+}
 function authContext(){
   if(typeof getAuthContext==="function")return getAuthContext();
   return {usuario:localStorage.getItem("nf_auth_user")||"USUARIO",nome:localStorage.getItem("nf_auth_name")||localStorage.getItem("nf_auth_user")||"USUARIO",perfil:localStorage.getItem("nf_auth_profile")||"PERFIL",estado:localStorage.getItem("nf_auth_state")||""};
@@ -347,10 +373,33 @@ function statusOptionsHtml(current){
   return STATUS_OPTIONS.map(status=>`<option value="${esc(status)}" ${up(status)===up(current)?"selected":""}>${esc(status)}</option>`).join("");
 }
 function renderStatusCell(r){
+  const statusAtual=normalizeStatus(r.status);
+
   if(!canWrite()){
-    return `<span class="badge ${statusClass(r.status)}" title="Status atual da solicitação">${esc(r.status)}</span>`;
+    return `
+      <span
+        title="Status atual da solicitação"
+        style="
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          min-width:132px;
+          min-height:28px;
+          padding:0 10px;
+          border-radius:999px;
+          font-size:8px;
+          font-weight:1000;
+          text-transform:uppercase;
+          white-space:nowrap;
+          ${readonlyStatusStyle(statusAtual)}
+        "
+      >
+        ${esc(statusAtual)}
+      </span>
+    `;
   }
-  return `<select class="statusSelect ${statusClass(r.status)}" data-id="${esc(r.id)}" data-old-status="${esc(r.status)}" ${statusEmAtualizacao.has(r.id)?"disabled":""}>${statusOptionsHtml(r.status)}</select>`;
+
+  return `<select class="statusSelect ${statusClass(statusAtual)}" data-id="${esc(r.id)}" data-old-status="${esc(statusAtual)}" ${statusEmAtualizacao.has(r.id)?"disabled":""}>${statusOptionsHtml(statusAtual)}</select>`;
 }
 function renderActionsCell(r){
   const actions=[];

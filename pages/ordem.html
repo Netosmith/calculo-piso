@@ -163,14 +163,149 @@
     }
   }
 
+  #printSheet{display:none;}
+  .cut-line{display:none;}
+
+  @page{
+    size:A4 portrait;
+    margin:4mm;
+  }
+
   @media print{
-    .no-print{
-      display:none !important;
+    html,body{
+      width:210mm !important;
+      height:297mm !important;
+      margin:0 !important;
+      padding:0 !important;
+      background:#fff !important;
+      overflow:hidden !important;
     }
 
-    .print-container{
+    body > main{display:none !important;}
+
+    #printSheet{
+      display:block !important;
+      width:202mm;
+      height:289mm;
+      margin:0 auto;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .print-copy{
+      width:202mm;
+      height:142mm;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #74777f;
+      page-break-inside:avoid;
+      break-inside:avoid;
+    }
+
+    .print-copy + .print-copy{margin-top:5mm;}
+
+    .print-copy .print-container{
+      width:100% !important;
+      max-width:none !important;
+      margin:0 !important;
+      border:0 !important;
+      border-radius:0 !important;
       box-shadow:none !important;
-      border:1px solid #74777f !important;
+      overflow:hidden !important;
+    }
+
+    .print-copy .no-print{display:none !important;}
+
+    .print-copy .p-12{padding:7px !important}
+    .print-copy .p-8{padding:6px !important}
+    .print-copy .p-6{padding:5px !important}
+    .print-copy .p-4{padding:3px 5px !important}
+    .print-copy .px-6{padding-left:7px !important;padding-right:7px !important}
+    .print-copy .py-2{padding-top:2px !important;padding-bottom:2px !important}
+    .print-copy .gap-8{gap:12px !important}
+    .print-copy .gap-4{gap:5px !important}
+    .print-copy .gap-2{gap:3px !important}
+    .print-copy .mt-8{margin-top:5px !important}
+    .print-copy .mt-2{margin-top:2px !important}
+
+    .print-copy label,
+    .print-copy span,
+    .print-copy p,
+    .print-copy strong{
+      font-size:6.5px !important;
+      line-height:8px !important;
+    }
+
+    .print-copy h3{
+      font-size:9px !important;
+      line-height:11px !important;
+    }
+
+    .print-copy input,
+    .print-copy textarea{
+      min-height:0 !important;
+      height:18px !important;
+      padding:1px 5px !important;
+      border-radius:1px !important;
+      font-size:7px !important;
+      line-height:9px !important;
+      box-shadow:none !important;
+    }
+
+    .print-copy textarea{
+      height:32px !important;
+      resize:none !important;
+    }
+
+    .print-copy img{max-height:42px !important;}
+
+    .print-copy .company-info-line,
+    .print-copy .company-email,
+    .print-copy .company-docs{
+      font-size:6.5px !important;
+      line-height:8px !important;
+    }
+
+    .print-via-header{
+      height:18px;
+      padding:2px 7px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:#f0f3ff;
+      border-bottom:1px solid #74777f;
+      font-family:"Inter",sans-serif;
+      font-size:7px;
+      font-weight:900;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+    }
+
+    .print-via-badge{
+      padding:2px 8px;
+      border-radius:2px;
+      background:#001633;
+      color:#fff;
+    }
+
+    .cut-line{
+      display:block !important;
+      position:absolute;
+      left:4mm;
+      top:145.5mm;
+      width:202mm;
+      border-top:1px dashed #64748b;
+      text-align:center;
+      color:#64748b;
+      font-size:6px;
+      line-height:1;
+    }
+
+    .cut-line span{
+      position:relative;
+      top:-4px;
+      padding:0 4px;
+      background:#fff;
     }
   }
 </style>
@@ -216,7 +351,7 @@
         FRETES
       </a>
 
-      <button class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all flex items-center gap-2" onclick="window.print()">
+      <button id="btnImprimirDuasVias" class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all flex items-center gap-2">
         <span class="material-symbols-outlined text-sm">print</span>
         IMPRIMIR
       </button>
@@ -230,7 +365,7 @@
 </header>
 <!-- Main Form Canvas -->
 <div class="flex-grow p-4 md:p-8 overflow-y-auto">
-<div class="max-w-5xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm print-container overflow-hidden">
+<div id="ordemEditavel" class="max-w-5xl mx-auto bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm print-container overflow-hidden">
 <!-- HEADER SECTOR (Ref: Image Section 1) -->
 <div class="grid grid-cols-1 md:grid-cols-2 border-b border-outline">
 <div class="p-6 flex items-center justify-center md:border-r border-outline bg-surface-container-low">
@@ -406,6 +541,10 @@
 </a>
 </nav>
 </main>
+
+<section id="printSheet" aria-hidden="true"></section>
+<div class="cut-line"><span>✂ LINHA DE CORTE</span></div>
+
 <script>
   const EMPRESAS_POR_ESTADO = {
     GO: {
@@ -583,6 +722,81 @@
     sincronizarNomeMotorista();
   }
 
+  function copiarValoresParaClone(origem, clone){
+    const camposOrigem = origem.querySelectorAll("input, textarea, select");
+    const camposClone = clone.querySelectorAll("input, textarea, select");
+
+    camposOrigem.forEach((campo, index) => {
+      const copia = camposClone[index];
+      if(!copia) return;
+
+      if(campo.tagName === "SELECT"){
+        copia.value = campo.value;
+      }else if(campo.type === "checkbox" || campo.type === "radio"){
+        copia.checked = campo.checked;
+      }else{
+        copia.value = campo.value;
+        copia.setAttribute("value", campo.value);
+      }
+
+      copia.readOnly = true;
+      copia.tabIndex = -1;
+    });
+  }
+
+  function removerIdsDoClone(clone){
+    clone.querySelectorAll("[id]").forEach((elemento) => {
+      elemento.removeAttribute("id");
+    });
+  }
+
+  function criarViaImpressao(tipoVia){
+    const origem = document.getElementById("ordemEditavel");
+    if(!origem) return null;
+
+    const clone = origem.cloneNode(true);
+    copiarValoresParaClone(origem, clone);
+    removerIdsDoClone(clone);
+
+    const cabecalho = document.createElement("div");
+    cabecalho.className = "print-via-header";
+    cabecalho.innerHTML =
+      '<strong>ORDEM DE CARREGAMENTO</strong>' +
+      '<span class="print-via-badge">' + tipoVia + '</span>';
+
+    clone.insertBefore(cabecalho, clone.firstChild);
+
+    return clone;
+  }
+
+  function prepararDuasViasParaImpressao(){
+    sincronizarNomeMotorista();
+
+    const folha = document.getElementById("printSheet");
+    if(!folha) return;
+
+    folha.innerHTML = "";
+
+    const vias = [
+      criarViaImpressao("1ª VIA • MOTORISTA"),
+      criarViaImpressao("2ª VIA • EMBARCADOR")
+    ];
+
+    vias.forEach((via) => {
+      if(!via) return;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "print-copy";
+      wrapper.appendChild(via);
+      folha.appendChild(wrapper);
+    });
+  }
+
+  function imprimirDuasVias(){
+    prepararDuasViasParaImpressao();
+    requestAnimationFrame(() => window.print());
+  }
+
   document.querySelectorAll("input, textarea").forEach((input) => {
     input.addEventListener("focus", () => {
       input.parentElement?.classList.add("bg-surface-container-high");
@@ -595,6 +809,8 @@
 
   document.getElementById("btnLimpar")?.addEventListener("click", limparOrdem);
   document.getElementById("btnNovaOrdem")?.addEventListener("click", novaOrdem);
+  document.getElementById("btnImprimirDuasVias")?.addEventListener("click", imprimirDuasVias);
+  window.addEventListener("beforeprint", prepararDuasViasParaImpressao);
 
   window.addEventListener("DOMContentLoaded", function(){
     iniciarSeletorEstado();

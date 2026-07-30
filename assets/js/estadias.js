@@ -420,7 +420,13 @@ function renderTable(){
       <td><b>${esc(r.placa||"-")}</b></td><td>${esc(r.origem||"-")}</td><td>${esc(r.destino||"-")}</td>
       <td>${esc(dateTimeBR(r.dataHoraChegada))}</td><td>${esc(dateTimeBR(r.dataHoraSaida))}</td>
       <td>${r.horasPagar>0?hoursText(r.horasPagar):"-"}</td>
-      <td class="moneyCell">${r.valorTotal>0?money(r.valorTotal):"-"}</td>
+      <td class="moneyCell">
+  ${
+    canWrite()
+      ? (r.valorTotal > 0 ? money(r.valorTotal) : "-")
+      : "••••••"
+  }
+</td>
       <td>${esc(r.responsavel||"-")}</td><td>${renderActionsCell(r)}</td>
     </tr>`).join("");
   tbody.querySelectorAll(".statusSelect").forEach(select=>{

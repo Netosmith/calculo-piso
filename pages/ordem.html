@@ -308,6 +308,296 @@
       background:#fff;
     }
   }
+
+  /* IMPRESSÃO PROFISSIONAL: DUAS VIAS EM UMA FOLHA A4 */
+  @page{size:A4 portrait;margin:4mm}
+
+  @media print{
+    html,body{
+      width:210mm!important;
+      height:297mm!important;
+      margin:0!important;
+      padding:0!important;
+      overflow:hidden!important;
+      background:#fff!important;
+      -webkit-print-color-adjust:exact!important;
+      print-color-adjust:exact!important;
+    }
+
+    body>main{display:none!important}
+
+    #printSheet{
+      display:flex!important;
+      flex-direction:column;
+      width:202mm!important;
+      height:289mm!important;
+      margin:0 auto!important;
+      padding:0!important;
+      overflow:hidden!important;
+      background:#fff!important;
+    }
+
+    .print-copy-static{
+      width:202mm;
+      height:142mm;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      border:.25mm solid #536071;
+      background:#fff;
+      color:#111827;
+      font-family:Arial,Helvetica,sans-serif;
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+
+    .print-copy-static+.print-copy-static{margin-top:5mm}
+
+    .ps-title{
+      height:7mm;
+      padding:0 2.5mm;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:.25mm solid #64748b;
+      background:#f3f6fb;
+      font-size:6.5pt;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      flex:0 0 auto;
+    }
+
+    .ps-badge{
+      padding:1mm 2.5mm;
+      border-radius:1mm;
+      background:#001633;
+      color:#fff;
+      font-size:6pt;
+    }
+
+    .ps-company{
+      height:26mm;
+      display:grid;
+      grid-template-columns:42% 58%;
+      border-bottom:.25mm solid #64748b;
+      flex:0 0 auto;
+    }
+
+    .ps-logo{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:2mm 4mm;
+      border-right:.25mm solid #64748b;
+      background:#f8faff;
+    }
+
+    .ps-logo img{
+      max-width:100%;
+      max-height:17mm;
+      object-fit:contain;
+    }
+
+    .ps-company-info{
+      min-width:0;
+      padding:2mm 3mm;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:.6mm;
+    }
+
+    .ps-company-name{
+      color:#001633;
+      font-size:7.5pt;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+
+    .ps-company-line{
+      overflow:hidden;
+      color:#334155;
+      font-size:5.4pt;
+      line-height:1.15;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .ps-company-line strong{color:#111827}
+
+    .ps-filial{
+      display:flex;
+      align-items:center;
+      gap:1.5mm;
+      margin-top:.7mm;
+      font-size:5.5pt;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+
+    .ps-filial-value{
+      flex:1;
+      min-height:4mm;
+      padding:.6mm 1.5mm;
+      background:#e8eefc;
+      color:#c81e1e;
+      font-size:6.5pt;
+      font-weight:900;
+    }
+
+    .ps-section-title{
+      height:5mm;
+      padding:0 2.5mm;
+      display:flex;
+      align-items:center;
+      border-bottom:.25mm solid #64748b;
+      background:#eef3ff;
+      color:#001633;
+      font-size:5.4pt;
+      font-weight:900;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      flex:0 0 auto;
+    }
+
+    .ps-grid{
+      display:grid;
+      border-bottom:.25mm solid #64748b;
+      flex:0 0 auto;
+    }
+
+    .ps-grid.two{grid-template-columns:1fr 1fr}
+    .ps-grid.three{grid-template-columns:repeat(3,1fr)}
+    .ps-grid.five{grid-template-columns:repeat(5,1fr)}
+    .ps-grid.driver-top{grid-template-columns:3fr 1fr}
+    .ps-grid.driver-bottom{grid-template-columns:1fr 1fr 2fr}
+
+    .ps-field{
+      min-width:0;
+      min-height:10mm;
+      padding:1.2mm 2mm;
+      border-right:.25mm solid #c7ced8;
+    }
+
+    .ps-field:last-child{border-right:0}
+
+    .ps-label{
+      display:block;
+      margin-bottom:.7mm;
+      color:#475569;
+      font-size:4.7pt;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:.035em;
+      text-transform:uppercase;
+    }
+
+    .ps-value{
+      display:block;
+      width:100%;
+      min-height:4.2mm;
+      overflow:hidden;
+      color:#001633;
+      font-size:6.3pt;
+      line-height:1.2;
+      font-weight:900;
+      text-transform:uppercase;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .ps-value.red{color:#c81e1e}
+
+    .ps-collection{
+      min-height:8mm;
+      display:grid;
+      grid-template-columns:31mm 1fr;
+      align-items:center;
+      padding:1mm 2.5mm;
+      border-bottom:.25mm solid #64748b;
+      background:#001633;
+      color:#fff;
+      flex:0 0 auto;
+    }
+
+    .ps-collection-label{
+      font-size:5.2pt;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+
+    .ps-collection-value{
+      overflow:hidden;
+      font-size:7pt;
+      font-weight:900;
+      text-align:center;
+      text-transform:uppercase;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .ps-observation{
+      min-height:13mm;
+      padding:1.2mm 2.5mm;
+      border-bottom:.25mm solid #64748b;
+      flex:1 1 auto;
+      overflow:hidden;
+    }
+
+    .ps-observation .ps-value{
+      min-height:8mm;
+      color:#c81e1e;
+      font-size:5.7pt;
+      line-height:1.25;
+      white-space:normal;
+    }
+
+    .ps-signatures{
+      height:16mm;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12mm;
+      align-items:end;
+      padding:2mm 8mm 2.5mm;
+      flex:0 0 auto;
+    }
+
+    .ps-signature{text-align:center;min-width:0}
+    .ps-sign-line{border-top:.25mm solid #475569;padding-top:1mm}
+    .ps-sign-label{color:#475569;font-size:4.7pt;font-weight:900;text-transform:uppercase}
+    .ps-sign-name{
+      margin-top:.7mm;
+      overflow:hidden;
+      color:#001633;
+      font-size:5.8pt;
+      font-weight:900;
+      text-transform:uppercase;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .cut-line{
+      display:block!important;
+      position:absolute;
+      left:4mm;
+      top:145.5mm;
+      width:202mm;
+      border-top:.25mm dashed #64748b;
+      text-align:center;
+      color:#64748b;
+      font-size:5pt;
+      line-height:1;
+    }
+
+    .cut-line span{
+      position:relative;
+      top:-2mm;
+      padding:0 2mm;
+      background:#fff;
+    }
+  }
+
 </style>
 
 </head><body class="bg-surface-bright text-on-surface font-body-md min-h-screen flex">
@@ -399,34 +689,34 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline">
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Remetente (Local de Coleta)</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX">
+<input id="remetenteColeta" class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cidade de Origem</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX-XX">
+<input id="cidadeOrigem" class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX-XX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Recebedor (Local de Descarga)</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX -XX">
+<input id="recebedorDescarga" class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX -XX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cidade de Destino</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX-XX">
+<input id="cidadeDestino" class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX-XX">
 </div>
 </div>
 <!-- CARGO SECTION (Ref: Image Section 3) -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-outline border-t border-outline">
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Peso (Ton)</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XX.XXX">
+<input id="pesoTon" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XX.XXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Produto</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX">
+<input id="produtoCarga" class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cliente</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX">
+<input id="clienteCarga" class="w-full border border-outline-variant rounded px-3 py-2 text-primary font-bold form-input-focus" type="text" value="XXXXX">
 </div>
 </div>
 <!-- VEHICLE SECTION (Ref: Image Section 4) -->
@@ -437,23 +727,23 @@
 <div class="grid grid-cols-2 md:grid-cols-5 gap-px bg-outline">
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Cavalo</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
+<input id="placaCavalo" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Carreta 1</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
+<input id="placaCarreta1" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Dolly 2</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
+<input id="placaDolly2" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Placa Carreta 3</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
+<input id="placaCarreta3" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXX-XXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Cidade Empl.</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-bold form-input-focus" type="text" value="XXXXX">
+<input id="cidadeEmplacamento" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-bold form-input-focus" type="text" value="XXXXX">
 </div>
 </div>
 <!-- DRIVER SECTION (Ref: Image Section 5) -->
@@ -468,19 +758,19 @@
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Fone</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="(X) X XXXX-XXXX">
+<input id="foneMotorista" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="(X) X XXXX-XXXX">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">CPF</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="000.000.000-00">
+<input id="cpfMotorista" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="000.000.000-00">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">RG</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXXXX-SSP/GO">
+<input id="rgMotorista" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXXXX-SSP/GO">
 </div>
 <div class="bg-surface-container-lowest p-4 flex flex-col gap-1 border-t border-outline md:col-span-2">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">CNH</label>
-<input class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXXXXXXXX-CAT E">
+<input id="cnhMotorista" class="w-full border border-outline-variant rounded px-3 py-2 text-error font-data-mono font-bold form-input-focus" type="text" value="XXXXXXXXX-CAT E">
 </div>
 </div>
 <!-- FOOTER SECTION (Ref: Image Footer) -->
@@ -502,7 +792,7 @@
 </div>
 <div class="p-6 bg-surface-container-lowest flex flex-col gap-2">
 <label class="font-label-caps text-label-caps text-on-surface-variant uppercase">Observações Gerais</label>
-<textarea class="w-full border border-outline-variant rounded p-3 text-error font-body-md form-input-focus resize-none uppercase" rows="3">XXXXXXXXXXXXXX.</textarea>
+<textarea id="observacoesGerais" class="w-full border border-outline-variant rounded p-3 text-error font-body-md form-input-focus resize-none uppercase" rows="3">XXXXXXXXXXXXXX.</textarea>
 </div>
 <!-- SIGNATURES -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-12 bg-surface-container-lowest border-t border-outline-variant">
@@ -514,7 +804,7 @@
 <div class="flex flex-col items-center">
 <div class="w-full border-t border-on-surface-variant mt-8"></div>
 <span class="mt-2 font-label-caps text-label-caps text-on-surface-variant">EMBARCADOR RESPONSÁVEL</span>
-<input class="w-full border-none text-center font-bold text-primary focus:ring-0 uppercase" type="text" value="NOVA FROTA LOGÍSTICA">
+<input id="embarcadorResponsavel" class="w-full border-none text-center font-bold text-primary focus:ring-0 uppercase" type="text" value="NOVA FROTA LOGÍSTICA">
 </div>
 </div>
 </div>
@@ -657,6 +947,10 @@
     if(ieEl) ieEl.textContent = dados.ie;
     if(emailEl) emailEl.textContent = dados.email;
     if(filialEl) filialEl.textContent = dados.filial;
+
+    if(typeof prepararDuasViasParaImpressao === "function"){
+      prepararDuasViasParaImpressao();
+    }
   }
 
   function iniciarSeletorEstado(){
@@ -722,51 +1016,124 @@
     sincronizarNomeMotorista();
   }
 
-  function copiarValoresParaClone(origem, clone){
-    const camposOrigem = origem.querySelectorAll("input, textarea, select");
-    const camposClone = clone.querySelectorAll("input, textarea, select");
+  function valorDoCampo(id){
+    const elemento = document.getElementById(id);
+    if(!elemento) return "-";
 
-    camposOrigem.forEach((campo, index) => {
-      const copia = camposClone[index];
-      if(!copia) return;
+    const valor = "value" in elemento
+      ? elemento.value
+      : elemento.textContent;
 
-      if(campo.tagName === "SELECT"){
-        copia.value = campo.value;
-      }else if(campo.type === "checkbox" || campo.type === "radio"){
-        copia.checked = campo.checked;
-      }else{
-        copia.value = campo.value;
-        copia.setAttribute("value", campo.value);
-      }
-
-      copia.readOnly = true;
-      copia.tabIndex = -1;
-    });
+    return String(valor || "").trim() || "-";
   }
 
-  function removerIdsDoClone(clone){
-    clone.querySelectorAll("[id]").forEach((elemento) => {
-      elemento.removeAttribute("id");
-    });
+  function escaparImpressao(valor){
+    return String(valor || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
   }
 
-  function criarViaImpressao(tipoVia){
-    const origem = document.getElementById("ordemEditavel");
-    if(!origem) return null;
+  function campoPrint(rotulo, id, extraClass=""){
+    return `
+      <div class="ps-field">
+        <span class="ps-label">${rotulo}</span>
+        <span class="ps-value ${extraClass}">${escaparImpressao(valorDoCampo(id))}</span>
+      </div>
+    `;
+  }
 
-    const clone = origem.cloneNode(true);
-    copiarValoresParaClone(origem, clone);
-    removerIdsDoClone(clone);
+  function montarViaImpressao(nomeVia){
+    return `
+      <article class="print-copy-static">
+        <div class="ps-title">
+          <span>Ordem de Carregamento</span>
+          <span class="ps-badge">${nomeVia}</span>
+        </div>
 
-    const cabecalho = document.createElement("div");
-    cabecalho.className = "print-via-header";
-    cabecalho.innerHTML =
-      '<strong>ORDEM DE CARREGAMENTO</strong>' +
-      '<span class="print-via-badge">' + tipoVia + '</span>';
+        <div class="ps-company">
+          <div class="ps-logo">
+            <img src="../assets/img/logo-novafrota.png" alt="Nova Frota">
+          </div>
 
-    clone.insertBefore(cabecalho, clone.firstChild);
+          <div class="ps-company-info">
+            <div class="ps-company-name">${escaparImpressao(valorDoCampo("empresaNome"))}</div>
+            <div class="ps-company-line">${escaparImpressao(valorDoCampo("empresaEndereco"))}</div>
+            <div class="ps-company-line">
+              CNPJ: <strong>${escaparImpressao(valorDoCampo("empresaCnpj"))}</strong>
+              &nbsp;&nbsp; IE: <strong>${escaparImpressao(valorDoCampo("empresaIe"))}</strong>
+            </div>
+            <div class="ps-company-line">${escaparImpressao(valorDoCampo("empresaEmail"))}</div>
+            <div class="ps-filial">
+              <span>Filial:</span>
+              <span class="ps-filial-value">${escaparImpressao(valorDoCampo("empresaFilial"))}</span>
+            </div>
+          </div>
+        </div>
 
-    return clone;
+        <div class="ps-grid two">
+          ${campoPrint("Remetente (Local de Coleta)","remetenteColeta")}
+          ${campoPrint("Cidade de Origem","cidadeOrigem")}
+          ${campoPrint("Recebedor (Local de Descarga)","recebedorDescarga")}
+          ${campoPrint("Cidade de Destino","cidadeDestino")}
+        </div>
+
+        <div class="ps-grid three">
+          ${campoPrint("Peso (Ton)","pesoTon","red")}
+          ${campoPrint("Produto","produtoCarga")}
+          ${campoPrint("Cliente","clienteCarga")}
+        </div>
+
+        <div class="ps-section-title">Dados do Veículo</div>
+        <div class="ps-grid five">
+          ${campoPrint("Placa Cavalo","placaCavalo","red")}
+          ${campoPrint("Placa Carreta 1","placaCarreta1","red")}
+          ${campoPrint("Placa Dolly 2","placaDolly2","red")}
+          ${campoPrint("Placa Carreta 3","placaCarreta3","red")}
+          ${campoPrint("Cidade Empl.","cidadeEmplacamento","red")}
+        </div>
+
+        <div class="ps-section-title">Dados do Motorista</div>
+        <div class="ps-grid driver-top">
+          ${campoPrint("Motorista","motoristaNome","red")}
+          ${campoPrint("Fone","foneMotorista","red")}
+        </div>
+
+        <div class="ps-grid driver-bottom">
+          ${campoPrint("CPF","cpfMotorista","red")}
+          ${campoPrint("RG","rgMotorista","red")}
+          ${campoPrint("CNH","cnhMotorista","red")}
+        </div>
+
+        <div class="ps-collection">
+          <span class="ps-collection-label">Local de Coleta:</span>
+          <span class="ps-collection-value">${escaparImpressao(valorDoCampo("localColetaRodape"))}</span>
+        </div>
+
+        <div class="ps-observation">
+          <span class="ps-label">Observações Gerais</span>
+          <span class="ps-value">${escaparImpressao(valorDoCampo("observacoesGerais"))}</span>
+        </div>
+
+        <div class="ps-signatures">
+          <div class="ps-signature">
+            <div class="ps-sign-line">
+              <div class="ps-sign-label">Assinatura Motorista</div>
+              <div class="ps-sign-name">${escaparImpressao(valorDoCampo("assinaturaMotorista"))}</div>
+            </div>
+          </div>
+
+          <div class="ps-signature">
+            <div class="ps-sign-line">
+              <div class="ps-sign-label">Embarcador Responsável</div>
+              <div class="ps-sign-name">${escaparImpressao(valorDoCampo("embarcadorResponsavel"))}</div>
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
   }
 
   function prepararDuasViasParaImpressao(){
@@ -775,27 +1142,18 @@
     const folha = document.getElementById("printSheet");
     if(!folha) return;
 
-    folha.innerHTML = "";
-
-    const vias = [
-      criarViaImpressao("1ª VIA • MOTORISTA"),
-      criarViaImpressao("2ª VIA • EMBARCADOR")
-    ];
-
-    vias.forEach((via) => {
-      if(!via) return;
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "print-copy";
-      wrapper.appendChild(via);
-      folha.appendChild(wrapper);
-    });
+    folha.innerHTML =
+      montarViaImpressao("1ª VIA • MOTORISTA") +
+      montarViaImpressao("2ª VIA • EMBARCADOR");
   }
 
   function imprimirDuasVias(){
     prepararDuasViasParaImpressao();
     requestAnimationFrame(() => window.print());
   }
+
+  document.getElementById("ordemEditavel")?.addEventListener("input", prepararDuasViasParaImpressao);
+  document.getElementById("ordemEditavel")?.addEventListener("change", prepararDuasViasParaImpressao);
 
   document.querySelectorAll("input, textarea").forEach((input) => {
     input.addEventListener("focus", () => {
@@ -815,6 +1173,8 @@
   window.addEventListener("DOMContentLoaded", function(){
     iniciarSeletorEstado();
     iniciarSincronizacaoMotorista();
+
+    setTimeout(prepararDuasViasParaImpressao, 120);
   });
 </script>
 

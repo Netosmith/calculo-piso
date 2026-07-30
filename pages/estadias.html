@@ -95,7 +95,7 @@
 
     .page{max-width:1840px;margin:0 auto;padding:16px}
 
-    .hero{
+    .estadiasHero{
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -103,8 +103,15 @@
       margin-bottom:14px;
     }
 
-    .hero h2{margin:0;color:var(--navy);font-size:24px}
-    .hero p{margin:5px 0 0;color:var(--muted);font-size:12px}
+    .estadiasHero::before,
+    .estadiasHero::after{
+      content:none !important;
+      display:none !important;
+      background:none !important;
+    }
+
+    .estadiasHero h2{margin:0;color:var(--navy);font-size:24px}
+    .estadiasHero p{margin:5px 0 0;color:var(--muted);font-size:12px}
 
     .btn{
       min-height:38px;
@@ -457,7 +464,7 @@
       .kpis{grid-template-columns:1fr 1fr}
       .filterTop,.filterGrid,.formGrid{grid-template-columns:1fr}
       .span2,.span4{grid-column:auto}
-      .hero{align-items:flex-start;flex-direction:column}
+      .estadiasHero{align-items:flex-start;flex-direction:column}
       .userBox{display:none}
     }
   </style>
@@ -466,79 +473,79 @@
 <body>
   <header class="topbar">
     <div class="brandArea">
-      <a href="./home.html" class="btn ghost" title="Voltar para Home">ð </a>
+      <a href="./home.html" class="btn ghost" title="Voltar para Home">🏠</a>
       <img src="../assets/img/logo-novafrota.png" alt="Nova Frota">
       <div class="titleArea">
         <div>
           <h1>Controle de Estadias</h1>
-          <small>Acompanhamento de solicitaÃ§Ãµes por cliente</small>
+          <small>Acompanhamento das solicitações de estadia por cliente</small>
         </div>
       </div>
     </div>
 
-    <div class="stateChip">GOIÃS</div>
+    <div class="stateChip">GOIÁS</div>
 
     <div class="topActions">
       <div class="userBox">
         <div class="avatar" id="userInitials">NF</div>
         <div>
-          <strong id="userName">USUÃRIO</strong>
+          <strong id="userName">USUÁRIO</strong>
           <span id="userRole">PERFIL</span>
         </div>
       </div>
-      <button class="btn green" id="btnNovaEstadia">ï¼ Nova solicitaÃ§Ã£o</button>
+      <button class="btn green" id="btnNovaEstadia">＋ Nova solicitação</button>
     </div>
   </header>
 
   <main class="page">
-    <section class="hero">
+    <section class="estadiasHero">
       <div>
-        <h2>GestÃ£o de estadias</h2>
-        <p>Dados sincronizados com a planilha Google Sheets para consulta de toda a equipe.</p>
+        <h2>Controle de Estadias</h2>
+        <p>Solicitações registradas no Google Sheets e disponíveis para acompanhamento de toda a equipe.</p>
       </div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" id="btnAtualizar">â» Atualizar</button>
-        <button class="btn blue" id="btnExportar">â© Exportar CSV</button>
+        <button class="btn ghost" id="btnAtualizar">↻ Atualizar</button>
+        <button class="btn blue" id="btnExportar">⇩ Exportar CSV</button>
       </div>
     </section>
 
     <section class="kpis">
       <article class="kpi blue">
-        <div class="kpiIcon">â¤</div>
-        <div><div class="kpiLabel">Total solicitaÃ§Ãµes</div><div class="kpiValue" id="kpiTotal">0</div><div class="kpiMeta">Todas as solicitaÃ§Ãµes</div></div>
+        <div class="kpiIcon">▤</div>
+        <div><div class="kpiLabel">Total de solicitações</div><div class="kpiValue" id="kpiTotal">0</div><div class="kpiMeta">Solicitações registradas</div></div>
       </article>
 
       <article class="kpi orange">
-        <div class="kpiIcon">â·</div>
-        <div><div class="kpiLabel">Aguardando</div><div class="kpiValue" id="kpiAguardando">0</div><div class="kpiMeta">Aguardando anÃ¡lise</div></div>
+        <div class="kpiIcon">◷</div>
+        <div><div class="kpiLabel">Aguardando</div><div class="kpiValue" id="kpiAguardando">0</div><div class="kpiMeta">Pendentes de análise</div></div>
       </article>
 
       <article class="kpi green">
-        <div class="kpiIcon">â</div>
-        <div><div class="kpiLabel">Liberadas</div><div class="kpiValue" id="kpiLiberadas">0</div><div class="kpiMeta">Estadias liberadas</div></div>
+        <div class="kpiIcon">✓</div>
+        <div><div class="kpiLabel">Liberadas</div><div class="kpiValue" id="kpiLiberadas">0</div><div class="kpiMeta">Solicitações liberadas</div></div>
       </article>
 
       <article class="kpi red">
-        <div class="kpiIcon">â</div>
-        <div><div class="kpiLabel">Negadas</div><div class="kpiValue" id="kpiNegadas">0</div><div class="kpiMeta">Estadias negadas</div></div>
+        <div class="kpiIcon">✕</div>
+        <div><div class="kpiLabel">Negadas</div><div class="kpiValue" id="kpiNegadas">0</div><div class="kpiMeta">Solicitações negadas</div></div>
       </article>
 
       <article class="kpi money">
         <div class="kpiIcon">$</div>
-        <div><div class="kpiLabel">Valor total</div><div class="kpiValue" id="kpiValor">R$ 0,00</div><div class="kpiMeta">Total no filtro atual</div></div>
+        <div><div class="kpiLabel">Valor total</div><div class="kpiValue" id="kpiValor">R$ 0,00</div><div class="kpiMeta">Valor no período filtrado</div></div>
       </article>
     </section>
 
     <section class="filtersCard">
       <div class="filterTop">
         <div class="field searchWrap">
-          <label>Busca rÃ¡pida</label>
-          <span class="searchIcon">â</span>
+          <label>Pesquisa rápida</label>
+          <span class="searchIcon">⌕</span>
           <input class="control" id="busca" placeholder="Buscar por Placa, CTe, NF, Cliente, Motorista, Origem ou Destino...">
         </div>
         <button class="btn ghost" id="btnLimparFiltros">Limpar</button>
-        <button class="btn blue" id="btnFiltrar">â· Filtrar</button>
+        <button class="btn blue" id="btnFiltrar">⏷ Filtrar</button>
       </div>
 
       <div class="filterGrid">
@@ -547,24 +554,24 @@
           <select class="control" id="filtroStatus">
             <option value="">Todos</option>
             <option>AGUARDANDO</option>
-            <option>EM ANÃLISE</option>
+            <option>EM ANÁLISE</option>
             <option>LIBERADA</option>
             <option>NEGADA CLIENTE</option>
-            <option>SOLICITAR CORREÃÃO</option>
+            <option>SOLICITAR CORREÇÃO</option>
           </select>
         </div>
-        <div class="field"><label>PerÃ­odo inicial</label><input class="control" id="dataInicio" type="date"></div>
-        <div class="field"><label>PerÃ­odo final</label><input class="control" id="dataFim" type="date"></div>
+        <div class="field"><label>Período inicial</label><input class="control" id="dataInicio" type="date"></div>
+        <div class="field"><label>Período final</label><input class="control" id="dataFim" type="date"></div>
         <div class="field"><label>Produto</label><select class="control" id="filtroProduto"><option value="">Todos</option></select></div>
-        <div class="field"><label>ResponsÃ¡vel</label><select class="control" id="filtroResponsavel"><option value="">Todos</option></select></div>
+        <div class="field"><label>Responsável</label><select class="control" id="filtroResponsavel"><option value="">Todos</option></select></div>
       </div>
     </section>
 
     <section class="workspace">
       <article class="tableCard">
         <div class="tableTop">
-          <div><strong id="tableTitle">SolicitaÃ§Ãµes encontradas</strong><br><span id="tableMeta">0 registro(s)</span></div>
-          <span id="syncStatus">Aguardando atualizaÃ§Ã£o</span>
+          <div><strong id="tableTitle">Solicitações de estadia</strong><br><span id="tableMeta">0 registro(s)</span></div>
+          <span id="syncStatus">Aguardando sincronização</span>
         </div>
 
         <div class="tableWrap">
@@ -572,8 +579,8 @@
             <thead>
               <tr>
                 <th>Status</th><th>Cliente</th><th>CTe</th><th>NF</th><th>Placa</th>
-                <th>Origem</th><th>Destino</th><th>Chegada</th><th>SaÃ­da</th>
-                <th>Horas</th><th>Valor</th><th>SituaÃ§Ã£o</th><th>ResponsÃ¡vel</th><th>AÃ§Ãµes</th>
+                <th>Origem</th><th>Destino</th><th>Chegada</th><th>Saída</th>
+                <th>Horas</th><th>Valor</th><th>Situação</th><th>Responsável</th><th>Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaEstadias">
@@ -594,11 +601,11 @@
       <aside class="detailsPanel">
         <div class="detailsHead">
           <h3>Detalhes da Estadia</h3>
-          <button class="closeBtn" id="btnFecharDetalhes">â</button>
+          <button class="closeBtn" id="btnFecharDetalhes">✕</button>
         </div>
 
         <div class="detailsBody" id="detalhesBody">
-          <div class="empty">Selecione uma solicitaÃ§Ã£o na tabela.</div>
+          <div class="empty">Selecione uma solicitação na tabela.</div>
         </div>
       </aside>
     </section>
@@ -607,8 +614,8 @@
   <div class="modal" id="modalEstadia">
     <div class="modalCard">
       <div class="modalHead">
-        <h3 id="modalTitulo">Nova solicitaÃ§Ã£o de estadia</h3>
-        <button class="closeBtn" id="btnFecharModal">â</button>
+        <h3 id="modalTitulo">Nova Solicitação de Estadia</h3>
+        <button class="closeBtn" id="btnFecharModal">✕</button>
       </div>
 
       <div class="modalBody">
@@ -627,46 +634,46 @@
             <div class="field"><label>Destino *</label><input class="control" id="destino" required></div>
 
             <div class="field"><label>Produto</label><input class="control" id="produto"></div>
-            <div class="field"><label>Peso destino (kg)</label><input class="control" id="pesoDestino" type="number" step="0.01"></div>
-            <div class="field"><label>Data/Hora chegada *</label><input class="control" id="dataHoraChegada" type="datetime-local" required></div>
-            <div class="field"><label>Data/Hora saÃ­da</label><input class="control" id="dataHoraSaida" type="datetime-local"></div>
+            <div class="field"><label>Peso no destino (kg)</label><input class="control" id="pesoDestino" type="number" step="0.01"></div>
+            <div class="field"><label>Data e hora de chegada *</label><input class="control" id="dataHoraChegada" type="datetime-local" required></div>
+            <div class="field"><label>Data e hora de saída</label><input class="control" id="dataHoraSaida" type="datetime-local"></div>
 
             <div class="field"><label>Tempo retroativo (h)</label><input class="control" id="tempoRetroativo" type="number" step="0.01" value="0"></div>
-            <div class="field"><label>Valor estadia por hora</label><input class="control" id="valorHora" type="number" step="0.01" value="0"></div>
+            <div class="field"><label>Valor da estadia por hora</label><input class="control" id="valorHora" type="number" step="0.01" value="0"></div>
             <div class="field"><label>Status</label>
               <select class="control" id="status">
                 <option>AGUARDANDO</option>
-                <option>EM ANÃLISE</option>
+                <option>EM ANÁLISE</option>
                 <option>LIBERADA</option>
                 <option>NEGADA CLIENTE</option>
-                <option>SOLICITAR CORREÃÃO</option>
+                <option>SOLICITAR CORREÇÃO</option>
               </select>
             </div>
-            <div class="field"><label>ResponsÃ¡vel</label><input class="control" id="responsavel"></div>
+            <div class="field"><label>Responsável</label><input class="control" id="responsavel"></div>
 
             <div class="field span2"><label>Motivo da estadia</label><textarea class="control" id="motivo"></textarea></div>
-            <div class="field span2"><label>ObservaÃ§Ãµes</label><textarea class="control" id="observacoes"></textarea></div>
-            <div class="field span4"><label>Link do anexo (e-mail, PDF ou Drive)</label><input class="control" id="anexoUrl" type="url" placeholder="https://..."></div>
+            <div class="field span2"><label>Observações</label><textarea class="control" id="observacoes"></textarea></div>
+            <div class="field span4"><label>Link do anexo (e-mail, PDF ou Google Drive)</label><input class="control" id="anexoUrl" type="url" placeholder="https://..."></div>
           </div>
         </form>
       </div>
 
       <div class="modalFoot">
         <button class="btn ghost" id="btnCancelarModal">Cancelar</button>
-        <button class="btn green" id="btnSalvarEstadia">Salvar solicitaÃ§Ã£o</button>
+        <button class="btn green" id="btnSalvarEstadia">Salvar Solicitação</button>
       </div>
     </div>
   </div>
 
   <div class="loading" id="loading"><div class="loadingBox" id="loadingText">Processando...</div></div>
 
-  <script src="../assets/js/estadias.js?v=1"></script>
+  <script src="../assets/js/estadias.js?v=2"></script>
   <script>
     try{
       if(typeof requireHomeAuth==="function") requireHomeAuth();
       if(typeof bindLogoutButton==="function") bindLogoutButton();
     }catch(e){
-      console.warn("[ESTADIAS] Auth ainda nÃ£o disponÃ­vel.",e);
+      console.warn("[ESTADIAS] Auth ainda não disponível.",e);
     }
   </script>
 </body>

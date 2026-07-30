@@ -12,12 +12,22 @@ const ACTIONS={
   status:"estadias_status"
 };
 
+const STATUS_OPTIONS=[
+  "AGUARDANDO",
+  "EM ANÁLISE",
+  "LIBERADA",
+  "NEGADA PELO CLIENTE",
+  "SOLICITAR CORREÇÃO",
+  "PAGA"
+];
+
+const statusEmAtualizacao=new Set();
+
 const $=id=>document.getElementById(id);
 
 let dados=[];
 let filtrados=[];
 let paginaAtual=1;
-let selecionado=null;
 
 function txt(v){return String(v??"").trim()}
 function up(v){return txt(v).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
@@ -69,27 +79,59 @@ function toDateTimeInput(v){
   if(Number.isNaN(d.getTime()))return "";
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
+function parseDateValue(v){
+  if(!v)return null;
+  if(v instanceof Date)return Number.isNaN(v.getTime())?null:v;
+  if(typeof v==="number"){
+    const epoch=new Date(Date.UTC(1899,11,30));
+    const d=new Date(epoch.getTime()+v*86400000);
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  const raw=txt(v);
+  const br=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if(br){
+    const d=new Date(+br[3],+br[2]-1,+br[1],+(br[4]||0),+(br[5]||0),+(br[6]||0));
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  const d=new Date(raw);
+  return Number.isNaN(d.getTime())?null:d;
+}
 function hoursBetween(start,end){
-  const a=new Date(start),b=new Date(end);
-  if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime()))return 0;
+  const a=parseDateValue(start),b=parseDateValue(end);
+  if(!a||!b)return 0;
   return Math.max(0,(b-a)/3600000);
+}
+function roundMoney(v){return Math.round((num(v)+Number.EPSILON)*100)/100}
+function hoursText(v){return `${num(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} h`}
+function normalizeStatus(status){
+  const normalized=up(status);
+  return STATUS_OPTIONS.find(item=>up(item)===normalized)||"AGUARDANDO";
 }
 function statusClass(status){
   const s=up(status);
+  if(s.includes("PAGA"))return "paid";
   if(s.includes("LIBER"))return "ok";
   if(s.includes("NEGAD"))return "no";
   if(s.includes("CORRE"))return "correct";
   if(s.includes("ANAL"))return "analysis";
   return "wait";
 }
+function authContext(){
+  if(typeof getAuthContext==="function")return getAuthContext();
+  return {usuario:localStorage.getItem("nf_auth_user")||"USUARIO",nome:localStorage.getItem("nf_auth_name")||localStorage.getItem("nf_auth_user")||"USUARIO",perfil:localStorage.getItem("nf_auth_profile")||"PERFIL",estado:localStorage.getItem("nf_auth_state")||""};
+}
+function canWrite(){return typeof canWriteEstadias==="function"?canWriteEstadias():up(currentRole())==="ADMINISTRADOR"}
+function canDelete(){return typeof canDeleteEstadias==="function"?canDeleteEstadias():up(currentRole())==="ADMINISTRADOR"}
+function ensureWrite(){if(canWrite())return true;alert("Seu perfil possui acesso somente para consulta.");return false}
+function auditPayload(){const a=authContext();return {usuario:up(a.usuario),nomeUsuario:up(a.nome),perfil:up(a.perfil),estado:up(a.estado),atualizadoPor:up(a.nome||a.usuario),atualizadoEm:new Date().toISOString()}}
 function normalizeRow(r,index){
   const chegada=r.dataHoraChegada??r["DATA/HORA CHEGADA"]??r.chegada??"";
-  const saida=r.dataHoraSaida??r["DATA/HORA SAÃDA"]??r.saida??"";
-  const espera=num(r.tempoEspera??r["TEMPO ESPERA (HORAS)"])||hoursBetween(chegada,saida);
-  const retro=num(r.tempoRetroativo??r["TEMPO RETROATIVO (HS)"]);
-  const pagar=num(r.horasPagar??r["HORA A PAGAR"])||Math.max(0,espera-retro);
-  const valorHora=num(r.valorHora??r["VALOR ESTADIA (H)"]);
-  const valorTotal=num(r.valorTotal??r["VALOR ESTADIA (R$)"])||(pagar*valorHora);
+  const saida=r.dataHoraSaida??r["DATA/HORA SAÍDA"]??r.saida??"";
+  const espera=(chegada&&saida)?hoursBetween(chegada,saida):num(r.tempoEspera??r["TEMPO ESPERA (HORAS)"]);
+  const retro=Math.max(0,num(r.tempoRetroativo??r["TEMPO RETROATIVO (HS)"]));
+  const pagar=Math.max(0,espera-retro);
+  const valorHora=Math.max(0,num(r.valorHora??r["VALOR ESTADIA (H)"]));
+  const valorTotal=roundMoney(pagar*valorHora);
 
   return {
     id:txt(r.id??r.ID??r.rowId??index+2),
@@ -111,8 +153,7 @@ function normalizeRow(r,index){
     valorHora,
     valorTotal,
     motivo:txt(r.motivo??r["MOTIVO DA ESTADIA"]),
-    status:txt(r.status??r["STATUS DA ESTADIA"]??"AGUARDANDO"),
-    situacao:txt(r.situacao??r.SITUACAO),
+    status:normalizeStatus(r.status??r["STATUS DA ESTADIA"]??"AGUARDANDO"),
     responsavel:txt(r.responsavel??r.RESPONSAVEL),
     observacoes:txt(r.observacoes??r.OBSERVACOES),
     anexoUrl:txt(r.anexoUrl??r.ANEXO_URL??r.anexo)
@@ -147,7 +188,7 @@ function jsonp(params,timeout=35000){
 
     script.onerror=()=>{
       cleanup();
-      reject(new Error("Falha de comunicaÃ§Ã£o com a API."));
+      reject(new Error("Falha de comunicação com a API."));
     };
 
     script.src=url.toString();
@@ -171,17 +212,8 @@ function loading(show,text="Processando..."){
   if($("loadingText"))$("loadingText").textContent=text;
 }
 
-function currentUser(){
-  const keys=["nf_auth_nome","nf_auth_user","usuario"];
-  for(const key of keys){
-    const value=localStorage.getItem(key);
-    if(value)return value;
-  }
-  return "USUÃRIO";
-}
-function currentRole(){
-  return localStorage.getItem("nf_auth_profile")||localStorage.getItem("perfil")||"PERFIL";
-}
+function currentUser(){const a=authContext();return txt(a.nome||a.usuario||"USUÁRIO")}
+function currentRole(){return txt(authContext().perfil||"PERFIL")}
 function renderUser(){
   const name=currentUser();
   const role=currentRole();
@@ -196,10 +228,11 @@ async function loadData(){
   if($("syncStatus"))$("syncStatus").textContent="Atualizando...";
 
   try{
-    const res=await jsonp({action:ACTIONS.list});
+    const a=auditPayload();
+    const res=await jsonp({action:ACTIONS.list,usuario:a.usuario,perfil:a.perfil,estado:a.estado});
 
     if(!res||res.ok===false){
-      throw new Error(res?.error||"A API de estadias ainda nÃ£o foi configurada.");
+      throw new Error(res?.error||"A API de estadias ainda não foi configurada.");
     }
 
     const rows=Array.isArray(res.data)?res.data:Array.isArray(res)?res:[];
@@ -209,7 +242,7 @@ async function loadData(){
     aplicarFiltros();
 
     if($("syncStatus")){
-      $("syncStatus").textContent=`Atualizado Ã s ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
+      $("syncStatus").textContent=`Atualizado às ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
     }
   }catch(error){
     console.error("[ESTADIAS] Erro ao carregar:",error);
@@ -218,7 +251,7 @@ async function loadData(){
     renderTudo();
     if($("syncStatus"))$("syncStatus").textContent="Apps Script ainda sem as rotas de estadias";
     $("tabelaEstadias").innerHTML=
-      `<tr><td colspan="14" class="empty">O layout estÃ¡ pronto. Agora precisamos adicionar ao Apps Script a aÃ§Ã£o <b>${ACTIONS.list}</b>.</td></tr>`;
+      `<tr><td colspan="13" class="empty">O layout estÃ¡ pronto. Agora precisamos adicionar ao Apps Script a aÃ§Ã£o <b>${ACTIONS.list}</b>.</td></tr>`;
   }finally{
     loading(false);
   }
@@ -303,54 +336,46 @@ function getPageRows(){
   return filtrados.slice(start,start+size);
 }
 
+function statusOptionsHtml(current){
+  return STATUS_OPTIONS.map(status=>`<option value="${esc(status)}" ${up(status)===up(current)?"selected":""}>${esc(status)}</option>`).join("");
+}
+function renderStatusCell(r){
+  if(!canWrite())return `<span class="badge ${statusClass(r.status)}">${esc(r.status)}</span>`;
+  return `<select class="statusSelect ${statusClass(r.status)}" data-id="${esc(r.id)}" data-old-status="${esc(r.status)}" ${statusEmAtualizacao.has(r.id)?"disabled":""}>${statusOptionsHtml(r.status)}</select>`;
+}
+function renderActionsCell(r){
+  const actions=[];
+  if(canWrite())actions.push(`<button class="btn ghost btnEdit" data-id="${esc(r.id)}" data-estadias-write style="min-height:28px;padding:0 9px">✏ Editar</button>`);
+  if(r.anexoUrl)actions.push(`<a class="btn ghost" href="${esc(r.anexoUrl)}" target="_blank" rel="noopener" style="min-height:28px;padding:0 9px">📎</a>`);
+  if(canDelete())actions.push(`<button class="btn red btnDelete" data-id="${esc(r.id)}" data-estadias-delete style="min-height:28px;padding:0 9px">🗑</button>`);
+  return actions.length?`<div style="display:flex;gap:5px;align-items:center">${actions.join("")}</div>`:'<span style="color:#8795aa">Consulta</span>';
+}
 function renderTable(){
   const tbody=$("tabelaEstadias");
   const rows=getPageRows();
-
-  $("tableMeta").textContent=`${filtrados.length} registro(s)`;
-
-  if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="14" class="empty">Nenhuma estadia encontrada para os filtros selecionados.</td></tr>';
-    return;
-  }
-
+  if($("tableMeta"))$("tableMeta").textContent=`${filtrados.length} registro(s)`;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="13" class="empty">Nenhuma estadia encontrada para os filtros selecionados.</td></tr>';return;}
   tbody.innerHTML=rows.map(r=>`
-    <tr data-id="${esc(r.id)}" class="${selecionado?.id===r.id?"selected":""}">
-      <td><span class="badge ${statusClass(r.status)}">${esc(r.status||"AGUARDANDO")}</span></td>
-      <td>${esc(r.cliente||"-")}</td>
-      <td>${esc(r.cte||"-")}</td>
-      <td>${esc(r.nf||"-")}</td>
-      <td><b>${esc(r.placa||"-")}</b></td>
-      <td>${esc(r.origem||"-")}</td>
-      <td>${esc(r.destino||"-")}</td>
-      <td>${esc(dateTimeBR(r.dataHoraChegada))}</td>
-      <td>${esc(dateTimeBR(r.dataHoraSaida))}</td>
-      <td>${r.tempoEspera?`${r.tempoEspera.toFixed(2)} h`:"-"}</td>
-      <td class="moneyCell">${r.valorTotal?money(r.valorTotal):"-"}</td>
-      <td><span class="badge ${statusClass(r.situacao||r.status)}">${esc(r.situacao||r.status||"-")}</span></td>
-      <td>${esc(r.responsavel||"-")}</td>
-      <td>
-        <button class="btn ghost btnEdit" data-id="${esc(r.id)}" style="min-height:27px;padding:0 8px">Editar</button>
-      </td>
-    </tr>
-  `).join("");
-
-  tbody.querySelectorAll("tr[data-id]").forEach(tr=>{
-    tr.addEventListener("click",e=>{
-      if(e.target.closest(".btnEdit"))return;
-      selecionado=dados.find(r=>r.id===tr.dataset.id)||null;
-      renderTable();
-      renderDetails();
+    <tr data-id="${esc(r.id)}">
+      <td>${renderStatusCell(r)}</td>
+      <td>${esc(r.cliente||"-")}</td><td>${esc(r.cte||"-")}</td><td>${esc(r.nf||"-")}</td>
+      <td><b>${esc(r.placa||"-")}</b></td><td>${esc(r.origem||"-")}</td><td>${esc(r.destino||"-")}</td>
+      <td>${esc(dateTimeBR(r.dataHoraChegada))}</td><td>${esc(dateTimeBR(r.dataHoraSaida))}</td>
+      <td>${r.horasPagar>0?hoursText(r.horasPagar):"-"}</td>
+      <td class="moneyCell">${r.valorTotal>0?money(r.valorTotal):"-"}</td>
+      <td>${esc(r.responsavel||"-")}</td><td>${renderActionsCell(r)}</td>
+    </tr>`).join("");
+  tbody.querySelectorAll(".statusSelect").forEach(select=>{
+    select.addEventListener("click",e=>e.stopPropagation());
+    select.addEventListener("change",async e=>{
+      e.stopPropagation();const oldStatus=select.dataset.oldStatus||"AGUARDANDO";const newStatus=normalizeStatus(select.value);
+      select.className=`statusSelect ${statusClass(newStatus)}`;
+      const ok=await updateStatus(select.dataset.id,newStatus,oldStatus);
+      if(!ok){select.value=oldStatus;select.className=`statusSelect ${statusClass(oldStatus)}`;}
     });
   });
-
-  tbody.querySelectorAll(".btnEdit").forEach(btn=>{
-    btn.addEventListener("click",e=>{
-      e.stopPropagation();
-      const item=dados.find(r=>r.id===btn.dataset.id);
-      if(item)openModal(item);
-    });
-  });
+  tbody.querySelectorAll(".btnEdit").forEach(btn=>btn.onclick=e=>{e.stopPropagation();const item=dados.find(r=>r.id===btn.dataset.id);if(item)openModal(item)});
+  tbody.querySelectorAll(".btnDelete").forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteItem(btn.dataset.id)});
 }
 
 function renderPagination(){
@@ -360,7 +385,7 @@ function renderPagination(){
   if(paginaAtual>pages)paginaAtual=pages;
 
   const items=[];
-  items.push(`<button class="pageBtn" data-page="${paginaAtual-1}" ${paginaAtual===1?"disabled":""}>â¹</button>`);
+  items.push(`<button class="pageBtn" data-page="${paginaAtual-1}" ${paginaAtual===1?"disabled":""}>‹</button>`);
 
   const start=Math.max(1,paginaAtual-2);
   const end=Math.min(pages,start+4);
@@ -368,7 +393,7 @@ function renderPagination(){
     items.push(`<button class="pageBtn ${p===paginaAtual?"active":""}" data-page="${p}">${p}</button>`);
   }
 
-  items.push(`<button class="pageBtn" data-page="${paginaAtual+1}" ${paginaAtual===pages?"disabled":""}>âº</button>`);
+  items.push(`<button class="pageBtn" data-page="${paginaAtual+1}" ${paginaAtual===pages?"disabled":""}>›</button>`);
   wrap.innerHTML=items.join("");
 
   wrap.querySelectorAll("button:not(:disabled)").forEach(btn=>{
@@ -380,72 +405,11 @@ function renderPagination(){
   });
 }
 
-function renderDetails(){
-  const body=$("detalhesBody");
-  const r=selecionado;
-
-  if(!r){
-    body.innerHTML='<div class="empty">Selecione uma solicitaÃ§Ã£o na tabela.</div>';
-    return;
-  }
-
-  body.innerHTML=`
-    <div class="detailStatusRow">
-      <span class="badge ${statusClass(r.status)}">${esc(r.status)}</span>
-      <span class="detailId">ID: #EST-${esc(String(r.id).padStart(5,"0"))}</span>
-    </div>
-
-    <dl class="detailGrid">
-      <dt>Cliente:</dt><dd>${esc(r.cliente||"-")}</dd>
-      <dt>CTe:</dt><dd>${esc(r.cte||"-")}</dd>
-      <dt>NF:</dt><dd>${esc(r.nf||"-")}</dd>
-      <dt>Data NF:</dt><dd>${esc(dateOnlyBR(r.dataNf))}</dd>
-      <dt>Placa:</dt><dd>${esc(r.placa||"-")}</dd>
-      <dt>Motorista:</dt><dd>${esc(r.motorista||"-")}</dd>
-      <dt>Origem:</dt><dd>${esc(r.origem||"-")}</dd>
-      <dt>Destino:</dt><dd>${esc(r.destino||"-")}</dd>
-      <dt>Produto:</dt><dd>${esc(r.produto||"-")}</dd>
-      <dt>Peso (kg):</dt><dd>${r.pesoDestino?r.pesoDestino.toLocaleString("pt-BR"):"-"}</dd>
-    </dl>
-
-    <hr class="detailDivider">
-
-    <dl class="detailGrid">
-      <dt>Chegada:</dt><dd>${esc(dateTimeBR(r.dataHoraChegada))}</dd>
-      <dt>SaÃ­da:</dt><dd>${esc(dateTimeBR(r.dataHoraSaida))}</dd>
-      <dt>Tempo de espera:</dt><dd>${r.tempoEspera?`${r.tempoEspera.toFixed(2)} h`:"-"}</dd>
-      <dt>Tempo retroativo:</dt><dd>${r.tempoRetroativo?`${r.tempoRetroativo.toFixed(2)} h`:"-"}</dd>
-      <dt>Horas a pagar:</dt><dd>${r.horasPagar?`${r.horasPagar.toFixed(2)} h`:"-"}</dd>
-      <dt>Valor/hora:</dt><dd>${r.valorHora?money(r.valorHora):"-"}</dd>
-      <dt>Valor da estadia:</dt><dd>${r.valorTotal?money(r.valorTotal):"-"}</dd>
-      <dt>ResponsÃ¡vel:</dt><dd>${esc(r.responsavel||"-")}</dd>
-      <dt>Motivo:</dt><dd>${esc(r.motivo||"-")}</dd>
-      <dt>ObservaÃ§Ãµes:</dt><dd>${esc(r.observacoes||"-")}</dd>
-    </dl>
-
-    ${r.anexoUrl?`
-      <div class="attachment">
-        <strong>ð Anexo (1)</strong>
-        <a href="${esc(r.anexoUrl)}" target="_blank" rel="noopener">Abrir documento <span>â©</span></a>
-      </div>`:""}
-
-    <div class="detailsActions">
-      <button class="btn green detailAction" data-status="LIBERADA">Aprovar</button>
-      <button class="btn red detailAction" data-status="NEGADA CLIENTE">Negar</button>
-      <button class="btn ghost detailAction" data-status="SOLICITAR CORREÃÃO">Solicitar correÃ§Ã£o</button>
-    </div>
-  `;
-
-  body.querySelectorAll(".detailAction").forEach(btn=>{
-    btn.onclick=()=>updateStatus(r.id,btn.dataset.status);
-  });
-}
-
 function renderTudo(){
   renderKpis();
   renderTable();
   renderPagination();
-  renderDetails();
+  if(typeof applyEstadiasAccessUI==="function")applyEstadiasAccessUI();
 }
 
 function clearForm(){
@@ -455,11 +419,13 @@ function clearForm(){
   $("tempoRetroativo").value="0";
   $("valorHora").value="0";
   $("responsavel").value=currentUser();
+  updateCalculationPreview();
 }
 
 function openModal(item=null){
+  if(!ensureWrite())return;
   clearForm();
-  $("modalTitulo").textContent=item?"Editar solicitaÃ§Ã£o":"Nova solicitaÃ§Ã£o de estadia";
+  $("modalTitulo").textContent=item?"Editar solicitação":"Nova solicitação de estadia";
 
   if(item){
     $("registroId").value=item.id;
@@ -484,58 +450,51 @@ function openModal(item=null){
     $("anexoUrl").value=item.anexoUrl;
   }
 
+  updateCalculationPreview();
   $("modalEstadia").classList.add("show");
 }
 function closeModal(){$("modalEstadia").classList.remove("show")}
 
-function formPayload(){
-  const chegada=$("dataHoraChegada").value;
-  const saida=$("dataHoraSaida").value;
-  const espera=hoursBetween(chegada,saida);
-  const retro=num($("tempoRetroativo").value);
+function calculateFormValues(){
+  const espera=hoursBetween($("dataHoraChegada")?.value,$("dataHoraSaida")?.value);
+  const retro=Math.max(0,num($("tempoRetroativo")?.value));
   const pagar=Math.max(0,espera-retro);
-  const valorHora=num($("valorHora").value);
-
+  const valorHora=Math.max(0,num($("valorHora")?.value));
+  return {espera,retro,pagar,valorHora,valorTotal:roundMoney(pagar*valorHora)};
+}
+function updateCalculationPreview(){
+  const c=calculateFormValues();
+  if($("calcTempoEspera"))$("calcTempoEspera").textContent=hoursText(c.espera);
+  if($("calcHorasPagar"))$("calcHorasPagar").textContent=hoursText(c.pagar);
+  if($("calcValorTotal"))$("calcValorTotal").textContent=money(c.valorTotal);
+  return c;
+}
+function formPayload(){
+  const c=calculateFormValues();
   return {
-    id:$("registroId").value,
-    cliente:up($("cliente").value),
-    cte:txt($("cte").value),
-    nf:txt($("nf").value),
-    dataNf:$("dataNf").value,
-    placa:up($("placa").value),
-    motorista:up($("motorista").value),
-    origem:up($("origem").value),
-    destino:up($("destino").value),
-    produto:up($("produto").value),
-    pesoDestino:num($("pesoDestino").value),
-    dataHoraChegada:chegada,
-    dataHoraSaida:saida,
-    tempoEspera:espera,
-    tempoRetroativo:retro,
-    horasPagar:pagar,
-    valorHora,
-    valorTotal:pagar*valorHora,
-    motivo:up($("motivo").value),
-    status:up($("status").value),
-    situacao:up($("status").value),
-    responsavel:up($("responsavel").value||currentUser()),
-    observacoes:up($("observacoes").value),
-    anexoUrl:txt($("anexoUrl").value)
+    id:$("registroId").value,cliente:up($("cliente").value),cte:txt($("cte").value),nf:txt($("nf").value),dataNf:$("dataNf").value,
+    placa:up($("placa").value),motorista:up($("motorista").value),origem:up($("origem").value),destino:up($("destino").value),produto:up($("produto").value),
+    pesoDestino:num($("pesoDestino").value),dataHoraChegada:$("dataHoraChegada").value,dataHoraSaida:$("dataHoraSaida").value,
+    tempoEspera:c.espera,tempoRetroativo:c.retro,horasPagar:c.pagar,valorHora:c.valorHora,valorTotal:c.valorTotal,
+    motivo:up($("motivo").value),status:normalizeStatus($("status").value),responsavel:up($("responsavel").value||currentUser()),
+    observacoes:up($("observacoes").value),anexoUrl:txt($("anexoUrl").value),...auditPayload()
   };
 }
 
 async function saveItem(){
+  if(!ensureWrite())return;
   if(!$("formEstadia").reportValidity())return;
 
   const payload=formPayload();
   const isEdit=!!payload.id;
 
-  loading(true,isEdit?"Atualizando solicitaÃ§Ã£o...":"Salvando solicitaÃ§Ã£o...");
+  loading(true,isEdit?"Atualizando solicitação...":"Salvando solicitação...");
 
   try{
     const res=await postApi({
       action:isEdit?ACTIONS.update:ACTIONS.save,
-      data:payload
+      data:payload,
+      auth:auditPayload()
     });
 
     if(!res||res.ok===false)throw new Error(res?.error||"NÃ£o foi possÃ­vel salvar.");
@@ -550,28 +509,33 @@ async function saveItem(){
   }
 }
 
-async function updateStatus(id,status){
-  if(!confirm(`Alterar esta estadia para "${status}"?`))return;
-
-  loading(true,"Atualizando status...");
+async function updateStatus(id,status,oldStatus){
+  if(!ensureWrite())return false;
+  const item=dados.find(r=>r.id===id);
+  if(!item){alert("Registro não encontrado.");return false;}
+  const newStatus=normalizeStatus(status);
+  if(up(newStatus)===up(item.status))return true;
+  if(!confirm(`Alterar o status de "${item.status}" para "${newStatus}"?`))return false;
+  statusEmAtualizacao.add(id);renderTable();
   try{
-    const res=await postApi({
-      action:ACTIONS.status,
-      id,
-      status,
-      responsavel:currentUser()
-    });
-
+    const res=await postApi({action:ACTIONS.status,id,status:newStatus,statusAnterior:oldStatus||item.status,responsavel:item.responsavel||currentUser(),auth:auditPayload(),...auditPayload()});
     if(!res||res.ok===false)throw new Error(res?.error||"Falha ao atualizar status.");
-    await loadData();
-    selecionado=dados.find(r=>r.id===id)||null;
-    renderTudo();
-  }catch(error){
-    console.error(error);
-    alert(`O Apps Script ainda precisa receber a rota ${ACTIONS.status}.\n\n${error.message}`);
-  }finally{
-    loading(false);
-  }
+    item.status=newStatus;item.atualizadoPor=currentUser();item.atualizadoEm=new Date().toISOString();aplicarFiltros();return true;
+  }catch(error){console.error(error);alert(`Não foi possível atualizar o status.
+
+${error.message}`);return false;}
+  finally{statusEmAtualizacao.delete(id);renderTudo();}
+}
+async function deleteItem(id){
+  if(!canDelete()){alert("Somente administradores podem excluir estadias.");return;}
+  const item=dados.find(r=>r.id===id);if(!item)return;
+  if(!confirm(`Excluir definitivamente a estadia da placa ${item.placa||"-"}?`))return;
+  loading(true,"Excluindo solicitação...");
+  try{const res=await postApi({action:ACTIONS.remove,id,auth:auditPayload(),...auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Falha ao excluir.");await loadData();}
+  catch(error){alert(`Não foi possível excluir a estadia.
+
+${error.message}`);}
+  finally{loading(false);}
 }
 
 function clearFilters(){
@@ -590,7 +554,7 @@ function exportCsv(){
 
   const header=[
     "CLIENTE","CTE","NF","DATA NF","PLACA","MOTORISTA","ORIGEM","DESTINO",
-    "PRODUTO","PESO DESTINO (KG)","DATA/HORA CHEGADA","DATA/HORA SAÃDA",
+    "PRODUTO","PESO DESTINO (KG)","DATA/HORA CHEGADA","DATA/HORA SAÍDA",
     "TEMPO ESPERA (HORAS)","TEMPO RETROATIVO (HS)","HORA A PAGAR",
     "VALOR ESTADIA (H)","VALOR ESTADIA (R$)","MOTIVO DA ESTADIA",
     "STATUS DA ESTADIA","RESPONSÃVEL","OBSERVAÃÃES","ANEXO"
@@ -619,12 +583,11 @@ function exportCsv(){
 function bind(){
   renderUser();
 
-  $("btnNovaEstadia").onclick=()=>openModal();
+  if($("btnNovaEstadia"))$("btnNovaEstadia").onclick=()=>{if(ensureWrite())openModal()};
   $("btnAtualizar").onclick=loadData;
   $("btnExportar").onclick=exportCsv;
   $("btnFiltrar").onclick=aplicarFiltros;
   $("btnLimparFiltros").onclick=clearFilters;
-  $("btnFecharDetalhes").onclick=()=>{selecionado=null;renderTudo()};
 
   $("btnFecharModal").onclick=closeModal;
   $("btnCancelarModal").onclick=closeModal;
@@ -644,13 +607,17 @@ function bind(){
   });
 
   $("porPagina").addEventListener("change",()=>{
-    paginaAtual=1;
-    renderTable();
-    renderPagination();
+    paginaAtual=1;renderTable();renderPagination();
+  });
+
+  ["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora"].forEach(id=>{
+    $(id)?.addEventListener("input",updateCalculationPreview);
+    $(id)?.addEventListener("change",updateCalculationPreview);
   });
 }
 
 window.addEventListener("DOMContentLoaded",()=>{
+  if(typeof requireEstadiasAuth==="function"&&requireEstadiasAuth()!==true)return;
   bind();
   loadData();
 });

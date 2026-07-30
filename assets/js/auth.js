@@ -25,7 +25,7 @@ const STATE_FEATURES = {
   ADMINISTRADOR: [
     "piso","piso2","fretes","share","divulgacao","bi",
     "custo-filial","fretes-mercado","administrativo",
-    "patrimonio","cadastros","fretes2","controle"
+    "patrimonio","cadastros","fretes2","controle","estadias"
   ],
 
   // Perfil exclusivo para o Piso 2.

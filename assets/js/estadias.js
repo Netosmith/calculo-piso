@@ -102,7 +102,12 @@ function hoursBetween(start,end){
   return Math.max(0,(b-a)/3600000);
 }
 function roundMoney(v){return Math.round((num(v)+Number.EPSILON)*100)/100}
-function hoursText(v){return `${num(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} h`}
+function hoursText(v){
+  const totalMinutes=Math.round(num(v)*60);
+  const hours=Math.floor(totalMinutes/60);
+  const minutes=totalMinutes%60;
+  return `${hours}:${String(minutes).padStart(2,"0")} h`;
+}
 function normalizeStatus(status){
   const normalized=up(status);
   return STATUS_OPTIONS.find(item=>up(item)===normalized)||"AGUARDANDO";

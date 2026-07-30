@@ -131,7 +131,9 @@ function normalizeRow(r,index){
   const retro=Math.max(0,num(r.tempoRetroativo??r["TEMPO RETROATIVO (HS)"]));
   const pagar=Math.max(0,espera-retro);
   const valorHora=Math.max(0,num(r.valorHora??r["VALOR ESTADIA (H)"]));
-  const valorTotal=roundMoney(pagar*valorHora);
+  const pesoDestino=num(r.pesoDestino??r["PESO DESTINO (kg)"]??r["PESO DESTINO (KG)"]);
+  const pesoToneladas=Math.max(0,pesoDestino/1000);
+  const valorTotal=roundMoney(pagar*valorHora*pesoToneladas);
 
   return {
     id:txt(r.id??r.ID??r.rowId??index+2),
@@ -144,7 +146,7 @@ function normalizeRow(r,index){
     origem:txt(r.origem??r.ORIGEM),
     destino:txt(r.destino??r.DESTINO),
     produto:txt(r.produto??r.PRODUTO),
-    pesoDestino:num(r.pesoDestino??r["PESO DESTINO (kg)"]),
+    pesoDestino,
     dataHoraChegada:chegada,
     dataHoraSaida:saida,
     tempoEspera:espera,
@@ -251,7 +253,7 @@ async function loadData(){
     renderTudo();
     if($("syncStatus"))$("syncStatus").textContent="Apps Script ainda sem as rotas de estadias";
     $("tabelaEstadias").innerHTML=
-      `<tr><td colspan="13" class="empty">O layout estÃ¡ pronto. Agora precisamos adicionar ao Apps Script a aÃ§Ã£o <b>${ACTIONS.list}</b>.</td></tr>`;
+      `<tr><td colspan="13" class="empty">O layout está pronto. Agora precisamos adicionar ao Apps Script a ação <b>${ACTIONS.list}</b>.</td></tr>`;
   }finally{
     loading(false);
   }
@@ -340,7 +342,9 @@ function statusOptionsHtml(current){
   return STATUS_OPTIONS.map(status=>`<option value="${esc(status)}" ${up(status)===up(current)?"selected":""}>${esc(status)}</option>`).join("");
 }
 function renderStatusCell(r){
-  if(!canWrite())return `<span class="badge ${statusClass(r.status)}">${esc(r.status)}</span>`;
+  if(!canWrite()){
+    return `<span class="badge ${statusClass(r.status)}" title="Status atual da solicitação">${esc(r.status)}</span>`;
+  }
   return `<select class="statusSelect ${statusClass(r.status)}" data-id="${esc(r.id)}" data-old-status="${esc(r.status)}" ${statusEmAtualizacao.has(r.id)?"disabled":""}>${statusOptionsHtml(r.status)}</select>`;
 }
 function renderActionsCell(r){
@@ -455,12 +459,27 @@ function openModal(item=null){
 }
 function closeModal(){$("modalEstadia").classList.remove("show")}
 
+// Fórmula oficial:
+// total = horas a pagar × valor por tonelada/hora × peso em toneladas.
+// O campo pesoDestino é informado em kg, por isso é dividido por 1.000.
 function calculateFormValues(){
   const espera=hoursBetween($("dataHoraChegada")?.value,$("dataHoraSaida")?.value);
   const retro=Math.max(0,num($("tempoRetroativo")?.value));
   const pagar=Math.max(0,espera-retro);
   const valorHora=Math.max(0,num($("valorHora")?.value));
-  return {espera,retro,pagar,valorHora,valorTotal:roundMoney(pagar*valorHora)};
+  const pesoDestino=Math.max(0,num($("pesoDestino")?.value));
+  const pesoToneladas=pesoDestino/1000;
+  const valorTotal=roundMoney(pagar*valorHora*pesoToneladas);
+
+  return {
+    espera,
+    retro,
+    pagar,
+    valorHora,
+    pesoDestino,
+    pesoToneladas,
+    valorTotal
+  };
 }
 function updateCalculationPreview(){
   const c=calculateFormValues();
@@ -474,7 +493,7 @@ function formPayload(){
   return {
     id:$("registroId").value,cliente:up($("cliente").value),cte:txt($("cte").value),nf:txt($("nf").value),dataNf:$("dataNf").value,
     placa:up($("placa").value),motorista:up($("motorista").value),origem:up($("origem").value),destino:up($("destino").value),produto:up($("produto").value),
-    pesoDestino:num($("pesoDestino").value),dataHoraChegada:$("dataHoraChegada").value,dataHoraSaida:$("dataHoraSaida").value,
+    pesoDestino:c.pesoDestino,dataHoraChegada:$("dataHoraChegada").value,dataHoraSaida:$("dataHoraSaida").value,
     tempoEspera:c.espera,tempoRetroativo:c.retro,horasPagar:c.pagar,valorHora:c.valorHora,valorTotal:c.valorTotal,
     motivo:up($("motivo").value),status:normalizeStatus($("status").value),responsavel:up($("responsavel").value||currentUser()),
     observacoes:up($("observacoes").value),anexoUrl:txt($("anexoUrl").value),...auditPayload()
@@ -497,7 +516,7 @@ async function saveItem(){
       auth:auditPayload()
     });
 
-    if(!res||res.ok===false)throw new Error(res?.error||"NÃ£o foi possÃ­vel salvar.");
+    if(!res||res.ok===false)throw new Error(res?.error||"Não foi possível salvar.");
 
     closeModal();
     await loadData();
@@ -550,14 +569,14 @@ function clearFilters(){
 }
 
 function exportCsv(){
-  if(!filtrados.length)return alert("NÃ£o hÃ¡ dados para exportar.");
+  if(!filtrados.length)return alert("Não há dados para exportar.");
 
   const header=[
     "CLIENTE","CTE","NF","DATA NF","PLACA","MOTORISTA","ORIGEM","DESTINO",
     "PRODUTO","PESO DESTINO (KG)","DATA/HORA CHEGADA","DATA/HORA SAÍDA",
     "TEMPO ESPERA (HORAS)","TEMPO RETROATIVO (HS)","HORA A PAGAR",
     "VALOR ESTADIA (H)","VALOR ESTADIA (R$)","MOTIVO DA ESTADIA",
-    "STATUS DA ESTADIA","RESPONSÃVEL","OBSERVAÃÃES","ANEXO"
+    "STATUS DA ESTADIA","RESPONSÁVEL","OBSERVAÇÕES","ANEXO"
   ];
 
   const rows=filtrados.map(r=>[
@@ -610,7 +629,7 @@ function bind(){
     paginaAtual=1;renderTable();renderPagination();
   });
 
-  ["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora"].forEach(id=>{
+  ["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora","pesoDestino"].forEach(id=>{
     $(id)?.addEventListener("input",updateCalculationPreview);
     $(id)?.addEventListener("change",updateCalculationPreview);
   });

@@ -4,5 +4,13 @@
   "main": "src/index.js",
   "compatibility_date": "2026-08-01",
   "workers_dev": true,
-  "observability": { "enabled": true }
+  "observability": {
+    "enabled": true
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "84be58f84dc54949af897d6f63c69689"
+    }
+  ]
 }

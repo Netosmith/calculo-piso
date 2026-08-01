@@ -5,4 +5,4 @@ export const ALLOWED_ORIGINS = new Set([
 ]);
 
 export const MAX_BODY_BYTES = 250000;
-export const APP_SCRIPT_TIMEOUT_MS = 25000;
+export const APP_SCRIPT_TIMEOUT_MS = 60000;

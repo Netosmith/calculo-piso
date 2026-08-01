@@ -125,21 +125,12 @@ window.PortalAPI = {
 
     const resource = match[1];
     const operation = match[2];
-    const actionMap = {
-      list:"read",
-      add:"create",
-      update:"update",
-      toggle:"update"
-    };
+    const actionMap = { list:"read", add:"create", update:"update", toggle:"update" };
 
     return {
       module:"cadastros",
       action:actionMap[operation],
-      params:{
-        ...params,
-        resource,
-        operation
-      },
+      params:{ ...params, resource, operation },
       adapt:operation === "list" ? okRows : okData
     };
   }
@@ -181,27 +172,13 @@ window.PortalAPI = {
           adapt(result){
             const raw = result.data;
             const rows = normalizeRows(raw);
-            return {
-              ok:true,
-              data:rows,
-              base:raw?.base || params.base || "fretes",
-              aba:raw?.aba || "",
-              total:raw?.total ?? rows.length
-            };
+            return { ok:true, data:rows, base:raw?.base || params.base || "fretes", aba:raw?.aba || "", total:raw?.total ?? rows.length };
           }
         };
       case "historico_diario_list":
-        return {
-          module:"bi", action:"read",
-          params:{resource:"daily-history",dataInicio:params.dataInicio||"",dataFim:params.dataFim||""},
-          adapt:okRows
-        };
+        return { module:"bi", action:"read", params:{resource:"daily-history",dataInicio:params.dataInicio||"",dataFim:params.dataFim||""}, adapt:okRows };
       case "historico_fretes_list":
-        return {
-          module:"bi", action:"read",
-          params:{resource:"commercial-history",dataInicio:params.dataInicio||"",dataFim:params.dataFim||""},
-          adapt:okRows
-        };
+        return { module:"bi", action:"read", params:{resource:"commercial-history",dataInicio:params.dataInicio||"",dataFim:params.dataFim||""}, adapt:okRows };
       case "controle_embarques_list":
         return {module:"controle",action:"read",params:{resource:"embarques"},adapt:okRows};
       case "controle_veiculos_list":
@@ -218,6 +195,8 @@ window.PortalAPI = {
         return {module:"controle",action:"update",params:{...params,resource:"veiculos"},adapt:okData};
       case "controle_veiculos_delete":
         return {module:"controle",action:"delete",params:{...params,resource:"veiculos"},adapt:okData};
+      case "estadias_list":
+        return {module:"estadias",action:"read",params:{...params,resource:"registros"},adapt:okRows};
       default:
         return null;
     }
@@ -244,10 +223,7 @@ window.PortalAPI = {
         Promise.resolve()
           .then(() => window.PortalAPI.call(route.module, route.action, route.params))
           .then(result => deliverCallback(callbackName, route.adapt(result)))
-          .catch(error => deliverCallback(callbackName, {
-            ok:false,
-            error:error?.message || "Falha na API segura do Portal Frete."
-          }));
+          .catch(error => deliverCallback(callbackName, { ok:false, error:error?.message || "Falha na API segura do Portal Frete." }));
         return node;
       }
     }
@@ -299,10 +275,25 @@ window.PortalAPI = {
     const action = String(payload.action || url.searchParams.get("action") || "").trim();
 
     if(action === "cheques_upload_termo"){
+      return { module:"administrativo", action:"update", params:{...payload,resource:"cheques-upload"}, adapt(result){return {ok:true,data:result.data||{}};} };
+    }
+
+    const estadiasMap = {
+      estadias_save:"create",
+      estadias_update:"update",
+      estadias_delete:"delete",
+      estadias_status:"update"
+    };
+
+    if(estadiasMap[action]){
       return {
-        module:"administrativo",
-        action:"update",
-        params:{...payload,resource:"cheques-upload"},
+        module:"estadias",
+        action:estadiasMap[action],
+        params:{
+          ...payload,
+          resource:action === "estadias_status" ? "status" : "registros",
+          operation:action.replace("estadias_","")
+        },
         adapt(result){return {ok:true,data:result.data||{}};}
       };
     }

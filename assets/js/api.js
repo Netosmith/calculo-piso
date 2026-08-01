@@ -59,5 +59,12 @@ window.PortalAPI = {
       method: "POST",
       body: {}
     });
+  },
+
+  call(module, action, params = {}) {
+    return portalApiRequest("/v1/gateway", {
+      method: "POST",
+      body: { module, action, params }
+    });
   }
 };

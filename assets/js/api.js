@@ -70,59 +70,140 @@ window.PortalAPI = {
 };
 
 // =====================================================
-// COMPATIBILIDADE TEMPORÁRIA DA HOME
+// PONTE SEGURA PARA TELAS LEGADAS
 //
-// A Home antiga ainda monta uma tag <script> JSONP apontando
-// diretamente para o Apps Script. Enquanto o HTML é migrado,
-// interceptamos somente essa chamada e entregamos o mesmo
-// callback usando o gateway autenticado do Worker.
+// Algumas telas antigas ainda criam tags <script> JSONP para
+// chamar o Apps Script. Enquanto os arquivos grandes dessas
+// telas são limpos, interceptamos as ações conhecidas e fazemos
+// a mesma operação pelo Worker autenticado.
 //
-// Nenhuma requisição de métricas da Home sai diretamente para
-// o Apps Script.
+// A chamada ao script.google.com não é enviada ao navegador.
 // =====================================================
-(function installSecureHomeDashboardBridge(){
-  if(window.__portalHomeDashboardBridgeInstalled) return;
-  window.__portalHomeDashboardBridgeInstalled = true;
+(function installSecureLegacyJsonpBridge(){
+  if(window.__portalLegacyJsonpBridgeInstalled) return;
+  window.__portalLegacyJsonpBridgeInstalled = true;
 
   const originalAppendChild = HTMLHeadElement.prototype.appendChild;
+
+  function queryObject(url){
+    const output = {};
+    url.searchParams.forEach((value, key) => {
+      if(key !== "callback" && key !== "_" && key !== "action"){
+        output[key] = value;
+      }
+    });
+    return output;
+  }
+
+  function normalizeFretesListData(data){
+    if(Array.isArray(data)) return data;
+    if(Array.isArray(data?.data)) return data.data;
+    return [];
+  }
+
+  function resolveLegacyRoute(action, params){
+    switch(action){
+      case "home_dashboard":
+        return {
+          module: "home",
+          action: "read",
+          params: {},
+          adapt(result){
+            return { ok:true, data:result.data || {} };
+          }
+        };
+
+      case "cadastros_fretes_list":
+        return {
+          module: "fretes",
+          action: "read",
+          params: { resource:"directory" },
+          adapt(result){
+            return { ok:true, data:result.data || {} };
+          }
+        };
+
+      case "fretes_list":
+        return {
+          module: "fretes",
+          action: "read",
+          params: {},
+          adapt(result){
+            return { ok:true, data:normalizeFretesListData(result.data) };
+          }
+        };
+
+      case "fretes_add":
+        return {
+          module: "fretes",
+          action: "create",
+          params,
+          adapt(result){
+            return { ok:true, data:result.data || {} };
+          }
+        };
+
+      case "fretes_update":
+        return {
+          module: "fretes",
+          action: "update",
+          params,
+          adapt(result){
+            return { ok:true, data:result.data || {} };
+          }
+        };
+
+      case "fretes_delete":
+        return {
+          module: "fretes",
+          action: "delete",
+          params,
+          adapt(result){
+            return { ok:true, data:result.data || {} };
+          }
+        };
+
+      default:
+        return null;
+    }
+  }
+
+  function deliverCallback(callbackName, payload){
+    if(callbackName && typeof window[callbackName] === "function"){
+      window[callbackName](payload);
+    }
+  }
 
   HTMLHeadElement.prototype.appendChild = function(node){
     const isScript = node && String(node.tagName || "").toUpperCase() === "SCRIPT";
     const src = isScript ? String(node.src || "") : "";
 
-    if(
-      isScript &&
-      src.includes("script.google.com/macros/") &&
-      src.includes("action=home_dashboard")
-    ){
-      let callbackName = "";
-
+    if(isScript && src.includes("script.google.com/macros/")){
+      let parsed;
       try{
-        callbackName = new URL(src).searchParams.get("callback") || "";
+        parsed = new URL(src);
       }catch(error){
-        callbackName = "";
+        return originalAppendChild.call(this, node);
       }
 
-      Promise.resolve()
-        .then(() => window.PortalAPI.call("home", "read", {}))
-        .then(result => {
-          if(callbackName && typeof window[callbackName] === "function"){
-            window[callbackName]({
-              ok: true,
-              data: result.data || {}
-            });
-          }
-        })
-        .catch(error => {
-          if(callbackName && typeof window[callbackName] === "function"){
-            window[callbackName]({
-              ok: false,
-              error: error?.message || "Falha ao consultar os indicadores da Home."
-            });
-          }
-        });
+      const action = String(parsed.searchParams.get("action") || "").trim();
+      const callbackName = String(parsed.searchParams.get("callback") || "").trim();
+      const params = queryObject(parsed);
+      const route = resolveLegacyRoute(action, params);
 
-      return node;
+      if(route){
+        Promise.resolve()
+          .then(() => window.PortalAPI.call(route.module, route.action, route.params))
+          .then(result => deliverCallback(callbackName, route.adapt(result)))
+          .catch(error => {
+            deliverCallback(callbackName, {
+              ok:false,
+              error:error?.message || "Falha na API segura do Portal Frete."
+            });
+          });
+
+        return node;
+      }
     }
 
     return originalAppendChild.call(this, node);

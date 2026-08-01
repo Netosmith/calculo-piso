@@ -71,13 +71,6 @@ window.PortalAPI = {
 
 // =====================================================
 // PONTE SEGURA PARA TELAS LEGADAS
-//
-// Algumas telas antigas ainda criam tags <script> JSONP para
-// chamar o Apps Script. Enquanto os arquivos grandes dessas
-// telas são limpos, interceptamos as ações conhecidas e fazemos
-// a mesma operação pelo Worker autenticado.
-//
-// A chamada ao script.google.com não é enviada ao navegador.
 // =====================================================
 (function installSecureLegacyJsonpBridge(){
   if(window.__portalLegacyJsonpBridgeInstalled) return;
@@ -108,9 +101,7 @@ window.PortalAPI = {
           module: "home",
           action: "read",
           params: {},
-          adapt(result){
-            return { ok:true, data:result.data || {} };
-          }
+          adapt(result){ return { ok:true, data:result.data || {} }; }
         };
 
       case "cadastros_fretes_list":
@@ -118,9 +109,7 @@ window.PortalAPI = {
           module: "fretes",
           action: "read",
           params: { resource:"directory" },
-          adapt(result){
-            return { ok:true, data:result.data || {} };
-          }
+          adapt(result){ return { ok:true, data:result.data || {} }; }
         };
 
       case "fretes_list":
@@ -128,9 +117,7 @@ window.PortalAPI = {
           module: "fretes",
           action: "read",
           params: {},
-          adapt(result){
-            return { ok:true, data:normalizeFretesListData(result.data) };
-          }
+          adapt(result){ return { ok:true, data:normalizeFretesListData(result.data) }; }
         };
 
       case "fretes_add":
@@ -138,9 +125,7 @@ window.PortalAPI = {
           module: "fretes",
           action: "create",
           params,
-          adapt(result){
-            return { ok:true, data:result.data || {} };
-          }
+          adapt(result){ return { ok:true, data:result.data || {} }; }
         };
 
       case "fretes_update":
@@ -148,9 +133,7 @@ window.PortalAPI = {
           module: "fretes",
           action: "update",
           params,
-          adapt(result){
-            return { ok:true, data:result.data || {} };
-          }
+          adapt(result){ return { ok:true, data:result.data || {} }; }
         };
 
       case "fretes_delete":
@@ -158,9 +141,40 @@ window.PortalAPI = {
           module: "fretes",
           action: "delete",
           params,
-          adapt(result){
-            return { ok:true, data:result.data || {} };
-          }
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      // Fretes MT
+      case "fretes2_list":
+        return {
+          module: "fretes2",
+          action: "read",
+          params: {},
+          adapt(result){ return { ok:true, data:normalizeFretesListData(result.data) }; }
+        };
+
+      case "fretes2_add":
+        return {
+          module: "fretes2",
+          action: "create",
+          params,
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      case "fretes2_update":
+        return {
+          module: "fretes2",
+          action: "update",
+          params,
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      case "fretes2_delete":
+        return {
+          module: "fretes2",
+          action: "delete",
+          params,
+          adapt(result){ return { ok:true, data:result.data || {} }; }
         };
 
       default:

@@ -1,5 +1,6 @@
 import { healthController } from "./controllers/health.js";
 import { gatewayTestController } from "./controllers/gateway.js";
+import { portalGatewayController } from "./controllers/portal-gateway.js";
 import {
   loginController,
   logoutController,
@@ -40,6 +41,11 @@ export async function routeRequest(request, env) {
   if (path === "/v1/logout") {
     if (request.method !== "POST") return methodNotAllowed(["POST"]);
     return logoutController(request, env);
+  }
+
+  if (path === "/v1/gateway") {
+    if (request.method !== "POST") return methodNotAllowed(["POST"]);
+    return portalGatewayController(request, env);
   }
 
   return notFound();

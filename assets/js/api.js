@@ -119,7 +119,35 @@ window.PortalAPI = {
     };
   }
 
+  function cadastroRoute(action, params){
+    const match = String(action || "").match(/^(usuarios|regionais|filiais|clientes|contatos|funcionarios)_(list|add|update|toggle)$/);
+    if(!match) return null;
+
+    const resource = match[1];
+    const operation = match[2];
+    const actionMap = {
+      list:"read",
+      add:"create",
+      update:"update",
+      toggle:"update"
+    };
+
+    return {
+      module:"cadastros",
+      action:actionMap[operation],
+      params:{
+        ...params,
+        resource,
+        operation
+      },
+      adapt:operation === "list" ? okRows : okData
+    };
+  }
+
   function resolveLegacyRoute(action, params){
+    const cadastro = cadastroRoute(action, params);
+    if(cadastro) return cadastro;
+
     const admin = adminRoute(action, params);
     if(admin) return admin;
 

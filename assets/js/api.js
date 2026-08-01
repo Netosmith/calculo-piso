@@ -98,143 +98,174 @@ window.PortalAPI = {
     if(Array.isArray(data)) return data;
     if(Array.isArray(data?.data)) return data.data;
     if(Array.isArray(data?.rows)) return data.rows;
+    if(Array.isArray(data?.items)) return data.items;
+    if(Array.isArray(data?.embarques)) return data.embarques;
+    if(Array.isArray(data?.veiculos)) return data.veiculos;
     if(Array.isArray(data?.historico)) return data.historico;
     if(Array.isArray(data?.registros)) return data.registros;
     return [];
   }
 
+  function okData(result){
+    return { ok:true, data:result.data || {} };
+  }
+
+  function okRows(result){
+    return { ok:true, data:normalizeRowsData(result.data) };
+  }
+
   function resolveLegacyRoute(action, params){
     switch(action){
       case "home_dashboard":
-        return {
-          module: "home",
-          action: "read",
-          params: {},
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"home", action:"read", params:{}, adapt:okData };
 
       case "cadastros_fretes_list":
         return {
-          module: "fretes",
-          action: "read",
-          params: { resource:"directory" },
-          adapt(result){ return { ok:true, data:result.data || {} }; }
+          module:"fretes",
+          action:"read",
+          params:{ resource:"directory" },
+          adapt:okData
         };
 
       case "fretes_list":
         return {
-          module: "fretes",
-          action: "read",
-          params: {},
+          module:"fretes",
+          action:"read",
+          params:{},
           adapt(result){ return { ok:true, data:normalizeFretesListData(result.data) }; }
         };
 
       case "fretes_add":
-        return {
-          module: "fretes",
-          action: "create",
-          params,
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"fretes", action:"create", params, adapt:okData };
 
       case "fretes_update":
-        return {
-          module: "fretes",
-          action: "update",
-          params,
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"fretes", action:"update", params, adapt:okData };
 
       case "fretes_delete":
-        return {
-          module: "fretes",
-          action: "delete",
-          params,
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"fretes", action:"delete", params, adapt:okData };
 
-      // Fretes MT
       case "fretes2_list":
         return {
-          module: "fretes2",
-          action: "read",
-          params: {},
+          module:"fretes2",
+          action:"read",
+          params:{},
           adapt(result){ return { ok:true, data:normalizeFretesListData(result.data) }; }
         };
 
       case "fretes2_add":
-        return {
-          module: "fretes2",
-          action: "create",
-          params,
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"fretes2", action:"create", params, adapt:okData };
 
       case "fretes2_update":
-        return {
-          module: "fretes2",
-          action: "update",
-          params,
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"fretes2", action:"update", params, adapt:okData };
 
       case "fretes2_delete":
-        return {
-          module: "fretes2",
-          action: "delete",
-          params,
-          adapt(result){ return { ok:true, data:result.data || {} }; }
-        };
+        return { module:"fretes2", action:"delete", params, adapt:okData };
 
-      // Share Clientes: alterna entre a base GO (fretes) e MT (fretes2)
       case "list":
       case "share_clientes_list":
         return {
-          module: "share",
-          action: "read",
-          params: {
-            base: String(params.base || "fretes").trim().toLowerCase()
-          },
+          module:"share",
+          action:"read",
+          params:{ base:String(params.base || "fretes").trim().toLowerCase() },
           adapt(result){
             const raw = result.data;
             return {
-              ok: true,
-              data: normalizeFretesListData(raw),
-              base: raw?.base || params.base || "fretes",
-              aba: raw?.aba || "",
-              total: raw?.total ?? normalizeFretesListData(raw).length
+              ok:true,
+              data:normalizeFretesListData(raw),
+              base:raw?.base || params.base || "fretes",
+              aba:raw?.aba || "",
+              total:raw?.total ?? normalizeFretesListData(raw).length
             };
           }
         };
 
-      // BI Operacional: histórico diário consolidado
       case "historico_diario_list":
         return {
-          module: "bi",
-          action: "read",
-          params: {
-            resource: "daily-history",
-            dataInicio: params.dataInicio || "",
-            dataFim: params.dataFim || ""
+          module:"bi",
+          action:"read",
+          params:{
+            resource:"daily-history",
+            dataInicio:params.dataInicio || "",
+            dataFim:params.dataFim || ""
           },
-          adapt(result){
-            return { ok:true, data:normalizeRowsData(result.data) };
-          }
+          adapt:okRows
         };
 
-      // BI Operacional: histórico comercial de alterações dos fretes
       case "historico_fretes_list":
         return {
-          module: "bi",
-          action: "read",
-          params: {
-            resource: "commercial-history",
-            dataInicio: params.dataInicio || "",
-            dataFim: params.dataFim || ""
+          module:"bi",
+          action:"read",
+          params:{
+            resource:"commercial-history",
+            dataInicio:params.dataInicio || "",
+            dataFim:params.dataFim || ""
           },
-          adapt(result){
-            return { ok:true, data:normalizeRowsData(result.data) };
-          }
+          adapt:okRows
+        };
+
+      // Controle de Embarque
+      case "controle_embarques_list":
+        return {
+          module:"controle",
+          action:"read",
+          params:{ resource:"embarques" },
+          adapt:okRows
+        };
+
+      case "controle_veiculos_list":
+        return {
+          module:"controle",
+          action:"read",
+          params:{ resource:"veiculos" },
+          adapt:okRows
+        };
+
+      case "controle_embarques_add":
+        return {
+          module:"controle",
+          action:"create",
+          params:{ ...params, resource:"embarques" },
+          adapt:okData
+        };
+
+      case "controle_embarques_update":
+        return {
+          module:"controle",
+          action:"update",
+          params:{ ...params, resource:"embarques" },
+          adapt:okData
+        };
+
+      case "controle_embarques_delete":
+        return {
+          module:"controle",
+          action:"delete",
+          params:{ ...params, resource:"embarques" },
+          adapt:okData
+        };
+
+      case "controle_veiculos_add":
+        return {
+          module:"controle",
+          action:"create",
+          params:{ ...params, resource:"veiculos" },
+          adapt:okData
+        };
+
+      case "controle_veiculos_update":
+        return {
+          module:"controle",
+          action:"update",
+          params:{ ...params, resource:"veiculos" },
+          adapt:okData
+        };
+
+      case "controle_veiculos_delete":
+        return {
+          module:"controle",
+          action:"delete",
+          params:{ ...params, resource:"veiculos" },
+          adapt:okData
         };
 
       default:

@@ -177,6 +177,27 @@ window.PortalAPI = {
           adapt(result){ return { ok:true, data:result.data || {} }; }
         };
 
+      // Share Clientes: alterna entre a base GO (fretes) e MT (fretes2)
+      case "list":
+      case "share_clientes_list":
+        return {
+          module: "share",
+          action: "read",
+          params: {
+            base: String(params.base || "fretes").trim().toLowerCase()
+          },
+          adapt(result){
+            const raw = result.data;
+            return {
+              ok: true,
+              data: normalizeFretesListData(raw),
+              base: raw?.base || params.base || "fretes",
+              aba: raw?.aba || "",
+              total: raw?.total ?? normalizeFretesListData(raw).length
+            };
+          }
+        };
+
       default:
         return null;
     }

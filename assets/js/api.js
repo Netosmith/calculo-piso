@@ -94,6 +94,15 @@ window.PortalAPI = {
     return [];
   }
 
+  function normalizeRowsData(data){
+    if(Array.isArray(data)) return data;
+    if(Array.isArray(data?.data)) return data.data;
+    if(Array.isArray(data?.rows)) return data.rows;
+    if(Array.isArray(data?.historico)) return data.historico;
+    if(Array.isArray(data?.registros)) return data.registros;
+    return [];
+  }
+
   function resolveLegacyRoute(action, params){
     switch(action){
       case "home_dashboard":
@@ -195,6 +204,36 @@ window.PortalAPI = {
               aba: raw?.aba || "",
               total: raw?.total ?? normalizeFretesListData(raw).length
             };
+          }
+        };
+
+      // BI Operacional: histórico diário consolidado
+      case "historico_diario_list":
+        return {
+          module: "bi",
+          action: "read",
+          params: {
+            resource: "daily-history",
+            dataInicio: params.dataInicio || "",
+            dataFim: params.dataFim || ""
+          },
+          adapt(result){
+            return { ok:true, data:normalizeRowsData(result.data) };
+          }
+        };
+
+      // BI Operacional: histórico comercial de alterações dos fretes
+      case "historico_fretes_list":
+        return {
+          module: "bi",
+          action: "read",
+          params: {
+            resource: "commercial-history",
+            dataInicio: params.dataInicio || "",
+            dataFim: params.dataFim || ""
+          },
+          adapt(result){
+            return { ok:true, data:normalizeRowsData(result.data) };
           }
         };
 

@@ -1,66 +1,62 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
+// =====================================================
+// PATRIMÔNIO | PORTAL FRETE
+// Cadastro e upload via Cloudflare Worker + Gateway seguro
+// =====================================================
 
 async function salvarPatrimonio(){
-
   const filesInput = document.getElementById("ptFiles");
-  const files = filesInput.files;
+  const files = filesInput?.files || [];
 
   if(files.length > 2){
-    alert("Máximo 2 arquivos!");
+    alert("Máximo de 2 arquivos.");
     return;
   }
 
   const payload = {
-    action: "patrimonio_add",
-    filial: document.getElementById("ptFilial").value,
-    estado: document.getElementById("ptEstado").value,
-    equipamento: document.getElementById("ptEquipamento").value,
-    numero: document.getElementById("ptNumero").value,
-    responsavel: document.getElementById("ptResponsavel").value,
-    status: document.getElementById("ptStatus").value,
-    obs: document.getElementById("ptObs").value,
+    filial: document.getElementById("ptFilial")?.value || "",
+    estado: document.getElementById("ptEstado")?.value || "",
+    equipamento: document.getElementById("ptEquipamento")?.value || "",
+    numero: document.getElementById("ptNumero")?.value || "",
+    responsavel: document.getElementById("ptResponsavel")?.value || "",
+    status: document.getElementById("ptStatus")?.value || "",
+    obs: document.getElementById("ptObs")?.value || "",
     arquivos: []
   };
 
-  // Converter arquivos para base64
-  for(let file of files){
+  for(const file of files){
     const base64 = await toBase64(file);
 
     payload.arquivos.push({
       nome: file.name,
       tipo: file.type,
-      base64: base64.split(",")[1]
+      base64: String(base64).split(",")[1] || ""
     });
   }
 
   try{
+    const api = typeof ensurePortalApi === "function"
+      ? await ensurePortalApi()
+      : window.PortalAPI;
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if(data.ok){
-      alert("Patrimônio salvo com sucesso!");
-      location.reload();
-    }else{
-      alert("Erro ao salvar");
+    if(!api){
+      throw new Error("API segura do Portal indisponível.");
     }
 
-  }catch(e){
-    console.error(e);
-    alert("Erro na comunicação");
+    await api.call("patrimonio", "create", payload);
+
+    alert("Patrimônio salvo com sucesso!");
+    location.reload();
+  }catch(error){
+    console.error("[PATRIMÔNIO]", error);
+    alert(error?.message || "Erro ao salvar o patrimônio.");
   }
 }
 
-// converter arquivo
 function toBase64(file){
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
+    reader.onerror = reject;
   });
 }

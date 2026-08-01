@@ -68,3 +68,63 @@ window.PortalAPI = {
     });
   }
 };
+
+// =====================================================
+// COMPATIBILIDADE TEMPORÁRIA DA HOME
+//
+// A Home antiga ainda monta uma tag <script> JSONP apontando
+// diretamente para o Apps Script. Enquanto o HTML é migrado,
+// interceptamos somente essa chamada e entregamos o mesmo
+// callback usando o gateway autenticado do Worker.
+//
+// Nenhuma requisição de métricas da Home sai diretamente para
+// o Apps Script.
+// =====================================================
+(function installSecureHomeDashboardBridge(){
+  if(window.__portalHomeDashboardBridgeInstalled) return;
+  window.__portalHomeDashboardBridgeInstalled = true;
+
+  const originalAppendChild = HTMLHeadElement.prototype.appendChild;
+
+  HTMLHeadElement.prototype.appendChild = function(node){
+    const isScript = node && String(node.tagName || "").toUpperCase() === "SCRIPT";
+    const src = isScript ? String(node.src || "") : "";
+
+    if(
+      isScript &&
+      src.includes("script.google.com/macros/") &&
+      src.includes("action=home_dashboard")
+    ){
+      let callbackName = "";
+
+      try{
+        callbackName = new URL(src).searchParams.get("callback") || "";
+      }catch(error){
+        callbackName = "";
+      }
+
+      Promise.resolve()
+        .then(() => window.PortalAPI.call("home", "read", {}))
+        .then(result => {
+          if(callbackName && typeof window[callbackName] === "function"){
+            window[callbackName]({
+              ok: true,
+              data: result.data || {}
+            });
+          }
+        })
+        .catch(error => {
+          if(callbackName && typeof window[callbackName] === "function"){
+            window[callbackName]({
+              ok: false,
+              error: error?.message || "Falha ao consultar os indicadores da Home."
+            });
+          }
+        });
+
+      return node;
+    }
+
+    return originalAppendChild.call(this, node);
+  };
+})();

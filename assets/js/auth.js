@@ -156,7 +156,6 @@ function clearAuthCache(){
   ].forEach(key => localStorage.removeItem(key));
 }
 
-// Compatibilidade com telas antigas.
 function logoutAll(){
   clearAuthCache();
 }
@@ -288,8 +287,6 @@ async function logoutPortal(){
   }
 }
 
-// Valida silenciosamente o cache local contra a sessão real.
-// As permissões no frontend continuam sendo apenas visuais.
 async function verifyPortalSession(options = {}){
   try{
     const session = await refreshPortalSession();
@@ -387,7 +384,6 @@ function requireHomeAuth(){
     return false;
   }
 
-  // Confirma a sessão real em segundo plano.
   verifyPortalSession({ requireState:true });
   return true;
 }
@@ -453,10 +449,31 @@ function bindLogoutButton(){
   };
 }
 
-// Expõe um evento para páginas novas aguardarem a sessão real.
 window.portalAuthReady = refreshPortalSession()
   .then(session => {
     window.dispatchEvent(new CustomEvent("portal:session", { detail:session }));
     return session;
   })
   .catch(() => null);
+
+// Carrega a implementação da tela Patrimônio BR sem depender de chamada pública.
+(function loadPatrimonioBrModule(){
+  const path = String(window.location.pathname || "").toLowerCase();
+  if(!path.endsWith("/patrimonio-br.html")) return;
+
+  ensurePortalApi()
+    .then(() => new Promise((resolve, reject) => {
+      if(document.querySelector('script[data-patrimonio-br]')) return resolve();
+      const script = document.createElement("script");
+      script.src = "../assets/js/patrimonio-br.js?v=1";
+      script.dataset.patrimonioBr = "1";
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("Falha ao carregar o módulo Patrimônio BR."));
+      document.head.appendChild(script);
+    }))
+    .catch(error => {
+      console.error("[AUTH] Patrimônio BR:", error);
+      const status = document.getElementById("syncStatus");
+      if(status) status.textContent = "❌ Módulo indisponível";
+    });
+})();

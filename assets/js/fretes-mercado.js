@@ -1,5 +1,6 @@
 // ==========================================
 // FRETES MERCADO - NOVA FROTA
+// Gateway seguro via Cloudflare Worker
 // ==========================================
 
 const REGIOES = {
@@ -12,14 +13,7 @@ const REGIOES = {
   "SAO SIMAO": ["RIO VERDE","INDIARA","PARAUNA","JATAI","CHAP CEU","CAIAPONIA","MONTIVIDIU","ITUMBIARA","PIRACANJUBA","CATALÃO","CRISTALINA","FORMOSA","BOM JESUS","MINEIROS","ANAPOLIS","VIANOPOLIS","PADRE BERNARDO","URUACU","NOVA CRIXAS"]
 };
 
-const API = "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
-
-// guarda os ids/linhas alteradas
 const DIRTY_KEYS = new Set();
-
-// ==========================================
-// HELPERS
-// ==========================================
 
 function $(id) {
   return document.getElementById(id);
@@ -30,7 +24,7 @@ function esc(str) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+    .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
 
@@ -95,21 +89,26 @@ function makeKey(regiao, base) {
   return `${regiao}__${base}`;
 }
 
-// ==========================================
-// LOAD
-// ==========================================
+async function mercadoApi(action, params = {}) {
+  const api = await ensurePortalApi();
+  const result = await api.call("fretes-mercado", action, params);
+  return result?.data ?? result;
+}
+
+function extractRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+}
 
 async function load() {
   try {
     setStatus("🔄 Carregando...");
-    const res = await fetch(API + "?action=fretes_mercado_list");
-    const json = await res.json();
+    const payload = await mercadoApi("read", {});
+    const dados = extractRows(payload);
 
-    if (!json.ok) {
-      throw new Error(json.error || "Erro ao carregar.");
-    }
-
-    const dados = json.data || [];
     DIRTY_KEYS.clear();
     render(dados);
     setStatus("✅ Dados sincronizados.");
@@ -118,10 +117,6 @@ async function load() {
     setStatus("❌ " + err.message, true);
   }
 }
-
-// ==========================================
-// RENDER
-// ==========================================
 
 function render(dados) {
   const container = $("tabela");
@@ -165,10 +160,6 @@ function render(dados) {
   bindCurrencyInputs();
 }
 
-// ==========================================
-// INPUT DE MOEDA + DIRTY
-// ==========================================
-
 function bindCurrencyInputs() {
   const inputs = document.querySelectorAll(".freteInput");
 
@@ -202,10 +193,6 @@ function bindCurrencyInputs() {
   });
 }
 
-// ==========================================
-// COLETAR DADOS
-// ==========================================
-
 function coletarDadosAlterados() {
   const linhas = document.querySelectorAll('.linha-frete[data-dirty="1"]');
 
@@ -219,15 +206,10 @@ function coletarDadosAlterados() {
       id,
       regiao,
       base,
-      frete: toNumber(freteEl ? freteEl.value : 0),
-      linha
+      frete: toNumber(freteEl ? freteEl.value : 0)
     };
   });
 }
-
-// ==========================================
-// SALVAR
-// ==========================================
 
 async function salvarTudo() {
   setButtonLoading("btnSalvarMercado", "Salvando...");
@@ -241,24 +223,13 @@ async function salvarTudo() {
     }
 
     for (const item of itens) {
-      const res = await fetch(API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify({
-          action: "fretes_mercado_save",
-          id: item.id || "",
-          regiao: item.regiao,
-          base: item.base,
-          frete: item.frete
-        })
+      await mercadoApi("update", {
+        resource: "frete",
+        id: item.id || "",
+        regiao: item.regiao,
+        base: item.base,
+        frete: item.frete
       });
-
-      const json = await res.json();
-      if (!json.ok) {
-        throw new Error(json.error || `Erro ao salvar ${item.regiao} / ${item.base}`);
-      }
     }
 
     setStatus(`✅ ${itens.length} alteração(ões) salva(s) com sucesso.`);
@@ -271,10 +242,6 @@ async function salvarTudo() {
   }
 }
 
-// ==========================================
-// ZERAR
-// ==========================================
-
 async function zerarTudo() {
   const ok = confirm("Deseja zerar todos os fretes da tela?");
   if (!ok) return;
@@ -282,25 +249,7 @@ async function zerarTudo() {
   setButtonLoading("btnZerarMercado", "Zerando...");
 
   try {
-    const inputs = document.querySelectorAll(".freteInput");
-    inputs.forEach((input) => {
-      input.value = "";
-    });
-
-    const linhas = document.querySelectorAll(".linha-frete");
-    linhas.forEach((linha) => {
-      linha.dataset.dirty = "1";
-      const key = makeKey(linha.dataset.regiao || "", linha.dataset.base || "");
-      DIRTY_KEYS.add(key);
-    });
-
-    const res = await fetch(API + "?action=fretes_mercado_clear");
-    const json = await res.json();
-
-    if (!json.ok) {
-      throw new Error(json.error || "Erro ao zerar.");
-    }
-
+    await mercadoApi("delete", { resource: "all" });
     setStatus("✅ Fretes zerados.");
     await load();
   } catch (err) {
@@ -311,34 +260,18 @@ async function zerarTudo() {
   }
 }
 
-// ==========================================
-// PRINT
-// ==========================================
-
 function imprimirTela() {
   window.print();
 }
-
-// ==========================================
-// NAVEGAÇÃO
-// ==========================================
 
 function irHome() {
   window.location.href = "./home.html";
 }
 
-function sairSistema() {
-  const logoutEl = document.querySelector("[data-logout]");
-  if (logoutEl) {
-    logoutEl.click();
-    return;
-  }
-  window.location.href = "./index.html";
+async function sairSistema() {
+  await logoutPortal();
+  window.location.href = "./login.html";
 }
-
-// ==========================================
-// EVENTOS
-// ==========================================
 
 function bindEvents() {
   $("btnSalvarMercado")?.addEventListener("click", salvarTudo);
@@ -347,10 +280,6 @@ function bindEvents() {
   $("btnHomeMercado")?.addEventListener("click", irHome);
   $("btnSairMercado")?.addEventListener("click", sairSistema);
 }
-
-// ==========================================
-// INIT
-// ==========================================
 
 document.addEventListener("DOMContentLoaded", async () => {
   bindEvents();

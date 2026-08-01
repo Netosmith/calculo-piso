@@ -70,7 +70,7 @@ window.PortalAPI = {
 };
 
 // =====================================================
-// PONTE SEGURA PARA TELAS LEGADAS
+// PONTE SEGURA PARA TELAS LEGADAS JSONP
 // =====================================================
 (function installSecureLegacyJsonpBridge(){
   if(window.__portalLegacyJsonpBridgeInstalled) return;
@@ -203,7 +203,6 @@ window.PortalAPI = {
           adapt:okRows
         };
 
-      // Controle de Embarque
       case "controle_embarques_list":
         return {
           module:"controle",
@@ -312,5 +311,144 @@ window.PortalAPI = {
     }
 
     return originalAppendChild.call(this, node);
+  };
+})();
+
+// =====================================================
+// PONTE SEGURA PARA FETCH LEGADO
+// Usada pelo módulo Custo por Filial, que ainda chama o
+// Apps Script com fetch GET/POST em vez de JSONP.
+// =====================================================
+(function installSecureLegacyFetchBridge(){
+  if(window.__portalLegacyFetchBridgeInstalled) return;
+  window.__portalLegacyFetchBridgeInstalled = true;
+
+  const originalFetch = window.fetch.bind(window);
+
+  function jsonResponse(payload){
+    return Promise.resolve(new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { "Content-Type": "application/json;charset=utf-8" }
+    }));
+  }
+
+  function normalizeList(data){
+    if(Array.isArray(data)) return data;
+    if(Array.isArray(data?.data)) return data.data;
+    return [];
+  }
+
+  async function parseLegacyRequest(input, init){
+    const rawUrl = typeof input === "string" ? input : String(input?.url || "");
+    if(!rawUrl.includes("script.google.com/macros/")) return null;
+
+    let url;
+    try{
+      url = new URL(rawUrl);
+    }catch(error){
+      return null;
+    }
+
+    const method = String(init?.method || input?.method || "GET").toUpperCase();
+    let payload = {};
+
+    if(method === "POST"){
+      try{
+        payload = JSON.parse(String(init?.body || "{}"));
+      }catch(error){
+        payload = {};
+      }
+    }else{
+      url.searchParams.forEach((value, key) => {
+        if(key !== "_") payload[key] = value;
+      });
+    }
+
+    const action = String(payload.action || url.searchParams.get("action") || "").trim();
+
+    switch(action){
+      case "getAll":
+        return {
+          module:"custo-filial",
+          action:"read",
+          params:{ resource:"all" },
+          adapt(result){
+            const data = result.data || {};
+            return {
+              ok:true,
+              metas:Array.isArray(data.metas) ? data.metas : [],
+              lancamentos:Array.isArray(data.lancamentos) ? data.lancamentos : []
+            };
+          }
+        };
+
+      case "fretes_list":
+        return {
+          module:"fretes",
+          action:"read",
+          params:{},
+          adapt(result){ return { ok:true, data:normalizeList(result.data) }; }
+        };
+
+      case "importar_metas_base":
+        return {
+          module:"custo-filial",
+          action:"export",
+          params:{ resource:"importar-metas" },
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      case "add_meta":
+        return {
+          module:"custo-filial",
+          action:"create",
+          params:{ ...payload, resource:"metas" },
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      case "update_meta":
+        return {
+          module:"custo-filial",
+          action:"update",
+          params:{ ...payload, resource:"metas" },
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      case "add_lancamento":
+        return {
+          module:"custo-filial",
+          action:"create",
+          params:{ ...payload, resource:"lancamentos" },
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      case "update_lancamento":
+        return {
+          module:"custo-filial",
+          action:"update",
+          params:{ ...payload, resource:"lancamentos" },
+          adapt(result){ return { ok:true, data:result.data || {} }; }
+        };
+
+      default:
+        return null;
+    }
+  }
+
+  window.fetch = async function(input, init){
+    const route = await parseLegacyRequest(input, init);
+    if(!route){
+      return originalFetch(input, init);
+    }
+
+    try{
+      const result = await window.PortalAPI.call(route.module, route.action, route.params);
+      return jsonResponse(route.adapt(result));
+    }catch(error){
+      return jsonResponse({
+        ok:false,
+        error:error?.message || "Falha na API segura do Portal Frete."
+      });
+    }
   };
 })();

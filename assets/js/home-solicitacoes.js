@@ -1,3 +1,60 @@
+// =====================================================
+// PONTE SEGURA DA HOME
+// Instalada de forma síncrona antes do script inline da página.
+// Bloqueia o JSONP antigo de home_dashboard e entrega o mesmo
+// callback usando o Worker autenticado.
+// =====================================================
+(function installSecureHomeDashboardBridge(){
+  if(window.__portalHomeDashboardBridgeInstalled) return;
+  window.__portalHomeDashboardBridgeInstalled = true;
+
+  const originalAppendChild = HTMLHeadElement.prototype.appendChild;
+
+  HTMLHeadElement.prototype.appendChild = function(node){
+    const isScript = node && String(node.tagName || "").toUpperCase() === "SCRIPT";
+    const src = isScript ? String(node.src || "") : "";
+
+    if(
+      isScript &&
+      src.includes("script.google.com/macros/") &&
+      src.includes("action=home_dashboard")
+    ){
+      let callbackName = "";
+
+      try{
+        callbackName = new URL(src).searchParams.get("callback") || "";
+      }catch(error){
+        callbackName = "";
+      }
+
+      Promise.resolve()
+        .then(() => ensurePortalApi())
+        .then(api => api.call("home", "read", {}))
+        .then(result => {
+          if(callbackName && typeof window[callbackName] === "function"){
+            window[callbackName]({
+              ok: true,
+              data: result.data || {}
+            });
+          }
+        })
+        .catch(error => {
+          if(callbackName && typeof window[callbackName] === "function"){
+            window[callbackName]({
+              ok: false,
+              error: error?.message || "Falha ao consultar os indicadores da Home."
+            });
+          }
+        });
+
+      // Não anexa a tag e, portanto, não envia requisição ao Apps Script.
+      return node;
+    }
+
+    return originalAppendChild.call(this, node);
+  };
+})();
+
 (function(){
   "use strict";
 

@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <!-- ✅ LOGIN DO PORTAL (HOME + ESTADO + PERMISSÕES DO PISO) -->
-  <script src="../assets/js/auth.js?v=3"></script>
+  <script src="../assets/js/auth.js?v=4"></script>
 
   <style>
     :root{
@@ -133,78 +133,9 @@
     @media (max-width:860px){body.quoteMode .quoteTableGrow{height:calc(100vh - 330px);min-height:380px}}
     body.quoteMode .quoteEntrada{display:block!important}
     body.quoteMode .normalEntrada{display:none!important}
-
-    /* Admin modal */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:18px}
-    .modal.show{display:flex}
-    .modalCard{
-      width:min(760px,100%);background:linear-gradient(180deg, rgba(17,26,51,.92), rgba(13,20,48,.88));
-      border:1px solid rgba(34,48,94,.95);border-radius:18px;padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.35);position:relative;overflow:hidden;
-    }
-    .modalCard::before{content:"";position:absolute;inset:-40px -40px auto -40px;height:140px;background:radial-gradient(closest-side, rgba(60,255,160,.10), transparent 70%);opacity:.55;pointer-events:none}
-    .modalHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .modalTitle{font-weight:900;font-size:16px;margin:0}
-    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    @media (max-width:720px){.twoCol{grid-template-columns:1fr}}
-    .miniCard{background:rgba(13,20,48,.92);border:1px solid rgba(43,58,114,.95);border-radius:14px;padding:12px}
-    .danger{border-color:rgba(255,120,120,.45)!important}
-    .small{font-size:12px;opacity:.8}
-    .userList{margin-top:10px;max-height:260px;overflow:auto;border:1px solid rgba(43,58,114,.95);border-radius:12px}
-    .userList table th{position:sticky}
-    .tagAdmin{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;border:1px solid rgba(60,255,160,.45);background:rgba(60,255,160,.10);font-size:11px;font-weight:900}
   </style>
 </head>
 <body>
-
-  <!-- ADMIN MODAL -->
-  <div class="modal" id="adminModal" aria-hidden="true">
-    <div class="modalCard">
-      <div class="modalHead">
-        <div>
-          <p class="modalTitle">🛠 Admin (LUZIANO)</p>
-          <div class="muted">Gerencie usuários e senhas (salvo neste navegador).</div>
-        </div>
-        <button class="smallBtn" id="btnAdminClose">Fechar</button>
-      </div>
-
-      <div class="twoCol">
-        <div class="miniCard">
-          <div class="pill">Criar / Atualizar usuário</div>
-
-          <label for="admUserName">Usuário</label>
-          <input id="admUserName" placeholder="Ex: JOÃO" />
-
-          <label for="admUserPass">Senha</label>
-          <input id="admUserPass" placeholder="Ex: 2026" />
-
-          <button class="btn" id="btnAdminSaveUser">Salvar usuário</button>
-          <div class="muted" id="admMsg" style="display:none;"></div>
-        </div>
-
-        <div class="miniCard danger">
-          <div class="pill">Ações rápidas</div>
-          <button class="btn" id="btnAdminResetAllPesos">Resetar pesos de TODOS</button>
-          <div class="muted small">Apaga os pesos customizados salvos por usuário neste navegador.</div>
-        </div>
-      </div>
-
-      <div class="miniCard" style="margin-top:12px;">
-        <div class="pill">Usuários cadastrados</div>
-        <div class="userList">
-          <table>
-            <thead>
-              <tr>
-                <th>Usuário</th>
-                <th class="num">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="admUserTable"></tbody>
-          </table>
-        </div>
-        <div class="muted small">Obs: não é possível excluir o usuário LUZIANO.</div>
-      </div>
-    </div>
-  </div>
 
   <div class="wrap" id="app">
     <div class="card">
@@ -219,8 +150,6 @@
             <span class="lbl">⚡ Cotação Rápida</span>
             <div class="toggle" id="toggleQuote" role="switch" aria-checked="false" tabindex="0"></div>
           </div>
-
-          <button class="smallBtn" id="btnAdmin" style="display:none">🛠 Admin</button>
           <button class="smallBtn green" id="btnExportCSV">⬇️ Exportar CSV</button>
           <button class="smallBtn green" id="btnExportJPG">🖼️ Exportar JPEG</button>
           <span class="pill" id="userBadge">Deslogado</span>
@@ -354,24 +283,22 @@
    - admin = LUZIANO
 ========================================================== */
 
-const ADMIN_USER = "LUZIANO";
 
 /** garante auth.js carregado + login + estado + permissão do piso */
 function enforcePisoAuth(){
   try{
-    if(typeof requirePiso2Auth==="function"){
-      return requirePiso2Auth()===true;
+    if(typeof requirePisoAuth === "function"){
+      return requirePisoAuth() === true;
     }
 
-    console.error("[PISO2] requirePiso2Auth não encontrado.");
-    alert("Não foi possível validar o acesso ao Piso 2.");
-    window.location.href="../pages/home.html";
+    console.error("[PISO] requirePisoAuth não encontrado.");
+    alert("Não foi possível validar o acesso ao Cálculo de Piso.");
+    window.location.href = "../pages/login.html";
     return false;
-
-  }catch(e){
-    console.error("[PISO2] Erro:",e);
-    alert("Erro ao validar acesso ao Piso 2.");
-    window.location.href="../pages/home.html";
+  }catch(error){
+    console.error("[PISO] Erro ao validar acesso:", error);
+    alert("Erro ao validar o acesso ao Cálculo de Piso.");
+    window.location.href = "../pages/login.html";
     return false;
   }
 }
@@ -392,29 +319,11 @@ function portalUF(){
   return String(localStorage.getItem("nf_auth_state") || "").trim().toUpperCase();
 }
 
-function isAdmin(){ return portalUser() === ADMIN_USER; }
 
 function goHome(){
   window.location.href = "./home.html";
 }
 
-/** logout do portal */
-function logoutPortal(){
-  try{
-    if(typeof logoutAll==="function"){
-      logoutAll();
-    }else{
-      localStorage.removeItem("nf_auth_home");
-      localStorage.removeItem("nf_auth_user");
-      localStorage.removeItem("nf_auth_state");
-      localStorage.removeItem("nf_auth_piso");
-      localStorage.removeItem("nf_auth_piso2");
-    }
-  }catch(e){
-    console.error(e);
-  }
-  window.location.href="../pages/login.html";
-}
 
 /* ================== MODO COTAÇÃO ================== */
 function quoteModeKey(){
@@ -767,67 +676,6 @@ function calc(opts={}){
   }
 }
 
-/* ================== ADMIN UI ================== */
-const USERS_KEY = "piso_users_v1";
-function loadUsers(){
-  try{
-    const raw = localStorage.getItem(USERS_KEY);
-    const u = raw ? JSON.parse(raw) : {};
-    return (u && typeof u==="object") ? u : {};
-  }catch(e){ return {}; }
-}
-function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
-
-function showAdmin(show){
-  const m=$("adminModal");
-  if(!m) return;
-  m.classList.toggle("show", !!show);
-  m.setAttribute("aria-hidden", show ? "false" : "true");
-  if(show) renderAdminUsers();
-}
-function renderAdminUsers(){
-  const USERS = loadUsers();
-  const tbody=$("admUserTable");
-  if(!tbody) return;
-  tbody.innerHTML="";
-  const names = Object.keys(USERS).sort();
-
-  if(!names.includes(ADMIN_USER)) names.unshift(ADMIN_USER);
-
-  names.forEach((u)=>{
-    const tr=document.createElement("tr");
-    const isAdm = (u===ADMIN_USER);
-    tr.innerHTML=`
-      <td style="white-space:nowrap">${u}${isAdm?`<span class="tagAdmin">ADMIN</span>`:""}</td>
-      <td class="num">
-        ${isAdm?`<span class="muted">---</span>`:`<button class="smallBtn" data-del="${u}">Excluir</button>`}
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll("button[data-del]").forEach((b)=>{
-    b.addEventListener("click", ()=>{
-      const u=b.getAttribute("data-del");
-      if(!u || u===ADMIN_USER) return;
-      if(confirm(`Excluir o usuário ${u}?`)){
-        const USERS = loadUsers();
-        delete USERS[u];
-        saveUsers(USERS);
-        renderAdminUsers();
-        toastAdmin("Usuário excluído.", true);
-      }
-    });
-  });
-}
-function toastAdmin(txt, ok){
-  const el=$("admMsg");
-  if(!el) return;
-  el.style.display="block";
-  el.style.color = ok ? "#b7ffd7" : "#ffb3b3";
-  el.textContent = txt;
-  setTimeout(()=>{ el.style.display="none"; }, 2200);
-}
-
 /* ================== INIT ================== */
 document.addEventListener("DOMContentLoaded", ()=>{
   const ok = enforcePisoAuth();
@@ -838,16 +686,24 @@ document.addEventListener("DOMContentLoaded", ()=>{
   const u = portalUser();
   const uf = portalUF();
   $("userBadge").textContent = u ? `Logado: ${u} (${uf||"--"})` : "Deslogado";
-  $("btnAdmin").style.display = isAdmin() ? "" : "none";
 
   $("btnHome")?.addEventListener("click", (e)=>{
     e.preventDefault();
     goHome();
   });
 
-  $("btnLogout").addEventListener("click", (e)=>{
-    e.preventDefault();
-    logoutPortal();
+  $("btnLogout")?.addEventListener("click", async (event)=>{
+    event.preventDefault();
+    const button = event.currentTarget;
+    if(button) button.disabled = true;
+
+    try{
+      if(typeof logoutPortal === "function"){
+        await logoutPortal();
+      }
+    }finally{
+      window.location.href = "../pages/login.html";
+    }
   });
 
   fillTipos();
@@ -864,7 +720,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(el) el.addEventListener("input", ()=>calc());
   });
 
-  ["km","pedagio","margem","icms","tipo","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));
+  ["km","pedagio","margem","icms","tipo"].forEach(id=>bindGlow($(id)));
 
   $("btnExportCSV")?.addEventListener("click", exportCSV);
   $("btnExportJPG")?.addEventListener("click", exportJPG);
@@ -885,43 +741,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
     });
   }
-
-  $("btnAdminClose")?.addEventListener("click", ()=>showAdmin(false));
-  $("adminModal")?.addEventListener("click",(e)=>{
-    if(e.target && e.target.id==="adminModal") showAdmin(false);
-  });
-  $("btnAdmin")?.addEventListener("click", ()=>{
-    if(isAdmin()) showAdmin(true);
-  });
-
-  $("btnAdminSaveUser")?.addEventListener("click", ()=>{
-    if(!isAdmin()) return;
-    let name = String($("admUserName")?.value||"").trim().toUpperCase();
-    const pass = String($("admUserPass")?.value||"").trim();
-    if(!name) return toastAdmin("Informe o nome do usuário.", false);
-    if(!pass) return toastAdmin("Informe a senha.", false);
-
-    name = name.replace(/\s+/g," ").replace(/[^\wÀ-ÿ ]/g,"").trim();
-
-    const USERS = loadUsers();
-    USERS[name]=pass;
-    saveUsers(USERS);
-
-    $("admUserName").value="";
-    $("admUserPass").value="";
-    renderAdminUsers();
-    toastAdmin("Usuário salvo/atualizado.", true);
-  });
-
-  $("btnAdminResetAllPesos")?.addEventListener("click", ()=>{
-    if(!isAdmin()) return;
-    if(confirm("Resetar os pesos customizados de TODOS os usuários neste navegador?")){
-      resetAllPesos();
-      pesosCustom = loadPesosCustom();
-      calc();
-      toastAdmin("Pesos resetados (todos).", true);
-    }
-  });
 });
 </script>
 </body>

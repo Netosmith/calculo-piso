@@ -1,0 +1,116 @@
+name: Migrate Fretes MT Secure API
+
+on:
+  push:
+    paths:
+      - ".github/workflows/migrate-fretes-mt-secure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Replace legacy Apps Script transport
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path("assets/js/fretes2.js")
+          text = path.read_text(encoding="utf-8")
+
+          text = text.replace(
+              "/* fretes2.js | NOVA FROTA - CADASTROS VIA GOOGLE SHEETS */",
+              "/* fretes2.js | NOVA FROTA | Gateway seguro Cloudflare */"
+          )
+
+          text = re.sub(
+              r'\n\s*const API_URL\s*=\s*\n\s*"https://script\.google\.com/macros/s/[^\"]+/exec";\n',
+              "\n",
+              text,
+              count=1
+          )
+
+          start = text.find("  function jsonp(url, timeoutMs = 30000) {")
+          end = text.find("\n\n  function normalizeDirectoryData(data) {", start)
+
+          if start < 0 or end < 0:
+              raise SystemExit("Bloco legado jsonp/buildUrl/apiGet não encontrado.")
+
+          replacement = "\n".join([
+              "  async function apiGet(paramsObj = {}) {",
+              "    if (!window.PortalAPI) {",
+              "      throw new Error(\"API segura do Portal indisponível.\");",
+              "    }",
+              "",
+              "    const params = { ...paramsObj };",
+              "    const legacyAction = String(params.action || \"\").trim();",
+              "    delete params.action;",
+              "",
+              "    const routes = {",
+              "      cadastros_fretes_list: { action: \"read\", params: { resource: \"directory\" } },",
+              "      fretes2_list: { action: \"read\", params: {} },",
+              "      fretes2_add: { action: \"create\", params },",
+              "      fretes2_update: { action: \"update\", params },",
+              "      fretes2_delete: { action: \"delete\", params }",
+              "    };",
+              "",
+              "    const route = routes[legacyAction];",
+              "    if (!route) {",
+              "      throw new Error(`Ação de Fretes MT não reconhecida: ${legacyAction || \"vazia\"}`);",
+              "    }",
+              "",
+              "    const result = await window.PortalAPI.call(",
+              "      \"fretes2\",",
+              "      route.action,",
+              "      route.params",
+              "    );",
+              "",
+              "    return {",
+              "      ok: true,",
+              "      data: result?.data ?? {}",
+              "    };",
+              "  }",
+              ""
+          ])
+
+          text = text[:start] + replacement + text[end:]
+
+          forbidden = [
+              "script.google.com/macros/",
+              "function jsonp(",
+              "function buildUrl(",
+              "const API_URL"
+          ]
+
+          leftovers = [item for item in forbidden if item in text]
+          if leftovers:
+              raise SystemExit(
+                  "Referências legadas restantes: " + ", ".join(leftovers)
+              )
+
+          path.write_text(text, encoding="utf-8")
+
+      - name: Validate JavaScript syntax
+        run: node --check assets/js/fretes2.js
+
+      - name: Commit migration
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/js/fretes2.js; then
+            echo "No changes needed"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/fretes2.js
+          git commit -m "refactor(fretes2): use secure gateway directly"
+          git push

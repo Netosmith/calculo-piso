@@ -1,0 +1,36 @@
+name: Migrate Custo Filial Secure Gateway
+
+on:
+  push:
+    paths:
+      - ".github/workflows/migrate-custo-filial-secure.yml"
+      - ".github/scripts/migrate_custo_filial_secure.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run secure migration
+        run: python .github/scripts/migrate_custo_filial_secure.py
+
+      - name: Validate JavaScript
+        run: node --check assets/js/custo-filial.js
+
+      - name: Commit migration
+        run: |
+          if git diff --quiet -- assets/js/custo-filial.js; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/custo-filial.js
+          git commit -m "refactor(custo-filial): use secure gateway directly"
+          git push

@@ -1,4 +1,4 @@
-/* share-clientes.js | NOVA -FROTA */
+/* share-clientes.js | NOVA FROTA | Gateway seguro Cloudflare */
 (function () {
   "use strict";
 
@@ -6,9 +6,6 @@
 
   const LS_KEY_FRETES_ROWS = "nf_fretes_rows_v1";
   const LS_KEY_BASE = "nf_share_clientes_base_v1";
-
-  const SHEETS_API_URL =
-    "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
 
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
@@ -150,50 +147,18 @@
     }
   }
 
-  function jsonp(url, timeoutMs = 30000) {
-    return new Promise((resolve, reject) => {
-      const callback = `cb_${Math.random().toString(36).slice(2)}`;
-      const script = document.createElement("script");
-      const separator = url.includes("?") ? "&" : "?";
-
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error("Tempo limite excedido ao carregar os dados."));
-      }, timeoutMs);
-
-      function cleanup() {
-        clearTimeout(timeout);
-        try {
-          delete window[callback];
-        } catch {}
-        script.remove();
-      }
-
-      window[callback] = (data) => {
-        cleanup();
-        resolve(data);
-      };
-
-      script.src =
-        `${url}${separator}callback=${encodeURIComponent(callback)}`;
-
-      script.onerror = () => {
-        cleanup();
-        reject(new Error("Erro de comunicação com o Google Sheets."));
-      };
-
-      document.head.appendChild(script);
-    });
-  }
-
   async function loadFretesRows() {
-    const url =
-      `${SHEETS_API_URL}?action=list&base=${encodeURIComponent(BASE_ATUAL)}`;
+    if (!window.PortalAPI) {
+      throw new Error("API segura do Portal indisponível.");
+    }
 
-    const response = await jsonp(url);
+    const response = await window.PortalAPI.call("share", "read", {
+      base: BASE_ATUAL,
+      resource: BASE_ATUAL
+    });
 
     if (response && response.ok === false) {
-      throw new Error(response.error || "Erro retornado pelo Apps Script.");
+      throw new Error(response.error || "Erro retornado pelo gateway seguro.");
     }
 
     let rows = response?.data ?? response;
@@ -204,6 +169,7 @@
 
     return Array.isArray(rows) ? rows : [];
   }
+
 
   function getCmhLocal(row) {
     return row.cmhLocal ?? row.cmh_local ?? row.cmhL ?? row.porta ?? "";

@@ -189,6 +189,8 @@
   const STATE = {
     rows: [],
     editingId: "",
+    syncPromise: null,
+    lastSuccessfulSyncAt: 0,
     inlineSaving: new Set(),
     floatingBarReady: false,
     floatingSyncing: false,
@@ -353,7 +355,93 @@
 
   function setStatus(text) {
     const el = document.querySelector("[data-sync-status]") || document.querySelector("#syncStatus");
-    if (el) el.textContent = text;
+    if (el) {
+      el.textContent = text;
+      el.title = text;
+    }
+  }
+
+  function nowPerformance() {
+    return typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
+  }
+
+  function recordPerformance(label, startedAt) {
+    const elapsedMs = Math.max(0, Math.round(nowPerformance() - startedAt));
+    window.__portalPerformance = window.__portalPerformance || {};
+    window.__portalPerformance[`fretes:${label}`] = elapsedMs;
+    console.info(`[fretes/perf] ${label}: ${elapsedMs} ms`);
+    return elapsedMs;
+  }
+
+  function formatElapsed(elapsedMs) {
+    if (elapsedMs < 1000) return `${elapsedMs} ms`;
+    return `${(elapsedMs / 1000).toFixed(1).replace(".", ",")} s`;
+  }
+
+  function friendlySyncError(error) {
+    const status = Number(error?.status || error?.data?.status || 0);
+    const message = String(error?.message || "").toLowerCase();
+
+    if (status === 401 || message.includes("sessão") || message.includes("session")) {
+      return "Sessão expirada. Entre novamente.";
+    }
+
+    if (status === 403 || message.includes("permiss")) {
+      return "Seu perfil não possui permissão para consultar os fretes.";
+    }
+
+    if (
+      status === 502 || status === 503 || status === 504 ||
+      error?.name === "AbortError" ||
+      message.includes("timeout") ||
+      message.includes("tempo limite") ||
+      message.includes("aborted") ||
+      message.includes("apps script")
+    ) {
+      return "Apps Script demorou para responder. Tente Atualizar.";
+    }
+
+    if (
+      message.includes("failed to fetch") ||
+      message.includes("network") ||
+      message.includes("rede") ||
+      (typeof navigator !== "undefined" && navigator.onLine === false)
+    ) {
+      return "Falha de rede. Verifique a conexão e tente Atualizar.";
+    }
+
+    return error?.message || "Não foi possível sincronizar os fretes.";
+  }
+
+  async function waitForPortalReady() {
+    const startedAt = nowPerformance();
+
+    if (!window.portalAuthReady || typeof window.portalAuthReady.then !== "function") {
+      throw new Error("Validação de sessão indisponível.");
+    }
+
+    const session = await window.portalAuthReady;
+    recordPerformance("sessao", startedAt);
+
+    if (!session) {
+      const error = new Error("Sessão expirada. Entre novamente.");
+      error.status = 401;
+      throw error;
+    }
+
+    if (!window.PortalAPI) {
+      throw new Error("API segura do Portal indisponível.");
+    }
+
+    if (typeof canAccessFeature === "function" && !canAccessFeature("fretes")) {
+      const error = new Error("Seu perfil não possui permissão para consultar os fretes.");
+      error.status = 403;
+      throw error;
+    }
+
+    return session;
   }
 
   function normalizeFreteStatus(value) {
@@ -566,11 +654,17 @@ function formatDateTimeBR(value) {
     };
   }
 
-  async function carregarCadastrosFretes() {
-    setStatus("🔄 Carregando cadastros...");
+  async function carregarCadastrosFretes(options = {}) {
+    const startedAt = nowPerformance();
+
+    if (!options.background) {
+      setStatus("🔄 Carregando cadastros...");
+    }
 
     try {
+      const requestStartedAt = nowPerformance();
       const res = await apiGet({ action: "cadastros_fretes_list" });
+      recordPerformance("cadastros-api", requestStartedAt);
       const novosCadastros = normalizeDirectoryData(res?.data || {});
 
       const possuiDados =
@@ -590,6 +684,7 @@ function formatDateTimeBR(value) {
     }
 
     rebuildContactPhoneMap();
+    recordPerformance("cadastros-total", startedAt);
   }
 
   function getPesoFromUI(id, fallback) {
@@ -883,8 +978,13 @@ function formatDateTimeBR(value) {
       try {
         setStatus("🗑 Excluindo...");
         await apiGet({ action: "fretes_delete", id: row.id });
-        await atualizar();
-        setStatus("✅ Excluído");
+        const deletedId = safeText(row.id);
+        STATE.rows = STATE.rows.filter((item) => safeText(item.id) !== deletedId);
+        STATE.selectedIds.delete(deletedId);
+        fillTopFilters(STATE.rows);
+        applyFilters();
+        updateBulkUI();
+        setStatus("✅ Excluído sem recarregar toda a planilha");
       } catch (e) {
         setStatus("❌ Falha ao excluir");
         alert(e.message || "Falha ao excluir.");
@@ -1801,13 +1901,38 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       showModalLoading("Salvando Frete...", "Sincronizando. Aguarde alguns segundos.");
       setStatus("💾 Salvando...");
 
-      await saveFrete(payload);
+      const editingId = safeText(STATE.editingId);
+      const result = await saveFrete(payload);
+      const data = result?.data || {};
+      const serverRow = [data?.row, data?.frete, data?.item, data?.data, data]
+        .find((item) => item && typeof item === "object" && !Array.isArray(item)) || {};
+      const savedId = safeText(serverRow.id || data.id || editingId);
 
-      showModalLoading("Frete salvo com sucesso ✓", "Atualizando a lista de fretes.");
-      await atualizar();
+      if (savedId) {
+        const nextRow = {
+          ...payload,
+          ...serverRow,
+          id: savedId,
+          status: normalizeFreteStatus(serverRow.status || payload.status),
+          ultimaAlteracao: serverRow.ultimaAlteracao || data.ultimaAlteracao || nowUltimaAlteracaoBR()
+        };
+        const index = STATE.rows.findIndex((row) => safeText(row.id) === savedId);
+
+        if (index >= 0) STATE.rows[index] = { ...STATE.rows[index], ...nextRow };
+        else STATE.rows.unshift(nextRow);
+
+        fillTopFilters(STATE.rows);
+        applyFilters();
+        renderPreview(nextRow);
+        updateBulkUI();
+      }
 
       modalShow(false);
-      setStatus("✅ Salvo");
+      setStatus(savedId ? "✅ Salvo sem recarregar toda a planilha" : "✅ Salvo • atualizando lista em segundo plano");
+
+      if (!savedId) {
+        void atualizar({ background: true });
+      }
     } catch (e) {
       setStatus("❌ Erro ao salvar");
       alert(e.message || "Falha ao salvar.");
@@ -1838,39 +1963,70 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     }, 180);
   }
 
-  async function atualizar() {
+  async function atualizar(options = {}) {
+    if (STATE.syncPromise) return STATE.syncPromise;
+
+    const syncPromise = (async () => {
+      const startedAt = nowPerformance();
+      const hadRows = STATE.rows.length > 0;
+
+      try {
+        setStatus(hadRows || options.background
+          ? "🔄 Atualizando fretes em segundo plano..."
+          : "🔄 Carregando fretes...");
+
+        const requestStartedAt = nowPerformance();
+        const res = await apiGet({ action: "fretes_list" });
+        recordPerformance("fretes-api", requestStartedAt);
+
+        const payload = res?.data ?? {};
+        const rows = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload.data)
+            ? payload.data
+            : Array.isArray(payload.rows)
+              ? payload.rows
+              : Array.isArray(payload.fretes)
+                ? payload.fretes
+                : Array.isArray(payload.items)
+                  ? payload.items
+                  : [];
+
+        const renderStartedAt = nowPerformance();
+        const nextRows = rows.map((row) => ({
+          ...row,
+          status: normalizeFreteStatus(row.status)
+        }));
+
+        STATE.rows = nextRows;
+        STATE.lastSuccessfulSyncAt = Date.now();
+
+        fillTopFilters(STATE.rows);
+        applyFilters();
+        renderPreview(getFilteredRows()[0] || STATE.rows[0]);
+        updateBulkUI();
+        recordPerformance("renderizacao", renderStartedAt);
+
+        const elapsedMs = recordPerformance("fretes-total", startedAt);
+        setStatus(`✅ ${STATE.rows.length} fretes atualizados em ${formatElapsed(elapsedMs)}`);
+        return true;
+      } catch (e) {
+        console.error("[fretes] erro ao atualizar:", e);
+        const message = friendlySyncError(e);
+
+        setStatus(hadRows
+          ? `⚠️ ${message} Mantendo os dados exibidos.`
+          : `❌ ${message}`);
+        return false;
+      }
+    })();
+
+    STATE.syncPromise = syncPromise;
+
     try {
-      setStatus("🔄 Carregando...");
-
-      const res = await apiGet({ action: "fretes_list" });
-
-      const payload = res?.data ?? {};
-      const rows = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload.data)
-          ? payload.data
-          : Array.isArray(payload.rows)
-            ? payload.rows
-            : Array.isArray(payload.fretes)
-              ? payload.fretes
-              : Array.isArray(payload.items)
-                ? payload.items
-                : [];
-
-      STATE.rows = rows.map((row) => ({
-        ...row,
-        status: normalizeFreteStatus(row.status)
-      }));
-
-      fillTopFilters(STATE.rows);
-      applyFilters();
-      renderPreview(getFilteredRows()[0] || STATE.rows[0]);
-      updateBulkUI();
-
-      setStatus("✅ Atualizado");
-    } catch (e) {
-      console.error("[fretes] erro ao atualizar:", e);
-      setStatus("❌ Erro ao sincronizar");
+      return await syncPromise;
+    } finally {
+      if (STATE.syncPromise === syncPromise) STATE.syncPromise = null;
     }
   }
 
@@ -2187,9 +2343,10 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   async function init() {
+    const initStartedAt = nowPerformance();
     ensureFloatingHorizontalBar();
 
-    await carregarCadastrosFretes();
+    rebuildContactPhoneMap();
     fillModalSelectors();
 
     initUppercaseFields();
@@ -2199,7 +2356,18 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     bindFloatingHorizontalBar();
     bindModoRaio();
 
-    await atualizar();
+    setStatus("🔐 Validando sessão...");
+    await waitForPortalReady();
+
+    // A tabela é a informação principal da tela e deve começar primeiro.
+    // Os cadastros usam os dados locais de contingência e são atualizados em paralelo.
+    const fretesPromise = atualizar();
+    void carregarCadastrosFretes({ background: true })
+      .then(() => fillModalSelectors())
+      .catch((error) => console.error("[fretes] falha ao atualizar cadastros em segundo plano:", error));
+
+    await fretesPromise;
+    recordPerformance("inicializacao", initStartedAt);
 
     setTimeout(syncFloatingHorizontalBar, 200);
     setTimeout(syncFloatingHorizontalBar, 600);
@@ -2208,7 +2376,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   window.addEventListener("DOMContentLoaded", () => {
     init().catch((e) => {
       console.error("[fretes] falha na inicialização:", e);
-      setStatus("❌ Erro ao iniciar");
+      setStatus(`❌ ${friendlySyncError(e)}`);
     });
   });
 })();

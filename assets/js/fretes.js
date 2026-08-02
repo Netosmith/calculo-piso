@@ -1844,9 +1844,21 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
       const res = await apiGet({ action: "fretes_list" });
 
-      STATE.rows = Array.isArray(res.data)
-        ? res.data.map((row) => ({ ...row, status: normalizeFreteStatus(row.status) }))
-        : [];
+      const payload = res?.data ?? {};
+      const rows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload.rows)
+          ? payload.rows
+          : Array.isArray(payload.fretes)
+            ? payload.fretes
+            : Array.isArray(payload.items)
+              ? payload.items
+              : [];
+
+      STATE.rows = rows.map((row) => ({
+        ...row,
+        status: normalizeFreteStatus(row.status)
+      }));
 
       fillTopFilters(STATE.rows);
       applyFilters();

@@ -1,0 +1,35 @@
+name: Final Frontend Security Audit
+
+on:
+  push:
+    paths:
+      - ".github/scripts/final_security_audit.py"
+      - ".github/workflows/final-security-audit.yml"
+      - "assets/js/**"
+      - "pages/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run final audit
+        run: python .github/scripts/final_security_audit.py
+
+      - name: Commit audit report
+        run: |
+          if git diff --quiet -- SECURITY_AUDIT_FINAL.md; then
+            echo "Audit report unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SECURITY_AUDIT_FINAL.md
+          git commit -m "docs: update final frontend security audit"
+          git push

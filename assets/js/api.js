@@ -33,6 +33,27 @@ async function portalApiRequest(path, options = {}) {
   return data;
 }
 
+function normalizeGatewayEnvelope(result) {
+  const inner = result?.data;
+
+  if (
+    inner &&
+    typeof inner === "object" &&
+    !Array.isArray(inner) &&
+    inner.ok === true &&
+    Object.prototype.hasOwnProperty.call(inner, "data")
+  ) {
+    const { data, ...gatewayMeta } = inner;
+    return {
+      ...result,
+      data,
+      gatewayMeta
+    };
+  }
+
+  return result;
+}
+
 window.PortalAPI = {
   login(usuario, senha) {
     return portalApiRequest("/v1/login", { method: "POST", body: { usuario, senha } });
@@ -46,11 +67,13 @@ window.PortalAPI = {
   logout() {
     return portalApiRequest("/v1/logout", { method: "POST", body: {} });
   },
-  call(module, action, params = {}) {
-    return portalApiRequest("/v1/gateway", {
+  async call(module, action, params = {}) {
+    const result = await portalApiRequest("/v1/gateway", {
       method: "POST",
       body: { module, action, params }
     });
+
+    return normalizeGatewayEnvelope(result);
   }
 };
 

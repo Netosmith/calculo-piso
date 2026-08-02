@@ -61,28 +61,27 @@
           <input data-template="1" data-field="obs" placeholder="Ex: Pagamento PIX ou cheque" />
 
           <label>Filial</label>
-<select data-template="1" data-field="filial">
-  <option value="">Selecione...</option>
-
-  <option value="RIOVERDE">RIO VERDE</option>
-  <option value="MESAOPERACIONAL">MESA OPERACIONAL</option>
-  <option value="BOMJESUS">BOM JESUS</option>
-  <option value="FERTILIZANTE">FERTILIZANTE</option>
-  <option value="MONTIVIDIU">MONTIVIDIU</option>
-  <option value="MINEIROS">MINEIROS</option>
-  <option value="INDIARA">INDIARA</option>
-  <option value="FORMOSA">FORMOSA</option>
-  <option value="CRISTALINA">CRISTALINA</option>
-  <option value="CGOMG">CGO MG</option>
-  <option value="ANAPOLIS">ANÁPOLIS</option>
-  <option value="URUACU">URUAÇU</option>
-  <option value="ITUMBIARA">ITUMBIARA</option>
-  <option value="SAOPAULO ">SÃO PAULO</option>
-  <option value="VIANOPOLIS">VIANÓPOLIS</option>
-  <option value="CHAPEU">CHAPÉU</option>
-  <option value="ARAGUARI">ARAGUARI</option>
-  <option value="JATAI">JATAÍ</option>
-</select>
+          <select data-template="1" data-field="filial">
+            <option value="">Selecione...</option>
+            <option value="RIOVERDE">RIO VERDE</option>
+            <option value="MESAOPERACIONAL">MESA OPERACIONAL</option>
+            <option value="BOMJESUS">BOM JESUS</option>
+            <option value="FERTILIZANTE">FERTILIZANTE</option>
+            <option value="MONTIVIDIU">MONTIVIDIU</option>
+            <option value="MINEIROS">MINEIROS</option>
+            <option value="INDIARA">INDIARA</option>
+            <option value="FORMOSA">FORMOSA</option>
+            <option value="CRISTALINA">CRISTALINA</option>
+            <option value="CGOMG">CGO MG</option>
+            <option value="ANAPOLIS">ANÁPOLIS</option>
+            <option value="URUACU">URUAÇU</option>
+            <option value="ITUMBIARA">ITUMBIARA</option>
+            <option value="SAOPAULO">SÃO PAULO</option>
+            <option value="VIANOPOLIS">VIANÓPOLIS</option>
+            <option value="CHAPEU">CHAPÉU</option>
+            <option value="ARAGUARI">ARAGUARI</option>
+            <option value="JATAI">JATAÍ</option>
+          </select>
 
           <label>Contatos (linha 1)</label>
           <input data-template="1" data-field="contato1" placeholder="Ex: (64) 9xxxx-xxxx" />
@@ -130,12 +129,16 @@
     </section>
   </main>
 
-  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/auth.js?v=4"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/divulgacao.js"></script>
+  <script src="../assets/js/divulgacao.js?v=2"></script>
   <script>
-    requireHomeAuth();
-    bindLogoutButton();
+    if (requireFeatureAuth(
+      "divulgacao",
+      "Divulgação não liberada para este perfil."
+    ) === true) {
+      bindLogoutButton();
+    }
   </script>
 </body>
 </html>

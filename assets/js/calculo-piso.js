@@ -439,10 +439,50 @@ async function loadHistory(){
  $("historyStatus").textContent="Consultando B.I...";
 
  try{
-  const res=await jsonp({action:"historico_fretes_list"});
+  if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
+
+  const res=await window.PortalAPI.call("bi","read",{
+   resource:"commercial-history"
+  });
+
   if(!res||res.ok===false)throw new Error(res?.error||"Falha na API");
 
-  let rows=Array.isArray(res.data)?res.data:[];
+  const payload=res?.data;
+  let rows=Array.isArray(payload)
+   ?payload
+   :Array.isArray(payload?.data)
+    ?payload.data
+    :Array.isArray(payload?.rows)
+     ?payload.rows
+     :Array.isArray(payload?.historico)
+      ?payload.historico
+      :Array.isArray(payload?.registros)
+       ?payload.registros
+       :[];
+
+  const pick=(row,...keys)=>{
+   for(const key of keys){
+    if(row&&row[key]!==undefined&&row[key]!==null&&txt(row[key])!=="")return row[key];
+   }
+   return "";
+  };
+
+  rows=rows.map(row=>({
+   ...row,
+   origem:pick(row,"origem","Origem","ORIGEM","cidadeOrigem","origemCidade","localOrigem"),
+   coleta:pick(row,"coleta","Coleta","COLETA","localColeta","embarque","Local Embarque"),
+   destino:pick(row,"destino","Destino","DESTINO","cidadeDestino","destinoCidade","localDestino"),
+   descarga:pick(row,"descarga","Descarga","DESCARGA","localDescarga","recebedor"),
+   cliente:pick(row,"cliente","Cliente","CLIENTE","nomeCliente","NomeCliente"),
+   produto:pick(row,"produto","Produto","PRODUTO","nomeProduto","NomeProduto"),
+   valorEmpresa:pick(row,"valorEmpresa","ValorEmpresa","valor_empresa","Vlr Empresa","freteEmpresa"),
+   valorMotorista:pick(row,"valorMotorista","ValorMotorista","valor_motorista","Vlr Motorista","freteMotorista"),
+   km:pick(row,"km","KM","Km","quilometragem"),
+   pedagioEixo:pick(row,"pedagioEixo","PedagioEixo","pedagio_eixo","Pedágio/Eixo"),
+   dataHora:pick(row,"dataHora","DataHora","data_hora","data","Data"),
+   ultimaAlteracao:pick(row,"ultimaAlteracao","Última Alteração","ultima_alteracao","updatedAt")
+  }));
+
   const totalRecebido=rows.length;
 
   rows=rows

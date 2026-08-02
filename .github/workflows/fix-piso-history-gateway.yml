@@ -1,0 +1,37 @@
+name: Fix Piso History Gateway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/fix_piso_history_gateway.py'
+      - '.github/workflows/fix-piso-history-gateway.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply correction
+        run: python .github/scripts/fix_piso_history_gateway.py
+
+      - name: Validate JavaScript
+        run: node --check assets/js/calculo-piso.js
+
+      - name: Commit correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/calculo-piso.js pages/calculo-piso.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(piso): restore commercial route history"
+          git push

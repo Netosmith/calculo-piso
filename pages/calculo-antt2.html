@@ -6,7 +6,7 @@
   <title>Cálculo Piso Mínimo de Frete - Nova Frota</title>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/auth.js?v=4"></script>
 
   <style>
     :root{
@@ -507,9 +507,23 @@
 
 <script>
 /* =======================
-   AUTENTICAÇÃO OPCIONAL
+   AUTENTICAÇÃO SEGURA DO PORTAL
 ======================= */
-function portalUser(){ try{ if(typeof getUser === "function") return String(getUser()||"").trim().toUpperCase(); }catch(e){} return String(localStorage.getItem("nf_auth_user")||"").trim().toUpperCase(); }
+function enforcePiso2Auth(){
+  try{
+    if(typeof requirePiso2Auth === "function"){
+      return requirePiso2Auth() === true;
+    }
+    console.error("[PISO2] requirePiso2Auth não encontrado.");
+    window.location.href = "../pages/login.html";
+    return false;
+  }catch(error){
+    console.error("[PISO2] Erro ao validar acesso:", error);
+    window.location.href = "../pages/login.html";
+    return false;
+  }
+}
+function portalUser(){ try{ if(typeof getUser === "function") return String(getUser()||"").trim().toUpperCase(); }catch(e){} return ""; }
 function goHome(){ window.location.href = "./home.html"; }
 
 /* =======================
@@ -720,7 +734,14 @@ function bind(){
   });
   document.querySelectorAll(".seg").forEach(seg=>seg.addEventListener("click",e=>{ if(e.target.tagName!=="BUTTON") return; flags[seg.dataset.toggle]=e.target.dataset.val; applyToggles(); renderAll(); }));
 }
-document.addEventListener("DOMContentLoaded",()=>{ bind(); applyToggles(); applyQuoteMode(); setEixosFromSelectedVehicle(); renderAll(); });
+document.addEventListener("DOMContentLoaded",()=>{
+  if(enforcePiso2Auth() !== true) return;
+  bind();
+  applyToggles();
+  applyQuoteMode();
+  setEixosFromSelectedVehicle();
+  renderAll();
+});
 </script>
 </body>
 </html>

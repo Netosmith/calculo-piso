@@ -161,13 +161,21 @@
       throw new Error(response.error || "Erro retornado pelo gateway seguro.");
     }
 
-    let rows = response?.data ?? response;
+    const payload = response?.data ?? response;
 
-    if (!Array.isArray(rows)) {
-      rows = rows?.rows || rows?.fretes || rows?.items || [];
-    }
+    const rows = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.rows)
+          ? payload.rows
+          : Array.isArray(payload?.fretes)
+            ? payload.fretes
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : [];
 
-    return Array.isArray(rows) ? rows : [];
+    return rows;
   }
 
 

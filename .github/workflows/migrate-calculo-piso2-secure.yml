@@ -1,0 +1,43 @@
+name: Migrate Calculo Piso 2 Secure Auth
+
+on:
+  push:
+    paths:
+      - ".github/workflows/migrate-calculo-piso2-secure.yml"
+      - ".github/scripts/migrate_calculo_piso2_secure.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Migrate Cálculo Piso 2
+        run: python .github/scripts/migrate_calculo_piso2_secure.py
+
+      - name: Validate migration
+        shell: bash
+        run: |
+          grep -q 'requirePiso2Auth' pages/calculo-antt2.html
+          grep -q 'enforcePiso2Auth' pages/calculo-antt2.html
+          grep -q 'auth.js?v=4' pages/calculo-antt2.html
+          ! grep -q 'AUTENTICAÇÃO OPCIONAL' pages/calculo-antt2.html
+          ! grep -q 'localStorage.getItem("nf_auth_user")' pages/calculo-antt2.html
+
+      - name: Commit migration
+        shell: bash
+        run: |
+          if git diff --quiet -- pages/calculo-antt2.html; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/calculo-antt2.html
+          git commit -m "refactor(piso2): enforce secure portal session"
+          git push

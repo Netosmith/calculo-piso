@@ -8,8 +8,10 @@ js = js_path.read_text(encoding="utf-8")
 required_markers = (
     'async function loadHistory()',
     'function extractHistoryRows(',
+    'function historySources(',
+    'function normalizeHistoryRow(',
+    'function enrichHistoryRows(',
     'PortalAPI.call("bi","read"',
-    'const normalizeKey=(value)=>',
 )
 
 missing = [marker for marker in required_markers if marker not in js]
@@ -22,7 +24,7 @@ if missing:
 html = html_path.read_text(encoding="utf-8")
 updated, count = re.subn(
     r"calculo-piso\.js(?:\?v=\d+)?",
-    "calculo-piso.js?v=21",
+    "calculo-piso.js?v=22",
     html,
     count=1,
 )
@@ -32,4 +34,4 @@ if count == 0:
     )
 
 html_path.write_text(updated, encoding="utf-8")
-print("Histórico Comercial validado e cache atualizado para v21.")
+print("Histórico Comercial validado e cache atualizado para v22.")

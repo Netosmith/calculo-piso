@@ -1,9 +1,6 @@
-/* fretes.js | NOVA FROTA - CADASTROS VIA GOOGLE SHEETSs */
+/* fretes.js | NOVA FROTA | Gateway seguro Cloudflare */
 (function () {
   "use strict";
-
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbwlz0Rr0PmdPLZva-6TtSzpfDqx-G1IAkrX8n8cFp5t4mDkH5NQjsztvaWYbtUu8nFG/exec";
 
   let DIRECTORY = {
     regionais: ["GOIAS", "MINAS", "SAO PAULO"],
@@ -496,48 +493,38 @@ function formatDateTimeBR(value) {
     return Math.ceil(n);
   }
 
-  function jsonp(url, timeoutMs = 30000) {
-    return new Promise((resolve, reject) => {
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      const s = document.createElement("script");
-      const sep = url.includes("?") ? "&" : "?";
+  async function apiGet(paramsObj = {}) {
+    if (!window.PortalAPI) {
+      throw new Error("API segura do Portal indisponível.");
+    }
 
-      const t = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout JSONP"));
-      }, timeoutMs);
+    const params = { ...paramsObj };
+    const legacyAction = String(params.action || "").trim();
+    delete params.action;
 
-      function cleanup() {
-        clearTimeout(t);
-        try { delete window[cb]; } catch {}
-        try { s.remove(); } catch {}
-      }
+    const routes = {
+      cadastros_fretes_list: { action: "read", params: { resource: "directory" } },
+      fretes_list: { action: "read", params: {} },
+      fretes_add: { action: "create", params },
+      fretes_update: { action: "update", params },
+      fretes_delete: { action: "delete", params }
+    };
 
-      window[cb] = (data) => {
-        cleanup();
-        resolve(data);
-      };
+    const route = routes[legacyAction];
+    if (!route) {
+      throw new Error(`Ação de fretes não reconhecida: ${legacyAction || "vazia"}`);
+    }
 
-      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      s.onerror = () => {
-        cleanup();
-        reject(new Error("Erro ao carregar JSONP"));
-      };
+    const result = await window.PortalAPI.call(
+      "fretes",
+      route.action,
+      route.params
+    );
 
-      document.head.appendChild(s);
-    });
-  }
-
-  function buildUrl(paramsObj) {
-    const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => url.searchParams.set(k, v));
-    return url.toString();
-  }
-
-  async function apiGet(paramsObj) {
-    const res = await jsonp(buildUrl(paramsObj), 35000);
-    if (!res || res.ok === false) throw new Error(res?.error || "Falha na API");
-    return res;
+    return {
+      ok: true,
+      data: result?.data ?? {}
+    };
   }
 
 

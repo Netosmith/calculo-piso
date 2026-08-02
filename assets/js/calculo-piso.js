@@ -288,7 +288,7 @@ function routeMatch(r,o,d){
  return origemOk&&destinoOk;
 }
 function dateVal(r){
- const v=r.dataHora||r.ultimaAlteracao||r.dataReferencia||r.updatedAt||r.createdAt;
+ const v=r.dataHora||r.dataEvento||r.timestamp||r.dataRegistro||r.dataAlteracao||r.dataCriacao||r.ultimaAlteracao||r.dataReferencia||r.updatedAt||r.createdAt;
  if(typeof v==="number")return v;
  const m=txt(v).match(/(\d{2})\/(\d{2})\/(\d{4})/);
  if(m)return new Date(+m[3],+m[2]-1,+m[1]).getTime();
@@ -425,6 +425,21 @@ function renderChart(rows){
  if(chart)chart.destroy();
  chart=new Chart($("trendChart"),{type:"line",data:{labels:ordered.map(r=>new Date(dateVal(r)).toLocaleDateString("pt-BR")),datasets:[{data:vals,label:"Frete Empresa",tension:.28,borderWidth:2,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{display:false},grid:{display:false}},y:{ticks:{callback:v=>`R$ ${v}`}}}}});
 }
+function extractHistoryRows(value,depth=0){
+ if(Array.isArray(value))return value;
+ if(!value||typeof value!=="object"||depth>6)return [];
+
+ const keys=["data","rows","items","fretes","historico","registros"];
+ for(const key of keys){
+  if(!Object.prototype.hasOwnProperty.call(value,key))continue;
+  const nested=value[key];
+  const rows=extractHistoryRows(nested,depth+1);
+  if(rows.length||Array.isArray(nested))return rows;
+ }
+
+ return [];
+}
+
 async function loadHistory(){
  const o=txt($("origemRota").value);
  const d=txt($("destinoRota").value);
@@ -439,6 +454,7 @@ async function loadHistory(){
  $("historyStatus").textContent="Consultando B.I...";
 
  try{
+  if(window.portalAuthReady)await window.portalAuthReady;
   if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
 
   const res=await window.PortalAPI.call("bi","read",{
@@ -447,18 +463,7 @@ async function loadHistory(){
 
   if(!res||res.ok===false)throw new Error(res?.error||"Falha na API");
 
-  const payload=res?.data;
-  let rows=Array.isArray(payload)
-   ?payload
-   :Array.isArray(payload?.data)
-    ?payload.data
-    :Array.isArray(payload?.rows)
-     ?payload.rows
-     :Array.isArray(payload?.historico)
-      ?payload.historico
-      :Array.isArray(payload?.registros)
-       ?payload.registros
-       :[];
+  let rows=extractHistoryRows(res);
 
   const normalizeKey=(value)=>up(value).replace(/[^A-Z0-9]/g,"");
   const pick=(row,...keys)=>{
@@ -497,16 +502,19 @@ async function loadHistory(){
    cliente:pick(row,"cliente","Cliente","CLIENTE","nomeCliente","NomeCliente","Nome Cliente"),
    produto:pick(row,"produto","Produto","PRODUTO","nomeProduto","NomeProduto","Nome Produto"),
    valorEmpresa:pick(row,
-    "valorEmpresa","ValorEmpresa","valor_empresa","Vlr Empresa","freteEmpresa",
-    "Valor Empresa","Frete Empresa"
+    "valorEmpresa","ValorEmpresa","valor_empresa","Vlr Empresa","vlrEmpresa","freteEmpresa",
+    "novoValorEmpresa","valorEmpresaNovo","valorFreteEmpresa","Valor Empresa","Frete Empresa"
    ),
    valorMotorista:pick(row,
-    "valorMotorista","ValorMotorista","valor_motorista","Vlr Motorista","freteMotorista",
-    "Valor Motorista","Frete Motorista"
+    "valorMotorista","ValorMotorista","valor_motorista","Vlr Motorista","vlrMotorista","freteMotorista",
+    "novoValorMotorista","valorMotoristaNovo","valorFreteMotorista","Valor Motorista","Frete Motorista"
    ),
    km:pick(row,"km","KM","Km","quilometragem","Quilometragem"),
    pedagioEixo:pick(row,"pedagioEixo","PedagioEixo","pedagio_eixo","Pedágio/Eixo","Pedagio por Eixo"),
-   dataHora:pick(row,"dataHora","DataHora","data_hora","data","Data","Data Hora"),
+   dataHora:pick(row,
+    "dataHora","DataHora","data_hora","dataEvento","timestamp","dataRegistro",
+    "dataAlteracao","dataCriacao","dataReferencia","createdAt","data","Data","Data Hora"
+   ),
    ultimaAlteracao:pick(row,"ultimaAlteracao","Última Alteração","ultima_alteracao","updatedAt","Data Atualizacao")
   }));
 

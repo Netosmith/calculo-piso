@@ -440,6 +440,206 @@ function extractHistoryRows(value,depth=0){
  return [];
 }
 
+function historyKey(value){
+ return up(value).replace(/[^A-Z0-9]/g,"");
+}
+
+function historyObject(value){
+ if(value&&typeof value==="object"&&!Array.isArray(value))return value;
+ if(typeof value!=="string")return null;
+
+ const raw=value.trim();
+ if(!raw.startsWith("{"))return null;
+
+ try{
+  const parsed=JSON.parse(raw);
+  return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:null;
+ }catch(e){
+  return null;
+ }
+}
+
+function historySources(row){
+ const output=[];
+ const queue=[{value:row,depth:0}];
+ const seen=new Set();
+ const priority=[
+  "DEPOIS","NOVO","ATUAL","DADOSDEPOIS","DADOSATUAIS","SNAPSHOT",
+  "FRETE","REGISTRO","PAYLOAD","DADOS","ANTES","ANTIGO","DADOSANTES"
+ ];
+
+ while(queue.length){
+  const item=queue.shift();
+  const current=historyObject(item.value);
+  if(!current||seen.has(current))continue;
+
+  seen.add(current);
+  output.push(current);
+  if(item.depth>=4)continue;
+
+  const entries=Object.entries(current)
+   .map(([key,value],index)=>({key,value,index,rank:priority.indexOf(historyKey(key))}))
+   .sort((a,b)=>{
+    const rankA=a.rank<0?priority.length:a.rank;
+    const rankB=b.rank<0?priority.length:b.rank;
+    return rankA-rankB||a.index-b.index;
+   });
+
+  entries.forEach(({value})=>{
+   const nested=historyObject(value);
+   if(nested)queue.push({value:nested,depth:item.depth+1});
+  });
+ }
+
+ return output;
+}
+
+function pickHistory(row,...keys){
+ const wanted=new Set(keys.map(historyKey));
+
+ for(const source of historySources(row)){
+  for(const [key,value] of Object.entries(source)){
+   if(!wanted.has(historyKey(key)))continue;
+   if(value===undefined||value===null||txt(value)==="")continue;
+   if(historyObject(value))continue;
+   return value;
+  }
+ }
+
+ return "";
+}
+
+function historyFreightId(row){
+ const explicit=pickHistory(row,
+  "idFrete","freteId","codigoFrete","idRegistro","registroId","ID Frete"
+ );
+ if(txt(explicit))return explicit;
+
+ const nestedSources=historySources(row).slice(1);
+ for(const source of nestedSources){
+  for(const [key,value] of Object.entries(source)){
+   if(historyKey(key)==="ID"&&value!==undefined&&value!==null&&txt(value)!==""){
+    return value;
+   }
+  }
+ }
+
+ const hasHistoryId=txt(pickHistory(row,"idHistorico","uuidHistorico","ID Historico"));
+ if(hasHistoryId)return "";
+
+ for(const [key,value] of Object.entries(row||{})){
+  if(historyKey(key)==="ID"&&value!==undefined&&value!==null&&txt(value)!==""){
+   return value;
+  }
+ }
+
+ return "";
+}
+
+function normalizeHistoryRow(row){
+ return {
+  ...row,
+  idFrete:historyFreightId(row),
+  origem:pickHistory(row,
+   "origem","cidadeOrigem","origemCidade","localOrigem","origemFrete",
+   "Cidade Origem","Origem Cidade","Local Origem","Origem da Rota",
+   "Municipio Origem","Município Origem"
+  ),
+  coleta:pickHistory(row,
+   "coleta","localColeta","embarque","localEmbarque","pontoColeta",
+   "Local Embarque","Local de Coleta","Ponto de Coleta"
+  ),
+  destino:pickHistory(row,
+   "destino","cidadeDestino","destinoCidade","localDestino","destinoFrete",
+   "Cidade Destino","Destino Cidade","Local Destino","Destino da Rota",
+   "Municipio Destino","Município Destino"
+  ),
+  descarga:pickHistory(row,
+   "descarga","localDescarga","recebedor","pontoDescarga",
+   "Local de Descarga","Ponto de Descarga"
+  ),
+  cliente:pickHistory(row,"cliente","nomeCliente","Nome Cliente"),
+  produto:pickHistory(row,"produto","nomeProduto","Nome Produto"),
+  valorEmpresa:pickHistory(row,
+   "valorEmpresa","valor_empresa","Vlr Empresa","vlrEmpresa","freteEmpresa",
+   "novoValorEmpresa","valorEmpresaNovo","valorFreteEmpresa","Valor Empresa","Frete Empresa"
+  ),
+  valorMotorista:pickHistory(row,
+   "valorMotorista","valor_motorista","Vlr Motorista","vlrMotorista","freteMotorista",
+   "novoValorMotorista","valorMotoristaNovo","valorFreteMotorista","Valor Motorista","Frete Motorista"
+  ),
+  km:pickHistory(row,"km","quilometragem"),
+  pedagioEixo:pickHistory(row,
+   "pedagioEixo","pedagio_eixo","pedagio","Pedágio/Eixo","Pedagio por Eixo","Pedágio Eixo"
+  ),
+  dataHora:pickHistory(row,
+   "dataHora","data_hora","dataEvento","timestamp","dataRegistro",
+   "dataAlteracao","dataCriacao","dataReferencia","createdAt","data","Data Hora"
+  ),
+  ultimaAlteracao:pickHistory(row,
+   "ultimaAlteracao","Última Alteração","ultima_alteracao","updatedAt","Data Atualizacao"
+  )
+ };
+}
+
+function hasHistoryRoute(row){
+ return !!(
+  (txt(row.origem)||txt(row.coleta))&&
+  (txt(row.destino)||txt(row.descarga))
+ );
+}
+
+function historyId(value){
+ return historyKey(value);
+}
+
+function currentFreightId(row){
+ return pickHistory(row,"id","ID","idFrete","freteId","codigoFrete","ID Frete");
+}
+
+async function loadCurrentFreightRows(){
+ const modules=["fretes","fretes2"];
+ const results=await Promise.allSettled(
+  modules.map(module=>window.PortalAPI.call(module,"read",{}))
+ );
+
+ return results.flatMap((result,index)=>{
+  if(result.status!=="fulfilled"){
+   console.warn(`[CÁLCULO PISO] Não foi possível consultar ${modules[index]} para completar o histórico.`);
+   return [];
+  }
+  return extractHistoryRows(result.value);
+ });
+}
+
+function enrichHistoryRows(historyRows,currentRows){
+ const currentById=new Map();
+
+ currentRows.forEach(raw=>{
+  const id=historyId(currentFreightId(raw));
+  if(!id)return;
+  currentById.set(id,normalizeHistoryRow(raw));
+ });
+
+ const fallbackFields=[
+  "origem","coleta","destino","descarga","cliente","produto",
+  "valorEmpresa","valorMotorista","km","pedagioEixo"
+ ];
+
+ return historyRows.map(row=>{
+  const current=currentById.get(historyId(row.idFrete));
+  if(!current)return row;
+
+  const enriched={...row};
+  fallbackFields.forEach(field=>{
+   if(txt(enriched[field])===""&&txt(current[field])!==""){
+    enriched[field]=current[field];
+   }
+  });
+  return enriched;
+ });
+}
+
 async function loadHistory(){
  const o=txt($("origemRota").value);
  const d=txt($("destinoRota").value);
@@ -463,66 +663,18 @@ async function loadHistory(){
 
   if(!res||res.ok===false)throw new Error(res?.error||"Falha na API");
 
-  let rows=extractHistoryRows(res);
+  const rawRows=extractHistoryRows(res);
+  let normalizedRows=rawRows.map(normalizeHistoryRow);
+  const totalRecebido=normalizedRows.length;
+  let rows=normalizedRows.filter(r=>routeMatch(r,o,d));
 
-  const normalizeKey=(value)=>up(value).replace(/[^A-Z0-9]/g,"");
-  const pick=(row,...keys)=>{
-   for(const key of keys){
-    if(row&&row[key]!==undefined&&row[key]!==null&&txt(row[key])!=="")return row[key];
-   }
+  if(!rows.length&&normalizedRows.some(r=>!hasHistoryRoute(r)&&txt(r.idFrete))){
+   const currentRows=await loadCurrentFreightRows();
+   normalizedRows=enrichHistoryRows(normalizedRows,currentRows);
+   rows=normalizedRows.filter(r=>routeMatch(r,o,d));
+  }
 
-   const wanted=new Set(keys.map(normalizeKey));
-   for(const [key,value] of Object.entries(row||{})){
-    if(wanted.has(normalizeKey(key))&&value!==undefined&&value!==null&&txt(value)!==""){
-     return value;
-    }
-   }
-
-   return "";
-  };
-
-  rows=rows.map(row=>({
-   ...row,
-   origem:pick(row,
-    "origem","Origem","ORIGEM","cidadeOrigem","origemCidade","localOrigem",
-    "Cidade Origem","Origem Cidade","Local Origem","Municipio Origem","Município Origem"
-   ),
-   coleta:pick(row,
-    "coleta","Coleta","COLETA","localColeta","embarque","Local Embarque",
-    "Local de Coleta","Ponto de Coleta","Embarque","LocalEmbarque"
-   ),
-   destino:pick(row,
-    "destino","Destino","DESTINO","cidadeDestino","destinoCidade","localDestino",
-    "Cidade Destino","Destino Cidade","Local Destino","Municipio Destino","Município Destino"
-   ),
-   descarga:pick(row,
-    "descarga","Descarga","DESCARGA","localDescarga","recebedor",
-    "Local de Descarga","Ponto de Descarga","LocalDescarga"
-   ),
-   cliente:pick(row,"cliente","Cliente","CLIENTE","nomeCliente","NomeCliente","Nome Cliente"),
-   produto:pick(row,"produto","Produto","PRODUTO","nomeProduto","NomeProduto","Nome Produto"),
-   valorEmpresa:pick(row,
-    "valorEmpresa","ValorEmpresa","valor_empresa","Vlr Empresa","vlrEmpresa","freteEmpresa",
-    "novoValorEmpresa","valorEmpresaNovo","valorFreteEmpresa","Valor Empresa","Frete Empresa"
-   ),
-   valorMotorista:pick(row,
-    "valorMotorista","ValorMotorista","valor_motorista","Vlr Motorista","vlrMotorista","freteMotorista",
-    "novoValorMotorista","valorMotoristaNovo","valorFreteMotorista","Valor Motorista","Frete Motorista"
-   ),
-   km:pick(row,"km","KM","Km","quilometragem","Quilometragem"),
-   pedagioEixo:pick(row,"pedagioEixo","PedagioEixo","pedagio_eixo","Pedágio/Eixo","Pedagio por Eixo"),
-   dataHora:pick(row,
-    "dataHora","DataHora","data_hora","dataEvento","timestamp","dataRegistro",
-    "dataAlteracao","dataCriacao","dataReferencia","createdAt","data","Data","Data Hora"
-   ),
-   ultimaAlteracao:pick(row,"ultimaAlteracao","Última Alteração","ultima_alteracao","updatedAt","Data Atualizacao")
-  }));
-
-  const totalRecebido=rows.length;
-
-  rows=rows
-   .filter(r=>routeMatch(r,o,d))
-   .sort((a,b)=>dateVal(b)-dateVal(a));
+  rows.sort((a,b)=>dateVal(b)-dateVal(a));
 
   historyRouteRows=rows;
 
@@ -532,14 +684,17 @@ async function loadHistory(){
    destinoDigitado:d,
    origemNormalizada:normPlace(o),
    destinoNormalizado:normPlace(d),
+   registrosComRota:normalizedRows.filter(hasHistoryRoute).length,
+   camposRecebidos:Object.keys(rawRows[0]||{}),
    encontrados:rows.length
   });
 
   applyHistoryDateFilter();
 
   if(!rows.length){
+   const rotasIdentificadas=normalizedRows.filter(hasHistoryRoute).length;
    $("historyStatus").textContent=
-    `Nenhum histórico para esta rota (${totalRecebido} registros analisados)`;
+    `Nenhum histórico para esta rota (${totalRecebido} analisados; ${rotasIdentificadas} com rota identificada)`;
   }
 
  }catch(e){

@@ -1,0 +1,37 @@
+name: Fix Fretes Nested Data V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/fix_fretes_nested_data_v2.py'
+      - '.github/workflows/fix-fretes-nested-data-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply fix
+        run: python .github/scripts/fix_fretes_nested_data_v2.py
+
+      - name: Validate JavaScript
+        run: node --check assets/js/fretes.js
+
+      - name: Commit correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/fretes.js
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(fretes): read nested gateway data array v2"
+          git push

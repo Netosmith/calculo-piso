@@ -12,99 +12,13 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Secure Cálculo Piso page
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          path = Path("pages/calculo-antt.html")
-          text = path.read_text(encoding="utf-8")
-          original = text
-
-          text = text.replace('auth.js?v=3', 'auth.js?v=4')
-          text = text.replace('requirePiso2Auth', 'requirePisoAuth')
-          text = text.replace('[PISO2]', '[PISO]')
-          text = text.replace('Piso 2', 'Cálculo de Piso')
-
-          text = re.sub(
-              r'\n\s*/\* Admin modal \*/.*?\n\s*</style>',
-              '\n  </style>', text, count=1, flags=re.S
-          )
-
-          text = re.sub(
-              r'\n\s*<!-- ADMIN MODAL -->.*?\n\s*<div class="wrap" id="app">',
-              '\n\n  <div class="wrap" id="app">', text, count=1, flags=re.S
-          )
-
-          text = re.sub(
-              r'\n\s*<button class="smallBtn" id="btnAdmin"[^>]*>.*?</button>',
-              '', text, count=1
-          )
-
-          text = re.sub(r'\nconst ADMIN_USER = "LUZIANO";\n', '\n', text, count=1)
-          text = re.sub(r'\nfunction isAdmin\(\)\{[^\n]*\}\n', '\n', text, count=1)
-
-          text = re.sub(
-              r'\n/\*\* logout do portal \*/\nfunction logoutPortal\(\)\{.*?\n\}\n\n/\* ================== MODO COTAÇÃO',
-              '\n/* ================== MODO COTAÇÃO', text, count=1, flags=re.S
-          )
-
-          text = re.sub(
-              r'\n/\* ================== ADMIN UI ================== \*/.*?\n/\* ================== INIT ================== \*/',
-              '\n/* ================== INIT ================== */', text, count=1, flags=re.S
-          )
-
-          text = re.sub(
-              r'\n\s*\$\("btnAdmin"\)\.style\.display\s*=\s*isAdmin\(\)\s*\?\s*""\s*:\s*"none";',
-              '', text, count=1
-          )
-
-          old_logout = '''  $("btnLogout").addEventListener("click", (e)=>{
-    e.preventDefault();
-    logoutPortal();
-  });'''
-          new_logout = '''  $("btnLogout")?.addEventListener("click", async (event)=>{
-    event.preventDefault();
-    const button = event.currentTarget;
-    if(button) button.disabled = true;
-    try{
-      if(typeof logoutPortal === "function") await logoutPortal();
-    }finally{
-      window.location.href = "../pages/login.html";
-    }
-  });'''
-          text = text.replace(old_logout, new_logout)
-
-          text = text.replace(
-              '["km","pedagio","margem","icms","tipo","admUserName","admUserPass"].forEach(id=>bindGlow($(id)));',
-              '["km","pedagio","margem","icms","tipo"].forEach(id=>bindGlow($(id)));'
-          )
-
-          text = re.sub(
-              r'\n\s*\$\("btnAdminClose"\).*?\n\s*\}\);\n\}\);\n</script>',
-              '\n});\n</script>', text, count=1, flags=re.S
-          )
-
-          forbidden = ['piso_users_v1','admUserPass','admUserName','btnAdmin','adminModal','const ADMIN_USER']
-          leftovers = [item for item in forbidden if item in text]
-          if leftovers:
-              raise SystemExit('Referências inseguras restantes: ' + ', '.join(leftovers))
-
-          if 'requirePisoAuth' not in text:
-              raise SystemExit('Guarda requirePisoAuth não encontrada.')
-          if 'await logoutPortal' not in text:
-              raise SystemExit('Logout remoto não foi conectado.')
-          if text == original:
-              raise SystemExit('Nenhuma alteração aplicada.')
-
-          path.write_text(text, encoding='utf-8')
-          PY
+      - name: Run secure migration
+        run: python .github/scripts/migrate_calculo_piso_secure.py
 
       - name: Validate migration
         shell: bash
@@ -122,6 +36,7 @@ jobs:
             echo "No changes needed"
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pages/calculo-antt.html

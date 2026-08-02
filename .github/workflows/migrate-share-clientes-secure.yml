@@ -1,0 +1,37 @@
+name: Migrate Share Clientes Secure API
+
+on:
+  push:
+    paths:
+      - ".github/scripts/migrate_share_clientes_secure.py"
+      - ".github/workflows/migrate-share-clientes-secure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Migrate Share Clientes
+        run: python .github/scripts/migrate_share_clientes_secure.py
+
+      - name: Validate JavaScript
+        run: node --check assets/js/share-clientes.js
+
+      - name: Commit migration
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/js/share-clientes.js; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/share-clientes.js
+          git commit -m "refactor(share): use secure gateway directly"
+          git push

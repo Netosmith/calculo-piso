@@ -1,0 +1,39 @@
+name: Normalize Gateway Envelopes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/normalize_gateway_envelopes.py'
+      - '.github/workflows/normalize-gateway-envelopes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Normalize gateway responses
+        run: python .github/scripts/normalize_gateway_envelopes.py
+
+      - name: Validate JavaScript
+        run: |
+          node --check assets/js/api.js
+          node --check assets/js/auth.js
+
+      - name: Commit global correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/api.js assets/js/auth.js pages '*.html' GATEWAY_ENVELOPE_AUDIT.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(api): normalize nested gateway envelopes globally"
+          git push

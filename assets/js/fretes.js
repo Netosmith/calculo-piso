@@ -1847,13 +1847,15 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       const payload = res?.data ?? {};
       const rows = Array.isArray(payload)
         ? payload
-        : Array.isArray(payload.rows)
-          ? payload.rows
-          : Array.isArray(payload.fretes)
-            ? payload.fretes
-            : Array.isArray(payload.items)
-              ? payload.items
-              : [];
+        : Array.isArray(payload.data)
+          ? payload.data
+          : Array.isArray(payload.rows)
+            ? payload.rows
+            : Array.isArray(payload.fretes)
+              ? payload.fretes
+              : Array.isArray(payload.items)
+                ? payload.items
+                : [];
 
       STATE.rows = rows.map((row) => ({
         ...row,

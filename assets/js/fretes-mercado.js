@@ -14,6 +14,7 @@ const REGIOES = {
 };
 
 const DIRTY_KEYS = new Set();
+let LOAD_SEQUENCE = 0;
 
 function $(id) {
   return document.getElementById(id);
@@ -91,8 +92,28 @@ function makeKey(regiao, base) {
 
 async function mercadoApi(action, params = {}) {
   const api = await ensurePortalApi();
-  const result = await api.call("fretes-mercado", action, params);
-  return result?.data ?? result;
+  const attempts = action === "read" ? 2 : 1;
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const result = await api.call("fretes-mercado", action, params);
+      return result?.data ?? result;
+    } catch (error) {
+      lastError = error;
+      const transient =
+        !error?.status || [502, 503, 504].includes(Number(error.status));
+
+      if (!transient || attempt >= attempts) {
+        throw error;
+      }
+
+      setStatus("🔄 Comunicação instável. Tentando novamente...");
+      await new Promise((resolve) => setTimeout(resolve, 900));
+    }
+  }
+
+  throw lastError || new Error("Falha ao carregar os fretes de mercado.");
 }
 
 function extractRows(payload) {
@@ -104,17 +125,27 @@ function extractRows(payload) {
 }
 
 async function load() {
+  const sequence = ++LOAD_SEQUENCE;
+
   try {
     setStatus("🔄 Carregando...");
     const payload = await mercadoApi("read", {});
     const dados = extractRows(payload);
 
+    if (sequence !== LOAD_SEQUENCE) return;
+
     DIRTY_KEYS.clear();
     render(dados);
     setStatus("✅ Dados sincronizados.");
   } catch (err) {
+    if (sequence !== LOAD_SEQUENCE) return;
+
     console.error(err);
-    setStatus("❌ " + err.message, true);
+    const hasRenderedRows = Boolean(document.querySelector(".linha-frete"));
+    const suffix = hasRenderedRows
+      ? " Os dados já exibidos foram preservados."
+      : " Tente novamente em instantes.";
+    setStatus("❌ " + err.message + suffix, true);
   }
 }
 
@@ -281,7 +312,20 @@ function bindEvents() {
   $("btnSairMercado")?.addEventListener("click", sairSistema);
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+async function iniciarFretesMercado() {
+  setStatus("🔄 Validando acesso...");
+
+  const session = await verifyPortalSession({ requireState: true });
+  if (!session) return;
+
+  if (!canAccessFeature("fretes-mercado")) {
+    alert("Fretes Mercado não está liberado para este perfil.");
+    window.location.href = "./home.html";
+    return;
+  }
+
   bindEvents();
   await load();
-});
+}
+
+document.addEventListener("DOMContentLoaded", iniciarFretesMercado);

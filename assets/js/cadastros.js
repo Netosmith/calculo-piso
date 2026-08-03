@@ -70,12 +70,27 @@
     }
   };
 
-  const STATE={tab:"usuarios",rows:[],editing:null,busy:false};
+  const STATE={
+    tab:"usuarios",
+    rows:[],
+    editing:null,
+    loading:false,
+    saving:false,
+    toggling:false,
+    loadToken:0
+  };
   const $=s=>document.querySelector(s);
   const safe=v=>String(v??"").trim();
   const upper=v=>safe(v).toUpperCase();
 
   function setStatus(text){const el=$("#cadStatus");if(el)el.textContent=text;}
+  function setModalMessage(text="",type=""){
+    const el=$("#modalMessage");
+    if(!el)return;
+    el.textContent=text;
+    el.className="modalMessage"+(type?" "+type:"");
+    el.hidden=!text;
+  }
   function configAtual(){return CONFIG[STATE.tab];}
   function isAtivo(row){return upper(row.Ativo??row.ativo)==="SIM";}
   function rowsFrom(data){
@@ -85,15 +100,32 @@
     return [];
   }
 
-  async function api(operation,payload={}){
+  async function api(operation,payload={},resource=STATE.tab){
+    if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
     if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
-    const actionMap={list:"read",add:"create",update:"update",toggle:"update"};
+    const actionMap={list:"read",add:"create",update:"update",toggle:"delete"};
     const result=await window.PortalAPI.call("cadastros",actionMap[operation],{
       ...payload,
-      resource:STATE.tab,
+      resource,
       operation
     });
     return {ok:true,data:operation==="list"?rowsFrom(result.data):(result.data||{})};
+  }
+
+  function rowIdentity(row,cfg=configAtual()){
+    return safe(row?.[cfg.idField]);
+  }
+
+  function mergeRow(saved,previousId="",baseRow=null){
+    if(!saved||typeof saved!=="object"||Array.isArray(saved))return false;
+    const cfg=configAtual();
+    const incoming={...(baseRow||{}),...saved};
+    const targetId=safe(previousId)||rowIdentity(incoming,cfg);
+    const index=STATE.rows.findIndex(row=>rowIdentity(row,cfg)===targetId);
+    if(index>=0)STATE.rows[index]={...STATE.rows[index],...incoming};
+    else STATE.rows.push(incoming);
+    render();
+    return true;
   }
 
   function statusPill(value){
@@ -142,13 +174,22 @@
   }
 
   async function loadCurrent(force=false){
-    if(STATE.busy&&!force)return;
-    STATE.busy=true;setStatus("🔄 Carregando "+configAtual().title.toLowerCase()+"...");
+    if(STATE.loading&&!force)return;
+    const tab=STATE.tab;
+    const token=++STATE.loadToken;
+    STATE.loading=true;setStatus("🔄 Carregando "+configAtual().title.toLowerCase()+"...");
     try{
-      const res=await api("list");STATE.rows=rowsFrom(res.data);render();setStatus("✅ "+STATE.rows.length+" registro(s)");
+      const res=await api("list",{},tab);
+      if(token!==STATE.loadToken||tab!==STATE.tab)return;
+      STATE.rows=rowsFrom(res.data);render();setStatus("✅ "+STATE.rows.length+" registro(s)");
     }catch(error){
-      console.error("[cadastros] carregar:",error);STATE.rows=[];render();setStatus("❌ Erro ao carregar");alert(error.message);
-    }finally{STATE.busy=false;}
+      if(token!==STATE.loadToken||tab!==STATE.tab)return;
+      console.error("[cadastros] carregar:",error);
+      setStatus(STATE.rows.length?"⚠️ Falha ao atualizar; dados mantidos":"❌ Erro ao carregar");
+      alert(error.message||"Não foi possível carregar os cadastros.");
+    }finally{
+      if(token===STATE.loadToken)STATE.loading=false;
+    }
   }
 
   function createInput(field,value){
@@ -169,13 +210,15 @@
     STATE.editing=row||null;const cfg=configAtual();
     $("#modalTitle").textContent=(row?"Editar ":"Novo ")+cfg.title;
     const fields=$("#formFields");fields.innerHTML="";cfg.fields.forEach(field=>fields.appendChild(createInput(field,row?row[field.key]:"")));
+    setModalMessage();
     $("#cadModal").classList.add("show");$("#cadModal").setAttribute("aria-hidden","false");
     setTimeout(()=>fields.querySelector("input,select")?.focus(),40);
   }
 
   function closeModal(force=false){
-    if(STATE.busy&&!force)return;
+    if(STATE.saving&&!force)return;
     $("#cadModal").classList.remove("show");$("#cadModal").setAttribute("aria-hidden","true");STATE.editing=null;$("#cadForm").reset();
+    setModalMessage();
   }
 
   function collectForm(){
@@ -188,42 +231,65 @@
     return payload;
   }
 
-  async function save(){
-    if(STATE.busy)return;
-    let payload;try{payload=collectForm();}catch(error){alert(error.message);return;}
-    const cfg=configAtual(),editing=!!STATE.editing;
-    if(editing){if(STATE.tab==="usuarios")payload.usuarioOriginal=STATE.editing.Usuario;else payload.id=STATE.editing[cfg.idField];}
-    STATE.busy=true;$("#btnSalvar").disabled=true;setStatus("💾 Salvando...");
+  async function save(event){
+    event?.preventDefault();
+    if(STATE.saving||STATE.toggling)return;
+    let payload;
+    try{payload=collectForm();}
+    catch(error){setModalMessage(error.message,"error");return;}
+    const tab=STATE.tab,cfg=configAtual(),editingRow=STATE.editing;
+    const editing=!!editingRow;
+    const previousId=editing?rowIdentity(editingRow,cfg):"";
+    if(editing){if(tab==="usuarios")payload.usuarioOriginal=editingRow.Usuario;else payload.id=editingRow[cfg.idField];}
+    const saveButton=$("#btnSalvar");
+    const originalLabel=saveButton.textContent;
+    STATE.loadToken++;STATE.loading=false;
+    STATE.saving=true;saveButton.disabled=true;saveButton.textContent="Salvando...";
+    setModalMessage("Salvando cadastro...","info");setStatus("💾 Salvando...");
     try{
-      await api(editing?"update":"add",payload);
-      closeModal(true);STATE.busy=false;await loadCurrent(true);setStatus("✅ Cadastro salvo");
-    }catch(error){console.error("[cadastros] salvar:",error);setStatus("❌ Erro ao salvar");alert(error.message);}
-    finally{STATE.busy=false;$("#btnSalvar").disabled=false;}
+      const res=await api(editing?"update":"add",payload,tab);
+      const updated=mergeRow(res.data,previousId,editingRow);
+      closeModal(true);
+      setStatus("✅ Cadastro salvo");
+      if(!updated)loadCurrent(true);
+    }catch(error){
+      console.error("[cadastros] salvar:",error);
+      setStatus("❌ Erro ao salvar");
+      setModalMessage(error.message||"Não foi possível salvar o cadastro.","error");
+    }finally{
+      STATE.saving=false;saveButton.disabled=false;saveButton.textContent=originalLabel;
+    }
   }
 
   async function toggleRow(row){
-    if(STATE.busy)return;
-    const cfg=configAtual(),novoAtivo=isAtivo(row)?"NÃO":"SIM";
+    if(STATE.saving||STATE.toggling)return;
+    const tab=STATE.tab,cfg=configAtual(),novoAtivo=isAtivo(row)?"NÃO":"SIM";
     const nome=row.Usuario||row.regional||row.filial||row.cliente||row.nome||"registro";
     if(!confirm((novoAtivo==="SIM"?"Ativar ":"Desativar ")+nome+"?"))return;
     const payload={ativo:novoAtivo};
-    if(STATE.tab==="usuarios")payload.usuario=row.Usuario;else payload.id=row[cfg.idField];
-    STATE.busy=true;setStatus("⏳ Atualizando status...");
-    try{await api("toggle",payload);STATE.busy=false;await loadCurrent(true);setStatus("✅ Status atualizado");}
+    if(tab==="usuarios")payload.usuario=row.Usuario;else payload.id=row[cfg.idField];
+    STATE.loadToken++;STATE.loading=false;
+    STATE.toggling=true;setStatus("⏳ Atualizando status...");
+    try{
+      const res=await api("toggle",payload,tab);
+      mergeRow(res.data,rowIdentity(row,cfg),row);
+      setStatus("✅ Status atualizado");
+    }
     catch(error){console.error("[cadastros] toggle:",error);setStatus("❌ Erro ao atualizar");alert(error.message);}
-    finally{STATE.busy=false;}
+    finally{STATE.toggling=false;}
   }
 
   function bind(){
     $("#tabs")?.addEventListener("click",event=>{
       const button=event.target.closest("[data-tab]");if(!button)return;
-      STATE.tab=button.dataset.tab;STATE.rows=[];STATE.editing=null;
+      STATE.tab=button.dataset.tab;STATE.rows=[];STATE.editing=null;STATE.loadToken++;STATE.loading=false;
       document.querySelectorAll(".tabBtn").forEach(btn=>btn.classList.toggle("active",btn===button));
       $("#buscaCadastro").value="";loadCurrent();
     });
     $("#buscaCadastro")?.addEventListener("input",render);
     $("#btnAtualizar")?.addEventListener("click",()=>loadCurrent(true));
     $("#btnNovo")?.addEventListener("click",()=>openModal(null));
+    $("#cadForm")?.addEventListener("submit",save);
     $("#btnSalvar")?.addEventListener("click",save);
     $("#btnCancelar")?.addEventListener("click",()=>closeModal());
     $("#btnFecharModal")?.addEventListener("click",()=>closeModal());
@@ -233,7 +299,18 @@
 
   async function init(){
     bind();
-    const perfil=upper(typeof getProfile==="function"?getProfile():localStorage.getItem("nf_auth_profile"));
+    let session=null;
+    try{
+      if(typeof verifyPortalSession==="function")session=await verifyPortalSession({requireState:true,redirect:false});
+      else if(typeof ensurePortalApi==="function"){
+        const portalApi=await ensurePortalApi();
+        session=(await portalApi.session()).session;
+      }
+    }catch(error){
+      console.error("[cadastros] sessão:",error);
+    }
+    if(!session){window.location.href="./login.html";return;}
+    const perfil=upper(session.perfil||localStorage.getItem("nf_auth_profile"));
     if(perfil!=="ADMINISTRADOR"){
       alert("Acesso permitido somente ao administrador.");window.location.href="./home.html";return;
     }

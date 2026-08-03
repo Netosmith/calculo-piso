@@ -4,6 +4,7 @@ const RETRYABLE_MODULES = new Set([
   "home",
   "fretes",
   "fretes2",
+  "fretes-mercado",
   "bi",
   "share",
   "controle",
@@ -14,10 +15,31 @@ const RETRYABLE_MODULES = new Set([
   "custo-filial"
 ]);
 
+function requestContext(payload) {
+  const outerAction = String(payload?.action || "").toLowerCase();
+  const gatewayParams = payload?.params;
+  const isGatewayRequest =
+    outerAction === "portal_gateway" &&
+    gatewayParams &&
+    typeof gatewayParams === "object" &&
+    !Array.isArray(gatewayParams);
+
+  return {
+    module: String(
+      isGatewayRequest ? gatewayParams.module : payload?.module || ""
+    ).toLowerCase(),
+    action: String(
+      isGatewayRequest ? gatewayParams.action : payload?.action || ""
+    ).toLowerCase()
+  };
+}
+
 function shouldRetry(payload, attempt, error) {
   if (attempt >= 2) return false;
-  if (String(payload?.action || "").toLowerCase() !== "read") return false;
-  if (!RETRYABLE_MODULES.has(String(payload?.module || "").toLowerCase())) return false;
+
+  const context = requestContext(payload);
+  if (context.action !== "read") return false;
+  if (!RETRYABLE_MODULES.has(context.module)) return false;
 
   const message = String(error?.message || error || "").toLowerCase();
   return (

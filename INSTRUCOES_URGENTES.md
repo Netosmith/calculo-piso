@@ -34,10 +34,7 @@ Abra o arquivo: **`apps-script-FIXED.gs`** (está no repositório)
 
 ### Passo 4: Atualize a URL no Site
 
-A URL atual que está no código é:
-```
-https://script.google.com/macros/s/AKfycbz05hQfNPztgZm24gzE7jgODmCU1nQqAxpCJbmJs9j_g8pR86xVRqEWQS_zUXqKogG2/exec
-```
+A URL do Apps Script não deve ficar no código. Configure a implantação somente no secret `APPS_SCRIPT_URL` do Cloudflare Worker.
 
 Você vai precisar **substituir** por uma nova URL após fazer o deploy.
 
@@ -70,10 +67,7 @@ O `getActiveSpreadsheet()` usa a planilha onde o script está vinculado automati
 
 ## 🧪 Testar
 
-Depois do deploy, teste abrindo no navegador:
-```
-SUA_NOVA_URL?action=list&callback=teste123
-```
+Depois do deploy, teste exclusivamente pelo Portal autenticado e pelo gateway do Worker. Chamadas diretas ao Apps Script devem ser recusadas.
 
 Deve retornar:
 ```javascript

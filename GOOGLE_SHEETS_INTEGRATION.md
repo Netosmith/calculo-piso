@@ -6,7 +6,9 @@ O sistema **fretes.html** agora está integrado com Google Sheets para permitir 
 
 ## 🔗 Configuração Atual
 
-**API URL:** `https://script.google.com/macros/s/AKfycbz05hQfNPztgZm24gzE7jgODmCU1nQqAxpCJbmJs9j_g8pR86xVRqEWQS_zUXqKogG2/exec`
+**Fluxo seguro atual:** `PortalAPI → Cloudflare Worker → Apps Script → Google Sheets`
+
+A URL do Apps Script deve existir somente no secret `APPS_SCRIPT_URL` do Worker. Não coloque esse endereço no frontend nem na documentação pública.
 
 ## 📋 Funcionalidades Implementadas
 
@@ -191,11 +193,13 @@ O sistema mantém uma cópia local no `localStorage`:
 
 ## 🔧 Manutenção
 
-Para alterar a URL do Apps Script:
-1. Abra `assets/js/fretes.js`
-2. Localize `const API_URL = "..."`
-3. Substitua pela nova URL
-4. Commit e push as mudanças
+Para alterar a implantação do Apps Script:
+1. Abra o Cloudflare Worker do Portal
+2. Atualize o secret `APPS_SCRIPT_URL`
+3. Confirme que `PORTAL_KEY` e `PORTAL_GATEWAY_KEY` continuam iguais
+4. Publique uma nova versão do Worker
+
+Nunca coloque a URL do Apps Script em arquivos do frontend.
 
 ---
 

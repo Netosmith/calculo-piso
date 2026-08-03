@@ -1,14 +1,8 @@
 # 🧪 TESTE DIRETO - VERIFICAR SE APPS SCRIPT GRAVA qtPorta
 
-## 📋 TESTE 1: Testar direto no navegador
+## 📋 TESTE 1: Testar pelo Portal autenticado
 
-Cole esta URL no navegador (substitua a URL do Apps Script pela sua):
-
-```
-https://script.google.com/macros/s/SUA_URL_AQUI/exec?action=save&data={"id":"","regional":"GOIÁS","filial":"ITUMBIARA","cliente":"TESTE BROWSER","origem":"RIO VERDE","coleta":"FAZ TESTE","contato":"ARIEL","destino":"CABECEIRAS","uf":"GO","descarga":"GRANJA","volume":100,"valorEmpresa":100,"valorMotorista":90,"km":500,"pedagioEixo":30,"produto":"SOJA","icms":"ISENTO","pedidoSat":999,"qtPorta":555,"qtdTransito":444,"status":"LIBERADO","obs":"TESTE DIRETO"}&callback=teste123
-```
-
-**Substitua `SUA_URL_AQUI`** pela sua URL do Apps Script (sem o /exec no final).
+Não abra nem compartilhe a URL do Apps Script. Crie um frete de teste pela tela do Portal, que envia a operação ao Cloudflare Worker com sessão válida.
 
 ### ✅ Resultado esperado:
 
@@ -64,4 +58,3 @@ Me envie:
 ## 🎯 SOLUÇÃO ALTERNATIVA: Simplificar o Apps Script
 
 Vou criar uma versão **ultra-simples** que grava diretamente pela posição da coluna:
-

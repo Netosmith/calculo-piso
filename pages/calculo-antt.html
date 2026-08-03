@@ -284,14 +284,14 @@
 ========================================================== */
 
 
-/** garante auth.js?v=6 carregado + login + estado + permissão do piso */
+/** garante auth.js?v=6 carregado + login + estado + permissão do Piso 2 */
 function enforcePisoAuth(){
   try{
-    if(typeof requirePisoAuth === "function"){
-      return requirePisoAuth() === true;
+    if(typeof requirePiso2Auth === "function"){
+      return requirePiso2Auth() === true;
     }
 
-    console.error("[PISO] requirePisoAuth não encontrado.");
+    console.error("[PISO2] requirePiso2Auth não encontrado.");
     alert("Não foi possível validar o acesso ao Cálculo de Piso.");
     window.location.href = "../pages/login.html";
     return false;

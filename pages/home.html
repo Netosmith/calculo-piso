@@ -603,7 +603,7 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=5"></script>
+  <script src="../assets/js/auth.js?v=6"></script>
   <script src="../assets/js/home-solicitacoes.js"></script>
   <script>
     requireHomeAuth();
@@ -712,60 +712,32 @@
 
     window.atualizarMetricasHome = atualizarMetricasHome;
 
-    const HOME_API_URL = "https://script.google.com/macros/s/AKfycbwlz0Rr0PmdPLZva-6TtSzpfDqx-G1IAkrX8n8cFp5t4mDkH5NQjsztvaWYbtUu8nFG/exec";
+    async function carregarMetricasHome() {
+      try {
+        const session = window.portalAuthReady
+          ? await window.portalAuthReady
+          : null;
 
-    function carregarMetricasHome() {
-      return new Promise((resolve, reject) => {
-        const callbackName = `homeDashboardCallback_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
-        const script = document.createElement("script");
-        const timeout = setTimeout(() => {
-          limpar();
-          reject(new Error("Tempo limite ao consultar os indicadores."));
-        }, 20000);
-
-        function limpar() {
-          clearTimeout(timeout);
-          if (script.parentNode) script.parentNode.removeChild(script);
-          try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+        if (!session) {
+          throw new Error("Sessão inválida ou expirada.");
         }
 
-        window[callbackName] = (resultado) => {
-          try {
-            if (!resultado || resultado.ok !== true) {
-              throw new Error(resultado?.error || "A API não retornou os dados da Home.");
-            }
+        if (!window.PortalAPI) {
+          throw new Error("API segura do Portal indisponível.");
+        }
 
-            const metricas = resultado.data || resultado;
-            atualizarMetricasHome(metricas);
+        const resultado = await window.PortalAPI.call("home", "read");
+        const metricas = resultado.data || {};
+        atualizarMetricasHome(metricas);
 
-            const footer = document.querySelector(".nf-footer-status");
-            if (footer) {
-              footer.textContent =
-                `Dados atualizados às ${horarioAtualizacao(metricas.ultimaAtualizacao)}`;
-            }
+        const footer = document.querySelector(".nf-footer-status");
+        if (footer) {
+          footer.textContent =
+            `Dados atualizados às ${horarioAtualizacao(metricas.ultimaAtualizacao)}`;
+        }
 
-            limpar();
-            resolve(metricas);
-
-          } catch (erro) {
-            limpar();
-            reject(erro);
-          }
-        };
-
-        script.onerror = () => {
-          limpar();
-          reject(new Error("Falha ao carregar a API da Home."));
-        };
-
-        const separador = HOME_API_URL.includes("?") ? "&" : "?";
-        script.src =
-          `${HOME_API_URL}${separador}action=home_dashboard` +
-          `&callback=${encodeURIComponent(callbackName)}` +
-          `&_=${Date.now()}`;
-
-        document.head.appendChild(script);
-      }).catch((erro) => {
+        return metricas;
+      } catch (erro) {
         console.error("Erro ao carregar métricas da Home:", erro);
 
         const footer = document.querySelector(".nf-footer-status");
@@ -782,9 +754,8 @@
           const el = document.getElementById(id);
           if (el) el.textContent = "Falha na atualização";
         });
-
         return null;
-      });
+      }
     }
 
     window.addEventListener("DOMContentLoaded", () => {

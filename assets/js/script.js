@@ -1,4 +1,3 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxZ2ktdYH4j50Xi-n9H1TN8JLI4yDmN0xShDqHKxWQUqXO8ik5BAq_e7G9Nd7YmQUjB/exec";
 const PESO_MEDIO_VIAGEM = 37;
 let dados = [];
 let charts = {};
@@ -274,22 +273,12 @@ function extrairDadosResposta(resultado) {
   return [];
 }
 
-async function iniciar() {
-  try {
-    atualizarStatus("Carregando dados da expedição...");
-    const resposta = await fetch(`${API_URL}?_=${Date.now()}`, { cache:"no-store" });
-    if (!resposta.ok) throw new Error(`Erro HTTP ${resposta.status}`);
-    dados = extrairDadosResposta(await resposta.json());
-    reconstruirFiltros();
-    document.querySelectorAll(".filters select").forEach(select=>select.addEventListener("change",atualizar));
-    atualizar();
-    if (!dados.length) atualizarStatus("A API respondeu, mas não retornou registros.");
-  } catch (erro) {
-    console.error("Erro ao iniciar dashboard:",erro);
-    atualizarStatus("Não foi possível carregar os dados da API.");
-    const tbody = document.getElementById("tabelaResumo");
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="emptyState">Falha ao carregar os dados. Verifique a API e tente novamente.</td></tr>';
-  }
+function iniciar() {
+  dados = [];
+  reconstruirFiltros();
+  document.querySelectorAll(".filters select").forEach(select=>select.addEventListener("change",atualizar));
+  atualizar();
+  atualizarStatus("Importe uma planilha Excel para iniciar a análise local.");
 }
 
 function configurarImportacao() {
@@ -373,40 +362,16 @@ function configurarImportacao() {
         );
       }
 
-      btnImportar.textContent = "⏳ Importando...";
-
-      const resposta = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify({ rows })
-      });
-
-      if (!resposta.ok) {
-        throw new Error(`Erro HTTP ${resposta.status}`);
-      }
-
-      const resultado = await resposta.json();
-
-      if (resultado?.ok === false) {
-        throw new Error(
-          resultado.message ||
-          resultado.error ||
-          "Erro na importação."
-        );
-      }
+      btnImportar.textContent = "⏳ Processando...";
 
       dados = rows;
       reconstruirFiltros();
       atualizar();
 
-      const linhasImportadas = Number(
-        resultado?.linhas ?? rows.length
-      );
+      const linhasImportadas = rows.length;
 
       alert(
-        `Importação concluída!\nLinhas importadas: ${linhasImportadas.toLocaleString("pt-BR")}`
+        `Importação local concluída!\nLinhas analisadas: ${linhasImportadas.toLocaleString("pt-BR")}`
       );
 
     } catch (erro) {

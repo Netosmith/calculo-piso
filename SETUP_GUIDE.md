@@ -8,7 +8,7 @@ Sua página `fretes.html` agora está **100% integrada com Google Sheets**! Todo
 
 ### Passo 1: Verificar/Configurar o Google Apps Script
 
-Seu Apps Script já está em: `https://script.google.com/macros/s/AKfycbz05hQfNPztgZm24gzE7jgODmCU1nQqAxpCJbmJs9j_g8pR86xVRqEWQS_zUXqKogG2/exec`
+O endereço do Apps Script deve ser configurado somente no secret `APPS_SCRIPT_URL` do Cloudflare Worker. O frontend usa `PortalAPI` e nunca chama a implantação diretamente.
 
 Certifique-se de que ele responde aos seguintes endpoints:
 
@@ -117,9 +117,11 @@ Se a conexão com o Google Sheets falhar:
 ### Alterar URL do Apps Script
 Se precisar mudar a URL:
 
-1. Abra `assets/js/fretes.js`
-2. Linha 16: `const API_URL = "sua-nova-url"`
-3. Salve e faça commit
+1. Abra as configurações do Cloudflare Worker
+2. Atualize o secret `APPS_SCRIPT_URL`
+3. Publique uma nova versão do Worker
+
+Não grave a URL do Apps Script no frontend ou no repositório.
 
 ### Adicionar Novos Campos
 Para adicionar um campo novo:

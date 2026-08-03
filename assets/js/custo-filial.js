@@ -4,8 +4,6 @@
 // B.I. Fretes embutido
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxcxoPf9iOShrihdONx721Sd327kszq044hhGO8JDHljierx4TauTLugwfXA27XvRri/exec";
-
 let DB = {
   metas: [],
   lancamentos: []
@@ -222,48 +220,68 @@ function getFiltroAnoMes() {
 // API
 // ==========================================
 
+async function portalCall(moduleName, actionName, params = {}) {
+  const session = window.portalAuthReady
+    ? await window.portalAuthReady
+    : null;
+
+  if (!session) {
+    throw new Error("Sessão inválida ou expirada.");
+  }
+
+  if (!window.PortalAPI) {
+    throw new Error("API segura do Portal indisponível.");
+  }
+
+  return window.PortalAPI.call(moduleName, actionName, params);
+}
+
 async function apiGet(action) {
-  const url = `${API_URL}?action=${encodeURIComponent(action)}`;
-  const res = await fetch(url, { method: "GET" });
-  const text = await res.text();
-
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    throw new Error(`Resposta inválida da API para ${action}`);
+  if (action === "fretes_list") {
+    const result = await portalCall("fretes", "read");
+    return { ok: true, data: Array.isArray(result.data) ? result.data : [] };
   }
 
-  if (!json.ok) {
-    throw new Error(json.error || `Erro GET: ${action}`);
+  if (action === "getAll") {
+    const result = await portalCall("custo-filial", "read", { resource: "all" });
+    const data = result.data || {};
+    return {
+      ok: true,
+      metas: Array.isArray(data.metas) ? data.metas : [],
+      lancamentos: Array.isArray(data.lancamentos) ? data.lancamentos : [],
+    };
   }
 
-  return json;
+  if (action === "importar_metas_base") {
+    const result = await portalCall("custo-filial", "export", {
+      resource: "importar-metas",
+    });
+    return { ok: true, data: result.data || {} };
+  }
+
+  throw new Error(`Operação de leitura inválida: ${action || "vazia"}.`);
 }
 
 async function apiPost(payload) {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify(payload)
+  const routes = {
+    add_meta: ["create", "metas"],
+    update_meta: ["update", "metas"],
+    add_lancamento: ["create", "lancamentos"],
+    update_lancamento: ["update", "lancamentos"],
+  };
+  const route = routes[payload?.action];
+
+  if (!route) {
+    throw new Error(`Operação de gravação inválida: ${payload?.action || "vazia"}.`);
+  }
+
+  const { action, ...params } = payload;
+  const result = await portalCall("custo-filial", route[0], {
+    ...params,
+    resource: route[1],
   });
 
-  const text = await res.text();
-
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    throw new Error(`Resposta inválida da API para ${payload.action || ""}`);
-  }
-
-  if (!json.ok) {
-    throw new Error(json.error || `Erro POST: ${payload.action || ""}`);
-  }
-
-  return json;
+  return { ok: true, data: result.data || {} };
 }
 
 // ==========================================
@@ -368,10 +386,6 @@ async function loadBiFretesData() {
 async function loadAll() {
   try {
     setStatus("🔄 Carregando dados...");
-
-    if (!API_URL || API_URL.includes("COLE_AQUI")) {
-      throw new Error("Preencha a API_URL no custo-filial.js");
-    }
 
     const [json] = await Promise.all([
       apiGet("getAll"),

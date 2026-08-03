@@ -2,9 +2,6 @@
 (function () {
   "use strict";
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbwlz0Rr0PmdPLZva-6TtSzpfDqx-G1IAkrX8n8cFp5t4mDkH5NQjsztvaWYbtUu8nFG/exec";
-
   const FILIAIS = [
     "ITUMBIARA", "RIO VERDE", "JATAI", "MINEIROS", "CHAPADAO DO CEU", "MONTIVIDIU", "CRISTALINA", "UBERLANDIA",
     "INDIARA", "BOM JESUS DE GO", "VIANOPOLIS", "ANAPOLIS", "URUAÇU", "FORMOSA", "ARAGUARI", "CATALAO", "SOROCABA",
@@ -169,71 +166,60 @@
     }
   }
 
-  function jsonp(url, timeoutMs = 25000) {
-    return new Promise((resolve, reject) => {
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      const s = document.createElement("script");
-      const sep = url.includes("?") ? "&" : "?";
+  const ADMIN_ROUTES = {
+    frotaleve_list: ["administrativo", "read", "frotaleve"],
+    frotaleve_add: ["administrativo", "create", "frotaleve"],
+    frotaleve_update: ["administrativo", "update", "frotaleve"],
+    cheques_list: ["administrativo", "read", "cheques"],
+    cheques_add: ["administrativo", "create", "cheques"],
+    cheques_update: ["administrativo", "update", "cheques"],
+    materiais_list: ["administrativo", "read", "materiais"],
+    materiais_add: ["administrativo", "create", "materiais"],
+    materiais_update: ["administrativo", "update", "materiais"],
+    solicit_list: ["administrativo", "read", "solicitacoes"],
+    solicit_add: ["administrativo", "create", "solicitacoes"],
+    solicit_update: ["administrativo", "update", "solicitacoes"],
+    patrimonio_list: ["patrimonio", "read", "patrimonio"],
+    patrimonio_add: ["patrimonio", "create", "patrimonio"],
+    patrimonio_update: ["patrimonio", "update", "patrimonio"],
+    epis_list: ["administrativo", "read", "epis"],
+    epis_add: ["administrativo", "create", "epis"],
+    epis_update: ["administrativo", "update", "epis"],
+    cheques_upload_termo: ["administrativo", "update", "cheques-upload"],
+  };
 
-      const t = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout (JSONP)"));
-      }, timeoutMs);
+  async function portalCall(moduleName, actionName, resource, params = {}) {
+    const session = window.portalAuthReady
+      ? await window.portalAuthReady
+      : null;
 
-      function cleanup() {
-        clearTimeout(t);
-        try { delete window[cb]; } catch {}
-        try { s.remove(); } catch {}
-      }
+    if (!session) {
+      throw new Error("Sessão inválida ou expirada.");
+    }
 
-      window[cb] = (data) => {
-        cleanup();
-        resolve(data);
-      };
+    if (!window.PortalAPI) {
+      throw new Error("API segura do Portal indisponível.");
+    }
 
-      s.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      s.onerror = () => {
-        cleanup();
-        reject(new Error("Erro ao carregar script (JSONP)"));
-      };
-
-      document.head.appendChild(s);
+    return window.PortalAPI.call(moduleName, actionName, {
+      ...params,
+      resource,
     });
-  }
-
-  function buildUrl(paramsObj) {
-    const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([k, v]) => {
-      url.searchParams.set(k, v);
-    });
-    return url.toString();
   }
 
   async function apiGet(paramsObj) {
-    const res = await jsonp(buildUrl(paramsObj));
-    if (!res || res.ok === false) throw new Error(res?.error || "Falha na API");
-    return res;
+    const { action, ...params } = paramsObj || {};
+    const route = ADMIN_ROUTES[action];
+
+    if (!route) {
+      throw new Error(`Operação administrativa inválida: ${action || "vazia"}.`);
+    }
+
+    return portalCall(route[0], route[1], route[2], params);
   }
 
   async function apiPostJSON(payload) {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload || {}),
-    });
-
-    if (!res.ok) {
-      throw new Error("Falha na comunicação com o servidor");
-    }
-
-    const data = await res.json();
-    if (!data || data.ok === false) {
-      throw new Error(data?.error || "Falha na API");
-    }
-
-    return data;
+    return apiGet(payload);
   }
 
   function parseBRDate(s) {

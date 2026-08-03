@@ -594,7 +594,7 @@
           <div class="field"><label for="hsFilial">Filial</label><select id="hsFilial"></select></div>
           <div class="field"><label for="hsTipo">Tipo (editável)</label><input id="hsTipo" placeholder="Ex: CHEQUES / MANUTENÇÃO / TONER..." /></div>
           <div class="field"><label for="hsData">Data</label><input id="hsData" placeholder="dd/mm/aaaa" /></div>
-          <div class="field"><label for="hsStatus">Status</label><select id="hsStatus"><option value="ABERTA">ABERTA</option><option value="EM ANDAMENTO">EM ANDAMENTO</option><option value="FINALIZADA">FINALIZADA</option></select></div>
+          <div class="field"><label for="hsStatus">Status</label><select id="hsStatus" disabled><option value="ABERTA">ABERTA</option></select></div>
           <div class="field" style="grid-column:1/-1"><label for="hsObs">Observação</label><textarea id="hsObs" placeholder="Descreva o pedido..."></textarea></div>
           <div class="field" style="grid-column:1/-1"><label for="hsSolicitante">Solicitante</label><input id="hsSolicitante" readonly /></div>
         </div>
@@ -604,7 +604,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/home-solicitacoes.js"></script>
+  <script src="../assets/js/home-solicitacoes.js?v=2"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

@@ -126,15 +126,19 @@
 
   async function refreshKpi(){
     try{
-      const result = await portalCall("read");
-      const rows = Array.isArray(result.data)
-        ? result.data
-        : Array.isArray(result.data?.data)
-          ? result.data.data
-          : [];
+      const api = typeof ensurePortalApi === "function"
+        ? await ensurePortalApi()
+        : window.PortalAPI;
 
-      const abertas = rows.filter(item => upper(item.status) === "ABERTA").length;
+      if(!api){
+        throw new Error("API segura do Portal indisponível.");
+      }
+
+      const result = await api.call("home", "read");
+      const abertas = Math.max(0, Number(result.data?.solicitacoes) || 0);
+
       if($("#homeSolicOpen")) $("#homeSolicOpen").textContent = String(abertas);
+      if($("#homeSolicStat")) $("#homeSolicStat").textContent = String(abertas);
     }catch(error){
       console.error("[home-solic] refreshKpi:", error);
     }
@@ -146,7 +150,7 @@
       filial: upper($("#hsFilial")?.value),
       tipo: upper($("#hsTipo")?.value || "GERAL"),
       data: safeText($("#hsData")?.value || todayBR()),
-      status: upper($("#hsStatus")?.value || "ABERTA"),
+      status: "ABERTA",
       observacao: safeText($("#hsObs")?.value),
       solicitante: upper($("#hsSolicitante")?.value || window.getUser?.() || "USUÁRIO")
     };

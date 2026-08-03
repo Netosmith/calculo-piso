@@ -2,7 +2,6 @@
 (function(){
 "use strict";
 
-const API_URL="https://script.google.com/macros/s/AKfycbwlz0Rr0PmdPLZva-6TtSzpfDqx-G1IAkrX8n8cFp5t4mDkH5NQjsztvaWYbtUu8nFG/exec";
 const ADMIN_USER="LUZIANO";
 const QUICK_QUOTE_KEY=`piso_${userSafeKey_()}_cotacao_rapida_v1`;
 
@@ -241,18 +240,6 @@ function renderMap(){
 }
 function renderAll(){renderSelected();renderTable();renderMap()}
 
-function jsonp(params,timeout=35000){
- return new Promise((resolve,reject)=>{
-  const cb=`nf_${Date.now()}_${Math.random().toString(36).slice(2)}`,s=document.createElement("script"),u=new URL(API_URL);
-  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
-  u.searchParams.set("callback",cb);u.searchParams.set("_",Date.now());
-  const t=setTimeout(()=>{clean();reject(new Error("Timeout"))},timeout);
-  function clean(){clearTimeout(t);try{delete window[cb]}catch(e){}s.remove()}
-  window[cb]=r=>{clean();resolve(r)};
-  s.onerror=()=>{clean();reject(new Error("Erro de comunicação"))};
-  s.src=u.toString();document.head.appendChild(s);
- });
-}
 const UFS_BR="AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO";
 
 function normPlace(v){

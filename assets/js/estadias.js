@@ -2,8 +2,6 @@
 (function(){
 "use strict";
 
-const API_URL="https://script.google.com/macros/s/AKfycbzaNepXksIaxkc-tgSscNoevqySYO_m-Sjqi9m3_Fvz0ApKdSw8Znel9wuzqkw02i6Z/exec";
-
 const ACTIONS={
   list:"estadias_list",
   save:"estadias_save",
@@ -193,51 +191,42 @@ function normalizeRow(r,index){
   };
 }
 
-function jsonp(params,timeout=35000){
-  return new Promise((resolve,reject)=>{
-    const cb=`nf_est_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script=document.createElement("script");
-    const url=new URL(API_URL);
-
-    Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v??""));
-    url.searchParams.set("callback",cb);
-    url.searchParams.set("_",Date.now());
-
-    const timer=setTimeout(()=>{
-      cleanup();
-      reject(new Error("Tempo de resposta excedido."));
-    },timeout);
-
-    function cleanup(){
-      clearTimeout(timer);
-      try{delete window[cb]}catch(e){}
-      script.remove();
-    }
-
-    window[cb]=response=>{
-      cleanup();
-      resolve(response);
-    };
-
-    script.onerror=()=>{
-      cleanup();
-      reject(new Error("Falha de comunicação com a API."));
-    };
-
-    script.src=url.toString();
-    document.head.appendChild(script);
-  });
+async function portalCall(action,params={}){
+  const session=window.portalAuthReady?await window.portalAuthReady:null;
+  if(!session)throw new Error("Sessão inválida ou expirada.");
+  if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
+  return window.PortalAPI.call("estadias",action,params);
 }
 
-async function postApi(payload){
-  const response=await fetch(API_URL,{
-    method:"POST",
-    headers:{"Content-Type":"text/plain;charset=utf-8"},
-    body:JSON.stringify(payload)
-  });
+async function readApi(params={}){
+  const {action,...filters}=params;
+  return portalCall("read",{...filters,resource:"registros"});
+}
 
-  if(!response.ok)throw new Error(`HTTP ${response.status}`);
-  return response.json();
+async function postApi(payload={}){
+  const action=payload.action;
+
+  if(action===ACTIONS.save||action===ACTIONS.update){
+    const operation=action===ACTIONS.save?"create":"update";
+    return portalCall(operation,{...(payload.data||{}),resource:"registros"});
+  }
+
+  if(action===ACTIONS.status){
+    const current=dados.find(item=>item.id===payload.id);
+    if(!current)throw new Error("Registro não encontrado.");
+    return portalCall("update",{
+      ...current,
+      status:payload.status,
+      responsavel:payload.responsavel||current.responsavel,
+      resource:"registros"
+    });
+  }
+
+  if(action===ACTIONS.remove){
+    return portalCall("delete",{id:payload.id,resource:"registros"});
+  }
+
+  throw new Error(`Operação de estadia inválida: ${action||"vazia"}.`);
 }
 
 function loading(show,text="Processando..."){
@@ -262,10 +251,10 @@ async function loadData(){
 
   try{
     const a=auditPayload();
-    const res=await jsonp({action:ACTIONS.list,usuario:a.usuario,perfil:a.perfil,estado:a.estado});
+    const res=await readApi({action:ACTIONS.list,usuario:a.usuario,perfil:a.perfil,estado:a.estado});
 
     if(!res||res.ok===false){
-      throw new Error(res?.error||"A API de estadias ainda não foi configurada.");
+      throw new Error(res?.error||"O serviço de estadias não respondeu.");
     }
 
     const rows=Array.isArray(res.data)?res.data:Array.isArray(res)?res:[];
@@ -282,9 +271,9 @@ async function loadData(){
     dados=[];
     filtrados=[];
     renderTudo();
-    if($("syncStatus"))$("syncStatus").textContent="Apps Script ainda sem as rotas de estadias";
+    if($("syncStatus"))$("syncStatus").textContent="Serviço de estadias indisponível";
     $("tabelaEstadias").innerHTML=
-      `<tr><td colspan="13" class="empty">O layout está pronto. Agora precisamos adicionar ao Apps Script a ação <b>${ACTIONS.list}</b>.</td></tr>`;
+      `<tr><td colspan="13" class="empty">Não foi possível consultar as estadias pelo servidor seguro.</td></tr>`;
   }finally{
     loading(false);
   }
@@ -582,7 +571,7 @@ async function saveItem(){
     await loadData();
   }catch(error){
     console.error("[ESTADIAS] Erro ao salvar:",error);
-    alert(`O Apps Script ainda precisa receber a rota ${isEdit?ACTIONS.update:ACTIONS.save}.\n\n${error.message}`);
+    alert(`Não foi possível ${isEdit?"atualizar":"salvar"} a estadia.\n\n${error.message}`);
   }finally{
     loading(false);
   }

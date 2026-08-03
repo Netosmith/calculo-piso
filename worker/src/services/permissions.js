@@ -55,6 +55,9 @@ const WRITE_PROFILES = new Set([
 const DELETE_PROFILES = new Set([
   "ADMINISTRADOR", "GOADM", "ESTADIAS_ADMIN"
 ]);
+const FREIGHT_DELETE_PROFILES = new Set([
+  "ADMINISTRADOR", "OPERACIONAL", "COMERCIAL"
+]);
 
 function normalize(value) {
   return String(value || "").trim().toUpperCase();
@@ -77,6 +80,10 @@ export function canRunGatewayAction(session, moduleName, actionName) {
   if (["read", "calculate", "export"].includes(actionName)) return true;
 
   if (actionName === "delete") {
+    if (["fretes", "fretes2"].includes(moduleName)) {
+      return FREIGHT_DELETE_PROFILES.has(profile);
+    }
+
     return DELETE_PROFILES.has(profile);
   }
 

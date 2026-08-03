@@ -2,9 +2,6 @@
 (function () {
   "use strict";
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbwlz0Rr0PmdPLZva-6TtSzpfDqx-G1IAkrX8n8cFp5t4mDkH5NQjsztvaWYbtUu8nFG/exec";
-
   const PESO_MEDIO = 38;
   const AUTO_REFRESH_MS = 60000;
   const $ = (sel) => document.querySelector(sel);
@@ -17,7 +14,8 @@
     comercialFiltradas: [],
     charts: {},
     autoRefreshTimer: null,
-    isLoading: false
+    isLoading: false,
+    loadSequence: 0
   };
 
   /* =========================================================
@@ -148,6 +146,24 @@
     return d ? isoDate(d) : safeText(value).slice(0, 10);
   }
 
+  function monthKey(value) {
+    const key = dateKey(value);
+    return /^\d{4}-\d{2}/.test(key) ? key.slice(0, 7) : "";
+  }
+
+  function formatMonthBR(value) {
+    const match = safeText(value).match(/^(\d{4})-(\d{2})$/);
+    if (!match) return "Período selecionado";
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    const label = date.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric"
+    });
+
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
   function routeName(row) {
     const origem = upper(row.origem) || "SEM ORIGEM";
     const destino = upper(row.destino) || "SEM DESTINO";
@@ -219,74 +235,62 @@
   }
 
   /* =========================================================
-     API / JSONP
+     API SEGURA / CLOUDFLARE WORKER
   ========================================================= */
 
-  function jsonp(url, timeoutMs = 35000) {
-    return new Promise((resolve, reject) => {
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      const script = document.createElement("script");
-      const sep = url.includes("?") ? "&" : "?";
-      let finished = false;
+  async function getPortalApi() {
+    if (window.portalAuthReady) {
+      await window.portalAuthReady;
+    }
 
-      const timer = setTimeout(() => {
-        if (finished) return;
-        finished = true;
-        cleanup();
-        reject(new Error("Timeout ao carregar dados do Apps Script"));
-      }, timeoutMs);
+    if (window.PortalAPI) return window.PortalAPI;
 
-      function cleanup() {
-        clearTimeout(timer);
-        try { delete window[cb]; } catch {}
-        try { script.remove(); } catch {}
-      }
+    if (typeof ensurePortalApi === "function") {
+      return ensurePortalApi();
+    }
 
-      window[cb] = function (data) {
-        if (finished) return;
-        finished = true;
-        cleanup();
-        resolve(data);
-      };
-
-      script.src = url + sep + "callback=" + encodeURIComponent(cb) + "&_=" + Date.now();
-      script.async = true;
-
-      script.onerror = function () {
-        if (finished) return;
-        finished = true;
-        cleanup();
-        reject(new Error("Erro ao carregar o script JSONP"));
-      };
-
-      document.head.appendChild(script);
-    });
+    throw new Error("API segura do Portal Frete indisponível.");
   }
 
-  function buildUrl(paramsObj) {
-    const url = new URL(API_URL);
-    Object.entries(paramsObj || {}).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        url.searchParams.set(key, String(value));
-      }
-    });
-    return url.toString();
+  function gatewayResource(res) {
+    return safeText(
+      res?.gatewayMeta?.resource ||
+      res?.data?.resource ||
+      res?.resource
+    ).toLowerCase();
   }
 
-  async function apiGet(paramsObj) {
-    const res = await jsonp(buildUrl(paramsObj));
-    if (!res) throw new Error("Resposta vazia da API");
-    if (res.ok === false) throw new Error(res.error || "Falha na API");
+  async function portalCall(moduleName, actionName, params = {}, expectedResource = "") {
+    const api = await getPortalApi();
+    const res = await api.call(moduleName, actionName, params);
+
+    if (!res) throw new Error("Resposta vazia da API do Portal Frete.");
+    if (res.ok === false) throw new Error(res.error || "Falha na API do Portal Frete.");
+
+    const actualResource = gatewayResource(res);
+    if (expectedResource && actualResource && actualResource !== expectedResource) {
+      throw new Error(
+        `Fonte incorreta recebida: ${actualResource}. Esperado: ${expectedResource}.`
+      );
+    }
+
     return res;
   }
 
-  function extractRows(res) {
+  function extractRows(res, depth = 0) {
     if (Array.isArray(res)) return res;
-    if (Array.isArray(res?.data)) return res.data;
-    if (Array.isArray(res?.rows)) return res.rows;
-    if (Array.isArray(res?.fretes)) return res.fretes;
-    if (Array.isArray(res?.historico)) return res.historico;
-    if (Array.isArray(res?.registros)) return res.registros;
+    if (!res || typeof res !== "object" || depth > 6) return [];
+
+    const keys = [
+      "data", "rows", "items", "fretes", "historico", "registros", "result"
+    ];
+
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(res, key)) continue;
+      const rows = extractRows(res[key], depth + 1);
+      if (rows.length || Array.isArray(res[key])) return rows;
+    }
+
     return [];
   }
 
@@ -450,6 +454,31 @@
     fillSelect($("#fProduto"), rows.map((r) => r.produto), "Todos os produtos");
   }
 
+  function loadHistoricalMonthOptions(rows) {
+    const el = $("#fMesReferencia");
+    if (!el) return;
+
+    const current = el.value;
+    const months = [...new Set(
+      rows.map((row) => monthKey(row.dataReferencia)).filter(Boolean)
+    )].sort();
+
+    el.innerHTML = '<option value="">Todos os meses do período</option>';
+
+    months.forEach((month) => {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = formatMonthBR(month);
+      el.appendChild(option);
+    });
+
+    if (months.includes(current)) {
+      el.value = current;
+    } else if (months.length) {
+      el.value = months[months.length - 1];
+    }
+  }
+
   function applyCommonFilters(rows) {
     const filial = upper($("#fFilial")?.value);
     const cliente = upper($("#fCliente")?.value);
@@ -482,8 +511,11 @@
 
   function getHistoricalFilteredRows() {
     const { inicio, fim } = getPeriod();
+    const referenceMonth = safeText($("#fMesReferencia")?.value);
+
     return applyCommonFilters(STATE.historicoRows).filter((row) =>
-      inPeriod(row.dataReferencia, inicio, fim)
+      inPeriod(row.dataReferencia, inicio, fim) &&
+      (!referenceMonth || monthKey(row.dataReferencia) === referenceMonth)
     );
   }
 
@@ -899,6 +931,7 @@
     const rows = getHistoricalFilteredRows();
     const evolucao = buildEvolucaoDiaria(rows);
     const dias = evolucao.length;
+    const referenceMonth = safeText($("#fMesReferencia")?.value);
 
     const mediaVeiculos = average(evolucao.map((r) => r.veiculos));
     const mediaPorta = average(evolucao.map((r) => r.porta));
@@ -915,6 +948,12 @@
     setText("#kpiHistPorta", decimalBR(mediaPorta, 1));
     setText("#kpiHistTransito", decimalBR(mediaTransito, 1));
     setText("#kpiHistDias", intBR(dias));
+    setText(
+      "#historicoReferenciaMes",
+      referenceMonth
+        ? `Referência: ${formatMonthBR(referenceMonth)}`
+        : "Referência: todos os meses do período"
+    );
 
     renderHistoricalCharts(rows, evolucao);
   }
@@ -1612,25 +1651,40 @@
   ========================================================= */
 
   async function loadCurrentRows() {
-    const [fretesRes, fretes2Res] = await Promise.all([
-      apiGet({ action: "fretes_list" }),
-      apiGet({ action: "fretes2_list" })
+    const results = await Promise.allSettled([
+      portalCall("fretes", "read"),
+      portalCall("fretes2", "read")
     ]);
 
-    return [
-      ...extractRows(fretesRes).map((r) => normalizeCurrentRow(r, "FRETES")),
-      ...extractRows(fretes2Res).map((r) => normalizeCurrentRow(r, "FRETES2"))
-    ];
+    const rows = [];
+    const sources = ["FRETES", "FRETES2"];
+    const errors = [];
+
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        rows.push(
+          ...extractRows(result.value).map((r) => normalizeCurrentRow(r, sources[index]))
+        );
+      } else {
+        errors.push(result.reason);
+      }
+    });
+
+    if (!rows.length && errors.length === results.length) {
+      throw errors[0];
+    }
+
+    return rows;
   }
 
   async function loadHistoricalRows() {
     const { inicio, fim } = getPeriod();
 
-    const res = await apiGet({
-      action: "historico_diario_list",
+    const res = await portalCall("bi", "read", {
+      resource: "daily-history",
       dataInicio: inicio,
       dataFim: fim
-    });
+    }, "daily-history");
 
     return extractRows(res).map((r) => normalizeCurrentRow(r));
   }
@@ -1638,11 +1692,11 @@
   async function loadCommercialRows() {
     const { inicio, fim } = getPeriod();
 
-    const res = await apiGet({
-      action: "historico_fretes_list",
+    const res = await portalCall("bi", "read", {
+      resource: "commercial-history",
       dataInicio: inicio,
       dataFim: fim
-    });
+    }, "commercial-history");
 
     return extractRows(res).map(normalizeCommercialRow);
   }
@@ -1661,6 +1715,7 @@
         STATE.historicoRows = await loadHistoricalRows();
       }
       loadCommonFilterOptions(STATE.historicoRows);
+      loadHistoricalMonthOptions(STATE.historicoRows);
       return;
     }
 
@@ -1674,9 +1729,8 @@
   }
 
   async function loadData(showStatus = true, force = true) {
-    if (STATE.isLoading) return;
-
     const mode = getMode();
+    const requestId = ++STATE.loadSequence;
 
     try {
       STATE.isLoading = true;
@@ -1685,6 +1739,8 @@
       if (showStatus) setStatus("🔄 Carregando...", true);
 
       await ensureModeData(mode, force);
+      if (requestId !== STATE.loadSequence) return;
+
       renderMode(mode);
 
       const count =
@@ -1711,13 +1767,18 @@
         setStatus(`✅ ${label} carregada às ${agora}`, true);
       }
     } catch (error) {
+      if (requestId !== STATE.loadSequence) return;
+
       console.error("[bi] erro ao carregar:", error);
-      setStatus("❌ Falha ao carregar", false);
+      const message = error?.message || "Erro desconhecido";
+      setStatus(`❌ ${message}`, false);
       if (showStatus) {
-        alert("Erro ao carregar o B.I.: " + (error.message || "Erro desconhecido"));
+        alert("Erro ao carregar o B.I.: " + message);
       }
     } finally {
-      STATE.isLoading = false;
+      if (requestId === STATE.loadSequence) {
+        STATE.isLoading = false;
+      }
     }
   }
 
@@ -1734,15 +1795,18 @@
   function updateDateAvailability() {
     const mode = getMode();
     const enabled = mode === "HISTORICO" || mode === "COMERCIAL";
+    const historical = mode === "HISTORICO";
 
     if ($("#fDataInicio")) $("#fDataInicio").disabled = !enabled;
     if ($("#fDataFim")) $("#fDataFim").disabled = !enabled;
+    if ($("#boxMesReferencia")) $("#boxMesReferencia").hidden = !historical;
+    if ($("#fMesReferencia")) $("#fMesReferencia").disabled = !historical;
   }
 
   function clearFilters() {
     [
       "#fFilial", "#fCliente", "#fStatus", "#fOrigemDados", "#fBusca",
-      "#fOrigem", "#fDestino", "#fProduto", "#fTipoEvento"
+      "#fOrigem", "#fDestino", "#fProduto", "#fTipoEvento", "#fMesReferencia"
     ].forEach((selector) => {
       const el = $(selector);
       if (el) el.value = "";
@@ -1790,6 +1854,10 @@
       if (getMode() === "COMERCIAL") renderCommercialCharts(STATE.comercialFiltradas);
     });
 
+    $("#fMesReferencia")?.addEventListener("change", () => {
+      if (getMode() === "HISTORICO") renderHistorical();
+    });
+
     $("#fDataInicio")?.addEventListener("change", () => {
       const mode = getMode();
       if (mode === "HISTORICO" || mode === "COMERCIAL") loadData(true, true);
@@ -1801,14 +1869,24 @@
     });
   }
 
-  function init() {
+  async function init() {
     setDefaultDates();
     STATE.modo = getMode();
     updateDateAvailability();
     bindEvents();
-    loadData(true, true);
+
+    if (window.portalAuthReady) {
+      await window.portalAuthReady;
+    }
+
+    await loadData(true, true);
     startAutoRefresh();
   }
 
-  window.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("DOMContentLoaded", () => {
+    init().catch((error) => {
+      console.error("[bi] falha na inicialização:", error);
+      setStatus("❌ Falha ao iniciar o B.I.", false);
+    });
+  });
 })();

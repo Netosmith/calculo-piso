@@ -58,6 +58,9 @@ const DELETE_PROFILES = new Set([
 const FREIGHT_DELETE_PROFILES = new Set([
   "ADMINISTRADOR", "OPERACIONAL", "COMERCIAL"
 ]);
+const HOME_REQUEST_CREATE_PROFILES = new Set([
+  "ADMINISTRADOR", "GOADM", "OPERACIONAL", "COMERCIAL"
+]);
 
 function normalize(value) {
   return String(value || "").trim().toUpperCase();
@@ -69,12 +72,22 @@ export function hasFeature(session, moduleName) {
   return moduleName === "home" || features.includes(moduleName);
 }
 
-export function canRunGatewayAction(session, moduleName, actionName) {
+export function canRunGatewayAction(session, moduleName, actionName, params = {}) {
   const allowedActions = MODULE_ACTIONS[moduleName];
   if (!allowedActions || !allowedActions.includes(actionName)) return false;
-  if (!hasFeature(session, moduleName)) return false;
 
   const profile = normalize(session?.perfil);
+  const resource = normalize(params?.resource);
+
+  if (
+    moduleName === "administrativo" &&
+    actionName === "create" &&
+    resource === "SOLICITACOES"
+  ) {
+    return HOME_REQUEST_CREATE_PROFILES.has(profile);
+  }
+
+  if (!hasFeature(session, moduleName)) return false;
   if (ADMIN_PROFILES.has(profile)) return true;
 
   if (["read", "calculate", "export"].includes(actionName)) return true;

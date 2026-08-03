@@ -51,7 +51,7 @@ export async function portalGatewayController(request, env) {
     return errorResponse("Módulo não autorizado.", 403);
   }
 
-  if (!canRunGatewayAction(session, moduleName, actionName)) {
+  if (!canRunGatewayAction(session, moduleName, actionName, params)) {
     console.warn("[GATEWAY] Ação recusada", {
       usuario: session.usuario,
       perfil: session.perfil,

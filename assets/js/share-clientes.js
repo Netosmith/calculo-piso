@@ -4,13 +4,15 @@
 
   const $ = (id) => document.getElementById(id);
 
-  const LS_KEY_FRETES_ROWS = "nf_fretes_rows_v1";
   const LS_KEY_BASE = "nf_share_clientes_base_v1";
+  const HTML2CANVAS_SRC = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
 
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
 
   let BASE_ATUAL = "fretes";
+  let refreshSequence = 0;
+  let html2canvasPromise = null;
 
   let ocultarFreteEmpresa = true;
 
@@ -131,6 +133,90 @@
     return base === "fretes2" ? "./fretes2.html" : "./fretes.html";
   }
 
+  function nowPerformance() {
+    return typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
+  }
+
+  function recordPerformance(label, startedAt) {
+    const elapsedMs = Math.max(0, Math.round(nowPerformance() - startedAt));
+    window.__portalPerformance = window.__portalPerformance || {};
+    window.__portalPerformance[`share:${label}`] = elapsedMs;
+    console.info(`[share/perf] ${label}: ${elapsedMs} ms`);
+    return elapsedMs;
+  }
+
+  function formatElapsed(elapsedMs) {
+    if (elapsedMs < 1000) return `${elapsedMs} ms`;
+    return `${(elapsedMs / 1000).toFixed(1).replace(".", ",")} s`;
+  }
+
+  function friendlySyncError(error) {
+    const status = Number(error?.status || error?.data?.status || 0);
+    const message = safeText(error?.message).toLowerCase();
+
+    if (status === 401 || message.includes("sessão") || message.includes("session")) {
+      return "Sessão expirada. Entre novamente.";
+    }
+
+    if (status === 403 || message.includes("permiss")) {
+      return "Seu perfil não possui permissão para consultar esta base.";
+    }
+
+    if (
+      status === 502 || status === 503 || status === 504 ||
+      error?.name === "AbortError" ||
+      message.includes("timeout") ||
+      message.includes("tempo limite") ||
+      message.includes("aborted") ||
+      message.includes("apps script")
+    ) {
+      return "Apps Script demorou para responder. Tente Atualizar.";
+    }
+
+    if (
+      message.includes("failed to fetch") ||
+      message.includes("network") ||
+      message.includes("rede") ||
+      (typeof navigator !== "undefined" && navigator.onLine === false)
+    ) {
+      return "Falha de rede. Verifique a conexão e tente Atualizar.";
+    }
+
+    return error?.message || "Não foi possível carregar o Share Clientes.";
+  }
+
+  async function waitForPortalReady() {
+    const startedAt = nowPerformance();
+
+    if (!window.portalAuthReady || typeof window.portalAuthReady.then !== "function") {
+      throw new Error("Validação de sessão indisponível.");
+    }
+
+    const session = await window.portalAuthReady;
+    recordPerformance("sessao", startedAt);
+
+    if (!session) {
+      const error = new Error("Sessão expirada. Entre novamente.");
+      error.status = 401;
+      throw error;
+    }
+
+    if (!window.PortalAPI) {
+      throw new Error("API segura do Portal indisponível.");
+    }
+
+    const feature = BASE_ATUAL === "fretes2" ? "fretes2" : "fretes";
+    if (typeof canAccessFeature === "function" && !canAccessFeature(feature)) {
+      const error = new Error("Seu perfil não possui permissão para consultar esta base.");
+      error.status = 403;
+      throw error;
+    }
+
+    return session;
+  }
+
   function salvarBaseSelecionada(base) {
     try {
       localStorage.setItem(LS_KEY_BASE, base);
@@ -148,14 +234,14 @@
   }
 
   async function loadFretesRows() {
-    if (!window.PortalAPI) {
-      throw new Error("API segura do Portal indisponível.");
-    }
+    await waitForPortalReady();
 
-    const response = await window.PortalAPI.call("share", "read", {
-      base: BASE_ATUAL,
-      resource: BASE_ATUAL
-    });
+    const requestStartedAt = nowPerformance();
+
+    // O Share usa exatamente a mesma leitura validada pelas telas Fretes GO/MT.
+    // Isso evita manter uma segunda rota de leitura para os mesmos registros.
+    const response = await window.PortalAPI.call(BASE_ATUAL, "read", {});
+    const elapsedMs = recordPerformance(`${BASE_ATUAL}-api`, requestStartedAt);
 
     if (response && response.ok === false) {
       throw new Error(response.error || "Erro retornado pelo gateway seguro.");
@@ -175,7 +261,7 @@
               ? payload.items
               : [];
 
-    return rows;
+    return { rows, elapsedMs };
   }
 
 
@@ -382,13 +468,54 @@
     toggleFreteEmpresa(ocultarFreteEmpresa);
   }
 
+  function loadHtml2Canvas() {
+    if (typeof window.html2canvas === "function") {
+      return Promise.resolve(window.html2canvas);
+    }
+
+    if (html2canvasPromise) return html2canvasPromise;
+
+    html2canvasPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-share-html2canvas="1"]');
+      const script = existing || document.createElement("script");
+
+      const finish = () => {
+        if (typeof window.html2canvas === "function") {
+          resolve(window.html2canvas);
+        } else {
+          html2canvasPromise = null;
+          reject(new Error("Gerador de imagem indisponível."));
+        }
+      };
+
+      const fail = () => {
+        html2canvasPromise = null;
+        reject(new Error("Não foi possível carregar o gerador de imagem."));
+      };
+
+      script.addEventListener("load", finish, { once: true });
+      script.addEventListener("error", fail, { once: true });
+
+      if (!existing) {
+        script.src = HTML2CANVAS_SRC;
+        script.async = true;
+        script.dataset.shareHtml2canvas = "1";
+        document.head.appendChild(script);
+      }
+    });
+
+    return html2canvasPromise;
+  }
+
   async function doPrint() {
     const page = $("pageShare");
-    if (!page || typeof html2canvas === "undefined") return;
+    if (!page) return;
 
     const estadoAntesPrint = ocultarFreteEmpresa;
 
     try {
+      const html2canvasLib = await loadHtml2Canvas();
+
       ocultarFreteEmpresa = true;
       toggleFreteEmpresa(true);
 
@@ -396,7 +523,7 @@
 
       await new Promise((r) => setTimeout(r, 120));
 
-      const canvas = await html2canvas(page, {
+      const canvas = await html2canvasLib(page, {
         backgroundColor: null,
         scale: 2,
         useCORS: true
@@ -411,6 +538,8 @@
       a.download = `share-${baseNome}-${cliente}-${stamp}.png`;
       a.href = dataUrl;
       a.click();
+    } catch (error) {
+      alert(`❌ ${friendlySyncError(error)}`);
     } finally {
       ocultarFreteEmpresa = estadoAntesPrint;
       toggleFreteEmpresa(ocultarFreteEmpresa);
@@ -459,14 +588,20 @@
   }
 
   async function refresh({ preserveClient = true } = {}) {
+    const sequence = ++refreshSequence;
+    const startedAt = nowPerformance();
     const selCliente = $("selCliente");
     const clienteAnterior = preserveClient ? up(selCliente?.value) : "";
     const baseLabel = getBaseLabel(BASE_ATUAL);
+    const previousRows = state.rowsAll;
 
     try {
       updateSyncStatus("loading", `Carregando ${baseLabel}...`);
 
-      state.rowsAll = await loadFretesRows();
+      const { rows, elapsedMs } = await loadFretesRows();
+      if (sequence !== refreshSequence) return;
+
+      state.rowsAll = rows;
       state.clientes = buildClientesList(state.rowsAll);
 
       fillSelect(selCliente, state.clientes, { includeAll: false });
@@ -488,29 +623,36 @@
       updateSyncStatus(
         "success",
         state.rowsAll.length
-          ? `${baseLabel} atualizado`
+          ? `${baseLabel} atualizado em ${formatElapsed(elapsedMs)}`
           : `${baseLabel}: nenhum frete cadastrado`
       );
+
+      recordPerformance("total", startedAt);
     } catch (err) {
+      if (sequence !== refreshSequence) return;
       console.error(err);
 
-      state.rowsAll = [];
-      state.clientes = buildClientesList([]);
-
-      fillSelect(selCliente, state.clientes, { includeAll: false });
-
-      if (selCliente && state.clientes.length) {
-        selCliente.value = state.clientes[0];
+      const hasPreviousRows = previousRows.length > 0;
+      if (!hasPreviousRows) {
+        state.rowsAll = [];
+        state.clientes = [];
+        fillSelect(selCliente, [], { includeAll: false });
+        await setClientLogo("");
+        rebuildDestinosForCliente();
+        applyFiltersAndRender();
       }
 
-      await setClientLogo(selCliente?.value);
-      rebuildDestinosForCliente();
-      applyFiltersAndRender();
-
-      updateSyncStatus("error", `Falha em ${baseLabel}`);
+      const message = friendlySyncError(err);
+      updateSyncStatus(
+        "error",
+        hasPreviousRows
+          ? `${baseLabel}: exibindo dados anteriores`
+          : `Falha em ${baseLabel}`
+      );
 
       alert(
-        `❌ Falha ao carregar ${baseLabel}.\n\nErro: ${err.message}`
+        `❌ Falha ao carregar ${baseLabel}.\n\nErro: ${message}` +
+        (hasPreviousRows ? "\n\nOs dados que já estavam na tela foram preservados." : "")
       );
     }
   }

@@ -197,6 +197,7 @@
     selectedIds: new Set(),
     previewRow: null,
     modalBusy: false,
+    pendingCreateId: "",
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -579,6 +580,18 @@ function formatDateTimeBR(value) {
 
   function ceil0(n) {
     return Math.ceil(n);
+  }
+
+  function createFreteId() {
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+      return globalThis.crypto.randomUUID();
+    }
+
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+      const random = Math.floor(Math.random() * 16);
+      const value = char === "x" ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
+    });
   }
 
   async function apiGet(paramsObj = {}) {
@@ -1744,6 +1757,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
   function clearModalFields() {
     STATE.editingId = "";
+    STATE.pendingCreateId = "";
 
     if (MODAL.title()) MODAL.title().textContent = "Novo Frete";
 
@@ -1887,7 +1901,15 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       return await apiGet({ action: "fretes_update", id: STATE.editingId, ...payload });
     }
 
-    return await apiGet({ action: "fretes_add", ...payload });
+    if (!STATE.pendingCreateId) {
+      STATE.pendingCreateId = createFreteId();
+    }
+
+    return await apiGet({
+      action: "fretes_add",
+      id: STATE.pendingCreateId,
+      ...payload
+    });
   }
 
   async function handleSave() {
@@ -1902,11 +1924,17 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       setStatus("💾 Salvando...");
 
       const editingId = safeText(STATE.editingId);
+
+      if (!editingId && !STATE.pendingCreateId) {
+        STATE.pendingCreateId = createFreteId();
+      }
+
+      const requestId = editingId || safeText(STATE.pendingCreateId);
       const result = await saveFrete(payload);
       const data = result?.data || {};
       const serverRow = [data?.row, data?.frete, data?.item, data?.data, data]
         .find((item) => item && typeof item === "object" && !Array.isArray(item)) || {};
-      const savedId = safeText(serverRow.id || data.id || editingId);
+      const savedId = safeText(serverRow.id || data.id || requestId);
 
       if (savedId) {
         const nextRow = {
@@ -1927,6 +1955,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         updateBulkUI();
       }
 
+      STATE.pendingCreateId = "";
       modalShow(false);
       setStatus(savedId ? "✅ Salvo sem recarregar toda a planilha" : "✅ Salvo • atualizando lista em segundo plano");
 

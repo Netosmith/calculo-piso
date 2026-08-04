@@ -25,23 +25,22 @@ function requestContext(payload) {
     !Array.isArray(gatewayParams);
 
   return {
+    outerAction,
     module: String(
       isGatewayRequest ? gatewayParams.module : payload?.module || ""
     ).toLowerCase(),
     action: String(
       isGatewayRequest ? gatewayParams.action : payload?.action || ""
-    ).toLowerCase()
+    ).toLowerCase(),
+    params: isGatewayRequest
+      ? gatewayParams.payload
+      : payload?.params
   };
 }
 
-function shouldRetry(payload, attempt, error) {
-  if (attempt >= 2) return false;
-
-  const context = requestContext(payload);
-  if (context.action !== "read") return false;
-  if (!RETRYABLE_MODULES.has(context.module)) return false;
-
+function isTransientError(error) {
   const message = String(error?.message || error || "").toLowerCase();
+
   return (
     error?.name === "AbortError" ||
     message.includes("aborted") ||
@@ -53,6 +52,22 @@ function shouldRetry(payload, attempt, error) {
     message.includes("503") ||
     message.includes("504")
   );
+}
+
+function shouldRetry(payload, attempt, error) {
+  if (attempt >= 2 || !isTransientError(error)) return false;
+
+  const context = requestContext(payload);
+  const isRetryableRead =
+    context.action === "read" &&
+    RETRYABLE_MODULES.has(context.module);
+  const isRetryableLogin = context.outerAction === "login";
+  const isIdempotentFretesWrite =
+    context.module === "fretes" &&
+    (context.action === "create" || context.action === "update") &&
+    Boolean(String(context.params?.id || "").trim());
+
+  return isRetryableRead || isRetryableLogin || isIdempotentFretesWrite;
 }
 
 function wait(ms) {

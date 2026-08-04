@@ -4,33 +4,74 @@
 // =====================================================
 
 const PORTAL_API_BASE = "https://api.portalfrete.net.br";
+const PORTAL_RETRYABLE_STATUS = new Set([502, 503, 504]);
+
+function waitPortalRetry(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isPortalTransientError(error) {
+  const status = Number(error?.status || 0);
+  const message = String(error?.message || "").toLowerCase();
+
+  return (
+    PORTAL_RETRYABLE_STATUS.has(status) ||
+    error?.name === "AbortError" ||
+    message.includes("failed to fetch") ||
+    message.includes("network") ||
+    message.includes("rede") ||
+    message.includes("timeout") ||
+    message.includes("tempo limite") ||
+    message.includes("aborted")
+  );
+}
 
 async function portalApiRequest(path, options = {}) {
-  const response = await fetch(`${PORTAL_API_BASE}${path}`, {
-    method: options.method || "GET",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body)
-  });
+  const retries = Math.max(0, Number(options.retries || 0));
+  let lastError;
 
-  let data;
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error("Resposta inválida da API do Portal Frete.");
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(`${PORTAL_API_BASE}${path}`, {
+        method: options.method || "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        },
+        body: options.body === undefined ? undefined : JSON.stringify(options.body)
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        const error = new Error("Resposta inválida da API do Portal Frete.");
+        error.status = response.status;
+        throw error;
+      }
+
+      if (!response.ok || data?.ok !== true) {
+        const error = new Error(data?.error || "Falha na API do Portal Frete.");
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt >= retries || !isPortalTransientError(error)) {
+        throw error;
+      }
+
+      await waitPortalRetry(700 * (attempt + 1));
+    }
   }
 
-  if (!response.ok || data?.ok !== true) {
-    const error = new Error(data?.error || "Falha na API do Portal Frete.");
-    error.status = response.status;
-    error.data = data;
-    throw error;
-  }
-
-  return data;
+  throw lastError || new Error("Falha na API do Portal Frete.");
 }
 
 function normalizeGatewayEnvelope(result) {
@@ -56,7 +97,11 @@ function normalizeGatewayEnvelope(result) {
 
 window.PortalAPI = {
   login(usuario, senha) {
-    return portalApiRequest("/v1/login", { method: "POST", body: { usuario, senha } });
+    return portalApiRequest("/v1/login", {
+      method: "POST",
+      body: { usuario, senha },
+      retries: 1
+    });
   },
   session() {
     return portalApiRequest("/v1/session");

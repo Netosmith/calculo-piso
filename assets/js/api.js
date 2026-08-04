@@ -38,7 +38,6 @@ async function portalApiRequest(path, options = {}) {
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
           ...(options.headers || {})
         },
         body: options.body === undefined ? undefined : JSON.stringify(options.body)

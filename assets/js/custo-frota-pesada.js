@@ -23,10 +23,10 @@
   }
 
   const exampleValues = {
-    veiculo:"EXEMPLO 9 EIXOS", dataViagem:localDateValue(), motorista:"Motorista Exemplo",
+    veiculo:"EXEMPLO 4 EIXOS", dataViagem:localDateValue(), motorista:"Motorista Exemplo",
     origem:"Origem", destino:"Destino", kmIda:933, kmVolta:933, kmExtra:0,
-    cargaTon:46, freteBruto:9614, precoDiesel:5.69, mediaKmLitro:2.2,
-    arlaPct:5, comissaoPct:11, impostosPct:9.25, pedagioIda:0, pedagioVolta:0,
+    cargaTon:40, freteBruto:9614, precoDiesel:6.00, mediaKmLitro:2.0,
+    arlaPct:2, comissaoPct:12, impostosPct:9.25, pedagioIda:0, pedagioVolta:0,
     outrasDespesas:0, valorAquisicao:850000, valorResidual:300000,
     vidaUtilMeses:120, kmPlanejadoMes:12000, seguroMensal:2500, ipvaAnual:8500,
     rastreadorMensal:250, salariosMensal:7000, administrativoMensal:1000,

@@ -3,13 +3,25 @@
   "use strict";
 
   const PRODUCT_BG_MAP = {
-    SOJA: "../assets/img/SOJATESTE.png",
-    MILHO: "../assets/img/MILHOTESTE.png",
-    ACUCAR: "../assets/img/ACUCARTESTE.png",
-    CALCARIO: "../assets/img/CALCARIOTESTE.png",
-    FARELODESOJA: "../assets/img/FARELODESOJA.png",
-    SORGO: "../assets/img/SORGOTESTE.png",
-    FERTILIZANTE: "../assets/img/FERTILIZANTE.png"
+    "1": {
+      SOJA: "../assets/img/SOJATESTE.png",
+      MILHO: "../assets/img/MILHOTESTE.png",
+      ACUCAR: "../assets/img/ACUCARTESTE.png",
+      CALCARIO: "../assets/img/CALCARIOTESTE.png",
+      FARELODESOJA: "../assets/img/FARELODESOJA.png",
+      SORGO: "../assets/img/SORGOTESTE.png",
+      FERTILIZANTE: "../assets/img/FERTILIZANTE.png"
+    },
+
+    "2": {
+      SOJA: "../assets/img/SOJA2.png",
+      MILHO: "../assets/img/MILHO2.png",
+      ACUCAR: "../assets/img/ACUCAR2.png",
+      CALCARIO: "../assets/img/CALCARIO2.png",
+      FARELODESOJA: "../assets/img/FARELODESOJA2.png",
+      SORGO: "../assets/img/SORGO2.png",
+      FERTILIZANTE: "../assets/img/FERTILIZANTE2.png"
+    }
   };
 
   const FILIAIS_CONTATOS = {
@@ -28,7 +40,8 @@
     MESAOPERACIONAL: [
       "ELOISA (64) 99232-3415",
       "GABRIEL (64) 99266-3603",
-      "LUIS.G (64) 99277-4293"
+      "LUIS.G (64) 99277-4293",
+      ""
     ],
     BOMJESUS: [
       "MATEUS (64) 99307-0738",
@@ -122,8 +135,6 @@
     ]
   };
 
-  const DEFAULT_BG = PRODUCT_BG_MAP.SOJA;
-
   const PRODUCT_ALIAS = {
     SOJA: "SOJA",
     SOJAEMGRAOS: "SOJA",
@@ -164,6 +175,15 @@
 
   function getBgImgEl(preview) {
     return preview ? preview.querySelector(".previewBg") : null;
+  }
+
+  function getTemplateMap(templateId) {
+    return PRODUCT_BG_MAP[String(templateId)] || PRODUCT_BG_MAP["1"];
+  }
+
+  function getDefaultBg(templateId) {
+    const map = getTemplateMap(templateId);
+    return map.SOJA;
   }
 
   function normalizeKey(value) {
@@ -229,33 +249,41 @@
   }
 
   function inferProductFamily(normalized) {
-    if (normalized.includes("FARELO") && normalized.includes("SOJA")) return "FARELODESOJA";
+    if (normalized.includes("FARELO") && normalized.includes("SOJA")) {
+      return "FARELODESOJA";
+    }
+
     if (normalized.includes("SOJA")) return "SOJA";
     if (normalized.includes("MILHO")) return "MILHO";
     if (normalized.includes("ACUCAR")) return "ACUCAR";
     if (normalized.includes("CALCARIO")) return "CALCARIO";
     if (normalized.includes("SORGO")) return "SORGO";
-    if (normalized.includes("FERT") || normalized.includes("ADUBO")) return "FERTILIZANTE";
+
+    if (normalized.includes("FERT") || normalized.includes("ADUBO")) {
+      return "FERTILIZANTE";
+    }
+
     return "";
   }
 
-  function productToImage(productValue) {
+  function productToImage(templateId, productValue) {
+    const map = getTemplateMap(templateId);
     const normalized = normalizeKey(productValue);
     const aliased = PRODUCT_ALIAS[normalized];
 
-    if (aliased && PRODUCT_BG_MAP[aliased]) return PRODUCT_BG_MAP[aliased];
+    if (aliased && map[aliased]) return map[aliased];
 
     const family = inferProductFamily(normalized);
-    if (family && PRODUCT_BG_MAP[family]) return PRODUCT_BG_MAP[family];
+    if (family && map[family]) return map[family];
 
-    return DEFAULT_BG;
+    return getDefaultBg(templateId);
   }
 
   function setPreviewBackgroundByProduct(templateId, productValue) {
     const preview = getPreview(templateId);
     if (!preview) return;
 
-    const img = productToImage(productValue);
+    const img = productToImage(templateId, productValue);
     const bgImg = getBgImgEl(preview);
 
     if (bgImg) {
@@ -309,7 +337,7 @@
       setPreviewBackgroundByProduct(templateId, value);
     }
 
-    if (templateId === "1" && field === "filial") {
+    if (field === "filial") {
       preencherContatosFilial(templateId, value);
     }
   }
@@ -329,7 +357,10 @@
   }
 
   function resetTemplate(templateId) {
-    const card = document.querySelector(`.templateCard[data-template="${templateId}"]`);
+    const card = document.querySelector(
+      `.templateCard[data-template="${templateId}"]`
+    );
+
     if (!card) return;
 
     card.querySelectorAll("input, select").forEach((el) => {
@@ -339,10 +370,22 @@
         el.value = "";
       }
 
-      if (el.dataset.field) updatePreview(templateId, el.dataset.field, "");
+      if (el.dataset.field) {
+        updatePreview(templateId, el.dataset.field, "");
+      }
     });
 
     setPreviewBackgroundByProduct(templateId, "SOJA");
+  }
+
+  async function waitForImage(img) {
+    if (!img) return;
+    if (img.complete && img.naturalWidth > 0) return;
+
+    await new Promise((resolve) => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    });
   }
 
   async function saveTemplate(templateId) {
@@ -350,13 +393,7 @@
     if (!preview) return;
 
     const bgImg = getBgImgEl(preview);
-
-    if (bgImg && (!bgImg.complete || bgImg.naturalWidth === 0)) {
-      await new Promise((resolve) => {
-        bgImg.addEventListener("load", resolve, { once: true });
-        bgImg.addEventListener("error", resolve, { once: true });
-      });
-    }
+    await waitForImage(bgImg);
 
     const canvas = await html2canvas(preview, {
       backgroundColor: null,
@@ -378,12 +415,15 @@
         `[data-template="${templateId}"][data-field="produto"]`
       );
 
-      const produtoVal = produtoEl ? (produtoEl.value || "").trim() : "";
+      const produtoVal = produtoEl ? produtoEl.value.trim() : "";
       setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
 
-      if (templateId === "1") {
-        const filialEl = document.querySelector(`[data-template="1"][data-field="filial"]`);
-        if (filialEl && filialEl.value) preencherContatosFilial("1", filialEl.value);
+      const filialEl = document.querySelector(
+        `[data-template="${templateId}"][data-field="filial"]`
+      );
+
+      if (filialEl && filialEl.value) {
+        preencherContatosFilial(templateId, filialEl.value);
       }
 
       const valorEl = document.querySelector(
@@ -391,7 +431,7 @@
       );
 
       if (valorEl && valorEl.value) {
-        const raw = String(valorEl.value || "").toUpperCase().trim();
+        const raw = String(valorEl.value).toUpperCase().trim();
         const value = formatarMoedaBR(raw);
 
         valorEl.value = value;
@@ -411,11 +451,15 @@
     });
 
     document.querySelectorAll("[data-action='reset']").forEach((btn) => {
-      btn.addEventListener("click", () => resetTemplate(btn.dataset.template));
+      btn.addEventListener("click", () => {
+        resetTemplate(btn.dataset.template);
+      });
     });
 
     document.querySelectorAll("[data-action='save']").forEach((btn) => {
-      btn.addEventListener("click", () => saveTemplate(btn.dataset.template));
+      btn.addEventListener("click", () => {
+        saveTemplate(btn.dataset.template);
+      });
     });
 
     initDefaults();

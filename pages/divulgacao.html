@@ -7,6 +7,158 @@
   <title>Divulgação | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
   <link rel="stylesheet" href="../assets/css/divulgacao.css" />
+
+  <style>
+    /* MODELO 2: posicionamento específico para artes 1024 x 1536 */
+    [data-template-preview="2"]{
+      position:relative;
+      overflow:hidden;
+      aspect-ratio:2 / 3;
+    }
+
+    [data-template-preview="2"] .previewBg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      z-index:0;
+    }
+
+    [data-template-preview="2"] .previewColeta,
+    [data-template-preview="2"] .previewDescarga,
+    [data-template-preview="2"] .previewPrice,
+    [data-template-preview="2"] .previewNote,
+    [data-template-preview="2"] .previewFilial,
+    [data-template-preview="2"] .previewContacts{
+      position:absolute;
+      z-index:2;
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+      font-family:Arial, Helvetica, sans-serif;
+      text-shadow:none;
+    }
+
+    /* Cidade/UF da coleta */
+    [data-template-preview="2"] .previewColeta{
+      top:48.4%;
+      left:25.2%;
+      width:66%;
+      text-align:left;
+    }
+
+    /* Cidade/UF da descarga */
+    [data-template-preview="2"] .previewDescarga{
+      top:58.2%;
+      left:25.2%;
+      width:66%;
+      text-align:left;
+    }
+
+    /* Cidades e UF em azul */
+    [data-template-preview="2"] .previewValue{
+      color:#082f6b;
+      font-size:clamp(11px,2.15vw,31px);
+      line-height:1.05;
+      font-weight:900;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Local de coleta e descarga em verde escuro */
+    [data-template-preview="2"] .previewSmall{
+      margin-top:1.1%;
+      color:#17662a;
+      font-size:clamp(8px,1.35vw,20px);
+      line-height:1.08;
+      font-weight:800;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* O nome do produto já faz parte da arte correspondente */
+    [data-template-preview="2"] .previewProduct{
+      display:none;
+    }
+
+    /* Valor do frete dentro da faixa azul */
+    [data-template-preview="2"] .previewPrice{
+      top:75.1%;
+      left:28.5%;
+      width:58%;
+      color:#fff;
+      font-size:clamp(10px,1.9vw,28px);
+      line-height:1;
+      font-weight:900;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Nome da filial em azul */
+    [data-template-preview="2"] .previewFilial{
+      top:84.7%;
+      left:18.3%;
+      width:27%;
+      color:#082f6b;
+      font-size:clamp(8px,1.45vw,22px);
+      line-height:1.05;
+      font-weight:900;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Contatos em azul, ao lado do WhatsApp */
+    [data-template-preview="2"] .previewContacts{
+      top:83.7%;
+      left:56.2%;
+      width:38%;
+      color:#082f6b;
+      font-size:clamp(7px,1.05vw,16px);
+      line-height:1.34;
+      font-weight:900;
+      text-transform:uppercase;
+      text-align:left;
+    }
+
+    [data-template-preview="2"] .previewContactLine{
+      min-height:1.3em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Observação dentro da faixa azul inferior */
+    [data-template-preview="2"] .previewNote{
+      top:94.75%;
+      left:12%;
+      width:76%;
+      color:#fff;
+      font-size:clamp(8px,1.2vw,18px);
+      line-height:1;
+      font-weight:800;
+      text-align:center;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* No Modelo 2 não exibir placeholders sobre a imagem */
+    [data-template-preview="2"] [data-bind]:empty::before{
+      content:"" !important;
+    }
+  </style>
+
 </head>
 <body>
   <div class="topbar">
@@ -208,25 +360,27 @@
           <img class="previewBg" src="../assets/img/SOJA2.png" alt="" />
 
           <div class="previewColeta">
-            <div class="previewValue" data-bind="coletaCidade" data-placeholder="-CIDADE-UF"></div>
-            <div class="previewSmall" data-bind="coletaLocal" data-placeholder="Local"></div>
+            <div class="previewValue" data-bind="coletaCidade"></div>
+            <div class="previewSmall" data-bind="coletaLocal"></div>
           </div>
 
           <div class="previewDescarga">
-            <div class="previewValue" data-bind="descargaCidade" data-placeholder="-CIDADE-UF"></div>
-            <div class="previewSmall" data-bind="descargaLocal" data-placeholder="Local"></div>
+            <div class="previewValue" data-bind="descargaCidade"></div>
+            <div class="previewSmall" data-bind="descargaLocal"></div>
           </div>
 
-          <div class="previewProduct" data-bind="produto" data-placeholder="Produto"></div>
-          <div class="previewPrice" data-bind="valor" data-placeholder="Valor por tonelada"></div>
-          <div class="previewNote" data-bind="obs" data-placeholder="Observações"></div>
+          <div class="previewProduct" data-bind="produto"></div>
+          <div class="previewPrice" data-bind="valor"></div>
+          <div class="previewFilial" data-bind="filial"></div>
 
           <div class="previewContacts">
-            <div class="previewContactLine" data-bind="contato1" data-placeholder="Contato 1"></div>
-            <div class="previewContactLine" data-bind="contato2" data-placeholder="Contato 2"></div>
-            <div class="previewContactLine" data-bind="contato3" data-placeholder="Contato 3"></div>
-            <div class="previewContactLine" data-bind="contato4" data-placeholder="Contato 4"></div>
+            <div class="previewContactLine" data-bind="contato1"></div>
+            <div class="previewContactLine" data-bind="contato2"></div>
+            <div class="previewContactLine" data-bind="contato3"></div>
+            <div class="previewContactLine" data-bind="contato4"></div>
           </div>
+
+          <div class="previewNote" data-bind="obs"></div>
         </div>
       </div>
 
@@ -239,7 +393,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/divulgacao.js?v=3"></script>
+  <script src="../assets/js/divulgacao.js?v=4"></script>
 
   <script>
     if (requireFeatureAuth(

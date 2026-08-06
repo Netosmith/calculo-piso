@@ -14,13 +14,13 @@
     },
 
     "2": {
-      SOJA: "../assets/img/SOJA3.png",
-      MILHO: "../assets/img/MILHO3.png",
-      ACUCAR: "../assets/img/ACUCAR3.png",
-      CALCARIO: "../assets/img/CALCARIO3.png",
-      FARELODESOJA: "../assets/img/FARELODESOJA3.png",
-      SORGO: "../assets/img/SORGO3.png",
-      FERTILIZANTE: "../assets/img/FERTILIZANTE3.png"
+      SOJA: "../assets/img/SOJA2.png",
+      MILHO: "../assets/img/MILHO2.png",
+      ACUCAR: "../assets/img/ACUCAR2.png",
+      CALCARIO: "../assets/img/CALCARIO2.png",
+      FARELODESOJA: "../assets/img/FARELODESOJA2.png",
+      SORGO: "../assets/img/SORGO2.png",
+      FERTILIZANTE: "../assets/img/FERTILIZANTE2.png"
     }
   };
 
@@ -331,14 +331,21 @@
     }
 
     value = String(value).trim();
+
+    if (field === "filial") {
+      const selectedText = el.selectedOptions && el.selectedOptions[0]
+        ? String(el.selectedOptions[0].textContent || "").trim()
+        : value;
+
+      updatePreview(templateId, "filial", value ? selectedText : "");
+      preencherContatosFilial(templateId, value);
+      return;
+    }
+
     updatePreview(templateId, field, value);
 
     if (field === "produto") {
       setPreviewBackgroundByProduct(templateId, value);
-    }
-
-    if (field === "filial") {
-      preencherContatosFilial(templateId, value);
     }
   }
 

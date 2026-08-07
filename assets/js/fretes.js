@@ -47,7 +47,7 @@
       ANAPOLIS: [{ nome: "WILHANS", fone: "5566996733683" }],
       "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
       MONTIVIDIU: [{ nome: "MARCELO", fone: "5564996532847" }],
-      "RIO VERDE": [{ nome: "ARIEL", fone: "5564992277537" }],
+      "RIO VERDE": [{ nome: "RODRIGO", fone: "5564996031200" }],
       INDIARA: [{ nome: "RAFAEL", fone: "5564999108790" }],
       ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992251214" }],
       JATAI: [{ nome: "RONE", fone: "5564996264511" }],
@@ -65,7 +65,7 @@
 
   const FILIAIS_CONTATOS_ARTE = {
     RIOVERDE: [
-      "ARIEL (64) 99227-7537",
+      "RODRIGO (64) 99603-1200",
       "GUSTAVO (64) 99207-8772",
       "UANDER (64) 98114-4642",
       "RODRIGO (64) 99603-1200"

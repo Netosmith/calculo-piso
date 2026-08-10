@@ -44,7 +44,7 @@
     contatosPorFilial: {
       MINEIROS: [{ nome: "KIEWERSON", fone: "5564999794586" }],
       ARAGUARI: [{ nome: "GUILHERME", fone: "5564992177636" }],
-      ANAPOLIS: [{ nome: "WILHANS", fone: "5566996733683" }],
+      ANAPOLIS: [{ nome: "DANILO", fone: "5562993155713" }],
       "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
       MONTIVIDIU: [{ nome: "MARCELO", fone: "5564996532847" }],
       "RIO VERDE": [{ nome: "RODRIGO", fone: "5564996031200" }],
@@ -118,7 +118,7 @@
       ""
     ],
     ANAPOLIS: [
-      "WILHANS (66) 99673-3683",
+      "FHELLIPE (62) 99930-7778",
       "DANILO (62) 99315-5713",
       "LUCAS (62) 99318-9816",
       "EDSON (62) 99340-5792"

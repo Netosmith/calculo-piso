@@ -183,6 +183,12 @@ function normalizeRow(r,index){
     horasPagar:pagar,
     valorHora,
     valorTotal,
+    valorPago:Math.max(0,num(
+      r.valorPago ??
+      r["VALOR PAGO"] ??
+      r["VALOR PAGO (R$)"] ??
+      r["VALOR_PAGO"]
+    )),
     motivo:txt(r.motivo??r["MOTIVO DA ESTADIA"]),
     status:normalizeStatus(r.status??r["STATUS DA ESTADIA"]??"AGUARDANDO"),
     responsavel:txt(r.responsavel??r.RESPONSAVEL),
@@ -229,6 +235,61 @@ async function postApi(payload={}){
   throw new Error(`Operação de estadia inválida: ${action||"vazia"}.`);
 }
 
+async function updateValorPago(id,valorPago,inputEl=null){
+  if(!ensureWrite())return false;
+
+  const item=dados.find(r=>r.id===id);
+  if(!item){
+    alert("Registro não encontrado.");
+    return false;
+  }
+
+  const novoValor=Math.max(0,roundMoney(valorPago));
+  const valorAnterior=Math.max(0,roundMoney(item.valorPago));
+
+  if(novoValor===valorAnterior){
+    if(inputEl)inputEl.value=novoValor.toFixed(2).replace(".",",");
+    return true;
+  }
+
+  if(inputEl){
+    inputEl.disabled=true;
+    inputEl.classList.add("saving");
+  }
+
+  try{
+    const res=await portalCall("update",{
+      ...item,
+      valorPago:novoValor,
+      resource:"registros",
+      ...auditPayload()
+    });
+
+    if(!res||res.ok===false){
+      throw new Error(res?.error||"Falha ao atualizar o valor pago.");
+    }
+
+    item.valorPago=novoValor;
+    aplicarFiltros();
+    return true;
+  }catch(error){
+    console.error("[ESTADIAS] Erro ao atualizar valor pago:",error);
+    item.valorPago=valorAnterior;
+
+    if(inputEl){
+      inputEl.value=valorAnterior.toFixed(2).replace(".",",");
+    }
+
+    alert(`Não foi possível atualizar o Valor Pago.\n\n${error.message}`);
+    return false;
+  }finally{
+    if(inputEl){
+      inputEl.disabled=false;
+      inputEl.classList.remove("saving");
+    }
+  }
+}
+
 function loading(show,text="Processando..."){
   $("loading")?.classList.toggle("show",!!show);
   if($("loadingText"))$("loadingText").textContent=text;
@@ -273,7 +334,7 @@ async function loadData(){
     renderTudo();
     if($("syncStatus"))$("syncStatus").textContent="Serviço de estadias indisponível";
     $("tabelaEstadias").innerHTML=
-      `<tr><td colspan="13" class="empty">Não foi possível consultar as estadias pelo servidor seguro.</td></tr>`;
+      `<tr><td colspan="14" class="empty">Não foi possível consultar as estadias pelo servidor seguro.</td></tr>`;
   }finally{
     loading(false);
   }
@@ -344,12 +405,15 @@ function renderKpis(){
   const liberadas=filtrados.filter(r=>up(r.status).includes("LIBER")).length;
   const negadas=filtrados.filter(r=>up(r.status).includes("NEGAD")).length;
   const valor=filtrados.reduce((sum,r)=>sum+num(r.valorTotal),0);
+  const valorPago=filtrados.reduce((sum,r)=>sum+num(r.valorPago),0);
+  const lucro=roundMoney(valor-valorPago);
 
   $("kpiTotal").textContent=total.toLocaleString("pt-BR");
   $("kpiAguardando").textContent=aguardando.toLocaleString("pt-BR");
   $("kpiLiberadas").textContent=liberadas.toLocaleString("pt-BR");
   $("kpiNegadas").textContent=negadas.toLocaleString("pt-BR");
   $("kpiValor").textContent=money(valor);
+  if($("kpiLucro"))$("kpiLucro").textContent=money(lucro);
 }
 
 function getPageRows(){
@@ -390,6 +454,26 @@ function renderStatusCell(r){
 
   return `<select class="statusSelect ${statusClass(statusAtual)}" data-id="${esc(r.id)}" data-old-status="${esc(statusAtual)}" ${statusEmAtualizacao.has(r.id)?"disabled":""}>${statusOptionsHtml(statusAtual)}</select>`;
 }
+function renderValorPagoCell(r){
+  if(canWrite()){
+    const raw=Math.max(0,num(r.valorPago));
+    const display=raw.toFixed(2).replace(".",",");
+    return `
+      <input
+        class="paidValueInput"
+        type="text"
+        inputmode="decimal"
+        data-id="${esc(r.id)}"
+        value="${esc(display)}"
+        title="Valor pago"
+        aria-label="Valor pago"
+      >
+    `;
+  }
+
+  return `<span class="paidValueReadOnly">${money(r.valorPago||0)}</span>`;
+}
+
 function renderActionsCell(r){
   const actions=[];
   if(canWrite())actions.push(`<button class="btn ghost btnEdit" data-id="${esc(r.id)}" data-estadias-write style="min-height:28px;padding:0 9px">✏ Editar</button>`);
@@ -401,7 +485,7 @@ function renderTable(){
   const tbody=$("tabelaEstadias");
   const rows=getPageRows();
   if($("tableMeta"))$("tableMeta").textContent=`${filtrados.length} registro(s)`;
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="13" class="empty">Nenhuma estadia encontrada para os filtros selecionados.</td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="14" class="empty">Nenhuma estadia encontrada para os filtros selecionados.</td></tr>';return;}
   tbody.innerHTML=rows.map(r=>`
     <tr data-id="${esc(r.id)}">
       <td>${renderStatusCell(r)}</td>
@@ -416,8 +500,36 @@ function renderTable(){
       : "••••••"
   }
 </td>
+      <td class="paidValueCell">${renderValorPagoCell(r)}</td>
       <td>${esc(r.responsavel||"-")}</td><td>${renderActionsCell(r)}</td>
     </tr>`).join("");
+  tbody.querySelectorAll(".paidValueInput").forEach(input=>{
+    input.addEventListener("click",e=>e.stopPropagation());
+
+    input.addEventListener("focus",()=>{
+      input.select();
+    });
+
+    input.addEventListener("keydown",e=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        input.blur();
+      }
+      if(e.key==="Escape"){
+        const item=dados.find(r=>r.id===input.dataset.id);
+        input.value=Math.max(0,num(item?.valorPago)).toFixed(2).replace(".",",");
+        input.blur();
+      }
+    });
+
+    input.addEventListener("blur",async e=>{
+      e.stopPropagation();
+      const id=input.dataset.id;
+      const valor=num(input.value);
+      await updateValorPago(id,valor,input);
+    });
+  });
+
   tbody.querySelectorAll(".statusSelect").forEach(select=>{
     select.addEventListener("click",e=>e.stopPropagation());
     select.addEventListener("change",async e=>{
@@ -624,14 +736,14 @@ function exportCsv(){
     "CLIENTE","CTE","NF","DATA NF","PLACA","MOTORISTA","ORIGEM","DESTINO",
     "PRODUTO","PESO DESTINO (KG)","DATA/HORA CHEGADA","DATA/HORA SAÍDA",
     "TEMPO ESPERA (HORAS)","TEMPO RETROATIVO (HS)","HORA A PAGAR",
-    "VALOR ESTADIA (H)","VALOR ESTADIA (R$)","MOTIVO DA ESTADIA",
+    "VALOR ESTADIA (H)","VALOR ESTADIA (R$)","VALOR PAGO (R$)","LUCRO (R$)","MOTIVO DA ESTADIA",
     "STATUS DA ESTADIA","RESPONSÁVEL","OBSERVAÇÕES","ANEXO"
   ];
 
   const rows=filtrados.map(r=>[
     r.cliente,r.cte,r.nf,dateOnlyBR(r.dataNf),r.placa,r.motorista,r.origem,r.destino,
     r.produto,r.pesoDestino,dateTimeBR(r.dataHoraChegada),dateTimeBR(r.dataHoraSaida),
-    r.tempoEspera,r.tempoRetroativo,r.horasPagar,r.valorHora,r.valorTotal,r.motivo,
+    r.tempoEspera,r.tempoRetroativo,r.horasPagar,r.valorHora,r.valorTotal,r.valorPago,roundMoney(r.valorTotal-r.valorPago),r.motivo,
     r.status,r.responsavel,r.observacoes,r.anexoUrl
   ]);
 

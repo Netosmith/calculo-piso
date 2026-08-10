@@ -44,6 +44,15 @@ function esc(v){
 function money(v){
   return num(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
+
+function moneyInput(v){
+  return num(v).toLocaleString("pt-BR",{
+    style:"currency",
+    currency:"BRL",
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
 function dateTimeBR(v){
   if(!v)return "-";
   if(typeof v==="number"){
@@ -248,7 +257,7 @@ async function updateValorPago(id,valorPago,inputEl=null){
   const valorAnterior=Math.max(0,roundMoney(item.valorPago));
 
   if(novoValor===valorAnterior){
-    if(inputEl)inputEl.value=money(novoValor);
+    if(inputEl)inputEl.value=moneyInput(novoValor);
     return true;
   }
 
@@ -277,7 +286,7 @@ async function updateValorPago(id,valorPago,inputEl=null){
     item.valorPago=valorAnterior;
 
     if(inputEl){
-      inputEl.value=money(valorAnterior);
+      inputEl.value=moneyInput(valorAnterior);
     }
 
     alert(`Não foi possível atualizar o Valor Pago.\n\n${error.message}`);
@@ -457,7 +466,7 @@ function renderStatusCell(r){
 function renderValorPagoCell(r){
   if(canWrite()){
     const raw=Math.max(0,num(r.valorPago));
-    const display=money(raw);
+    const display=moneyInput(raw);
 
     return `
       <input
@@ -466,14 +475,29 @@ function renderValorPagoCell(r){
         inputmode="decimal"
         data-id="${esc(r.id)}"
         value="${esc(display)}"
-        title="Valor pago"
+        title="Clique para editar o valor pago"
         aria-label="Valor pago"
         autocomplete="off"
+        style="
+          width:112px;
+          height:30px;
+          border:1px solid transparent;
+          border-radius:8px;
+          background:transparent;
+          color:#086f47;
+          padding:0;
+          text-align:left;
+          font-size:9px;
+          font-weight:900;
+          outline:none;
+          cursor:text;
+          box-shadow:none;
+        "
       >
     `;
   }
 
-  return `<span class="paidValueReadOnly">${money(r.valorPago||0)}</span>`;
+  return `<span class="paidValueReadOnly" style="color:#086f47;font-weight:900">${moneyInput(r.valorPago||0)}</span>`;
 }
 
 function renderActionsCell(r){
@@ -508,7 +532,27 @@ function renderTable(){
   tbody.querySelectorAll(".paidValueInput").forEach(input=>{
     input.addEventListener("click",e=>e.stopPropagation());
 
+    input.addEventListener("mouseenter",()=>{
+      if(document.activeElement!==input){
+        input.style.borderColor="#dfe6ef";
+        input.style.background="#fff";
+        input.style.padding="0 8px";
+      }
+    });
+
+    input.addEventListener("mouseleave",()=>{
+      if(document.activeElement!==input){
+        input.style.borderColor="transparent";
+        input.style.background="transparent";
+        input.style.padding="0";
+      }
+    });
+
     input.addEventListener("focus",()=>{
+      input.style.borderColor="#4d83f3";
+      input.style.background="#fff";
+      input.style.padding="0 8px";
+      input.style.boxShadow="0 0 0 3px rgba(37,99,235,.12)";
       input.select();
     });
 
@@ -519,7 +563,7 @@ function renderTable(){
       }
       if(e.key==="Escape"){
         const item=dados.find(r=>r.id===input.dataset.id);
-        input.value=money(Math.max(0,num(item?.valorPago)));
+        input.value=moneyInput(Math.max(0,num(item?.valorPago)));
         input.blur();
       }
     });
@@ -530,8 +574,11 @@ function renderTable(){
       const id=input.dataset.id;
       const valor=Math.max(0,num(input.value));
 
-      // Mantém o campo imediatamente no mesmo padrão visual da coluna VALOR.
-      input.value=money(valor);
+      input.value=moneyInput(valor);
+      input.style.borderColor="transparent";
+      input.style.background="transparent";
+      input.style.padding="0";
+      input.style.boxShadow="none";
 
       await updateValorPago(id,valor,input);
     });

@@ -248,7 +248,7 @@ async function updateValorPago(id,valorPago,inputEl=null){
   const valorAnterior=Math.max(0,roundMoney(item.valorPago));
 
   if(novoValor===valorAnterior){
-    if(inputEl)inputEl.value=novoValor.toFixed(2).replace(".",",");
+    if(inputEl)inputEl.value=money(novoValor);
     return true;
   }
 
@@ -277,7 +277,7 @@ async function updateValorPago(id,valorPago,inputEl=null){
     item.valorPago=valorAnterior;
 
     if(inputEl){
-      inputEl.value=valorAnterior.toFixed(2).replace(".",",");
+      inputEl.value=money(valorAnterior);
     }
 
     alert(`Não foi possível atualizar o Valor Pago.\n\n${error.message}`);
@@ -457,7 +457,8 @@ function renderStatusCell(r){
 function renderValorPagoCell(r){
   if(canWrite()){
     const raw=Math.max(0,num(r.valorPago));
-    const display=raw.toFixed(2).replace(".",",");
+    const display=money(raw);
+
     return `
       <input
         class="paidValueInput"
@@ -467,6 +468,7 @@ function renderValorPagoCell(r){
         value="${esc(display)}"
         title="Valor pago"
         aria-label="Valor pago"
+        autocomplete="off"
       >
     `;
   }
@@ -517,15 +519,20 @@ function renderTable(){
       }
       if(e.key==="Escape"){
         const item=dados.find(r=>r.id===input.dataset.id);
-        input.value=Math.max(0,num(item?.valorPago)).toFixed(2).replace(".",",");
+        input.value=money(Math.max(0,num(item?.valorPago)));
         input.blur();
       }
     });
 
     input.addEventListener("blur",async e=>{
       e.stopPropagation();
+
       const id=input.dataset.id;
-      const valor=num(input.value);
+      const valor=Math.max(0,num(input.value));
+
+      // Mantém o campo imediatamente no mesmo padrão visual da coluna VALOR.
+      input.value=money(valor);
+
       await updateValorPago(id,valor,input);
     });
   });

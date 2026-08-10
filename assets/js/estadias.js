@@ -422,7 +422,19 @@ function renderKpis(){
   $("kpiLiberadas").textContent=liberadas.toLocaleString("pt-BR");
   $("kpiNegadas").textContent=negadas.toLocaleString("pt-BR");
   $("kpiValor").textContent=money(valor);
-  if($("kpiLucro"))$("kpiLucro").textContent=money(lucro);
+
+  const kpiLucro=$("kpiLucro");
+  if(kpiLucro){
+    const cardLucro=kpiLucro.closest(".kpi");
+
+    if(canWrite()){
+      kpiLucro.textContent=money(lucro);
+      if(cardLucro)cardLucro.style.display="";
+    }else{
+      kpiLucro.textContent="";
+      if(cardLucro)cardLucro.style.display="none";
+    }
+  }
 }
 
 function getPageRows(){

@@ -140,7 +140,7 @@
 
     .kpis{
       display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
+      grid-template-columns:repeat(6,minmax(0,1fr));
       gap:12px;
       margin-bottom:14px;
     }
@@ -170,6 +170,8 @@
     .kpi.green .kpiIcon{background:var(--green-soft);color:var(--green)}
     .kpi.red .kpiIcon{background:var(--red-soft);color:var(--red)}
     .kpi.money .kpiIcon{background:#e7f8ef;color:#008f57}
+    .kpi.profit .kpiIcon{background:#e7f8ef;color:#008f57}
+    .kpi.profit .kpiValue{color:#008f57}
 
     .kpiLabel{
       color:#52627a;
@@ -325,6 +327,15 @@
     .badge.correct{background:#f1ebff;color:#6b35d0}
 
     .moneyCell{font-weight:900;color:#086f47}
+
+    .paidValueCell{min-width:118px}
+    .paidValueInput{
+      width:108px;height:30px;border:1px solid #cfd8e6;border-radius:8px;background:#fff;color:#086f47;
+      padding:0 8px;text-align:right;font-size:9px;font-weight:900;outline:none;
+    }
+    .paidValueInput:focus{border-color:#4d83f3;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+    .paidValueInput.saving{opacity:.6;cursor:wait}
+    .paidValueReadOnly{display:inline-block;min-width:90px;color:#086f47;font-weight:900;text-align:right}
 
     .statusSelect{min-width:132px;height:28px;padding:0 28px 0 9px;border:1px solid var(--line);border-radius:999px;outline:none;font-size:8px;font-weight:1000;text-transform:uppercase;cursor:pointer;background:#fff}
     .statusSelect.wait{background:var(--orange-soft);color:#a85f00;border-color:#ffd27d}
@@ -495,6 +506,11 @@
         <div class="kpiIcon">$</div>
         <div><div class="kpiLabel">Valor total</div><div class="kpiValue" id="kpiValor">R$ 0,00</div><div class="kpiMeta">Valor no período filtrado</div></div>
       </article>
+
+      <article class="kpi profit">
+        <div class="kpiIcon">↗</div>
+        <div><div class="kpiLabel">Lucro</div><div class="kpiValue" id="kpiLucro">R$ 0,00</div><div class="kpiMeta">Valor total menos valor pago</div></div>
+      </article>
     </section>
 
     <section class="filtersCard">
@@ -542,11 +558,11 @@
               <tr>
                 <th>Status</th><th>Cliente</th><th>CTe</th><th>NF</th><th>Placa</th>
                 <th>Origem</th><th>Destino</th><th>Chegada</th><th>Saída</th>
-                <th>Horas a pagar</th><th>Valor</th><th>Responsável</th><th>Ações</th>
+                <th>Horas a pagar</th><th>Valor</th><th>Valor Pago</th><th>Responsável</th><th>Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaEstadias">
-              <tr><td colspan="13" class="empty">Carregando dados...</td></tr>
+              <tr><td colspan="14" class="empty">Carregando dados...</td></tr>
             </tbody>
           </table>
         </div>
@@ -625,7 +641,7 @@
 
   <div class="loading" id="loading"><div class="loadingBox" id="loadingText">Processando...</div></div>
 
-  <script src="../assets/js/estadias.js?v=4"></script>
+  <script src="../assets/js/estadias.js?v=5"></script>
   <script>
     try{
       if(typeof requireFeatureAuth==="function"){

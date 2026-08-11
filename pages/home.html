@@ -609,7 +609,7 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=7"></script>
+  <script src="../assets/js/auth.js?v=8"></script>
   <script src="../assets/js/home-solicitacoes.js?v=2"></script>
   <script>
     requireHomeAuth();
@@ -785,10 +785,37 @@
         data.value = `${String(agora.getDate()).padStart(2,"0")}/${String(agora.getMonth()+1).padStart(2,"0")}/${agora.getFullYear()}`;
       }
 
-      document.querySelectorAll("[data-feature]").forEach((card) => {
-        const feature = card.getAttribute("data-feature");
-        if (typeof canAccessFeature === "function" && !canAccessFeature(feature)) card.style.display = "none";
-      });
+      async function aplicarPermissoesHome() {
+        /*
+          Aguarda a sessão real do Worker antes de decidir quais cards mostrar.
+          Isso evita esconder permanentemente um card quando o localStorage ainda
+          contém um perfil antigo durante os primeiros milissegundos da página.
+        */
+        try {
+          if (window.portalAuthReady) {
+            await window.portalAuthReady;
+          }
+        } catch (erro) {
+          console.warn("Não foi possível aguardar a sessão para aplicar permissões:", erro);
+        }
+
+        document.querySelectorAll("[data-feature]").forEach((card) => {
+          const feature = card.getAttribute("data-feature");
+
+          if (typeof canAccessFeature !== "function") {
+            card.style.removeProperty("display");
+            return;
+          }
+
+          if (canAccessFeature(feature)) {
+            card.style.removeProperty("display");
+          } else {
+            card.style.display = "none";
+          }
+        });
+      }
+
+      aplicarPermissoesHome();
 
       carregarMetricasHome();
 
@@ -816,6 +843,23 @@
         new MutationObserver(contarFiliais).observe(filialSelect,{childList:true,subtree:true});
         contarFiliais();
       }
+    });
+
+    window.addEventListener("portal:session", () => {
+      document.querySelectorAll("[data-feature]").forEach((card) => {
+        const feature = card.getAttribute("data-feature");
+
+        if (typeof canAccessFeature !== "function") {
+          card.style.removeProperty("display");
+          return;
+        }
+
+        if (canAccessFeature(feature)) {
+          card.style.removeProperty("display");
+        } else {
+          card.style.display = "none";
+        }
+      });
     });
 
     window.addEventListener("home:metrics",(evento) => atualizarMetricasHome(evento.detail || {}));

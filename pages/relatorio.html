@@ -1,1 +1,67 @@
-teste
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Expedição</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{--bg:#07162c;--panel:rgba(12,34,63,.88);--line:rgba(158,191,229,.18);--text:#f4f8ff;--muted:#9fb2c9;--blue:#4f8df7;--green:#34bd83;--gold:#f2b935;--purple:#9b6ee5;--orange:#f28c45;--shadow:0 18px 46px rgba(0,0,0,.28);--radius:18px}
+    *{box-sizing:border-box}html{min-height:100%;background:var(--bg)}body{min-height:100vh;margin:0;color:var(--text);background:radial-gradient(circle at 82% 5%,rgba(71,119,182,.24),transparent 30%),radial-gradient(circle at 10% 20%,rgba(26,100,167,.14),transparent 26%),linear-gradient(160deg,#07162c 0%,#0a1d37 48%,#07162c 100%);font-family:"Inter",Arial,sans-serif}button,select,input{font:inherit}.app{width:min(100% - 34px,1680px);margin:0 auto;padding:28px 0 44px}
+    .hero{position:relative;overflow:hidden;min-height:190px;padding:34px 36px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(120deg,rgba(10,35,66,.96),rgba(22,63,103,.76)),linear-gradient(135deg,#0e2e55,#0a1e39);box-shadow:var(--shadow)}.hero::before{content:"";position:absolute;width:420px;height:420px;right:-110px;top:-220px;border-radius:50%;background:radial-gradient(circle,rgba(79,141,247,.35),transparent 67%)}.hero::after{content:"";position:absolute;inset:auto 0 0;height:4px;background:linear-gradient(90deg,var(--blue),var(--green),var(--gold),var(--purple))}.hero-content,.hero-status{position:relative;z-index:1}.eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#a9c8ef;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(52,189,131,.8)}.hero h1{margin:0;font-size:clamp(30px,4vw,52px);line-height:1;letter-spacing:-1.9px}.hero p{margin:14px 0 0;color:#c4d2e3;font-size:16px}.hero-status{min-width:270px;display:grid;grid-template-columns:1fr 1fr;gap:12px}.hero-mini{padding:16px;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(4,18,36,.38);backdrop-filter:blur(10px)}.hero-mini span{display:block;color:#9fb2c9;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}.hero-mini strong{display:block;margin-top:7px;color:#fff;font-size:17px}
+    .importPanel{margin-top:22px;padding:21px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(145deg,rgba(17,47,82,.88),rgba(9,29,55,.86));box-shadow:0 12px 32px rgba(0,0,0,.18)}.importLeft h2{margin:0;font-size:18px}.importLeft p{margin:7px 0 0;color:var(--muted);font-size:13px}#btnImportar{min-height:46px;padding:0 20px;border:1px solid rgba(79,141,247,.78);border-radius:13px;background:linear-gradient(135deg,#2f6fd6,#4f8df7);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 12px 24px rgba(36,99,190,.25);transition:.18s ease}#btnImportar:hover{transform:translateY(-2px);filter:brightness(1.08)}#btnImportar:disabled{opacity:.65;cursor:not-allowed;transform:none}
+    .filters{margin-top:18px;padding:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(9,28,53,.76);box-shadow:0 10px 30px rgba(0,0,0,.14)}.filterField label{display:block;margin-bottom:7px;color:#aebfd1;font-size:11px;font-weight:800;letter-spacing:.045em;text-transform:uppercase}.filterField select{width:100%;min-height:44px;padding:0 13px;border:1px solid rgba(164,196,232,.20);border-radius:12px;outline:none;background:#0c2341;color:#f4f8ff}.filterField select:focus{border-color:rgba(79,141,247,.75);box-shadow:0 0 0 3px rgba(79,141,247,.14)}
+    .cards{margin-top:18px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:15px}.metricCard{--accent:var(--blue);position:relative;min-height:150px;padding:20px;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:18px;background:radial-gradient(circle at 88% 4%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 42%),linear-gradient(145deg,rgba(18,48,82,.92),rgba(8,26,51,.91));box-shadow:0 16px 36px rgba(0,0,0,.18)}.metricCard::after{content:"";position:absolute;left:18px;right:18px;bottom:0;height:4px;border-radius:8px 8px 0 0;background:var(--accent);box-shadow:0 0 16px color-mix(in srgb,var(--accent) 65%,transparent)}.metricCard.green{--accent:var(--green)}.metricCard.gold{--accent:var(--gold)}.metricCard.purple{--accent:var(--purple)}.metricCard.orange{--accent:var(--orange)}.metricTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.metricLabel{color:#d9e5f3;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}.metricIcon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);font-size:18px}.metricCard strong{display:block;margin-top:18px;font-size:clamp(26px,2.4vw,39px);line-height:1;letter-spacing:-1.4px;font-variant-numeric:tabular-nums}.metricCard small{display:block;margin-top:10px;color:var(--muted);font-size:11px}
+    .grid{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.box{min-width:0;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(145deg,rgba(15,42,74,.90),rgba(8,27,52,.88));box-shadow:0 15px 36px rgba(0,0,0,.18)}.boxHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.box h2{margin:0;font-size:17px;letter-spacing:-.25px}.box p{margin:6px 0 0;color:var(--muted);font-size:12px}.chartWrap{position:relative;min-height:340px}.tableBox{margin-top:18px}.tableWrap{overflow:auto;border:1px solid rgba(160,192,228,.12);border-radius:14px}table{width:100%;min-width:920px;border-collapse:collapse;background:rgba(4,19,38,.28)}th,td{padding:14px 16px;border-bottom:1px solid rgba(155,188,225,.10);text-align:right;font-size:13px;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;z-index:2;color:#c9d8e9;background:#0d2b4e;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}tbody tr:hover{background:rgba(79,141,247,.07)}.progressCell{min-width:180px}.progressLine{height:8px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.08)}.progressLine span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),var(--green))}.progressText{display:block;margin-top:6px;color:#b7c7d9;font-size:11px;text-align:right}.emptyState{padding:34px 20px;color:var(--muted);text-align:center}.statusBar{margin-top:18px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid var(--line);border-radius:14px;color:#9fb2c9;background:rgba(8,28,53,.70);font-size:12px}.statusBar strong{color:#dfe9f5}
+    @media(max-width:1250px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.hero{align-items:flex-start;flex-direction:column}.hero-status{width:100%}.grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.app{width:min(100% - 22px,1680px);padding-top:12px}.hero{padding:26px 22px}.hero-status,.filters,.cards{grid-template-columns:1fr}.importPanel{align-items:stretch;flex-direction:column}#btnImportar{width:100%}.chartWrap{min-height:290px}.statusBar{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div class="hero-content">
+        <span class="eyebrow">LOUIS DREYFUS • Inteligência operacional</span>
+        <h1>Dashboard de Expedição</h1>
+        <p>Soja, Milho e Sorgo • Acompanhamento mensal dos contratos e recebimentos.</p>
+      </div>
+      <div class="hero-status">
+        <div class="hero-mini"><span>Última atualização</span><strong id="ultimaAtualizacao">--:--</strong></div>
+        <div class="hero-mini"><span>Registros carregados</span><strong id="totalRegistros">0</strong></div>
+      </div>
+    </header>
+    <section class="importPanel">
+      <div class="importLeft"><h2>Importar Expedição</h2><p>Selecione a planilha exportada do SAP com as novas colunas do sistema.</p></div>
+      <div class="importRight"><input type="file" id="arquivoExcel" accept=".xlsx,.xls" hidden /><button id="btnImportar" type="button">📂 Importar Excel</button></div>
+    </section>
+    <section class="filters" aria-label="Filtros do dashboard">
+      <div class="filterField"><label for="filtroFilial">Filial</label><select id="filtroFilial"><option value="">Todas as filiais</option></select></div>
+      <div class="filterField"><label for="filtroProduto">Produto</label><select id="filtroProduto"><option value="">Todos os produtos</option></select></div>
+      <div class="filterField"><label for="filtroUF">UF</label><select id="filtroUF"><option value="">Todas as UFs</option></select></div>
+      <div class="filterField"><label for="filtroLocal">Local de embarque</label><select id="filtroLocal"><option value="">Todos os locais</option></select></div>
+    </section>
+    <section class="cards" aria-label="Indicadores gerais">
+      <article class="metricCard"><div class="metricTop"><span class="metricLabel">Contratada</span><span class="metricIcon">📦</span></div><strong id="totalContratada">0 t</strong><small>Volume total contratado</small></article>
+      <article class="metricCard green"><div class="metricTop"><span class="metricLabel">Recebida</span><span class="metricIcon">✅</span></div><strong id="totalRecebida">0 t</strong><small>Volume já recebido</small></article>
+      <article class="metricCard gold"><div class="metricTop"><span class="metricLabel">Restante</span><span class="metricIcon">⏳</span></div><strong id="totalRestante">0 t</strong><small>Contratada menos recebida</small></article>
+      <article class="metricCard purple"><div class="metricTop"><span class="metricLabel">Contratos</span><span class="metricIcon">📄</span></div><strong id="totalContratos">0</strong><small>Contratos AS400 distintos</small></article>
+      <article class="metricCard orange"><div class="metricTop"><span class="metricLabel">Viagens</span><span class="metricIcon">🚛</span></div><strong id="totalViagens">0</strong><small>Estimativa com 37 t por viagem</small></article>
+    </section>
+    <section class="grid">
+      <article class="box"><div class="boxHead"><div><h2>Volume por Filial</h2><p>Comparativo do volume contratado por unidade.</p></div></div><div class="chartWrap"><canvas id="graficoFilial"></canvas></div></article>
+      <article class="box"><div class="boxHead"><div><h2>Volume por Produto</h2><p>Participação de cada produto no volume contratado.</p></div></div><div class="chartWrap"><canvas id="graficoProduto"></canvas></div></article>
+      <article class="box"><div class="boxHead"><div><h2>Locais de Embarque</h2><p>Principais endereços de embarque por volume.</p></div></div><div class="chartWrap"><canvas id="graficoLocal"></canvas></div></article>
+      <article class="box"><div class="boxHead"><div><h2>Volume Restante por Data</h2><p>Saldo projetado conforme a data máxima de entrega.</p></div></div><div class="chartWrap"><canvas id="graficoData"></canvas></div></article>
+    </section>
+    <section class="box tableBox">
+      <div class="boxHead"><div><h2>Resumo por Filial</h2><p>Contratada, recebida, saldo, desempenho e viagens estimadas.</p></div></div>
+      <div class="tableWrap"><table><thead><tr><th>Filial</th><th>Contratada</th><th>Recebida</th><th>Restante</th><th>Conclusão</th><th>Viagens</th></tr></thead><tbody id="tabelaResumo"></tbody></table></div>
+    </section>
+    <footer class="statusBar"><span id="statusMensagem">Carregando dados da expedição...</span><span><strong>Fonte:</strong> SAP / Google Sheets</span></footer>
+  </main>
+  <script src="../assets/js/script.js?v=2" defer></script>
+</body>
+</html>

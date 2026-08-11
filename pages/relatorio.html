@@ -3,65 +3,1342 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard de Expedição</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <title>Relatório de Expedição | NOVA FROTA</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
   <style>
-    :root{--bg:#07162c;--panel:rgba(12,34,63,.88);--line:rgba(158,191,229,.18);--text:#f4f8ff;--muted:#9fb2c9;--blue:#4f8df7;--green:#34bd83;--gold:#f2b935;--purple:#9b6ee5;--orange:#f28c45;--shadow:0 18px 46px rgba(0,0,0,.28);--radius:18px}
-    *{box-sizing:border-box}html{min-height:100%;background:var(--bg)}body{min-height:100vh;margin:0;color:var(--text);background:radial-gradient(circle at 82% 5%,rgba(71,119,182,.24),transparent 30%),radial-gradient(circle at 10% 20%,rgba(26,100,167,.14),transparent 26%),linear-gradient(160deg,#07162c 0%,#0a1d37 48%,#07162c 100%);font-family:"Inter",Arial,sans-serif}button,select,input{font:inherit}.app{width:min(100% - 34px,1680px);margin:0 auto;padding:28px 0 44px}
-    .hero{position:relative;overflow:hidden;min-height:190px;padding:34px 36px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(120deg,rgba(10,35,66,.96),rgba(22,63,103,.76)),linear-gradient(135deg,#0e2e55,#0a1e39);box-shadow:var(--shadow)}.hero::before{content:"";position:absolute;width:420px;height:420px;right:-110px;top:-220px;border-radius:50%;background:radial-gradient(circle,rgba(79,141,247,.35),transparent 67%)}.hero::after{content:"";position:absolute;inset:auto 0 0;height:4px;background:linear-gradient(90deg,var(--blue),var(--green),var(--gold),var(--purple))}.hero-content,.hero-status{position:relative;z-index:1}.eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#a9c8ef;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(52,189,131,.8)}.hero h1{margin:0;font-size:clamp(30px,4vw,52px);line-height:1;letter-spacing:-1.9px}.hero p{margin:14px 0 0;color:#c4d2e3;font-size:16px}.hero-status{min-width:270px;display:grid;grid-template-columns:1fr 1fr;gap:12px}.hero-mini{padding:16px;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(4,18,36,.38);backdrop-filter:blur(10px)}.hero-mini span{display:block;color:#9fb2c9;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}.hero-mini strong{display:block;margin-top:7px;color:#fff;font-size:17px}
-    .importPanel{margin-top:22px;padding:21px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(145deg,rgba(17,47,82,.88),rgba(9,29,55,.86));box-shadow:0 12px 32px rgba(0,0,0,.18)}.importLeft h2{margin:0;font-size:18px}.importLeft p{margin:7px 0 0;color:var(--muted);font-size:13px}#btnImportar{min-height:46px;padding:0 20px;border:1px solid rgba(79,141,247,.78);border-radius:13px;background:linear-gradient(135deg,#2f6fd6,#4f8df7);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 12px 24px rgba(36,99,190,.25);transition:.18s ease}#btnImportar:hover{transform:translateY(-2px);filter:brightness(1.08)}#btnImportar:disabled{opacity:.65;cursor:not-allowed;transform:none}
-    .filters{margin-top:18px;padding:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(9,28,53,.76);box-shadow:0 10px 30px rgba(0,0,0,.14)}.filterField label{display:block;margin-bottom:7px;color:#aebfd1;font-size:11px;font-weight:800;letter-spacing:.045em;text-transform:uppercase}.filterField select{width:100%;min-height:44px;padding:0 13px;border:1px solid rgba(164,196,232,.20);border-radius:12px;outline:none;background:#0c2341;color:#f4f8ff}.filterField select:focus{border-color:rgba(79,141,247,.75);box-shadow:0 0 0 3px rgba(79,141,247,.14)}
-    .cards{margin-top:18px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:15px}.metricCard{--accent:var(--blue);position:relative;min-height:150px;padding:20px;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:18px;background:radial-gradient(circle at 88% 4%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 42%),linear-gradient(145deg,rgba(18,48,82,.92),rgba(8,26,51,.91));box-shadow:0 16px 36px rgba(0,0,0,.18)}.metricCard::after{content:"";position:absolute;left:18px;right:18px;bottom:0;height:4px;border-radius:8px 8px 0 0;background:var(--accent);box-shadow:0 0 16px color-mix(in srgb,var(--accent) 65%,transparent)}.metricCard.green{--accent:var(--green)}.metricCard.gold{--accent:var(--gold)}.metricCard.purple{--accent:var(--purple)}.metricCard.orange{--accent:var(--orange)}.metricTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.metricLabel{color:#d9e5f3;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}.metricIcon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);font-size:18px}.metricCard strong{display:block;margin-top:18px;font-size:clamp(26px,2.4vw,39px);line-height:1;letter-spacing:-1.4px;font-variant-numeric:tabular-nums}.metricCard small{display:block;margin-top:10px;color:var(--muted);font-size:11px}
-    .grid{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.box{min-width:0;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(145deg,rgba(15,42,74,.90),rgba(8,27,52,.88));box-shadow:0 15px 36px rgba(0,0,0,.18)}.boxHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.box h2{margin:0;font-size:17px;letter-spacing:-.25px}.box p{margin:6px 0 0;color:var(--muted);font-size:12px}.chartWrap{position:relative;min-height:340px}.tableBox{margin-top:18px}.tableWrap{overflow:auto;border:1px solid rgba(160,192,228,.12);border-radius:14px}table{width:100%;min-width:920px;border-collapse:collapse;background:rgba(4,19,38,.28)}th,td{padding:14px 16px;border-bottom:1px solid rgba(155,188,225,.10);text-align:right;font-size:13px;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{position:sticky;top:0;z-index:2;color:#c9d8e9;background:#0d2b4e;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}tbody tr:hover{background:rgba(79,141,247,.07)}.progressCell{min-width:180px}.progressLine{height:8px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.08)}.progressLine span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),var(--green))}.progressText{display:block;margin-top:6px;color:#b7c7d9;font-size:11px;text-align:right}.emptyState{padding:34px 20px;color:var(--muted);text-align:center}.statusBar{margin-top:18px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid var(--line);border-radius:14px;color:#9fb2c9;background:rgba(8,28,53,.70);font-size:12px}.statusBar strong{color:#dfe9f5}
-    @media(max-width:1250px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.hero{align-items:flex-start;flex-direction:column}.hero-status{width:100%}.grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.app{width:min(100% - 22px,1680px);padding-top:12px}.hero{padding:26px 22px}.hero-status,.filters,.cards{grid-template-columns:1fr}.importPanel{align-items:stretch;flex-direction:column}#btnImportar{width:100%}.chartWrap{min-height:290px}.statusBar{align-items:flex-start;flex-direction:column}}
+    :root{
+      --bg:#061429;
+      --bg2:#0a1d38;
+      --panel:#0b2545;
+      --panel2:#0d2b50;
+      --line:rgba(158,191,229,.18);
+      --text:#f5f8ff;
+      --muted:#9fb3ca;
+      --blue:#4d8df7;
+      --green:#2fc48d;
+      --gold:#f2bc3d;
+      --purple:#9b75ed;
+      --orange:#f28a45;
+      --cyan:#3ccbe7;
+      --red:#ff6678;
+      --shadow:0 18px 48px rgba(0,0,0,.28);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg)}
+    body{
+      min-height:100vh;
+      margin:0;
+      color:var(--text);
+      font-family:"Inter",Arial,sans-serif;
+      background:
+        radial-gradient(circle at 85% 4%,rgba(62,127,204,.22),transparent 28%),
+        radial-gradient(circle at 9% 30%,rgba(33,121,178,.12),transparent 24%),
+        linear-gradient(160deg,#061429 0%,#0b213f 48%,#061429 100%);
+    }
+
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{width:min(calc(100% - 30px),1760px);margin:0 auto;padding:20px 0 42px}
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      min-height:150px;
+      padding:28px 32px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:24px;
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:
+        linear-gradient(120deg,rgba(8,31,59,.98),rgba(19,65,107,.78)),
+        #0d2b50;
+      box-shadow:var(--shadow);
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      left:0;right:0;bottom:0;
+      height:4px;
+      background:linear-gradient(90deg,var(--blue),var(--green),var(--gold),var(--purple));
+    }
+    .hero h1{margin:0;font-size:clamp(31px,4vw,54px);letter-spacing:-2px;line-height:1}
+    .hero p{margin:11px 0 0;color:#c6d4e5;font-size:14px}
+    .heroEyebrow{
+      margin-bottom:10px;
+      color:#9ec7f4;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+    }
+    .heroStats{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(120px,1fr));
+      gap:10px;
+      min-width:460px;
+    }
+    .heroMini{
+      padding:14px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:13px;
+      background:rgba(5,20,39,.42);
+    }
+    .heroMini span{
+      display:block;color:var(--muted);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em
+    }
+    .heroMini strong{display:block;margin-top:7px;font-size:13px}
+
+    .toolbar{
+      margin-top:16px;
+      padding:16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:rgba(9,29,55,.82);
+      box-shadow:0 10px 28px rgba(0,0,0,.16);
+    }
+    .toolbarTitle strong{display:block;font-size:14px}
+    .toolbarTitle span{display:block;margin-top:5px;color:var(--muted);font-size:11px}
+    .toolbarActions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      min-height:42px;
+      padding:0 16px;
+      border:1px solid rgba(95,151,235,.5);
+      border-radius:11px;
+      background:#173d6e;
+      color:#fff;
+      font-size:12px;
+      font-weight:900;
+    }
+    .btn:hover{filter:brightness(1.08)}
+    .btn.primary{background:linear-gradient(135deg,#2f71d8,#4d8df7)}
+    .btn.green{background:linear-gradient(135deg,#149864,#2fc48d);border-color:rgba(47,196,141,.55)}
+    .btn.ghost{background:rgba(11,36,68,.75)}
+    .btn.danger{background:#6a2330;border-color:#a74656}
+    #csvInput{display:none}
+
+    .filters{
+      margin-top:16px;
+      padding:16px;
+      display:grid;
+      grid-template-columns:1.05fr 1.3fr 1fr 1fr .8fr 1fr;
+      gap:11px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:rgba(8,28,52,.76);
+    }
+    .filterField label{
+      display:block;margin:0 0 6px;color:#aebfd2;font-size:9px;font-weight:900;letter-spacing:.045em;text-transform:uppercase
+    }
+    .filterField select,.filterField input{
+      width:100%;
+      min-height:41px;
+      padding:0 11px;
+      border:1px solid rgba(164,196,232,.2);
+      border-radius:10px;
+      outline:none;
+      background:#0b2341;
+      color:#fff;
+      font-size:12px;
+    }
+    .filterField select:focus,.filterField input:focus{
+      border-color:#4d8df7;
+      box-shadow:0 0 0 3px rgba(77,141,247,.12);
+    }
+
+    .cards{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:12px;
+    }
+    .metric{
+      --accent:var(--blue);
+      position:relative;
+      min-height:126px;
+      padding:17px;
+      overflow:hidden;
+      border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 92% 0%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 43%),
+        linear-gradient(145deg,rgba(17,48,82,.94),rgba(7,25,49,.94));
+      box-shadow:0 14px 32px rgba(0,0,0,.17);
+    }
+    .metric.green{--accent:var(--green)}
+    .metric.gold{--accent:var(--gold)}
+    .metric.purple{--accent:var(--purple)}
+    .metric.orange{--accent:var(--orange)}
+    .metric.cyan{--accent:var(--cyan)}
+    .metric::after{
+      content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;background:var(--accent);border-radius:6px 6px 0 0
+    }
+    .metricTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .metricLabel{color:#dbe7f5;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+    .metricIcon{
+      width:32px;height:32px;display:grid;place-items:center;border-radius:10px;
+      color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);
+      border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)
+    }
+    .metric strong{
+      display:block;margin-top:15px;font-size:clamp(21px,2vw,32px);line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums
+    }
+    .metric small{display:block;margin-top:8px;color:var(--muted);font-size:9px}
+
+    .grid{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:15px;
+    }
+    .box{
+      min-width:0;
+      padding:19px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:linear-gradient(145deg,rgba(14,42,75,.91),rgba(7,26,50,.91));
+      box-shadow:0 14px 34px rgba(0,0,0,.17);
+    }
+    .boxHead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+    .box h2{margin:0;font-size:15px;letter-spacing:-.2px}
+    .box p{margin:5px 0 0;color:var(--muted);font-size:10px}
+    .chartWrap{position:relative;min-height:335px}
+    .chartWrap.small{min-height:300px}
+
+    .tableBox{margin-top:16px}
+    .tableWrap{overflow:auto;border:1px solid rgba(160,192,228,.12);border-radius:13px}
+    table{width:100%;min-width:1180px;border-collapse:collapse;background:rgba(4,19,38,.25)}
+    th,td{
+      padding:11px 12px;
+      border-bottom:1px solid rgba(155,188,225,.10);
+      text-align:right;
+      font-size:10px;
+      white-space:nowrap;
+    }
+    th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+    th{
+      position:sticky;top:0;z-index:2;
+      color:#d3deec;background:#0d2b4e;
+      font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.035em
+    }
+    tbody tr:hover{background:rgba(77,141,247,.07)}
+    .groupBadge{
+      display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:999px;
+      background:rgba(77,141,247,.12);border:1px solid rgba(77,141,247,.28);color:#cfe0ff;font-size:9px;font-weight:900
+    }
+
+    .statusBar{
+      margin-top:14px;
+      padding:12px 15px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      color:var(--muted);
+      background:rgba(8,28,53,.74);
+      font-size:10px;
+    }
+    .statusBar strong{color:#dfe9f5}
+
+    .modal{
+      position:fixed;inset:0;z-index:9999;
+      display:none;align-items:center;justify-content:center;
+      padding:18px;
+      background:rgba(1,8,18,.72);
+      backdrop-filter:blur(8px);
+    }
+    .modal.show{display:flex}
+    .modalCard{
+      width:min(920px,96vw);
+      max-height:88vh;
+      overflow:auto;
+      border:1px solid rgba(174,203,235,.24);
+      border-radius:18px;
+      background:#081d36;
+      box-shadow:0 30px 80px rgba(0,0,0,.5);
+    }
+    .modalHead{
+      position:sticky;top:0;z-index:2;
+      padding:17px 18px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      background:#0b294b;border-bottom:1px solid var(--line)
+    }
+    .modalHead h2{margin:0;font-size:16px}
+    .modalBody{padding:16px}
+    .modalHint{
+      margin-bottom:14px;padding:12px;border:1px solid rgba(77,141,247,.2);border-radius:10px;background:rgba(77,141,247,.08);color:#bdd0e7;font-size:10px
+    }
+    .groupRows{display:grid;gap:8px}
+    .groupRow{
+      display:grid;grid-template-columns:minmax(240px,1fr) 180px;gap:10px;align-items:center;
+      padding:9px;border:1px solid rgba(162,193,227,.12);border-radius:10px;background:rgba(5,22,43,.55)
+    }
+    .groupRow span{font-size:10px;font-weight:700}
+    .groupRow select{
+      min-height:36px;padding:0 9px;border:1px solid rgba(162,193,227,.2);border-radius:9px;background:#0d2b4e;color:#fff;font-size:10px
+    }
+    .modalFoot{
+      position:sticky;bottom:0;
+      padding:14px 18px;
+      display:flex;justify-content:flex-end;gap:9px;
+      background:#0b294b;border-top:1px solid var(--line)
+    }
+
+    .empty{
+      min-height:240px;
+      display:grid;place-items:center;
+      color:var(--muted);font-size:12px;text-align:center
+    }
+
+    @media(max-width:1450px){
+      .cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+    @media(max-width:1000px){
+      .hero{align-items:flex-start;flex-direction:column}
+      .heroStats{width:100%;min-width:0}
+      .grid{grid-template-columns:1fr}
+      .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:650px){
+      .app{width:min(calc(100% - 18px),1760px)}
+      .hero{padding:22px}
+      .heroStats,.filters,.cards{grid-template-columns:1fr}
+      .toolbar{align-items:stretch;flex-direction:column}
+      .toolbarActions{width:100%}
+      .toolbarActions .btn{flex:1}
+      .groupRow{grid-template-columns:1fr}
+      .chartWrap{min-height:290px}
+      .statusBar{align-items:flex-start;flex-direction:column}
+    }
   </style>
 </head>
+
 <body>
   <main class="app">
     <header class="hero">
-      <div class="hero-content">
-        <span class="eyebrow">LOUIS DREYFUS • Inteligência operacional</span>
+      <div>
+        <div class="heroEyebrow">NOVA FROTA • Inteligência Comercial e Operacional</div>
         <h1>Dashboard de Expedição</h1>
-        <p>Soja, Milho e Sorgo • Acompanhamento mensal dos contratos e recebimentos.</p>
+        <p>Volumes, clientes, unidades de embarque, grupos comerciais, margens e produtividade.</p>
       </div>
-      <div class="hero-status">
-        <div class="hero-mini"><span>Última atualização</span><strong id="ultimaAtualizacao">--:--</strong></div>
-        <div class="hero-mini"><span>Registros carregados</span><strong id="totalRegistros">0</strong></div>
+
+      <div class="heroStats">
+        <div class="heroMini">
+          <span>Período</span>
+          <strong id="periodo">--</strong>
+        </div>
+        <div class="heroMini">
+          <span>Última atualização</span>
+          <strong id="ultimaAtualizacao">--:--</strong>
+        </div>
+        <div class="heroMini">
+          <span>Registros carregados</span>
+          <strong id="totalRegistros">0</strong>
+        </div>
       </div>
     </header>
-    <section class="importPanel">
-      <div class="importLeft"><h2>Importar Expedição</h2><p>Selecione a planilha exportada do SAP com as novas colunas do sistema.</p></div>
-      <div class="importRight"><input type="file" id="arquivoExcel" accept=".xlsx,.xls" hidden /><button id="btnImportar" type="button">📂 Importar Excel</button></div>
+
+    <section class="toolbar">
+      <div class="toolbarTitle">
+        <strong>Importar relatório CSV</strong>
+        <span>Formato esperado: arquivo exportado com separador “;”. A linha “Totais” é ignorada automaticamente.</span>
+      </div>
+
+      <div class="toolbarActions">
+        <input id="csvInput" type="file" accept=".csv,text/csv" />
+        <button class="btn primary" id="btnImportar" type="button">📂 Importar CSV</button>
+        <button class="btn green" id="btnGrupos" type="button">👥 Gerenciar grupos</button>
+        <button class="btn ghost" id="btnLimpar" type="button">Limpar filtros</button>
+      </div>
     </section>
-    <section class="filters" aria-label="Filtros do dashboard">
-      <div class="filterField"><label for="filtroFilial">Filial</label><select id="filtroFilial"><option value="">Todas as filiais</option></select></div>
-      <div class="filterField"><label for="filtroProduto">Produto</label><select id="filtroProduto"><option value="">Todos os produtos</option></select></div>
-      <div class="filterField"><label for="filtroUF">UF</label><select id="filtroUF"><option value="">Todas as UFs</option></select></div>
-      <div class="filterField"><label for="filtroLocal">Local de embarque</label><select id="filtroLocal"><option value="">Todos os locais</option></select></div>
+
+    <section class="filters">
+      <div class="filterField">
+        <label for="filtroUnidade">Unidade de embarque</label>
+        <select id="filtroUnidade"><option value="">Todas as unidades</option></select>
+      </div>
+
+      <div class="filterField">
+        <label for="filtroCliente">Cliente principal</label>
+        <select id="filtroCliente"><option value="">Todos os clientes</option></select>
+      </div>
+
+      <div class="filterField">
+        <label for="filtroGrupo">Grupo de cliente</label>
+        <select id="filtroGrupo">
+          <option value="">Todos os grupos</option>
+          <option value="LUZIANO">LUZIANO</option>
+          <option value="LUIS">LUIS</option>
+          <option value="VALDEMI">VALDEMI</option>
+          <option value="ELIEL">ELIEL</option>
+          <option value="NÃO DEFINIDO">NÃO DEFINIDO</option>
+        </select>
+      </div>
+
+      <div class="filterField">
+        <label for="filtroProduto">Produto</label>
+        <select id="filtroProduto"><option value="">Todos os produtos</option></select>
+      </div>
+
+      <div class="filterField">
+        <label for="filtroUF">UF embarque</label>
+        <select id="filtroUF"><option value="">Todas</option></select>
+      </div>
+
+      <div class="filterField">
+        <label for="filtroFilial">Filial</label>
+        <select id="filtroFilial"><option value="">Todas as filiais</option></select>
+      </div>
     </section>
-    <section class="cards" aria-label="Indicadores gerais">
-      <article class="metricCard"><div class="metricTop"><span class="metricLabel">Contratada</span><span class="metricIcon">📦</span></div><strong id="totalContratada">0 t</strong><small>Volume total contratado</small></article>
-      <article class="metricCard green"><div class="metricTop"><span class="metricLabel">Recebida</span><span class="metricIcon">✅</span></div><strong id="totalRecebida">0 t</strong><small>Volume já recebido</small></article>
-      <article class="metricCard gold"><div class="metricTop"><span class="metricLabel">Restante</span><span class="metricIcon">⏳</span></div><strong id="totalRestante">0 t</strong><small>Contratada menos recebida</small></article>
-      <article class="metricCard purple"><div class="metricTop"><span class="metricLabel">Contratos</span><span class="metricIcon">📄</span></div><strong id="totalContratos">0</strong><small>Contratos AS400 distintos</small></article>
-      <article class="metricCard orange"><div class="metricTop"><span class="metricLabel">Viagens</span><span class="metricIcon">🚛</span></div><strong id="totalViagens">0</strong><small>Estimativa com 37 t por viagem</small></article>
+
+    <section class="cards">
+      <article class="metric">
+        <div class="metricTop"><span class="metricLabel">Volume total</span><span class="metricIcon">📦</span></div>
+        <strong id="kpiVolume">0 t</strong>
+        <small>Soma do Peso convertido de kg para toneladas</small>
+      </article>
+
+      <article class="metric green">
+        <div class="metricTop"><span class="metricLabel">Margem líquida %</span><span class="metricIcon">✅</span></div>
+        <strong id="kpiMargemPct">0,0%</strong>
+        <small>Margem líquida ÷ Frete Empresa</small>
+      </article>
+
+      <article class="metric gold">
+        <div class="metricTop"><span class="metricLabel">Frete médio / t</span><span class="metricIcon">⏳</span></div>
+        <strong id="kpiFreteMedio">R$ 0,00</strong>
+        <small>Frete Empresa dividido pelo volume</small>
+      </article>
+
+      <article class="metric purple">
+        <div class="metricTop"><span class="metricLabel">Faturamento bruto</span><span class="metricIcon">📄</span></div>
+        <strong id="kpiFaturamento">R$ 0,00</strong>
+        <small>Soma da coluna F.Emp</small>
+      </article>
+
+      <article class="metric orange">
+        <div class="metricTop"><span class="metricLabel">Margem líquida</span><span class="metricIcon">📊</span></div>
+        <strong id="kpiMargemLiquida">R$ 0,00</strong>
+        <small>Soma da coluna Margem Liq</small>
+      </article>
+
+      <article class="metric cyan">
+        <div class="metricTop"><span class="metricLabel">Viagens</span><span class="metricIcon">🚛</span></div>
+        <strong id="kpiViagens">0</strong>
+        <small>Num.viag distintos no período filtrado</small>
+      </article>
     </section>
+
     <section class="grid">
-      <article class="box"><div class="boxHead"><div><h2>Volume por Filial</h2><p>Comparativo do volume contratado por unidade.</p></div></div><div class="chartWrap"><canvas id="graficoFilial"></canvas></div></article>
-      <article class="box"><div class="boxHead"><div><h2>Volume por Produto</h2><p>Participação de cada produto no volume contratado.</p></div></div><div class="chartWrap"><canvas id="graficoProduto"></canvas></div></article>
-      <article class="box"><div class="boxHead"><div><h2>Locais de Embarque</h2><p>Principais endereços de embarque por volume.</p></div></div><div class="chartWrap"><canvas id="graficoLocal"></canvas></div></article>
-      <article class="box"><div class="boxHead"><div><h2>Volume Restante por Data</h2><p>Saldo projetado conforme a data máxima de entrega.</p></div></div><div class="chartWrap"><canvas id="graficoData"></canvas></div></article>
+      <article class="box">
+        <div class="boxHead">
+          <div>
+            <h2>Volume por cliente</h2>
+            <p>Ranking dos clientes pelo volume efetivamente transportado.</p>
+          </div>
+        </div>
+        <div class="chartWrap"><canvas id="graficoCliente"></canvas></div>
+      </article>
+
+      <article class="box">
+        <div class="boxHead">
+          <div>
+            <h2>Volume por unidade de embarque</h2>
+            <p>Comparativo de toneladas por Unid.Emb.</p>
+          </div>
+        </div>
+        <div class="chartWrap"><canvas id="graficoUnidade"></canvas></div>
+      </article>
+
+      <article class="box">
+        <div class="boxHead">
+          <div>
+            <h2>Volume por grupo comercial</h2>
+            <p>Luziano, Luis, Valdemi, Eliel e clientes ainda não classificados.</p>
+          </div>
+        </div>
+        <div class="chartWrap small"><canvas id="graficoGrupo"></canvas></div>
+      </article>
+
+      <article class="box">
+        <div class="boxHead">
+          <div>
+            <h2>Margem líquida por cliente</h2>
+            <p>Resultado financeiro acumulado por cliente principal.</p>
+          </div>
+        </div>
+        <div class="chartWrap small"><canvas id="graficoMargem"></canvas></div>
+      </article>
+
+      <article class="box">
+        <div class="boxHead">
+          <div>
+            <h2>Volume por produto</h2>
+            <p>Produtos normalizados para facilitar leitura gerencial.</p>
+          </div>
+        </div>
+        <div class="chartWrap small"><canvas id="graficoProduto"></canvas></div>
+      </article>
+
+      <article class="box">
+        <div class="boxHead">
+          <div>
+            <h2>Principais rotas</h2>
+            <p>Origem → destino ordenadas pelo volume em toneladas.</p>
+          </div>
+        </div>
+        <div class="chartWrap small"><canvas id="graficoRota"></canvas></div>
+      </article>
     </section>
+
     <section class="box tableBox">
-      <div class="boxHead"><div><h2>Resumo por Filial</h2><p>Contratada, recebida, saldo, desempenho e viagens estimadas.</p></div></div>
-      <div class="tableWrap"><table><thead><tr><th>Filial</th><th>Contratada</th><th>Recebida</th><th>Restante</th><th>Conclusão</th><th>Viagens</th></tr></thead><tbody id="tabelaResumo"></tbody></table></div>
+      <div class="boxHead">
+        <div>
+          <h2>Resumo por cliente</h2>
+          <p>Visão consolidada com grupo, volume, faturamento, custo, margem, viagens e veículos.</p>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Grupo</th>
+              <th>Volume</th>
+              <th>% volume</th>
+              <th>Frete Empresa</th>
+              <th>Custo Motorista</th>
+              <th>Margem Real</th>
+              <th>Margem Líquida</th>
+              <th>Margem %</th>
+              <th>Frete / t</th>
+              <th>Viagens</th>
+              <th>Veículos</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaResumo"></tbody>
+        </table>
+      </div>
     </section>
-    <footer class="statusBar"><span id="statusMensagem">Carregando dados da expedição...</span><span><strong>Fonte:</strong> SAP / Google Sheets</span></footer>
+
+    <footer class="statusBar">
+      <span id="statusMensagem">Selecione o arquivo relatorio.CSV para carregar os dados.</span>
+      <span><strong>Campos principais:</strong> Peso, F.Emp, F.Mot+Ped, Margem real, Margem Liq, Cliente Principal e Unid.Emb</span>
+    </footer>
   </main>
-  <script src="../assets/js/script.js?v=2" defer></script>
+
+  <div class="modal" id="modalGrupos">
+    <div class="modalCard">
+      <div class="modalHead">
+        <h2>Gerenciar grupos de clientes</h2>
+        <button class="btn ghost" id="btnFecharGrupos" type="button">✕ Fechar</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="modalHint">
+          Associe cada <strong>Cliente Principal</strong> a LUZIANO, LUIS, VALDEMI ou ELIEL.
+          As escolhas ficam salvas neste navegador usando localStorage.
+        </div>
+        <div class="groupRows" id="groupRows"></div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btn danger" id="btnResetGrupos" type="button">Resetar grupos</button>
+        <button class="btn green" id="btnSalvarGrupos" type="button">Salvar grupos</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  /*
+    ============================================================
+    RELATORIO NOVA FROTA
+    Base analisada: relatorio.CSV (separador ;)
+    ------------------------------------------------------------
+    Regras usadas:
+    - Ignora automaticamente a linha final "Totais".
+    - Volume = Peso (kg) / 1000.
+    - Faturamento bruto = soma de F.Emp.
+    - Custo Motorista = soma de F.Mot+Ped.
+    - Margem Real = soma de Margem real.
+    - Margem Líquida = soma de Margem Liq.
+    - Margem Líquida % = soma Margem Liq / soma F.Emp.
+    - Frete Médio / t = soma F.Emp / soma volume.
+    - Cliente = Cliente Principal; se vazio, usa Cliente.
+    - Unidade = Unid.Emb.
+    ============================================================
+  */
+
+  const GRUPOS_VALIDOS = ["LUZIANO","LUIS","VALDEMI","ELIEL"];
+  const STORAGE_GRUPOS = "nf_relatorio_grupos_clientes_v1";
+
+  /*
+    Se você colocar relatorio.CSV neste caminho do site, o dashboard
+    tentará carregar automaticamente. Caso não exista, use Importar CSV.
+  */
+  const AUTO_CSV_URL = "../assets/data/relatorio.CSV";
+
+  const $ = id => document.getElementById(id);
+
+  let dados = [];
+  let filtrados = [];
+  let charts = {};
+  let gruposClientes = carregarGrupos();
+
+  function txt(v){
+    return String(v ?? "").trim();
+  }
+
+  function upper(v){
+    return txt(v)
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"");
+  }
+
+  function numeroBR(v){
+    if(typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+    let s = txt(v)
+      .replace(/^'+|'+$/g,"")
+      .replace(/[^\d,.\-]/g,"");
+
+    if(!s) return 0;
+
+    if(s.includes(",")){
+      s = s.replace(/\./g,"").replace(",",".");
+    }
+
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function moeda(v){
+    return numeroBR(v).toLocaleString("pt-BR",{
+      style:"currency",
+      currency:"BRL",
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    });
+  }
+
+  function tonelada(v){
+    return numeroBR(v).toLocaleString("pt-BR",{
+      minimumFractionDigits:0,
+      maximumFractionDigits:1
+    }) + " t";
+  }
+
+  function percentual(v){
+    return numeroBR(v).toLocaleString("pt-BR",{
+      minimumFractionDigits:1,
+      maximumFractionDigits:1
+    }) + "%";
+  }
+
+  function escapar(v){
+    return String(v ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+  }
+
+  function carregarGrupos(){
+    try{
+      const value = JSON.parse(localStorage.getItem(STORAGE_GRUPOS) || "{}");
+      return value && typeof value === "object" ? value : {};
+    }catch{
+      return {};
+    }
+  }
+
+  function salvarGrupos(){
+    localStorage.setItem(STORAGE_GRUPOS,JSON.stringify(gruposClientes));
+  }
+
+  function grupoDoCliente(cliente){
+    const key = upper(cliente);
+    return gruposClientes[key] || "NÃO DEFINIDO";
+  }
+
+  function normalizarProduto(v){
+    const s = upper(v);
+
+    if(!s) return "NÃO INFORMADO";
+    if(s.includes("FARELO") && s.includes("SOJA")) return "FARELO DE SOJA";
+    if(s.includes("SOJA")) return "SOJA";
+    if(s.includes("MILHO")) return "MILHO";
+    if(s.includes("SORGO")) return "SORGO";
+    if(s.includes("FERTIL")) return "FERTILIZANTE";
+    if(s.includes("CALCAR")) return "CALCÁRIO";
+    if(s.includes("ACUCAR")) return "AÇÚCAR";
+    if(s.includes("RACAO")) return "RAÇÃO";
+
+    return txt(v).toUpperCase();
+  }
+
+  function extrairUF(unidade,cidade){
+    const s = upper(unidade || cidade);
+    const m = s.match(/\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/);
+    return m ? m[1] : "";
+  }
+
+  function parseDate(v){
+    const s = txt(v);
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):?(\d{2})?)?/);
+
+    if(m){
+      return new Date(
+        Number(m[3]),
+        Number(m[2])-1,
+        Number(m[1]),
+        Number(m[4] || 0),
+        Number(m[5] || 0),
+        Number(m[6] || 0)
+      );
+    }
+
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  /*
+    Parser simples de CSV com suporte a:
+    - separador ;
+    - campos entre aspas
+    - aspas duplicadas ""
+  */
+  function parseCSV(text){
+    const rows = [];
+    let row = [];
+    let field = "";
+    let quoted = false;
+
+    for(let i=0;i<text.length;i++){
+      const ch = text[i];
+      const next = text[i+1];
+
+      if(ch === '"'){
+        if(quoted && next === '"'){
+          field += '"';
+          i++;
+        }else{
+          quoted = !quoted;
+        }
+        continue;
+      }
+
+      if(ch === ";" && !quoted){
+        row.push(field);
+        field = "";
+        continue;
+      }
+
+      if((ch === "\n" || ch === "\r") && !quoted){
+        if(ch === "\r" && next === "\n") i++;
+
+        row.push(field);
+        field = "";
+
+        if(row.some(v => txt(v) !== "")){
+          rows.push(row);
+        }
+
+        row = [];
+        continue;
+      }
+
+      field += ch;
+    }
+
+    if(field.length || row.length){
+      row.push(field);
+      if(row.some(v => txt(v) !== "")) rows.push(row);
+    }
+
+    if(!rows.length) return [];
+
+    const headers = rows[0].map((h,index) => {
+      const clean = txt(h).replace(/^\uFEFF/,"");
+      return clean || `COL_${index}`;
+    });
+
+    return rows.slice(1).map(cols => {
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = cols[i] ?? "");
+      return obj;
+    });
+  }
+
+  function normalizarLinha(r,index){
+    const numViag = txt(r["Num.viag"]);
+    const clienteOriginal = txt(r["Cliente Principal"]) || txt(r["Cliente"]);
+
+    if(!numViag) return null;
+    if(upper(r["Cliente"]).includes("TOTAIS")) return null;
+    if(upper(clienteOriginal).includes("TOTAIS")) return null;
+
+    const pesoKg = numeroBR(r["Peso"]);
+    const volume = pesoKg > 0
+      ? pesoKg / 1000
+      : numeroBR(r["Peso/1000"]);
+
+    const unidade = txt(r["Unid.Emb"]) || txt(r["Cidade"]);
+    const produto = normalizarProduto(r["Mercadoria"]);
+    const data = parseDate(r["Data"]);
+    const origem = txt(r["Origem"]);
+    const destino = txt(r["Destino"]);
+
+    return {
+      id:index+1,
+      viagem:numViag,
+      cte:txt(r["CTe"]),
+      placa:upper(r["Placa"]),
+      unidade:upper(unidade),
+      uf:extrairUF(unidade,r["Cidade"]),
+      filial:upper(r["Filial"]),
+      cliente:upper(clienteOriginal),
+      clienteDocumento:upper(txt(r["Cliente"])),
+      produto,
+      origem:upper(origem),
+      destino:upper(destino),
+      rota:`${upper(origem || "-")} → ${upper(destino || "-")}`,
+      data,
+      volume,
+      freteEmpresa:numeroBR(r["F.Emp"]),
+      pptEmpresa:numeroBR(r["PPT.Emp"]),
+      custoMotorista:numeroBR(r["F.Mot+Ped"]),
+      pptMotorista:numeroBR(r["PPT.Mot"]),
+      margemReal:numeroBR(r["Margem real"]),
+      margemRealPct:numeroBR(r["% Margem real"]),
+      margemLiquida:numeroBR(r["Margem Liq"]),
+      margemLiquidaPct:numeroBR(r["% Marg.Liq"]),
+      margemBruta:numeroBR(r["Margem Bruta"]),
+      margemBrutaPct:numeroBR(r["% Marg.Br"]),
+      pedagio:numeroBR(r["Valor Pedagio"]),
+      km:numeroBR(r["KM Rodado"]),
+      tipoTransp:upper(r["Tipo Transp"]),
+      vendedor:upper(r["Vendedores"]),
+      usuario:upper(r["Usuario que inseriu a viagem"])
+    };
+  }
+
+  function transformar(rawRows){
+    return rawRows
+      .map(normalizarLinha)
+      .filter(Boolean);
+  }
+
+  function unique(field){
+    return [...new Set(dados.map(r => txt(r[field])).filter(Boolean))]
+      .sort((a,b) => a.localeCompare(b,"pt-BR"));
+  }
+
+  function popularSelect(id,values,firstText){
+    const el = $(id);
+    const old = el.value;
+    el.innerHTML = `<option value="">${firstText}</option>` +
+      values.map(v => `<option value="${escapar(v)}">${escapar(v)}</option>`).join("");
+
+    if(values.includes(old)) el.value = old;
+  }
+
+  function popularFiltros(){
+    popularSelect("filtroUnidade",unique("unidade"),"Todas as unidades");
+    popularSelect("filtroCliente",unique("cliente"),"Todos os clientes");
+    popularSelect("filtroProduto",unique("produto"),"Todos os produtos");
+    popularSelect("filtroUF",unique("uf"),"Todas");
+    popularSelect("filtroFilial",unique("filial"),"Todas as filiais");
+  }
+
+  function aplicarFiltros(){
+    const unidade = $("filtroUnidade").value;
+    const cliente = $("filtroCliente").value;
+    const grupo = $("filtroGrupo").value;
+    const produto = $("filtroProduto").value;
+    const uf = $("filtroUF").value;
+    const filial = $("filtroFilial").value;
+
+    filtrados = dados.filter(r =>
+      (!unidade || r.unidade === unidade) &&
+      (!cliente || r.cliente === cliente) &&
+      (!grupo || grupoDoCliente(r.cliente) === grupo) &&
+      (!produto || r.produto === produto) &&
+      (!uf || r.uf === uf) &&
+      (!filial || r.filial === filial)
+    );
+
+    renderTudo();
+  }
+
+  function limparFiltros(){
+    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
+      .forEach(id => $(id).value = "");
+
+    aplicarFiltros();
+  }
+
+  function soma(rows,field){
+    return rows.reduce((acc,r) => acc + numeroBR(r[field]),0);
+  }
+
+  function distinct(rows,field){
+    return new Set(rows.map(r => txt(r[field])).filter(Boolean)).size;
+  }
+
+  function agrupar(rows,keyField,valueField){
+    const map = new Map();
+
+    rows.forEach(r => {
+      const key = typeof keyField === "function" ? keyField(r) : (r[keyField] || "NÃO INFORMADO");
+      const value = typeof valueField === "function" ? valueField(r) : numeroBR(r[valueField]);
+      map.set(key,(map.get(key) || 0) + numeroBR(value));
+    });
+
+    return [...map.entries()]
+      .map(([label,value]) => ({label,value}))
+      .sort((a,b) => b.value - a.value);
+  }
+
+  function resumirClientes(rows){
+    const map = new Map();
+
+    rows.forEach(r => {
+      const key = r.cliente || "NÃO INFORMADO";
+
+      if(!map.has(key)){
+        map.set(key,{
+          cliente:key,
+          grupo:grupoDoCliente(key),
+          volume:0,
+          freteEmpresa:0,
+          custoMotorista:0,
+          margemReal:0,
+          margemLiquida:0,
+          viagens:new Set(),
+          placas:new Set()
+        });
+      }
+
+      const x = map.get(key);
+      x.volume += r.volume;
+      x.freteEmpresa += r.freteEmpresa;
+      x.custoMotorista += r.custoMotorista;
+      x.margemReal += r.margemReal;
+      x.margemLiquida += r.margemLiquida;
+      if(r.viagem) x.viagens.add(r.viagem);
+      if(r.placa) x.placas.add(r.placa);
+    });
+
+    return [...map.values()]
+      .map(x => ({
+        ...x,
+        margemPct:x.freteEmpresa > 0 ? (x.margemLiquida / x.freteEmpresa) * 100 : 0,
+        freteTon:x.volume > 0 ? x.freteEmpresa / x.volume : 0,
+        qtdViagens:x.viagens.size,
+        qtdPlacas:x.placas.size
+      }))
+      .sort((a,b) => b.volume - a.volume);
+  }
+
+  function renderPeriodo(){
+    const dates = dados.map(r => r.data).filter(Boolean).sort((a,b) => a-b);
+
+    if(!dates.length){
+      $("periodo").textContent = "--";
+      return;
+    }
+
+    const fmt = d => d.toLocaleDateString("pt-BR");
+    $("periodo").textContent = `${fmt(dates[0])} a ${fmt(dates[dates.length-1])}`;
+  }
+
+  function renderKpis(){
+    const volume = soma(filtrados,"volume");
+    const faturamento = soma(filtrados,"freteEmpresa");
+    const margemLiquida = soma(filtrados,"margemLiquida");
+    const margemPct = faturamento > 0 ? (margemLiquida / faturamento) * 100 : 0;
+    const freteMedio = volume > 0 ? faturamento / volume : 0;
+
+    $("kpiVolume").textContent = tonelada(volume);
+    $("kpiMargemPct").textContent = percentual(margemPct);
+    $("kpiFreteMedio").textContent = moeda(freteMedio);
+    $("kpiFaturamento").textContent = moeda(faturamento);
+    $("kpiMargemLiquida").textContent = moeda(margemLiquida);
+    $("kpiViagens").textContent = distinct(filtrados,"viagem").toLocaleString("pt-BR");
+  }
+
+  Chart.defaults.color = "#b8c9dc";
+  Chart.defaults.borderColor = "rgba(160,190,225,.11)";
+  Chart.defaults.font.family = "Inter, Arial, sans-serif";
+
+  function destruirChart(key){
+    if(charts[key]){
+      charts[key].destroy();
+      charts[key] = null;
+    }
+  }
+
+  function baseOptions(horizontal=false){
+    return {
+      responsive:true,
+      maintainAspectRatio:false,
+      indexAxis:horizontal ? "y" : "x",
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:"#07172c",
+          titleColor:"#fff",
+          bodyColor:"#d5e3f2",
+          borderColor:"rgba(117,164,219,.28)",
+          borderWidth:1,
+          padding:11
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:"rgba(145,179,217,.09)"},
+          ticks:{color:"#aebfd2",font:{size:9}}
+        },
+        y:{
+          grid:{color:"rgba(145,179,217,.09)"},
+          ticks:{color:"#d8e3ef",font:{size:9,weight:"700"}}
+        }
+      }
+    };
+  }
+
+  function renderBar(key,canvasId,items,{
+    horizontal=true,
+    moneyValue=false,
+    maxItems=12
+  }={}){
+    destruirChart(key);
+
+    const list = items.slice(0,maxItems);
+    const ctx = $(canvasId);
+
+    charts[key] = new Chart(ctx,{
+      type:"bar",
+      data:{
+        labels:list.map(x => x.label),
+        datasets:[{
+          data:list.map(x => x.value),
+          backgroundColor:"rgba(77,141,247,.82)",
+          borderColor:"rgba(104,163,255,1)",
+          borderWidth:1,
+          borderRadius:6,
+          maxBarThickness:30
+        }]
+      },
+      options:{
+        ...baseOptions(horizontal),
+        plugins:{
+          ...baseOptions(horizontal).plugins,
+          tooltip:{
+            ...baseOptions(horizontal).plugins.tooltip,
+            callbacks:{
+              label(context){
+                const value = context.raw || 0;
+                return moneyValue ? moeda(value) : tonelada(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderGrupo(){
+    destruirChart("grupo");
+
+    const ordem = ["LUZIANO","LUIS","VALDEMI","ELIEL","NÃO DEFINIDO"];
+    const sums = Object.fromEntries(ordem.map(g => [g,0]));
+
+    filtrados.forEach(r => {
+      sums[grupoDoCliente(r.cliente)] = (sums[grupoDoCliente(r.cliente)] || 0) + r.volume;
+    });
+
+    charts.grupo = new Chart($("graficoGrupo"),{
+      type:"doughnut",
+      data:{
+        labels:ordem,
+        datasets:[{
+          data:ordem.map(g => sums[g] || 0),
+          backgroundColor:[
+            "rgba(77,141,247,.88)",
+            "rgba(47,196,141,.88)",
+            "rgba(242,188,61,.88)",
+            "rgba(155,117,237,.88)",
+            "rgba(120,139,162,.65)"
+          ],
+          borderColor:"#0b2545",
+          borderWidth:3
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        cutout:"63%",
+        plugins:{
+          legend:{
+            position:"bottom",
+            labels:{color:"#d5e1ef",boxWidth:11,padding:16,font:{size:9,weight:"700"}}
+          },
+          tooltip:{
+            backgroundColor:"#07172c",
+            callbacks:{label:c => `${c.label}: ${tonelada(c.raw || 0)}`}
+          }
+        }
+      }
+    });
+  }
+
+  function renderGraficos(){
+    renderBar(
+      "cliente","graficoCliente",
+      agrupar(filtrados,"cliente","volume"),
+      {horizontal:true,maxItems:12}
+    );
+
+    renderBar(
+      "unidade","graficoUnidade",
+      agrupar(filtrados,"unidade","volume"),
+      {horizontal:false,maxItems:14}
+    );
+
+    renderGrupo();
+
+    renderBar(
+      "margem","graficoMargem",
+      agrupar(filtrados,"cliente","margemLiquida"),
+      {horizontal:true,moneyValue:true,maxItems:12}
+    );
+
+    renderBar(
+      "produto","graficoProduto",
+      agrupar(filtrados,"produto","volume"),
+      {horizontal:false,maxItems:12}
+    );
+
+    renderBar(
+      "rota","graficoRota",
+      agrupar(filtrados,"rota","volume"),
+      {horizontal:true,maxItems:10}
+    );
+  }
+
+  function renderTabela(){
+    const tbody = $("tabelaResumo");
+    const resumo = resumirClientes(filtrados);
+    const totalVolume = soma(filtrados,"volume");
+
+    if(!resumo.length){
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;color:#9fb3ca;padding:30px">Nenhum registro para os filtros selecionados.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = resumo.map(r => {
+      const share = totalVolume > 0 ? (r.volume / totalVolume) * 100 : 0;
+
+      return `
+        <tr>
+          <td><strong>${escapar(r.cliente)}</strong></td>
+          <td><span class="groupBadge">${escapar(r.grupo)}</span></td>
+          <td>${tonelada(r.volume)}</td>
+          <td>${percentual(share)}</td>
+          <td>${moeda(r.freteEmpresa)}</td>
+          <td>${moeda(r.custoMotorista)}</td>
+          <td>${moeda(r.margemReal)}</td>
+          <td>${moeda(r.margemLiquida)}</td>
+          <td>${percentual(r.margemPct)}</td>
+          <td>${moeda(r.freteTon)}</td>
+          <td>${r.qtdViagens.toLocaleString("pt-BR")}</td>
+          <td>${r.qtdPlacas.toLocaleString("pt-BR")}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderTudo(){
+    renderKpis();
+    renderGraficos();
+    renderTabela();
+
+    $("totalRegistros").textContent = dados.length.toLocaleString("pt-BR");
+    $("ultimaAtualizacao").textContent = new Date().toLocaleTimeString("pt-BR",{
+      hour:"2-digit",
+      minute:"2-digit"
+    });
+
+    $("statusMensagem").textContent =
+      `${filtrados.length.toLocaleString("pt-BR")} registro(s) exibido(s) após os filtros • ` +
+      `${distinct(filtrados,"placa").toLocaleString("pt-BR")} veículo(s) distinto(s)`;
+  }
+
+  function abrirGrupos(){
+    if(!dados.length){
+      alert("Importe o CSV antes de definir os grupos.");
+      return;
+    }
+
+    const clientes = unique("cliente");
+    $("groupRows").innerHTML = clientes.map(cliente => {
+      const atual = grupoDoCliente(cliente);
+
+      return `
+        <div class="groupRow">
+          <span>${escapar(cliente)}</span>
+          <select data-cliente="${escapar(cliente)}">
+            <option value="NÃO DEFINIDO" ${atual==="NÃO DEFINIDO"?"selected":""}>NÃO DEFINIDO</option>
+            ${GRUPOS_VALIDOS.map(g => `<option value="${g}" ${atual===g?"selected":""}>${g}</option>`).join("")}
+          </select>
+        </div>
+      `;
+    }).join("");
+
+    $("modalGrupos").classList.add("show");
+  }
+
+  function fecharGrupos(){
+    $("modalGrupos").classList.remove("show");
+  }
+
+  function salvarGruposModal(){
+    const novo = {...gruposClientes};
+
+    $("groupRows").querySelectorAll("select[data-cliente]").forEach(select => {
+      const cliente = upper(select.dataset.cliente);
+      const grupo = select.value;
+
+      if(grupo === "NÃO DEFINIDO"){
+        delete novo[cliente];
+      }else{
+        novo[cliente] = grupo;
+      }
+    });
+
+    gruposClientes = novo;
+    salvarGrupos();
+    fecharGrupos();
+    aplicarFiltros();
+  }
+
+  function resetarGrupos(){
+    if(!confirm("Remover todas as classificações de grupo salvas neste navegador?")) return;
+
+    gruposClientes = {};
+    localStorage.removeItem(STORAGE_GRUPOS);
+    fecharGrupos();
+    aplicarFiltros();
+  }
+
+  async function carregarTextoCSV(text,nomeArquivo="relatorio.CSV"){
+    try{
+      const raw = parseCSV(text);
+
+      if(!raw.length){
+        throw new Error("O CSV não possui registros válidos.");
+      }
+
+      const required = ["Num.viag","Unid.Emb","Cliente","Peso","F.Emp","Margem Liq"];
+      const headers = Object.keys(raw[0] || {});
+      const missing = required.filter(c => !headers.includes(c));
+
+      if(missing.length){
+        throw new Error("Colunas obrigatórias não encontradas: " + missing.join(", "));
+      }
+
+      dados = transformar(raw);
+      filtrados = dados.slice();
+
+      popularFiltros();
+      renderPeriodo();
+      renderTudo();
+
+      $("statusMensagem").textContent =
+        `${dados.length.toLocaleString("pt-BR")} viagens válidas carregadas de ${nomeArquivo}. ` +
+        `A linha de totais, quando existente, foi descartada.`;
+
+    }catch(error){
+      console.error(error);
+      alert("Não foi possível carregar o CSV.\n\n" + error.message);
+    }
+  }
+
+  function importarArquivo(file){
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      carregarTextoCSV(String(e.target.result || ""),file.name);
+    };
+
+    reader.onerror = () => {
+      alert("Não foi possível ler o arquivo selecionado.");
+    };
+
+    reader.readAsText(file,"UTF-8");
+  }
+
+  async function tentarCarregarAutomatico(){
+    try{
+      const res = await fetch(AUTO_CSV_URL,{cache:"no-store"});
+      if(!res.ok) return;
+
+      const text = await res.text();
+      await carregarTextoCSV(text,"relatorio.CSV");
+    }catch{
+      // Sem problema: o usuário pode usar o botão Importar CSV.
+    }
+  }
+
+  function bind(){
+    $("btnImportar").addEventListener("click",() => $("csvInput").click());
+
+    $("csvInput").addEventListener("change",e => {
+      importarArquivo(e.target.files?.[0]);
+      e.target.value = "";
+    });
+
+    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
+      .forEach(id => $(id).addEventListener("change",aplicarFiltros));
+
+    $("btnLimpar").addEventListener("click",limparFiltros);
+    $("btnGrupos").addEventListener("click",abrirGrupos);
+    $("btnFecharGrupos").addEventListener("click",fecharGrupos);
+    $("btnSalvarGrupos").addEventListener("click",salvarGruposModal);
+    $("btnResetGrupos").addEventListener("click",resetarGrupos);
+
+    $("modalGrupos").addEventListener("click",e => {
+      if(e.target === $("modalGrupos")) fecharGrupos();
+    });
+  }
+
+  bind();
+  tentarCarregarAutomatico();
+})();
+</script>
 </body>
 </html>

@@ -13,6 +13,29 @@ function safeParams(value) {
   return value;
 }
 
+function gatewayErrorMessage(error) {
+  const message = String(error?.message || error || "").trim();
+
+  if (!message) {
+    return "Falha na comunicação segura com o Apps Script.";
+  }
+
+  const lower = message.toLowerCase();
+  const safePrefixes = [
+    "tempo limite excedido",
+    "resposta inválida do apps script",
+    "apps script respondeu",
+    "falha ao enviar",
+    "arquivo"
+  ];
+
+  if (safePrefixes.some((prefix) => lower.startsWith(prefix))) {
+    return message;
+  }
+
+  return "Falha na comunicação segura com o Apps Script.";
+}
+
 export async function portalGatewayController(request, env) {
   const sessionId = readSessionId(request);
   const session = await getSession(env, sessionId);
@@ -94,15 +117,19 @@ export async function portalGatewayController(request, env) {
       data: result.data ?? result
     });
   } catch (error) {
+    const message = gatewayErrorMessage(error);
+    const isTimeout = message.toLowerCase().includes("tempo limite excedido");
+
     console.error("[GATEWAY] Falha ao chamar Apps Script", {
       moduleName,
       actionName,
+      resource: normalizeKey(params.resource),
       message: String(error?.message || error)
     });
 
     return errorResponse(
-      "Falha na comunicação segura com o Apps Script.",
-      502
+      message,
+      isTimeout ? 504 : 502
     );
   }
 }

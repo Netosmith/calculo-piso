@@ -209,7 +209,7 @@ async function ensurePortalApi(){
     }
 
     const script = document.createElement("script");
-    script.src = "../assets/js/api.js?v=4";
+    script.src = "../assets/js/api.js?v=5";
     script.dataset.portalApi = "1";
     script.onload = resolve;
     script.onerror = () => reject(new Error("Falha ao carregar a API do Portal."));
@@ -322,7 +322,11 @@ function featuresForProfile(profile){
 
 function canAccessFeature(featureKey){
   const feature = String(featureKey || "").trim().toLowerCase();
-  return featuresForProfile(getProfile()).includes(feature);
+  const profile = getProfile();
+  const features = featuresForProfile(profile)
+    .map(item => String(item || "").trim().toLowerCase());
+
+  return features.includes(feature);
 }
 
 function canViewEstadias(){

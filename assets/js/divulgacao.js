@@ -337,9 +337,25 @@
         ? String(el.selectedOptions[0].textContent || "").trim()
         : value;
 
-      updatePreview(templateId, "filial", value ? selectedText : "");
+      updatePreview(
+        templateId,
+        "filial",
+        value ? selectedText.toUpperCase() : ""
+      );
+
       preencherContatosFilial(templateId, value);
       return;
+    }
+
+    if (
+      field === "coletaCidade" ||
+      field === "coletaLocal" ||
+      field === "descargaCidade" ||
+      field === "descargaLocal" ||
+      field === "produto" ||
+      field === "obs"
+    ) {
+      value = value.toUpperCase();
     }
 
     updatePreview(templateId, field, value);

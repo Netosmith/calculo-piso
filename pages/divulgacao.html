@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../assets/css/divulgacao.css" />
 
   <style>
-    /* MODELO 2: posicionamento específico para artes 1024 x 1536 */
+    /* MODELO 2 - ajuste fino para artes 1024 x 1536 */
     [data-template-preview="2"]{
       position:relative;
       overflow:hidden;
@@ -38,122 +38,134 @@
       margin:0;
       padding:0;
       font-family:Arial, Helvetica, sans-serif;
-      text-shadow:none;
+      text-shadow:none !important;
+      filter:none !important;
     }
 
-    /* Cidade/UF da coleta */
     [data-template-preview="2"] .previewColeta{
-      top:48.4%;
-      left:25.2%;
-      width:66%;
+      top:48.15%;
+      left:24.5%;
+      width:66.5%;
       text-align:left;
     }
 
-    /* Cidade/UF da descarga */
     [data-template-preview="2"] .previewDescarga{
-      top:58.2%;
-      left:25.2%;
-      width:66%;
+      top:57.95%;
+      left:24.5%;
+      width:66.5%;
       text-align:left;
     }
 
-    /* Cidades e UF em azul */
     [data-template-preview="2"] .previewValue{
-      color:#082f6b;
-      font-size:clamp(11px,2.15vw,31px);
-      line-height:1.05;
+      color:#082f6b !important;
+      font-size:clamp(10px,1.72vw,25px);
+      line-height:1.02;
       font-weight:900;
+      letter-spacing:0;
       text-transform:uppercase;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      text-shadow:none !important;
     }
 
-    /* Local de coleta e descarga em verde escuro */
     [data-template-preview="2"] .previewSmall{
-      margin-top:1.1%;
-      color:#17662a;
-      font-size:clamp(8px,1.35vw,20px);
-      line-height:1.08;
+      margin-top:2px;
+      color:#17662a !important;
+      font-size:clamp(7px,1.08vw,16px);
+      line-height:1.05;
       font-weight:800;
+      letter-spacing:0;
       text-transform:uppercase;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      text-shadow:none !important;
     }
 
-    /* O nome do produto já faz parte da arte correspondente */
     [data-template-preview="2"] .previewProduct{
-      display:none;
+      display:none !important;
     }
 
-    /* Valor do frete dentro da faixa azul */
     [data-template-preview="2"] .previewPrice{
-      top:75.1%;
-      left:28.5%;
-      width:58%;
-      color:#fff;
-      font-size:clamp(10px,1.9vw,28px);
+      top:75.05%;
+      left:47.5%;
+      width:42%;
+      color:#ffffff !important;
+      font-size:clamp(10px,1.55vw,23px);
       line-height:1;
       font-weight:900;
+      letter-spacing:0;
+      text-align:left;
       text-transform:uppercase;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      text-shadow:none !important;
     }
 
-    /* Nome da filial em azul */
     [data-template-preview="2"] .previewFilial{
-      top:84.7%;
-      left:18.3%;
+      top:86.35%;
+      left:18.2%;
       width:27%;
-      color:#082f6b;
-      font-size:clamp(8px,1.45vw,22px);
+      color:#082f6b !important;
+      font-size:clamp(6px,.92vw,14px);
       line-height:1.05;
       font-weight:900;
+      letter-spacing:0;
+      text-align:left;
       text-transform:uppercase;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      text-shadow:none !important;
     }
 
-    /* Contatos em azul, ao lado do WhatsApp */
     [data-template-preview="2"] .previewContacts{
-      top:83.7%;
-      left:56.2%;
-      width:38%;
-      color:#082f6b;
-      font-size:clamp(7px,1.05vw,16px);
-      line-height:1.34;
+      top:83.65%;
+      left:56.8%;
+      width:36%;
+      color:#082f6b !important;
+      font-size:clamp(5.5px,.78vw,12px);
+      line-height:1.28;
       font-weight:900;
+      letter-spacing:0;
       text-transform:uppercase;
       text-align:left;
+      text-shadow:none !important;
     }
 
     [data-template-preview="2"] .previewContactLine{
-      min-height:1.3em;
+      color:#082f6b !important;
+      min-height:1.25em;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      text-shadow:none !important;
     }
 
-    /* Observação dentro da faixa azul inferior */
     [data-template-preview="2"] .previewNote{
-      top:94.75%;
-      left:12%;
-      width:76%;
-      color:#fff;
-      font-size:clamp(8px,1.2vw,18px);
-      line-height:1;
+      top:94.2%;
+      left:10.5%;
+      width:79%;
+      min-height:3.8%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#ffffff !important;
+      font-size:clamp(6px,.9vw,13px);
+      line-height:1.12;
       font-weight:800;
+      letter-spacing:0;
       text-align:center;
       text-transform:uppercase;
-      white-space:nowrap;
+      white-space:normal;
       overflow:hidden;
-      text-overflow:ellipsis;
+      text-overflow:clip;
+      text-shadow:none !important;
+      padding:0 3%;
     }
 
-    /* No Modelo 2 não exibir placeholders sobre a imagem */
     [data-template-preview="2"] [data-bind]:empty::before{
       content:"" !important;
     }
@@ -393,7 +405,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/divulgacao.js?v=4"></script>
+  <script src="../assets/js/divulgacao.js?v=5"></script>
 
   <script>
     if (requireFeatureAuth(

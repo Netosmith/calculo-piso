@@ -42,118 +42,128 @@
       filter:none !important;
     }
 
+    /* COLETA */
     [data-template-preview="2"] .previewColeta{
-      top:48.15%;
-      left:24.5%;
-      width:66.5%;
+      top:47.8%;
+      left:26.0%;
+      width:67.5%;
       text-align:left;
     }
 
+    /* DESCARGA */
     [data-template-preview="2"] .previewDescarga{
-      top:57.95%;
-      left:24.5%;
-      width:66.5%;
+      top:57.25%;
+      left:26.0%;
+      width:67.5%;
       text-align:left;
     }
 
+    /* Cidade/UF: azul, sem cortar */
     [data-template-preview="2"] .previewValue{
       color:#082f6b !important;
-      font-size:clamp(10px,1.72vw,25px);
+      font-size:clamp(9px,1.55vw,23px);
       line-height:1.02;
       font-weight:900;
       letter-spacing:0;
       text-transform:uppercase;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow:visible;
+      text-overflow:clip;
       text-shadow:none !important;
     }
 
+    /* Local: verde escuro, menor e sem cortar */
     [data-template-preview="2"] .previewSmall{
       margin-top:2px;
       color:#17662a !important;
-      font-size:clamp(7px,1.08vw,16px);
-      line-height:1.05;
+      font-size:clamp(7px,1.02vw,15px);
+      line-height:1.04;
       font-weight:800;
       letter-spacing:0;
       text-transform:uppercase;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow:visible;
+      text-overflow:clip;
       text-shadow:none !important;
     }
 
+    /* Produto já faz parte da arte */
     [data-template-preview="2"] .previewProduct{
       display:none !important;
     }
 
+    /* FRETE: deixa a palavra da arte livre e posiciona apenas o valor */
     [data-template-preview="2"] .previewPrice{
-      top:75.05%;
-      left:47.5%;
-      width:42%;
+      top:75.15%;
+      left:50.0%;
+      width:39.5%;
       color:#ffffff !important;
-      font-size:clamp(10px,1.55vw,23px);
+      font-size:clamp(10px,1.45vw,22px);
       line-height:1;
       font-weight:900;
       letter-spacing:0;
       text-align:left;
       text-transform:uppercase;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow:visible;
+      text-overflow:clip;
       text-shadow:none !important;
     }
 
+    /* FILIAL: nome menor, abaixo do rótulo FILIAL da arte */
     [data-template-preview="2"] .previewFilial{
-      top:86.35%;
-      left:18.2%;
-      width:27%;
+      top:86.0%;
+      left:18.3%;
+      width:31%;
       color:#082f6b !important;
-      font-size:clamp(6px,.92vw,14px);
-      line-height:1.05;
+      font-size:clamp(6px,.86vw,13px);
+      line-height:1.02;
       font-weight:900;
       letter-spacing:0;
       text-align:left;
       text-transform:uppercase;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow:visible;
+      text-overflow:clip;
       text-shadow:none !important;
     }
 
+    /* CONTATOS: azul, usando quase toda a margem direita */
     [data-template-preview="2"] .previewContacts{
       top:83.65%;
-      left:56.8%;
-      width:36%;
+      left:56.0%;
+      width:41.5%;
       color:#082f6b !important;
-      font-size:clamp(5.5px,.78vw,12px);
+      font-size:clamp(5.2px,.70vw,10.5px);
       line-height:1.28;
       font-weight:900;
       letter-spacing:0;
       text-transform:uppercase;
       text-align:left;
       text-shadow:none !important;
+      overflow:visible;
     }
 
     [data-template-preview="2"] .previewContactLine{
       color:#082f6b !important;
       min-height:1.25em;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow:visible;
+      text-overflow:clip;
       text-shadow:none !important;
     }
 
+    /* OBSERVAÇÕES: dentro do retângulo azul inferior */
     [data-template-preview="2"] .previewNote{
-      top:94.2%;
-      left:10.5%;
-      width:79%;
-      min-height:3.8%;
+      top:94.15%;
+      left:8.6%;
+      width:82.8%;
+      min-height:3.9%;
       display:flex;
       align-items:center;
       justify-content:center;
       color:#ffffff !important;
-      font-size:clamp(6px,.9vw,13px);
+      font-size:clamp(6px,.86vw,13px);
       line-height:1.12;
       font-weight:800;
       letter-spacing:0;
@@ -166,6 +176,7 @@
       padding:0 3%;
     }
 
+    /* Sem placeholders artificiais */
     [data-template-preview="2"] [data-bind]:empty::before{
       content:"" !important;
     }
@@ -405,7 +416,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/divulgacao.js?v=5"></script>
+  <script src="../assets/js/divulgacao.js?v=6"></script>
 
   <script>
     if (requireFeatureAuth(

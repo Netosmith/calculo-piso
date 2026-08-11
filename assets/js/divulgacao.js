@@ -200,7 +200,46 @@
     if (!preview) return;
 
     const target = preview.querySelector(`[data-bind="${field}"]`);
-    if (target) target.textContent = value || "";
+    if (!target) return;
+
+    target.textContent = value || "";
+
+    if (String(templateId) === "2") {
+      ajustarFonteModelo2(target, field, value || "");
+    }
+  }
+
+  function ajustarFonteModelo2(target, field, value) {
+    const len = String(value || "").trim().length;
+
+    target.style.fontSize = "";
+
+    if (field === "coletaCidade" || field === "descargaCidade") {
+      if (len >= 24) target.style.fontSize = "clamp(8px,1.20vw,18px)";
+      else if (len >= 19) target.style.fontSize = "clamp(8.5px,1.35vw,20px)";
+      return;
+    }
+
+    if (field === "coletaLocal" || field === "descargaLocal") {
+      if (len >= 28) target.style.fontSize = "clamp(6px,.78vw,12px)";
+      else if (len >= 22) target.style.fontSize = "clamp(6.5px,.90vw,13px)";
+      return;
+    }
+
+    if (
+      field === "contato1" ||
+      field === "contato2" ||
+      field === "contato3" ||
+      field === "contato4"
+    ) {
+      if (len >= 26) target.style.fontSize = "clamp(4.8px,.62vw,9.5px)";
+      else if (len >= 22) target.style.fontSize = "clamp(5px,.66vw,10px)";
+      return;
+    }
+
+    if (field === "filial" && len >= 16) {
+      target.style.fontSize = "clamp(5.5px,.72vw,11px)";
+    }
   }
 
   function hasLetters(value) {

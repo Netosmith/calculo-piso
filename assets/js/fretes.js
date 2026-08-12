@@ -1311,8 +1311,24 @@ function formatDateTimeBR(value) {
 
   function setPreviewModel(modelo) {
     STATE.previewModel = Number(modelo) === 2 ? 2 : 1;
+
+    try {
+      localStorage.setItem("nf_divulgacao_modelo", String(STATE.previewModel));
+    } catch {}
+
     syncPreviewModelUI();
     renderPreview(STATE.previewRow || getFilteredRows()[0] || STATE.rows[0]);
+  }
+
+  function restorePreviewModel() {
+    try {
+      const saved = Number(localStorage.getItem("nf_divulgacao_modelo"));
+      STATE.previewModel = saved === 2 ? 2 : 1;
+    } catch {
+      STATE.previewModel = 1;
+    }
+
+    syncPreviewModelUI();
   }
 
   function ajustarFonteModelo2(target, field, value) {
@@ -2341,6 +2357,21 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
           e.preventDefault();
           e.stopPropagation();
           openDivulgacaoFrete();
+          return;
+        }
+
+        if (id === "nfModel1Btn") {
+          e.preventDefault();
+          e.stopPropagation();
+          setPreviewModel(1);
+          return;
+        }
+
+        if (id === "nfModel2Btn") {
+          e.preventDefault();
+          e.stopPropagation();
+          setPreviewModel(2);
+          return;
         }
       });
     }
@@ -2380,8 +2411,28 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   function bindModoRaio() {
-    document.getElementById("nfModel1Btn")?.addEventListener("click", () => setPreviewModel(1));
-    document.getElementById("nfModel2Btn")?.addEventListener("click", () => setPreviewModel(2));
+    const model1Btn = document.getElementById("nfModel1Btn");
+    const model2Btn = document.getElementById("nfModel2Btn");
+
+    if (model1Btn && !model1Btn.dataset.nfModelBound) {
+      model1Btn.dataset.nfModelBound = "1";
+      model1Btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewModel(1);
+      });
+    }
+
+    if (model2Btn && !model2Btn.dataset.nfModelBound) {
+      model2Btn.dataset.nfModelBound = "1";
+      model2Btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewModel(2);
+      });
+    }
+
+    syncPreviewModelUI();
 
     document.getElementById("btnSelecionarTodosVisiveis")?.addEventListener("click", () => {
       const visible = getFilteredRows().filter((r) => safeText(r.id));
@@ -2449,6 +2500,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     bindFilters();
     bindFloatingHorizontalBar();
     bindModoRaio();
+    restorePreviewModel();
 
     setStatus("🔐 Validando sessão...");
     await waitForPortalReady();

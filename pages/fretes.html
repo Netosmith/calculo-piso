@@ -692,6 +692,80 @@
         0 0 6px rgba(0,0,0,.50);
     }
 
+
+    .nfPreviewMeta{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;
+    }
+    .nfPreviewMeta .nfProductBadge{margin-bottom:0}
+    .nfModelSelector{
+      display:inline-flex;gap:4px;padding:3px;border:1px solid #d1d5db;
+      border-radius:9px;background:#f8fafc;
+    }
+    .nfModelBtn{
+      height:24px;min-width:58px;padding:0 8px;border:1px solid transparent;
+      border-radius:6px;background:transparent;color:#475569;font-size:9px;
+      font-weight:950;cursor:pointer;
+    }
+    .nfModelBtn.active{
+      background:#0f2e6e;border-color:#0f2e6e;color:#fff;
+    }
+
+    .nfArtCard:not(.modelo2) .previewFilial{display:none!important}
+
+    .nfArtCard.modelo2{
+      width:240px;height:360px;
+    }
+    .nfArtCard.modelo2 .nfArtScale{
+      width:380px;height:570px;transform:scale(.63158);transform-origin:top left;
+    }
+    .nfArtCard.modelo2 .previewColeta,
+    .nfArtCard.modelo2 .previewDescarga,
+    .nfArtCard.modelo2 .previewPrice,
+    .nfArtCard.modelo2 .previewNote,
+    .nfArtCard.modelo2 .previewContacts,
+    .nfArtCard.modelo2 .previewFilial{
+      position:absolute;z-index:2;box-sizing:border-box;margin:0;padding:0;
+      font-family:Arial,Helvetica,sans-serif;text-shadow:none!important;filter:none!important;
+    }
+    .nfArtCard.modelo2 .previewColeta{top:47.8%;left:26%;width:67.5%;text-align:left}
+    .nfArtCard.modelo2 .previewDescarga{top:57.25%;left:26%;width:67.5%;text-align:left}
+    .nfArtCard.modelo2 .previewValue{
+      color:#082f6b!important;font-size:23px;line-height:1.02;font-weight:900;
+      text-transform:uppercase;white-space:nowrap;overflow:visible;text-overflow:clip;
+      text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewSmall{
+      margin-top:2px;color:#17662a!important;font-size:15px;line-height:1.04;
+      font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:visible;
+      text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewProduct{display:none!important}
+    .nfArtCard.modelo2 .previewPrice{
+      top:75.15%;left:50%;width:39.5%;color:#fff!important;font-size:22px;line-height:1;
+      font-weight:900;text-align:left;text-transform:uppercase;white-space:nowrap;
+      overflow:visible;text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewFilial{
+      display:block;top:87.1%;left:18.3%;width:31%;color:#082f6b!important;font-size:13px;
+      line-height:1.02;font-weight:900;text-align:left;text-transform:uppercase;
+      white-space:nowrap;overflow:visible;text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewContacts{
+      top:83.65%;left:56%;width:41.5%;color:#082f6b!important;font-size:10.5px;
+      line-height:1.28;font-weight:900;text-transform:uppercase;text-align:left;
+      text-shadow:none!important;overflow:visible;
+    }
+    .nfArtCard.modelo2 .previewContactLine{
+      color:#082f6b!important;font-size:10.5px;font-weight:900;line-height:1.28;
+      white-space:nowrap;overflow:visible;text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewNote{
+      top:94.15%;left:8.6%;width:82.8%;min-height:3.9%;display:flex;align-items:center;
+      justify-content:center;color:#fff!important;font-size:13px;line-height:1.12;font-weight:800;
+      text-align:center;text-transform:uppercase;white-space:normal;overflow:hidden;
+      text-overflow:clip;text-shadow:none!important;padding:0 3%;
+    }
+
     .nfPreviewButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
 
     .nfPreviewButtons button{
@@ -922,7 +996,13 @@
           <h3>Prévia da Divulgação</h3>
           <button class="nfClosePreview" id="nfClosePreview" type="button">×</button>
         </div>
-        <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
+        <div class="nfPreviewMeta">
+          <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
+          <div class="nfModelSelector" aria-label="Modelo de divulgação">
+            <button class="nfModelBtn active" id="nfModel1Btn" type="button">MOD 01</button>
+            <button class="nfModelBtn" id="nfModel2Btn" type="button">MOD 02</button>
+          </div>
+        </div>
         <div class="nfArtCard" id="nfArtCard">
           <div class="nfArtScale">
             <img class="previewBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" />
@@ -937,6 +1017,7 @@
             <div class="previewProduct" id="nfArtProduto"></div>
             <div class="previewPrice" id="nfArtValor"></div>
             <div class="previewNote" id="nfArtObs"></div>
+            <div class="previewFilial" id="nfArtFilial"></div>
             <div class="previewContacts">
               <div class="previewContactLine" id="nfArtContato1"></div>
               <div class="previewContactLine" id="nfArtContato2"></div>
@@ -1030,7 +1111,7 @@
 
   <script src="../assets/js/api.js?v=5"></script>
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/fretes.js?v=14"></script>
+  <script src="../assets/js/fretes.js?v=15"></script>
   <script>
     bindLogoutButton();
   </script>

@@ -196,6 +196,7 @@
     floatingSyncing: false,
     selectedIds: new Set(),
     previewRow: null,
+    previewModel: 1,
     modalBusy: false,
     pendingCreateId: "",
   };
@@ -316,13 +317,24 @@
   };
 
   const PRODUCT_BG_MAP_NF = {
-    SOJA: "../assets/img/SOJATESTE.png",
-    MILHO: "../assets/img/MILHOTESTE.png",
-    ACUCAR: "../assets/img/ACUCARTESTE.png",
-    CALCARIO: "../assets/img/CALCARIOTESTE.png",
-    FARELODESOJA: "../assets/img/FARELODESOJA.png",
-    SORGO: "../assets/img/SORGOTESTE.png",
-    FERTILIZANTE: "../assets/img/FERTILIZANTE.png",
+    1: {
+      SOJA: "../assets/img/SOJATESTE.png",
+      MILHO: "../assets/img/MILHOTESTE.png",
+      ACUCAR: "../assets/img/ACUCARTESTE.png",
+      CALCARIO: "../assets/img/CALCARIOTESTE.png",
+      FARELODESOJA: "../assets/img/FARELODESOJA.png",
+      SORGO: "../assets/img/SORGOTESTE.png",
+      FERTILIZANTE: "../assets/img/FERTILIZANTE.png",
+    },
+    2: {
+      SOJA: "../assets/img/SOJA2.png",
+      MILHO: "../assets/img/MILHO2.png",
+      ACUCAR: "../assets/img/ACUCAR2.png",
+      CALCARIO: "../assets/img/CALCARIO2.png",
+      FARELODESOJA: "../assets/img/FARELODESOJA2.png",
+      SORGO: "../assets/img/SORGO2.png",
+      FERTILIZANTE: "../assets/img/FERTILIZANTE2.png",
+    },
   };
 
   const PISO_PARAMS = {
@@ -1241,6 +1253,8 @@ function formatDateTimeBR(value) {
   const produto = upper(row.produto || "SOJA");
   const family = productFamilyNF(produto);
   const contatos = contactsFromFilial(row);
+  const modelo = Number(STATE.previewModel) === 2 ? 2 : 1;
+  const mapaModelo = PRODUCT_BG_MAP_NF[modelo] || PRODUCT_BG_MAP_NF[1];
 
   const valor = safeText(row.valorMotorista)
     ? formatMoneyBR(row.valorMotorista)
@@ -1260,11 +1274,13 @@ function formatDateTimeBR(value) {
     produto,
     productFamily: family,
 
-    bg: PRODUCT_BG_MAP_NF[family] || PRODUCT_BG_MAP_NF.SOJA,
+    modelo,
+    bg: mapaModelo[family] || mapaModelo.SOJA,
 
     valor,
 
     obs: upper(row.obs || ""),
+    filial: upper(row.filial || ""),
 
     contatos,
 
@@ -1273,6 +1289,7 @@ function formatDateTimeBR(value) {
     phone: extractPhoneBR(row.contato),
 
     filename:
+      `MOD${modelo}_` +
       `${family}_` +
       `${normalizeKeyNF(row.origem)}_` +
       `${normalizeKeyNF(row.destino)}_` +
@@ -1285,11 +1302,44 @@ function formatDateTimeBR(value) {
     if (el) el.textContent = txt || "";
   }
 
+  function syncPreviewModelUI() {
+    const modelo = Number(STATE.previewModel) === 2 ? 2 : 1;
+    document.getElementById("nfArtCard")?.classList.toggle("modelo2", modelo === 2);
+    document.getElementById("nfModel1Btn")?.classList.toggle("active", modelo === 1);
+    document.getElementById("nfModel2Btn")?.classList.toggle("active", modelo === 2);
+  }
+
+  function setPreviewModel(modelo) {
+    STATE.previewModel = Number(modelo) === 2 ? 2 : 1;
+    syncPreviewModelUI();
+    renderPreview(STATE.previewRow || getFilteredRows()[0] || STATE.rows[0]);
+  }
+
+  function ajustarFonteModelo2(target, field, value) {
+    if (!target || Number(STATE.previewModel) !== 2) return;
+    const len = safeText(value).length;
+    target.style.fontSize = "";
+
+    if (field === "cidade") {
+      if (len >= 24) target.style.fontSize = "18px";
+      else if (len >= 19) target.style.fontSize = "20px";
+    } else if (field === "local") {
+      if (len >= 28) target.style.fontSize = "12px";
+      else if (len >= 22) target.style.fontSize = "13px";
+    } else if (field === "contato") {
+      if (len >= 26) target.style.fontSize = "9.5px";
+      else if (len >= 22) target.style.fontSize = "10px";
+    } else if (field === "filial" && len >= 16) {
+      target.style.fontSize = "11px";
+    }
+  }
+
   function renderPreview(row) {
     if (!row) row = STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
     if (!row) return;
 
     STATE.previewRow = row;
+    syncPreviewModelUI();
     const d = divulgacaoDataFromRow(row);
 
     const bg = document.getElementById("nfArtBg");
@@ -1305,11 +1355,23 @@ function formatDateTimeBR(value) {
     setText("nfArtProduto", d.produto);
     setText("nfArtValor", d.valor);
     setText("nfArtObs", d.obs);
+    setText("nfArtFilial", d.filial);
 
     setText("nfArtContato1", d.contatos[0] || "");
     setText("nfArtContato2", d.contatos[1] || "");
     setText("nfArtContato3", d.contatos[2] || "");
     setText("nfArtContato4", d.contatos[3] || "");
+
+    if (d.modelo === 2) {
+      ajustarFonteModelo2(document.getElementById("nfArtColetaCidade"), "cidade", d.coletaCidade);
+      ajustarFonteModelo2(document.getElementById("nfArtColetaLocal"), "local", d.coletaLocal);
+      ajustarFonteModelo2(document.getElementById("nfArtDescargaCidade"), "cidade", d.descargaCidade);
+      ajustarFonteModelo2(document.getElementById("nfArtDescargaLocal"), "local", d.descargaLocal);
+      ajustarFonteModelo2(document.getElementById("nfArtFilial"), "filial", d.filial);
+      d.contatos.forEach((contato, i) => {
+        ajustarFonteModelo2(document.getElementById(`nfArtContato${i + 1}`), "contato", contato);
+      });
+    }
 
     const msg = document.getElementById("nfMensagemPronta");
     if (msg) msg.value = buildMessage(row);
@@ -2318,6 +2380,9 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   function bindModoRaio() {
+    document.getElementById("nfModel1Btn")?.addEventListener("click", () => setPreviewModel(1));
+    document.getElementById("nfModel2Btn")?.addEventListener("click", () => setPreviewModel(2));
+
     document.getElementById("btnSelecionarTodosVisiveis")?.addEventListener("click", () => {
       const visible = getFilteredRows().filter((r) => safeText(r.id));
       const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));

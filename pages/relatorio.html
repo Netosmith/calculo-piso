@@ -133,7 +133,7 @@
       margin-top:16px;
       padding:16px;
       display:grid;
-      grid-template-columns:1.05fr 1.3fr 1fr 1fr .8fr 1fr;
+      grid-template-columns:1.05fr 1.25fr 1fr 1fr .8fr 1fr 1.35fr;
       gap:11px;
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -404,6 +404,23 @@
         <label for="filtroFilial">Filial</label>
         <select id="filtroFilial"><option value="">Todas as filiais</option></select>
       </div>
+
+      <div class="filterField">
+        <label for="filtroTipoCte">Tipo CTE</label>
+        <select id="filtroTipoCte">
+          <option value="">Todos os tipos</option>
+          <option value="0 - NORMAL/NORMAL">0 - Normal/Normal</option>
+          <option value="1 - NORMAL/SUBCONTRATAÇÃO">1 - Normal/SubContratação</option>
+          <option value="2 - NORMAL/REDESPACHO">2 - Normal/Redespacho</option>
+          <option value="3 - COMPLEMENTO/NORMAL">3 - Complemento/Normal</option>
+          <option value="4 - COMPLEMENTO/SUBCONTRATAÇÃO">4 - Complemento/SubContratação</option>
+          <option value="5 - COMPLEMENTO/REDESPACHO">5 - Complemento/Redespacho</option>
+          <option value="6 - CTE ENTRADA/NORMAL ANULAÇÃO DE VALORES">6 - Cte Entrada/Normal Anulação de Valores</option>
+          <option value="7 - CTE SUBSTITUTO/NORMAL">7 - Cte Substituto/Normal</option>
+          <option value="8 - CTE SUBSTITUTO/SUBCONTRATAÇÃO">8 - Cte Substituto/SubContratação</option>
+          <option value="9 - COMPLEMENTO/ESTADIA">9 - Complemento/Estadia</option>
+        </select>
+      </div>
     </section>
 
     <section class="cards">
@@ -539,7 +556,7 @@
 
     <footer class="statusBar">
       <span id="statusMensagem">Selecione o arquivo relatorio.CSV para carregar os dados.</span>
-      <span><strong>Campos principais:</strong> Peso, F.Emp, F.Mot+Ped, Margem real, Margem Liq, Cliente Principal e Unid.Emb</span>
+      <span><strong>Campos principais:</strong> Peso, F.Emp, F.Mot+Ped, Margem real, Margem Liq, Cliente Principal, Unid.Emb e Tipo CTE</span>
     </footer>
   </main>
 
@@ -703,6 +720,76 @@
     return m ? m[1] : "";
   }
 
+  function lerTipoCte(r){
+    const candidatos = [
+      "Tipo CTE",
+      "Tipo CT-e",
+      "Tipo CTe",
+      "Tipo Cte",
+      "TIPO CTE",
+      "TIPO CT-E",
+      "Tp CTE",
+      "Tp CT-e",
+      "Tp CTe",
+      "TipoCTE",
+      "Tipo Ct-e"
+    ];
+
+    for(const campo of candidatos){
+      if(r[campo] !== undefined && txt(r[campo]) !== ""){
+        return upper(r[campo]);
+      }
+    }
+
+    const chave = Object.keys(r).find(k => {
+      const n = upper(k).replace(/[^A-Z0-9]/g,"");
+      return n.includes("TIPO") && n.includes("CTE");
+    });
+
+    return chave ? upper(r[chave]) : "";
+  }
+
+  function normalizarTipoCte(v){
+    const s = upper(v)
+      .replace(/\s+/g," ")
+      .replace(/CT-E/g,"CTE")
+      .trim();
+
+    const exibicao = {
+      "0":"0 - NORMAL/NORMAL",
+      "1":"1 - NORMAL/SUBCONTRATAÇÃO",
+      "2":"2 - NORMAL/REDESPACHO",
+      "3":"3 - COMPLEMENTO/NORMAL",
+      "4":"4 - COMPLEMENTO/SUBCONTRATAÇÃO",
+      "5":"5 - COMPLEMENTO/REDESPACHO",
+      "6":"6 - CTE ENTRADA/NORMAL ANULAÇÃO DE VALORES",
+      "7":"7 - CTE SUBSTITUTO/NORMAL",
+      "8":"8 - CTE SUBSTITUTO/SUBCONTRATAÇÃO",
+      "9":"9 - COMPLEMENTO/ESTADIA"
+    };
+
+    const descricoes = {
+      "0":"NORMAL/NORMAL",
+      "1":"NORMAL/SUBCONTRATACAO",
+      "2":"NORMAL/REDESPACHO",
+      "3":"COMPLEMENTO/NORMAL",
+      "4":"COMPLEMENTO/SUBCONTRATACAO",
+      "5":"COMPLEMENTO/REDESPACHO",
+      "6":"CTE ENTRADA/NORMAL ANULACAO DE VALORES",
+      "7":"CTE SUBSTITUTO/NORMAL",
+      "8":"CTE SUBSTITUTO/SUBCONTRATACAO",
+      "9":"COMPLEMENTO/ESTADIA"
+    };
+
+    for(const codigo of Object.keys(exibicao)){
+      if(s === codigo || s.startsWith(codigo + " ") || s.includes(descricoes[codigo])){
+        return exibicao[codigo];
+      }
+    }
+
+    return s;
+  }
+
   function parseDate(v){
     const s = txt(v);
     const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):?(\d{2})?)?/);
@@ -817,6 +904,7 @@
       unidade:upper(unidade),
       uf:extrairUF(unidade,r["Cidade"]),
       filial:upper(r["Filial"]),
+      tipoCte:normalizarTipoCte(lerTipoCte(r)),
       cliente:upper(clienteOriginal),
       clienteDocumento:upper(txt(r["Cliente"])),
       produto,
@@ -878,6 +966,7 @@
     const produto = $("filtroProduto").value;
     const uf = $("filtroUF").value;
     const filial = $("filtroFilial").value;
+    const tipoCte = $("filtroTipoCte").value;
 
     filtrados = dados.filter(r =>
       (!unidade || r.unidade === unidade) &&
@@ -885,14 +974,15 @@
       (!grupo || grupoDoCliente(r.cliente) === grupo) &&
       (!produto || r.produto === produto) &&
       (!uf || r.uf === uf) &&
-      (!filial || r.filial === filial)
+      (!filial || r.filial === filial) &&
+      (!tipoCte || r.tipoCte === tipoCte)
     );
 
     renderTudo();
   }
 
   function limparFiltros(){
-    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
+    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial","filtroTipoCte"]
       .forEach(id => $(id).value = "");
 
     aplicarFiltros();
@@ -1322,7 +1412,7 @@
       e.target.value = "";
     });
 
-    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
+    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial","filtroTipoCte"]
       .forEach(id => $(id).addEventListener("change",aplicarFiltros));
 
     $("btnLimpar").addEventListener("click",limparFiltros);

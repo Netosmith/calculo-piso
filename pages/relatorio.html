@@ -346,6 +346,95 @@
       background:rgba(77,141,247,.12);border:1px solid rgba(77,141,247,.28);color:#cfe0ff;font-size:9px;font-weight:900
     }
 
+    .lowMarginBox{
+      margin-top:16px;
+      border-color:rgba(255,102,120,.28);
+      background:
+        radial-gradient(circle at 96% 0%,rgba(255,102,120,.10),transparent 32%),
+        linear-gradient(145deg,rgba(14,42,75,.91),rgba(7,26,50,.91));
+    }
+
+    .lowMarginHeader{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    .lowMarginTitleWrap h2{
+      margin:0;
+      font-size:15px;
+    }
+
+    .lowMarginTitleWrap p{
+      margin:5px 0 0;
+      color:var(--muted);
+      font-size:10px;
+    }
+
+    .lowMarginBadge{
+      min-height:30px;
+      padding:0 10px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid rgba(255,102,120,.30);
+      border-radius:999px;
+      background:rgba(255,102,120,.10);
+      color:#ffd5db;
+      font-size:9px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .lowMarginCards{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .lowMini{
+      padding:12px 13px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:11px;
+      background:rgba(5,20,39,.40);
+    }
+
+    .lowMini span{
+      display:block;
+      color:#9fb3ca;
+      font-size:8px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.045em;
+    }
+
+    .lowMini strong{
+      display:block;
+      margin-top:7px;
+      color:#fff;
+      font-size:16px;
+      letter-spacing:-.3px;
+    }
+
+    .lowMarginPct{
+      font-weight:900;
+    }
+
+    .lowMarginPct.critical{color:#ff8a9a}
+    .lowMarginPct.warning{color:#f4c75f}
+
+    @media(max-width:1000px){
+      .lowMarginCards{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
+    @media(max-width:650px){
+      .lowMarginCards{grid-template-columns:1fr}
+      .lowMarginHeader{flex-direction:column}
+    }
+
     .statusBar{
       margin-top:14px;
       padding:12px 15px;
@@ -708,6 +797,62 @@
             </tr>
           </thead>
           <tbody id="tabelaResumo"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="box lowMarginBox">
+      <div class="lowMarginHeader">
+        <div class="lowMarginTitleWrap">
+          <h2>CTEs com margem abaixo de 7%</h2>
+          <p>Resumo dos CT-es abaixo da margem mínima de 7%, respeitando todos os filtros aplicados acima.</p>
+        </div>
+
+        <div class="lowMarginBadge">
+          ⚠️ Margem crítica &lt; 7%
+        </div>
+      </div>
+
+      <div class="lowMarginCards">
+        <div class="lowMini">
+          <span>CTEs abaixo de 7%</span>
+          <strong id="lowKpiCtes">0</strong>
+        </div>
+
+        <div class="lowMini">
+          <span>Volume envolvido</span>
+          <strong id="lowKpiVolume">0 t</strong>
+        </div>
+
+        <div class="lowMini">
+          <span>Faturamento</span>
+          <strong id="lowKpiFaturamento">R$ 0,00</strong>
+        </div>
+
+        <div class="lowMini">
+          <span>Margem líquida</span>
+          <strong id="lowKpiMargem">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CTE</th>
+              <th>Viagem</th>
+              <th>Cliente</th>
+              <th>Unid. Emb.</th>
+              <th>Rota</th>
+              <th>Tipo CTE</th>
+              <th>Volume</th>
+              <th>F. Empresa</th>
+              <th>Margem Líq.</th>
+              <th>Margem %</th>
+              <th>Placa</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCtesBaixaMargem"></tbody>
         </table>
       </div>
     </section>
@@ -1460,10 +1605,72 @@
     }).join("");
   }
 
+  function margemPercentualLinha(r){
+    if(numeroBR(r.freteEmpresa) > 0){
+      return (numeroBR(r.margemLiquida) / numeroBR(r.freteEmpresa)) * 100;
+    }
+
+    return numeroBR(r.margemLiquidaPct);
+  }
+
+  function renderCtesBaixaMargem(){
+    const tbody = $("tabelaCtesBaixaMargem");
+    if(!tbody) return;
+
+    const criticos = filtrados
+      .filter(r => {
+        const pct = margemPercentualLinha(r);
+        return numeroBR(r.freteEmpresa) > 0 && pct < 7;
+      })
+      .sort((a,b) => margemPercentualLinha(a) - margemPercentualLinha(b));
+
+    const volume = soma(criticos,"volume");
+    const faturamento = soma(criticos,"freteEmpresa");
+    const margem = soma(criticos,"margemLiquida");
+
+    $("lowKpiCtes").textContent = criticos.length.toLocaleString("pt-BR");
+    $("lowKpiVolume").textContent = tonelada(volume);
+    $("lowKpiFaturamento").textContent = moeda(faturamento);
+    $("lowKpiMargem").textContent = moeda(margem);
+
+    if(!criticos.length){
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="11" style="text-align:center;color:#9fb3ca;padding:28px">
+            Nenhum CTE com margem abaixo de 7% para os filtros selecionados.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = criticos.map(r => {
+      const pct = margemPercentualLinha(r);
+      const classe = pct < 5 ? "critical" : "warning";
+
+      return `
+        <tr>
+          <td><strong>${escapar(r.cte || "-")}</strong></td>
+          <td>${escapar(r.viagem || "-")}</td>
+          <td>${escapar(r.cliente || "-")}</td>
+          <td>${escapar(r.unidade || "-")}</td>
+          <td>${escapar(r.rota || "-")}</td>
+          <td>${escapar(r.tipoCte || "-")}</td>
+          <td>${tonelada(r.volume)}</td>
+          <td>${moeda(r.freteEmpresa)}</td>
+          <td>${moeda(r.margemLiquida)}</td>
+          <td><span class="lowMarginPct ${classe}">${percentual(pct)}</span></td>
+          <td>${escapar(r.placa || "-")}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
   function renderTudo(){
     renderKpis();
     renderGraficos();
     renderTabela();
+    renderCtesBaixaMargem();
 
     $("totalRegistros").textContent = dados.length.toLocaleString("pt-BR");
     $("ultimaAtualizacao").textContent = new Date().toLocaleTimeString("pt-BR",{

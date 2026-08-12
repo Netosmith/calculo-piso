@@ -489,11 +489,16 @@
     }
 
     .cardsGrid > *{
-      border:1px solid rgba(213,226,241,.94) !important;
+      border:1px solid rgba(78,141,247,.24) !important;
       border-radius:16px !important;
-      background:linear-gradient(145deg,#fff 0%,#edf3f9 100%) !important;
-      color:#0b1e38 !important;
-      box-shadow:0 12px 28px rgba(0,0,0,.18),inset 0 1px 0 #fff !important;
+      background:
+        radial-gradient(circle at 90% 5%,rgba(78,141,247,.12),transparent 42%),
+        linear-gradient(145deg,#102d50 0%,#0a213d 55%,#081a31 100%) !important;
+      color:#f5f8ff !important;
+      box-shadow:
+        0 12px 28px rgba(0,0,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.04) !important;
+      overflow:hidden;
     }
 
     /* cards conhecidos do administrativo.js */
@@ -502,21 +507,70 @@
     .solicCard,
     .patrimonioCard,
     .epiCard,
-    .card{
+    .card,
+    .nf-dark-card{
       border-radius:16px !important;
     }
 
     .cardsGrid h3,
     .cardsGrid h4,
     .cardsGrid strong,
-    .cardsGrid b{
-      color:#0b1e38;
+    .cardsGrid b,
+    .cardsGrid .big,
+    .cardsGrid .smallLine{
+      color:#f5f8ff !important;
     }
 
     .cardsGrid p,
     .cardsGrid small,
-    .cardsGrid .muted{
-      color:#607086 !important;
+    .cardsGrid .muted,
+    .cardsGrid .tagLine{
+      color:#aebdd0 !important;
+    }
+
+    .cardsGrid .adminCardTop{
+      background:transparent !important;
+    }
+
+    .cardsGrid .adminCardFoot{
+      background:rgba(4,17,34,.34) !important;
+      border-top:1px solid rgba(173,204,240,.10) !important;
+    }
+
+    .cardsGrid .avatar{
+      color:#d9e7ff !important;
+      background:rgba(78,141,247,.13) !important;
+      border:1px solid rgba(78,141,247,.28) !important;
+    }
+
+    .cardsGrid .linkBtn{
+      color:#d9e7ff !important;
+      border-color:rgba(173,204,240,.18) !important;
+      background:rgba(255,255,255,.04) !important;
+    }
+
+    .cardsGrid .linkBtn:hover{
+      color:#fff !important;
+      border-color:rgba(78,141,247,.48) !important;
+      background:rgba(78,141,247,.13) !important;
+    }
+
+    .cardsGrid .pill.ok{
+      color:#0b6b43 !important;
+      background:#d9f6e7 !important;
+      border-color:#8ed8b4 !important;
+    }
+
+    .cardsGrid .pill.pendente{
+      color:#8a5b00 !important;
+      background:#fff1c9 !important;
+      border-color:#f4c767 !important;
+    }
+
+    .cardsGrid .pill.atrasado{
+      color:#9f1f2a !important;
+      background:#ffe0e4 !important;
+      border-color:#f5a6ae !important;
     }
 
     /* =========================================================
@@ -1034,7 +1088,7 @@
   />
 
   <script src="../assets/js/auth.js?v=8"></script>
-  <script src="../assets/js/administrativo.js?v=3"></script>
+  <script src="../assets/js/administrativo.js?v=4"></script>
 
   <script>
     requireHomeAuth();

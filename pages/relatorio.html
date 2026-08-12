@@ -158,6 +158,113 @@
       box-shadow:0 0 0 3px rgba(77,141,247,.12);
     }
 
+    .multiSelect{
+      position:relative;
+    }
+
+    .multiSelectButton{
+      width:100%;
+      min-height:41px;
+      padding:0 11px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      border:1px solid rgba(164,196,232,.2);
+      border-radius:10px;
+      outline:none;
+      background:#0b2341;
+      color:#fff;
+      font-size:12px;
+      text-align:left;
+    }
+
+    .multiSelectButton:hover,
+    .multiSelect.open .multiSelectButton{
+      border-color:#4d8df7;
+      box-shadow:0 0 0 3px rgba(77,141,247,.12);
+    }
+
+    .multiSelectButton .arrow{
+      flex:0 0 auto;
+      color:#9fb3ca;
+      font-size:10px;
+      transition:.18s ease;
+    }
+
+    .multiSelect.open .multiSelectButton .arrow{
+      transform:rotate(180deg);
+    }
+
+    .multiSelectMenu{
+      position:absolute;
+      z-index:100;
+      top:calc(100% + 6px);
+      left:0;
+      width:min(430px,92vw);
+      max-height:330px;
+      overflow:auto;
+      display:none;
+      padding:8px;
+      border:1px solid rgba(164,196,232,.24);
+      border-radius:12px;
+      background:#081d36;
+      box-shadow:0 20px 48px rgba(0,0,0,.42);
+    }
+
+    .multiSelect.open .multiSelectMenu{
+      display:block;
+    }
+
+    .multiSelectActions{
+      position:sticky;
+      top:-8px;
+      z-index:2;
+      display:flex;
+      gap:7px;
+      padding:8px 0 9px;
+      background:#081d36;
+      border-bottom:1px solid rgba(164,196,232,.12);
+      margin-bottom:5px;
+    }
+
+    .multiMiniBtn{
+      min-height:29px;
+      padding:0 9px;
+      border:1px solid rgba(77,141,247,.35);
+      border-radius:8px;
+      background:rgba(77,141,247,.10);
+      color:#d9e6f5;
+      font-size:9px;
+      font-weight:800;
+    }
+
+    .multiOption{
+      display:flex;
+      align-items:flex-start;
+      gap:9px;
+      padding:8px 7px;
+      border-radius:8px;
+      color:#dce7f4;
+      font-size:10px;
+      line-height:1.25;
+      cursor:pointer;
+    }
+
+    .multiOption:hover{
+      background:rgba(77,141,247,.08);
+    }
+
+    .multiOption input{
+      width:15px;
+      height:15px;
+      min-height:0;
+      margin:0;
+      flex:0 0 auto;
+      accent-color:#4d8df7;
+      box-shadow:none !important;
+    }
+
     .cards{
       margin-top:16px;
       display:grid;
@@ -406,20 +513,71 @@
       </div>
 
       <div class="filterField">
-        <label for="filtroTipoCte">Tipo CTE</label>
-        <select id="filtroTipoCte">
-          <option value="">Todos os tipos</option>
-          <option value="0 - NORMAL/NORMAL">0 - Normal/Normal</option>
-          <option value="1 - NORMAL/SUBCONTRATAÇÃO">1 - Normal/SubContratação</option>
-          <option value="2 - NORMAL/REDESPACHO">2 - Normal/Redespacho</option>
-          <option value="3 - COMPLEMENTO/NORMAL">3 - Complemento/Normal</option>
-          <option value="4 - COMPLEMENTO/SUBCONTRATAÇÃO">4 - Complemento/SubContratação</option>
-          <option value="5 - COMPLEMENTO/REDESPACHO">5 - Complemento/Redespacho</option>
-          <option value="6 - CTE ENTRADA/NORMAL ANULAÇÃO DE VALORES">6 - Cte Entrada/Normal Anulação de Valores</option>
-          <option value="7 - CTE SUBSTITUTO/NORMAL">7 - Cte Substituto/Normal</option>
-          <option value="8 - CTE SUBSTITUTO/SUBCONTRATAÇÃO">8 - Cte Substituto/SubContratação</option>
-          <option value="9 - COMPLEMENTO/ESTADIA">9 - Complemento/Estadia</option>
-        </select>
+        <label>Tipo CTE</label>
+
+        <div class="multiSelect" id="tipoCteMulti">
+          <button class="multiSelectButton" id="btnTipoCte" type="button">
+            <span id="tipoCteResumo">Todos os tipos</span>
+            <span class="arrow">▼</span>
+          </button>
+
+          <div class="multiSelectMenu" id="menuTipoCte">
+            <div class="multiSelectActions">
+              <button class="multiMiniBtn" id="btnTipoCteTodos" type="button">Selecionar todos</button>
+              <button class="multiMiniBtn" id="btnTipoCteLimpar" type="button">Limpar</button>
+            </div>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="0 - NORMAL/NORMAL">
+              <span>0 - Normal/Normal</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="1 - NORMAL/SUBCONTRATAÇÃO">
+              <span>1 - Normal/SubContratação</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="2 - NORMAL/REDESPACHO">
+              <span>2 - Normal/Redespacho</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="3 - COMPLEMENTO/NORMAL">
+              <span>3 - Complemento/Normal</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="4 - COMPLEMENTO/SUBCONTRATAÇÃO">
+              <span>4 - Complemento/SubContratação</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="5 - COMPLEMENTO/REDESPACHO">
+              <span>5 - Complemento/Redespacho</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="6 - CTE ENTRADA/NORMAL ANULAÇÃO DE VALORES">
+              <span>6 - Cte Entrada/Normal Anulação de Valores</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="7 - CTE SUBSTITUTO/NORMAL">
+              <span>7 - Cte Substituto/Normal</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="8 - CTE SUBSTITUTO/SUBCONTRATAÇÃO">
+              <span>8 - Cte Substituto/SubContratação</span>
+            </label>
+
+            <label class="multiOption">
+              <input type="checkbox" name="tipoCteOption" value="9 - COMPLEMENTO/ESTADIA">
+              <span>9 - Complemento/Estadia</span>
+            </label>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -959,6 +1117,31 @@
     popularSelect("filtroFilial",unique("filial"),"Todas as filiais");
   }
 
+  function tiposCteSelecionados(){
+    return [...document.querySelectorAll('input[name="tipoCteOption"]:checked')]
+      .map(input => input.value);
+  }
+
+  function atualizarResumoTipoCte(){
+    const selecionados = tiposCteSelecionados();
+    const total = document.querySelectorAll('input[name="tipoCteOption"]').length;
+    const resumo = $("tipoCteResumo");
+
+    if(!resumo) return;
+
+    if(selecionados.length === 0 || selecionados.length === total){
+      resumo.textContent = "Todos os tipos";
+      return;
+    }
+
+    if(selecionados.length === 1){
+      resumo.textContent = selecionados[0];
+      return;
+    }
+
+    resumo.textContent = `${selecionados.length} tipos selecionados`;
+  }
+
   function aplicarFiltros(){
     const unidade = $("filtroUnidade").value;
     const cliente = $("filtroCliente").value;
@@ -966,7 +1149,9 @@
     const produto = $("filtroProduto").value;
     const uf = $("filtroUF").value;
     const filial = $("filtroFilial").value;
-    const tipoCte = $("filtroTipoCte").value;
+    const tiposCte = tiposCteSelecionados();
+    const totalTiposCte = document.querySelectorAll('input[name="tipoCteOption"]').length;
+    const filtrarTipoCte = tiposCte.length > 0 && tiposCte.length < totalTiposCte;
 
     filtrados = dados.filter(r =>
       (!unidade || r.unidade === unidade) &&
@@ -975,16 +1160,21 @@
       (!produto || r.produto === produto) &&
       (!uf || r.uf === uf) &&
       (!filial || r.filial === filial) &&
-      (!tipoCte || r.tipoCte === tipoCte)
+      (!filtrarTipoCte || tiposCte.includes(r.tipoCte))
     );
 
     renderTudo();
   }
 
   function limparFiltros(){
-    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial","filtroTipoCte"]
+    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
       .forEach(id => $(id).value = "");
 
+    document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
+      input.checked = false;
+    });
+
+    atualizarResumoTipoCte();
     aplicarFiltros();
   }
 
@@ -1412,8 +1602,49 @@
       e.target.value = "";
     });
 
-    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial","filtroTipoCte"]
+    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
       .forEach(id => $(id).addEventListener("change",aplicarFiltros));
+
+    const multi = $("tipoCteMulti");
+    const btnTipo = $("btnTipoCte");
+
+    btnTipo?.addEventListener("click",e => {
+      e.stopPropagation();
+      multi?.classList.toggle("open");
+    });
+
+    document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
+      input.addEventListener("change",() => {
+        atualizarResumoTipoCte();
+        aplicarFiltros();
+      });
+    });
+
+    $("btnTipoCteTodos")?.addEventListener("click",e => {
+      e.stopPropagation();
+      document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
+        input.checked = true;
+      });
+      atualizarResumoTipoCte();
+      aplicarFiltros();
+    });
+
+    $("btnTipoCteLimpar")?.addEventListener("click",e => {
+      e.stopPropagation();
+      document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
+        input.checked = false;
+      });
+      atualizarResumoTipoCte();
+      aplicarFiltros();
+    });
+
+    document.addEventListener("click",e => {
+      if(multi && !multi.contains(e.target)){
+        multi.classList.remove("open");
+      }
+    });
+
+    atualizarResumoTipoCte();
 
     $("btnLimpar").addEventListener("click",limparFiltros);
     $("btnGrupos").addEventListener("click",abrirGrupos);

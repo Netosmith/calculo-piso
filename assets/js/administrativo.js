@@ -667,7 +667,7 @@
 
     applyFilters(list).forEach((it) => {
       const card = document.createElement("div");
-      card.className = "adminCard";
+      card.className = "adminCard nf-dark-card";
       card.innerHTML = `
         <div class="adminCardTop">
           <div class="avatar">${upper(it.placa).slice(0, 2)}</div>
@@ -1005,7 +1005,7 @@
 
     applyFilters(list).forEach((it) => {
       const card = document.createElement("div");
-      card.className = "adminCard";
+      card.className = "adminCard nf-dark-card";
       card.innerHTML = `
         <div class="adminCardTop">
           <div class="avatar">📋</div>
@@ -1036,7 +1036,7 @@
 
     applyFilters(list).forEach((it) => {
       const card = document.createElement("div");
-      card.className = "adminCard";
+      card.className = "adminCard nf-dark-card";
       card.innerHTML = `
         <div class="adminCardTop">
           <div class="avatar">🏷️</div>
@@ -1063,7 +1063,7 @@
 
     applyFilters(list).forEach((it) => {
       const card = document.createElement("div");
-      card.className = "adminCard";
+      card.className = "adminCard nf-dark-card";
       card.innerHTML = `
         <div class="adminCardTop">
           <div class="avatar">🦺</div>

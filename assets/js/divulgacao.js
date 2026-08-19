@@ -20,6 +20,7 @@
       CALCARIO: "../assets/img/CALCARIO2.png",
       FARELODESOJA: "../assets/img/FARELODESOJA2.png",
       SORGO: "../assets/img/SORGO2.png",
+      SEMENTE: "../assets/img/SEMENTE.png",
       FERTILIZANTE: "../assets/img/FERTILIZANTE2.png"
     }
   };
@@ -163,6 +164,10 @@
     SORGOEMGRAOS: "SORGO",
     SORGOGRANEL: "SORGO",
 
+    SEMENTEDESOJA: "SEMENTE",
+    SEMENTE: "SEMENTE",
+    SEMENTEDEMILHO: "SEMENTE",   
+    
     ADUBO: "FERTILIZANTE",
     FERTILIZANTE: "FERTILIZANTE",
     FERTILIZANTES: "FERTILIZANTE",

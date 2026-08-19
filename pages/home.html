@@ -147,7 +147,9 @@
       pointer-events:none;
     }
 
-    .nf-container{ position:relative; z-index:2; width:min(100% - 72px, 1560px); margin:auto; }
+    .nf-container{ position:relative; z-index:2; width:min(100% - 56px, 1700px); margin:auto; }
+    .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:24px; align-items:start; }
+    .nf-home-main,.nf-home-side{ min-width:0; }
     .nf-welcome{ margin-bottom:34px; }
     .nf-welcome h1{ margin:0; font-size:clamp(32px,3vw,48px); font-weight:400; letter-spacing:-1.5px; }
     .nf-welcome h1 strong{ font-weight:800; }
@@ -156,15 +158,15 @@
     .nf-stats{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:18px;
-      margin-bottom:26px;
+      gap:14px;
+      margin-bottom:22px;
     }
 
     .nf-stat{
       --accent:var(--home-blue);
       position:relative;
-      min-height:178px;
-      padding:18px 20px 16px;
+      min-height:162px;
+      padding:16px 18px 15px;
       overflow:hidden;
       border:1px solid color-mix(in srgb,var(--accent) 34%,rgba(173,204,240,.18));
       border-radius:18px;
@@ -238,7 +240,7 @@
       display:block;
       margin-top:14px;
       color:#fff;
-      font-size:42px;
+      font-size:38px;
       line-height:1;
       font-weight:800;
       letter-spacing:-1.5px;
@@ -284,15 +286,15 @@
 
     .nf-tools{
       display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      gap:16px;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:14px;
     }
 
     .nf-tool{
       --accent:var(--home-blue);
       position:relative;
-      min-height:205px;
-      padding:28px 28px 24px;
+      min-height:184px;
+      padding:22px 22px 20px;
       display:flex;
       flex-direction:column;
       color:#0b1e38;
@@ -312,8 +314,8 @@
     .nf-tool.gold{ --accent:var(--home-gold); }
     .nf-tool.purple{ --accent:var(--home-purple); }
     .nf-tool-icon{
-      width:64px;
-      height:64px;
+      width:54px;
+      height:54px;
       display:grid;
       place-items:center;
       margin-bottom:18px;
@@ -322,11 +324,53 @@
       color:var(--accent);
       background:color-mix(in srgb,var(--accent) 9%,white);
     }
-    .nf-tool-icon svg{ width:34px; height:34px; }
-    .nf-tool h2{ max-width:210px; margin:0; font-size:20px; line-height:1.2; font-weight:800; letter-spacing:-.35px; }
-    .nf-tool p{ max-width:210px; margin:10px 0 0; color:#607086; font-size:13px; line-height:1.45; }
+    .nf-tool-icon svg{ width:29px; height:29px; }
+    .nf-tool h2{ max-width:210px; margin:0; font-size:17px; line-height:1.2; font-weight:800; letter-spacing:-.35px; }
+    .nf-tool p{ max-width:210px; margin:10px 0 0; color:#607086; font-size:12px; line-height:1.4; }
     .nf-tool-arrow{ position:absolute; right:24px; bottom:22px; color:#18385d; font-size:28px; line-height:1; transition:transform .18s ease; }
     .nf-tool:hover .nf-tool-arrow{ transform:translateX(4px); }
+
+
+    /* Central de Avisos */
+    .nf-notice-panel{
+      position:sticky; top:18px; overflow:hidden;
+      border:1px solid rgba(173,204,240,.22); border-radius:20px;
+      background:radial-gradient(circle at 85% 0%,rgba(78,141,247,.14),transparent 38%),
+                 linear-gradient(160deg,rgba(11,36,67,.96),rgba(5,24,46,.95));
+      box-shadow:0 20px 50px rgba(0,0,0,.28);
+      backdrop-filter:blur(16px);
+    }
+    .nf-notice-head{padding:18px 18px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nf-notice-head-title{display:flex;align-items:center;gap:10px}
+    .nf-notice-head-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(78,141,247,.13);border:1px solid rgba(78,141,247,.35);font-size:20px}
+    .nf-notice-head h2{margin:0;color:#fff;font-size:17px;line-height:1.1;font-weight:800}
+    .nf-notice-head p{margin:5px 0 0;color:#9fb0c4;font-size:10px}
+    .nf-notice-pin{font-size:20px}
+    .nf-notice-body{padding:16px}
+    .nf-notice-card{overflow:hidden;border-radius:16px;background:linear-gradient(160deg,#fff,#eef4fa);color:#0b1e38;box-shadow:0 14px 30px rgba(0,0,0,.22)}
+    .nf-notice-visual{position:relative;min-height:210px;padding:18px;overflow:hidden;display:flex;align-items:flex-end;background:linear-gradient(140deg,#f8fbff 0%,#e8f0f6 100%)}
+    .nf-notice-visual::before{content:"";position:absolute;right:26px;top:28px;width:92px;height:150px;border-radius:70% 12% 70% 18%;background:linear-gradient(145deg,#58a94f,#1e7a36);transform:rotate(28deg);box-shadow:-42px 36px 0 -18px #3f9a46,-20px 72px 0 -24px #2f843d;opacity:.95}
+    .nf-notice-visual::after{content:"";position:absolute;right:-42px;bottom:-54px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle at 45% 45%,#d9b56f 0 8%,#caa05c 9% 13%,transparent 14%),radial-gradient(circle at 64% 35%,#e3c47d 0 9%,#c89f5b 10% 14%,transparent 15%),radial-gradient(circle at 35% 67%,#e8cf92 0 9%,#d1aa67 10% 14%,transparent 15%),radial-gradient(circle at 62% 70%,#d9b875 0 8%,#c59955 9% 13%,transparent 14%);opacity:.95}
+    .nf-notice-priority{position:absolute;z-index:2;left:16px;top:16px;min-height:24px;padding:0 9px;display:inline-flex;align-items:center;border-radius:999px;background:#16a34a;color:#fff;font-size:9px;font-weight:900;text-transform:uppercase}
+    .nf-notice-title{position:relative;z-index:2;width:70%;margin:48px 0 0;font-size:32px;line-height:1.02;font-weight:900;letter-spacing:-1px;text-transform:uppercase}
+    .nf-notice-title span{color:#159447}
+    .nf-notice-content{padding:18px}
+    .nf-notice-text{margin:0 0 14px;color:#31435a;font-size:13px;line-height:1.45;font-weight:600}
+    .nf-notice-list{display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none}
+    .nf-notice-list li{display:flex;align-items:flex-start;gap:8px;color:#293c52;font-size:11px;line-height:1.35}
+    .nf-notice-list li::before{content:"✓";width:18px;height:18px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:900}
+    .nf-notice-cta{width:100%;min-height:42px;border:0;border-radius:10px;background:linear-gradient(135deg,#11813c,#16a34a);color:#fff;font-size:11px;font-weight:900;cursor:pointer}
+    .nf-notice-nav{padding:13px 16px;display:flex;align-items:center;justify-content:center;gap:8px}
+    .nf-notice-dot{width:8px;height:8px;border:0;padding:0;border-radius:50%;background:#53677f;cursor:pointer}
+    .nf-notice-dot.active{width:22px;border-radius:999px;background:var(--home-blue)}
+    .nf-notice-listing{padding:0 16px 16px;border-top:1px solid rgba(255,255,255,.08)}
+    .nf-notice-listing h3{margin:14px 0 10px;color:#aebed0;font-size:10px;font-weight:900;text-transform:uppercase}
+    .nf-notice-mini{width:100%;display:flex;align-items:center;gap:10px;padding:9px 0;border:0;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;color:#dce6f2;text-align:left;cursor:pointer}
+    .nf-notice-mini-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:rgba(78,141,247,.12);border:1px solid rgba(78,141,247,.25)}
+    .nf-notice-mini strong{display:block;color:#fff;font-size:10px;line-height:1.25}
+    .nf-notice-mini small{display:block;margin-top:3px;color:#8195ad;font-size:9px}
+    .nf-notice-mini time{margin-left:auto;color:#a8b8ca;font-size:9px;white-space:nowrap}
+    .nf-notice-footer{min-height:50px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(255,255,255,.08);color:#e8f0f8;font-size:10px;font-weight:900}
 
     .nf-footer{
       margin-top:28px;
@@ -373,9 +417,15 @@
     .btnAdmin.ghost{ border-color:rgba(255,255,255,.15); background:rgba(255,255,255,.06); }
     .btnAdmin:disabled{ opacity:.6; cursor:not-allowed; }
 
-    @media (max-width:1280px){
-      .nf-tools{ grid-template-columns:repeat(4,minmax(0,1fr)); }
-      .nf-stats{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    @media (max-width:1420px){
+      .nf-home-layout{grid-template-columns:minmax(0,1fr) 330px;gap:18px}
+      .nf-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .nf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:1100px){
+      .nf-home-layout{grid-template-columns:1fr}
+      .nf-home-side{order:-1}
+      .nf-notice-panel{position:relative;top:0}
     }
     @media (max-width:900px){
       .nf-topbar{ height:auto; min-height:78px; padding:12px 0; }
@@ -441,6 +491,8 @@
   <main class="nf-dashboard">
     <img class="nf-bg-image" src="../assets/img/FUNDO.jpg" alt="" aria-hidden="true" />
     <div class="nf-container">
+      <div class="nf-home-layout">
+        <div class="nf-home-main">
       <section class="nf-welcome" aria-labelledby="homeWelcome">
         <h1 id="homeWelcome">Bom dia, <strong id="homeUserName">Usuário</strong></h1>
         <p id="homeSub">Visão geral da operação</p>
@@ -587,6 +639,44 @@
           <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V10h3v10M11 20V4h3v16M17 20v-7h3v7M3 20h19"/></svg></span><h2>Relatório</h2><p>Relátorio completo, cliente/filial, import CSV.</p><span class="nf-tool-arrow">→</span>
         </a>
       </section>
+        </div>
+
+        <aside class="nf-home-side" aria-label="Central de avisos">
+          <section class="nf-notice-panel">
+            <div class="nf-notice-head">
+              <div class="nf-notice-head-title">
+                <div class="nf-notice-head-icon">📣</div>
+                <div>
+                  <h2>CENTRAL DE AVISOS</h2>
+                  <p>Informações importantes para o dia a dia</p>
+                </div>
+              </div>
+              <div class="nf-notice-pin">📌</div>
+            </div>
+
+            <div class="nf-notice-body">
+              <article class="nf-notice-card">
+                <div class="nf-notice-visual">
+                  <span class="nf-notice-priority" id="nfNoticePriority">IMPORTANTE</span>
+                  <h3 class="nf-notice-title" id="nfNoticeTitle">SEGURO<br>SEMENTE<br><span>DE SOJA</span></h3>
+                </div>
+                <div class="nf-notice-content">
+                  <p class="nf-notice-text" id="nfNoticeText">Atenção às condições obrigatórias para cargas de sementes.</p>
+                  <ul class="nf-notice-list" id="nfNoticeList"></ul>
+                  <button class="nf-notice-cta" id="nfNoticeCta" type="button">VER ORIENTAÇÕES COMPLETAS</button>
+                </div>
+              </article>
+              <div class="nf-notice-nav" id="nfNoticeDots"></div>
+            </div>
+
+            <div class="nf-notice-listing">
+              <h3>Próximos avisos</h3>
+              <div id="nfNoticeNext"></div>
+            </div>
+            <div class="nf-notice-footer">VER TODOS OS AVISOS →</div>
+          </section>
+        </aside>
+      </div>
 
       <footer class="nf-footer"><span class="nf-footer-status">Dados atualizados agora</span><span class="nf-footer-sep"></span><span>Sistema Operacional Nova Frota</span></footer>
     </div>
@@ -861,6 +951,87 @@
         }
       });
     });
+
+
+    const NF_HOME_AVISOS = [
+      {
+        prioridade:"IMPORTANTE",
+        titulo:'SEGURO<br>SEMENTE<br><span>DE SOJA</span>',
+        texto:"Atenção às condições obrigatórias para cargas de sementes.",
+        itens:[
+          "Contratação obrigatória do seguro conforme orientação comercial",
+          "Conferir cobertura mínima exigida antes do carregamento",
+          "Documentação necessária deve acompanhar a operação",
+          "Comunicação imediata em caso de ocorrência"
+        ],
+        cta:"VER ORIENTAÇÕES COMPLETAS",
+        data:"19/08"
+      },
+      {
+        prioridade:"OPERACIONAL",
+        titulo:'NOVO<br>PROCEDIMENTO<br><span>DE EMBARQUE</span>',
+        texto:"Padronização para liberação, conferência e comunicação das cargas.",
+        itens:["Confirmar filial e unidade de embarque","Validar motorista e placa","Registrar observações no Portal"],
+        cta:"VER PROCEDIMENTO",
+        data:"20/08"
+      },
+      {
+        prioridade:"COMERCIAL",
+        titulo:'CAMPANHA<br>DE FRETES<br><span>AGOSTO</span>',
+        texto:"Acompanhe as oportunidades e demandas prioritárias do período.",
+        itens:["Priorizar corredores divulgados","Atualizar disponibilidade de veículos","Manter contatos e valores atualizados"],
+        cta:"VER CAMPANHA",
+        data:"21/08"
+      },
+      {
+        prioridade:"SISTEMA",
+        titulo:'MANUTENÇÃO<br>PROGRAMADA<br><span>PORTAL</span>',
+        texto:"Janela técnica prevista para atualização e melhorias do Portal Frete.",
+        itens:["Salvar alterações antes da janela","Evitar operações durante a manutenção","Aguardar aviso de normalização"],
+        cta:"VER DETALHES",
+        data:"22/08"
+      }
+    ];
+
+    let nfAvisoAtual = 0;
+    let nfAvisoTimer = null;
+
+    function renderHomeAviso(index){
+      if(!NF_HOME_AVISOS.length) return;
+      nfAvisoAtual = ((index % NF_HOME_AVISOS.length) + NF_HOME_AVISOS.length) % NF_HOME_AVISOS.length;
+      const aviso = NF_HOME_AVISOS[nfAvisoAtual];
+
+      document.getElementById("nfNoticePriority").textContent = aviso.prioridade;
+      document.getElementById("nfNoticeTitle").innerHTML = aviso.titulo;
+      document.getElementById("nfNoticeText").textContent = aviso.texto;
+      document.getElementById("nfNoticeCta").textContent = aviso.cta;
+      document.getElementById("nfNoticeList").innerHTML = aviso.itens.map(item => `<li>${item}</li>`).join("");
+
+      const dots = document.getElementById("nfNoticeDots");
+      dots.innerHTML = NF_HOME_AVISOS.map((_,i) => `<button class="nf-notice-dot ${i===nfAvisoAtual?"active":""}" type="button" data-i="${i}"></button>`).join("");
+      dots.querySelectorAll("[data-i]").forEach(btn => btn.onclick = () => { renderHomeAviso(Number(btn.dataset.i)); reiniciarAvisos(); });
+
+      const proximos = NF_HOME_AVISOS.map((item,i)=>({...item,i})).filter(x=>x.i!==nfAvisoAtual).slice(0,3);
+      const next = document.getElementById("nfNoticeNext");
+      next.innerHTML = proximos.map(item => `
+        <button class="nf-notice-mini" type="button" data-next="${item.i}">
+          <span class="nf-notice-mini-icon">📄</span>
+          <span><strong>${item.prioridade}: ${item.texto}</strong><small>${item.cta}</small></span>
+          <time>${item.data}</time>
+        </button>`).join("");
+      next.querySelectorAll("[data-next]").forEach(btn => btn.onclick = () => { renderHomeAviso(Number(btn.dataset.next)); reiniciarAvisos(); });
+    }
+
+    function reiniciarAvisos(){
+      if(nfAvisoTimer) clearInterval(nfAvisoTimer);
+      nfAvisoTimer = setInterval(() => renderHomeAviso(nfAvisoAtual + 1), 9000);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderHomeAviso(0);
+      reiniciarAvisos();
+    });
+
 
     window.addEventListener("home:metrics",(evento) => atualizarMetricasHome(evento.detail || {}));
   </script>

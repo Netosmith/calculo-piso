@@ -150,6 +150,7 @@
     .nf-container{ position:relative; z-index:2; width:min(100% - 56px, 1700px); margin:auto; }
     .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:24px; align-items:start; }
     .nf-home-main,.nf-home-side{ min-width:0; }
+    .nf-home-side{ padding-top:112px; }
     .nf-welcome{ margin-bottom:34px; }
     .nf-welcome h1{ margin:0; font-size:clamp(32px,3vw,48px); font-weight:400; letter-spacing:-1.5px; }
     .nf-welcome h1 strong{ font-weight:800; }
@@ -349,9 +350,102 @@
     .nf-notice-body{padding:16px}
     .nf-notice-card{overflow:hidden;border-radius:16px;background:linear-gradient(160deg,#fff,#eef4fa);color:#0b1e38;box-shadow:0 14px 30px rgba(0,0,0,.22)}
     .nf-notice-visual{position:relative;min-height:210px;padding:18px;overflow:hidden;display:flex;align-items:flex-end;background:linear-gradient(140deg,#f8fbff 0%,#e8f0f6 100%)}
-    .nf-notice-visual::before{content:"";position:absolute;right:26px;top:28px;width:92px;height:150px;border-radius:70% 12% 70% 18%;background:linear-gradient(145deg,#58a94f,#1e7a36);transform:rotate(28deg);box-shadow:-42px 36px 0 -18px #3f9a46,-20px 72px 0 -24px #2f843d;opacity:.95}
-    .nf-notice-visual::after{content:"";position:absolute;right:-42px;bottom:-54px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle at 45% 45%,#d9b56f 0 8%,#caa05c 9% 13%,transparent 14%),radial-gradient(circle at 64% 35%,#e3c47d 0 9%,#c89f5b 10% 14%,transparent 15%),radial-gradient(circle at 35% 67%,#e8cf92 0 9%,#d1aa67 10% 14%,transparent 15%),radial-gradient(circle at 62% 70%,#d9b875 0 8%,#c59955 9% 13%,transparent 14%);opacity:.95}
     .nf-notice-priority{position:absolute;z-index:2;left:16px;top:16px;min-height:24px;padding:0 9px;display:inline-flex;align-items:center;border-radius:999px;background:#16a34a;color:#fff;font-size:9px;font-weight:900;text-transform:uppercase}
+    .nf-notice-card.notice-risk .nf-notice-visual{
+      min-height:auto;
+      padding:16px 16px 12px;
+      display:block;
+      background:linear-gradient(145deg,#0f2b49,#183a5f);
+      color:#fff;
+    }
+    .nf-notice-card.notice-risk .nf-notice-priority{
+      position:static;
+      margin-bottom:8px;
+      background:#334155;
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .nf-risk-title{
+      margin:0;
+      color:#fff;
+      font-size:18px;
+      line-height:1.15;
+      font-weight:900;
+      text-align:center;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+    }
+    .nf-risk-company{
+      margin-top:6px;
+      color:#dbeafe;
+      font-size:13px;
+      font-weight:800;
+      text-align:center;
+    }
+    .nf-notice-card.notice-risk .nf-notice-content{
+      padding:0;
+      background:#fff;
+    }
+    .nf-risk-section-title{
+      padding:9px 12px;
+      background:#334155;
+      color:#fff;
+      font-size:11px;
+      font-weight:900;
+      text-align:center;
+      text-transform:uppercase;
+      letter-spacing:.045em;
+    }
+    .nf-risk-rule{
+      padding:11px 13px;
+      border-bottom:1px solid #d7dde5;
+      color:#172033;
+      font-size:10.5px;
+      line-height:1.42;
+      text-align:center;
+      background:#fff;
+    }
+    .nf-risk-rule:last-child{ border-bottom:0; }
+    .nf-risk-rule strong{
+      color:#0f172a;
+      font-weight:900;
+    }
+    .nf-risk-alert{
+      display:block;
+      margin-top:5px;
+      color:#9f1f2a;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .nf-risk-footer{
+      padding:11px 13px 13px;
+      color:#64748b;
+      font-size:9px;
+      line-height:1.35;
+      text-align:center;
+      background:#f8fafc;
+      border-top:1px solid #e2e8f0;
+    }
+
+    /* Avisos simples continuam usando o layout padrão */
+    .nf-notice-card.notice-simple .nf-notice-visual{
+      min-height:172px;
+      background:linear-gradient(145deg,#f8fbff,#e8f0f6);
+    }
+
+    /* Preparado para flyer/imagem em uma próxima etapa */
+    .nf-notice-card.notice-flyer .nf-notice-visual{
+      min-height:420px;
+      padding:0;
+      background:#0b1e38;
+    }
+    .nf-notice-flyer-img{
+      width:100%;
+      height:100%;
+      min-height:420px;
+      display:block;
+      object-fit:cover;
+    }
+
     .nf-notice-title{position:relative;z-index:2;width:70%;margin:48px 0 0;font-size:32px;line-height:1.02;font-weight:900;letter-spacing:-1px;text-transform:uppercase}
     .nf-notice-title span{color:#159447}
     .nf-notice-content{padding:18px}
@@ -424,7 +518,7 @@
     }
     @media (max-width:1100px){
       .nf-home-layout{grid-template-columns:1fr}
-      .nf-home-side{order:-1}
+      .nf-home-side{order:-1;padding-top:0}
       .nf-notice-panel{position:relative;top:0}
     }
     @media (max-width:900px){
@@ -655,16 +749,13 @@
             </div>
 
             <div class="nf-notice-body">
-              <article class="nf-notice-card">
-                <div class="nf-notice-visual">
+              <article class="nf-notice-card notice-risk" id="nfNoticeCard">
+                <div class="nf-notice-visual" id="nfNoticeVisual">
                   <span class="nf-notice-priority" id="nfNoticePriority">IMPORTANTE</span>
-                  <h3 class="nf-notice-title" id="nfNoticeTitle">SEGURO<br>SEMENTE<br><span>DE SOJA</span></h3>
+                  <h3 class="nf-risk-title" id="nfNoticeTitle">GERENCIAMENTO DE RISCO</h3>
+                  <div class="nf-risk-company" id="nfNoticeCompany">HDI</div>
                 </div>
-                <div class="nf-notice-content">
-                  <p class="nf-notice-text" id="nfNoticeText">Atenção às condições obrigatórias para cargas de sementes.</p>
-                  <ul class="nf-notice-list" id="nfNoticeList"></ul>
-                  <button class="nf-notice-cta" id="nfNoticeCta" type="button">VER ORIENTAÇÕES COMPLETAS</button>
-                </div>
+                <div class="nf-notice-content" id="nfNoticeContent"></div>
               </article>
               <div class="nf-notice-nav" id="nfNoticeDots"></div>
             </div>
@@ -955,39 +1046,67 @@
 
     const NF_HOME_AVISOS = [
       {
+        tipo:"risco",
         prioridade:"IMPORTANTE",
-        titulo:'SEGURO<br>SEMENTE<br><span>DE SOJA</span>',
-        texto:"Atenção às condições obrigatórias para cargas de sementes.",
-        itens:[
-          "Contratação obrigatória do seguro conforme orientação comercial",
-          "Conferir cobertura mínima exigida antes do carregamento",
-          "Documentação necessária deve acompanhar a operação",
-          "Comunicação imediata em caso de ocorrência"
+        titulo:"GERENCIAMENTO DE RISCO",
+        empresa:"HDI",
+        data:"19/08",
+        secoes:[
+          {
+            titulo:"",
+            regras:[
+              "<strong>Sublimite único de R$ 300.000,00</strong>",
+              "De <strong>R$ 300.000,00 até R$ 1.000.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO",
+              "De <strong>R$ 1.000.000,00 até R$ 1.500.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO + ISCA OU ESCOLTA <span class='nf-risk-alert'>PROIBIDO RODAR ENTRE 18H00 E 05H00.</span>"
+            ]
+          },
+          {
+            titulo:"EXCLUSIVAMENTE SEMENTES",
+            regras:[
+              "Até <strong>R$ 500.000,00</strong>: CADASTRO + CONSULTA",
+              "De <strong>R$ 500.000,00 até R$ 1.500.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO",
+              "De <strong>R$ 1.500.000,00 até R$ 3.000.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO + 1 ISCA OU 1 ESCOLTA OU BLOQUEADOR ADICIONAL INDEPENDENTE"
+            ]
+          }
         ],
-        cta:"VER ORIENTAÇÕES COMPLETAS",
-        data:"19/08"
+        resumo:"Regras HDI para gerenciamento de risco e cargas de sementes."
       },
       {
+        tipo:"simples",
         prioridade:"OPERACIONAL",
-        titulo:'NOVO<br>PROCEDIMENTO<br><span>DE EMBARQUE</span>',
+        titulo:"NOVO PROCEDIMENTO DE EMBARQUE",
         texto:"Padronização para liberação, conferência e comunicação das cargas.",
-        itens:["Confirmar filial e unidade de embarque","Validar motorista e placa","Registrar observações no Portal"],
+        itens:[
+          "Confirmar filial e unidade de embarque",
+          "Validar motorista e placa antes da liberação",
+          "Registrar observações importantes no Portal"
+        ],
         cta:"VER PROCEDIMENTO",
         data:"20/08"
       },
       {
+        tipo:"simples",
         prioridade:"COMERCIAL",
-        titulo:'CAMPANHA<br>DE FRETES<br><span>AGOSTO</span>',
+        titulo:"CAMPANHA DE FRETES - AGOSTO",
         texto:"Acompanhe as oportunidades e demandas prioritárias do período.",
-        itens:["Priorizar corredores divulgados","Atualizar disponibilidade de veículos","Manter contatos e valores atualizados"],
+        itens:[
+          "Priorizar corredores divulgados pela Mesa Comercial",
+          "Atualizar disponibilidade de veículos",
+          "Manter contatos e valores atualizados"
+        ],
         cta:"VER CAMPANHA",
         data:"21/08"
       },
       {
+        tipo:"simples",
         prioridade:"SISTEMA",
-        titulo:'MANUTENÇÃO<br>PROGRAMADA<br><span>PORTAL</span>',
+        titulo:"MANUTENÇÃO PROGRAMADA DO PORTAL",
         texto:"Janela técnica prevista para atualização e melhorias do Portal Frete.",
-        itens:["Salvar alterações antes da janela","Evitar operações durante a manutenção","Aguardar aviso de normalização"],
+        itens:[
+          "Salvar alterações antes da janela",
+          "Evitar operações durante a manutenção",
+          "Aguardar aviso de normalização"
+        ],
         cta:"VER DETALHES",
         data:"22/08"
       }
@@ -996,35 +1115,131 @@
     let nfAvisoAtual = 0;
     let nfAvisoTimer = null;
 
+    function renderAvisoRisco(aviso){
+      const card = document.getElementById("nfNoticeCard");
+      const visual = document.getElementById("nfNoticeVisual");
+      const content = document.getElementById("nfNoticeContent");
+
+      card.className = "nf-notice-card notice-risk";
+      visual.innerHTML = `
+        <span class="nf-notice-priority">${aviso.prioridade}</span>
+        <h3 class="nf-risk-title">${aviso.titulo}</h3>
+        <div class="nf-risk-company">${aviso.empresa || ""}</div>
+      `;
+
+      content.innerHTML = aviso.secoes.map(secao => `
+        ${secao.titulo ? `<div class="nf-risk-section-title">${secao.titulo}</div>` : ""}
+        ${secao.regras.map(regra => `<div class="nf-risk-rule">${regra}</div>`).join("")}
+      `).join("") + `
+        <div class="nf-risk-footer">
+          Informativo operacional. Em caso de dúvida, confirme as regras vigentes com o responsável pelo gerenciamento de risco.
+        </div>
+      `;
+    }
+
+    function renderAvisoSimples(aviso){
+      const card = document.getElementById("nfNoticeCard");
+      const visual = document.getElementById("nfNoticeVisual");
+      const content = document.getElementById("nfNoticeContent");
+
+      card.className = "nf-notice-card notice-simple";
+      visual.innerHTML = `
+        <span class="nf-notice-priority">${aviso.prioridade}</span>
+        <h3 class="nf-notice-title">${aviso.titulo}</h3>
+      `;
+
+      content.innerHTML = `
+        <p class="nf-notice-text">${aviso.texto || ""}</p>
+        <ul class="nf-notice-list">
+          ${(aviso.itens || []).map(item => `<li>${item}</li>`).join("")}
+        </ul>
+        ${aviso.cta ? `<button class="nf-notice-cta" type="button">${aviso.cta}</button>` : ""}
+      `;
+    }
+
+    /*
+      Preparado para a próxima etapa:
+      tipo:"flyer", imagem:"../assets/img/seu-flyer.jpg"
+    */
+    function renderAvisoFlyer(aviso){
+      const card = document.getElementById("nfNoticeCard");
+      const visual = document.getElementById("nfNoticeVisual");
+      const content = document.getElementById("nfNoticeContent");
+
+      card.className = "nf-notice-card notice-flyer";
+      visual.innerHTML = `
+        <img class="nf-notice-flyer-img" src="${aviso.imagem}" alt="${aviso.titulo || "Flyer"}">
+      `;
+      content.innerHTML = aviso.texto
+        ? `<p class="nf-notice-text">${aviso.texto}</p>`
+        : "";
+    }
+
     function renderHomeAviso(index){
       if(!NF_HOME_AVISOS.length) return;
-      nfAvisoAtual = ((index % NF_HOME_AVISOS.length) + NF_HOME_AVISOS.length) % NF_HOME_AVISOS.length;
+
+      nfAvisoAtual =
+        ((index % NF_HOME_AVISOS.length) + NF_HOME_AVISOS.length) %
+        NF_HOME_AVISOS.length;
+
       const aviso = NF_HOME_AVISOS[nfAvisoAtual];
 
-      document.getElementById("nfNoticePriority").textContent = aviso.prioridade;
-      document.getElementById("nfNoticeTitle").innerHTML = aviso.titulo;
-      document.getElementById("nfNoticeText").textContent = aviso.texto;
-      document.getElementById("nfNoticeCta").textContent = aviso.cta;
-      document.getElementById("nfNoticeList").innerHTML = aviso.itens.map(item => `<li>${item}</li>`).join("");
+      if(aviso.tipo === "risco"){
+        renderAvisoRisco(aviso);
+      }else if(aviso.tipo === "flyer"){
+        renderAvisoFlyer(aviso);
+      }else{
+        renderAvisoSimples(aviso);
+      }
 
       const dots = document.getElementById("nfNoticeDots");
-      dots.innerHTML = NF_HOME_AVISOS.map((_,i) => `<button class="nf-notice-dot ${i===nfAvisoAtual?"active":""}" type="button" data-i="${i}"></button>`).join("");
-      dots.querySelectorAll("[data-i]").forEach(btn => btn.onclick = () => { renderHomeAviso(Number(btn.dataset.i)); reiniciarAvisos(); });
+      dots.innerHTML = NF_HOME_AVISOS.map((_,i) =>
+        `<button
+          class="nf-notice-dot ${i===nfAvisoAtual ? "active" : ""}"
+          type="button"
+          data-i="${i}"
+          aria-label="Abrir aviso ${i+1}"
+        ></button>`
+      ).join("");
 
-      const proximos = NF_HOME_AVISOS.map((item,i)=>({...item,i})).filter(x=>x.i!==nfAvisoAtual).slice(0,3);
+      dots.querySelectorAll("[data-i]").forEach(btn => {
+        btn.onclick = () => {
+          renderHomeAviso(Number(btn.dataset.i));
+          reiniciarAvisos();
+        };
+      });
+
+      const proximos = NF_HOME_AVISOS
+        .map((item,i)=>({...item,i}))
+        .filter(item=>item.i!==nfAvisoAtual)
+        .slice(0,3);
+
       const next = document.getElementById("nfNoticeNext");
       next.innerHTML = proximos.map(item => `
         <button class="nf-notice-mini" type="button" data-next="${item.i}">
-          <span class="nf-notice-mini-icon">📄</span>
-          <span><strong>${item.prioridade}: ${item.texto}</strong><small>${item.cta}</small></span>
-          <time>${item.data}</time>
-        </button>`).join("");
-      next.querySelectorAll("[data-next]").forEach(btn => btn.onclick = () => { renderHomeAviso(Number(btn.dataset.next)); reiniciarAvisos(); });
+          <span class="nf-notice-mini-icon">${item.tipo === "risco" ? "🛡️" : item.tipo === "flyer" ? "🖼️" : "📄"}</span>
+          <span>
+            <strong>${item.prioridade}: ${item.titulo}</strong>
+            <small>${item.resumo || item.texto || "Informativo Nova Frota"}</small>
+          </span>
+          <time>${item.data || ""}</time>
+        </button>
+      `).join("");
+
+      next.querySelectorAll("[data-next]").forEach(btn => {
+        btn.onclick = () => {
+          renderHomeAviso(Number(btn.dataset.next));
+          reiniciarAvisos();
+        };
+      });
     }
 
     function reiniciarAvisos(){
       if(nfAvisoTimer) clearInterval(nfAvisoTimer);
-      nfAvisoTimer = setInterval(() => renderHomeAviso(nfAvisoAtual + 1), 9000);
+      nfAvisoTimer = setInterval(
+        () => renderHomeAviso(nfAvisoAtual + 1),
+        12000
+      );
     }
 
     window.addEventListener("DOMContentLoaded", () => {

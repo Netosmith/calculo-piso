@@ -332,6 +332,7 @@
       ACUCAR: "../assets/img/ACUCAR2.png",
       CALCARIO: "../assets/img/CALCARIO2.png",
       FARELODESOJA: "../assets/img/FARELODESOJA2.png",
+      SEMENTE: "../assets/img/SEMENTE.png",
       SORGO: "../assets/img/SORGO2.png",
       FERTILIZANTE: "../assets/img/FERTILIZANTE2.png",
     },

@@ -839,8 +839,13 @@ function bind(){
   $("btnCancelarModal").onclick=closeModal;
   $("btnSalvarEstadia").onclick=saveItem;
 
+  let modalBackdropMouseDown=false;
+  $("modalEstadia").addEventListener("mousedown",e=>{
+    modalBackdropMouseDown=e.target===$("modalEstadia");
+  });
   $("modalEstadia").addEventListener("click",e=>{
-    if(e.target===$("modalEstadia"))closeModal();
+    if(e.target===$("modalEstadia")&&modalBackdropMouseDown)closeModal();
+    modalBackdropMouseDown=false;
   });
 
   $("busca").addEventListener("input",()=>{

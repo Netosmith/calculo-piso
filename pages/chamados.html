@@ -64,12 +64,12 @@
       padding:30px 0 48px;
     }
 
-    .hero{
+    .support-hero{
       display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
       margin-bottom:20px;
     }
-    .hero h1{margin:0;font-size:30px;letter-spacing:-.7px}
-    .hero p{margin:7px 0 0;color:var(--muted);font-size:13px}
+    .support-hero h1{margin:0;font-size:30px;letter-spacing:-.7px}
+    .support-hero p{margin:7px 0 0;color:var(--muted);font-size:13px}
 
     .btn{
       min-height:42px;padding:0 16px;border:1px solid transparent;border-radius:11px;
@@ -206,7 +206,7 @@
     }
     @media(max-width:650px){
       .page,.topbar-inner{width:min(100% - 24px,1600px)}
-      .hero{align-items:flex-start;flex-direction:column}
+      .support-hero{align-items:flex-start;flex-direction:column}
       .kpis{grid-template-columns:1fr}
       .form-grid,.admin-controls{grid-template-columns:1fr}
       .info-grid{grid-template-columns:1fr}
@@ -230,7 +230,7 @@
   </header>
 
   <main class="page">
-    <section class="hero">
+    <section class="support-hero">
       <div>
         <h1>🎧 Central de Suporte</h1>
         <p>Abra chamados, acompanhe o atendimento e converse com o suporte do Portal Frete.</p>
@@ -411,7 +411,7 @@
   </div>
 
   <div class="loading" id="loading">
-    <div class="loading-box" id="loadingText">Processando....</div>
+    <div class="loading-box" id="loadingText">Processando...</div>
   </div>
 
   <script src="../assets/js/auth.js?v=9"></script>

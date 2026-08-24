@@ -1,0 +1,367 @@
+/* embarques.js | NOVA FROTA */
+(function(){
+"use strict";
+
+const $=id=>document.getElementById(id);
+const up=v=>String(v??"").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const num=v=>{
+  if(typeof v==="number")return Number.isFinite(v)?v:0;
+  let s=String(v??"").replace(/[^\d,.-]/g,"");
+  if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+};
+const esc=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+
+let rows=[];
+let filtered=[];
+let selected=null;
+let page=1;
+let shareView="cliente";
+const PAGE_SIZE=12;
+
+function money(v){return num(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+function kg(v){return num(v).toLocaleString("pt-BR",{maximumFractionDigits:2})+" kg"}
+function fmtDate(v){
+  if(!v)return "-";
+  if(typeof v==="number"){
+    const d=new Date(v);
+    return Number.isNaN(d.getTime())?"-":d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+  }
+  const d=new Date(v);
+  return Number.isNaN(d.getTime())?String(v):d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+}
+function statusSlug(v){return up(v).toLowerCase().replace(/\s+/g,"-")}
+function loading(show,text="Processando..."){$("loading")?.classList.toggle("show",!!show);if($("loadingText"))$("loadingText").textContent=text}
+function authContext(){return typeof getAuthContext==="function"?getAuthContext():{usuario:"",nome:"",perfil:"",estado:""}}
+function renderUser(){const a=authContext();$("userName").textContent=up(a.nome||a.usuario||"USUÁRIO");$("userRole").textContent=up(a.perfil||"PERFIL")}
+
+async function api(action,params={}){
+  const session=window.portalAuthReady?await window.portalAuthReady:null;
+  if(!session)throw new Error("Sessão inválida ou expirada.");
+  if(!window.PortalAPI)throw new Error("API segura indisponível.");
+  return window.PortalAPI.call("embarques",action,params);
+}
+
+function normalize(r){
+  return {
+    id:String(r.id||""),
+    numeroCarga:String(r.numeroCarga||""),
+    dataCarga:r.dataCarga||"",
+    cliente:String(r.cliente||""),
+    origem:String(r.origem||""),
+    localOrigem:String(r.localOrigem||""),
+    destino:String(r.destino||""),
+    localDestino:String(r.localDestino||""),
+    placa:String(r.placa||""),
+    tipoVeiculo:String(r.tipoVeiculo||""),
+    tipoCarga:up(r.tipoCarga||"SEMENTE")==="PLUMA"?"PLUMA":"SEMENTE",
+    pesoKg:num(r.pesoKg),
+    freteEmpresa:num(r.freteEmpresa),
+    freteMotorista:num(r.freteMotorista),
+    situacao:up(r.situacao||"PORTA"),
+    observacao:String(r.observacao||""),
+    comprovanteNome:String(r.comprovanteNome||""),
+    comprovanteUrl:String(r.comprovanteUrl||""),
+    comprovanteId:String(r.comprovanteId||""),
+    previsaoChegada:r.previsaoChegada||"",
+    createdAt:r.createdAt||"",
+    updatedAt:r.updatedAt||"",
+    atualizadoPor:String(r.atualizadoPor||"")
+  };
+}
+
+async function load(){
+  loading(true,"Carregando embarques...");
+  $("syncStatus").textContent="Atualizando...";
+  try{
+    const res=await api("read",{resource:"registros"});
+    rows=(Array.isArray(res?.data)?res.data:[]).map(normalize);
+    populateFilters();
+    applyFilters();
+    $("syncStatus").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  }catch(error){
+    console.error(error);
+    rows=[];filtered=[];
+    renderAll();
+    alert("Não foi possível carregar os embarques.\n\n"+error.message);
+    $("syncStatus").textContent="Falha na atualização";
+  }finally{loading(false)}
+}
+
+function unique(field){return [...new Set(rows.map(r=>String(r[field]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
+function fillSelect(id,values){
+  const el=$(id),old=el.value,first=el.options[0]?.outerHTML||'<option value="">Todos</option>';
+  el.innerHTML=first+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  el.value=values.includes(old)?old:"";
+}
+function populateFilters(){
+  fillSelect("fCliente",unique("cliente"));
+  fillSelect("fOrigem",unique("origem"));
+  fillSelect("fDestino",unique("destino"));
+}
+
+function applyFilters(){
+  const days=num($("fPeriodo").value);
+  const cliente=up($("fCliente").value);
+  const origem=up($("fOrigem").value);
+  const destino=up($("fDestino").value);
+  const situacao=up($("fSituacao").value);
+  const tipo=up($("fTipo").value);
+  const busca=up($("fBusca").value);
+  const cutoff=days?Date.now()-days*86400000:0;
+
+  filtered=rows.filter(r=>{
+    if(cliente&&up(r.cliente)!==cliente)return false;
+    if(origem&&up(r.origem)!==origem)return false;
+    if(destino&&up(r.destino)!==destino)return false;
+    if(situacao&&up(r.situacao)!==situacao)return false;
+    if(tipo&&up(r.tipoCarga)!==tipo)return false;
+
+    if(cutoff){
+      const d=new Date(r.dataCarga||r.createdAt).getTime();
+      if(!d||d<cutoff)return false;
+    }
+
+    if(busca){
+      const hay=up([r.numeroCarga,r.cliente,r.origem,r.localOrigem,r.destino,r.localDestino,r.placa,r.tipoVeiculo,r.tipoCarga,r.situacao,r.observacao].join(" "));
+      if(!hay.includes(busca))return false;
+    }
+    return true;
+  });
+
+  page=1;
+  renderAll();
+}
+
+function renderKpis(){
+  const active=filtered.filter(r=>!["CONCLUIDA"].includes(up(r.situacao))).length;
+  const count=s=>filtered.filter(r=>up(r.situacao)===s).length;
+  const seed=filtered.filter(r=>r.tipoCarga==="SEMENTE").reduce((a,r)=>a+r.pesoKg,0);
+  const fiber=filtered.filter(r=>r.tipoCarga==="PLUMA").reduce((a,r)=>a+r.pesoKg,0);
+
+  $("kAberto").textContent=active;
+  $("kPorta").textContent=count("PORTA");
+  $("kTransito").textContent=count("EM TRANSITO");
+  $("kDescarga").textContent=count("NA DESCARGA");
+  $("kConcluidas").textContent=count("CONCLUIDA");
+  $("kAtrasadas").textContent=count("ATRASADA");
+  $("kSemente").textContent=seed.toLocaleString("pt-BR",{maximumFractionDigits:0});
+  $("kPluma").textContent=fiber.toLocaleString("pt-BR",{maximumFractionDigits:0});
+
+  $("rPeso").textContent=kg(filtered.reduce((a,r)=>a+r.pesoKg,0));
+  $("rEmpresa").textContent=money(filtered.reduce((a,r)=>a+r.freteEmpresa,0));
+  $("rMotorista").textContent=money(filtered.reduce((a,r)=>a+r.freteMotorista,0));
+  $("rConcluidas").textContent=count("CONCLUIDA");
+}
+
+function pageRows(){const start=(page-1)*PAGE_SIZE;return filtered.slice(start,start+PAGE_SIZE)}
+function renderTable(){
+  const body=$("tbody"),pr=pageRows();
+  if(!pr.length){body.innerHTML='<tr><td colspan="16" style="padding:32px;text-align:center;color:#8097ad">Nenhum embarque encontrado.</td></tr>';return}
+
+  body.innerHTML=pr.map(r=>`
+    <tr data-id="${esc(r.id)}">
+      <td class="strong">${esc(r.numeroCarga||"-")}</td>
+      <td>${esc(fmtDate(r.dataCarga))}</td>
+      <td>${esc(r.cliente||"-")}</td>
+      <td>${esc(r.origem||"-")}</td>
+      <td>${esc(r.localOrigem||"-")}</td>
+      <td>${esc(r.destino||"-")}</td>
+      <td>${esc(r.localDestino||"-")}</td>
+      <td class="strong">${esc(r.placa||"-")}</td>
+      <td>${esc(r.tipoVeiculo||"-")}</td>
+      <td><span class="tag ${r.tipoCarga.toLowerCase()}">${esc(r.tipoCarga)}</span></td>
+      <td>${esc(kg(r.pesoKg))}</td>
+      <td class="money">${esc(money(r.freteEmpresa))}</td>
+      <td class="money">${esc(money(r.freteMotorista))}</td>
+      <td><span class="tag st-${statusSlug(r.situacao)}">${esc(r.situacao)}</span></td>
+      <td>${r.comprovanteUrl?`<a class="proof" href="${esc(r.comprovanteUrl)}" target="_blank" title="${esc(r.comprovanteNome||"Comprovante")}">📄</a>`:"-"}</td>
+      <td><div class="actions">
+        <button class="iconbtn view" data-id="${esc(r.id)}" title="Visualizar">◉</button>
+        <button class="iconbtn edit" data-id="${esc(r.id)}" title="Editar">✎</button>
+        <button class="iconbtn del" data-id="${esc(r.id)}" title="Excluir">⋮</button>
+      </div></td>
+    </tr>
+  `).join("");
+
+  body.querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=e=>{
+    if(e.target.closest("button,a"))return;
+    selectRow(tr.dataset.id);
+  });
+  body.querySelectorAll(".view").forEach(b=>b.onclick=()=>selectRow(b.dataset.id));
+  body.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openModal(rows.find(r=>r.id===b.dataset.id)));
+  body.querySelectorAll(".del").forEach(b=>b.onclick=()=>removeRow(b.dataset.id));
+}
+
+function renderPagination(){
+  const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  if(page>pages)page=pages;
+  $("tableMeta").textContent=`Mostrando ${filtered.length?((page-1)*PAGE_SIZE+1):0} a ${Math.min(page*PAGE_SIZE,filtered.length)} de ${filtered.length} embarque(s)`;
+  const out=[];
+  const start=Math.max(1,page-2),end=Math.min(pages,start+4);
+  for(let p=start;p<=end;p++)out.push(`<button class="pagebtn ${p===page?"active":""}" data-page="${p}">${p}</button>`);
+  $("pages").innerHTML=out.join("");
+  $("pages").querySelectorAll("button").forEach(b=>b.onclick=()=>{page=Number(b.dataset.page);renderTable();renderPagination()});
+}
+
+function renderShare(){
+  const field=shareView==="origem"?"origem":shareView==="destino"?"destino":"cliente";
+  const title=shareView==="origem"?"Situação dos Pontos por Origem":shareView==="destino"?"Situação dos Pontos por Destino":"Situação dos Pontos por Cliente";
+  $("shareTitle").textContent=title;
+  $("shareKey").textContent=field==="cliente"?"Cliente":field==="origem"?"Origem":"Destino";
+
+  const map=new Map();
+  filtered.forEach(r=>{
+    const key=r[field]||"NÃO INFORMADO";
+    if(!map.has(key))map.set(key,{key,porta:0,transito:0,descarga:0,concluida:0,atrasada:0,total:0,peso:0});
+    const x=map.get(key);x.total++;x.peso+=r.pesoKg;
+    if(r.situacao==="PORTA")x.porta++;
+    else if(r.situacao==="EM TRANSITO")x.transito++;
+    else if(r.situacao==="NA DESCARGA")x.descarga++;
+    else if(r.situacao==="CONCLUIDA")x.concluida++;
+    else if(r.situacao==="ATRASADA")x.atrasada++;
+  });
+
+  const list=[...map.values()].sort((a,b)=>b.total-a.total);
+  $("shareBody").innerHTML=list.length?list.map(x=>{
+    const pct=x.total?Math.round(x.concluida/x.total*100):0;
+    return `<tr>
+      <td class="strong">${esc(x.key)}</td><td style="color:#ffd24e">${x.porta}</td><td style="color:#51e3ac">${x.transito}</td>
+      <td style="color:#c394ff">${x.descarga}</td><td style="color:#42e5d0">${x.concluida}</td><td style="color:#ff7079">${x.atrasada}</td>
+      <td>${x.total}</td><td>${esc(kg(x.peso))}</td><td>${pct}% &nbsp;<span class="progress"><i style="width:${pct}%"></i></span></td>
+    </tr>`;
+  }).join(""):'<tr><td colspan="9" style="padding:28px;text-align:center;color:#8298ad">Sem dados para o resumo.</td></tr>';
+}
+
+function selectRow(id){
+  selected=rows.find(r=>r.id===id)||null;
+  if(!selected)return;
+  $("dCarga").textContent=selected.numeroCarga||"-";
+  $("dStatus").className=`tag st-${statusSlug(selected.situacao)}`;
+  $("dStatus").textContent=selected.situacao||"-";
+  $("dCliente").textContent=selected.cliente||"-";
+  $("dTipo").textContent=selected.tipoCarga||"-";
+  $("dOrigem").textContent=[selected.origem,selected.localOrigem].filter(Boolean).join(" / ")||"-";
+  $("dDestino").textContent=[selected.destino,selected.localDestino].filter(Boolean).join(" / ")||"-";
+  $("dPlaca").textContent=selected.placa||"-";
+  $("dVeiculo").textContent=selected.tipoVeiculo||"-";
+  $("dPeso").textContent=kg(selected.pesoKg);
+  $("dPrevisao").textContent=fmtDate(selected.previsaoChegada);
+  $("dObs").textContent=selected.observacao||"Sem observação.";
+  $("dProof").textContent=selected.comprovanteNome||"Sem comprovante";
+  $("dProofLink").hidden=!selected.comprovanteUrl;
+  if(selected.comprovanteUrl)$("dProofLink").href=selected.comprovanteUrl;
+}
+
+function renderAll(){renderKpis();renderTable();renderPagination();renderShare();if(selected)selectRow(selected.id)}
+
+function clearFilters(){
+  ["fPeriodo","fCliente","fOrigem","fDestino","fSituacao","fTipo","fBusca"].forEach(id=>$(id).value="");
+  applyFilters();
+}
+
+function resetModal(){
+  ["mId","mNumeroCarga","mDataCarga","mCliente","mOrigem","mLocalOrigem","mDestino","mLocalDestino","mPlaca","mTipoVeiculo","mPeso","mFreteEmpresa","mFreteMotorista","mPrevisao","mObservacao"].forEach(id=>$(id).value="");
+  $("mTipoCarga").value="SEMENTE";$("mSituacao").value="PORTA";$("mComprovante").value="";
+}
+function toDT(v){if(!v)return"";const d=new Date(v);if(Number.isNaN(d.getTime()))return"";return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+function openModal(item=null){
+  resetModal();$("modalTitle").textContent=item?"Editar embarque":"Novo embarque";
+  if(item){
+    $("mId").value=item.id;$("mNumeroCarga").value=item.numeroCarga;$("mDataCarga").value=toDT(item.dataCarga);$("mCliente").value=item.cliente;
+    $("mOrigem").value=item.origem;$("mLocalOrigem").value=item.localOrigem;$("mDestino").value=item.destino;$("mLocalDestino").value=item.localDestino;
+    $("mPlaca").value=item.placa;$("mTipoVeiculo").value=item.tipoVeiculo;$("mTipoCarga").value=item.tipoCarga;$("mPeso").value=item.pesoKg||"";
+    $("mFreteEmpresa").value=item.freteEmpresa||"";$("mFreteMotorista").value=item.freteMotorista||"";$("mSituacao").value=item.situacao;
+    $("mPrevisao").value=toDT(item.previsaoChegada);$("mObservacao").value=item.observacao;
+  }
+  $("modal").classList.add("show");
+}
+function closeModal(){$("modal").classList.remove("show")}
+
+function formPayload(){
+  return {
+    id:$("mId").value,
+    numeroCarga:up($("mNumeroCarga").value),
+    dataCarga:$("mDataCarga").value,
+    cliente:up($("mCliente").value),
+    origem:up($("mOrigem").value),
+    localOrigem:up($("mLocalOrigem").value),
+    destino:up($("mDestino").value),
+    localDestino:up($("mLocalDestino").value),
+    placa:up($("mPlaca").value),
+    tipoVeiculo:up($("mTipoVeiculo").value),
+    tipoCarga:$("mTipoCarga").value,
+    pesoKg:num($("mPeso").value),
+    freteEmpresa:num($("mFreteEmpresa").value),
+    freteMotorista:num($("mFreteMotorista").value),
+    situacao:$("mSituacao").value,
+    previsaoChegada:$("mPrevisao").value,
+    observacao:$("mObservacao").value.trim()
+  };
+}
+async function filePayload(file){
+  if(!file)return null;
+  if(file.size>7*1024*1024)throw new Error("O comprovante excede 7 MB.");
+  const base64=await new Promise((resolve,reject)=>{const rd=new FileReader();rd.onload=()=>resolve(String(rd.result||"").split(",").pop());rd.onerror=()=>reject(new Error("Falha ao ler arquivo."));rd.readAsDataURL(file)});
+  return {fileName:file.name,mimeType:file.type||"application/octet-stream",base64Data:base64};
+}
+
+async function save(){
+  const p=formPayload();
+  if(!p.numeroCarga||!p.cliente||!p.placa){alert("Número da carga, Cliente e Placa são obrigatórios.");return}
+  const edit=!!p.id;
+  loading(true,edit?"Atualizando embarque...":"Salvando embarque...");
+  try{
+    let res;
+    if(edit)res=await api("update",{...p,resource:"registros"});
+    else res=await api("create",{...p,resource:"registros"});
+    const saved=res?.data||p;
+    const id=saved.id||p.id;
+    const file=$("mComprovante").files?.[0];
+    if(file&&id){
+      const fp=await filePayload(file);
+      await api("update",{resource:"comprovante",id,...fp});
+    }
+    closeModal();await load();
+    if(id)selectRow(id);
+  }catch(error){console.error(error);alert("Não foi possível salvar o embarque.\n\n"+error.message)}
+  finally{loading(false)}
+}
+
+async function removeRow(id){
+  const item=rows.find(r=>r.id===id);if(!item)return;
+  if(!confirm(`Excluir a carga ${item.numeroCarga}?`))return;
+  loading(true,"Excluindo...");
+  try{await api("delete",{id,resource:"registros"});if(selected?.id===id)selected=null;await load()}
+  catch(error){alert("Não foi possível excluir.\n\n"+error.message)}
+  finally{loading(false)}
+}
+
+function exportExcel(){
+  if(!filtered.length)return alert("Não há dados para exportar.");
+  if(!window.XLSX)return alert("Biblioteca de Excel indisponível.");
+  const data=filtered.map(r=>({
+    "Nº CARGA":r.numeroCarga,"DATA":fmtDate(r.dataCarga),"CLIENTE":r.cliente,"ORIGEM":r.origem,"LOCAL ORIGEM":r.localOrigem,
+    "DESTINO":r.destino,"LOCAL DESTINO":r.localDestino,"PLACA":r.placa,"TIPO VEÍCULO":r.tipoVeiculo,"TIPO CARGA":r.tipoCarga,
+    "PESO KG":r.pesoKg,"FRETE EMPRESA":r.freteEmpresa,"FRETE MOTORISTA":r.freteMotorista,"SITUAÇÃO":r.situacao,
+    "OBSERVAÇÃO":r.observacao,"COMPROVANTE":r.comprovanteUrl
+  }));
+  const ws=XLSX.utils.json_to_sheet(data),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Embarques");
+  XLSX.writeFile(wb,`embarques_algodao_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function bind(){
+  renderUser();
+  $("btnNovo").onclick=()=>openModal();
+  $("btnFechar").onclick=closeModal;$("btnCancelar").onclick=closeModal;$("btnSalvar").onclick=save;
+  $("btnLimpar").onclick=clearFilters;$("btnFiltrar").onclick=applyFilters;$("btnExportar").onclick=exportExcel;
+  ["fPeriodo","fCliente","fOrigem","fDestino","fSituacao","fTipo"].forEach(id=>$(id).onchange=applyFilters);
+  let t;$("fBusca").oninput=()=>{clearTimeout(t);t=setTimeout(applyFilters,250)};
+  document.querySelectorAll(".share-btn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".share-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");shareView=b.dataset.view;renderShare()});
+  $("modal").onclick=e=>{if(e.target===$("modal"))closeModal()};
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+}
+
+window.addEventListener("DOMContentLoaded",async()=>{bind();await load()});
+})();

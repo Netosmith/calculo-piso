@@ -1,259 +1,33 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Controle de Embarques | NOVA FROTA</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/app.css">
-
-  <style>
-    :root{
-      --bg:#071728;--bg2:#0a1e32;--panel:#0d2135;--panel2:#10273f;
-      --line:#243c53;--text:#f5f8fc;--muted:#92a6bb;--blue:#3b82f6;
-      --green:#17b47a;--gold:#e7ad17;--purple:#9a63e6;--red:#ed4f59;--cyan:#18b7c9;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;background:linear-gradient(145deg,#061522,#0a2035 55%,#061522);color:var(--text);font-family:Inter,Arial,sans-serif}
-    button,input,select,textarea{font:inherit}
-    a{color:inherit}
-
-    .topbar{height:68px;background:#061326;border-bottom:1px solid rgba(255,255,255,.08)}
-    .topbar-inner{width:min(100% - 30px,1720px);height:100%;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{display:flex;align-items:center;gap:18px}
-    .brand img{width:160px;max-height:42px;object-fit:contain}
-    .back{width:42px;height:42px;display:grid;place-items:center;border:1px solid #263b50;border-radius:11px;text-decoration:none;background:#0c1b2b}
-    .titlebar{font-size:22px;font-weight:900;letter-spacing:-.5px}
-    .account{text-align:right}
-    .account strong{display:block;font-size:10px}.account small{color:#9cb0c4;font-size:8px}
-
-    .page{width:min(100% - 28px,1720px);margin:auto;padding:16px 0 34px}
-    .kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;margin-bottom:12px}
-    .kpi{--accent:var(--blue);min-height:102px;padding:14px;border:1px solid color-mix(in srgb,var(--accent) 36%,#203449);border-radius:12px;background:linear-gradient(145deg,#102943,#0a1d31);position:relative;overflow:hidden}
-    .kpi::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:4px;background:var(--accent)}
-    .kpi.gold{--accent:var(--gold)}.kpi.green{--accent:var(--green)}.kpi.purple{--accent:var(--purple)}.kpi.red{--accent:var(--red)}.kpi.cyan{--accent:var(--cyan)}
-    .kpi small{display:block;color:#aebed0;font-size:8px;font-weight:900;text-transform:uppercase}
-    .kpi strong{display:block;margin-top:9px;font-size:25px;line-height:1}.kpi span{display:block;margin-top:8px;color:#8298ad;font-size:8.5px}
-
-    .filters{padding:10px;border:1px solid var(--line);border-radius:12px;background:#0b1d30;display:grid;grid-template-columns:150px 170px 160px 160px 150px 150px minmax(240px,1fr) auto auto auto;gap:8px;align-items:end;margin-bottom:12px}
-    .field label{display:block;margin:0 0 5px;color:#9aafc2;font-size:7.5px;font-weight:900;text-transform:uppercase}
-    .input,.select{width:100%;height:37px;padding:0 10px;border:1px solid #2a4056;border-radius:8px;background:#0a192a;color:#fff;outline:0;font-size:9px}
-    .input:focus,.select:focus{border-color:#448df8}
-    .btn{height:37px;padding:0 13px;border:1px solid #31485e;border-radius:8px;background:#10243a;color:#fff;font-size:8.5px;font-weight:900;text-transform:uppercase;cursor:pointer;white-space:nowrap}
-    .btn.blue{background:#1764dc;border-color:#2d7cf0}.btn.green{background:#078f58;border-color:#19ae73}.btn.red{background:#9f3441;border-color:#d44d5c}.btn.ghost{background:#0b1d30}
-    .btn:disabled{opacity:.55;cursor:not-allowed}
-
-    .panel{border:1px solid var(--line);border-radius:12px;background:#0b1e31;overflow:hidden}
-    .panel-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .panel-head h2{margin:0;font-size:13px}
-    .table-wrap{overflow:auto}
-    table{width:100%;border-collapse:collapse;min-width:1500px}
-    th,td{padding:9px 10px;border-bottom:1px solid #1c3348;text-align:left;white-space:nowrap}
-    th{position:sticky;top:0;z-index:2;background:#0f2439;color:#aebed0;font-size:7.5px;text-transform:uppercase}
-    td{font-size:8.5px;color:#e3edf7}
-    tr:hover td{background:rgba(65,126,211,.05)}
-    .money{font-variant-numeric:tabular-nums}.strong{font-weight:900;color:#fff}
-    .tag{display:inline-flex;align-items:center;justify-content:center;min-height:21px;padding:0 7px;border-radius:6px;border:1px solid #2a4056;font-size:7.5px;font-weight:900;text-transform:uppercase}
-    .tag.semente{color:#5cc3ff;background:rgba(29,144,213,.14);border-color:#276da0}
-    .tag.pluma{color:#c291ff;background:rgba(154,99,230,.14);border-color:#69439c}
-    .st-porta{color:#ffd24e;background:rgba(231,173,23,.14);border-color:#a47a10}
-    .st-em-transito{color:#51e3ac;background:rgba(23,180,122,.13);border-color:#16835c}
-    .st-na-descarga{color:#c394ff;background:rgba(154,99,230,.14);border-color:#7047aa}
-    .st-concluida{color:#42e5d0;background:rgba(24,183,201,.12);border-color:#148593}
-    .st-atrasada{color:#ff7a82;background:rgba(237,79,89,.12);border-color:#a5323a}
-    .proof{display:inline-flex;width:25px;height:25px;align-items:center;justify-content:center;border:1px solid #44586c;border-radius:6px;text-decoration:none}
-    .actions{display:flex;gap:5px}
-    .iconbtn{width:27px;height:27px;border:1px solid #31485d;border-radius:7px;background:#0d2033;color:#dbe9f8;cursor:pointer}
-
-    .bottom{display:grid;grid-template-columns:205px minmax(0,1fr) 350px;gap:12px;margin-top:12px}
-    .share-menu{padding:11px}
-    .share-menu h3{font-size:12px;margin:0 0 10px}
-    .share-btn{width:100%;height:36px;margin:0 0 6px;text-align:left;padding:0 10px;border:1px solid #30475d;border-radius:8px;background:#0b1e31;color:#dce8f4;font-size:8.5px;font-weight:800;cursor:pointer}
-    .share-btn.active{background:#174fc0;border-color:#2b6be2}
-    .summary-side{margin-top:12px;padding-top:12px;border-top:1px solid #263d52}
-    .summary-side div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;color:#9eb0c2;font-size:8px}
-    .summary-side strong{color:#fff;font-size:10px}
-
-    .client-wrap{overflow:auto}
-    .client-table{min-width:800px}
-    .progress{width:88px;height:6px;border-radius:999px;background:#1c3448;overflow:hidden;display:inline-block;vertical-align:middle}
-    .progress i{display:block;height:100%;background:#14b879;border-radius:inherit}
-
-    .detail{padding:14px}
-    .detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #253d52;padding-bottom:12px}
-    .detail-top small{display:block;color:#8da2b8;font-size:8px}.detail-top h3{margin:5px 0 0;font-size:18px}
-    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-    .detail-item{padding:9px;border:1px solid #223a50;border-radius:8px;background:#0a1a2b}
-    .detail-item small{display:block;color:#859bb1;font-size:7.5px;text-transform:uppercase}.detail-item strong{display:block;margin-top:5px;font-size:9px;overflow-wrap:anywhere}
-    .detail-observation{margin-top:10px;padding:10px;border:1px solid #223a50;border-radius:8px;background:#0a1a2b;color:#c9d7e5;font-size:9px;line-height:1.4}
-    .detail-proof{margin-top:10px;padding:10px;border:1px solid #223a50;border-radius:8px;background:#0a1a2b;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:8.5px}
-
-    .pagination{padding:9px 12px;display:flex;justify-content:space-between;align-items:center;color:#8ea3b8;font-size:8px;border-top:1px solid #1f3549}
-    .pages{display:flex;gap:4px}.pagebtn{min-width:27px;height:27px;border:1px solid #31475c;border-radius:7px;background:#0b1c2e;color:#fff;font-size:8px;cursor:pointer}.pagebtn.active{background:#175fcf;border-color:#3983eb}
-
-    .modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);padding:18px}
-    .modal.show{display:flex}.modal-card{width:min(850px,100%);max-height:94vh;overflow:auto;border:1px solid #334b61;border-radius:15px;background:#0c2136;box-shadow:0 28px 70px rgba(0,0,0,.5)}
-    .modal-head,.modal-foot{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #294157}.modal-foot{border-bottom:0;border-top:1px solid #294157;justify-content:flex-end}.modal-head h2{margin:0;font-size:15px}
-    .modal-body{padding:16px}.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.form-field.full{grid-column:1/-1}.form-field.two{grid-column:span 2}.form-field label{display:block;margin-bottom:5px;color:#a5b7c9;font-size:8px;font-weight:900;text-transform:uppercase}
-    .textarea{width:100%;min-height:90px;padding:10px;border:1px solid #2a4056;border-radius:8px;background:#091a2c;color:#fff;resize:vertical;outline:0}
-    .filebox{padding:12px;border:1px dashed #3a566f;border-radius:10px;background:#091a2b}
-    .loading{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}.loading.show{display:flex}.loading-box{padding:16px 22px;border:1px solid #3c5368;border-radius:12px;background:#0a2036;font-weight:900;font-size:11px}
-
-    @media(max-width:1400px){.kpis{grid-template-columns:repeat(4,1fr)}.filters{grid-template-columns:repeat(5,1fr)}.bottom{grid-template-columns:180px 1fr}.detail{grid-column:1/-1}}
-    @media(max-width:850px){.kpis{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr 1fr}.bottom{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-field.two{grid-column:auto}.titlebar{display:none}}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controle de Embarques | NOVA FROTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/app.css">
+<style>
+:root{--bg:#f5f7fb;--panel:#fff;--line:#dbe4ef;--line2:#e8eef5;--text:#10233d;--muted:#66788f;--blue:#2563eb;--green:#0ea66d;--gold:#f0a800;--purple:#8b5cf6;--red:#ef4444;--cyan:#0ea5b7;--shadow:0 10px 28px rgba(15,35,63,.07)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}button,input,select,textarea{font:inherit}a{color:inherit}
+.topbar{height:68px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 3px 14px rgba(15,35,63,.04)}.topbar-inner{width:min(100% - 30px,1720px);height:100%;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:18px}.brand img{width:160px;max-height:42px;object-fit:contain}.back{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:11px;text-decoration:none;background:#fff;color:#153252}.titlebar{font-size:22px;font-weight:900;letter-spacing:-.5px;color:#0b1830}.account{text-align:right}.account strong{display:block;font-size:10px;color:#0b1830}.account small{color:#6f8196;font-size:8px}
+.page{width:min(100% - 28px,1720px);margin:auto;padding:16px 0 34px}.kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;margin-bottom:12px}.kpi{--accent:var(--blue);min-height:102px;padding:14px;border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));border-radius:12px;background:#fff;position:relative;overflow:hidden;box-shadow:var(--shadow)}.kpi::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:4px;background:var(--accent)}.kpi.gold{--accent:var(--gold)}.kpi.green{--accent:var(--green)}.kpi.purple{--accent:var(--purple)}.kpi.red{--accent:var(--red)}.kpi.cyan{--accent:var(--cyan)}.kpi small{display:block;color:#52667d;font-size:8px;font-weight:900;text-transform:uppercase}.kpi strong{display:block;margin-top:9px;font-size:25px;line-height:1;color:#0b1830}.kpi span{display:block;margin-top:8px;color:#73859a;font-size:8.5px}
+.filters{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow);display:grid;grid-template-columns:145px 170px 160px 160px 150px 150px minmax(240px,1fr) auto auto auto auto;gap:8px;align-items:end;margin-bottom:12px}.field label{display:block;margin:0 0 5px;color:#52667d;font-size:7.5px;font-weight:900;text-transform:uppercase}.input,.select{width:100%;height:37px;padding:0 10px;border:1px solid #ccd8e5;border-radius:8px;background:#fff;color:#10233d;outline:0;font-size:9px}.input:focus,.select:focus{border-color:#448df8;box-shadow:0 0 0 3px rgba(37,99,235,.1)}.btn{height:37px;padding:0 13px;border:1px solid #c9d5e3;border-radius:8px;background:#fff;color:#17324f;font-size:8.5px;font-weight:900;text-transform:uppercase;cursor:pointer;white-space:nowrap}.btn.blue{background:#2563eb;border-color:#2563eb;color:#fff}.btn.green{background:#0a9c62;border-color:#0a9c62;color:#fff}.btn.ghost{background:#fff}.btn:disabled{opacity:.55;cursor:not-allowed}.privacy-toggle{height:37px;display:inline-flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #cbd7e5;border-radius:8px;background:#fff;color:#334b64;font-size:8px;font-weight:900;text-transform:uppercase;cursor:pointer}.privacy-toggle .switch{width:31px;height:18px;border-radius:999px;background:#d4dce6;position:relative}.privacy-toggle .switch:after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:.2s}.privacy-toggle.active .switch{background:#2563eb}.privacy-toggle.active .switch:after{left:16px}
+.panel{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;box-shadow:var(--shadow)}.panel-head{padding:12px 14px;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;gap:10px}.panel-head h2{margin:0;font-size:13px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1720px}th,td{padding:9px 10px;border-bottom:1px solid var(--line2);text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#f8fafc;color:#50637a;font-size:7.5px;text-transform:uppercase}td{font-size:8.5px;color:#243a52}tbody tr:hover td{background:#fbfdff}.money{font-variant-numeric:tabular-nums}.strong{font-weight:900;color:#0e2138}.obs-cell{max-width:230px;white-space:normal;line-height:1.3;color:#50637a}.hidden-frete{filter:blur(5px);user-select:none}.tag{display:inline-flex;align-items:center;justify-content:center;min-height:21px;padding:0 7px;border-radius:6px;border:1px solid #cbd8e5;font-size:7.5px;font-weight:900;text-transform:uppercase}.tag.semente{color:#1769c2;background:#eef6ff;border-color:#acd3fa}.tag.pluma{color:#7444b7;background:#f5efff;border-color:#d7c0fa}.st-porta{color:#a96600;background:#fff7e3;border-color:#f7d68a}.st-em-transito{color:#087b51;background:#ecfbf5;border-color:#9fe1c8}.st-na-descarga{color:#6941a5;background:#f5efff;border-color:#d1b7f7}.st-concluida{color:#087c84;background:#eafbfd;border-color:#9fdfe6}.st-atrasada{color:#c52935;background:#fff0f1;border-color:#f6b1b7}.proof{display:inline-flex;width:27px;height:27px;align-items:center;justify-content:center;border:1px solid #cad6e2;border-radius:7px;background:#fff;text-decoration:none}.actions{display:flex;gap:5px}.iconbtn{width:29px;height:29px;border:1px solid #c9d6e3;border-radius:7px;background:#fff;color:#17324f;cursor:pointer}.iconbtn.attach{color:#166534}.iconbtn.del{color:#a51d2d}
+.bottom{display:grid;grid-template-columns:240px minmax(0,1fr);gap:12px;margin-top:12px}.share-menu{padding:11px}.share-menu h3{font-size:12px;margin:0 0 10px}.share-btn{width:100%;height:36px;margin:0 0 6px;text-align:left;padding:0 10px;border:1px solid #ccd8e5;border-radius:8px;background:#fff;color:#31485f;font-size:8.5px;font-weight:800;cursor:pointer}.share-btn.active{background:#edf4ff;border-color:#77a7f7;color:#1455b3}.summary-side{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.summary-side div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;color:#6e8297;font-size:8px}.summary-side strong{color:#10233d;font-size:10px}.client-wrap{overflow:auto}.client-table{min-width:800px}.progress{width:88px;height:6px;border-radius:999px;background:#e5ebf2;overflow:hidden;display:inline-block;vertical-align:middle}.progress i{display:block;height:100%;background:#14b879;border-radius:inherit}.pagination{padding:9px 12px;display:flex;justify-content:space-between;align-items:center;color:#6d8298;font-size:8px;border-top:1px solid var(--line2)}.pages{display:flex;gap:4px}.pagebtn{min-width:27px;height:27px;border:1px solid #cbd7e3;border-radius:7px;background:#fff;color:#17324f;font-size:8px;cursor:pointer}.pagebtn.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(15,30,50,.55);backdrop-filter:blur(5px);padding:18px}.modal.show{display:flex}.modal-card{width:min(850px,100%);max-height:94vh;overflow:auto;border:1px solid #d4deea;border-radius:15px;background:#fff;box-shadow:0 28px 70px rgba(15,30,50,.24)}.modal-head,.modal-foot{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}.modal-foot{border-bottom:0;border-top:1px solid var(--line);justify-content:flex-end}.modal-head h2{margin:0;font-size:15px}.modal-body{padding:16px}.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.form-field.full{grid-column:1/-1}.form-field.two{grid-column:span 2}.form-field label{display:block;margin-bottom:5px;color:#61758b;font-size:8px;font-weight:900;text-transform:uppercase}.textarea{width:100%;min-height:90px;padding:10px;border:1px solid #ccd8e5;border-radius:8px;background:#fff;color:#10233d;resize:vertical;outline:0}.filebox{padding:12px;border:1px dashed #aebfd0;border-radius:10px;background:#f8fafc}.loading{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.74)}.loading.show{display:flex}.loading-box{padding:16px 22px;border:1px solid #cad7e3;border-radius:12px;background:#fff;color:#17324f;font-weight:900;font-size:11px}.footer{padding:20px 0 4px;text-align:center;color:#8b9bad;font-size:9px}
+@media(max-width:1450px){.kpis{grid-template-columns:repeat(4,1fr)}.filters{grid-template-columns:repeat(5,1fr)}}@media(max-width:850px){.kpis{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr 1fr}.bottom{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-field.two{grid-column:auto}.titlebar{display:none}}
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <a class="back" href="./home.html">←</a>
-        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">
-        <div class="titlebar">☁ Controle de Embarques – Semente e Pluma de Algodão</div>
-      </div>
-      <div class="account"><strong id="userName">USUÁRIO</strong><small id="userRole">PERFIL</small></div>
-    </div>
-  </header>
-
-  <main class="page">
-    <section class="kpis">
-      <article class="kpi"><small>Em aberto</small><strong id="kAberto">0</strong><span>Cargas em andamento</span></article>
-      <article class="kpi gold"><small>Porta</small><strong id="kPorta">0</strong><span>Nos pontos de carregamento</span></article>
-      <article class="kpi green"><small>Em trânsito</small><strong id="kTransito">0</strong><span>Veículos em deslocamento</span></article>
-      <article class="kpi purple"><small>Na descarga</small><strong id="kDescarga">0</strong><span>Em processo de descarga</span></article>
-      <article class="kpi cyan"><small>Concluídas</small><strong id="kConcluidas">0</strong><span>Cargas finalizadas</span></article>
-      <article class="kpi red"><small>Atrasadas</small><strong id="kAtrasadas">0</strong><span>Fora da situação normal</span></article>
-      <article class="kpi"><small>Semente (KG)</small><strong id="kSemente">0</strong><span>Total embarcado</span></article>
-      <article class="kpi"><small>Pluma (KG)</small><strong id="kPluma">0</strong><span>Total embarcado</span></article>
-    </section>
-
-    <section class="filters">
-      <div class="field"><label>Período</label><select class="select" id="fPeriodo"><option value="">Todos</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></div>
-      <div class="field"><label>Cliente</label><select class="select" id="fCliente"><option value="">Todos</option></select></div>
-      <div class="field"><label>Origem</label><select class="select" id="fOrigem"><option value="">Todas</option></select></div>
-      <div class="field"><label>Destino</label><select class="select" id="fDestino"><option value="">Todos</option></select></div>
-      <div class="field"><label>Situação</label><select class="select" id="fSituacao"><option value="">Todas</option><option>PORTA</option><option>EM TRANSITO</option><option>NA DESCARGA</option><option>CONCLUIDA</option><option>ATRASADA</option></select></div>
-      <div class="field"><label>Tipo de carga</label><select class="select" id="fTipo"><option value="">Todas</option><option>SEMENTE</option><option>PLUMA</option></select></div>
-      <div class="field"><label>Buscar</label><input class="input" id="fBusca" placeholder="Carga, placa, cliente, local..."></div>
-      <button class="btn ghost" id="btnLimpar">Limpar</button>
-      <button class="btn blue" id="btnFiltrar">Filtrar</button>
-      <button class="btn blue" id="btnNovo">+ Novo embarque</button>
-      <button class="btn green" id="btnExportar">Exportar</button>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head"><h2>🚚 Embarques</h2><span id="syncStatus" style="color:#8ea4b9;font-size:8px">Pronto</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Nº Carga</th><th>Data</th><th>Cliente</th><th>Origem</th><th>Local origem</th><th>Destino</th><th>Local destino</th>
-            <th>Placa</th><th>Veículo</th><th>Tipo carga</th><th>Peso (KG)</th><th>Frete empresa</th><th>Frete motorista</th>
-            <th>Situação</th><th>Comprovante</th><th>Ações</th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-      <div class="pagination"><span id="tableMeta">0 embarques</span><div class="pages" id="pages"></div></div>
-    </section>
-
-    <section class="bottom">
-      <aside class="panel share-menu">
-        <h3>👥 Share / Clientes</h3>
-        <button class="share-btn active" data-view="cliente">◉ Visão por Cliente</button>
-        <button class="share-btn" data-view="origem">◎ Visão por Origem</button>
-        <button class="share-btn" data-view="destino">◎ Visão por Destino</button>
-
-        <div class="summary-side">
-          <h3>Resumo Geral</h3>
-          <div><span>Total embarcado</span><strong id="rPeso">0 kg</strong></div>
-          <div><span>Frete empresa</span><strong id="rEmpresa">R$ 0,00</strong></div>
-          <div><span>Frete motorista</span><strong id="rMotorista">R$ 0,00</strong></div>
-          <div><span>Cargas concluídas</span><strong id="rConcluidas">0</strong></div>
-        </div>
-      </aside>
-
-      <section class="panel">
-        <div class="panel-head"><h2 id="shareTitle">Situação dos Pontos por Cliente</h2></div>
-        <div class="client-wrap">
-          <table class="client-table">
-            <thead><tr><th id="shareKey">Cliente</th><th>Porta</th><th>Em trânsito</th><th>Na descarga</th><th>Concluídas</th><th>Atrasadas</th><th>Total cargas</th><th>Peso (KG)</th><th>% conclusão</th></tr></thead>
-            <tbody id="shareBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <aside class="panel detail">
-        <div class="detail-top"><div><small>Nº Carga</small><h3 id="dCarga">Selecione uma carga</h3></div><span id="dStatus" class="tag">-</span></div>
-        <div class="detail-grid">
-          <div class="detail-item"><small>Cliente</small><strong id="dCliente">-</strong></div>
-          <div class="detail-item"><small>Tipo de carga</small><strong id="dTipo">-</strong></div>
-          <div class="detail-item"><small>Origem</small><strong id="dOrigem">-</strong></div>
-          <div class="detail-item"><small>Destino</small><strong id="dDestino">-</strong></div>
-          <div class="detail-item"><small>Placa</small><strong id="dPlaca">-</strong></div>
-          <div class="detail-item"><small>Veículo</small><strong id="dVeiculo">-</strong></div>
-          <div class="detail-item"><small>Peso</small><strong id="dPeso">-</strong></div>
-          <div class="detail-item"><small>Previsão chegada</small><strong id="dPrevisao">-</strong></div>
-        </div>
-        <div class="detail-observation"><strong>Observação</strong><div id="dObs" style="margin-top:6px">-</div></div>
-        <div class="detail-proof"><span id="dProof">Sem comprovante</span><a id="dProofLink" href="#" target="_blank" hidden>ABRIR ↗</a></div>
-      </aside>
-    </section>
-  </main>
-
-  <div class="modal" id="modal">
-    <div class="modal-card">
-      <div class="modal-head"><h2 id="modalTitle">Novo embarque</h2><button class="btn ghost" id="btnFechar">Fechar</button></div>
-      <div class="modal-body">
-        <input type="hidden" id="mId">
-        <div class="form-grid">
-          <div class="form-field"><label>Número da carga *</label><input class="input" id="mNumeroCarga"></div>
-          <div class="form-field"><label>Data/Hora carga</label><input class="input" type="datetime-local" id="mDataCarga"></div>
-          <div class="form-field"><label>Cliente *</label><input class="input" id="mCliente"></div>
-
-          <div class="form-field"><label>Origem</label><input class="input" id="mOrigem"></div>
-          <div class="form-field two"><label>Local origem</label><input class="input" id="mLocalOrigem"></div>
-
-          <div class="form-field"><label>Destino</label><input class="input" id="mDestino"></div>
-          <div class="form-field two"><label>Local destino</label><input class="input" id="mLocalDestino"></div>
-
-          <div class="form-field"><label>Placa *</label><input class="input" id="mPlaca"></div>
-          <div class="form-field"><label>Tipo veículo</label><input class="input" id="mTipoVeiculo" placeholder="Ex: RODOCAÇAMBA"></div>
-          <div class="form-field"><label>Tipo carga</label><select class="select" id="mTipoCarga"><option>SEMENTE</option><option>PLUMA</option></select></div>
-
-          <div class="form-field"><label>Peso da carga (KG)</label><input class="input" type="number" step="0.01" id="mPeso"></div>
-          <div class="form-field"><label>Frete empresa</label><input class="input" type="number" step="0.01" id="mFreteEmpresa"></div>
-          <div class="form-field"><label>Frete motorista</label><input class="input" type="number" step="0.01" id="mFreteMotorista"></div>
-
-          <div class="form-field"><label>Situação</label><select class="select" id="mSituacao"><option>PORTA</option><option>EM TRANSITO</option><option>NA DESCARGA</option><option>CONCLUIDA</option><option>ATRASADA</option></select></div>
-          <div class="form-field two"><label>Previsão chegada</label><input class="input" type="datetime-local" id="mPrevisao"></div>
-
-          <div class="form-field full"><label>Observação</label><textarea class="textarea" id="mObservacao"></textarea></div>
-
-          <div class="form-field full">
-            <label>Comprovante de descarga</label>
-            <div class="filebox">
-              <input type="file" id="mComprovante" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp">
-              <div style="margin-top:7px;color:#8197ac;font-size:8px">PDF, PNG, JPG ou WEBP. O arquivo será salvo no Google Drive.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-foot"><button class="btn ghost" id="btnCancelar">Cancelar</button><button class="btn blue" id="btnSalvar">Salvar embarque</button></div>
-    </div>
-  </div>
-
-  <div class="loading" id="loading"><div class="loading-box" id="loadingText">Processando...</div></div>
-
-  <script src="../assets/js/auth.js?v=10"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="../assets/js/embarques.js?v=1"></script>
-  <script>
-    if(requireFeatureAuth("embarques","Controle de Embarques não liberado para este perfil.") === true){
-      bindLogoutButton();
-    }
-  </script>
-</body>
-</html>
+<header class="topbar"><div class="topbar-inner"><div class="brand"><a class="back" href="./home.html">←</a><img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA"><div class="titlebar">☁ Controle de Embarques – Semente e Pluma de Algodão</div></div><div class="account"><strong id="userName">USUÁRIO</strong><small id="userRole">PERFIL</small></div></div></header>
+<main class="page">
+<section class="kpis"><article class="kpi"><small>Em aberto</small><strong id="kAberto">0</strong><span>Cargas em andamento</span></article><article class="kpi gold"><small>Porta</small><strong id="kPorta">0</strong><span>Nos pontos de carregamento</span></article><article class="kpi green"><small>Em trânsito</small><strong id="kTransito">0</strong><span>Veículos em deslocamento</span></article><article class="kpi purple"><small>Na descarga</small><strong id="kDescarga">0</strong><span>Em processo de descarga</span></article><article class="kpi cyan"><small>Concluídas</small><strong id="kConcluidas">0</strong><span>Cargas finalizadas</span></article><article class="kpi red"><small>Atrasadas</small><strong id="kAtrasadas">0</strong><span>Fora da situação normal</span></article><article class="kpi"><small>Semente (KG)</small><strong id="kSemente">0</strong><span>Total embarcado</span></article><article class="kpi"><small>Pluma (KG)</small><strong id="kPluma">0</strong><span>Total embarcado</span></article></section>
+<section class="filters"><div class="field"><label>Período</label><select class="select" id="fPeriodo"><option value="">Todos</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></div><div class="field"><label>Cliente</label><select class="select" id="fCliente"><option value="">Todos</option></select></div><div class="field"><label>Origem</label><select class="select" id="fOrigem"><option value="">Todas</option></select></div><div class="field"><label>Destino</label><select class="select" id="fDestino"><option value="">Todos</option></select></div><div class="field"><label>Situação</label><select class="select" id="fSituacao"><option value="">Todas</option><option>PORTA</option><option>EM TRANSITO</option><option>NA DESCARGA</option><option>CONCLUIDA</option><option>ATRASADA</option></select></div><div class="field"><label>Tipo de carga</label><select class="select" id="fTipo"><option value="">Todas</option><option>SEMENTE</option><option>PLUMA</option></select></div><div class="field"><label>Buscar</label><input class="input" id="fBusca" placeholder="Carga, placa, cliente, local..."></div><button class="btn ghost" id="btnLimpar">Limpar</button><button class="btn blue" id="btnFiltrar">Filtrar</button><button class="btn green" id="btnNovo">+ Novo embarque</button><button class="btn ghost" id="btnExportar">Exportar</button><button class="privacy-toggle" id="btnToggleFreteMotorista" type="button"><span>◉ Ocultar frete motorista</span><span class="switch"></span></button></section>
+<section class="panel"><div class="panel-head"><h2>🚚 Embarques</h2><span id="syncStatus" style="color:#71869b;font-size:8px">Pronto</span></div><div class="table-wrap"><table><thead><tr><th>Nº Carga</th><th>Data da carga</th><th>Previsão chegada</th><th>Cliente</th><th>Origem</th><th>Local origem</th><th>Destino</th><th>Local destino</th><th>Placa</th><th>Veículo</th><th>Tipo carga</th><th>Peso (KG)</th><th>Frete empresa</th><th>Frete motorista</th><th>Situação</th><th>Observação</th><th>Comprovante</th><th>Ações</th></tr></thead><tbody id="tbody"></tbody></table></div><div class="pagination"><span id="tableMeta">0 embarques</span><div class="pages" id="pages"></div></div></section>
+<section class="bottom"><aside class="panel share-menu"><h3>👥 Share / Clientes</h3><button class="share-btn active" data-view="cliente">◉ Visão por Cliente</button><button class="share-btn" data-view="origem">◎ Visão por Origem</button><button class="share-btn" data-view="destino">◎ Visão por Destino</button><div class="summary-side"><h3>Resumo Geral</h3><div><span>Total embarcado</span><strong id="rPeso">0 kg</strong></div><div><span>Frete empresa</span><strong id="rEmpresa">R$ 0,00</strong></div><div><span>Frete motorista</span><strong id="rMotorista">R$ 0,00</strong></div><div><span>Cargas concluídas</span><strong id="rConcluidas">0</strong></div></div></aside><section class="panel"><div class="panel-head"><h2 id="shareTitle">Situação dos Pontos por Cliente</h2></div><div class="client-wrap"><table class="client-table"><thead><tr><th id="shareKey">Cliente</th><th>Porta</th><th>Em trânsito</th><th>Na descarga</th><th>Concluídas</th><th>Atrasadas</th><th>Total cargas</th><th>Peso (KG)</th><th>% conclusão</th></tr></thead><tbody id="shareBody"></tbody></table></div></section></section><footer class="footer">© 2026 NOVA FROTA Transportes e Logística</footer>
+</main>
+<div class="modal" id="modal"><div class="modal-card"><div class="modal-head"><h2 id="modalTitle">Novo embarque</h2><button class="btn ghost" id="btnFechar">Fechar</button></div><div class="modal-body"><input type="hidden" id="mId"><div class="form-grid"><div class="form-field"><label>Número da carga *</label><input class="input" id="mNumeroCarga"></div><div class="form-field"><label>Data/Hora carga</label><input class="input" type="datetime-local" id="mDataCarga"></div><div class="form-field"><label>Cliente *</label><input class="input" id="mCliente"></div><div class="form-field"><label>Origem</label><input class="input" id="mOrigem"></div><div class="form-field two"><label>Local origem</label><input class="input" id="mLocalOrigem"></div><div class="form-field"><label>Destino</label><input class="input" id="mDestino"></div><div class="form-field two"><label>Local destino</label><input class="input" id="mLocalDestino"></div><div class="form-field"><label>Placa *</label><input class="input" id="mPlaca"></div><div class="form-field"><label>Tipo veículo</label><input class="input" id="mTipoVeiculo"></div><div class="form-field"><label>Tipo carga</label><select class="select" id="mTipoCarga"><option>SEMENTE</option><option>PLUMA</option></select></div><div class="form-field"><label>Peso da carga (KG)</label><input class="input" type="number" step="0.01" id="mPeso"></div><div class="form-field"><label>Frete empresa</label><input class="input" type="number" step="0.01" id="mFreteEmpresa"></div><div class="form-field"><label>Frete motorista</label><input class="input" type="number" step="0.01" id="mFreteMotorista"></div><div class="form-field"><label>Situação</label><select class="select" id="mSituacao"><option>PORTA</option><option>EM TRANSITO</option><option>NA DESCARGA</option><option>CONCLUIDA</option><option>ATRASADA</option></select></div><div class="form-field two"><label>Previsão chegada</label><input class="input" type="datetime-local" id="mPrevisao"></div><div class="form-field full"><label>Observação</label><textarea class="textarea" id="mObservacao"></textarea></div><div class="form-field full"><label>Comprovante de descarga</label><div class="filebox"><input type="file" id="mComprovante" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"><div style="margin-top:7px;color:#71859a;font-size:8px">PDF, PNG, JPG ou WEBP. O arquivo será salvo no Google Drive.</div></div></div></div></div><div class="modal-foot"><button class="btn ghost" id="btnCancelar">Cancelar</button><button class="btn blue" id="btnSalvar">Salvar embarque</button></div></div></div>
+<input type="file" id="quickProofInput" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" hidden>
+<div class="loading" id="loading"><div class="loading-box" id="loadingText">Processando...</div></div>
+<script src="../assets/js/auth.js?v=10"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="../assets/js/embarques.js?v=2"></script><script>if(requireFeatureAuth("embarques","Controle de Embarques não liberado para este perfil.")===true){bindLogoutButton();}</script>
+</body></html>

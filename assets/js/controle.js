@@ -61,6 +61,9 @@ function show(name){document.querySelectorAll(".view").forEach(v=>v.classList.re
 function embarcado(e){return(e.veiculos||[]).reduce((a,v)=>a+num(v.peso),0)}
 function saldo(e){return Math.max(0,num(e.volume)-embarcado(e))}
 function cls(status){status=upper(status);if(["CONCLUÍDO","FINALIZADO"].includes(status))return"text-green-400 border-green-500/40 bg-green-500/10";if(status==="EM ATRASO")return"text-red-300 border-red-400/40 bg-red-500/10";if(["EM ANDAMENTO","CARREGANDO"].includes(status))return"text-yellow border-yellow/40 bg-yellow/10";return"text-primary border-primary/40 bg-primary/10"}
+function statusSlug(value){return upper(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z0-9]+/g,"").toLowerCase()}
+function filenamePart(value){return upper(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"")}
+function getEmbarqueAtual(){return S.rows.find(x=>x.id===S.id)||null}
 
 function resumo(){
   const map={};
@@ -107,6 +110,13 @@ function renderVeiculos(e){
 async function atualizarStatusEmbarque(id,novoStatus,select){const embarque=S.rows.find(x=>x.id===id);if(!embarque)return;const anterior=embarque.status;select.disabled=true;sync("⏳ Atualizando status...");try{await api("update","embarques",{id,status:upper(novoStatus)});embarque.status=upper(novoStatus);await carregarDados();if(S.filial)renderFilial();if(S.id===id)openDetalhe(id,false);sync("✅ Status atualizado")}catch(err){console.error(err);select.value=anterior;alert("Erro ao atualizar o status do embarque.\n\n"+err.message);sync("⚠️ Erro ao atualizar")}finally{select.disabled=false}}
 async function atualizarSituacaoVeiculo(id,novaSituacao,select){const embarque=S.rows.find(x=>x.id===S.id);const veiculo=embarque?.veiculos?.find(v=>v.id===id);if(!veiculo)return;const anterior=veiculo.situacao;select.disabled=true;sync("⏳ Atualizando veículo...");try{await api("update","veiculos",{id,situacao:upper(novaSituacao)});veiculo.situacao=upper(novaSituacao);await carregarDados();if(S.id)openDetalhe(S.id,false);sync("✅ Situação atualizada")}catch(err){console.error(err);select.value=anterior;alert("Erro ao atualizar a situação do veículo.\n\n"+err.message);sync("⚠️ Erro ao atualizar")}finally{select.disabled=false}}
 
+function renderPosicao(e){if(!e)return;$("#pCliente").textContent=e.cliente||"-";$("#pRota").textContent=(e.origem||"-")+" → "+(e.destino||"-");$("#pProduto").textContent=e.produto||"-";$("#pStatus").textContent=e.status||"-";$("#pContratado").textContent=ton(e.volume);$("#pEmbarcado").textContent=ton(embarcado(e));$("#pSaldo").textContent=ton(saldo(e));$("#pQtdVeiculos").textContent=(e.veiculos||[]).length.toLocaleString("pt-BR");$("#pTotalEmbarcado").textContent=ton(embarcado(e));$("#pAtualizado").textContent="Atualizado em "+new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});const tbody=$("#pVeiculos");tbody.innerHTML="";const rows=(e.veiculos||[]).slice().sort((a,b)=>{const da=new Date(a.dataHora||0).getTime()||0;const db=new Date(b.dataHora||0).getTime()||0;return da-db});if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="position-empty">Nenhum veículo registrado neste embarque.</td></tr>';return}rows.forEach(v=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${escapeHtml(fmtDataHora(v.dataHora))}</td><td><strong>${escapeHtml(v.placa||"-")}</strong></td><td>${escapeHtml(v.motorista||"-")}</td><td>${escapeHtml(v.tipo||"-")}</td><td>${escapeHtml(ton(v.peso))}</td><td><span class="position-badge ${statusSlug(v.situacao)}">${escapeHtml(v.situacao||"-")}</span></td>`;tbody.appendChild(tr)})}
+function abrirPosicao(){const e=getEmbarqueAtual();if(!e){alert("Nenhum embarque selecionado.");return}renderPosicao(e);$("#modalPosicao")?.classList.add("show")}
+function fecharPosicao(){$("#modalPosicao")?.classList.remove("show")}
+async function capturarPosicao(){const target=$("#positionCapture");if(!target)throw new Error("Área da posição não encontrada.");if(typeof window.html2canvas!=="function")throw new Error("Gerador de imagem indisponível.");return window.html2canvas(target,{backgroundColor:"#071522",scale:2,useCORS:true,logging:false,windowWidth:target.scrollWidth,windowHeight:target.scrollHeight})}
+async function baixarPosicao(){const e=getEmbarqueAtual();if(!e)return;const btn=$("#btnBaixarPosicao"),original=btn?.textContent;try{if(btn){btn.disabled=true;btn.textContent="GERANDO..."}const canvas=await capturarPosicao();const a=document.createElement("a");a.download=`POSICAO_${filenamePart(e.cliente)}_${filenamePart(e.origem)}_${filenamePart(e.destino)}.jpg`;a.href=canvas.toDataURL("image/jpeg",.94);a.click();sync("✅ Posição gerada")}catch(err){console.error("[CONTROLE] posição JPG:",err);alert("Não foi possível gerar a imagem da posição.\n\n"+err.message)}finally{if(btn){btn.disabled=false;btn.textContent=original||"⬇ Baixar JPG"}}}
+async function copiarPosicao(){const btn=$("#btnCopiarPosicao"),original=btn?.textContent;try{if(btn){btn.disabled=true;btn.textContent="COPIANDO..."}const canvas=await capturarPosicao();if(!navigator.clipboard||!window.ClipboardItem)throw new Error("Seu navegador não permite copiar imagens diretamente.");const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Falha ao criar a imagem.")),"image/png"));await navigator.clipboard.write([new ClipboardItem({"image/png":blob})]);sync("✅ Imagem copiada");if(btn)btn.textContent="COPIADO ✓";setTimeout(()=>{if(btn)btn.textContent=original||"▣ Copiar imagem"},1400)}catch(err){console.error("[CONTROLE] copiar posição:",err);alert("Não foi possível copiar a imagem.\n\n"+err.message);if(btn)btn.textContent=original||"▣ Copiar imagem"}finally{if(btn)btn.disabled=false}}
+
 function modal(id,on){if(S.loading&&!on)return;$("#"+id)?.classList.toggle("show",on)}
 function openEmbarqueModal(){["eCliente","eOrigem","eLocal","eDestino","eProduto","eVolume"].forEach(id=>$("#"+id).value="");$("#eFilial").value=S.filial||"";$("#eStatus").value="AGENDADO";modal("modalEmbarque",true)}
 
@@ -125,13 +135,15 @@ async function deleteVeiculo(id){const embarque=S.rows.find(x=>x.id===S.id);if(!
 
 function bind(){
   $("#btnNovoTop").onclick=openEmbarqueModal;$("#btnNovoFilial").onclick=openEmbarqueModal;$("#btnNovoVeiculo").onclick=openVeiculoModal;
+  $("#btnGerarPosicao").onclick=abrirPosicao;$("#btnFecharPosicao").onclick=fecharPosicao;$("#btnBaixarPosicao").onclick=baixarPosicao;$("#btnCopiarPosicao").onclick=copiarPosicao;
   $("#btnVoltarPainel").onclick=()=>{renderDashboard();show("dashboard")};$("#btnVoltarFilial").onclick=()=>{renderFilial();show("filial")};
   $("#fBusca").oninput=renderDashboard;$("#fFilial").onchange=renderDashboard;$("#buscaFilial").oninput=renderFilial;$("#btnAtualizar").onclick=carregarDados;
   $("#dStatus").onchange=e=>{const id=e.target.dataset.id||S.id;if(id)atualizarStatusEmbarque(id,e.target.value,e.target)};
   $("#fecharEmbarque").onclick=$("#cancelarEmbarque").onclick=()=>modal("modalEmbarque",false);$("#salvarEmbarque").onclick=salvarEmbarque;
   $("#fecharVeiculo").onclick=$("#cancelarVeiculo").onclick=()=>modal("modalVeiculo",false);$("#salvarVeiculo").onclick=salvarVeiculo;
   ["modalEmbarque","modalVeiculo"].forEach(id=>{$("#"+id).onclick=e=>{if(e.target.id===id)modal(id,false)}});
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"){modal("modalEmbarque",false);modal("modalVeiculo",false)}});
+  $("#modalPosicao").onclick=e=>{if(e.target.id==="modalPosicao")fecharPosicao()};
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){modal("modalEmbarque",false);modal("modalVeiculo",false);fecharPosicao()}});
 }
 
 async function init(){bind();show("dashboard");await carregarDados()}

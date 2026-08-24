@@ -17,6 +17,26 @@ primary:"#c1c1ff",primary2:"#5d5fef",yellow:"#eec200",text:"#d4e4fa",muted:"#c7c
 body{background:#051424;color:#d4e4fa}.view{display:none}.view.active{display:block}
 .modal{display:none}.modal.show{display:flex}.pulse{animation:pulse 1.6s infinite}
 @keyframes pulse{50%{opacity:.35}}.scrollbar{scrollbar-width:thin} button:disabled,select:disabled,input:disabled{opacity:.6;cursor:not-allowed}.status-select{min-width:150px}
+
+/* POSIÇÃO DE EMBARQUE */
+.position-modal{display:none}.position-modal.show{display:flex}
+.position-shell{width:min(980px,96vw);max-height:92vh;overflow:auto;background:#081827;border:1px solid #3d5268;border-radius:18px;box-shadow:0 28px 80px rgba(0,0,0,.55)}
+.position-toolbar{position:sticky;top:0;z-index:5;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0d2033;border-bottom:1px solid #31465a}
+.position-toolbar strong{font-family:"Hanken Grotesk",sans-serif;font-size:18px;color:#fff}
+.position-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}
+.position-action{min-height:38px;padding:0 14px;border:1px solid #40556b;border-radius:10px;background:#14273a;color:#fff;font-size:11px;font-weight:800;text-transform:uppercase}
+.position-action.green{background:#0c6c46;border-color:#1b9c6b}.position-action.blue{background:#164b9d;border-color:#2b6ecb}
+#positionCapture{width:900px;margin:18px auto;padding:24px;color:#eef6ff;background:radial-gradient(circle at 90% 2%,rgba(93,95,239,.17),transparent 34%),linear-gradient(155deg,#0a1b2d 0%,#0b1f34 46%,#071522 100%);border:1px solid #40566c;border-radius:16px;font-family:"Inter",Arial,sans-serif}
+.position-head{display:grid;grid-template-columns:210px 1fr 210px;align-items:center;gap:18px;padding-bottom:18px;border-bottom:1px solid rgba(174,201,227,.22)}
+.position-logo img{width:185px;height:auto;object-fit:contain}.position-title{text-align:center}.position-title h2{margin:0;font-family:"Hanken Grotesk",sans-serif;font-size:26px;font-weight:900;letter-spacing:-.4px;color:#fff}.position-title p{margin:6px 0 0;color:#aebfd1;font-size:11px}
+.position-status-wrap{text-align:right}.position-status-label{color:#8fa4ba;font-size:9px;font-weight:800;text-transform:uppercase}.position-status{margin-top:5px;display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 11px;border-radius:999px;border:1px solid rgba(47,196,141,.45);background:rgba(47,196,141,.12);color:#54dc9f;font-size:10px;font-weight:900;text-transform:uppercase}
+.position-info{margin-top:16px;padding:14px 16px;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:14px;border:1px solid rgba(174,201,227,.18);border-radius:12px;background:rgba(255,255,255,.025)}
+.position-info small,.position-summary-card small{display:block;color:#8fa4ba;font-size:9px;font-weight:800;text-transform:uppercase}.position-info strong{display:block;margin-top:5px;color:#fff;font-size:13px}
+.position-summary{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.position-summary-card{padding:14px 15px;border:1px solid #40566c;border-radius:12px;background:#102337}.position-summary-card.embarcado{border-color:rgba(193,193,255,.45)}.position-summary-card.saldo{border-left:4px solid #eec200}.position-summary-card strong{display:block;margin-top:6px;color:#fff;font-family:"Hanken Grotesk",sans-serif;font-size:24px;font-weight:900}.position-summary-card.embarcado strong{color:#c1c1ff}.position-summary-card.saldo strong{color:#ffd51e}
+.position-table-wrap{margin-top:16px;overflow:hidden;border:1px solid rgba(174,201,227,.18);border-radius:12px}.position-table{width:100%;border-collapse:collapse;table-layout:fixed}.position-table th,.position-table td{padding:10px 9px;border-bottom:1px solid rgba(174,201,227,.12);vertical-align:middle;text-align:left;overflow-wrap:anywhere}.position-table th{background:#172a3e;color:#9eb0c3;font-size:8.5px;font-weight:900;text-transform:uppercase}.position-table td{color:#e8f2fd;font-size:9.5px;line-height:1.25}.position-table tbody tr:last-child td{border-bottom:0}.position-table .c-data{width:16%}.position-table .c-placa{width:11%}.position-table .c-motorista{width:27%}.position-table .c-tipo{width:17%}.position-table .c-peso{width:10%}.position-table .c-situacao{width:19%}
+.position-badge{display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 8px;border-radius:8px;border:1px solid rgba(193,193,255,.35);background:rgba(193,193,255,.10);color:#d9d9ff;font-size:8.5px;font-weight:900;text-transform:uppercase;white-space:nowrap}.position-badge.porta{border-color:#2f77d8;background:rgba(47,119,216,.14);color:#6db0ff}.position-badge.carregando{border-color:#c99f17;background:rgba(201,159,23,.14);color:#f3cb47}.position-badge.carregado{border-color:#7654d6;background:rgba(118,84,214,.16);color:#c2afff}.position-badge.transito{border-color:#2477d9;background:rgba(36,119,217,.16);color:#73b4ff}.position-badge.finalizado{border-color:#1e9b68;background:rgba(30,155,104,.15);color:#61dfa8}.position-badge.cancelado{border-color:#c64b5d;background:rgba(198,75,93,.15);color:#ff8f9f}
+.position-footer{margin-top:14px;padding-top:12px;display:flex;justify-content:space-between;gap:16px;border-top:1px solid rgba(174,201,227,.16);color:#93a8bd;font-size:9.5px}.position-footer strong{color:#d8e7f7}.position-empty{padding:24px!important;text-align:center!important;color:#8fa4ba!important}
+@media(max-width:980px){#positionCapture{width:820px}}@media(max-width:700px){.position-toolbar{align-items:flex-start;flex-direction:column}.position-shell{width:98vw}.position-summary{grid-template-columns:1fr}}
 </style>
 </head>
 <body class="min-h-screen font-sans">
@@ -93,12 +113,14 @@ body{background:#051424;color:#d4e4fa}.view{display:none}.view.active{display:bl
       <div class="bg-surface border border-line rounded-xl p-5 border-l-4 border-l-yellow"><div class="text-xs text-muted uppercase">Saldo</div><div id="dSaldo" class="text-3xl font-bold mt-2 text-yellow">0 t</div></div>
     </div>
     <div class="bg-surface border border-line rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-line flex justify-between"><h3 class="text-xs uppercase font-bold">Veículos</h3><button id="btnNovoVeiculo" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold text-xs uppercase">+ Veículo</button></div>
+      <div class="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3"><h3 class="text-xs uppercase font-bold">Veículos</h3><div class="flex flex-wrap gap-2"><button id="btnGerarPosicao" class="px-4 py-2 border border-primary/50 text-primary rounded-lg font-bold text-xs uppercase hover:bg-primary/10"><span class="material-symbols-outlined align-middle text-[18px] mr-1">image</span> Gerar posição</button><button id="btnNovoVeiculo" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold text-xs uppercase">+ Veículo</button></div></div>
       <div class="overflow-x-auto"><table class="w-full min-w-[850px]"><thead class="bg-surface2 text-xs uppercase text-muted"><tr><th class="p-4 text-left">Data/Hora</th><th class="p-4 text-left">Placa</th><th class="p-4 text-left">Motorista</th><th class="p-4 text-left">Tipo</th><th class="p-4 text-left">Peso</th><th class="p-4 text-left">Situação</th><th class="p-4 text-right">Ações</th></tr></thead><tbody id="tbodyVeiculos" class="divide-y divide-line/40"></tbody></table></div>
     </div>
   </div>
 </section>
 </main>
+
+<div id="modalPosicao" class="position-modal fixed inset-0 z-[70] items-center justify-center bg-black/70 p-3"><div class="position-shell"><div class="position-toolbar"><strong>Prévia da posição de embarque</strong><div class="position-toolbar-actions"><button id="btnBaixarPosicao" class="position-action green" type="button">⬇ Baixar JPG</button><button id="btnCopiarPosicao" class="position-action blue" type="button">▣ Copiar imagem</button><button id="btnFecharPosicao" class="position-action" type="button">Fechar</button></div></div><div id="positionCapture"><div class="position-head"><div class="position-logo"><img src="../assets/img/logo-novafrota.png" alt="Nova Frota"></div><div class="position-title"><h2>POSIÇÃO DE EMBARQUE</h2><p id="pAtualizado">Atualizado em --</p></div><div class="position-status-wrap"><div class="position-status-label">Status do embarque</div><div class="position-status" id="pStatus">-</div></div></div><div class="position-info"><div><small>Cliente</small><strong id="pCliente">-</strong></div><div><small>Rota</small><strong id="pRota">-</strong></div><div><small>Produto</small><strong id="pProduto">-</strong></div></div><div class="position-summary"><div class="position-summary-card"><small>Contratado</small><strong id="pContratado">0 t</strong></div><div class="position-summary-card embarcado"><small>Embarcado</small><strong id="pEmbarcado">0 t</strong></div><div class="position-summary-card saldo"><small>Saldo</small><strong id="pSaldo">0 t</strong></div></div><div class="position-table-wrap"><table class="position-table"><thead><tr><th class="c-data">Data/Hora</th><th class="c-placa">Placa</th><th class="c-motorista">Motorista</th><th class="c-tipo">Tipo do veículo</th><th class="c-peso">Peso</th><th class="c-situacao">Situação</th></tr></thead><tbody id="pVeiculos"></tbody></table></div><div class="position-footer"><span><strong id="pQtdVeiculos">0</strong> veículo(s) registrado(s)</span><span>Total embarcado: <strong id="pTotalEmbarcado">0 t</strong></span><span>NOVA FROTA TRANSPORTES E LOGÍSTICA</span></div></div></div></div>
 
 <div id="modalEmbarque" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60 p-4">
   <div class="w-full max-w-3xl bg-surface border border-line rounded-2xl">
@@ -132,7 +154,8 @@ body{background:#051424;color:#d4e4fa}.view{display:none}.view.active{display:bl
 </div>
 
 <script src="../assets/js/auth.js?v=6"></script>
-<script src="../assets/js/controle.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="../assets/js/controle.js?v=3"></script>
 <script>if(typeof requireHomeAuth==="function")requireHomeAuth();if(typeof bindLogoutButton==="function")bindLogoutButton();</script>
 </body>
 </html>

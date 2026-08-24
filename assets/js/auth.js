@@ -322,6 +322,12 @@ function featuresForProfile(profile){
 
 function canAccessFeature(featureKey){
   const feature = String(featureKey || "").trim().toLowerCase();
+
+  // Central de Suporte é liberada para qualquer usuário autenticado.
+  if(feature === "chamados"){
+    return isAuthedHome();
+  }
+
   const profile = getProfile();
   const features = featuresForProfile(profile)
     .map(item => String(item || "").trim().toLowerCase());
@@ -416,6 +422,13 @@ function requireEstadiasAuth(){
 
   applyEstadiasAccessUI();
   return true;
+}
+
+function requireChamadosAuth(){
+  return requireFeatureAuth(
+    "chamados",
+    "Central de Suporte não liberada para este perfil."
+  );
 }
 
 function requirePisoAuth(){

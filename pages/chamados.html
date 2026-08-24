@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Suporte / Chamados | NOVA FROTA</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+
+  <style>
+    :root{
+      --bg:#07172d;
+      --panel:#0d223b;
+      --panel2:#102a47;
+      --line:rgba(173,204,240,.18);
+      --text:#f4f8ff;
+      --muted:#9fb1c6;
+      --blue:#4e8df7;
+      --green:#36b97e;
+      --gold:#f0b82e;
+      --red:#ef5c6c;
+      --purple:#9a68db;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:"Inter",Arial,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+
+    .topbar{
+      min-height:72px;
+      display:flex;
+      align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      background:#061326;
+    }
+
+    .topbar-inner{
+      width:min(100% - 40px,1600px);
+      margin:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+    }
+
+    .brand{display:flex;align-items:center;gap:14px}
+    .brand img{width:160px;max-height:44px;object-fit:contain}
+    .back{
+      width:42px;height:42px;display:grid;place-items:center;
+      border:1px solid rgba(255,255,255,.14);border-radius:12px;
+      color:#fff;text-decoration:none;background:rgba(255,255,255,.04)
+    }
+
+    .userbox{text-align:right}
+    .userbox strong{display:block;font-size:12px}
+    .userbox small{color:var(--muted);font-size:10px}
+
+    .page{
+      width:min(100% - 40px,1600px);
+      margin:auto;
+      padding:30px 0 48px;
+    }
+
+    .hero{
+      display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+      margin-bottom:20px;
+    }
+    .hero h1{margin:0;font-size:30px;letter-spacing:-.7px}
+    .hero p{margin:7px 0 0;color:var(--muted);font-size:13px}
+
+    .btn{
+      min-height:42px;padding:0 16px;border:1px solid transparent;border-radius:11px;
+      cursor:pointer;font-weight:800;font-size:11px;text-transform:uppercase;
+    }
+    .btn.primary{background:var(--blue);color:#fff;border-color:#6ea1f9}
+    .btn.green{background:#12824f;color:#fff;border-color:#35b77d}
+    .btn.ghost{background:rgba(255,255,255,.05);color:#fff;border-color:rgba(255,255,255,.15)}
+    .btn.red{background:#a83243;color:#fff;border-color:#d65566}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+
+    .kpis{
+      display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px
+    }
+    .kpi{
+      --accent:var(--blue);
+      min-height:112px;padding:16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));
+      border-radius:16px;background:linear-gradient(145deg,rgba(19,47,80,.96),rgba(8,28,51,.94));
+      position:relative;overflow:hidden
+    }
+    .kpi::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px;background:var(--accent)}
+    .kpi.gold{--accent:var(--gold)} .kpi.green{--accent:var(--green)} .kpi.red{--accent:var(--red)} .kpi.purple{--accent:var(--purple)}
+    .kpi small{display:block;color:#b8c8d9;font-size:9px;font-weight:900;text-transform:uppercase}
+    .kpi strong{display:block;margin-top:9px;font-size:30px;line-height:1}
+    .kpi span{display:block;margin-top:8px;color:#91a5ba;font-size:10px}
+
+    .layout{display:grid;grid-template-columns:390px minmax(0,1fr);gap:16px;align-items:start}
+    .panel{
+      border:1px solid var(--line);border-radius:17px;background:linear-gradient(155deg,rgba(13,34,59,.98),rgba(7,24,44,.97));
+      box-shadow:0 16px 40px rgba(0,0,0,.22);overflow:hidden
+    }
+    .panel-head{padding:15px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .panel-head h2{margin:0;font-size:15px}
+    .panel-body{padding:15px}
+
+    .filters{display:grid;gap:9px;margin-bottom:12px}
+    .input,.select,.textarea{
+      width:100%;border:1px solid rgba(173,204,240,.18);border-radius:10px;
+      background:#091a2e;color:#fff;outline:none
+    }
+    .input,.select{height:40px;padding:0 11px}
+    .textarea{padding:11px;min-height:120px;resize:vertical}
+    .input:focus,.select:focus,.textarea:focus{border-color:#4e8df7;box-shadow:0 0 0 3px rgba(78,141,247,.12)}
+
+    .ticket-list{display:grid;gap:9px;max-height:calc(100vh - 320px);overflow:auto;padding-right:2px}
+    .ticket{
+      width:100%;padding:12px;border:1px solid rgba(173,204,240,.12);border-radius:12px;
+      background:rgba(255,255,255,.025);color:#fff;text-align:left;cursor:pointer
+    }
+    .ticket:hover,.ticket.active{border-color:#4e8df7;background:rgba(78,141,247,.08)}
+    .ticket-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .ticket-number{font-size:10px;font-weight:900;color:#8ab2ff}
+    .ticket-title{margin-top:6px;font-size:12px;font-weight:800;line-height:1.3}
+    .ticket-meta{margin-top:7px;color:#8fa3b9;font-size:9px;display:flex;justify-content:space-between;gap:8px}
+
+    .badge{
+      display:inline-flex;align-items:center;justify-content:center;min-height:23px;padding:0 8px;
+      border-radius:999px;font-size:8px;font-weight:900;text-transform:uppercase;white-space:nowrap
+    }
+    .status-aberto{background:rgba(78,141,247,.14);color:#85b4ff;border:1px solid rgba(78,141,247,.38)}
+    .status-em-atendimento{background:rgba(240,184,46,.13);color:#ffd25e;border:1px solid rgba(240,184,46,.38)}
+    .status-aguardando-usuario{background:rgba(154,104,219,.13);color:#c8a8f5;border:1px solid rgba(154,104,219,.38)}
+    .status-resolvido,.status-fechado{background:rgba(54,185,126,.13);color:#69dea9;border:1px solid rgba(54,185,126,.38)}
+    .prio-urgente{background:rgba(239,92,108,.14);color:#ff93a0;border:1px solid rgba(239,92,108,.42)}
+    .prio-alta{background:rgba(240,184,46,.14);color:#ffd25e;border:1px solid rgba(240,184,46,.4)}
+    .prio-normal{background:rgba(78,141,247,.12);color:#9fc2ff;border:1px solid rgba(78,141,247,.32)}
+    .prio-baixa{background:rgba(54,185,126,.12);color:#7de4b4;border:1px solid rgba(54,185,126,.32)}
+
+    .empty{padding:35px 20px;color:#8fa3b9;text-align:center;font-size:12px}
+    .detail{min-height:620px}
+    .detail-empty{display:grid;place-items:center;min-height:540px;color:#859ab1;text-align:center;padding:30px}
+
+    .ticket-detail-head{
+      padding:18px;border-bottom:1px solid var(--line);
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px
+    }
+    .ticket-detail-head h2{margin:5px 0 0;font-size:21px}
+    .ticket-detail-number{color:#80aefe;font-size:10px;font-weight:900}
+    .ticket-detail-badges{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+
+    .info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+    .info-item{padding:10px;border:1px solid rgba(173,204,240,.10);border-radius:10px;background:rgba(255,255,255,.02)}
+    .info-item small{display:block;color:#8399b0;font-size:8px;font-weight:900;text-transform:uppercase}
+    .info-item strong{display:block;margin-top:5px;font-size:10px;overflow-wrap:anywhere}
+
+    .admin-controls{display:none;grid-template-columns:1fr 1fr 1fr auto;gap:9px;padding:12px 18px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.018)}
+    body.is-admin .admin-controls{display:grid}
+
+    .conversation{padding:18px;display:grid;gap:11px;max-height:430px;overflow:auto}
+    .message{max-width:82%;padding:11px 12px;border-radius:13px;background:#112b48;border:1px solid rgba(173,204,240,.12)}
+    .message.mine{margin-left:auto;background:#143966;border-color:rgba(78,141,247,.25)}
+    .message.admin{background:#183a30;border-color:rgba(54,185,126,.25)}
+    .message-head{display:flex;justify-content:space-between;gap:12px;color:#8fa4ba;font-size:8.5px}
+    .message strong{color:#fff}
+    .message-text{margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere;color:#e8f1fb;font-size:11px;line-height:1.45}
+
+    .attachments{padding:0 18px 14px;display:flex;gap:8px;flex-wrap:wrap}
+    .attachment{
+      display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid rgba(173,204,240,.14);
+      border-radius:9px;background:rgba(255,255,255,.03);color:#d8e6f6;text-decoration:none;font-size:9px
+    }
+
+    .reply{padding:14px 18px 18px;border-top:1px solid var(--line)}
+    .reply textarea{min-height:86px}
+    .reply-actions{margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .file-name{color:#8fa4ba;font-size:9px}
+
+    .modal{
+      position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;
+      background:rgba(0,0,0,.7);backdrop-filter:blur(8px)
+    }
+    .modal.show{display:flex}
+    .modal-card{width:min(720px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:#0d223b;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+    .modal-head,.modal-foot{padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}
+    .modal-foot{border-bottom:0;border-top:1px solid var(--line);justify-content:flex-end}
+    .modal-head h2{margin:0;font-size:17px}
+    .modal-body{padding:17px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field.full{grid-column:1/-1}
+    .field label{display:block;margin-bottom:6px;color:#c7d5e4;font-size:10px;font-weight:800}
+
+    .loading{
+      position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;
+      background:rgba(4,13,29,.66);backdrop-filter:blur(4px)
+    }
+    .loading.show{display:flex}
+    .loading-box{padding:18px 24px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:#0c2038;font-weight:800;font-size:12px}
+
+    @media(max-width:1100px){
+      .kpis{grid-template-columns:repeat(2,1fr)}
+      .layout{grid-template-columns:1fr}
+      .ticket-list{max-height:360px}
+      .info-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:650px){
+      .page,.topbar-inner{width:min(100% - 24px,1600px)}
+      .hero{align-items:flex-start;flex-direction:column}
+      .kpis{grid-template-columns:1fr}
+      .form-grid,.admin-controls{grid-template-columns:1fr}
+      .info-grid{grid-template-columns:1fr}
+      .message{max-width:96%}
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a class="back" href="./home.html" title="Voltar para Home">←</a>
+        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">
+      </div>
+      <div class="userbox">
+        <strong id="userName">USUÁRIO</strong>
+        <small id="userRole">PERFIL</small>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1>🎧 Central de Suporte</h1>
+        <p>Abra chamados, acompanhe o atendimento e converse com o suporte do Portal Frete.</p>
+      </div>
+      <button class="btn primary" id="btnNovoChamado" type="button">+ Abrir chamado</button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi"><small>Abertos</small><strong id="kpiAbertos">0</strong><span>Chamados em andamento</span></article>
+      <article class="kpi gold"><small>Em atendimento</small><strong id="kpiAtendimento">0</strong><span>Em análise pelo suporte</span></article>
+      <article class="kpi purple"><small>Aguardando usuário</small><strong id="kpiAguardando">0</strong><span>Aguardando retorno</span></article>
+      <article class="kpi green"><small>Resolvidos</small><strong id="kpiResolvidos">0</strong><span>Chamados solucionados</span></article>
+      <article class="kpi red"><small>Urgentes</small><strong id="kpiUrgentes">0</strong><span>Prioridade máxima</span></article>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panel-head">
+          <h2 id="listTitle">Meus chamados</h2>
+          <button class="btn ghost" id="btnAtualizar" type="button">Atualizar</button>
+        </div>
+        <div class="panel-body">
+          <div class="filters">
+            <input class="input" id="fBusca" placeholder="Buscar chamado...">
+            <select class="select" id="fStatus">
+              <option value="">Todos os status</option>
+              <option>ABERTO</option>
+              <option>EM ATENDIMENTO</option>
+              <option>AGUARDANDO USUARIO</option>
+              <option>RESOLVIDO</option>
+              <option>FECHADO</option>
+            </select>
+            <select class="select" id="fPrioridade">
+              <option value="">Todas as prioridades</option>
+              <option>BAIXA</option>
+              <option>NORMAL</option>
+              <option>ALTA</option>
+              <option>URGENTE</option>
+            </select>
+          </div>
+          <div class="ticket-list" id="ticketList"></div>
+        </div>
+      </aside>
+
+      <section class="panel detail" id="detailPanel">
+        <div class="detail-empty" id="detailEmpty">
+          <div>
+            <div style="font-size:38px;margin-bottom:10px">🎫</div>
+            <strong>Selecione um chamado</strong>
+            <div style="margin-top:6px">O histórico e as respostas aparecerão aqui.</div>
+          </div>
+        </div>
+
+        <div id="detailContent" hidden>
+          <div class="ticket-detail-head">
+            <div>
+              <div class="ticket-detail-number" id="dNumero">CH-0000-0000</div>
+              <h2 id="dTitulo">Título</h2>
+            </div>
+            <div class="ticket-detail-badges">
+              <span class="badge" id="dPrioridade"></span>
+              <span class="badge" id="dStatus"></span>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item"><small>Solicitante</small><strong id="dSolicitante">-</strong></div>
+            <div class="info-item"><small>Categoria</small><strong id="dCategoria">-</strong></div>
+            <div class="info-item"><small>Módulo</small><strong id="dModulo">-</strong></div>
+            <div class="info-item"><small>Responsável</small><strong id="dResponsavel">-</strong></div>
+          </div>
+
+          <div class="admin-controls">
+            <select class="select" id="dEditStatus">
+              <option>ABERTO</option>
+              <option>EM ATENDIMENTO</option>
+              <option>AGUARDANDO USUARIO</option>
+              <option>RESOLVIDO</option>
+              <option>FECHADO</option>
+            </select>
+            <select class="select" id="dEditPrioridade">
+              <option>BAIXA</option>
+              <option>NORMAL</option>
+              <option>ALTA</option>
+              <option>URGENTE</option>
+            </select>
+            <input class="input" id="dEditResponsavel" placeholder="Responsável">
+            <button class="btn green" id="btnSalvarGestao" type="button">Salvar gestão</button>
+          </div>
+
+          <div class="conversation" id="conversation"></div>
+          <div class="attachments" id="attachments"></div>
+
+          <div class="reply">
+            <textarea class="textarea" id="replyText" placeholder="Escreva uma resposta..."></textarea>
+            <div class="reply-actions">
+              <div>
+                <input type="file" id="replyFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,text/plain,application/pdf,image/png,image/jpeg,image/webp" hidden>
+                <button class="btn ghost" id="btnReplyFile" type="button">📎 Anexar</button>
+                <span class="file-name" id="replyFileName">Nenhum arquivo</span>
+              </div>
+              <button class="btn primary" id="btnEnviarResposta" type="button">Enviar resposta</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="modal" id="modalNovo">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Abrir novo chamado</h2>
+        <button class="btn ghost" id="btnFecharNovo" type="button">Fechar</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field full">
+            <label>Título *</label>
+            <input class="input" id="nTitulo" maxlength="120" placeholder="Ex: Erro ao gerar posição de embarque">
+          </div>
+
+          <div class="field">
+            <label>Categoria *</label>
+            <select class="select" id="nCategoria">
+              <option>ERRO NO SISTEMA</option>
+              <option>ACESSO / LOGIN</option>
+              <option>FRETES</option>
+              <option>BI</option>
+              <option>ADMINISTRATIVO</option>
+              <option>CONTROLE DE EMBARQUE</option>
+              <option>ESTADIAS</option>
+              <option>CADASTROS</option>
+              <option>SUGESTAO / MELHORIA</option>
+              <option>OUTROS</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Prioridade *</label>
+            <select class="select" id="nPrioridade">
+              <option>BAIXA</option>
+              <option selected>NORMAL</option>
+              <option>ALTA</option>
+              <option>URGENTE</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Módulo / página</label>
+            <input class="input" id="nModulo" placeholder="Ex: CONTROLE DE EMBARQUE">
+          </div>
+
+          <div class="field">
+            <label>Filial</label>
+            <input class="input" id="nFilial" placeholder="Ex: RIO VERDE">
+          </div>
+
+          <div class="field full">
+            <label>Descrição detalhada *</label>
+            <textarea class="textarea" id="nDescricao" placeholder="Explique o que aconteceu, o que você esperava e, se possível, como reproduzir o problema."></textarea>
+          </div>
+
+          <div class="field full">
+            <label>Anexo opcional</label>
+            <input class="input" type="file" id="nAnexo" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,text/plain,application/pdf,image/png,image/jpeg,image/webp">
+            <div style="margin-top:6px;color:#8297ae;font-size:9px">PDF, PNG, JPG, WEBP ou TXT. Recomendado até 5 MB.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn ghost" id="btnCancelarNovo" type="button">Cancelar</button>
+        <button class="btn primary" id="btnSalvarNovo" type="button">Abrir chamado</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-box" id="loadingText">Processando...</div>
+  </div>
+
+  <script src="../assets/js/auth.js?v=9"></script>
+  <script src="../assets/js/chamados.js?v=1"></script>
+  <script>
+    if (requireChamadosAuth() === true) {
+      bindLogoutButton();
+    }
+  </script>
+</body>
+</html>

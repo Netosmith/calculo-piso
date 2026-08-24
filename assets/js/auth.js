@@ -13,19 +13,16 @@ const STATE_FEATURES = {
 
   OPERACIONAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "fretes-mercado", "bi", "controle", "estadias"
-  ],
+    "fretes-mercado", "bi", "controle", "estadias", "embarques"],
 
   COMERCIAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "bi", "custo-frota", "fretes-mercado", "controle", "fretes2", "estadias", "relatorio"
-  ],
+    "bi", "custo-frota", "fretes-mercado", "controle", "fretes2", "estadias", "relatorio", "embarques"],
 
   ADMINISTRADOR: [
     "piso", "piso2", "fretes", "share", "divulgacao", "bi",
     "custo-filial", "custo-frota", "fretes-mercado", "administrativo",
-    "patrimonio", "cadastros", "fretes2", "controle", "estadias", "relatorio"
-  ],
+    "patrimonio", "cadastros", "fretes2", "controle", "estadias", "relatorio", "embarques"],
 
   ESTADIAS_ADMIN: ["estadias"],
   ESTADIAS_EDITOR: ["estadias"],

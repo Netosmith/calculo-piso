@@ -1,6 +1,7 @@
 // ==========================================
 // FRETES MERCADO - NOVA FROTA
 // Gateway seguro via Cloudflare Worker
+// AUTO-SAVE AO SAIR DO CAMPO
 // ==========================================
 
 const REGIOES = {
@@ -14,6 +15,7 @@ const REGIOES = {
 };
 
 const DIRTY_KEYS = new Set();
+const SAVING_KEYS = new Set();
 let LOAD_SEQUENCE = 0;
 
 function $(id) {
@@ -59,7 +61,9 @@ function setStatus(msg, isError = false) {
   const el = $("statusMercado");
   if (!el) return;
   el.textContent = msg;
-  el.style.color = isError ? "#fca5a5" : "#93c5fd";
+  el.style.color = isError ? "#b42318" : "#0b7d4e";
+  el.style.borderColor = isError ? "#fecaca" : "#bde8d0";
+  el.style.background = isError ? "#fff1f2" : "#eaf8f1";
 }
 
 function setButtonLoading(id, text) {
@@ -173,14 +177,18 @@ function render(dados) {
                  data-base="${esc(base)}"
                  data-id="${esc(item.id || "")}">
               <input value="${esc(base)}" readonly class="baseInput">
-              <input
-                type="text"
-                inputmode="decimal"
-                value="${valor ? formatBRL(valor) : ""}"
-                class="freteInput"
-                data-original="${valor}"
-                placeholder="R$ 0,00"
-              >
+              <div class="freteWrap">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  value="${valor ? formatBRL(valor) : ""}"
+                  class="freteInput"
+                  data-original="${valor}"
+                  placeholder="R$ 0,00"
+                  autocomplete="off"
+                >
+                <span class="saveState" aria-live="polite"></span>
+              </div>
             </div>
           `;
         }).join("")}
@@ -191,6 +199,117 @@ function render(dados) {
   bindCurrencyInputs();
 }
 
+function setLinhaState(linha, state, text = "") {
+  if (!linha) return;
+
+  linha.dataset.saveState = state || "";
+  const stateEl = linha.querySelector(".saveState");
+  const input = linha.querySelector(".freteInput");
+
+  if (stateEl) {
+    stateEl.textContent = text;
+    stateEl.className = "saveState " + (state || "");
+  }
+
+  if (input) {
+    input.classList.toggle("is-saving", state === "saving");
+    input.classList.toggle("is-saved", state === "saved");
+    input.classList.toggle("is-error", state === "error");
+  }
+}
+
+async function salvarLinha(linha, input) {
+  if (!linha || !input) return false;
+
+  const regiao = linha.dataset.regiao || "";
+  const base = linha.dataset.base || "";
+  const id = linha.dataset.id || "";
+  const key = makeKey(regiao, base);
+
+  const valorAtual = toNumber(input.value);
+  const valorOriginal = Number(input.dataset.original || 0);
+
+  input.value = valorAtual ? formatBRL(valorAtual) : "";
+
+  if (valorAtual === valorOriginal) {
+    DIRTY_KEYS.delete(key);
+    linha.dataset.dirty = "";
+    setLinhaState(linha, "", "");
+    return true;
+  }
+
+  if (SAVING_KEYS.has(key)) {
+    return false;
+  }
+
+  SAVING_KEYS.add(key);
+  DIRTY_KEYS.add(key);
+  linha.dataset.dirty = "1";
+  setLinhaState(linha, "saving", "Salvando...");
+  setStatus(`💾 Salvando ${base} → ${regiao}...`);
+
+  const valorAntesDeSalvar = valorOriginal;
+
+  try {
+    const result = await mercadoApi("update", {
+      resource: "frete",
+      id,
+      regiao,
+      base,
+      frete: valorAtual
+    });
+
+    const returnedId =
+      result?.id ||
+      result?.data?.id ||
+      result?.row?.id ||
+      "";
+
+    if (returnedId) {
+      linha.dataset.id = String(returnedId);
+    }
+
+    input.dataset.original = String(valorAtual);
+    DIRTY_KEYS.delete(key);
+    linha.dataset.dirty = "";
+
+    setLinhaState(linha, "saved", "Salvo");
+    setStatus(`✅ ${base} → ${regiao} salvo automaticamente.`);
+
+    window.setTimeout(() => {
+      if (linha.dataset.saveState === "saved") {
+        setLinhaState(linha, "", "");
+      }
+    }, 1800);
+
+    return true;
+  } catch (err) {
+    console.error("[FRETES MERCADO] Falha no auto-save:", err);
+
+    input.dataset.original = String(valorAntesDeSalvar);
+    input.value = valorAntesDeSalvar ? formatBRL(valorAntesDeSalvar) : "";
+
+    DIRTY_KEYS.delete(key);
+    linha.dataset.dirty = "";
+
+    setLinhaState(linha, "error", "Erro");
+    setStatus(
+      `❌ Não foi possível salvar ${base} → ${regiao}. O valor anterior foi restaurado.`,
+      true
+    );
+
+    window.setTimeout(() => {
+      if (linha.dataset.saveState === "error") {
+        setLinhaState(linha, "", "");
+      }
+    }, 3000);
+
+    return false;
+  } finally {
+    SAVING_KEYS.delete(key);
+  }
+}
+
 function bindCurrencyInputs() {
   const inputs = document.querySelectorAll(".freteInput");
 
@@ -198,9 +317,24 @@ function bindCurrencyInputs() {
     input.addEventListener("focus", () => {
       const n = toNumber(input.value);
       input.value = n ? String(n).replace(".", ",") : "";
+      input.select();
     });
 
-    input.addEventListener("blur", () => {
+    input.addEventListener("keydown", async (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        input.blur();
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        const valorOriginal = Number(input.dataset.original || 0);
+        input.value = valorOriginal ? formatBRL(valorOriginal) : "";
+        input.blur();
+      }
+    });
+
+    input.addEventListener("input", () => {
       const linha = input.closest(".linha-frete");
       if (!linha) return;
 
@@ -211,15 +345,21 @@ function bindCurrencyInputs() {
       const valorAtual = toNumber(input.value);
       const valorOriginal = Number(input.dataset.original || 0);
 
-      input.value = valorAtual ? formatBRL(valorAtual) : "";
-
       if (valorAtual !== valorOriginal) {
         DIRTY_KEYS.add(key);
         linha.dataset.dirty = "1";
+        setLinhaState(linha, "", "");
       } else {
         DIRTY_KEYS.delete(key);
         linha.dataset.dirty = "";
       }
+    });
+
+    input.addEventListener("blur", async () => {
+      const linha = input.closest(".linha-frete");
+      if (!linha) return;
+
+      await salvarLinha(linha, input);
     });
   });
 }
@@ -234,6 +374,8 @@ function coletarDadosAlterados() {
     const freteEl = linha.querySelector(".freteInput");
 
     return {
+      linha,
+      input: freteEl,
       id,
       regiao,
       base,
@@ -249,22 +391,18 @@ async function salvarTudo() {
     const itens = coletarDadosAlterados();
 
     if (!itens.length) {
-      setStatus("✅ Nenhuma alteração para salvar.");
+      setStatus("✅ Nenhuma alteração pendente. Tudo já foi salvo automaticamente.");
       return;
     }
 
+    let salvos = 0;
+
     for (const item of itens) {
-      await mercadoApi("update", {
-        resource: "frete",
-        id: item.id || "",
-        regiao: item.regiao,
-        base: item.base,
-        frete: item.frete
-      });
+      const ok = await salvarLinha(item.linha, item.input);
+      if (ok) salvos += 1;
     }
 
-    setStatus(`✅ ${itens.length} alteração(ões) salva(s) com sucesso.`);
-    await load();
+    setStatus(`✅ ${salvos} alteração(ões) pendente(s) salva(s).`);
   } catch (err) {
     console.error(err);
     setStatus("❌ " + err.message, true);

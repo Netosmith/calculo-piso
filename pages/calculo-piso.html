@@ -701,9 +701,15 @@
     /* BOTTOM */
     .bottomGrid{
       display:grid;
-      grid-template-columns:minmax(0,1.78fr) minmax(290px,.6fr) minmax(245px,.58fr);
+      grid-template-columns:minmax(0,1.9fr) minmax(300px,.72fr);
       gap:11px;
       margin-top:11px;
+    }
+
+    /* AÇÕES RÁPIDAS REMOVIDAS DA INTERFACE
+       Mantidas ocultas no DOM por compatibilidade com calculo-piso.js. */
+    .actionsPanel{
+      display:none!important;
     }
 
     .freightTableWrap{
@@ -862,13 +868,12 @@
       .dashboard{grid-template-columns:1fr 1.08fr}
       .historyPanel{grid-column:1/-1}
       .bottomGrid{grid-template-columns:1.4fr .7fr}
-      .actionsPanel{grid-column:1/-1}
       .actionStack{grid-template-columns:repeat(4,1fr)}
     }
 
     @media(max-width:900px){
       .dashboard,.bottomGrid{grid-template-columns:1fr}
-      .historyPanel,.actionsPanel{grid-column:auto}
+      .historyPanel{grid-column:auto}
       .topbar{align-items:flex-start}
       .topActions{justify-content:flex-start}
       .formGrid{grid-template-columns:1fr}

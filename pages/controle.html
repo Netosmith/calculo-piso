@@ -1,161 +1,961 @@
 <!doctype html>
-<html lang="pt-br" class="dark">
+<html lang="pt-br">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Controle de Embarque </title>
+<title>Controle de Embarque | NOVA FROTA</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Hanken+Grotesk:wght@700;900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-<script>
-tailwind.config={darkMode:"class",theme:{extend:{colors:{
-background:"#051424",surface:"#122131",surface2:"#1c2b3c",line:"#464555",
-primary:"#c1c1ff",primary2:"#5d5fef",yellow:"#eec200",text:"#d4e4fa",muted:"#c7c4d7"
-},fontFamily:{sans:["Inter"],head:["Hanken Grotesk"]}}}}
-</script>
-<style>
-body{background:#051424;color:#d4e4fa}.view{display:none}.view.active{display:block}
-.modal{display:none}.modal.show{display:flex}.pulse{animation:pulse 1.6s infinite}
-@keyframes pulse{50%{opacity:.35}}.scrollbar{scrollbar-width:thin} button:disabled,select:disabled,input:disabled{opacity:.6;cursor:not-allowed}.status-select{min-width:150px}
 
-/* POSIÇÃO DE EMBARQUE */
-.position-modal{display:none}.position-modal.show{display:flex}
-.position-shell{width:min(980px,96vw);max-height:92vh;overflow:auto;background:#081827;border:1px solid #3d5268;border-radius:18px;box-shadow:0 28px 80px rgba(0,0,0,.55)}
-.position-toolbar{position:sticky;top:0;z-index:5;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0d2033;border-bottom:1px solid #31465a}
-.position-toolbar strong{font-family:"Hanken Grotesk",sans-serif;font-size:18px;color:#fff}
-.position-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}
-.position-action{min-height:38px;padding:0 14px;border:1px solid #40556b;border-radius:10px;background:#14273a;color:#fff;font-size:11px;font-weight:800;text-transform:uppercase}
-.position-action.green{background:#0c6c46;border-color:#1b9c6b}.position-action.blue{background:#164b9d;border-color:#2b6ecb}
-#positionCapture{width:900px;margin:18px auto;padding:24px;color:#eef6ff;background:radial-gradient(circle at 90% 2%,rgba(93,95,239,.17),transparent 34%),linear-gradient(155deg,#0a1b2d 0%,#0b1f34 46%,#071522 100%);border:1px solid #40566c;border-radius:16px;font-family:"Inter",Arial,sans-serif}
-.position-head{display:grid;grid-template-columns:210px 1fr 210px;align-items:center;gap:18px;padding-bottom:18px;border-bottom:1px solid rgba(174,201,227,.22)}
-.position-logo img{width:185px;height:auto;object-fit:contain}.position-title{text-align:center}.position-title h2{margin:0;font-family:"Hanken Grotesk",sans-serif;font-size:26px;font-weight:900;letter-spacing:-.4px;color:#fff}.position-title p{margin:6px 0 0;color:#aebfd1;font-size:11px}
-.position-status-wrap{text-align:right}.position-status-label{color:#8fa4ba;font-size:9px;font-weight:800;text-transform:uppercase}.position-status{margin-top:5px;display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 11px;border-radius:999px;border:1px solid rgba(47,196,141,.45);background:rgba(47,196,141,.12);color:#54dc9f;font-size:10px;font-weight:900;text-transform:uppercase}
-.position-info{margin-top:16px;padding:14px 16px;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:14px;border:1px solid rgba(174,201,227,.18);border-radius:12px;background:rgba(255,255,255,.025)}
-.position-info small,.position-summary-card small{display:block;color:#8fa4ba;font-size:9px;font-weight:800;text-transform:uppercase}.position-info strong{display:block;margin-top:5px;color:#fff;font-size:13px}
-.position-summary{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.position-summary-card{padding:14px 15px;border:1px solid #40566c;border-radius:12px;background:#102337}.position-summary-card.embarcado{border-color:rgba(193,193,255,.45)}.position-summary-card.saldo{border-left:4px solid #eec200}.position-summary-card strong{display:block;margin-top:6px;color:#fff;font-family:"Hanken Grotesk",sans-serif;font-size:24px;font-weight:900}.position-summary-card.embarcado strong{color:#c1c1ff}.position-summary-card.saldo strong{color:#ffd51e}
-.position-table-wrap{margin-top:16px;overflow:hidden;border:1px solid rgba(174,201,227,.18);border-radius:12px}.position-table{width:100%;border-collapse:collapse;table-layout:fixed}.position-table th,.position-table td{padding:10px 9px;border-bottom:1px solid rgba(174,201,227,.12);vertical-align:middle;text-align:left;overflow-wrap:anywhere}.position-table th{background:#172a3e;color:#9eb0c3;font-size:8.5px;font-weight:900;text-transform:uppercase}.position-table td{color:#e8f2fd;font-size:9.5px;line-height:1.25}.position-table tbody tr:last-child td{border-bottom:0}.position-table .c-data{width:16%}.position-table .c-placa{width:11%}.position-table .c-motorista{width:27%}.position-table .c-tipo{width:17%}.position-table .c-peso{width:10%}.position-table .c-situacao{width:19%}
-.position-badge{display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 8px;border-radius:8px;border:1px solid rgba(193,193,255,.35);background:rgba(193,193,255,.10);color:#d9d9ff;font-size:8.5px;font-weight:900;text-transform:uppercase;white-space:nowrap}.position-badge.porta{border-color:#2f77d8;background:rgba(47,119,216,.14);color:#6db0ff}.position-badge.carregando{border-color:#c99f17;background:rgba(201,159,23,.14);color:#f3cb47}.position-badge.carregado{border-color:#7654d6;background:rgba(118,84,214,.16);color:#c2afff}.position-badge.transito{border-color:#2477d9;background:rgba(36,119,217,.16);color:#73b4ff}.position-badge.finalizado{border-color:#1e9b68;background:rgba(30,155,104,.15);color:#61dfa8}.position-badge.cancelado{border-color:#c64b5d;background:rgba(198,75,93,.15);color:#ff8f9f}
-.position-footer{margin-top:14px;padding-top:12px;display:flex;justify-content:space-between;gap:16px;border-top:1px solid rgba(174,201,227,.16);color:#93a8bd;font-size:9.5px}.position-footer strong{color:#d8e7f7}.position-empty{padding:24px!important;text-align:center!important;color:#8fa4ba!important}
-@media(max-width:980px){#positionCapture{width:820px}}@media(max-width:700px){.position-toolbar{align-items:flex-start;flex-direction:column}.position-shell{width:98vw}.position-summary{grid-template-columns:1fr}}
+<script>
+tailwind.config={
+  darkMode:"class",
+  theme:{
+    extend:{
+      colors:{
+        background:"#f5f7fb",
+        surface:"#ffffff",
+        surface2:"#f8fafc",
+        line:"#dbe4ee",
+        primary:"#2563eb",
+        primary2:"#eaf2ff",
+        yellow:"#d69e00",
+        text:"#10233d",
+        muted:"#6f8195"
+      },
+      fontFamily:{
+        sans:["Inter"],
+        head:["Hanken Grotesk"]
+      }
+    }
+  }
+}
+</script>
+
+<style>
+:root{
+  --bg:#f5f7fb;
+  --panel:#ffffff;
+  --soft:#f8fafc;
+  --line:#dbe4ee;
+  --text:#10233d;
+  --muted:#6f8195;
+  --navy:#0d2f5f;
+  --blue:#2563eb;
+  --green:#0fa968;
+  --amber:#d69e00;
+  --red:#e64646;
+  --shadow:0 8px 26px rgba(27,49,78,.08);
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+}
+
+body{
+  font-family:"Inter",Arial,sans-serif;
+}
+
+.view{display:none}
+.view.active{display:block}
+
+.modal{display:none}
+.modal.show{display:flex}
+
+.pulse{animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+.scrollbar{scrollbar-width:thin}
+button:disabled,select:disabled,input:disabled{opacity:.6;cursor:not-allowed}
+.status-select{min-width:150px}
+
+/* ===== HEADER CLARO ===== */
+.portal-header{
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  box-shadow:0 2px 12px rgba(15,35,63,.04);
+}
+
+.home-button{
+  background:#fff;
+  border:1px solid var(--line);
+  color:var(--navy);
+}
+
+.home-button:hover{
+  background:#f6f9fd;
+  border-color:#b9c9db;
+}
+
+.top-primary-button{
+  background:var(--blue);
+  color:#fff;
+  box-shadow:0 4px 12px rgba(37,99,235,.18);
+}
+
+.top-primary-button:hover{
+  filter:brightness(1.04);
+}
+
+/* ===== CARDS ===== */
+.light-card{
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+
+.soft-card{
+  background:var(--soft);
+  border:1px solid var(--line);
+}
+
+.table-card{
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+
+.table-light thead{
+  background:#f1f5f9;
+  color:#5f7288;
+}
+
+.table-light tbody{
+  color:var(--text);
+}
+
+.table-light tbody tr{
+  border-color:#e5ebf2;
+}
+
+/* ===== INPUTS ===== */
+.portal-input,
+.portal-select{
+  background:#fff!important;
+  border-color:#cfd9e5!important;
+  color:var(--text)!important;
+}
+
+.portal-input:focus,
+.portal-select:focus{
+  border-color:#6da3f7!important;
+  box-shadow:0 0 0 3px rgba(37,99,235,.10)!important;
+}
+
+/* ===== MODAIS ===== */
+.modal-panel{
+  background:#fff;
+  color:var(--text);
+  border:1px solid var(--line);
+  box-shadow:0 24px 80px rgba(15,35,63,.20);
+}
+
+.modal-overlay{
+  background:rgba(15,35,63,.36);
+}
+
+/* ===== POSIÇÃO DE EMBARQUE, AGORA CLARA ===== */
+.position-modal{display:none}
+.position-modal.show{display:flex}
+
+.position-shell{
+  width:min(980px,96vw);
+  max-height:92vh;
+  overflow:auto;
+  background:#f8fafc;
+  border:1px solid #d7e0ea;
+  border-radius:18px;
+  box-shadow:0 28px 80px rgba(15,35,63,.28);
+}
+
+.position-toolbar{
+  position:sticky;
+  top:0;
+  z-index:5;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background:#fff;
+  border-bottom:1px solid #d7e0ea;
+}
+
+.position-toolbar strong{
+  font-family:"Hanken Grotesk",sans-serif;
+  font-size:18px;
+  color:#10233d;
+}
+
+.position-toolbar-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.position-action{
+  min-height:38px;
+  padding:0 14px;
+  border:1px solid #cbd7e3;
+  border-radius:10px;
+  background:#fff;
+  color:#17324f;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.position-action.green{
+  background:#0fa968;
+  border-color:#0fa968;
+  color:#fff;
+}
+
+.position-action.blue{
+  background:#2563eb;
+  border-color:#2563eb;
+  color:#fff;
+}
+
+#positionCapture{
+  width:900px;
+  margin:18px auto;
+  padding:24px;
+  color:#10233d;
+  background:
+    radial-gradient(circle at 92% 0%,rgba(37,99,235,.08),transparent 32%),
+    linear-gradient(155deg,#ffffff 0%,#f8fbff 50%,#f4f7fb 100%);
+  border:1px solid #d8e2ec;
+  border-radius:16px;
+  font-family:"Inter",Arial,sans-serif;
+}
+
+.position-head{
+  display:grid;
+  grid-template-columns:210px 1fr 210px;
+  align-items:center;
+  gap:18px;
+  padding-bottom:18px;
+  border-bottom:1px solid #dce5ee;
+}
+
+.position-logo img{
+  width:185px;
+  height:auto;
+  object-fit:contain;
+}
+
+.position-title{text-align:center}
+
+.position-title h2{
+  margin:0;
+  font-family:"Hanken Grotesk",sans-serif;
+  font-size:26px;
+  font-weight:900;
+  letter-spacing:-.4px;
+  color:#10233d;
+}
+
+.position-title p{
+  margin:6px 0 0;
+  color:#708397;
+  font-size:11px;
+}
+
+.position-status-wrap{text-align:right}
+
+.position-status-label{
+  color:#7b8ea2;
+  font-size:9px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.position-status{
+  margin-top:5px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  padding:0 11px;
+  border-radius:999px;
+  border:1px solid #9cddbd;
+  background:#eaf8f1;
+  color:#08794b;
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+.position-info{
+  margin-top:16px;
+  padding:14px 16px;
+  display:grid;
+  grid-template-columns:1fr 1.6fr 1fr;
+  gap:14px;
+  border:1px solid #dce5ee;
+  border-radius:12px;
+  background:#fff;
+}
+
+.position-info small,
+.position-summary-card small{
+  display:block;
+  color:#7b8ea2;
+  font-size:9px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.position-info strong{
+  display:block;
+  margin-top:5px;
+  color:#10233d;
+  font-size:13px;
+}
+
+.position-summary{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.position-summary-card{
+  padding:14px 15px;
+  border:1px solid #d8e2ec;
+  border-radius:12px;
+  background:#fff;
+}
+
+.position-summary-card.embarcado{
+  border-color:#b9d2ff;
+  background:#f2f7ff;
+}
+
+.position-summary-card.saldo{
+  border-left:4px solid #e3b000;
+  background:#fffdf4;
+}
+
+.position-summary-card strong{
+  display:block;
+  margin-top:6px;
+  color:#10233d;
+  font-family:"Hanken Grotesk",sans-serif;
+  font-size:24px;
+  font-weight:900;
+}
+
+.position-summary-card.embarcado strong{color:#2563eb}
+.position-summary-card.saldo strong{color:#b38400}
+
+.position-table-wrap{
+  margin-top:16px;
+  overflow:hidden;
+  border:1px solid #dce5ee;
+  border-radius:12px;
+  background:#fff;
+}
+
+.position-table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+
+.position-table th,
+.position-table td{
+  padding:10px 9px;
+  border-bottom:1px solid #e5ebf2;
+  vertical-align:middle;
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+
+.position-table th{
+  background:#f1f5f9;
+  color:#61758a;
+  font-size:8.5px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+.position-table td{
+  color:#17324f;
+  font-size:9.5px;
+  line-height:1.25;
+}
+
+.position-table tbody tr:last-child td{border-bottom:0}
+
+.position-table .c-data{width:16%}
+.position-table .c-placa{width:11%}
+.position-table .c-motorista{width:27%}
+.position-table .c-tipo{width:17%}
+.position-table .c-peso{width:10%}
+.position-table .c-situacao{width:19%}
+
+.position-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:24px;
+  padding:0 8px;
+  border-radius:8px;
+  border:1px solid #c9d6e3;
+  background:#f5f8fb;
+  color:#476078;
+  font-size:8.5px;
+  font-weight:900;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+
+.position-badge.porta{
+  border-color:#9fc5fa;
+  background:#eff6ff;
+  color:#2563eb;
+}
+
+.position-badge.carregando{
+  border-color:#efd980;
+  background:#fff9db;
+  color:#9a7500;
+}
+
+.position-badge.carregado,
+.position-badge.transito{
+  border-color:#b7cafa;
+  background:#eef4ff;
+  color:#305fbd;
+}
+
+.position-badge.finalizado{
+  border-color:#9cddbd;
+  background:#eaf8f1;
+  color:#08794b;
+}
+
+.position-badge.cancelado{
+  border-color:#f3b8c0;
+  background:#fff0f2;
+  color:#c73e51;
+}
+
+.position-footer{
+  margin-top:14px;
+  padding-top:12px;
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  border-top:1px solid #dce5ee;
+  color:#75899d;
+  font-size:9.5px;
+}
+
+.position-footer strong{color:#17324f}
+
+.position-empty{
+  padding:24px!important;
+  text-align:center!important;
+  color:#7b8ea2!important;
+}
+
+@media(max-width:980px){
+  #positionCapture{width:820px}
+}
+
+@media(max-width:700px){
+  .position-toolbar{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .position-shell{width:98vw}
+  .position-summary{grid-template-columns:1fr}
+}
 </style>
 </head>
-<body class="min-h-screen font-sans">
-<header class="sticky top-0 z-40 bg-surface border-b border-line px-4 md:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+
+<body class="min-h-screen font-sans bg-background text-text">
+
+<header class="portal-header sticky top-0 z-40 px-4 md:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
   <div class="flex items-center gap-4">
-    <a href="./home.html" class="px-3 py-2 rounded-lg bg-surface2 hover:bg-primary2" aria-label="Voltar para a página inicial">
+    <a href="./home.html" class="home-button px-3 py-2 rounded-lg" aria-label="Voltar para a página inicial">
       <span class="material-symbols-outlined">home</span>
     </a>
-    <img src="../assets/img/logo-novafrota.png" alt="Nova Frota" class="h-11 w-auto object-contain" onerror="this.style.display='none'">
+
+    <img
+      src="../assets/img/logo-novafrota.png"
+      alt="Nova Frota"
+      class="h-11 w-auto object-contain"
+      onerror="this.style.display='none'"
+    >
+
     <div>
-      <h1 class="font-head text-2xl font-black text-primary">Controle de Embarque</h1>
+      <h1 class="font-head text-2xl font-black text-text">Controle de Embarque</h1>
+      <p class="text-xs text-muted mt-1">Acompanhamento operacional por filial, embarque e veículo.</p>
     </div>
   </div>
-  <div class="flex items-center gap-3"><span id="sync" class="text-xs text-muted">✅ Pronto</span><button id="btnNovoTop" class="px-4 py-2 rounded-lg bg-primary text-blue-950 font-bold text-xs uppercase">+ Criar embarque</button></div>
+
+  <div class="flex items-center gap-3">
+    <span id="sync" class="text-xs font-semibold text-green-700">✅ Pronto</span>
+    <button id="btnNovoTop" class="top-primary-button px-4 py-2 rounded-lg font-bold text-xs uppercase">
+      + Criar embarque
+    </button>
+  </div>
 </header>
 
 <main>
+
 <section id="view-dashboard" class="view active">
-  <div class="px-4 md:px-8 py-4 bg-primary2/20 border-b border-line flex flex-wrap gap-3">
-    <select id="fFilial" class="bg-surface border-line rounded-lg text-sm"><option value="">Todas as filiais</option></select>
-    <input id="fBusca" class="flex-1 min-w-[240px] bg-surface border-line rounded-lg text-sm" placeholder="Buscar filial, cliente, rota ou status">
-    <button id="btnAtualizar" class="px-4 py-2 border border-line rounded-lg text-xs font-bold uppercase">Atualizar</button>
+  <div class="px-4 md:px-8 py-4 bg-white border-b border-line flex flex-wrap gap-3">
+    <select id="fFilial" class="portal-select border rounded-lg text-sm">
+      <option value="">Todas as filiais</option>
+    </select>
+
+    <input
+      id="fBusca"
+      class="portal-input flex-1 min-w-[240px] border rounded-lg text-sm"
+      placeholder="Buscar filial, cliente, rota ou status"
+    >
+
+    <button
+      id="btnAtualizar"
+      class="px-4 py-2 bg-white border border-line rounded-lg text-xs font-bold uppercase text-text hover:bg-slate-50">
+      Atualizar
+    </button>
   </div>
+
   <div class="p-4 md:p-8">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Filiais</div><div id="sFiliais" class="text-3xl font-black mt-2">0</div></div>
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Ativos</div><div id="sAtivos" class="text-3xl font-black mt-2 text-yellow">0</div></div>
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Veículos</div><div id="sVeiculos" class="text-3xl font-black mt-2 text-primary">0</div></div>
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Finalizados</div><div id="sFinalizados" class="text-3xl font-black mt-2 text-green-400">0</div></div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Filiais</div>
+        <div id="sFiliais" class="text-3xl font-black mt-2 text-text">0</div>
+      </div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Ativos</div>
+        <div id="sAtivos" class="text-3xl font-black mt-2 text-amber-600">0</div>
+      </div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Veículos</div>
+        <div id="sVeiculos" class="text-3xl font-black mt-2 text-blue-600">0</div>
+      </div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Finalizados</div>
+        <div id="sFinalizados" class="text-3xl font-black mt-2 text-green-600">0</div>
+      </div>
+
     </div>
+
     <div id="gridFiliais" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
   </div>
 </section>
 
 <section id="view-filial" class="view">
   <div class="p-4 md:p-8 space-y-5">
-    <button id="btnVoltarPainel" class="text-primary text-xs uppercase">&lt; Voltar ao painel</button>
+
+    <button id="btnVoltarPainel" class="text-blue-600 font-bold text-xs uppercase">
+      &lt; Voltar ao painel
+    </button>
+
     <div class="flex flex-wrap items-end justify-between gap-4">
-      <div><h2 id="tituloFilial" class="font-head text-3xl font-black">Filial</h2><div class="text-xs text-muted mt-2"><span id="fAtivos">0</span> ativos · <span id="fTotal">0</span> total · <span id="fFinalizados">0</span> finalizados</div></div>
-      <div class="flex gap-2"><input id="buscaFilial" class="bg-surface border-line rounded-lg text-sm" placeholder="Filtrar embarques"><button id="btnNovoFilial" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold text-xs uppercase">+ Criar</button></div>
+      <div>
+        <h2 id="tituloFilial" class="font-head text-3xl font-black text-text">Filial</h2>
+        <div class="text-xs text-muted mt-2">
+          <span id="fAtivos">0</span> ativos ·
+          <span id="fTotal">0</span> total ·
+          <span id="fFinalizados">0</span> finalizados
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <input
+          id="buscaFilial"
+          class="portal-input border rounded-lg text-sm"
+          placeholder="Filtrar embarques"
+        >
+
+        <button
+          id="btnNovoFilial"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs uppercase">
+          + Criar
+        </button>
+      </div>
     </div>
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Eficiência</div><div id="mEficiencia" class="text-2xl font-bold mt-2">0%</div></div>
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Saídas</div><div id="mSaidas" class="text-2xl font-bold mt-2">0</div></div>
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Volume</div><div id="mVolume" class="text-2xl font-bold mt-2">0 t</div></div>
-      <div class="bg-surface border border-line rounded-xl p-4"><div class="text-xs text-muted uppercase">Saldo</div><div id="mSaldo" class="text-2xl font-bold mt-2 text-yellow">0 t</div></div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Eficiência</div>
+        <div id="mEficiencia" class="text-2xl font-bold mt-2">0%</div>
+      </div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Saídas</div>
+        <div id="mSaidas" class="text-2xl font-bold mt-2">0</div>
+      </div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Volume</div>
+        <div id="mVolume" class="text-2xl font-bold mt-2">0 t</div>
+      </div>
+
+      <div class="light-card rounded-xl p-4">
+        <div class="text-xs text-muted uppercase">Saldo</div>
+        <div id="mSaldo" class="text-2xl font-bold mt-2 text-amber-600">0 t</div>
+      </div>
+
     </div>
-    <div class="bg-surface border border-line rounded-xl overflow-hidden">
+
+    <div class="table-card rounded-xl overflow-hidden">
       <div class="overflow-x-auto scrollbar">
-        <table class="w-full min-w-[1050px] text-left">
-          <thead class="bg-surface2 text-xs uppercase text-muted"><tr><th class="p-4">Data</th><th class="p-4">Cliente</th><th class="p-4">Origem</th><th class="p-4">Local</th><th class="p-4">Destino</th><th class="p-4">Volume</th><th class="p-4">Saldo</th><th class="p-4">Status</th><th class="p-4 text-right">Ações</th></tr></thead>
-          <tbody id="tbodyEmbarques" class="divide-y divide-line/40"></tbody>
+        <table class="table-light w-full min-w-[1050px] text-left">
+          <thead class="text-xs uppercase">
+            <tr>
+              <th class="p-4">Data</th>
+              <th class="p-4">Cliente</th>
+              <th class="p-4">Origem</th>
+              <th class="p-4">Local</th>
+              <th class="p-4">Destino</th>
+              <th class="p-4">Volume</th>
+              <th class="p-4">Saldo</th>
+              <th class="p-4">Status</th>
+              <th class="p-4 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyEmbarques" class="divide-y divide-line"></tbody>
         </table>
       </div>
     </div>
+
   </div>
 </section>
 
 <section id="view-detalhe" class="view">
   <div class="p-4 md:p-8 space-y-5">
-    <button id="btnVoltarFilial" class="text-primary text-xs uppercase">&lt; Voltar à filial</button>
-    <div class="bg-surface border border-line rounded-xl p-5 flex flex-wrap gap-8 items-center">
-      <div><div class="text-xs text-muted uppercase">Cliente</div><div id="dCliente" class="font-bold mt-1">-</div></div>
-      <div><div class="text-xs text-muted uppercase">Rota</div><div id="dRota" class="font-bold mt-1">-</div></div>
-      <div><div class="text-xs text-muted uppercase">Produto</div><div id="dProduto" class="font-bold mt-1">-</div></div>
+
+    <button id="btnVoltarFilial" class="text-blue-600 font-bold text-xs uppercase">
+      &lt; Voltar à filial
+    </button>
+
+    <div class="light-card rounded-xl p-5 flex flex-wrap gap-8 items-center">
+      <div>
+        <div class="text-xs text-muted uppercase">Cliente</div>
+        <div id="dCliente" class="font-bold mt-1">-</div>
+      </div>
+
+      <div>
+        <div class="text-xs text-muted uppercase">Rota</div>
+        <div id="dRota" class="font-bold mt-1">-</div>
+      </div>
+
+      <div>
+        <div class="text-xs text-muted uppercase">Produto</div>
+        <div id="dProduto" class="font-bold mt-1">-</div>
+      </div>
+
       <div class="ml-auto min-w-[180px]">
-        <label for="dStatus" class="block text-[10px] uppercase text-muted mb-1">Status do embarque</label>
-        <select id="dStatus" class="w-full bg-surface2 border border-line rounded-lg text-xs font-bold uppercase"></select>
+        <label for="dStatus" class="block text-[10px] uppercase text-muted mb-1">
+          Status do embarque
+        </label>
+        <select id="dStatus" class="portal-select w-full border rounded-lg text-xs font-bold uppercase"></select>
       </div>
     </div>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-surface border border-line rounded-xl p-5"><div class="text-xs text-muted uppercase">Contratado</div><div id="dVolume" class="text-3xl font-bold mt-2">0 t</div></div>
-      <div class="bg-surface border border-line rounded-xl p-5"><div class="text-xs text-muted uppercase">Embarcado</div><div id="dEmbarcado" class="text-3xl font-bold mt-2 text-primary">0 t</div></div>
-      <div class="bg-surface border border-line rounded-xl p-5 border-l-4 border-l-yellow"><div class="text-xs text-muted uppercase">Saldo</div><div id="dSaldo" class="text-3xl font-bold mt-2 text-yellow">0 t</div></div>
+
+      <div class="light-card rounded-xl p-5">
+        <div class="text-xs text-muted uppercase">Contratado</div>
+        <div id="dVolume" class="text-3xl font-bold mt-2">0 t</div>
+      </div>
+
+      <div class="light-card rounded-xl p-5">
+        <div class="text-xs text-muted uppercase">Embarcado</div>
+        <div id="dEmbarcado" class="text-3xl font-bold mt-2 text-blue-600">0 t</div>
+      </div>
+
+      <div class="light-card rounded-xl p-5 border-l-4 border-l-amber-400">
+        <div class="text-xs text-muted uppercase">Saldo</div>
+        <div id="dSaldo" class="text-3xl font-bold mt-2 text-amber-600">0 t</div>
+      </div>
+
     </div>
-    <div class="bg-surface border border-line rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3"><h3 class="text-xs uppercase font-bold">Veículos</h3><div class="flex flex-wrap gap-2"><button id="btnGerarPosicao" class="px-4 py-2 border border-primary/50 text-primary rounded-lg font-bold text-xs uppercase hover:bg-primary/10"><span class="material-symbols-outlined align-middle text-[18px] mr-1">image</span> Gerar posição</button><button id="btnNovoVeiculo" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold text-xs uppercase">+ Veículo</button></div></div>
-      <div class="overflow-x-auto"><table class="w-full min-w-[850px]"><thead class="bg-surface2 text-xs uppercase text-muted"><tr><th class="p-4 text-left">Data/Hora</th><th class="p-4 text-left">Placa</th><th class="p-4 text-left">Motorista</th><th class="p-4 text-left">Tipo</th><th class="p-4 text-left">Peso</th><th class="p-4 text-left">Situação</th><th class="p-4 text-right">Ações</th></tr></thead><tbody id="tbodyVeiculos" class="divide-y divide-line/40"></tbody></table></div>
+
+    <div class="table-card rounded-xl overflow-hidden">
+
+      <div class="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm uppercase font-bold text-text">Veículos</h3>
+          <p class="text-[11px] text-muted mt-1">
+            Situação pode ser alterada diretamente. Use o lápis para editar os dados do veículo.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            id="btnGerarPosicao"
+            class="px-4 py-2 border border-blue-200 text-blue-700 bg-blue-50 rounded-lg font-bold text-xs uppercase hover:bg-blue-100">
+            <span class="material-symbols-outlined align-middle text-[18px] mr-1">image</span>
+            Gerar posição
+          </button>
+
+          <button
+            id="btnNovoVeiculo"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs uppercase">
+            + Veículo
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table-light w-full min-w-[900px]">
+          <thead class="text-xs uppercase">
+            <tr>
+              <th class="p-4 text-left">Data/Hora</th>
+              <th class="p-4 text-left">Placa</th>
+              <th class="p-4 text-left">Motorista</th>
+              <th class="p-4 text-left">Tipo</th>
+              <th class="p-4 text-left">Peso</th>
+              <th class="p-4 text-left">Situação</th>
+              <th class="p-4 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyVeiculos" class="divide-y divide-line"></tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 </section>
+
 </main>
 
-<div id="modalPosicao" class="position-modal fixed inset-0 z-[70] items-center justify-center bg-black/70 p-3"><div class="position-shell"><div class="position-toolbar"><strong>Prévia da posição de embarque</strong><div class="position-toolbar-actions"><button id="btnBaixarPosicao" class="position-action green" type="button">⬇ Baixar JPG</button><button id="btnCopiarPosicao" class="position-action blue" type="button">▣ Copiar imagem</button><button id="btnFecharPosicao" class="position-action" type="button">Fechar</button></div></div><div id="positionCapture"><div class="position-head"><div class="position-logo"><img src="../assets/img/logo-novafrota.png" alt="Nova Frota"></div><div class="position-title"><h2>POSIÇÃO DE EMBARQUE</h2><p id="pAtualizado">Atualizado em --</p></div><div class="position-status-wrap"><div class="position-status-label">Status do embarque</div><div class="position-status" id="pStatus">-</div></div></div><div class="position-info"><div><small>Cliente</small><strong id="pCliente">-</strong></div><div><small>Rota</small><strong id="pRota">-</strong></div><div><small>Produto</small><strong id="pProduto">-</strong></div></div><div class="position-summary"><div class="position-summary-card"><small>Contratado</small><strong id="pContratado">0 t</strong></div><div class="position-summary-card embarcado"><small>Embarcado</small><strong id="pEmbarcado">0 t</strong></div><div class="position-summary-card saldo"><small>Saldo</small><strong id="pSaldo">0 t</strong></div></div><div class="position-table-wrap"><table class="position-table"><thead><tr><th class="c-data">Data/Hora</th><th class="c-placa">Placa</th><th class="c-motorista">Motorista</th><th class="c-tipo">Tipo do veículo</th><th class="c-peso">Peso</th><th class="c-situacao">Situação</th></tr></thead><tbody id="pVeiculos"></tbody></table></div><div class="position-footer"><span><strong id="pQtdVeiculos">0</strong> veículo(s) registrado(s)</span><span>Total embarcado: <strong id="pTotalEmbarcado">0 t</strong></span><span>NOVA FROTA TRANSPORTES E LOGÍSTICA</span></div></div></div></div>
-
-<div id="modalEmbarque" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60 p-4">
-  <div class="w-full max-w-3xl bg-surface border border-line rounded-2xl">
-    <div class="p-4 border-b border-line flex justify-between"><h2 class="font-head text-xl font-bold">Criar embarque</h2><button id="fecharEmbarque">✕</button></div>
-    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <input id="eFilial" class="bg-surface2 border-line rounded-lg" placeholder="FILIAL">
-      <input id="eCliente" class="bg-surface2 border-line rounded-lg" placeholder="CLIENTE">
-      <input id="eOrigem" class="bg-surface2 border-line rounded-lg" placeholder="ORIGEM">
-      <input id="eLocal" class="bg-surface2 border-line rounded-lg" placeholder="LOCAL DE EMBARQUE">
-      <input id="eDestino" class="bg-surface2 border-line rounded-lg" placeholder="DESTINO">
-      <input id="eProduto" class="bg-surface2 border-line rounded-lg" placeholder="PRODUTO">
-      <input id="eVolume" type="number" step="0.01" class="bg-surface2 border-line rounded-lg" placeholder="VOLUME (T)">
-      <select id="eStatus" class="bg-surface2 border-line rounded-lg"><option>AGENDADO</option><option>EM ANDAMENTO</option><option>CONCLUÍDO</option><option>EM ATRASO</option></select>
+<!-- POSIÇÃO -->
+<div id="modalPosicao" class="position-modal fixed inset-0 z-[70] items-center justify-center bg-slate-900/40 p-3">
+  <div class="position-shell">
+    <div class="position-toolbar">
+      <strong>Prévia da posição de embarque</strong>
+      <div class="position-toolbar-actions">
+        <button id="btnBaixarPosicao" class="position-action green" type="button">⬇ Baixar JPG</button>
+        <button id="btnCopiarPosicao" class="position-action blue" type="button">▣ Copiar imagem</button>
+        <button id="btnFecharPosicao" class="position-action" type="button">Fechar</button>
+      </div>
     </div>
-    <div class="p-4 border-t border-line flex justify-end gap-2"><button id="cancelarEmbarque" class="px-4 py-2 border border-line rounded-lg">Cancelar</button><button id="salvarEmbarque" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold min-w-[110px]">Salvar</button></div>
+
+    <div id="positionCapture">
+
+      <div class="position-head">
+        <div class="position-logo">
+          <img src="../assets/img/logo-novafrota.png" alt="Nova Frota">
+        </div>
+
+        <div class="position-title">
+          <h2>POSIÇÃO DE EMBARQUE</h2>
+          <p id="pAtualizado">Atualizado em --</p>
+        </div>
+
+        <div class="position-status-wrap">
+          <div class="position-status-label">Status do embarque</div>
+          <div class="position-status" id="pStatus">-</div>
+        </div>
+      </div>
+
+      <div class="position-info">
+        <div>
+          <small>Cliente</small>
+          <strong id="pCliente">-</strong>
+        </div>
+        <div>
+          <small>Rota</small>
+          <strong id="pRota">-</strong>
+        </div>
+        <div>
+          <small>Produto</small>
+          <strong id="pProduto">-</strong>
+        </div>
+      </div>
+
+      <div class="position-summary">
+        <div class="position-summary-card">
+          <small>Contratado</small>
+          <strong id="pContratado">0 t</strong>
+        </div>
+        <div class="position-summary-card embarcado">
+          <small>Embarcado</small>
+          <strong id="pEmbarcado">0 t</strong>
+        </div>
+        <div class="position-summary-card saldo">
+          <small>Saldo</small>
+          <strong id="pSaldo">0 t</strong>
+        </div>
+      </div>
+
+      <div class="position-table-wrap">
+        <table class="position-table">
+          <thead>
+            <tr>
+              <th class="c-data">Data/Hora</th>
+              <th class="c-placa">Placa</th>
+              <th class="c-motorista">Motorista</th>
+              <th class="c-tipo">Tipo do veículo</th>
+              <th class="c-peso">Peso</th>
+              <th class="c-situacao">Situação</th>
+            </tr>
+          </thead>
+          <tbody id="pVeiculos"></tbody>
+        </table>
+      </div>
+
+      <div class="position-footer">
+        <span><strong id="pQtdVeiculos">0</strong> veículo(s) registrado(s)</span>
+        <span>Total embarcado: <strong id="pTotalEmbarcado">0 t</strong></span>
+        <span>NOVA FROTA TRANSPORTES E LOGÍSTICA</span>
+      </div>
+
+    </div>
   </div>
 </div>
 
-<div id="modalVeiculo" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60 p-4">
-  <div class="w-full max-w-2xl bg-surface border border-line rounded-2xl">
-    <div class="p-4 border-b border-line flex justify-between"><h2 class="font-head text-xl font-bold">Adicionar veículo</h2><button id="fecharVeiculo">✕</button></div>
-    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <input id="vPlaca" class="bg-surface2 border-line rounded-lg" placeholder="PLACA">
-      <input id="vMotorista" class="bg-surface2 border-line rounded-lg" placeholder="MOTORISTA">
-      <input id="vTipo" class="bg-surface2 border-line rounded-lg" placeholder="TIPO DO VEÍCULO">
-      <input id="vPeso" type="number" step="0.01" class="bg-surface2 border-line rounded-lg" placeholder="PESO (T)">
-      <select id="vSituacao" class="md:col-span-2 bg-surface2 border-line rounded-lg"><option>PORTA</option><option>CARREGANDO</option><option>CARREGADO</option><option>TRÂNSITO</option><option>FINALIZADO</option></select>
+<!-- MODAL EMBARQUE -->
+<div id="modalEmbarque" class="modal modal-overlay fixed inset-0 z-50 items-center justify-center p-4">
+  <div class="modal-panel w-full max-w-3xl rounded-2xl">
+
+    <div class="p-4 border-b border-line flex justify-between">
+      <h2 class="font-head text-xl font-bold">Criar embarque</h2>
+      <button id="fecharEmbarque">✕</button>
     </div>
-    <div class="p-4 border-t border-line flex justify-end gap-2"><button id="cancelarVeiculo" class="px-4 py-2 border border-line rounded-lg">Cancelar</button><button id="salvarVeiculo" class="px-4 py-2 bg-primary text-blue-950 rounded-lg font-bold min-w-[110px]">Salvar</button></div>
+
+    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <input id="eFilial" class="portal-input border rounded-lg" placeholder="FILIAL">
+      <input id="eCliente" class="portal-input border rounded-lg" placeholder="CLIENTE">
+      <input id="eOrigem" class="portal-input border rounded-lg" placeholder="ORIGEM">
+      <input id="eLocal" class="portal-input border rounded-lg" placeholder="LOCAL DE EMBARQUE">
+      <input id="eDestino" class="portal-input border rounded-lg" placeholder="DESTINO">
+      <input id="eProduto" class="portal-input border rounded-lg" placeholder="PRODUTO">
+
+      <input
+        id="eVolume"
+        type="number"
+        step="0.01"
+        class="portal-input border rounded-lg"
+        placeholder="VOLUME (T)"
+      >
+
+      <select id="eStatus" class="portal-select border rounded-lg">
+        <option>AGENDADO</option>
+        <option>EM ANDAMENTO</option>
+        <option>CONCLUÍDO</option>
+        <option>EM ATRASO</option>
+        <option>CANCELADO</option>
+      </select>
+    </div>
+
+    <div class="p-4 border-t border-line flex justify-end gap-2">
+      <button id="cancelarEmbarque" class="px-4 py-2 border border-line rounded-lg bg-white">
+        Cancelar
+      </button>
+
+      <button id="salvarEmbarque" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold min-w-[110px]">
+        Salvar
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL VEÍCULO: ADICIONAR + EDITAR -->
+<div id="modalVeiculo" class="modal modal-overlay fixed inset-0 z-50 items-center justify-center p-4">
+  <div class="modal-panel w-full max-w-2xl rounded-2xl">
+
+    <div class="p-4 border-b border-line flex justify-between">
+      <div>
+        <h2 id="tituloModalVeiculo" class="font-head text-xl font-bold">Adicionar veículo</h2>
+        <p class="text-[11px] text-muted mt-1">
+          Cadastre ou altere placa, motorista, tipo, peso e situação.
+        </p>
+      </div>
+
+      <button id="fecharVeiculo">✕</button>
+    </div>
+
+    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <input
+        id="vPlaca"
+        class="portal-input border rounded-lg"
+        placeholder="PLACA"
+      >
+
+      <input
+        id="vMotorista"
+        class="portal-input border rounded-lg"
+        placeholder="MOTORISTA"
+      >
+
+      <input
+        id="vTipo"
+        class="portal-input border rounded-lg"
+        placeholder="TIPO DO VEÍCULO"
+      >
+
+      <input
+        id="vPeso"
+        type="number"
+        step="0.01"
+        class="portal-input border rounded-lg"
+        placeholder="PESO (T)"
+      >
+
+      <select id="vSituacao" class="portal-select md:col-span-2 border rounded-lg">
+        <option>PORTA</option>
+        <option>CARREGANDO</option>
+        <option>CARREGADO</option>
+        <option>TRÂNSITO</option>
+        <option>FINALIZADO</option>
+        <option>CANCELADO</option>
+      </select>
+
+    </div>
+
+    <div class="p-4 border-t border-line flex justify-end gap-2">
+
+      <button
+        id="cancelarVeiculo"
+        class="px-4 py-2 border border-line rounded-lg bg-white">
+        Cancelar
+      </button>
+
+      <button
+        id="salvarVeiculo"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold min-w-[110px]">
+        Salvar
+      </button>
+
+    </div>
+
   </div>
 </div>
 
 <script src="../assets/js/auth.js?v=6"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="../assets/js/controle.js?v=3"></script>
-<script>if(typeof requireHomeAuth==="function")requireHomeAuth();if(typeof bindLogoutButton==="function")bindLogoutButton();</script>
+<script src="../assets/js/controle.js?v=4"></script>
+
+<script>
+if(typeof requireHomeAuth==="function")requireHomeAuth();
+if(typeof bindLogoutButton==="function")bindLogoutButton();
+</script>
+
 </body>
 </html>

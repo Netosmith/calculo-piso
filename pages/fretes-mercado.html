@@ -56,14 +56,34 @@
     input:focus{border-color:#6da3f7;box-shadow:0 0 0 3px rgba(37,99,235,.10)}
     input[readonly]{opacity:1;background:#f3f6fa;color:#17324f;border-color:#e0e7ef}
     .baseInput{font-weight:800;color:#17324f}
-    .freteInput{text-align:right;font-size:10px;font-weight:800;color:#0d2f5f;background:#f9fbfd}
+
+    .freteWrap{position:relative}
+    .freteInput{text-align:right;font-size:10px;font-weight:800;color:#0d2f5f;background:#f9fbfd;padding-right:8px}
+    .freteInput.is-saving{border-color:#93c5fd;background:#eff6ff}
+    .freteInput.is-saved{border-color:#86efac;background:#f0fdf4}
+    .freteInput.is-error{border-color:#fca5a5;background:#fff1f2}
+
+    .saveState{
+      display:block;
+      min-height:12px;
+      margin-top:2px;
+      padding-right:2px;
+      text-align:right;
+      font-size:8px;
+      font-weight:800;
+      color:#64748b;
+      line-height:1;
+    }
+    .saveState.saving{color:#2563eb}
+    .saveState.saved{color:#0a8f59}
+    .saveState.error{color:#c62828}
 
     @media(max-width:900px){.container{padding:10px}.pageHeader{align-items:flex-start}.pageHeader h1{font-size:19px}.regiao{min-width:200px;width:200px;flex-basis:200px}}
 
     @page{size:A4 landscape;margin:6mm}
     @media print{
       html,body{background:#fff!important;color:#000!important;width:297mm;height:210mm;overflow:hidden!important}
-      .topbar,.headerActions,.statusBar{display:none!important}
+      .topbar,.headerActions,.statusBar,.saveState{display:none!important}
       .container{padding:0!important;width:100%!important}
       .pageShell,.marketShell{border:none!important;box-shadow:none!important;padding:0!important}
       .pageHeader{margin-bottom:4mm!important}.pageHeader h1{font-size:14px!important;color:#000!important}.pageSubtitle{display:none!important}
@@ -93,10 +113,10 @@
       <div class="pageHeader">
         <div class="titleWrap">
           <h1>Fretes Mercado</h1>
-          <div class="pageSubtitle">Tabela de referência de fretes por base e corredor.</div>
+          <div class="pageSubtitle">Tabela compartilhada de referência por base e corredor. As alterações são salvas automaticamente ao sair do campo.</div>
         </div>
         <div class="headerActions">
-          <button id="btnSalvarMercado" class="btnAction green" type="button">Salvar</button>
+          <button id="btnSalvarMercado" class="btnAction green" type="button">Salvar pendentes</button>
           <button id="btnZerarMercado" class="btnAction red" type="button">Zerar</button>
           <button id="btnPrintMercado" class="btnAction blue" type="button">Print</button>
         </div>
@@ -110,7 +130,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/fretes-mercado.js?v=2"></script>
+  <script src="../assets/js/fretes-mercado.js?v=3"></script>
   <script>bindLogoutButton();</script>
 </body>
 </html>

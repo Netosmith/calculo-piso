@@ -304,6 +304,17 @@
     }
     .metric small{display:block;margin-top:8px;color:var(--muted);font-size:9px}
 
+    /* Privacidade: oculta somente o nome e o valor da Margem Líquida em R$.
+       O card Margem Líquida % permanece sempre visível. */
+    body.margemRsOculta .margemRsPrivada .metricLabel,
+    body.margemRsOculta .margemRsPrivada strong{
+      visibility:hidden;
+    }
+
+    body.margemRsOculta .margemRsPrivada{
+      user-select:none;
+    }
+
     .grid{
       margin-top:16px;
       display:grid;
@@ -559,6 +570,7 @@
         <input id="csvInput" type="file" accept=".csv,text/csv" />
         <button class="btn primary" id="btnImportar" type="button">📂 Importar CSV</button>
         <button class="btn green" id="btnGrupos" type="button">👥 Gerenciar grupos</button>
+        <button class="btn ghost" id="btnOcultarMargemRs" type="button">👁 Ocultar margem líquida R$</button>
         <button class="btn ghost" id="btnLimpar" type="button">Limpar filtros</button>
       </div>
     </section>
@@ -695,7 +707,7 @@
         <small>Soma da coluna F.Emp</small>
       </article>
 
-      <article class="metric orange">
+      <article class="metric orange margemRsPrivada">
         <div class="metricTop"><span class="metricLabel">Margem líquida</span><span class="metricIcon">📊</span></div>
         <strong id="kpiMargemLiquida">R$ 0,00</strong>
         <small>Soma da coluna Margem Liq</small>
@@ -923,6 +935,21 @@
   let filtrados = [];
   let charts = {};
   let gruposClientes = carregarGrupos();
+
+  let margemRsOculta = false;
+
+  function alternarMargemLiquidaRs(){
+    margemRsOculta = !margemRsOculta;
+
+    document.body.classList.toggle("margemRsOculta",margemRsOculta);
+
+    const btn = $("btnOcultarMargemRs");
+    if(btn){
+      btn.textContent = margemRsOculta
+        ? "👁 Exibir margem líquida R$"
+        : "👁 Ocultar margem líquida R$";
+    }
+  }
 
   function txt(v){
     return String(v ?? "").trim();
@@ -1853,6 +1880,7 @@
 
     atualizarResumoTipoCte();
 
+    $("btnOcultarMargemRs")?.addEventListener("click",alternarMargemLiquidaRs);
     $("btnLimpar").addEventListener("click",limparFiltros);
     $("btnGrupos").addEventListener("click",abrirGrupos);
     $("btnFecharGrupos").addEventListener("click",fecharGrupos);

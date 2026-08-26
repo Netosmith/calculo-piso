@@ -133,7 +133,7 @@
       margin-top:16px;
       padding:16px;
       display:grid;
-      grid-template-columns:1.05fr 1.25fr 1fr 1fr .8fr 1fr 1.35fr;
+      grid-template-columns:1fr 1fr 1.05fr 1.25fr 1fr 1fr .8fr 1fr 1.35fr;
       gap:11px;
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -156,6 +156,14 @@
     .filterField select:focus,.filterField input:focus{
       border-color:#4d8df7;
       box-shadow:0 0 0 3px rgba(77,141,247,.12);
+    }
+    .filterField input[type="date"]{
+      color-scheme:dark;
+      cursor:pointer;
+    }
+    .filterField input[type="date"]::-webkit-calendar-picker-indicator{
+      cursor:pointer;
+      filter:invert(1) opacity(.85);
     }
 
     .multiSelect{
@@ -576,6 +584,16 @@
     </section>
 
     <section class="filters">
+      <div class="filterField">
+        <label for="filtroDataInicial">Data inicial</label>
+        <input id="filtroDataInicial" type="date" />
+      </div>
+
+      <div class="filterField">
+        <label for="filtroDataFinal">Data final</label>
+        <input id="filtroDataFinal" type="date" />
+      </div>
+
       <div class="filterField">
         <label for="filtroUnidade">Unidade de embarque</label>
         <select id="filtroUnidade"><option value="">Todas as unidades</option></select>
@@ -1139,6 +1157,50 @@
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
+  function parseInputDate(v,endOfDay=false){
+    const s = txt(v);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const [ano,mes,dia] = s.split("-").map(Number);
+    return new Date(
+      ano,
+      mes-1,
+      dia,
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0
+    );
+  }
+
+  function dateToInputValue(d){
+    if(!(d instanceof Date) || Number.isNaN(d.getTime())) return "";
+    return [
+      d.getFullYear(),
+      String(d.getMonth()+1).padStart(2,"0"),
+      String(d.getDate()).padStart(2,"0")
+    ].join("-");
+  }
+
+  function configurarLimitesDatas(){
+    const datas = dados
+      .map(r => r.data)
+      .filter(d => d instanceof Date && !Number.isNaN(d.getTime()))
+      .sort((a,b) => a-b);
+
+    if(!datas.length) return;
+
+    const min = dateToInputValue(datas[0]);
+    const max = dateToInputValue(datas[datas.length-1]);
+
+    ["filtroDataInicial","filtroDataFinal"].forEach(id => {
+      const el = $(id);
+      if(el){
+        el.min = min;
+        el.max = max;
+      }
+    });
+  }
+
   /*
     Parser simples de CSV com suporte a:
     - separador ;
@@ -1321,26 +1383,47 @@
     const produto = $("filtroProduto").value;
     const uf = $("filtroUF").value;
     const filial = $("filtroFilial").value;
+
+    const dataInicial = parseInputDate($("filtroDataInicial")?.value,false);
+    const dataFinal = parseInputDate($("filtroDataFinal")?.value,true);
+
+    if(dataInicial && dataFinal && dataFinal < dataInicial){
+      alert("A data final não pode ser anterior à data inicial.");
+      return;
+    }
+
     const tiposCte = tiposCteSelecionados();
     const totalTiposCte = document.querySelectorAll('input[name="tipoCteOption"]').length;
     const filtrarTipoCte = tiposCte.length > 0 && tiposCte.length < totalTiposCte;
 
-    filtrados = dados.filter(r =>
-      (!unidade || r.unidade === unidade) &&
-      (!cliente || r.cliente === cliente) &&
-      (!grupo || grupoDoCliente(r.cliente) === grupo) &&
-      (!produto || r.produto === produto) &&
-      (!uf || r.uf === uf) &&
-      (!filial || r.filial === filial) &&
-      (!filtrarTipoCte || tiposCte.includes(r.tipoCte))
-    );
+    filtrados = dados.filter(r => {
+      const dentroPeriodo =
+        (!dataInicial || (r.data && r.data >= dataInicial)) &&
+        (!dataFinal || (r.data && r.data <= dataFinal));
+
+      return (
+        dentroPeriodo &&
+        (!unidade || r.unidade === unidade) &&
+        (!cliente || r.cliente === cliente) &&
+        (!grupo || grupoDoCliente(r.cliente) === grupo) &&
+        (!produto || r.produto === produto) &&
+        (!uf || r.uf === uf) &&
+        (!filial || r.filial === filial) &&
+        (!filtrarTipoCte || tiposCte.includes(r.tipoCte))
+      );
+    });
 
     renderTudo();
   }
 
   function limparFiltros(){
-    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
-      .forEach(id => $(id).value = "");
+    [
+      "filtroDataInicial","filtroDataFinal",
+      "filtroUnidade","filtroCliente","filtroGrupo",
+      "filtroProduto","filtroUF","filtroFilial"
+    ].forEach(id => {
+      if($(id)) $(id).value = "";
+    });
 
     document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
       input.checked = false;
@@ -1414,14 +1497,31 @@
   }
 
   function renderPeriodo(){
-    const dates = dados.map(r => r.data).filter(Boolean).sort((a,b) => a-b);
+    const inicio = parseInputDate($("filtroDataInicial")?.value,false);
+    const fim = parseInputDate($("filtroDataFinal")?.value,false);
+    const fmt = d => d.toLocaleDateString("pt-BR");
+
+    if(inicio || fim){
+      if(inicio && fim){
+        $("periodo").textContent = `${fmt(inicio)} a ${fmt(fim)}`;
+      }else if(inicio){
+        $("periodo").textContent = `A partir de ${fmt(inicio)}`;
+      }else{
+        $("periodo").textContent = `Até ${fmt(fim)}`;
+      }
+      return;
+    }
+
+    const dates = dados
+      .map(r => r.data)
+      .filter(d => d instanceof Date && !Number.isNaN(d.getTime()))
+      .sort((a,b) => a-b);
 
     if(!dates.length){
       $("periodo").textContent = "--";
       return;
     }
 
-    const fmt = d => d.toLocaleDateString("pt-BR");
     $("periodo").textContent = `${fmt(dates[0])} a ${fmt(dates[dates.length-1])}`;
   }
 
@@ -1694,6 +1794,7 @@
   }
 
   function renderTudo(){
+    renderPeriodo();
     renderKpis();
     renderGraficos();
     renderTabela();
@@ -1787,7 +1888,7 @@
       filtrados = dados.slice();
 
       popularFiltros();
-      renderPeriodo();
+      configurarLimitesDatas();
       renderTudo();
 
       $("statusMensagem").textContent =
@@ -1836,8 +1937,11 @@
       e.target.value = "";
     });
 
-    ["filtroUnidade","filtroCliente","filtroGrupo","filtroProduto","filtroUF","filtroFilial"]
-      .forEach(id => $(id).addEventListener("change",aplicarFiltros));
+    [
+      "filtroDataInicial","filtroDataFinal",
+      "filtroUnidade","filtroCliente","filtroGrupo",
+      "filtroProduto","filtroUF","filtroFilial"
+    ].forEach(id => $(id)?.addEventListener("change",aplicarFiltros));
 
     const multi = $("tipoCteMulti");
     const btnTipo = $("btnTipoCte");

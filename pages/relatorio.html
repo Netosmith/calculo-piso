@@ -1099,7 +1099,7 @@
 
         <div class="filterField">
           <label>Grupo Unid. Emb.</label>
-          <select id="ordGrupoUnidade">
+          <select id="ordGrupoUnidade" onchange="window.NF_applyOrdensFilters && window.NF_applyOrdensFilters()">
               <option value="">Todos os grupos</option>
               <option value="GRUPO SP">Grupo SP</option>
               <option value="GRUPO MG">Grupo MG</option>
@@ -1339,10 +1339,33 @@ function carregarMapaLocal(chave){
     try{const v=JSON.parse(localStorage.getItem(chave)||"{}");return v&&typeof v==="object"?v:{}}catch{return {}}
   }
   function grupoOrdensUnidade(v){return ordensGruposUnidade[upper(v)]||"NÃO DEFINIDO"}
-function unidadesDoGrupoOrdens(grupo){
-    return Array.isArray(ordensGruposUnidade[grupo])
-      ? ordensGruposUnidade[grupo]
-      : [];
+  function lerMapaGruposOrdens(){
+    const saida = {};
+
+    try{
+      const raw = JSON.parse(localStorage.getItem(STORAGE_ORDENS_GRUPOS_UNIDADE) || "{}");
+
+      Object.entries(raw || {}).forEach(([chave,lista]) => {
+        const grupo = upper(chave);
+        if(!grupo || !Array.isArray(lista)) return;
+
+        saida[grupo] = [...new Set(
+          lista.map(item => upper(item)).filter(Boolean)
+        )];
+      });
+    }catch(error){
+      console.warn("Falha ao ler grupos de Unid. Emb.:", error);
+    }
+
+    return saida;
+  }
+
+  function unidadesDoGrupoOrdens(grupo){
+    const chave = upper(grupo);
+    if(!chave) return [];
+
+    const mapa = lerMapaGruposOrdens();
+    return Array.isArray(mapa[chave]) ? mapa[chave] : [];
   }
 
   function alternarMargemLiquidaRs(){
@@ -2425,13 +2448,12 @@ function unidadesDoGrupoOrdens(grupo){
 
     return selecionados;
   }
-
   function aplicarFiltrosOrdens(){
-    const filiais = selecionadosMulti("ordFilialMulti");
-    const unidades = selecionadosMulti("ordUnidadeMulti");
-    const clientes = selecionadosMulti("ordClienteMulti");
-    const embarcadores = selecionadosMulti("ordEmbarcadorMulti");
-    const grupoUnidade = $("ordGrupoUnidade")?.value || "";
+    const filiais = selecionadosMulti("ordFilialMulti").map(upper);
+    const unidades = selecionadosMulti("ordUnidadeMulti").map(upper);
+    const clientes = selecionadosMulti("ordClienteMulti").map(upper);
+    const embarcadores = selecionadosMulti("ordEmbarcadorMulti").map(upper);
+    const grupoUnidade = upper($("ordGrupoUnidade")?.value || "");
 
     const dataInicial = parseInputDate($("ordDataInicial")?.value,false);
     const dataFinal = parseInputDate($("ordDataFinal")?.value,true);
@@ -2441,21 +2463,32 @@ function unidadesDoGrupoOrdens(grupo){
       return;
     }
 
-    const unidadesGrupo = grupoUnidade ? unidadesDoGrupoOrdens(grupoUnidade) : [];
+    const unidadesGrupo = grupoUnidade
+      ? unidadesDoGrupoOrdens(grupoUnidade).map(upper)
+      : [];
+
+    const conjuntoGrupo = new Set(unidadesGrupo);
 
     ordensFiltrados = ordensDados.filter(r => {
+      const filial = upper(r.filial);
+      const unidade = upper(r.unidade);
+      const cliente = upper(r.cliente);
+      const embarcador = upper(r.embarcador);
+
       const dentroPeriodo =
         (!dataInicial || (r.data instanceof Date && !Number.isNaN(r.data.getTime()) && r.data >= dataInicial)) &&
         (!dataFinal || (r.data instanceof Date && !Number.isNaN(r.data.getTime()) && r.data <= dataFinal));
 
-      const passaGrupo = !grupoUnidade || unidadesGrupo.includes(r.unidade);
+      // Se um grupo foi escolhido, a unidade PRECISA pertencer exatamente a ele.
+      // Grupo vazio gera zero registros em vez de cair no Grupo Regional/todos.
+      const passaGrupo = !grupoUnidade || conjuntoGrupo.has(unidade);
 
       return (
         dentroPeriodo &&
-        (!filiais.length || filiais.includes(r.filial)) &&
-        (!unidades.length || unidades.includes(r.unidade)) &&
-        (!clientes.length || clientes.includes(r.cliente)) &&
-        (!embarcadores.length || embarcadores.includes(r.embarcador)) &&
+        (!filiais.length || filiais.includes(filial)) &&
+        (!unidades.length || unidades.includes(unidade)) &&
+        (!clientes.length || clientes.includes(cliente)) &&
+        (!embarcadores.length || embarcadores.includes(embarcador)) &&
         passaGrupo
       );
     });
@@ -2463,28 +2496,22 @@ function unidadesDoGrupoOrdens(grupo){
     renderOrdens();
 
     if($("statusMensagem")){
+      const grupoInfo = grupoUnidade
+        ? ` • ${grupoUnidade}: ${unidadesGrupo.length} unidade(s)`
+        : "";
+
       $("statusMensagem").textContent =
-        `${ordensFiltrados.length.toLocaleString("pt-BR")} ordem(ns) exibida(s) após os filtros.`;
+        `${ordensFiltrados.length.toLocaleString("pt-BR")} ordem(ns) exibida(s) após os filtros${grupoInfo}.`;
     }
 
-    // O período do topo também acompanha o Dashboard Ordens.
-    if($("viewOrdens")?.classList.contains("active") && $("periodo")){
+    // Atualiza o período do topo quando o Dashboard Ordens estiver ativo.
+    const viewOrdens = $("viewOrdens");
+    if(viewOrdens?.classList.contains("active") && $("periodo")){
       const fmt = d => d.toLocaleDateString("pt-BR");
-      if(dataInicial && dataFinal){
-        $("periodo").textContent = `${fmt(dataInicial)} a ${fmt(dataFinal)}`;
-      }else if(dataInicial){
-        $("periodo").textContent = `A partir de ${fmt(dataInicial)}`;
-      }else if(dataFinal){
-        $("periodo").textContent = `Até ${fmt(dataFinal)}`;
-      }else{
-        const datas = ordensDados
-          .map(r => r.data)
-          .filter(d => d instanceof Date && !Number.isNaN(d.getTime()))
-          .sort((a,b) => a-b);
-        $("periodo").textContent = datas.length
-          ? `${fmt(datas[0])} a ${fmt(datas[datas.length-1])}`
-          : "--";
-      }
+      if(dataInicial && dataFinal) $("periodo").textContent = `${fmt(dataInicial)} a ${fmt(dataFinal)}`;
+      else if(dataInicial) $("periodo").textContent = `A partir de ${fmt(dataInicial)}`;
+      else if(dataFinal) $("periodo").textContent = `Até ${fmt(dataFinal)}`;
+      else $("periodo").textContent = "--";
     }
   }
 
@@ -2776,15 +2803,41 @@ function unidadesDoGrupoOrdens(grupo){
 
     renderConfigGrupoUnidades();
   }
-
   function salvarConfigGrupoUnidades(){
     try{
-      const grupo = $("cfgGrupoUnidades")?.value || "";
+      const grupo = upper($("cfgGrupoUnidades")?.value || "");
 
       if(!grupo){
         alert("Selecione um grupo.");
         return;
       }
+
+      const mapaAtual = lerMapaGruposOrdens();
+      mapaAtual[grupo] = [...new Set(
+        grupoUnidadesEdicao.map(item => upper(item)).filter(Boolean)
+      )];
+
+      ordensGruposUnidade = mapaAtual;
+
+      localStorage.setItem(
+        STORAGE_ORDENS_GRUPOS_UNIDADE,
+        JSON.stringify(mapaAtual)
+      );
+
+      if($("ordGrupoUnidade")) $("ordGrupoUnidade").value = grupo;
+      $("modalGrupoUnidades")?.classList.remove("show");
+
+      aplicarFiltrosOrdens();
+
+      if($("statusMensagem")){
+        $("statusMensagem").textContent =
+          `${mapaAtual[grupo].length} unidade(s) vinculada(s) ao ${grupo}.`;
+      }
+    }catch(error){
+      console.error(error);
+      alert("Não foi possível salvar o grupo: " + (error?.message || error));
+    }
+  }
 
       ordensGruposUnidade[grupo] = [...new Set(
         grupoUnidadesEdicao.map(upper).filter(Boolean)
@@ -2818,12 +2871,11 @@ function unidadesDoGrupoOrdens(grupo){
     grupoUnidadesEdicao = [];
     renderConfigGrupoUnidades();
   }
-
   function trocarGrupoConfiguracao(){
-    const grupo = $("cfgGrupoUnidades").value;
+    const grupo = upper($("cfgGrupoUnidades")?.value || "");
     grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(grupo)];
-    $("buscaUnidadesDisponiveis").value = "";
-    $("buscaUnidadesGrupo").value = "";
+    if($("buscaUnidadesDisponiveis")) $("buscaUnidadesDisponiveis").value = "";
+    if($("buscaUnidadesGrupo")) $("buscaUnidadesGrupo").value = "";
     renderConfigGrupoUnidades();
   }
 
@@ -3038,6 +3090,7 @@ function unidadesDoGrupoOrdens(grupo){
   window.NF_saveOrdensGroup = salvarConfigGrupoUnidades;
   window.NF_clearOrdensGroup = limparGrupoAtualUnidades;
   window.NF_changeOrdensGroup = trocarGrupoConfiguracao;
+  window.NF_applyOrdensFilters = aplicarFiltrosOrdens;
   window.NF_renderOrdensGroups = renderConfigGrupoUnidades;
 
   function iniciarDashboard(){

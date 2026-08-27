@@ -161,7 +161,7 @@
     }
     .ordensTable{margin-top:16px}
     .ordensFilters{
-      grid-template-columns:180px 180px minmax(170px,1fr) minmax(190px,1fr) minmax(190px,1fr) minmax(190px,1fr) minmax(200px,1fr) !important;
+      grid-template-columns:170px 170px minmax(160px,1fr) minmax(180px,1fr) minmax(180px,1fr) minmax(180px,1fr) minmax(190px,1fr) minmax(170px,1fr) !important;
       align-items:end;
       overflow:visible;
     }
@@ -174,7 +174,7 @@
 
     @media(max-width:1450px){
       .ordensFilters{
-        grid-template-columns:repeat(7,minmax(165px,1fr)) !important;
+        grid-template-columns:repeat(8,minmax(160px,1fr)) !important;
         overflow-x:auto;
         overflow-y:visible;
         padding-bottom:18px;
@@ -1089,7 +1089,7 @@
         </div>
       </section>
 
-      <section class="filters ordensFilters" style="grid-template-columns:repeat(7,minmax(0,1fr))">
+      <section class="filters ordensFilters" style="grid-template-columns:repeat(8,minmax(0,1fr))">
         <div class="filterField">
           <label for="ordDataInicial">Data inicial</label>
           <input id="ordDataInicial" type="date" />
@@ -1146,6 +1146,16 @@
           <div class="multiSelect" id="ordEmbarcadorMulti">
             <button class="multiSelectButton" type="button">
               <span class="multiResumo">Todos os embarcadores</span><span class="arrow">▼</span>
+            </button>
+            <div class="multiSelectMenu"></div>
+          </div>
+        </div>
+
+        <div class="filterField">
+          <label>Status da Ordem</label>
+          <div class="multiSelect" id="ordStatusMulti">
+            <button class="multiSelectButton" type="button">
+              <span class="multiResumo">Todos os status</span><span class="arrow">▼</span>
             </button>
             <div class="multiSelectMenu"></div>
           </div>
@@ -2385,6 +2395,23 @@ function lerMapaGruposOrdens(){
     return chave ? txt(r[chave]) : "";
   }
 
+  function normalizarStatusOrdem(valor){
+    const v = upper(valor)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .replace(/[_-]+/g," ")
+      .replace(/\s+/g," ")
+      .trim();
+
+    if(!v) return "NÃO INFORMADO";
+
+    if(["CARREGADA","CARREGADO","CARREGADAS","CARREGADOS"].includes(v)) return "CARREGADA";
+    if(["CANCELADA","CANCELADO","CANCELADAS","CANCELADOS"].includes(v)) return "CANCELADA";
+    if(["A CARREGAR","À CARREGAR","AGUARDANDO CARREGAMENTO","PENDENTE","ABERTA","ABERTO"].includes(v)) return "A CARREGAR";
+
+    return v;
+  }
+
   function normalizarOrdem(r){
     const dataRaw=valorCampoFlex(r,["Data","DATA","Data Emissão","Data Emissao","Dt. Emissão","Dt Emissao","Data Ordem","Data da Ordem"]);
     return {
@@ -2392,7 +2419,8 @@ function lerMapaGruposOrdens(){
       filial:upper(valorCampoFlex(r,["FILIAL","Filial"])),
       unidade:upper(valorCampoFlex(r,["Unid.Emb","UNID.EMB","Unidade de Embarque","Unidade Embarque"])),
       cliente:upper(valorCampoFlex(r,["Cliente","CLIENTE","Cliente Principal"])),
-      embarcador:upper(valorCampoFlex(r,["Nome Embarcador","NOME EMBARCADOR","Embarcador","Nome do Embarcador"]))
+      embarcador:upper(valorCampoFlex(r,["Nome Embarcador","NOME EMBARCADOR","Embarcador","Nome do Embarcador"])),
+      status:normalizarStatusOrdem(valorCampoFlex(r,["Status","STATUS","Status Ordem","STATUS ORDEM","Status da Ordem","Situação","Situacao","Situação Ordem","Situacao Ordem"]))
     };
   }
 
@@ -2482,6 +2510,7 @@ function lerMapaGruposOrdens(){
     const unidades = selecionadosMulti("ordUnidadeMulti").map(upper);
     const clientes = selecionadosMulti("ordClienteMulti").map(upper);
     const embarcadores = selecionadosMulti("ordEmbarcadorMulti").map(upper);
+    const statusOrdens = selecionadosMulti("ordStatusMulti").map(upper);
     const grupoUnidade = upper($("ordGrupoUnidade")?.value || "");
 
     const dataInicial = parseInputDate($("ordDataInicial")?.value,false);
@@ -2503,6 +2532,7 @@ function lerMapaGruposOrdens(){
       const unidade = upper(r.unidade);
       const cliente = upper(r.cliente);
       const embarcador = upper(r.embarcador);
+      const statusOrdem = upper(r.status);
 
       const dentroPeriodo =
         (!dataInicial || (r.data instanceof Date && !Number.isNaN(r.data.getTime()) && r.data >= dataInicial)) &&
@@ -2518,6 +2548,7 @@ function lerMapaGruposOrdens(){
         (!unidades.length || unidades.includes(unidade)) &&
         (!clientes.length || clientes.includes(cliente)) &&
         (!embarcadores.length || embarcadores.includes(embarcador)) &&
+        (!statusOrdens.length || statusOrdens.includes(statusOrdem)) &&
         passaGrupo
       );
     });
@@ -2688,6 +2719,15 @@ function lerMapaGruposOrdens(){
     montarMultiOrdens("ordUnidadeMulti",unicos("unidade"),"Todas as unidades");
     montarMultiOrdens("ordClienteMulti",unicos("cliente"),"Todos os clientes");
     montarMultiOrdens("ordEmbarcadorMulti",unicos("embarcador"),"Todos os embarcadores");
+
+    const statusPreferidos = ["CARREGADA","CANCELADA","A CARREGAR"];
+    const statusEncontrados = unicos("status");
+    const statusOrdenados = [
+      ...statusPreferidos.filter(s => statusEncontrados.includes(s)),
+      ...statusEncontrados.filter(s => !statusPreferidos.includes(s))
+    ];
+    montarMultiOrdens("ordStatusMulti",statusOrdenados,"Todos os status");
+
     configurarLimitesDatasOrdens();
     aplicarFiltrosOrdens();
 

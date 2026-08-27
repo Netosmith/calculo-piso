@@ -1198,7 +1198,7 @@
     <div class="modalCard" style="width:min(1050px,96vw)">
       <div class="modalHead">
         <h2>Grupos de Unidades de Embarque</h2>
-        <button class="btn ghost" id="btnFecharGrupoUnidades" type="button">✕ Fechar</button>
+        <button class="btn ghost" id="btnFecharGrupoUnidades" type="button" onclick="window.NF_closeOrdensGroups && window.NF_closeOrdensGroups()">✕ Fechar</button>
       </div>
 
       <div class="modalBody">
@@ -1208,7 +1208,7 @@
         </div>
 
         <div class="formRow">
-          <select id="cfgGrupoUnidades" style="min-width:250px">
+          <select id="cfgGrupoUnidades" onchange="window.NF_changeOrdensGroup && window.NF_changeOrdensGroup()" style="min-width:250px">
             <option value="GRUPO SP">Grupo SP</option>
             <option value="GRUPO MG">Grupo MG</option>
             <option value="GRUPO GO">Grupo GO</option>
@@ -1219,7 +1219,7 @@
           </select>
 
           <input id="importGrupoUnidadesInput" type="file" accept=".csv,text/csv" hidden />
-          <button class="btn primary" id="btnImportGrupoUnidades" type="button">📎 Importar CSV de grupos</button>
+          <button class="btn primary" id="btnImportGrupoUnidades" type="button" onclick="document.getElementById('importGrupoUnidadesInput')?.click()">📎 Importar CSV de grupos</button>
         </div>
 
         <div class="groupManager">
@@ -1229,14 +1229,14 @@
               <span class="groupCount" id="countUnidadesDisponiveis">0</span>
             </div>
             <div style="padding:0 8px">
-              <input class="groupSearch" id="buscaUnidadesDisponiveis" placeholder="Buscar unidade..." />
+              <input class="groupSearch" id="buscaUnidadesDisponiveis" oninput="window.NF_renderOrdensGroups && window.NF_renderOrdensGroups()" placeholder="Buscar unidade..." />
             </div>
             <div class="groupManagerList" id="listaUnidadesDisponiveis"></div>
           </div>
 
           <div class="groupManagerActions">
-            <button class="groupMoveBtn" id="btnAdicionarUnidadesGrupo" type="button" title="Adicionar ao grupo">→</button>
-            <button class="groupMoveBtn" id="btnRemoverUnidadesGrupo" type="button" title="Remover do grupo">←</button>
+            <button class="groupMoveBtn" id="btnAdicionarUnidadesGrupo" type="button" onclick="window.NF_addOrdensGroupUnits && window.NF_addOrdensGroupUnits()" title="Adicionar ao grupo">→</button>
+            <button class="groupMoveBtn" id="btnRemoverUnidadesGrupo" type="button" onclick="window.NF_removeOrdensGroupUnits && window.NF_removeOrdensGroupUnits()" title="Remover do grupo">←</button>
           </div>
 
           <div class="groupManagerCol">
@@ -1245,7 +1245,7 @@
               <span class="groupCount" id="countUnidadesGrupo">0</span>
             </div>
             <div style="padding:0 8px">
-              <input class="groupSearch" id="buscaUnidadesGrupo" placeholder="Buscar no grupo..." />
+              <input class="groupSearch" id="buscaUnidadesGrupo" oninput="window.NF_renderOrdensGroups && window.NF_renderOrdensGroups()" placeholder="Buscar no grupo..." />
             </div>
             <div class="groupManagerList" id="listaUnidadesGrupo"></div>
           </div>
@@ -1253,8 +1253,8 @@
       </div>
 
       <div class="modalFoot">
-        <button class="btn danger" id="btnLimparGrupoAtual" type="button">Limpar grupo atual</button>
-        <button class="btn green" id="btnSalvarGrupoUnidades" type="button">💾 Salvar alterações</button>
+        <button class="btn danger" id="btnLimparGrupoAtual" type="button" onclick="window.NF_clearOrdensGroup && window.NF_clearOrdensGroup()">Limpar grupo atual</button>
+        <button class="btn green" id="btnSalvarGrupoUnidades" type="button" onclick="window.NF_saveOrdensGroup && window.NF_saveOrdensGroup()">💾 Salvar alterações</button>
       </div>
     </div>
   </div>
@@ -2991,6 +2991,16 @@ function unidadesDoGrupoOrdens(grupo){
   }
 
   window.NF_openOrdensGroups = abrirConfigGrupoUnidades;
+  window.NF_closeOrdensGroups = function(){
+    const modal = document.getElementById("modalGrupoUnidades");
+    if(modal) modal.classList.remove("show");
+  };
+  window.NF_addOrdensGroupUnits = adicionarUnidadesAoGrupo;
+  window.NF_removeOrdensGroupUnits = removerUnidadesDoGrupo;
+  window.NF_saveOrdensGroup = salvarConfigGrupoUnidades;
+  window.NF_clearOrdensGroup = limparGrupoAtualUnidades;
+  window.NF_changeOrdensGroup = trocarGrupoConfiguracao;
+  window.NF_renderOrdensGroups = renderConfigGrupoUnidades;
 
   function iniciarDashboard(){
     try{

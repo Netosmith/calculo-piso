@@ -561,6 +561,106 @@
       padding:9px;border:1px solid rgba(162,193,227,.12);border-radius:10px;background:rgba(5,22,43,.55)
     }
     .groupRow span{font-size:10px;font-weight:700}
+    .groupManager{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);
+      gap:12px;
+      align-items:stretch;
+      margin-top:14px;
+    }
+    .groupManagerCol{
+      border:1px solid rgba(162,193,227,.14);
+      border-radius:12px;
+      background:rgba(5,22,43,.48);
+      overflow:hidden;
+      min-height:340px;
+    }
+    .groupManagerHead{
+      padding:11px 12px;
+      border-bottom:1px solid rgba(162,193,227,.12);
+      color:#cfe0f2;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    .groupManagerList{
+      padding:8px;
+      max-height:390px;
+      overflow:auto;
+      display:grid;
+      gap:5px;
+    }
+    .unitGroupItem{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 9px;
+      border:1px solid rgba(162,193,227,.12);
+      border-radius:8px;
+      background:#0b2948;
+      color:#eef6ff;
+      font-size:10px;
+      font-weight:750;
+      cursor:pointer;
+      user-select:none;
+    }
+    .unitGroupItem:hover{
+      border-color:#4d8df7;
+      background:#10365e;
+    }
+    .unitGroupItem input{
+      width:15px !important;
+      height:15px !important;
+      min-height:15px !important;
+      margin:0;
+      padding:0;
+      accent-color:#4d8df7;
+      box-shadow:none !important;
+    }
+    .groupManagerActions{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+    .groupMoveBtn{
+      width:42px;
+      height:42px;
+      padding:0;
+      border:1px solid rgba(105,160,238,.35);
+      border-radius:10px;
+      background:#153d69;
+      color:#fff;
+      font-weight:1000;
+      font-size:17px;
+      cursor:pointer;
+    }
+    .groupMoveBtn:hover{background:#1d5289}
+    .groupSearch{
+      width:100%;
+      min-height:36px;
+      margin-top:10px;
+      padding:0 10px;
+      border:1px solid rgba(162,193,227,.18);
+      border-radius:9px;
+      background:#0d2b4e;
+      color:#fff;
+      font-size:10px;
+    }
+    .groupCount{
+      margin-left:auto;
+      color:#7fd7af;
+      font-size:9px;
+      font-weight:900;
+    }
+    @media(max-width:780px){
+      .groupManager{grid-template-columns:1fr}
+      .groupManagerActions{flex-direction:row}
+      .groupMoveBtn{transform:rotate(90deg)}
+    }
+
     .groupRow select{
       min-height:36px;padding:0 9px;border:1px solid rgba(162,193,227,.2);border-radius:9px;background:#0d2b4e;color:#fff;font-size:10px
     }
@@ -963,6 +1063,7 @@
         <div class="toolbarActions">
           <input id="ordensInput" type="file" accept=".csv,text/csv" />
           <button class="btn primary" id="btnImportarOrdens" type="button">📎 Anexar CSV de Ordens</button>
+          <button class="btn green" id="btnAbrirGruposUnidades" type="button">🗂️ Grupos Unid. Emb.</button>
           <button class="btn ghost" id="btnLimparOrdens" type="button">Limpar filtros</button>
         </div>
       </section>
@@ -998,8 +1099,7 @@
 
         <div class="filterField">
           <label>Grupo Unid. Emb.</label>
-          <div style="display:grid;grid-template-columns:1fr 38px;gap:6px">
-            <select id="ordGrupoUnidade">
+          <select id="ordGrupoUnidade">
               <option value="">Todos os grupos</option>
               <option value="GRUPO SP">Grupo SP</option>
               <option value="GRUPO MG">Grupo MG</option>
@@ -1009,14 +1109,6 @@
               <option value="GRUPO CGO-SP">Grupo CGO-SP</option>
               <option value="GRUPO REGIONAL">Grupo Regional</option>
             </select>
-            <button
-              id="btnConfigGrupoUnidades"
-              class="btn ghost"
-              type="button"
-              title="Configurar Unidades de Embarque por grupo"
-              style="min-height:41px;padding:0"
-            >⚙️</button>
-          </div>
         </div>
         <div class="filterField">
           <label>Cliente</label>
@@ -1103,21 +1195,20 @@
     </footer>
   </main>
 <div class="modal" id="modalGrupoUnidades">
-    <div class="modalCard">
+    <div class="modalCard" style="width:min(1050px,96vw)">
       <div class="modalHead">
-        <h2>Configurar Grupos de Unid. Emb.</h2>
+        <h2>Grupos de Unidades de Embarque</h2>
         <button class="btn ghost" id="btnFecharGrupoUnidades" type="button">✕ Fechar</button>
       </div>
 
       <div class="modalBody">
         <div class="modalHint">
-          Escolha um grupo e marque as <strong>Unidades de Embarque</strong> que pertencem a ele.
-          Você também pode importar um CSV simples no formato
-          <strong>GRUPO;UNID.EMB</strong>.
+          1. Escolha o grupo. 2. Marque as unidades disponíveis. 3. Clique em <strong>→</strong> para adicionar.
+          Para retirar unidades do grupo, marque à direita e clique em <strong>←</strong>.
         </div>
 
-        <div class="formRow" style="margin-top:14px">
-          <select id="cfgGrupoUnidades" style="min-width:230px">
+        <div class="formRow">
+          <select id="cfgGrupoUnidades" style="min-width:250px">
             <option value="GRUPO SP">Grupo SP</option>
             <option value="GRUPO MG">Grupo MG</option>
             <option value="GRUPO GO">Grupo GO</option>
@@ -1128,15 +1219,42 @@
           </select>
 
           <input id="importGrupoUnidadesInput" type="file" accept=".csv,text/csv" hidden />
-          <button class="btn primary" id="btnImportGrupoUnidades" type="button">📎 Importar grupos CSV</button>
+          <button class="btn primary" id="btnImportGrupoUnidades" type="button">📎 Importar CSV de grupos</button>
         </div>
 
-        <div class="groupRows" id="cfgUnidadesLista" style="margin-top:14px"></div>
+        <div class="groupManager">
+          <div class="groupManagerCol">
+            <div class="groupManagerHead">
+              Unidades disponíveis
+              <span class="groupCount" id="countUnidadesDisponiveis">0</span>
+            </div>
+            <div style="padding:0 8px">
+              <input class="groupSearch" id="buscaUnidadesDisponiveis" placeholder="Buscar unidade..." />
+            </div>
+            <div class="groupManagerList" id="listaUnidadesDisponiveis"></div>
+          </div>
+
+          <div class="groupManagerActions">
+            <button class="groupMoveBtn" id="btnAdicionarUnidadesGrupo" type="button" title="Adicionar ao grupo">→</button>
+            <button class="groupMoveBtn" id="btnRemoverUnidadesGrupo" type="button" title="Remover do grupo">←</button>
+          </div>
+
+          <div class="groupManagerCol">
+            <div class="groupManagerHead">
+              Unidades dentro do grupo
+              <span class="groupCount" id="countUnidadesGrupo">0</span>
+            </div>
+            <div style="padding:0 8px">
+              <input class="groupSearch" id="buscaUnidadesGrupo" placeholder="Buscar no grupo..." />
+            </div>
+            <div class="groupManagerList" id="listaUnidadesGrupo"></div>
+          </div>
+        </div>
       </div>
 
       <div class="modalFoot">
         <button class="btn danger" id="btnLimparGrupoAtual" type="button">Limpar grupo atual</button>
-        <button class="btn green" id="btnSalvarGrupoUnidades" type="button">Salvar grupo</button>
+        <button class="btn green" id="btnSalvarGrupoUnidades" type="button">💾 Salvar alterações</button>
       </div>
     </div>
   </div>
@@ -2458,56 +2576,124 @@ function carregarMapaLocal(chave){
   }
 
 
+  let grupoUnidadesEdicao = [];
+
   function abrirConfigGrupoUnidades(){
     if(!ordensDados.length){
-      alert("Importe o CSV de Ordens antes de configurar os grupos.");
+      alert("Primeiro importe o CSV de Ordens. As Unid. Emb. serão carregadas automaticamente dele.");
       return;
     }
+
+    const grupo = $("ordGrupoUnidade")?.value || "GRUPO SP";
+    $("cfgGrupoUnidades").value = grupo || "GRUPO SP";
+
+    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens($("cfgGrupoUnidades").value)];
+    $("buscaUnidadesDisponiveis").value = "";
+    $("buscaUnidadesGrupo").value = "";
 
     renderConfigGrupoUnidades();
     $("modalGrupoUnidades").classList.add("show");
   }
 
-  function renderConfigGrupoUnidades(){
-    const grupo = $("cfgGrupoUnidades").value;
-    const selecionadas = new Set(unidadesDoGrupoOrdens(grupo));
-
-    const unidades = [...new Set(
-      ordensDados.map(r => r.unidade).filter(Boolean)
+  function todasUnidadesOrdens(){
+    return [...new Set(
+      ordensDados.map(r => upper(r.unidade)).filter(Boolean)
     )].sort((a,b) => a.localeCompare(b,"pt-BR"));
+  }
 
-    $("cfgUnidadesLista").innerHTML = unidades.length
-      ? unidades.map(unidade => `
-          <label class="groupRow" style="grid-template-columns:1fr auto">
+  function renderListaUnidadesGrupo(containerId,unidades,busca=""){
+    const container = $(containerId);
+    if(!container) return;
+
+    const termo = upper(busca);
+    const filtradas = unidades.filter(unidade =>
+      !termo || upper(unidade).includes(termo)
+    );
+
+    container.innerHTML = filtradas.length
+      ? filtradas.map(unidade => `
+          <label class="unitGroupItem">
+            <input type="checkbox" value="${escapar(unidade)}">
             <span>${escapar(unidade)}</span>
-            <input
-              type="checkbox"
-              value="${escapar(unidade)}"
-              ${selecionadas.has(unidade) ? "checked" : ""}
-            >
           </label>
         `).join("")
-      : `<div style="padding:18px;color:#9fb3ca">Nenhuma Unid. Emb. encontrada no CSV importado.</div>`;
+      : `<div style="padding:18px;text-align:center;color:#8fa7bf;font-size:10px">Nenhuma unidade encontrada.</div>`;
+  }
+
+  function renderConfigGrupoUnidades(){
+    const todas = todasUnidadesOrdens();
+    const dentroSet = new Set(grupoUnidadesEdicao);
+
+    const disponiveis = todas.filter(unidade => !dentroSet.has(unidade));
+    const dentro = todas.filter(unidade => dentroSet.has(unidade));
+
+    renderListaUnidadesGrupo(
+      "listaUnidadesDisponiveis",
+      disponiveis,
+      $("buscaUnidadesDisponiveis")?.value || ""
+    );
+
+    renderListaUnidadesGrupo(
+      "listaUnidadesGrupo",
+      dentro,
+      $("buscaUnidadesGrupo")?.value || ""
+    );
+
+    $("countUnidadesDisponiveis").textContent = disponiveis.length;
+    $("countUnidadesGrupo").textContent = dentro.length;
+  }
+
+  function unidadesMarcadas(containerId){
+    return [...$(containerId).querySelectorAll('input[type="checkbox"]:checked')]
+      .map(input => input.value);
+  }
+
+  function adicionarUnidadesAoGrupo(){
+    const escolhidas = unidadesMarcadas("listaUnidadesDisponiveis");
+    if(!escolhidas.length){
+      alert("Marque pelo menos uma unidade do lado esquerdo.");
+      return;
+    }
+
+    grupoUnidadesEdicao = [...new Set([
+      ...grupoUnidadesEdicao,
+      ...escolhidas
+    ])];
+
+    renderConfigGrupoUnidades();
+  }
+
+  function removerUnidadesDoGrupo(){
+    const escolhidas = new Set(unidadesMarcadas("listaUnidadesGrupo"));
+    if(!escolhidas.size){
+      alert("Marque pelo menos uma unidade do lado direito.");
+      return;
+    }
+
+    grupoUnidadesEdicao = grupoUnidadesEdicao.filter(
+      unidade => !escolhidas.has(unidade)
+    );
+
+    renderConfigGrupoUnidades();
   }
 
   function salvarConfigGrupoUnidades(){
     const grupo = $("cfgGrupoUnidades").value;
 
-    const unidades = [...$("cfgUnidadesLista").querySelectorAll('input[type="checkbox"]:checked')]
-      .map(input => input.value);
-
-    ordensGruposUnidade[grupo] = unidades;
+    ordensGruposUnidade[grupo] = [...new Set(grupoUnidadesEdicao)];
 
     localStorage.setItem(
       STORAGE_ORDENS_GRUPOS_UNIDADE,
       JSON.stringify(ordensGruposUnidade)
     );
 
+    $("ordGrupoUnidade").value = grupo;
     $("modalGrupoUnidades").classList.remove("show");
+
     aplicarFiltrosOrdens();
 
     $("statusMensagem").textContent =
-      `${unidades.length} unidade(s) salva(s) em ${grupo}.`;
+      `${ordensGruposUnidade[grupo].length} unidade(s) vinculada(s) ao ${grupo}.`;
   }
 
   function limparGrupoAtualUnidades(){
@@ -2515,16 +2701,18 @@ function carregarMapaLocal(chave){
 
     if(!confirm(`Deseja remover todas as unidades do ${grupo}?`)) return;
 
-    ordensGruposUnidade[grupo] = [];
-
-    localStorage.setItem(
-      STORAGE_ORDENS_GRUPOS_UNIDADE,
-      JSON.stringify(ordensGruposUnidade)
-    );
-
+    grupoUnidadesEdicao = [];
     renderConfigGrupoUnidades();
-    aplicarFiltrosOrdens();
   }
+
+  function trocarGrupoConfiguracao(){
+    const grupo = $("cfgGrupoUnidades").value;
+    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(grupo)];
+    $("buscaUnidadesDisponiveis").value = "";
+    $("buscaUnidadesGrupo").value = "";
+    renderConfigGrupoUnidades();
+  }
+
 
   function importarMapeamentoGrupoUnidades(texto,nomeArquivo){
     const linhas = String(texto || "")
@@ -2584,6 +2772,7 @@ function carregarMapaLocal(chave){
       JSON.stringify(ordensGruposUnidade)
     );
 
+    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens($("cfgGrupoUnidades").value)];
     renderConfigGrupoUnidades();
     aplicarFiltrosOrdens();
 
@@ -2611,14 +2800,18 @@ function carregarMapaLocal(chave){
     });
 
     $("btnLimparOrdens")?.addEventListener("click",limparFiltrosOrdens);
+    $("btnAbrirGruposUnidades")?.addEventListener("click",abrirConfigGrupoUnidades);
+    $("btnAdicionarUnidadesGrupo")?.addEventListener("click",adicionarUnidadesAoGrupo);
+    $("btnRemoverUnidadesGrupo")?.addEventListener("click",removerUnidadesDoGrupo);
+    $("buscaUnidadesDisponiveis")?.addEventListener("input",renderConfigGrupoUnidades);
+    $("buscaUnidadesGrupo")?.addEventListener("input",renderConfigGrupoUnidades);
 
-    $("btnConfigGrupoUnidades")?.addEventListener("click",abrirConfigGrupoUnidades);
     $("btnFecharGrupoUnidades")?.addEventListener("click",() => {
       $("modalGrupoUnidades").classList.remove("show");
     });
     $("btnSalvarGrupoUnidades")?.addEventListener("click",salvarConfigGrupoUnidades);
     $("btnLimparGrupoAtual")?.addEventListener("click",limparGrupoAtualUnidades);
-    $("cfgGrupoUnidades")?.addEventListener("change",renderConfigGrupoUnidades);
+    $("cfgGrupoUnidades")?.addEventListener("change",trocarGrupoConfiguracao);
 
     $("btnImportGrupoUnidades")?.addEventListener("click",() => {
       $("importGrupoUnidadesInput").click();

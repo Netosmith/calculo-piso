@@ -1,0 +1,34 @@
+name: Fix ordens filters
+
+on:
+  push:
+    paths:
+      - '.github/fix-ordens-filters.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Aplicar correção dos filtros
+        run: python3 .github/scripts/fix_ordens_filters.py
+
+      - name: Validar correção
+        run: |
+          grep -q 'ordensFiltrados = ordensDados.filter' pages/relatorio.html
+          grep -q 'aplicarFiltrosOrdens();' pages/relatorio.html
+          grep -q 'ordGrupoUnidade' pages/relatorio.html
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/relatorio.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: atualiza dashboard Ordens ao alterar filtros"
+          git push

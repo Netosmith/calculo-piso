@@ -160,6 +160,9 @@
       gap:12px;
     }
     .ordensTable{margin-top:16px}
+    .meetingGroupBar{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .meetingGroupBadge{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(77,141,247,.28);background:rgba(77,141,247,.10);color:#d9e6f5;font-size:9px;font-weight:900}
+
     @media(max-width:1000px){.ordensCards{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:650px){.ordensCards{grid-template-columns:1fr}}
 
@@ -943,7 +946,15 @@
         </div>
       </section>
 
-      <section class="filters" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+      <section class="filters" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="filterField">
+          <label for="ordDataInicial">Data inicial</label>
+          <input id="ordDataInicial" type="date" />
+        </div>
+        <div class="filterField">
+          <label for="ordDataFinal">Data final</label>
+          <input id="ordDataFinal" type="date" />
+        </div>
         <div class="filterField">
           <label>Filial</label>
           <div class="multiSelect" id="ordFilialMulti">
@@ -965,6 +976,10 @@
         </div>
 
         <div class="filterField">
+          <label>Grupo Unid. Emb.</label>
+          <select id="ordGrupoUnidade"><option value="">Todos os grupos</option></select>
+        </div>
+        <div class="filterField">
           <label>Cliente</label>
           <div class="multiSelect" id="ordClienteMulti">
             <button class="multiSelectButton" type="button">
@@ -983,7 +998,16 @@
             <div class="multiSelectMenu"></div>
           </div>
         </div>
+        <div class="filterField">
+          <label>Grupo Embarcador</label>
+          <select id="ordGrupoEmbarcador"><option value="">Todos os grupos</option></select>
+        </div>
       </section>
+
+      <div class="meetingGroupBar">
+        <button class="btn green" id="btnGerenciarGruposOrdens" type="button">👥 Gerenciar grupos da reunião</button>
+        <span class="meetingGroupBadge">Grupos salvos neste navegador</span>
+      </div>
 
       <section class="ordensCards">
         <article class="metric">
@@ -1049,6 +1073,20 @@
       <span><strong>Campos principais:</strong> Peso, F.Emp, F.Mot+Ped, Margem real, Margem Liq, Cliente Principal, Unid.Emb e Tipo CTE</span>
     </footer>
   </main>
+
+  <div class="modal" id="modalGruposOrdens">
+    <div class="modalCard">
+      <div class="modalHead"><h2>Gerenciar grupos da reunião</h2><button class="btn ghost" id="btnFecharGruposOrdens" type="button">✕ Fechar</button></div>
+      <div class="modalBody">
+        <div class="modalHint">Crie grupos livres para <strong>Unid. Emb.</strong> e <strong>Nome Embarcador</strong>. Ex.: REUNIÃO HOJE, PRIORIDADE, TIME LUZIANO.</div>
+        <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0">
+          <article class="box"><div class="boxHead"><div><h2>Unidades de Embarque</h2><p>Associe cada unidade a um grupo.</p></div></div><div class="groupRows" id="ordGroupRowsUnidade"></div></article>
+          <article class="box"><div class="boxHead"><div><h2>Embarcadores</h2><p>Associe cada embarcador a um grupo.</p></div></div><div class="groupRows" id="ordGroupRowsEmbarcador"></div></article>
+        </div>
+      </div>
+      <div class="modalFoot"><button class="btn danger" id="btnResetGruposOrdens" type="button">Resetar grupos</button><button class="btn green" id="btnSalvarGruposOrdens" type="button">Salvar grupos</button></div>
+    </div>
+  </div>
 
   <div class="modal" id="modalGrupos">
     <div class="modalCard">
@@ -1116,6 +1154,16 @@
   let ordensFiltrados = [];
   let ordensCharts = {};
   const ordMultiIds = ["ordFilialMulti","ordUnidadeMulti","ordClienteMulti","ordEmbarcadorMulti"];
+  const STORAGE_ORDENS_GRUPOS_UNIDADE = "nf_ordens_grupos_unidade_v1";
+  const STORAGE_ORDENS_GRUPOS_EMBARCADOR = "nf_ordens_grupos_embarcador_v1";
+  let ordensGruposUnidade = carregarMapaLocal(STORAGE_ORDENS_GRUPOS_UNIDADE);
+  let ordensGruposEmbarcador = carregarMapaLocal(STORAGE_ORDENS_GRUPOS_EMBARCADOR);
+
+  function carregarMapaLocal(chave){
+    try{const v=JSON.parse(localStorage.getItem(chave)||"{}");return v&&typeof v==="object"?v:{}}catch{return {}}
+  }
+  function grupoOrdensUnidade(v){return ordensGruposUnidade[upper(v)]||"NÃO DEFINIDO"}
+  function grupoOrdensEmbarcador(v){return ordensGruposEmbarcador[upper(v)]||"NÃO DEFINIDO"}
 
   function alternarMargemLiquidaRs(){
     margemRsOculta = !margemRsOculta;
@@ -2106,7 +2154,9 @@
   }
 
   function normalizarOrdem(r){
+    const dataRaw=valorCampoFlex(r,["Data","DATA","Data Emissão","Data Emissao","Dt. Emissão","Dt Emissao","Data Ordem","Data da Ordem"]);
     return {
+      data:parseDate(dataRaw),dataRaw:txt(dataRaw),
       filial:upper(valorCampoFlex(r,["FILIAL","Filial"])),
       unidade:upper(valorCampoFlex(r,["Unid.Emb","UNID.EMB","Unidade de Embarque","Unidade Embarque"])),
       cliente:upper(valorCampoFlex(r,["Cliente","CLIENTE","Cliente Principal"])),
@@ -2190,18 +2240,14 @@
   }
 
   function aplicarFiltrosOrdens(){
-    const filiais = selecionadosMulti("ordFilialMulti");
-    const unidades = selecionadosMulti("ordUnidadeMulti");
-    const clientes = selecionadosMulti("ordClienteMulti");
-    const embarcadores = selecionadosMulti("ordEmbarcadorMulti");
-
-    ordensFiltrados = ordensDados.filter(r => (
-      (!filiais.length || filiais.includes(r.filial)) &&
-      (!unidades.length || unidades.includes(r.unidade)) &&
-      (!clientes.length || clientes.includes(r.cliente)) &&
-      (!embarcadores.length || embarcadores.includes(r.embarcador))
-    ));
-
+    const filiais=selecionadosMulti("ordFilialMulti"),unidades=selecionadosMulti("ordUnidadeMulti"),clientes=selecionadosMulti("ordClienteMulti"),embarcadores=selecionadosMulti("ordEmbarcadorMulti");
+    const grupoUnidade=$("ordGrupoUnidade")?.value||"",grupoEmbarcador=$("ordGrupoEmbarcador")?.value||"";
+    const dataInicial=parseInputDate($("ordDataInicial")?.value,false),dataFinal=parseInputDate($("ordDataFinal")?.value,true);
+    if(dataInicial&&dataFinal&&dataFinal<dataInicial){alert("A data final não pode ser anterior à data inicial.");return}
+    ordensFiltrados=ordensDados.filter(r=>{
+      const periodo=(!dataInicial||(r.data&&r.data>=dataInicial))&&(!dataFinal||(r.data&&r.data<=dataFinal));
+      return periodo&&(!filiais.length||filiais.includes(r.filial))&&(!unidades.length||unidades.includes(r.unidade))&&(!clientes.length||clientes.includes(r.cliente))&&(!embarcadores.length||embarcadores.includes(r.embarcador))&&(!grupoUnidade||grupoOrdensUnidade(r.unidade)===grupoUnidade)&&(!grupoEmbarcador||grupoOrdensEmbarcador(r.embarcador)===grupoEmbarcador);
+    });
     renderOrdens();
   }
 
@@ -2298,14 +2344,32 @@
     montarMultiOrdens("ordUnidadeMulti",unicos("unidade"),"Todas as unidades");
     montarMultiOrdens("ordClienteMulti",unicos("cliente"),"Todos os clientes");
     montarMultiOrdens("ordEmbarcadorMulti",unicos("embarcador"),"Todos os embarcadores");
-
+    popularGruposOrdens();
+    configurarLimitesDatasOrdens();
     renderOrdens();
 
     $("statusMensagem").textContent =
       `${ordensDados.length.toLocaleString("pt-BR")} registro(s) de Ordens carregados de ${nomeArquivo}.`;
   }
 
+  function popularSelectSimples(id,values,firstText){const el=$(id);if(!el)return;const old=el.value;el.innerHTML=`<option value="">${firstText}</option>`+values.map(v=>`<option value="${escapar(v)}">${escapar(v)}</option>`).join("");if(values.includes(old))el.value=old}
+  function gruposExistentesMapa(m){return [...new Set(Object.values(m||{}).filter(v=>v&&v!=="NÃO DEFINIDO"))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
+  function popularGruposOrdens(){popularSelectSimples("ordGrupoUnidade",gruposExistentesMapa(ordensGruposUnidade),"Todos os grupos");popularSelectSimples("ordGrupoEmbarcador",gruposExistentesMapa(ordensGruposEmbarcador),"Todos os grupos") }
+  function configurarLimitesDatasOrdens(){const ds=ordensDados.map(r=>r.data).filter(d=>d instanceof Date&&!Number.isNaN(d.getTime())).sort((a,b)=>a-b);if(!ds.length)return;const min=dateToInputValue(ds[0]),max=dateToInputValue(ds[ds.length-1]);["ordDataInicial","ordDataFinal"].forEach(id=>{const el=$(id);if(el){el.min=min;el.max=max}})}
+  function abrirGruposOrdens(){
+    if(!ordensDados.length){alert("Importe o CSV de Ordens antes de criar os grupos.");return}
+    const us=[...new Set(ordensDados.map(r=>r.unidade).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const es=[...new Set(ordensDados.map(r=>r.embarcador).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const campo=(v,g,t)=>`<div class="groupRow"><span>${escapar(v)}</span><input type="text" value="${escapar(g==="NÃO DEFINIDO"?"":g)}" data-tipo="${t}" data-chave="${escapar(v)}" placeholder="Ex.: REUNIÃO HOJE" style="min-height:36px;padding:0 9px;border:1px solid rgba(162,193,227,.2);border-radius:9px;background:#0d2b4e;color:#fff;font-size:10px" /></div>`;
+    $("ordGroupRowsUnidade").innerHTML=us.map(v=>campo(v,grupoOrdensUnidade(v),"unidade")).join("");
+    $("ordGroupRowsEmbarcador").innerHTML=es.map(v=>campo(v,grupoOrdensEmbarcador(v),"embarcador")).join("");
+    $("modalGruposOrdens").classList.add("show");
+  }
+  function salvarGruposOrdensModal(){const nu={...ordensGruposUnidade},ne={...ordensGruposEmbarcador};$("modalGruposOrdens").querySelectorAll("input[data-tipo][data-chave]").forEach(i=>{const k=upper(i.dataset.chave),g=upper(i.value);if(i.dataset.tipo==="unidade"){if(g)nu[k]=g;else delete nu[k]}else{if(g)ne[k]=g;else delete ne[k]}});ordensGruposUnidade=nu;ordensGruposEmbarcador=ne;localStorage.setItem(STORAGE_ORDENS_GRUPOS_UNIDADE,JSON.stringify(nu));localStorage.setItem(STORAGE_ORDENS_GRUPOS_EMBARCADOR,JSON.stringify(ne));$("modalGruposOrdens").classList.remove("show");popularGruposOrdens();aplicarFiltrosOrdens()}
+  function resetarGruposOrdens(){if(!confirm("Remover todos os grupos salvos?"))return;ordensGruposUnidade={};ordensGruposEmbarcador={};localStorage.removeItem(STORAGE_ORDENS_GRUPOS_UNIDADE);localStorage.removeItem(STORAGE_ORDENS_GRUPOS_EMBARCADOR);$("modalGruposOrdens").classList.remove("show");popularGruposOrdens();aplicarFiltrosOrdens()}
+
   function limparFiltrosOrdens(){
+    ["ordDataInicial","ordDataFinal","ordGrupoUnidade","ordGrupoEmbarcador"].forEach(id=>{if($(id))$(id).value=""});
     ordMultiIds.forEach(id => {
       $(id)?.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
     });
@@ -2370,6 +2434,12 @@
     });
 
     $("btnLimparOrdens")?.addEventListener("click",limparFiltrosOrdens);
+    ["ordDataInicial","ordDataFinal","ordGrupoUnidade","ordGrupoEmbarcador"].forEach(id=>$(id)?.addEventListener("change",aplicarFiltrosOrdens));
+    $("btnGerenciarGruposOrdens")?.addEventListener("click",abrirGruposOrdens);
+    $("btnFecharGruposOrdens")?.addEventListener("click",()=>$("modalGruposOrdens").classList.remove("show"));
+    $("btnSalvarGruposOrdens")?.addEventListener("click",salvarGruposOrdensModal);
+    $("btnResetGruposOrdens")?.addEventListener("click",resetarGruposOrdens);
+    $("modalGruposOrdens")?.addEventListener("click",e=>{if(e.target===$("modalGruposOrdens"))$("modalGruposOrdens").classList.remove("show")});
 
     document.addEventListener("click",() => {
       document.querySelectorAll(".multiSelect.open").forEach(x => x.classList.remove("open"));

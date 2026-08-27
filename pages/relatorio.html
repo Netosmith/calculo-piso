@@ -1338,8 +1338,7 @@
 function carregarMapaLocal(chave){
     try{const v=JSON.parse(localStorage.getItem(chave)||"{}");return v&&typeof v==="object"?v:{}}catch{return {}}
   }
-  function grupoOrdensUnidade(v){return ordensGruposUnidade[upper(v)]||"NÃO DEFINIDO"}
-  function lerMapaGruposOrdens(){
+function lerMapaGruposOrdens(){
     const saida = {};
 
     try{
@@ -2812,6 +2811,7 @@ function carregarMapaLocal(chave){
         return;
       }
 
+      // Parte sempre de uma leitura fresca para preservar os demais grupos.
       const mapaAtual = lerMapaGruposOrdens();
       mapaAtual[grupo] = [...new Set(
         grupoUnidadesEdicao.map(item => upper(item)).filter(Boolean)
@@ -2824,9 +2824,13 @@ function carregarMapaLocal(chave){
         JSON.stringify(mapaAtual)
       );
 
-      if($("ordGrupoUnidade")) $("ordGrupoUnidade").value = grupo;
+      if($("ordGrupoUnidade")){
+        $("ordGrupoUnidade").value = grupo;
+      }
+
       $("modalGrupoUnidades")?.classList.remove("show");
 
+      // Recalcula o Dashboard usando exatamente o grupo que acabou de ser salvo.
       aplicarFiltrosOrdens();
 
       if($("statusMensagem")){
@@ -2834,31 +2838,7 @@ function carregarMapaLocal(chave){
           `${mapaAtual[grupo].length} unidade(s) vinculada(s) ao ${grupo}.`;
       }
     }catch(error){
-      console.error(error);
-      alert("Não foi possível salvar o grupo: " + (error?.message || error));
-    }
-  }
-
-      ordensGruposUnidade[grupo] = [...new Set(
-        grupoUnidadesEdicao.map(upper).filter(Boolean)
-      )];
-
-      localStorage.setItem(
-        STORAGE_ORDENS_GRUPOS_UNIDADE,
-        JSON.stringify(ordensGruposUnidade)
-      );
-
-      if($("ordGrupoUnidade")) $("ordGrupoUnidade").value = grupo;
-      $("modalGrupoUnidades")?.classList.remove("show");
-
-      aplicarFiltrosOrdens();
-
-      if($("statusMensagem")){
-        $("statusMensagem").textContent =
-          `${ordensGruposUnidade[grupo].length} unidade(s) vinculada(s) ao ${grupo}.`;
-      }
-    }catch(error){
-      console.error(error);
+      console.error("Erro ao salvar grupo de Unid. Emb.:", error);
       alert("Não foi possível salvar o grupo: " + (error?.message || error));
     }
   }

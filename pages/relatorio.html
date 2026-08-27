@@ -1063,7 +1063,7 @@
         <div class="toolbarActions">
           <input id="ordensInput" type="file" accept=".csv,text/csv" />
           <button class="btn primary" id="btnImportarOrdens" type="button">📎 Anexar CSV de Ordens</button>
-          <button class="btn green" id="btnAbrirGruposUnidades" type="button">🗂️ Grupos Unid. Emb.</button>
+          <button class="btn green" id="btnAbrirGruposUnidades" type="button" onclick="window.NF_openOrdensGroups && window.NF_openOrdensGroups()">🗂️ Grupos Unid. Emb.</button>
           <button class="btn ghost" id="btnLimparOrdens" type="button">Limpar filtros</button>
         </div>
       </section>
@@ -2621,32 +2621,43 @@ function unidadesDoGrupoOrdens(grupo){
   let grupoUnidadesEdicao = [];
 
   function abrirConfigGrupoUnidades(){
+    const modal = $("modalGrupoUnidades");
+    const seletor = $("cfgGrupoUnidades");
+
+    if(!modal || !seletor){
+      alert("Janela de grupos de Unid. Emb. não encontrada.");
+      return;
+    }
+
+    if(!ordensDados.length){
+      alert("Primeiro importe o CSV de Ordens. As Unid. Emb. serão carregadas automaticamente dele.");
+      return;
+    }
+
+    const grupo = $("ordGrupoUnidade")?.value || "GRUPO SP";
+    seletor.value = grupo || "GRUPO SP";
+    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(seletor.value)];
+
+    if($("buscaUnidadesDisponiveis")) $("buscaUnidadesDisponiveis").value = "";
+    if($("buscaUnidadesGrupo")) $("buscaUnidadesGrupo").value = "";
+
+    modal.classList.add("show");
+
     try{
-      if(!ordensDados.length){
-        alert("Primeiro importe o CSV de Ordens. As Unid. Emb. serão carregadas automaticamente dele.");
-        return;
-      }
-
-      const modal = $("modalGrupoUnidades");
-      const seletor = $("cfgGrupoUnidades");
-
-      if(!modal || !seletor){
-        throw new Error("Janela de configuração dos grupos não encontrada.");
-      }
-
-      const grupo = $("ordGrupoUnidade")?.value || "GRUPO SP";
-      seletor.value = grupo || "GRUPO SP";
-
-      grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(seletor.value)];
-
-      if($("buscaUnidadesDisponiveis")) $("buscaUnidadesDisponiveis").value = "";
-      if($("buscaUnidadesGrupo")) $("buscaUnidadesGrupo").value = "";
-
       renderConfigGrupoUnidades();
-      modal.classList.add("show");
     }catch(error){
-      console.error(error);
-      alert("Não foi possível abrir os grupos de Unid. Emb.: " + (error?.message || error));
+      console.error("Falha ao montar unidades dos grupos:", error);
+      const lista = $("listaUnidadesDisponiveis");
+      if(lista){
+        const unidades = [...new Set(ordensDados.map(r => upper(r.unidade)).filter(Boolean))]
+          .sort((a,b) => a.localeCompare(b,"pt-BR"));
+        lista.innerHTML = unidades.map(unidade => `
+          <label class="unitGroupItem">
+            <input type="checkbox" value="${escapar(unidade)}">
+            <span>${escapar(unidade)}</span>
+          </label>
+        `).join("");
+      }
     }
   }
 
@@ -2978,6 +2989,8 @@ function unidadesDoGrupoOrdens(grupo){
       if(e.target === $("modalGrupos")) fecharGrupos();
     });
   }
+
+  window.NF_openOrdensGroups = abrirConfigGrupoUnidades;
 
   function iniciarDashboard(){
     try{

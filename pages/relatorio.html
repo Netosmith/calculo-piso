@@ -127,7 +127,41 @@
     .btn.green{background:linear-gradient(135deg,#149864,#2fc48d);border-color:rgba(47,196,141,.55)}
     .btn.ghost{background:rgba(11,36,68,.75)}
     .btn.danger{background:#6a2330;border-color:#a74656}
-    #csvInput{display:none}
+    #csvInput,#ordensInput{display:none}
+
+    .dashboardTabs{
+      margin-top:16px;
+      display:flex;
+      gap:9px;
+      flex-wrap:wrap;
+    }
+    .dashboardTab{
+      min-height:42px;
+      padding:0 18px;
+      border:1px solid rgba(95,151,235,.35);
+      border-radius:11px;
+      background:rgba(11,36,68,.72);
+      color:#b9cce2;
+      font-size:11px;
+      font-weight:900;
+    }
+    .dashboardTab.active{
+      background:linear-gradient(135deg,#2f71d8,#4d8df7);
+      border-color:#5b99f8;
+      color:#fff;
+      box-shadow:0 8px 22px rgba(77,141,247,.18);
+    }
+    .dashboardView{display:none}
+    .dashboardView.active{display:block}
+    .ordensCards{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+    .ordensTable{margin-top:16px}
+    @media(max-width:1000px){.ordensCards{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:650px){.ordensCards{grid-template-columns:1fr}}
 
     .filters{
       margin-top:16px;
@@ -568,6 +602,12 @@
       </div>
     </header>
 
+    <section class="dashboardTabs">
+      <button class="dashboardTab active" id="tabExpedicao" type="button">📊 Dashboard Expedição</button>
+      <button class="dashboardTab" id="tabOrdens" type="button">📋 Dashboard Ordens</button>
+    </section>
+
+    <div class="dashboardView active" id="viewExpedicao">
     <section class="toolbar">
       <div class="toolbarTitle">
         <strong>Importar relatório CSV</strong>
@@ -887,6 +927,123 @@
       </div>
     </section>
 
+    </div>
+
+    <div class="dashboardView" id="viewOrdens">
+      <section class="toolbar">
+        <div class="toolbarTitle">
+          <strong>Importar relatório de Ordens</strong>
+          <span>Anexe o CSV de Ordens. O dashboard irá trabalhar com FILIAL, Unid.Emb, Cliente e Nome Embarcador.</span>
+        </div>
+
+        <div class="toolbarActions">
+          <input id="ordensInput" type="file" accept=".csv,text/csv" />
+          <button class="btn primary" id="btnImportarOrdens" type="button">📎 Anexar CSV de Ordens</button>
+          <button class="btn ghost" id="btnLimparOrdens" type="button">Limpar filtros</button>
+        </div>
+      </section>
+
+      <section class="filters" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+        <div class="filterField">
+          <label>Filial</label>
+          <div class="multiSelect" id="ordFilialMulti">
+            <button class="multiSelectButton" type="button">
+              <span class="multiResumo">Todas as filiais</span><span class="arrow">▼</span>
+            </button>
+            <div class="multiSelectMenu"></div>
+          </div>
+        </div>
+
+        <div class="filterField">
+          <label>Unid. Emb.</label>
+          <div class="multiSelect" id="ordUnidadeMulti">
+            <button class="multiSelectButton" type="button">
+              <span class="multiResumo">Todas as unidades</span><span class="arrow">▼</span>
+            </button>
+            <div class="multiSelectMenu"></div>
+          </div>
+        </div>
+
+        <div class="filterField">
+          <label>Cliente</label>
+          <div class="multiSelect" id="ordClienteMulti">
+            <button class="multiSelectButton" type="button">
+              <span class="multiResumo">Todos os clientes</span><span class="arrow">▼</span>
+            </button>
+            <div class="multiSelectMenu"></div>
+          </div>
+        </div>
+
+        <div class="filterField">
+          <label>Nome embarcador</label>
+          <div class="multiSelect" id="ordEmbarcadorMulti">
+            <button class="multiSelectButton" type="button">
+              <span class="multiResumo">Todos os embarcadores</span><span class="arrow">▼</span>
+            </button>
+            <div class="multiSelectMenu"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ordensCards">
+        <article class="metric">
+          <div class="metricTop"><span class="metricLabel">Ordens</span><span class="metricIcon">📋</span></div>
+          <strong id="ordKpiTotal">0</strong><small>Registros após os filtros</small>
+        </article>
+        <article class="metric green">
+          <div class="metricTop"><span class="metricLabel">Filiais</span><span class="metricIcon">🏢</span></div>
+          <strong id="ordKpiFiliais">0</strong><small>Filiais distintas</small>
+        </article>
+        <article class="metric gold">
+          <div class="metricTop"><span class="metricLabel">Unidades embarque</span><span class="metricIcon">📍</span></div>
+          <strong id="ordKpiUnidades">0</strong><small>Unidades distintas</small>
+        </article>
+        <article class="metric cyan">
+          <div class="metricTop"><span class="metricLabel">Embarcadores</span><span class="metricIcon">👤</span></div>
+          <strong id="ordKpiEmbarcadores">0</strong><small>Embarcadores distintos</small>
+        </article>
+      </section>
+
+      <section class="grid">
+        <article class="box">
+          <div class="boxHead"><div><h2>Ordens por filial</h2><p>Distribuição dos registros por filial.</p></div></div>
+          <div class="chartWrap small"><canvas id="graficoOrdFilial"></canvas></div>
+        </article>
+        <article class="box">
+          <div class="boxHead"><div><h2>Ordens por unidade de embarque</h2><p>Comparativo por Unid.Emb.</p></div></div>
+          <div class="chartWrap small"><canvas id="graficoOrdUnidade"></canvas></div>
+        </article>
+        <article class="box">
+          <div class="boxHead"><div><h2>Ordens por cliente</h2><p>Ranking de clientes pela quantidade de ordens.</p></div></div>
+          <div class="chartWrap small"><canvas id="graficoOrdCliente"></canvas></div>
+        </article>
+        <article class="box">
+          <div class="boxHead"><div><h2>Ordens por embarcador</h2><p>Distribuição por nome do embarcador.</p></div></div>
+          <div class="chartWrap small"><canvas id="graficoOrdEmbarcador"></canvas></div>
+        </article>
+      </section>
+
+      <section class="box ordensTable">
+        <div class="boxHead">
+          <div><h2>Resumo de Ordens</h2><p>Consolidado por FILIAL, Unid.Emb, Cliente e Nome Embarcador.</p></div>
+        </div>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Filial</th>
+                <th>Unid. Emb.</th>
+                <th>Cliente</th>
+                <th>Nome Embarcador</th>
+                <th>Ordens</th>
+              </tr>
+            </thead>
+            <tbody id="ordTabela"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
     <footer class="statusBar">
       <span id="statusMensagem">Selecione o arquivo relatorio.CSV para carregar os dados.</span>
       <span><strong>Campos principais:</strong> Peso, F.Emp, F.Mot+Ped, Margem real, Margem Liq, Cliente Principal, Unid.Emb e Tipo CTE</span>
@@ -955,6 +1112,10 @@
   let gruposClientes = carregarGrupos();
 
   let margemRsOculta = false;
+  let ordensDados = [];
+  let ordensFiltrados = [];
+  let ordensCharts = {};
+  const ordMultiIds = ["ordFilialMulti","ordUnidadeMulti","ordClienteMulti","ordEmbarcadorMulti"];
 
   function alternarMargemLiquidaRs(){
     margemRsOculta = !margemRsOculta;
@@ -1929,7 +2090,291 @@
     }
   }
 
+
+  function valorCampoFlex(r,nomes){
+    for(const nome of nomes){
+      if(r[nome] !== undefined && txt(r[nome]) !== "") return txt(r[nome]);
+    }
+
+    const alvos = nomes.map(n => upper(n).replace(/[^A-Z0-9]/g,""));
+    const chave = Object.keys(r).find(k => {
+      const normalizada = upper(k).replace(/[^A-Z0-9]/g,"");
+      return alvos.includes(normalizada);
+    });
+
+    return chave ? txt(r[chave]) : "";
+  }
+
+  function normalizarOrdem(r){
+    return {
+      filial:upper(valorCampoFlex(r,["FILIAL","Filial"])),
+      unidade:upper(valorCampoFlex(r,["Unid.Emb","UNID.EMB","Unidade de Embarque","Unidade Embarque"])),
+      cliente:upper(valorCampoFlex(r,["Cliente","CLIENTE","Cliente Principal"])),
+      embarcador:upper(valorCampoFlex(r,["Nome Embarcador","NOME EMBARCADOR","Embarcador","Nome do Embarcador"]))
+    };
+  }
+
+  function montarMultiOrdens(id,valores,todosTexto){
+    const root = $(id);
+    const menu = root?.querySelector(".multiSelectMenu");
+    const resumo = root?.querySelector(".multiResumo");
+
+    if(!root || !menu || !resumo) return;
+
+    menu.innerHTML = `
+      <div class="multiSelectActions">
+        <button class="multiMiniBtn selTodos" type="button">Selecionar todos</button>
+        <button class="multiMiniBtn limpaTodos" type="button">Limpar</button>
+      </div>
+      ${valores.map(v => `
+        <label class="multiOption">
+          <input type="checkbox" value="${escapar(v)}">
+          <span>${escapar(v)}</span>
+        </label>
+      `).join("")}
+    `;
+
+    const atualizar = () => {
+      const checks = [...menu.querySelectorAll('input[type="checkbox"]')];
+      const sel = checks.filter(x => x.checked);
+
+      if(!sel.length || sel.length === checks.length){
+        resumo.textContent = todosTexto;
+      }else if(sel.length === 1){
+        resumo.textContent = sel[0].value;
+      }else{
+        resumo.textContent = `${sel.length} selecionados`;
+      }
+    };
+
+    root.querySelector(".multiSelectButton").onclick = e => {
+      e.stopPropagation();
+      document.querySelectorAll(".multiSelect.open").forEach(x => {
+        if(x !== root) x.classList.remove("open");
+      });
+      root.classList.toggle("open");
+    };
+
+    menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.addEventListener("change",() => {
+        atualizar();
+        aplicarFiltrosOrdens();
+      });
+    });
+
+    menu.querySelector(".selTodos").onclick = e => {
+      e.stopPropagation();
+      menu.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = true);
+      atualizar();
+      aplicarFiltrosOrdens();
+    };
+
+    menu.querySelector(".limpaTodos").onclick = e => {
+      e.stopPropagation();
+      menu.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
+      atualizar();
+      aplicarFiltrosOrdens();
+    };
+
+    atualizar();
+  }
+
+  function selecionadosMulti(id){
+    const root = $(id);
+    if(!root) return [];
+
+    const all = [...root.querySelectorAll('.multiSelectMenu input[type="checkbox"]')];
+    const selecionados = all.filter(x => x.checked).map(x => x.value);
+
+    return selecionados.length === all.length ? [] : selecionados;
+  }
+
+  function aplicarFiltrosOrdens(){
+    const filiais = selecionadosMulti("ordFilialMulti");
+    const unidades = selecionadosMulti("ordUnidadeMulti");
+    const clientes = selecionadosMulti("ordClienteMulti");
+    const embarcadores = selecionadosMulti("ordEmbarcadorMulti");
+
+    ordensFiltrados = ordensDados.filter(r => (
+      (!filiais.length || filiais.includes(r.filial)) &&
+      (!unidades.length || unidades.includes(r.unidade)) &&
+      (!clientes.length || clientes.includes(r.cliente)) &&
+      (!embarcadores.length || embarcadores.includes(r.embarcador))
+    ));
+
+    renderOrdens();
+  }
+
+  function agruparContagem(rows,field){
+    const map = new Map();
+
+    rows.forEach(r => {
+      const key = r[field] || "NÃO INFORMADO";
+      map.set(key,(map.get(key) || 0) + 1);
+    });
+
+    return [...map.entries()]
+      .map(([label,value]) => ({label,value}))
+      .sort((a,b) => b.value - a.value);
+  }
+
+  function renderBarOrd(key,canvasId,items){
+    if(ordensCharts[key]) ordensCharts[key].destroy();
+
+    ordensCharts[key] = new Chart($(canvasId),{
+      type:"bar",
+      data:{
+        labels:items.slice(0,15).map(x => x.label),
+        datasets:[{
+          data:items.slice(0,15).map(x => x.value),
+          backgroundColor:"rgba(77,141,247,.82)",
+          borderColor:"rgba(104,163,255,1)",
+          borderWidth:1,
+          borderRadius:6,
+          maxBarThickness:30
+        }]
+      },
+      options:baseOptions(true)
+    });
+  }
+
+  function renderOrdens(){
+    $("ordKpiTotal").textContent = ordensFiltrados.length.toLocaleString("pt-BR");
+    $("ordKpiFiliais").textContent = distinct(ordensFiltrados,"filial").toLocaleString("pt-BR");
+    $("ordKpiUnidades").textContent = distinct(ordensFiltrados,"unidade").toLocaleString("pt-BR");
+    $("ordKpiEmbarcadores").textContent = distinct(ordensFiltrados,"embarcador").toLocaleString("pt-BR");
+
+    renderBarOrd("filial","graficoOrdFilial",agruparContagem(ordensFiltrados,"filial"));
+    renderBarOrd("unidade","graficoOrdUnidade",agruparContagem(ordensFiltrados,"unidade"));
+    renderBarOrd("cliente","graficoOrdCliente",agruparContagem(ordensFiltrados,"cliente"));
+    renderBarOrd("embarcador","graficoOrdEmbarcador",agruparContagem(ordensFiltrados,"embarcador"));
+
+    const map = new Map();
+
+    ordensFiltrados.forEach(r => {
+      const chave = [r.filial,r.unidade,r.cliente,r.embarcador].join("|||");
+
+      if(!map.has(chave)){
+        map.set(chave,{...r,qtd:0});
+      }
+
+      map.get(chave).qtd++;
+    });
+
+    const rows = [...map.values()].sort((a,b) => b.qtd - a.qtd);
+
+    $("ordTabela").innerHTML = rows.length
+      ? rows.map(r => `
+          <tr>
+            <td>${escapar(r.filial || "-")}</td>
+            <td>${escapar(r.unidade || "-")}</td>
+            <td>${escapar(r.cliente || "-")}</td>
+            <td>${escapar(r.embarcador || "-")}</td>
+            <td>${r.qtd.toLocaleString("pt-BR")}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="5" style="text-align:center;color:#9fb3ca;padding:30px">Importe o CSV de Ordens.</td></tr>`;
+  }
+
+  function carregarOrdensCSV(text,nomeArquivo="ordens.CSV"){
+    const raw = parseCSV(text);
+
+    if(!raw.length){
+      alert("O CSV de Ordens não possui registros válidos.");
+      return;
+    }
+
+    ordensDados = raw
+      .map(normalizarOrdem)
+      .filter(r => r.filial || r.unidade || r.cliente || r.embarcador);
+
+    ordensFiltrados = ordensDados.slice();
+
+    const unicos = field => [...new Set(
+      ordensDados.map(r => r[field]).filter(Boolean)
+    )].sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+    montarMultiOrdens("ordFilialMulti",unicos("filial"),"Todas as filiais");
+    montarMultiOrdens("ordUnidadeMulti",unicos("unidade"),"Todas as unidades");
+    montarMultiOrdens("ordClienteMulti",unicos("cliente"),"Todos os clientes");
+    montarMultiOrdens("ordEmbarcadorMulti",unicos("embarcador"),"Todos os embarcadores");
+
+    renderOrdens();
+
+    $("statusMensagem").textContent =
+      `${ordensDados.length.toLocaleString("pt-BR")} registro(s) de Ordens carregados de ${nomeArquivo}.`;
+  }
+
+  function limparFiltrosOrdens(){
+    ordMultiIds.forEach(id => {
+      $(id)?.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
+    });
+
+    const textos = {
+      ordFilialMulti:"Todas as filiais",
+      ordUnidadeMulti:"Todas as unidades",
+      ordClienteMulti:"Todos os clientes",
+      ordEmbarcadorMulti:"Todos os embarcadores"
+    };
+
+    Object.keys(textos).forEach(id => {
+      const resumo = $(id)?.querySelector(".multiResumo");
+      if(resumo) resumo.textContent = textos[id];
+    });
+
+    ordensFiltrados = ordensDados.slice();
+    renderOrdens();
+  }
+
+  function trocarDashboard(tipo){
+    const exp = tipo === "expedicao";
+
+    $("viewExpedicao").classList.toggle("active",exp);
+    $("viewOrdens").classList.toggle("active",!exp);
+    $("tabExpedicao").classList.toggle("active",exp);
+    $("tabOrdens").classList.toggle("active",!exp);
+
+    if(exp){
+      $("statusMensagem").textContent =
+        `${filtrados.length.toLocaleString("pt-BR")} registro(s) exibido(s) após os filtros • ` +
+        `${distinct(filtrados,"placa").toLocaleString("pt-BR")} veículo(s) distinto(s)`;
+    }else{
+      $("statusMensagem").textContent =
+        ordensDados.length
+          ? `${ordensFiltrados.length.toLocaleString("pt-BR")} ordem(ns) exibida(s) após os filtros.`
+          : "Selecione um arquivo CSV de Ordens para carregar o segundo dashboard.";
+
+      if(ordensDados.length){
+        setTimeout(renderOrdens,50);
+      }
+    }
+  }
+
   function bind(){
+    $("tabExpedicao")?.addEventListener("click",() => trocarDashboard("expedicao"));
+    $("tabOrdens")?.addEventListener("click",() => trocarDashboard("ordens"));
+
+    $("btnImportarOrdens")?.addEventListener("click",() => $("ordensInput").click());
+
+    $("ordensInput")?.addEventListener("change",e => {
+      const file = e.target.files?.[0];
+
+      if(file){
+        const reader = new FileReader();
+        reader.onload = ev => carregarOrdensCSV(String(ev.target.result || ""),file.name);
+        reader.onerror = () => alert("Não foi possível ler o CSV de Ordens.");
+        reader.readAsText(file,"UTF-8");
+      }
+
+      e.target.value = "";
+    });
+
+    $("btnLimparOrdens")?.addEventListener("click",limparFiltrosOrdens);
+
+    document.addEventListener("click",() => {
+      document.querySelectorAll(".multiSelect.open").forEach(x => x.classList.remove("open"));
+    });
+
     $("btnImportar").addEventListener("click",() => $("csvInput").click());
 
     $("csvInput").addEventListener("change",e => {

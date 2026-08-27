@@ -1,0 +1,154 @@
+from pathlib import Path
+
+path = Path('pages/relatorio.html')
+text = path.read_text(encoding='utf-8')
+
+old_html = '''      <section class="box ordensTable">
+        <div class="boxHead">
+          <div><h2>Resumo de Ordens</h2><p>Consolidado por FILIAL, Unid.Emb, Cliente e Nome Embarcador.</p></div>
+        </div>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Filial</th>
+                <th>Unid. Emb.</th>
+                <th>Cliente</th>
+                <th>Nome Embarcador</th>
+                <th>Ordens</th>
+              </tr>
+            </thead>
+            <tbody id="ordTabela"></tbody>
+          </table>
+        </div>
+      </section>'''
+
+new_html = '''      <section class="box ordensTable rankingFuncionariosBox">
+        <div class="boxHead rankingFuncionariosHead">
+          <div>
+            <h2>🏆 Ranking de Funcionários por Ordens</h2>
+            <p>Classificação dos colaboradores pelo número de ordens registradas, respeitando todos os filtros acima.</p>
+          </div>
+          <div class="rankingTop5Badge">TOP 5 EM DESTAQUE</div>
+        </div>
+        <div class="tableWrap">
+          <table class="rankingFuncionariosTable">
+            <thead>
+              <tr>
+                <th style="width:110px">Classificação</th>
+                <th>Funcionário</th>
+                <th style="width:150px">Ordens</th>
+                <th style="width:190px">Participação</th>
+              </tr>
+            </thead>
+            <tbody id="ordTabela"></tbody>
+          </table>
+        </div>
+      </section>'''
+
+if old_html not in text:
+    raise SystemExit('Bloco HTML Resumo de Ordens não encontrado.')
+text = text.replace(old_html, new_html, 1)
+
+css = '''
+
+    /* ===== RANKING DE FUNCIONÁRIOS - DASHBOARD ORDENS ===== */
+    .rankingFuncionariosHead{align-items:center}
+    .rankingTop5Badge{padding:8px 12px;border:1px solid rgba(242,188,61,.38);border-radius:999px;background:rgba(242,188,61,.10);color:#ffd86b;font-size:9px;font-weight:900;letter-spacing:.05em;white-space:nowrap}
+    .rankingFuncionariosTable th:first-child,.rankingFuncionariosTable td:first-child{text-align:center}
+    .rankingFuncionariosTable td:nth-child(3),.rankingFuncionariosTable th:nth-child(3){text-align:right}
+    .rankingPosicao{display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:30px;padding:0 10px;border-radius:999px;border:1px solid rgba(139,172,209,.22);background:rgba(22,54,88,.72);color:#cfe0f2;font-weight:900;font-size:10px}
+    .rankingPosicao.top1{background:rgba(242,188,61,.18);border-color:rgba(242,188,61,.55);color:#ffe08a}
+    .rankingPosicao.top2{background:rgba(190,205,222,.14);border-color:rgba(190,205,222,.45);color:#e3edf7}
+    .rankingPosicao.top3{background:rgba(205,132,72,.16);border-color:rgba(205,132,72,.48);color:#f1bb8d}
+    .rankingPosicao.top4,.rankingPosicao.top5{background:rgba(47,196,141,.10);border-color:rgba(47,196,141,.34);color:#8ee7c1}
+    .rankingFuncionarioNome{font-weight:900;color:#f5f9ff}
+    .rankingTopLinha{background:linear-gradient(90deg,rgba(39,94,154,.12),rgba(12,41,73,0))}
+    .rankingTopLinha:hover{background:linear-gradient(90deg,rgba(39,94,154,.22),rgba(12,41,73,.08))}
+    .rankingOrdensValor{font-weight:1000;color:#76aaff;font-size:12px}
+    .rankingParticipacao{display:flex;align-items:center;gap:9px}
+    .rankingBarra{flex:1;height:7px;border-radius:999px;background:rgba(153,184,218,.12);overflow:hidden;min-width:70px}
+    .rankingBarra>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4d8df7,#2fc48d)}
+    .rankingPct{min-width:52px;text-align:right;font-weight:800;color:#aec5dc;font-size:9px}
+'''
+
+if '/* ===== RANKING DE FUNCIONÁRIOS - DASHBOARD ORDENS ===== */' not in text:
+    text = text.replace('</style>', css + '\n  </style>', 1)
+
+old_js = '''      const map = new Map();
+
+      ordensFiltrados.forEach(r => {
+        const chave = [r.filial,r.unidade,r.cliente,r.embarcador].join("|||");
+
+        if(!map.has(chave)){
+          map.set(chave,{...r,qtd:0});
+        }
+
+        map.get(chave).qtd++;
+      });
+
+      const rows = [...map.values()].sort((a,b) => b.qtd - a.qtd);
+
+      if($("ordTabela")){
+        $("ordTabela").innerHTML = rows.length
+          ? rows.map(r => `
+              <tr>
+                <td>${escapar(r.filial || "-")}</td>
+                <td>${escapar(r.unidade || "-")}</td>
+                <td>${escapar(r.cliente || "-")}</td>
+                <td>${escapar(r.embarcador || "-")}</td>
+                <td>${r.qtd.toLocaleString("pt-BR")}</td>
+              </tr>
+            `).join("")
+          : `<tr><td colspan="5" style="text-align:center;color:#9fb3ca;padding:30px">Nenhum registro de Ordens para os filtros atuais.</td></tr>`;
+      }'''
+
+new_js = '''      const rankingMap = new Map();
+
+      ordensFiltrados.forEach(r => {
+        const funcionario = upper(r.embarcador || "NÃO INFORMADO");
+        rankingMap.set(funcionario,(rankingMap.get(funcionario) || 0) + 1);
+      });
+
+      const rankingFuncionarios = [...rankingMap.entries()]
+        .map(([funcionario,qtd]) => ({funcionario,qtd}))
+        .sort((a,b) => {
+          if(b.qtd !== a.qtd) return b.qtd - a.qtd;
+          return a.funcionario.localeCompare(b.funcionario,"pt-BR");
+        });
+
+      const totalOrdensRanking = ordensFiltrados.length || 1;
+      const medalhas = ["🥇 1º","🥈 2º","🥉 3º","4º","5º"];
+
+      if($("ordTabela")){
+        $("ordTabela").innerHTML = rankingFuncionarios.length
+          ? rankingFuncionarios.map((r,index) => {
+              const posicao = index + 1;
+              const top5 = posicao <= 5;
+              const pct = (r.qtd / totalOrdensRanking) * 100;
+              const classePosicao = top5 ? `top${posicao}` : "";
+              const textoPosicao = top5 ? medalhas[index] : `${posicao}º`;
+
+              return `
+                <tr class="${top5 ? "rankingTopLinha" : ""}">
+                  <td><span class="rankingPosicao ${classePosicao}">${textoPosicao}</span></td>
+                  <td><span class="rankingFuncionarioNome">${escapar(r.funcionario || "NÃO INFORMADO")}</span></td>
+                  <td><span class="rankingOrdensValor">${r.qtd.toLocaleString("pt-BR")}</span></td>
+                  <td>
+                    <div class="rankingParticipacao">
+                      <div class="rankingBarra"><span style="width:${Math.min(100,pct).toFixed(2)}%"></span></div>
+                      <span class="rankingPct">${pct.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})}%</span>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join("")
+          : `<tr><td colspan="4" style="text-align:center;color:#9fb3ca;padding:30px">Nenhum funcionário encontrado para os filtros atuais.</td></tr>`;
+      }'''
+
+if old_js not in text:
+    raise SystemExit('Bloco JS antigo do Resumo de Ordens não encontrado.')
+text = text.replace(old_js, new_js, 1)
+
+path.write_text(text, encoding='utf-8')
+print('Ranking atualizado com sucesso.')

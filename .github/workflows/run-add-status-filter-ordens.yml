@@ -1,0 +1,35 @@
+name: Add status filter ordens
+on:
+  push:
+    paths:
+      - .github/workflows/run-add-status-filter-ordens.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar filtro de status
+        run: python3 .github/scripts/add_status_filter_ordens.py
+      - name: Validar JavaScript inline
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          text = Path('pages/relatorio.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script>(.*?)</script>', text, flags=re.S)
+          if not scripts:
+              raise SystemExit('Script inline não encontrado')
+          Path('/tmp/relatorio-inline.js').write_text(scripts[-1], encoding='utf-8')
+          PY
+          node --check /tmp/relatorio-inline.js
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/relatorio.html
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: adiciona filtro multiselect de status no dashboard de ordens"
+          git push

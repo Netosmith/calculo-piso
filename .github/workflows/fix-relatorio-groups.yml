@@ -12,100 +12,25 @@ jobs:
   fix:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Corrigir abertura dos grupos de Unid Emb
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
+      - name: Aplicar correção
+        run: python scripts/fix_relatorio_groups.py
 
-          p = Path('pages/relatorio.html')
-          s = p.read_text(encoding='utf-8')
-
-          # Botão com fallback inline para não depender apenas do bind principal.
-          s = s.replace(
-              '<button class="btn green" id="btnAbrirGruposUnidades" type="button">🗂️ Grupos Unid. Emb.</button>',
-              '<button class="btn green" id="btnAbrirGruposUnidades" type="button" onclick="window.NF_openOrdensGroups && window.NF_openOrdensGroups()">🗂️ Grupos Unid. Emb.</button>'
-          )
-
-          # Substitui a função de abertura por uma versão robusta: abre primeiro e renderiza depois.
-          padrao = re.compile(r'  function abrirConfigGrupoUnidades\(\)\{.*?\n  \}\n\n  function todasUnidadesOrdens\(\)', re.S)
-          nova = '''  function abrirConfigGrupoUnidades(){
-    const modal = $("modalGrupoUnidades");
-    const seletor = $("cfgGrupoUnidades");
-
-    if(!modal || !seletor){
-      alert("Janela de grupos de Unid. Emb. não encontrada.");
-      return;
-    }
-
-    if(!ordensDados.length){
-      alert("Primeiro importe o CSV de Ordens. As Unid. Emb. serão carregadas automaticamente dele.");
-      return;
-    }
-
-    try{
-      const grupo = $("ordGrupoUnidade")?.value || "GRUPO SP";
-      seletor.value = grupo || "GRUPO SP";
-      grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(seletor.value)];
-
-      if($("buscaUnidadesDisponiveis")) $("buscaUnidadesDisponiveis").value = "";
-      if($("buscaUnidadesGrupo")) $("buscaUnidadesGrupo").value = "";
-
-      // Abre o modal antes de montar as listas. Assim um erro de render não impede a abertura.
-      modal.classList.add("show");
-
-      try{
-        renderConfigGrupoUnidades();
-      }catch(renderError){
-        console.error("Falha ao montar unidades dos grupos:", renderError);
-        const lista = $("listaUnidadesDisponiveis");
-        if(lista){
-          const unidades = [...new Set(ordensDados.map(r => upper(r.unidade)).filter(Boolean))]
-            .sort((a,b) => a.localeCompare(b,"pt-BR"));
-          lista.innerHTML = unidades.map(unidade => `
-            <label class="unitGroupItem">
-              <input type="checkbox" value="${escapar(unidade)}">
-              <span>${escapar(unidade)}</span>
-            </label>
-          `).join("");
-        }
-      }
-    }catch(error){
-      console.error("Erro ao abrir grupos de Unid. Emb.:", error);
-      modal.classList.add("show");
-    }
-  }
-
-  function todasUnidadesOrdens()'''
-
-          s, n = padrao.subn(nova, s, count=1)
-          if n != 1:
-              raise SystemExit('Função abrirConfigGrupoUnidades não encontrada para correção')
-
-          # Expõe a função para o fallback inline do botão.
-          alvo = '  function iniciarDashboard(){'
-          if 'window.NF_openOrdensGroups = abrirConfigGrupoUnidades;' not in s:
-              s = s.replace(alvo, '  window.NF_openOrdensGroups = abrirConfigGrupoUnidades;\n\n' + alvo, 1)
-
-          p.write_text(s, encoding='utf-8')
-          PY
-
-      - name: Validar correção
-        shell: bash
+      - name: Validar
         run: |
           grep -q 'window.NF_openOrdensGroups = abrirConfigGrupoUnidades' pages/relatorio.html
           grep -q 'onclick="window.NF_openOrdensGroups' pages/relatorio.html
-          grep -q 'modal.classList.add("show")' pages/relatorio.html
 
-      - name: Publicar correção
-        shell: bash
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pages/relatorio.html
-          git diff --cached --quiet && exit 0
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração necessária"
+            exit 0
+          fi
           git commit -m "fix: corrige abertura dos grupos de Unid Emb"
           git push

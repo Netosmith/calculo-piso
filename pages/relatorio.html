@@ -727,8 +727,8 @@
     </header>
 
     <section class="dashboardTabs">
-      <button class="dashboardTab active" id="tabExpedicao" type="button">📊 Dashboard Expedição</button>
-      <button class="dashboardTab" id="tabOrdens" type="button">📋 Dashboard Ordens</button>
+      <button class="dashboardTab active" id="tabExpedicao" type="button" onclick="window.NF_switchDashboard && window.NF_switchDashboard('expedicao')">📊 Dashboard Expedição</button>
+      <button class="dashboardTab" id="tabOrdens" type="button" onclick="window.NF_switchDashboard && window.NF_switchDashboard('ordens')">📋 Dashboard Ordens</button>
     </section>
 
     <div class="dashboardView active" id="viewExpedicao">
@@ -739,38 +739,38 @@
       </div>
 
       <div class="toolbarActions">
-        <input id="csvInput" type="file" accept=".csv,text/csv" />
-        <button class="btn primary" id="btnImportar" type="button">📂 Importar CSV</button>
-        <button class="btn green" id="btnGrupos" type="button">👥 Gerenciar grupos</button>
-        <button class="btn ghost" id="btnOcultarMargemRs" type="button">👁 Ocultar margem líquida R$</button>
-        <button class="btn ghost" id="btnLimpar" type="button">Limpar filtros</button>
+        <input id="csvInput" type="file" accept=".csv,text/csv" onchange="window.NF_importExpedicaoFile && window.NF_importExpedicaoFile(this)" />
+        <button class="btn primary" id="btnImportar" type="button" onclick="document.getElementById('csvInput')?.click()">📂 Importar CSV</button>
+        <button class="btn green" id="btnGrupos" type="button" onclick="window.NF_openExpedicaoGroups && window.NF_openExpedicaoGroups()">👥 Gerenciar grupos</button>
+        <button class="btn ghost" id="btnOcultarMargemRs" type="button" onclick="window.NF_toggleExpedicaoMargin && window.NF_toggleExpedicaoMargin()">👁 Ocultar margem líquida R$</button>
+        <button class="btn ghost" id="btnLimpar" type="button" onclick="window.NF_clearExpedicaoFilters && window.NF_clearExpedicaoFilters()">Limpar filtros</button>
       </div>
     </section>
 
     <section class="filters">
       <div class="filterField">
         <label for="filtroDataInicial">Data inicial</label>
-        <input id="filtroDataInicial" type="date" />
+        <input id="filtroDataInicial" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()" type="date" />
       </div>
 
       <div class="filterField">
         <label for="filtroDataFinal">Data final</label>
-        <input id="filtroDataFinal" type="date" />
+        <input id="filtroDataFinal" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()" type="date" />
       </div>
 
       <div class="filterField">
         <label for="filtroUnidade">Unidade de embarque</label>
-        <select id="filtroUnidade"><option value="">Todas as unidades</option></select>
+        <select id="filtroUnidade" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()"><option value="">Todas as unidades</option></select>
       </div>
 
       <div class="filterField">
         <label for="filtroCliente">Cliente principal</label>
-        <select id="filtroCliente"><option value="">Todos os clientes</option></select>
+        <select id="filtroCliente" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()"><option value="">Todos os clientes</option></select>
       </div>
 
       <div class="filterField">
         <label for="filtroGrupo">Grupo de cliente</label>
-        <select id="filtroGrupo">
+        <select id="filtroGrupo" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()">
           <option value="">Todos os grupos</option>
           <option value="LUZIANO">LUZIANO</option>
           <option value="LUIS">LUIS</option>
@@ -782,17 +782,17 @@
 
       <div class="filterField">
         <label for="filtroProduto">Produto</label>
-        <select id="filtroProduto"><option value="">Todos os produtos</option></select>
+        <select id="filtroProduto" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()"><option value="">Todos os produtos</option></select>
       </div>
 
       <div class="filterField">
         <label for="filtroUF">UF embarque</label>
-        <select id="filtroUF"><option value="">Todas</option></select>
+        <select id="filtroUF" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()"><option value="">Todas</option></select>
       </div>
 
       <div class="filterField">
         <label for="filtroFilial">Filial</label>
-        <select id="filtroFilial"><option value="">Todas as filiais</option></select>
+        <select id="filtroFilial" onchange="window.NF_applyExpedicaoFilters && window.NF_applyExpedicaoFilters()"><option value="">Todas as filiais</option></select>
       </div>
 
       <div class="filterField">
@@ -1951,9 +1951,11 @@ function lerMapaGruposOrdens(){
     $("kpiViagens").textContent = distinct(filtrados,"viagem").toLocaleString("pt-BR");
   }
 
-  Chart.defaults.color = "#b8c9dc";
-  Chart.defaults.borderColor = "rgba(160,190,225,.11)";
-  Chart.defaults.font.family = "Inter, Arial, sans-serif";
+  if(typeof Chart !== "undefined"){
+    Chart.defaults.color = "#b8c9dc";
+    Chart.defaults.borderColor = "rgba(160,190,225,.11)";
+    Chart.defaults.font.family = "Inter, Arial, sans-serif";
+  }
 
   function destruirChart(key){
     if(charts[key]){
@@ -2078,6 +2080,10 @@ function lerMapaGruposOrdens(){
   }
 
   function renderGraficos(){
+    if(typeof Chart === "undefined"){
+      console.warn("Chart.js indisponível. Dados e filtros continuam funcionando.");
+      return;
+    }
     renderBar(
       "cliente","graficoCliente",
       agrupar(filtrados,"cliente","volume"),
@@ -2997,6 +3003,10 @@ function lerMapaGruposOrdens(){
     $("btnImportar")?.addEventListener("click",() => $("csvInput")?.click());
 
     $("csvInput")?.addEventListener("change",e => {
+      if(e.target.dataset.nfHandled === "1"){
+        e.target.dataset.nfHandled = "";
+        return;
+      }
       importarArquivo(e.target.files?.[0]);
       e.target.value = "";
     });
@@ -3072,6 +3082,20 @@ function lerMapaGruposOrdens(){
   window.NF_changeOrdensGroup = trocarGrupoConfiguracao;
   window.NF_applyOrdensFilters = aplicarFiltrosOrdens;
   window.NF_renderOrdensGroups = renderConfigGrupoUnidades;
+  window.NF_applyExpedicaoFilters = aplicarFiltros;
+  window.NF_openExpedicaoGroups = abrirGrupos;
+  window.NF_toggleExpedicaoMargin = alternarMargemLiquidaRs;
+  window.NF_clearExpedicaoFilters = limparFiltros;
+  window.NF_switchDashboard = trocarDashboard;
+  window.NF_importExpedicaoFile = function(input){
+    try{
+      if(input) input.dataset.nfHandled = "1";
+      const file = input && input.files ? input.files[0] : null;
+      if(file) importarArquivo(file);
+    }finally{
+      if(input) input.value = "";
+    }
+  };
 
   function iniciarDashboard(){
     try{

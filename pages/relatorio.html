@@ -161,11 +161,27 @@
     }
     .ordensTable{margin-top:16px}
     .ordensFilters{
-      overflow-x:auto;
+      grid-template-columns:180px 180px minmax(170px,1fr) minmax(190px,1fr) minmax(190px,1fr) minmax(190px,1fr) minmax(200px,1fr) !important;
       align-items:end;
+      overflow:visible;
     }
     .ordensFilters .filterField{
-      min-width:145px;
+      min-width:0;
+    }
+    .ordensFilters .multiSelectMenu{
+      z-index:600;
+    }
+
+    @media(max-width:1450px){
+      .ordensFilters{
+        grid-template-columns:repeat(7,minmax(165px,1fr)) !important;
+        overflow-x:auto;
+        overflow-y:visible;
+        padding-bottom:18px;
+      }
+      .ordensFilters .filterField{
+        min-width:165px;
+      }
     }
 
 @media(max-width:1000px){.ordensCards{grid-template-columns:repeat(2,1fr)}}
@@ -982,7 +998,25 @@
 
         <div class="filterField">
           <label>Grupo Unid. Emb.</label>
-          <select id="ordGrupoUnidade"><option value="">Todos os grupos</option></select>
+          <div style="display:grid;grid-template-columns:1fr 38px;gap:6px">
+            <select id="ordGrupoUnidade">
+              <option value="">Todos os grupos</option>
+              <option value="GRUPO SP">Grupo SP</option>
+              <option value="GRUPO MG">Grupo MG</option>
+              <option value="GRUPO GO">Grupo GO</option>
+              <option value="GRUPO CGO-GO">Grupo CGO-GO</option>
+              <option value="GRUPO CGO-MG">Grupo CGO-MG</option>
+              <option value="GRUPO CGO-SP">Grupo CGO-SP</option>
+              <option value="GRUPO REGIONAL">Grupo Regional</option>
+            </select>
+            <button
+              id="btnConfigGrupoUnidades"
+              class="btn ghost"
+              type="button"
+              title="Configurar Unidades de Embarque por grupo"
+              style="min-height:41px;padding:0"
+            >⚙️</button>
+          </div>
         </div>
         <div class="filterField">
           <label>Cliente</label>
@@ -1068,7 +1102,46 @@
       <span><strong>Campos principais:</strong> Peso, F.Emp, F.Mot+Ped, Margem real, Margem Liq, Cliente Principal, Unid.Emb e Tipo CTE</span>
     </footer>
   </main>
-<div class="modal" id="modalGrupos">
+<div class="modal" id="modalGrupoUnidades">
+    <div class="modalCard">
+      <div class="modalHead">
+        <h2>Configurar Grupos de Unid. Emb.</h2>
+        <button class="btn ghost" id="btnFecharGrupoUnidades" type="button">✕ Fechar</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="modalHint">
+          Escolha um grupo e marque as <strong>Unidades de Embarque</strong> que pertencem a ele.
+          Você também pode importar um CSV simples no formato
+          <strong>GRUPO;UNID.EMB</strong>.
+        </div>
+
+        <div class="formRow" style="margin-top:14px">
+          <select id="cfgGrupoUnidades" style="min-width:230px">
+            <option value="GRUPO SP">Grupo SP</option>
+            <option value="GRUPO MG">Grupo MG</option>
+            <option value="GRUPO GO">Grupo GO</option>
+            <option value="GRUPO CGO-GO">Grupo CGO-GO</option>
+            <option value="GRUPO CGO-MG">Grupo CGO-MG</option>
+            <option value="GRUPO CGO-SP">Grupo CGO-SP</option>
+            <option value="GRUPO REGIONAL">Grupo Regional</option>
+          </select>
+
+          <input id="importGrupoUnidadesInput" type="file" accept=".csv,text/csv" hidden />
+          <button class="btn primary" id="btnImportGrupoUnidades" type="button">📎 Importar grupos CSV</button>
+        </div>
+
+        <div class="groupRows" id="cfgUnidadesLista" style="margin-top:14px"></div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btn danger" id="btnLimparGrupoAtual" type="button">Limpar grupo atual</button>
+        <button class="btn green" id="btnSalvarGrupoUnidades" type="button">Salvar grupo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalGrupos">
     <div class="modalCard">
       <div class="modalHead">
         <h2>Gerenciar grupos de clientes</h2>
@@ -1134,14 +1207,19 @@
   let ordensFiltrados = [];
   let ordensCharts = {};
   const ordMultiIds = ["ordFilialMulti","ordUnidadeMulti","ordClienteMulti","ordEmbarcadorMulti"];
-  const STORAGE_ORDENS_GRUPOS_FILIAIS = "nf_ordens_grupos_filiais_v1";
-  let ordensGruposFiliais = carregarMapaLocal(STORAGE_ORDENS_GRUPOS_FILIAIS);
-
-  function carregarMapaLocal(chave){
+  const STORAGE_ORDENS_GRUPOS_UNIDADE = "nf_ordens_grupos_unidade_v2";
+  let ordensGruposUnidade = carregarMapaLocal(STORAGE_ORDENS_GRUPOS_UNIDADE);
+function carregarMapaLocal(chave){
     try{const v=JSON.parse(localStorage.getItem(chave)||"{}");return v&&typeof v==="object"?v:{}}catch{return {}}
   }
   function grupoOrdensUnidade(v){return ordensGruposUnidade[upper(v)]||"NÃO DEFINIDO"}
   function grupoOrdensEmbarcador(v){return ordensGruposEmbarcador[upper(v)]||"NÃO DEFINIDO"}
+
+  function unidadesDoGrupoOrdens(grupo){
+    return Array.isArray(ordensGruposUnidade[grupo])
+      ? ordensGruposUnidade[grupo]
+      : [];
+  }
 
   function alternarMargemLiquidaRs(){
     margemRsOculta = !margemRsOculta;
@@ -2232,7 +2310,7 @@
       return;
     }
 
-    const filiaisGrupo = grupoUnidade ? filiaisDoGrupoOrdens(grupoUnidade) : [];
+    const unidadesGrupo = grupoUnidade ? unidadesDoGrupoOrdens(grupoUnidade) : [];
 
     ordensFiltrados = ordensDados.filter(r => {
       const dentroPeriodo =
@@ -2245,7 +2323,7 @@
         (!unidades.length || unidades.includes(r.unidade)) &&
         (!clientes.length || clientes.includes(r.cliente)) &&
         (!embarcadores.length || embarcadores.includes(r.embarcador)) &&
-        (!grupoUnidade || filiaisGrupo.includes(r.filial))
+        (!grupoUnidade || unidadesGrupo.includes(r.unidade))
       );
     });
 
@@ -2379,39 +2457,138 @@
     }
   }
 
-  function abrirConfigGrupoFiliais(){
+
+  function abrirConfigGrupoUnidades(){
     if(!ordensDados.length){
       alert("Importe o CSV de Ordens antes de configurar os grupos.");
       return;
     }
-    renderConfigGrupoFiliais();
-    $("modalGrupoFiliais").classList.add("show");
+
+    renderConfigGrupoUnidades();
+    $("modalGrupoUnidades").classList.add("show");
   }
 
-  function renderConfigGrupoFiliais(){
-    const grupo = $("cfgGrupoFiliais").value;
-    const selecionadas = new Set(filiaisDoGrupoOrdens(grupo));
-    const filiais = [...new Set(ordensDados.map(r => r.filial).filter(Boolean))]
-      .sort((a,b) => a.localeCompare(b,"pt-BR"));
+  function renderConfigGrupoUnidades(){
+    const grupo = $("cfgGrupoUnidades").value;
+    const selecionadas = new Set(unidadesDoGrupoOrdens(grupo));
 
-    $("cfgFiliaisLista").innerHTML = filiais.map(f => `
-      <label class="groupRow" style="grid-template-columns:1fr auto">
-        <span>${escapar(f)}</span>
-        <input type="checkbox" value="${escapar(f)}" ${selecionadas.has(f) ? "checked" : ""}>
-      </label>
-    `).join("");
+    const unidades = [...new Set(
+      ordensDados.map(r => r.unidade).filter(Boolean)
+    )].sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+    $("cfgUnidadesLista").innerHTML = unidades.length
+      ? unidades.map(unidade => `
+          <label class="groupRow" style="grid-template-columns:1fr auto">
+            <span>${escapar(unidade)}</span>
+            <input
+              type="checkbox"
+              value="${escapar(unidade)}"
+              ${selecionadas.has(unidade) ? "checked" : ""}
+            >
+          </label>
+        `).join("")
+      : `<div style="padding:18px;color:#9fb3ca">Nenhuma Unid. Emb. encontrada no CSV importado.</div>`;
   }
 
-  function salvarConfigGrupoFiliais(){
-    const grupo = $("cfgGrupoFiliais").value;
-    const filiais = [...$("cfgFiliaisLista").querySelectorAll('input[type="checkbox"]:checked')]
-      .map(x => x.value);
+  function salvarConfigGrupoUnidades(){
+    const grupo = $("cfgGrupoUnidades").value;
 
-    ordensGruposFiliais[grupo] = filiais;
-    localStorage.setItem(STORAGE_ORDENS_GRUPOS_FILIAIS,JSON.stringify(ordensGruposFiliais));
+    const unidades = [...$("cfgUnidadesLista").querySelectorAll('input[type="checkbox"]:checked')]
+      .map(input => input.value);
 
-    $("modalGrupoFiliais").classList.remove("show");
+    ordensGruposUnidade[grupo] = unidades;
+
+    localStorage.setItem(
+      STORAGE_ORDENS_GRUPOS_UNIDADE,
+      JSON.stringify(ordensGruposUnidade)
+    );
+
+    $("modalGrupoUnidades").classList.remove("show");
     aplicarFiltrosOrdens();
+
+    $("statusMensagem").textContent =
+      `${unidades.length} unidade(s) salva(s) em ${grupo}.`;
+  }
+
+  function limparGrupoAtualUnidades(){
+    const grupo = $("cfgGrupoUnidades").value;
+
+    if(!confirm(`Deseja remover todas as unidades do ${grupo}?`)) return;
+
+    ordensGruposUnidade[grupo] = [];
+
+    localStorage.setItem(
+      STORAGE_ORDENS_GRUPOS_UNIDADE,
+      JSON.stringify(ordensGruposUnidade)
+    );
+
+    renderConfigGrupoUnidades();
+    aplicarFiltrosOrdens();
+  }
+
+  function importarMapeamentoGrupoUnidades(texto,nomeArquivo){
+    const linhas = String(texto || "")
+      .replace(/^\uFEFF/,"")
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    if(!linhas.length){
+      alert("Arquivo de grupos vazio.");
+      return;
+    }
+
+    const mapa = {...ordensGruposUnidade};
+    let importados = 0;
+
+    linhas.forEach((linha,index) => {
+      const partes = linha.split(";").map(v => upper(v));
+
+      if(partes.length < 2) return;
+
+      const grupo = partes[0];
+      const unidade = partes[1];
+
+      if(
+        index === 0 &&
+        (grupo.includes("GRUPO") || grupo === "GRUPO") &&
+        (unidade.includes("UNID") || unidade.includes("EMB"))
+      ){
+        return;
+      }
+
+      const gruposValidos = [
+        "GRUPO SP",
+        "GRUPO MG",
+        "GRUPO GO",
+        "GRUPO CGO-GO",
+        "GRUPO CGO-MG",
+        "GRUPO CGO-SP",
+        "GRUPO REGIONAL"
+      ];
+
+      if(!gruposValidos.includes(grupo) || !unidade) return;
+
+      if(!Array.isArray(mapa[grupo])) mapa[grupo] = [];
+
+      if(!mapa[grupo].includes(unidade)){
+        mapa[grupo].push(unidade);
+        importados++;
+      }
+    });
+
+    ordensGruposUnidade = mapa;
+
+    localStorage.setItem(
+      STORAGE_ORDENS_GRUPOS_UNIDADE,
+      JSON.stringify(ordensGruposUnidade)
+    );
+
+    renderConfigGrupoUnidades();
+    aplicarFiltrosOrdens();
+
+    $("statusMensagem").textContent =
+      `${importados} associação(ões) de grupo importada(s) de ${nomeArquivo}.`;
   }
 
   function bind(){
@@ -2434,16 +2611,41 @@
     });
 
     $("btnLimparOrdens")?.addEventListener("click",limparFiltrosOrdens);
-    $("btnConfigGrupoFiliais")?.addEventListener("click",abrirConfigGrupoFiliais);
-    $("btnFecharGrupoFiliais")?.addEventListener("click",() => $("modalGrupoFiliais").classList.remove("show"));
-    $("btnSalvarGrupoFiliais")?.addEventListener("click",salvarConfigGrupoFiliais);
-    $("cfgGrupoFiliais")?.addEventListener("change",renderConfigGrupoFiliais);
-    $("modalGrupoFiliais")?.addEventListener("click",e => {
-      if(e.target === $("modalGrupoFiliais")) $("modalGrupoFiliais").classList.remove("show");
+
+    $("btnConfigGrupoUnidades")?.addEventListener("click",abrirConfigGrupoUnidades);
+    $("btnFecharGrupoUnidades")?.addEventListener("click",() => {
+      $("modalGrupoUnidades").classList.remove("show");
+    });
+    $("btnSalvarGrupoUnidades")?.addEventListener("click",salvarConfigGrupoUnidades);
+    $("btnLimparGrupoAtual")?.addEventListener("click",limparGrupoAtualUnidades);
+    $("cfgGrupoUnidades")?.addEventListener("change",renderConfigGrupoUnidades);
+
+    $("btnImportGrupoUnidades")?.addEventListener("click",() => {
+      $("importGrupoUnidadesInput").click();
+    });
+
+    $("importGrupoUnidadesInput")?.addEventListener("change",e => {
+      const file = e.target.files?.[0];
+
+      if(file){
+        const reader = new FileReader();
+        reader.onload = ev => importarMapeamentoGrupoUnidades(
+          String(ev.target.result || ""),
+          file.name
+        );
+        reader.onerror = () => alert("Não foi possível ler o CSV de grupos.");
+        reader.readAsText(file,"UTF-8");
+      }
+
+      e.target.value = "";
+    });
+
+    $("modalGrupoUnidades")?.addEventListener("click",e => {
+      if(e.target === $("modalGrupoUnidades")){
+        $("modalGrupoUnidades").classList.remove("show");
+      }
     });
     ["ordDataInicial","ordDataFinal","ordGrupoUnidade"].forEach(id=>$(id)?.addEventListener("change",aplicarFiltrosOrdens));
-    $("btnFecharGruposOrdens")?.addEventListener("click",()=>$("modalGruposOrdens").classList.remove("show"));
-    $("modalGruposOrdens")?.addEventListener("click",e=>{if(e.target===$("modalGruposOrdens"))$("modalGruposOrdens").classList.remove("show")});
 
     document.addEventListener("click",() => {
       document.querySelectorAll(".multiSelect.open").forEach(x => x.classList.remove("open"));

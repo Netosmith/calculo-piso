@@ -698,7 +698,117 @@
       .chartWrap{min-height:290px}
       .statusBar{align-items:flex-start;flex-direction:column}
     }
-  </style>
+  
+    .groupsWorkspace{
+      display:grid;
+      grid-template-columns:minmax(0,1.1fr) minmax(220px,.7fr) minmax(0,1.1fr);
+      gap:12px;
+      margin-top:14px;
+      align-items:stretch;
+    }
+    .groupsPanel{
+      border:1px solid rgba(162,193,227,.14);
+      border-radius:12px;
+      background:rgba(5,22,43,.48);
+      overflow:hidden;
+      min-height:390px;
+    }
+    .groupsPanelHead{
+      padding:11px 12px;
+      border-bottom:1px solid rgba(162,193,227,.12);
+      color:#cfe0f2;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    .groupsPanelBody{
+      padding:10px;
+    }
+    .groupCategoryList{
+      display:grid;
+      gap:6px;
+      margin-top:10px;
+      max-height:300px;
+      overflow:auto;
+    }
+    .groupCategoryBtn{
+      width:100%;
+      min-height:38px;
+      border:1px solid rgba(162,193,227,.14);
+      border-radius:9px;
+      background:#0b2948;
+      color:#d9e6f5;
+      font-size:10px;
+      font-weight:850;
+      cursor:pointer;
+      text-align:left;
+      padding:0 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .groupCategoryBtn:hover,
+    .groupCategoryBtn.active{
+      border-color:#4d8df7;
+      background:#153d69;
+      color:#fff;
+    }
+    .groupCategoryCount{
+      min-width:24px;
+      height:20px;
+      padding:0 6px;
+      border-radius:999px;
+      background:rgba(77,141,247,.18);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:9px;
+      color:#a9ccff;
+    }
+    .groupCreateRow{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:7px;
+    }
+    .groupCreateRow input{
+      width:100%;
+      min-height:38px;
+      border:1px solid rgba(162,193,227,.18);
+      border-radius:9px;
+      background:#0d2b4e;
+      color:#fff;
+      padding:0 10px;
+      font-size:10px;
+      outline:none;
+    }
+    .selectedFiliaisBox{
+      margin-top:10px;
+      padding:9px 10px;
+      border:1px solid rgba(82,213,157,.18);
+      border-radius:9px;
+      background:rgba(82,213,157,.06);
+      color:#cdebdc;
+      font-size:9px;
+      line-height:1.45;
+    }
+    .groupsMoveBar{
+      display:flex;
+      gap:7px;
+      justify-content:center;
+      padding-top:10px;
+    }
+    .groupsMoveBar .btn{
+      min-height:34px;
+      padding:0 12px;
+      font-size:9px;
+    }
+    @media(max-width:980px){
+      .groupsWorkspace{grid-template-columns:1fr}
+    }
+
+</style>
 </head>
 
 <body>
@@ -1101,13 +1211,6 @@
           <label>Grupo Unid. Emb.</label>
           <select id="ordGrupoUnidade">
               <option value="">Todos os grupos</option>
-              <option value="GRUPO SP">Grupo SP</option>
-              <option value="GRUPO MG">Grupo MG</option>
-              <option value="GRUPO GO">Grupo GO</option>
-              <option value="GRUPO CGO-GO">Grupo CGO-GO</option>
-              <option value="GRUPO CGO-MG">Grupo CGO-MG</option>
-              <option value="GRUPO CGO-SP">Grupo CGO-SP</option>
-              <option value="GRUPO REGIONAL">Grupo Regional</option>
             </select>
         </div>
         <div class="filterField">
@@ -1195,7 +1298,7 @@
     </footer>
   </main>
 <div class="modal" id="modalGrupoUnidades">
-    <div class="modalCard" style="width:min(1050px,96vw)">
+    <div class="modalCard" style="width:min(1180px,97vw)">
       <div class="modalHead">
         <h2>Grupos de Unidades de Embarque</h2>
         <button class="btn ghost" id="btnFecharGrupoUnidades" type="button">✕ Fechar</button>
@@ -1203,57 +1306,60 @@
 
       <div class="modalBody">
         <div class="modalHint">
-          1. Escolha o grupo. 2. Marque as unidades disponíveis. 3. Clique em <strong>→</strong> para adicionar.
-          Para retirar unidades do grupo, marque à direita e clique em <strong>←</strong>.
+          Fluxo: <strong>1)</strong> selecione as filiais no Dashboard Ordens;
+          <strong>2)</strong> abra esta pasta;
+          <strong>3)</strong> as Unid. Emb. dessas filiais aparecerão à esquerda;
+          <strong>4)</strong> crie uma categoria de grupo e adicione as unidades pertinentes à reunião.
         </div>
 
-        <div class="formRow">
-          <select id="cfgGrupoUnidades" style="min-width:250px">
-            <option value="GRUPO SP">Grupo SP</option>
-            <option value="GRUPO MG">Grupo MG</option>
-            <option value="GRUPO GO">Grupo GO</option>
-            <option value="GRUPO CGO-GO">Grupo CGO-GO</option>
-            <option value="GRUPO CGO-MG">Grupo CGO-MG</option>
-            <option value="GRUPO CGO-SP">Grupo CGO-SP</option>
-            <option value="GRUPO REGIONAL">Grupo Regional</option>
-          </select>
-
-          <input id="importGrupoUnidadesInput" type="file" accept=".csv,text/csv" hidden />
-          <button class="btn primary" id="btnImportGrupoUnidades" type="button">📎 Importar CSV de grupos</button>
+        <div class="selectedFiliaisBox" id="resumoFiliaisGrupo">
+          Filiais selecionadas: —
         </div>
 
-        <div class="groupManager">
-          <div class="groupManagerCol">
-            <div class="groupManagerHead">
-              Unidades disponíveis
-              <span class="groupCount" id="countUnidadesDisponiveis">0</span>
-            </div>
-            <div style="padding:0 8px">
+        <div class="groupsWorkspace">
+          <section class="groupsPanel">
+            <div class="groupsPanelHead">Unidades das filiais selecionadas</div>
+            <div class="groupsPanelBody">
               <input class="groupSearch" id="buscaUnidadesDisponiveis" placeholder="Buscar unidade..." />
+              <div class="groupManagerList" id="listaUnidadesDisponiveis"></div>
             </div>
-            <div class="groupManagerList" id="listaUnidadesDisponiveis"></div>
-          </div>
+          </section>
 
-          <div class="groupManagerActions">
-            <button class="groupMoveBtn" id="btnAdicionarUnidadesGrupo" type="button" title="Adicionar ao grupo">→</button>
-            <button class="groupMoveBtn" id="btnRemoverUnidadesGrupo" type="button" title="Remover do grupo">←</button>
-          </div>
+          <section class="groupsPanel">
+            <div class="groupsPanelHead">Categorias de grupos</div>
+            <div class="groupsPanelBody">
+              <div class="groupCreateRow">
+                <input id="novoNomeGrupoUnidade" placeholder="Ex.: Grupo SP" />
+                <button class="btn green" id="btnCriarGrupoUnidade" type="button">+ Criar</button>
+              </div>
 
-          <div class="groupManagerCol">
-            <div class="groupManagerHead">
-              Unidades dentro do grupo
-              <span class="groupCount" id="countUnidadesGrupo">0</span>
+              <div class="groupCategoryList" id="listaCategoriasGrupos"></div>
+
+              <div class="groupsMoveBar">
+                <button class="btn primary" id="btnAdicionarUnidadesGrupo" type="button">Adicionar →</button>
+                <button class="btn ghost" id="btnRemoverUnidadesGrupo" type="button">← Remover</button>
+              </div>
+
+              <div style="margin-top:10px">
+                <button class="btn danger" id="btnExcluirGrupoUnidade" type="button" style="width:100%">Excluir grupo selecionado</button>
+              </div>
             </div>
-            <div style="padding:0 8px">
+          </section>
+
+          <section class="groupsPanel">
+            <div class="groupsPanelHead">Unidades dentro do grupo selecionado</div>
+            <div class="groupsPanelBody">
               <input class="groupSearch" id="buscaUnidadesGrupo" placeholder="Buscar no grupo..." />
+              <div class="groupManagerList" id="listaUnidadesGrupo"></div>
             </div>
-            <div class="groupManagerList" id="listaUnidadesGrupo"></div>
-          </div>
+          </section>
         </div>
       </div>
 
       <div class="modalFoot">
-        <button class="btn danger" id="btnLimparGrupoAtual" type="button">Limpar grupo atual</button>
+        <span style="margin-right:auto;color:#8fa7bf;font-size:9px">
+          Os grupos ficam salvos neste navegador.
+        </span>
         <button class="btn green" id="btnSalvarGrupoUnidades" type="button">💾 Salvar alterações</button>
       </div>
     </div>
@@ -2382,6 +2488,11 @@ function carregarMapaLocal(chave){
     menu.querySelectorAll('input[type="checkbox"]').forEach(input => {
       input.addEventListener("change",() => {
         atualizar();
+
+        if(id === "ordFilialMulti"){
+          atualizarUnidadesPorFiliais();
+        }
+
         aplicarFiltrosOrdens();
       });
     });
@@ -2390,6 +2501,7 @@ function carregarMapaLocal(chave){
       e.stopPropagation();
       menu.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = true);
       atualizar();
+      if(id === "ordFilialMulti") atualizarUnidadesPorFiliais();
       aplicarFiltrosOrdens();
     };
 
@@ -2397,6 +2509,7 @@ function carregarMapaLocal(chave){
       e.stopPropagation();
       menu.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
       atualizar();
+      if(id === "ordFilialMulti") atualizarUnidadesPorFiliais();
       aplicarFiltrosOrdens();
     };
 
@@ -2541,6 +2654,8 @@ function carregarMapaLocal(chave){
     montarMultiOrdens("ordUnidadeMulti",unicos("unidade"),"Todas as unidades");
     montarMultiOrdens("ordClienteMulti",unicos("cliente"),"Todos os clientes");
     montarMultiOrdens("ordEmbarcadorMulti",unicos("embarcador"),"Todos os embarcadores");
+    popularFiltroGruposUnidade();
+    atualizarUnidadesPorFiliais();
     configurarLimitesDatasOrdens();
     renderOrdens();
 
@@ -2576,36 +2691,92 @@ function carregarMapaLocal(chave){
   }
 
 
-  let grupoUnidadesEdicao = [];
+  let grupoUnidadeSelecionado = "";
+  let grupoUnidadesEdicao = {};
 
-  function abrirConfigGrupoUnidades(){
-    if(!ordensDados.length){
-      alert("Primeiro importe o CSV de Ordens. As Unid. Emb. serão carregadas automaticamente dele.");
-      return;
-    }
-
-    const grupo = $("ordGrupoUnidade")?.value || "GRUPO SP";
-    $("cfgGrupoUnidades").value = grupo || "GRUPO SP";
-
-    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens($("cfgGrupoUnidades").value)];
-    $("buscaUnidadesDisponiveis").value = "";
-    $("buscaUnidadesGrupo").value = "";
-
-    renderConfigGrupoUnidades();
-    $("modalGrupoUnidades").classList.add("show");
+  function filiaisSelecionadasOrdens(){
+    return selecionadosMulti("ordFilialMulti");
   }
 
-  function todasUnidadesOrdens(){
+  function unidadesDasFiliaisSelecionadas(){
+    const filiais = filiaisSelecionadasOrdens();
+
+    const base = !filiais.length
+      ? ordensDados
+      : ordensDados.filter(r => filiais.includes(r.filial));
+
     return [...new Set(
-      ordensDados.map(r => upper(r.unidade)).filter(Boolean)
+      base.map(r => upper(r.unidade)).filter(Boolean)
     )].sort((a,b) => a.localeCompare(b,"pt-BR"));
   }
 
-  function renderListaUnidadesGrupo(containerId,unidades,busca=""){
+  function atualizarUnidadesPorFiliais(){
+    const filiais = filiaisSelecionadasOrdens();
+
+    const base = !filiais.length
+      ? ordensDados
+      : ordensDados.filter(r => filiais.includes(r.filial));
+
+    const unidadesValidas = [...new Set(
+      base.map(r => r.unidade).filter(Boolean)
+    )].sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+    montarMultiOrdens(
+      "ordUnidadeMulti",
+      unidadesValidas,
+      filiais.length ? "Unidades das filiais" : "Todas as unidades"
+    );
+  }
+
+  function popularFiltroGruposUnidade(){
+    const select = $("ordGrupoUnidade");
+    if(!select) return;
+
+    const atual = select.value;
+    const grupos = Object.keys(ordensGruposUnidade || {})
+      .sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+    select.innerHTML =
+      '<option value="">Todos os grupos</option>' +
+      grupos.map(g => `<option value="${escapar(g)}">${escapar(g)}</option>`).join("");
+
+    if(grupos.includes(atual)) select.value = atual;
+  }
+
+  function abrirConfigGrupoUnidades(){
+    if(!ordensDados.length){
+      alert("Primeiro importe o CSV de Ordens.");
+      return;
+    }
+
+    grupoUnidadesEdicao = JSON.parse(JSON.stringify(ordensGruposUnidade || {}));
+
+    const grupos = Object.keys(grupoUnidadesEdicao);
+    grupoUnidadeSelecionado = grupos[0] || "";
+
+    const filiais = filiaisSelecionadasOrdens();
+    const resumo = $("resumoFiliaisGrupo");
+
+    if(resumo){
+      resumo.textContent = filiais.length
+        ? `Filiais selecionadas: ${filiais.join(", ")}`
+        : "Filiais selecionadas: TODAS (selecione filiais no dashboard para restringir as unidades)";
+    }
+
+    $("buscaUnidadesDisponiveis").value = "";
+    $("buscaUnidadesGrupo").value = "";
+    $("novoNomeGrupoUnidade").value = "";
+
+    renderGerenciadorGruposUnidade();
+    $("modalGrupoUnidades").classList.add("show");
+  }
+
+  function renderListaCheck(containerId, unidades, busca=""){
     const container = $(containerId);
     if(!container) return;
 
     const termo = upper(busca);
+
     const filtradas = unidades.filter(unidade =>
       !termo || upper(unidade).includes(termo)
     );
@@ -2620,97 +2791,172 @@ function carregarMapaLocal(chave){
       : `<div style="padding:18px;text-align:center;color:#8fa7bf;font-size:10px">Nenhuma unidade encontrada.</div>`;
   }
 
-  function renderConfigGrupoUnidades(){
-    const todas = todasUnidadesOrdens();
-    const dentroSet = new Set(grupoUnidadesEdicao);
+  function renderCategoriasGrupos(){
+    const container = $("listaCategoriasGrupos");
+    if(!container) return;
 
-    const disponiveis = todas.filter(unidade => !dentroSet.has(unidade));
-    const dentro = todas.filter(unidade => dentroSet.has(unidade));
+    const grupos = Object.keys(grupoUnidadesEdicao)
+      .sort((a,b) => a.localeCompare(b,"pt-BR"));
 
-    renderListaUnidadesGrupo(
+    if(!grupos.length){
+      container.innerHTML = `
+        <div style="padding:18px;text-align:center;color:#8fa7bf;font-size:10px">
+          Nenhum grupo criado. Digite um nome acima e clique em + Criar.
+        </div>`;
+      return;
+    }
+
+    if(!grupoUnidadeSelecionado || !grupoUnidadesEdicao[grupoUnidadeSelecionado]){
+      grupoUnidadeSelecionado = grupos[0];
+    }
+
+    container.innerHTML = grupos.map(grupo => `
+      <button
+        class="groupCategoryBtn ${grupo === grupoUnidadeSelecionado ? "active" : ""}"
+        type="button"
+        data-grupo="${escapar(grupo)}"
+      >
+        <span>${escapar(grupo)}</span>
+        <span class="groupCategoryCount">${(grupoUnidadesEdicao[grupo] || []).length}</span>
+      </button>
+    `).join("");
+
+    container.querySelectorAll(".groupCategoryBtn").forEach(btn => {
+      btn.addEventListener("click",() => {
+        grupoUnidadeSelecionado = btn.dataset.grupo || "";
+        renderGerenciadorGruposUnidade();
+      });
+    });
+  }
+
+  function renderGerenciadorGruposUnidade(){
+    renderCategoriasGrupos();
+
+    const candidatas = unidadesDasFiliaisSelecionadas();
+    const dentro = grupoUnidadeSelecionado
+      ? (grupoUnidadesEdicao[grupoUnidadeSelecionado] || [])
+      : [];
+
+    const dentroSet = new Set(dentro);
+
+    const disponiveis = candidatas.filter(unidade => !dentroSet.has(unidade));
+
+    renderListaCheck(
       "listaUnidadesDisponiveis",
       disponiveis,
       $("buscaUnidadesDisponiveis")?.value || ""
     );
 
-    renderListaUnidadesGrupo(
+    renderListaCheck(
       "listaUnidadesGrupo",
-      dentro,
+      dentro.slice().sort((a,b) => a.localeCompare(b,"pt-BR")),
       $("buscaUnidadesGrupo")?.value || ""
     );
+  }
 
-    $("countUnidadesDisponiveis").textContent = disponiveis.length;
-    $("countUnidadesGrupo").textContent = dentro.length;
+  function criarCategoriaGrupoUnidade(){
+    const nome = upper($("novoNomeGrupoUnidade")?.value || "");
+
+    if(!nome){
+      alert("Digite o nome do grupo.");
+      return;
+    }
+
+    if(grupoUnidadesEdicao[nome]){
+      alert("Esse grupo já existe.");
+      grupoUnidadeSelecionado = nome;
+      renderGerenciadorGruposUnidade();
+      return;
+    }
+
+    grupoUnidadesEdicao[nome] = [];
+    grupoUnidadeSelecionado = nome;
+    $("novoNomeGrupoUnidade").value = "";
+    renderGerenciadorGruposUnidade();
   }
 
   function unidadesMarcadas(containerId){
-    return [...$(containerId).querySelectorAll('input[type="checkbox"]:checked')]
+    const container = $(containerId);
+    if(!container) return [];
+
+    return [...container.querySelectorAll('input[type="checkbox"]:checked')]
       .map(input => input.value);
   }
 
   function adicionarUnidadesAoGrupo(){
-    const escolhidas = unidadesMarcadas("listaUnidadesDisponiveis");
-    if(!escolhidas.length){
-      alert("Marque pelo menos uma unidade do lado esquerdo.");
+    if(!grupoUnidadeSelecionado){
+      alert("Crie ou selecione um grupo primeiro.");
       return;
     }
 
-    grupoUnidadesEdicao = [...new Set([
-      ...grupoUnidadesEdicao,
+    const escolhidas = unidadesMarcadas("listaUnidadesDisponiveis");
+
+    if(!escolhidas.length){
+      alert("Marque pelo menos uma unidade disponível.");
+      return;
+    }
+
+    grupoUnidadesEdicao[grupoUnidadeSelecionado] = [...new Set([
+      ...(grupoUnidadesEdicao[grupoUnidadeSelecionado] || []),
       ...escolhidas
     ])];
 
-    renderConfigGrupoUnidades();
+    renderGerenciadorGruposUnidade();
   }
 
   function removerUnidadesDoGrupo(){
+    if(!grupoUnidadeSelecionado) return;
+
     const escolhidas = new Set(unidadesMarcadas("listaUnidadesGrupo"));
+
     if(!escolhidas.size){
-      alert("Marque pelo menos uma unidade do lado direito.");
+      alert("Marque pelo menos uma unidade do grupo.");
       return;
     }
 
-    grupoUnidadesEdicao = grupoUnidadesEdicao.filter(
-      unidade => !escolhidas.has(unidade)
-    );
+    grupoUnidadesEdicao[grupoUnidadeSelecionado] =
+      (grupoUnidadesEdicao[grupoUnidadeSelecionado] || [])
+        .filter(unidade => !escolhidas.has(unidade));
 
-    renderConfigGrupoUnidades();
+    renderGerenciadorGruposUnidade();
+  }
+
+  function excluirCategoriaGrupoUnidade(){
+    if(!grupoUnidadeSelecionado){
+      alert("Selecione um grupo.");
+      return;
+    }
+
+    if(!confirm(`Excluir o grupo ${grupoUnidadeSelecionado}?`)) return;
+
+    delete grupoUnidadesEdicao[grupoUnidadeSelecionado];
+
+    const restantes = Object.keys(grupoUnidadesEdicao)
+      .sort((a,b) => a.localeCompare(b,"pt-BR"));
+
+    grupoUnidadeSelecionado = restantes[0] || "";
+    renderGerenciadorGruposUnidade();
   }
 
   function salvarConfigGrupoUnidades(){
-    const grupo = $("cfgGrupoUnidades").value;
-
-    ordensGruposUnidade[grupo] = [...new Set(grupoUnidadesEdicao)];
+    ordensGruposUnidade = JSON.parse(JSON.stringify(grupoUnidadesEdicao));
 
     localStorage.setItem(
       STORAGE_ORDENS_GRUPOS_UNIDADE,
       JSON.stringify(ordensGruposUnidade)
     );
 
-    $("ordGrupoUnidade").value = grupo;
-    $("modalGrupoUnidades").classList.remove("show");
+    popularFiltroGruposUnidade();
 
+    if(grupoUnidadeSelecionado && ordensGruposUnidade[grupoUnidadeSelecionado]){
+      $("ordGrupoUnidade").value = grupoUnidadeSelecionado;
+    }
+
+    $("modalGrupoUnidades").classList.remove("show");
     aplicarFiltrosOrdens();
 
     $("statusMensagem").textContent =
-      `${ordensGruposUnidade[grupo].length} unidade(s) vinculada(s) ao ${grupo}.`;
-  }
-
-  function limparGrupoAtualUnidades(){
-    const grupo = $("cfgGrupoUnidades").value;
-
-    if(!confirm(`Deseja remover todas as unidades do ${grupo}?`)) return;
-
-    grupoUnidadesEdicao = [];
-    renderConfigGrupoUnidades();
-  }
-
-  function trocarGrupoConfiguracao(){
-    const grupo = $("cfgGrupoUnidades").value;
-    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(grupo)];
-    $("buscaUnidadesDisponiveis").value = "";
-    $("buscaUnidadesGrupo").value = "";
-    renderConfigGrupoUnidades();
+      `${Object.keys(ordensGruposUnidade).length} grupo(s) de Unid. Emb. salvo(s).`;
   }
 
 
@@ -2772,7 +3018,7 @@ function carregarMapaLocal(chave){
       JSON.stringify(ordensGruposUnidade)
     );
 
-    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens($("cfgGrupoUnidades").value)];
+    grupoUnidadesEdicao = [...unidadesDoGrupoOrdens(
     renderConfigGrupoUnidades();
     aplicarFiltrosOrdens();
 
@@ -2801,8 +3047,16 @@ function carregarMapaLocal(chave){
 
     $("btnLimparOrdens")?.addEventListener("click",limparFiltrosOrdens);
     $("btnAbrirGruposUnidades")?.addEventListener("click",abrirConfigGrupoUnidades);
+    $("btnCriarGrupoUnidade")?.addEventListener("click",criarCategoriaGrupoUnidade);
+    $("novoNomeGrupoUnidade")?.addEventListener("keydown",e => {
+      if(e.key === "Enter") criarCategoriaGrupoUnidade();
+    });
     $("btnAdicionarUnidadesGrupo")?.addEventListener("click",adicionarUnidadesAoGrupo);
     $("btnRemoverUnidadesGrupo")?.addEventListener("click",removerUnidadesDoGrupo);
+    $("btnExcluirGrupoUnidade")?.addEventListener("click",excluirCategoriaGrupoUnidade);
+    $("btnSalvarGrupoUnidades")?.addEventListener("click",salvarConfigGrupoUnidades);
+    $("buscaUnidadesDisponiveis")?.addEventListener("input",renderGerenciadorGruposUnidade);
+    $("buscaUnidadesGrupo")?.addEventListener("input",renderGerenciadorGruposUnidade);
     $("buscaUnidadesDisponiveis")?.addEventListener("input",renderConfigGrupoUnidades);
     $("buscaUnidadesGrupo")?.addEventListener("input",renderConfigGrupoUnidades);
 
@@ -2810,27 +3064,6 @@ function carregarMapaLocal(chave){
       $("modalGrupoUnidades").classList.remove("show");
     });
     $("btnSalvarGrupoUnidades")?.addEventListener("click",salvarConfigGrupoUnidades);
-    $("btnLimparGrupoAtual")?.addEventListener("click",limparGrupoAtualUnidades);
-    $("cfgGrupoUnidades")?.addEventListener("change",trocarGrupoConfiguracao);
-
-    $("btnImportGrupoUnidades")?.addEventListener("click",() => {
-      $("importGrupoUnidadesInput").click();
-    });
-
-    $("importGrupoUnidadesInput")?.addEventListener("change",e => {
-      const file = e.target.files?.[0];
-
-      if(file){
-        const reader = new FileReader();
-        reader.onload = ev => importarMapeamentoGrupoUnidades(
-          String(ev.target.result || ""),
-          file.name
-        );
-        reader.onerror = () => alert("Não foi possível ler o CSV de grupos.");
-        reader.readAsText(file,"UTF-8");
-      }
-
-      e.target.value = "";
     });
 
     $("modalGrupoUnidades")?.addEventListener("click",e => {
@@ -2875,44 +3108,4 @@ function carregarMapaLocal(chave){
     $("btnTipoCteTodos")?.addEventListener("click",e => {
       e.stopPropagation();
       document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
-        input.checked = true;
-      });
-      atualizarResumoTipoCte();
-      aplicarFiltros();
-    });
-
-    $("btnTipoCteLimpar")?.addEventListener("click",e => {
-      e.stopPropagation();
-      document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
-        input.checked = false;
-      });
-      atualizarResumoTipoCte();
-      aplicarFiltros();
-    });
-
-    document.addEventListener("click",e => {
-      if(multi && !multi.contains(e.target)){
-        multi.classList.remove("open");
-      }
-    });
-
-    atualizarResumoTipoCte();
-
-    $("btnOcultarMargemRs")?.addEventListener("click",alternarMargemLiquidaRs);
-    $("btnLimpar").addEventListener("click",limparFiltros);
-    $("btnGrupos").addEventListener("click",abrirGrupos);
-    $("btnFecharGrupos").addEventListener("click",fecharGrupos);
-    $("btnSalvarGrupos").addEventListener("click",salvarGruposModal);
-    $("btnResetGrupos").addEventListener("click",resetarGrupos);
-
-    $("modalGrupos").addEventListener("click",e => {
-      if(e.target === $("modalGrupos")) fecharGrupos();
-    });
-  }
-
-  bind();
-  tentarCarregarAutomatico();
-})();
-</script>
-</body>
-</html>
+        inp

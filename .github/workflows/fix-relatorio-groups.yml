@@ -12,25 +12,66 @@ jobs:
   fix:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Aplicar correção
-        run: python scripts/fix_relatorio_groups.py
+      - name: Aplicar correção dos botões
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('pages/relatorio.html')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = {
+            'id="btnFecharGrupoUnidades" type="button"': 'id="btnFecharGrupoUnidades" type="button" onclick="window.NF_closeOrdensGroups && window.NF_closeOrdensGroups()"',
+            'id="btnImportGrupoUnidades" type="button"': 'id="btnImportGrupoUnidades" type="button" onclick="document.getElementById(\'importGrupoUnidadesInput\')?.click()"',
+            'id="btnAdicionarUnidadesGrupo" type="button"': 'id="btnAdicionarUnidadesGrupo" type="button" onclick="window.NF_addOrdensGroupUnits && window.NF_addOrdensGroupUnits()"',
+            'id="btnRemoverUnidadesGrupo" type="button"': 'id="btnRemoverUnidadesGrupo" type="button" onclick="window.NF_removeOrdensGroupUnits && window.NF_removeOrdensGroupUnits()"',
+            'id="btnLimparGrupoAtual" type="button"': 'id="btnLimparGrupoAtual" type="button" onclick="window.NF_clearOrdensGroup && window.NF_clearOrdensGroup()"',
+            'id="btnSalvarGrupoUnidades" type="button"': 'id="btnSalvarGrupoUnidades" type="button" onclick="window.NF_saveOrdensGroup && window.NF_saveOrdensGroup()"',
+            'id="cfgGrupoUnidades" style=': 'id="cfgGrupoUnidades" onchange="window.NF_changeOrdensGroup && window.NF_changeOrdensGroup()" style=',
+            'id="buscaUnidadesDisponiveis" placeholder=': 'id="buscaUnidadesDisponiveis" oninput="window.NF_renderOrdensGroups && window.NF_renderOrdensGroups()" placeholder=',
+            'id="buscaUnidadesGrupo" placeholder=': 'id="buscaUnidadesGrupo" oninput="window.NF_renderOrdensGroups && window.NF_renderOrdensGroups()" placeholder='
+          }
+
+          for old, new in replacements.items():
+            if old in s and new not in s:
+              s = s.replace(old, new, 1)
+
+          marker = '  window.NF_openOrdensGroups = abrirConfigGrupoUnidades;'
+          expose = '''  window.NF_openOrdensGroups = abrirConfigGrupoUnidades;
+  window.NF_closeOrdensGroups = function(){
+    const modal = document.getElementById("modalGrupoUnidades");
+    if(modal) modal.classList.remove("show");
+  };
+  window.NF_addOrdensGroupUnits = adicionarUnidadesAoGrupo;
+  window.NF_removeOrdensGroupUnits = removerUnidadesDoGrupo;
+  window.NF_saveOrdensGroup = salvarConfigGrupoUnidades;
+  window.NF_clearOrdensGroup = limparGrupoAtualUnidades;
+  window.NF_changeOrdensGroup = trocarGrupoConfiguracao;
+  window.NF_renderOrdensGroups = renderConfigGrupoUnidades;'''
+
+          if marker in s and 'window.NF_addOrdensGroupUnits' not in s:
+            s = s.replace(marker, expose, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
 
       - name: Validar
+        shell: bash
         run: |
-          grep -q 'window.NF_openOrdensGroups = abrirConfigGrupoUnidades' pages/relatorio.html
-          grep -q 'onclick="window.NF_openOrdensGroups' pages/relatorio.html
+          grep -q 'NF_addOrdensGroupUnits' pages/relatorio.html
+          grep -q 'NF_removeOrdensGroupUnits' pages/relatorio.html
+          grep -q 'NF_saveOrdensGroup' pages/relatorio.html
+          grep -q 'NF_closeOrdensGroups' pages/relatorio.html
 
       - name: Commit
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pages/relatorio.html
-          if git diff --cached --quiet; then
-            echo "Nenhuma alteração necessária"
-            exit 0
-          fi
-          git commit -m "fix: corrige abertura dos grupos de Unid Emb"
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: ativa botoes do gerenciador de grupos"
           git push

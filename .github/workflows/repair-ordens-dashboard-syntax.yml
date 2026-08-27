@@ -1,0 +1,49 @@
+name: Repair ordens dashboard syntax
+
+on:
+  push:
+    paths:
+      - '.github/repair-ordens-dashboard-syntax.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Aplicar reparo
+        run: python3 .github/scripts/repair_ordens_dashboard_syntax.py
+
+      - name: Validar JavaScript inline
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s = Path('pages/relatorio.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script>(.*?)</script>', s, flags=re.S)
+          if not scripts:
+              raise SystemExit('Nenhum script inline encontrado')
+          Path('/tmp/relatorio-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/relatorio-inline.js
+
+      - name: Validar filtro de grupos
+        run: |
+          grep -q 'function aplicarFiltrosOrdens' pages/relatorio.html
+          grep -q 'function salvarConfigGrupoUnidades' pages/relatorio.html
+          grep -q 'const conjuntoGrupo = new Set(unidadesGrupo)' pages/relatorio.html
+          grep -q 'mapaAtual\[grupo\]' pages/relatorio.html
+          grep -q 'window.NF_applyOrdensFilters = aplicarFiltrosOrdens' pages/relatorio.html
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/relatorio.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: restaura dashboard Ordens e filtro de grupos"
+          git push

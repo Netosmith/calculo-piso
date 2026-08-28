@@ -3,7 +3,7 @@ const PROFILE_FEATURES = {
   GOADM: ["administrativo", "patrimonio", "estadias"],
   OPERACIONAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "fretes-mercado", "bi", "controle", "estadias"
+    "fretes-mercado", "bi", "controle", "estadias", "embarques"
   ],
   COMERCIAL: [
     "piso", "piso2", "fretes", "share", "divulgacao", "bi",

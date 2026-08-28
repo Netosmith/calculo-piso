@@ -8,21 +8,21 @@
 // PERMISSÕES POR PERFIL
 // =====================================================
 const STATE_FEATURES = {
-  GO: ["fretes", "divulgacao", "estadias"],
-  GOADM: ["administrativo", "patrimonio", "estadias"],
+  GO: ["fretes", "divulgacao", "estadias", "chamados"],
+  GOADM: ["administrativo", "patrimonio", "estadias", "chamados"],
 
   OPERACIONAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "fretes-mercado", "bi", "controle", "estadias", "embarques"],
+    "fretes-mercado", "bi", "controle", "estadias", "embarques", "chamados"],
 
   COMERCIAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "bi", "custo-frota", "fretes-mercado", "controle", "fretes2", "estadias", "relatorio", "embarques"],
+    "bi", "custo-frota", "fretes-mercado", "controle", "fretes2", "estadias", "relatorio", "embarques", "chamados"],
 
   ADMINISTRADOR: [
     "piso", "piso2", "fretes", "share", "divulgacao", "bi",
     "custo-filial", "custo-frota", "fretes-mercado", "administrativo",
-    "patrimonio", "cadastros", "fretes2", "controle", "estadias", "relatorio", "embarques"],
+    "patrimonio", "cadastros", "fretes2", "controle", "estadias", "relatorio", "embarques", "chamados"],
 
   ESTADIAS_ADMIN: ["estadias"],
   ESTADIAS_EDITOR: ["estadias"],
@@ -31,7 +31,7 @@ const STATE_FEATURES = {
 
   SP: ["piso", "divulgacao", "estadias"],
   MG: ["piso", "divulgacao", "estadias"],
-  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "embarques", "relatorio"],
+  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "embarques", "relatorio", "chamados"],
   BA: ["piso", "divulgacao", "estadias"],
   SC: ["piso", "divulgacao", "estadias"],
   TO: ["piso", "divulgacao", "estadias"],

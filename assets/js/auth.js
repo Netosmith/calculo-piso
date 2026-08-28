@@ -31,7 +31,7 @@ const STATE_FEATURES = {
 
   SP: ["piso", "divulgacao", "estadias"],
   MG: ["piso", "divulgacao", "estadias"],
-  MT: ["piso", "divulgacao", "fretes2", "controle", "share"],
+  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "embarques", "relatorio"],
   BA: ["piso", "divulgacao", "estadias"],
   SC: ["piso", "divulgacao", "estadias"],
   TO: ["piso", "divulgacao", "estadias"],

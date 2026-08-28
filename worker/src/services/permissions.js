@@ -7,12 +7,12 @@ const PROFILE_FEATURES = {
   ],
   COMERCIAL: [
     "piso", "piso2", "fretes", "share", "divulgacao", "bi",
-    "fretes-mercado", "controle", "fretes2", "estadias"
+    "fretes-mercado", "controle", "fretes2", "estadias", "embarques"
   ],
   ADMINISTRADOR: [
     "home", "piso", "piso2", "fretes", "share", "divulgacao", "bi",
     "custo-filial", "fretes-mercado", "administrativo", "patrimonio",
-    "cadastros", "fretes2", "controle", "estadias"
+    "cadastros", "fretes2", "controle", "estadias", "embarques"
   ],
   ESTADIAS_ADMIN: ["estadias"],
   ESTADIAS_EDITOR: ["estadias"],
@@ -20,7 +20,7 @@ const PROFILE_FEATURES = {
   PISO: ["piso2"],
   SP: ["piso", "divulgacao", "estadias"],
   MG: ["piso", "divulgacao", "estadias"],
-  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "estadias"],
+  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "estadias", "embarques"],
   BA: ["piso", "divulgacao", "estadias"],
   SC: ["piso", "divulgacao", "estadias"],
   TO: ["piso", "divulgacao", "estadias"],

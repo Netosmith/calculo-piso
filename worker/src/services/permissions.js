@@ -44,7 +44,8 @@ export const MODULE_ACTIONS = {
   administrativo: ["read", "create", "update", "delete"],
   patrimonio: ["read", "create", "update", "delete"],
   cadastros: ["read", "create", "update", "delete"],
-  estadias: ["read", "create", "update", "approve", "reject", "delete"]
+  estadias: ["read", "create", "update", "approve", "reject", "delete"],
+  embarques: ["read", "create", "update", "delete", "export"]
 };
 
 const ADMIN_PROFILES = new Set(["ADMINISTRADOR"]);
@@ -71,6 +72,10 @@ function normalize(value) {
 
 export function hasFeature(session, moduleName) {
   const profile = normalize(session?.perfil);
+
+  // Administrador tem acesso a todos os módulos registrados no gateway.
+  if (ADMIN_PROFILES.has(profile)) return true;
+
   const features = PROFILE_FEATURES[profile] || [];
   return moduleName === "home" || features.includes(moduleName);
 }

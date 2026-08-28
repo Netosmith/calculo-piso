@@ -319,13 +319,19 @@ function featuresForProfile(profile){
 
 function canAccessFeature(featureKey){
   const feature = String(featureKey || "").trim().toLowerCase();
+  const profile = getProfile();
+
+  // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.
+  // Assim, novos módulos não precisam ser adicionados manualmente ao array ADMINISTRADOR.
+  if(profile === "ADMINISTRADOR"){
+    return isAuthedHome();
+  }
 
   // Central de Suporte é liberada para qualquer usuário autenticado.
   if(feature === "chamados"){
     return isAuthedHome();
   }
 
-  const profile = getProfile();
   const features = featuresForProfile(profile)
     .map(item => String(item || "").trim().toLowerCase());
 

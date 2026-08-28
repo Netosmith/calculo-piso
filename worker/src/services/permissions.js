@@ -1,18 +1,18 @@
 const PROFILE_FEATURES = {
-  GO: ["fretes", "divulgacao", "estadias"],
-  GOADM: ["administrativo", "patrimonio", "estadias"],
+  GO: ["fretes", "divulgacao", "estadias", "chamados"],
+  GOADM: ["administrativo", "patrimonio", "estadias", "chamados"],
   OPERACIONAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "fretes-mercado", "bi", "controle", "estadias", "embarques"
+    "fretes-mercado", "bi", "controle", "estadias", "embarques", "chamados"
   ],
   COMERCIAL: [
     "piso", "piso2", "fretes", "share", "divulgacao", "bi",
-    "fretes-mercado", "controle", "fretes2", "estadias", "embarques"
+    "fretes-mercado", "controle", "fretes2", "estadias", "embarques", "chamados"
   ],
   ADMINISTRADOR: [
     "home", "piso", "piso2", "fretes", "share", "divulgacao", "bi",
     "custo-filial", "fretes-mercado", "administrativo", "patrimonio",
-    "cadastros", "fretes2", "controle", "estadias", "embarques"
+    "cadastros", "fretes2", "controle", "estadias", "embarques", "chamados"
   ],
   ESTADIAS_ADMIN: ["estadias"],
   ESTADIAS_EDITOR: ["estadias"],
@@ -20,7 +20,7 @@ const PROFILE_FEATURES = {
   PISO: ["piso2"],
   SP: ["piso", "divulgacao", "estadias"],
   MG: ["piso", "divulgacao", "estadias"],
-  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "estadias", "embarques"],
+  MT: ["piso", "divulgacao", "fretes2", "controle", "share", "estadias", "embarques", "chamados"],
   BA: ["piso", "divulgacao", "estadias"],
   SC: ["piso", "divulgacao", "estadias"],
   TO: ["piso", "divulgacao", "estadias"],
@@ -45,7 +45,8 @@ export const MODULE_ACTIONS = {
   patrimonio: ["read", "create", "update", "delete"],
   cadastros: ["read", "create", "update", "delete"],
   estadias: ["read", "create", "update", "approve", "reject", "delete"],
-  embarques: ["read", "create", "update", "delete", "export"]
+  embarques: ["read", "create", "update", "delete", "export"],
+  chamados: ["read", "create", "update", "delete", "export"]
 };
 
 const ADMIN_PROFILES = new Set(["ADMINISTRADOR"]);

@@ -58,6 +58,9 @@ const DELETE_PROFILES = new Set([
 const FREIGHT_DELETE_PROFILES = new Set([
   "ADMINISTRADOR", "OPERACIONAL", "COMERCIAL"
 ]);
+const FRETES2_DELETE_PROFILES = new Set([
+  "ADMINISTRADOR", "OPERACIONAL", "COMERCIAL", "MT"
+]);
 const HOME_REQUEST_CREATE_PROFILES = new Set([
   "ADMINISTRADOR", "GOADM", "OPERACIONAL", "COMERCIAL"
 ]);
@@ -93,7 +96,11 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
   if (["read", "calculate", "export"].includes(actionName)) return true;
 
   if (actionName === "delete") {
-    if (["fretes", "fretes2"].includes(moduleName)) {
+    if (moduleName === "fretes2") {
+      return FRETES2_DELETE_PROFILES.has(profile);
+    }
+
+    if (moduleName === "fretes") {
       return FREIGHT_DELETE_PROFILES.has(profile);
     }
 

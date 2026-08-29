@@ -1,0 +1,25 @@
+name: Destacar origem destino e peso Embarques
+on:
+  push:
+    paths:
+      - '.github/scripts/style_embarques_route_weight.py'
+      - '.github/workflows/style-embarques-route-weight.yml'
+permissions:
+  contents: write
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Aplicar ajuste
+        run: python .github/scripts/style_embarques_route_weight.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/embarques.html assets/js/embarques.js
+          git diff --cached --quiet || git commit -m "Destaca origem destino e peso nos embarques"
+          git push

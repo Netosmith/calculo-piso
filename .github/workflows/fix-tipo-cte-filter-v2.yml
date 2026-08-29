@@ -1,0 +1,39 @@
+name: Fix Tipo CTE filter v2
+
+on:
+  push:
+    paths:
+      - '.github/fix-tipo-cte-filter-v2.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar correção
+        run: python3 .github/scripts/fix_tipo_cte_filter_v2.py
+      - name: Validar JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('pages/relatorio.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>\s*(\(\(\) => \{.*?\}\)\(\);)\s*</script>',s,re.S)
+          if not m:
+              raise SystemExit('Script principal não encontrado')
+          Path('/tmp/relatorio.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/relatorio.js
+          grep -q 'function popularTiposCte' pages/relatorio.html
+          grep -q 'popularTiposCte();' pages/relatorio.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/relatorio.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: torna filtro Tipo CTE baseado nos valores do CSV"
+          git push

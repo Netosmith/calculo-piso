@@ -1583,6 +1583,37 @@ function lerMapaGruposOrdens(){
     return s;
   }
 
+  function chaveTipoCte(v){
+    const s = upper(v)
+      .replace(/CT-E/g,"CTE")
+      .replace(/\s+/g," ")
+      .trim();
+
+    if(!s) return "";
+
+    const codigo = s.match(/^([0-9])(?:\s|\-|\/|$)/);
+    if(codigo) return codigo[1];
+
+    const descricoes = {
+      "NORMAL/NORMAL":"0",
+      "NORMAL/SUBCONTRATACAO":"1",
+      "NORMAL/REDESPACHO":"2",
+      "COMPLEMENTO/NORMAL":"3",
+      "COMPLEMENTO/SUBCONTRATACAO":"4",
+      "COMPLEMENTO/REDESPACHO":"5",
+      "CTE ENTRADA/NORMAL ANULACAO DE VALORES":"6",
+      "CTE SUBSTITUTO/NORMAL":"7",
+      "CTE SUBSTITUTO/SUBCONTRATACAO":"8",
+      "COMPLEMENTO/ESTADIA":"9"
+    };
+
+    for(const [descricao,codigoTipo] of Object.entries(descricoes)){
+      if(s.includes(descricao)) return codigoTipo;
+    }
+
+    return s;
+  }
+
   function parseDate(v){
     const s = txt(v);
     const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):?(\d{2})?)?/);
@@ -1798,7 +1829,8 @@ function lerMapaGruposOrdens(){
 
   function tiposCteSelecionados(){
     return [...document.querySelectorAll('input[name="tipoCteOption"]:checked')]
-      .map(input => input.value);
+      .map(input => chaveTipoCte(input.value))
+      .filter(Boolean);
   }
 
   function atualizarResumoTipoCte(){
@@ -1854,7 +1886,7 @@ function lerMapaGruposOrdens(){
         (!produto || r.produto === produto) &&
         (!uf || r.uf === uf) &&
         (!filial || r.filial === filial) &&
-        (!filtrarTipoCte || tiposCte.includes(r.tipoCte))
+        (!filtrarTipoCte || tiposCte.includes(chaveTipoCte(r.tipoCte)))
       );
     });
 

@@ -1,9 +1,8 @@
 /* embarques-itinerario.js | NOVA FROTA
-   Complemento do Controle de Embarques:
-   - coluna ITINERÁRIO ao lado de ROTEIRO
-   - 📎 quando ainda não existe print
-   - 🖼️ quando o print já foi anexado
-   - troca o ícone visual dos anexos existentes para 🖼️
+   Itinerário separado dos anexos gerais:
+   - 📎 enquanto não houver print
+   - 🖼️ quando houver print
+   - a coluna ANEXOS continua reservada somente para comprovante e liberação
 */
 (function(){
 "use strict";
@@ -60,18 +59,28 @@ async function filePayload(file){
     rd.onerror=()=>reject(new Error("Falha ao ler a imagem do itinerário."));
     rd.readAsDataURL(file);
   });
-  return {fileName:file.name,mimeType:file.type||"image/png",base64Data:base64};
+  const original=String(file.name||"itinerario.png").replace(/^ITINERARIO_/i,"");
+  return {fileName:"ITINERARIO_"+original,mimeType:file.type||"image/png",base64Data:base64};
+}
+
+function isItineraryRecord(r){
+  const explicit=safeUrl(r.itinerarioUrl);
+  if(explicit) return {url:explicit,nome:String(r.itinerarioNome||""),fileId:String(r.itinerarioId||""),legacy:false};
+
+  /* Compatibilidade: a primeira versão podia cair no slot de comprovante.
+     A partir desta correção, uploads de itinerário recebem prefixo ITINERARIO_. */
+  const comprovanteNome=String(r.comprovanteNome||"");
+  if(/^ITINERARIO_/i.test(comprovanteNome) && safeUrl(r.comprovanteUrl)){
+    return {url:safeUrl(r.comprovanteUrl),nome:comprovanteNome,fileId:String(r.comprovanteId||""),legacy:true};
+  }
+  return {url:"",nome:"",fileId:"",legacy:false};
 }
 
 async function loadItineraries(){
   try{
     const res=await api("read",{resource:"registros"});
     const data=Array.isArray(res?.data)?res.data:[];
-    itineraryById=new Map(data.map(r=>[String(r.id||""),{
-      nome:String(r.itinerarioNome||""),
-      url:String(r.itinerarioUrl||""),
-      fileId:String(r.itinerarioId||"")
-    }]));
+    itineraryById=new Map(data.map(r=>[String(r.id||""),isItineraryRecord(r)]));
     decorateTable();
   }catch(error){
     console.warn("[EMBARQUES] Não foi possível carregar os itinerários:",error);
@@ -126,16 +135,36 @@ function itineraryCell(id){
   return td;
 }
 
+function cleanAnnexCell(tr,id){
+  const info=itineraryById.get(String(id))||{};
+  if(!info.legacy) return;
+  const cells=[...tr.children];
+  /* Depois da inclusão dinâmica do ITINERÁRIO, ANEXOS fica na penúltima coluna. */
+  const annexCell=cells[cells.length-2];
+  if(!annexCell) return;
+  const links=[...annexCell.querySelectorAll("a.proof")];
+  links.forEach(a=>{
+    if(safeUrl(a.href)===safeUrl(info.url)) a.remove();
+  });
+  const box=annexCell.querySelector(".annexes");
+  if(box && !box.querySelector("a.proof")) box.textContent="-";
+}
+
 function decorateRows(){
   const body=document.getElementById("tbody");
   if(!body) return;
   [...body.querySelectorAll("tr[data-id]")].forEach(tr=>{
-    if(tr.querySelector("td.nf-itinerary-col")) return;
-    const cells=[...tr.children];
-    /* ROTEIRO é a 9ª coluna no layout original. */
-    const roteiroCell=cells[8];
-    if(!roteiroCell) return;
-    roteiroCell.insertAdjacentElement("afterend",itineraryCell(tr.dataset.id||""));
+    const id=tr.dataset.id||"";
+    if(!tr.querySelector("td.nf-itinerary-col")){
+      const cells=[...tr.children];
+      const roteiroCell=cells[8];
+      if(roteiroCell) roteiroCell.insertAdjacentElement("afterend",itineraryCell(id));
+    }else{
+      const old=tr.querySelector("td.nf-itinerary-col");
+      const fresh=itineraryCell(id);
+      old.replaceWith(fresh);
+    }
+    cleanAnnexCell(tr,id);
   });
 }
 
@@ -156,7 +185,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   ensureFileInput();
   decorateTable();
   observeTable();
-  setTimeout(loadItineraries,600);
-  setInterval(()=>{ if(!busy) loadItineraries(); },30000);
+  setTimeout(loadItineraries,500);
+  setInterval(()=>{if(!busy)loadItineraries()},30000);
 });
 })();

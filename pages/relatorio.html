@@ -1525,7 +1525,13 @@ function lerMapaGruposOrdens(){
       "Tp CT-e",
       "Tp CTe",
       "TipoCTE",
-      "Tipo Ct-e"
+      "Tipo Ct-e",
+      "Tp.Cte",
+      "Tp. Cte",
+      "Tp.Ct-e",
+      "Tp CT E",
+      "Tipo do CTE",
+      "Tipo do CT-e"
     ];
 
     for(const campo of candidatos){
@@ -1536,7 +1542,8 @@ function lerMapaGruposOrdens(){
 
     const chave = Object.keys(r).find(k => {
       const n = upper(k).replace(/[^A-Z0-9]/g,"");
-      return n.includes("TIPO") && n.includes("CTE");
+      return (n.includes("TIPO") && n.includes("CTE")) ||
+             n === "TPCTE" || n === "TIPODOCTE";
     });
 
     return chave ? upper(r[chave]) : "";
@@ -1825,6 +1832,61 @@ function lerMapaGruposOrdens(){
     popularSelect("filtroProduto",unique("produto"),"Todos os produtos");
     popularSelect("filtroUF",unique("uf"),"Todas");
     popularSelect("filtroFilial",unique("filial"),"Todas as filiais");
+  }
+
+  function popularTiposCte(){
+    const menu = $("menuTipoCte");
+    if(!menu) return;
+
+    const mapa = new Map();
+    dados.forEach(r => {
+      const chave = chaveTipoCte(r.tipoCte);
+      const label = normalizarTipoCte(r.tipoCte);
+      if(chave && !mapa.has(chave)) mapa.set(chave,label || chave);
+    });
+
+    const ordem = [...mapa.entries()].sort((a,b) => {
+      const na = Number(a[0]);
+      const nb = Number(b[0]);
+      if(Number.isFinite(na) && Number.isFinite(nb)) return na-nb;
+      return String(a[1]).localeCompare(String(b[1]),"pt-BR");
+    });
+
+    menu.innerHTML = `
+      <div class="multiSelectActions">
+        <button class="multiMiniBtn" id="btnTipoCteTodos" type="button">Selecionar todos</button>
+        <button class="multiMiniBtn" id="btnTipoCteLimpar" type="button">Limpar</button>
+      </div>
+      ${ordem.length ? ordem.map(([chave,label]) => `
+        <label class="multiOption">
+          <input type="checkbox" name="tipoCteOption" value="${escapar(chave)}">
+          <span>${escapar(label)}</span>
+        </label>
+      `).join("") : `<div style="padding:14px;color:#9fb3ca;font-size:10px">Nenhum Tipo CTE foi identificado no CSV importado.</div>`}
+    `;
+
+    menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
+      input.addEventListener("change",() => {
+        atualizarResumoTipoCte();
+        aplicarFiltros();
+      });
+    });
+
+    $("btnTipoCteTodos")?.addEventListener("click",e => {
+      e.stopPropagation();
+      menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => input.checked = true);
+      atualizarResumoTipoCte();
+      aplicarFiltros();
+    });
+
+    $("btnTipoCteLimpar")?.addEventListener("click",e => {
+      e.stopPropagation();
+      menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => input.checked = false);
+      atualizarResumoTipoCte();
+      aplicarFiltros();
+    });
+
+    atualizarResumoTipoCte();
   }
 
   function tiposCteSelecionados(){
@@ -2371,6 +2433,7 @@ function lerMapaGruposOrdens(){
       filtrados = dados.slice();
 
       popularFiltros();
+      popularTiposCte();
       configurarLimitesDatas();
       renderTudo();
 

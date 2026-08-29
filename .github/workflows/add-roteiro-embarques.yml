@@ -1,0 +1,38 @@
+name: Add roteiro embarques
+
+on:
+  push:
+    paths:
+      - '.github/add-roteiro-embarques.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Aplicar ajuste
+        run: python3 .github/scripts/add_roteiro_embarques.py
+
+      - name: Validar JavaScript
+        run: node --check assets/js/embarques.js
+
+      - name: Validar campos
+        run: |
+          grep -q '<th>Roteiro</th>' pages/embarques.html
+          grep -q 'id="mRoteiro"' pages/embarques.html
+          grep -q 'roteiro:String(r.roteiro' assets/js/embarques.js
+          grep -q 'route-link' assets/js/embarques.js
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/embarques.html assets/js/embarques.js
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: adiciona roteiro Google Maps aos embarques"
+          git push

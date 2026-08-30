@@ -58,6 +58,7 @@ export async function portalGatewayController(request, env) {
   const moduleName = normalizeKey(body.module);
   const actionName = normalizeKey(body.action);
   const params = safeParams(body.params);
+  const resourceName = normalizeKey(params.resource);
 
   if (!moduleName || !actionName) {
     return errorResponse("Informe módulo e ação.", 400);
@@ -83,6 +84,25 @@ export async function portalGatewayController(request, env) {
       actionName
     });
     return errorResponse("Ação não autorizada para este perfil.", 403);
+  }
+
+  // Proteção crítica: versões antigas do frontend usavam DELETE para remover
+  // anexos e o Apps Script interpretava isso como exclusão do embarque inteiro.
+  // Nunca encaminhar DELETE de anexos. A remoção visual/segura é feita por UPDATE.
+  if (
+    moduleName === "embarques" &&
+    actionName === "delete" &&
+    ["itinerario", "comprovante", "liberacao"].includes(resourceName)
+  ) {
+    console.warn("[GATEWAY] DELETE de anexo bloqueado para proteger o embarque", {
+      usuario: session.usuario,
+      resourceName,
+      id: params.id
+    });
+    return errorResponse(
+      "Remoção direta de anexo bloqueada para proteger os dados do embarque. Atualize a página e tente novamente.",
+      409
+    );
   }
 
   try {
@@ -123,7 +143,7 @@ export async function portalGatewayController(request, env) {
     console.error("[GATEWAY] Falha ao chamar Apps Script", {
       moduleName,
       actionName,
-      resource: normalizeKey(params.resource),
+      resource: resourceName,
       message: String(error?.message || error)
     });
 

@@ -1,0 +1,25 @@
+name: Restore Embarques Stable
+on:
+  push:
+    paths:
+      - '.github/restore-embarques-stable.trigger'
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore stable embarques files
+        run: |
+          git checkout 31ab6a6 -- pages/embarques.html assets/js/embarques.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "No changes to restore"
+            exit 0
+          fi
+          git commit -m "fix: restaura embarques para versao estavel"
+          git push

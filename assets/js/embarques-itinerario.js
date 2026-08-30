@@ -34,18 +34,31 @@ function injectStyles(){
   .nf-attach-row:first-of-type{border-top:0}.nf-attach-label{font-weight:900;color:#17324f}.nf-attach-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#60758b}
   .nf-mini{height:28px;padding:0 9px;border:1px solid #cbd7e3;border-radius:7px;background:#fff;color:#17324f;font-size:8px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
   .nf-mini.danger{border-color:#f2b8bd;background:#fff2f3;color:#b4232f}.nf-mini:disabled{opacity:.55;cursor:not-allowed}
+  .annexes{display:flex!important;align-items:center!important;gap:5px!important;min-width:68px}
   `;
   document.head.appendChild(st);
 }
 
-function rowInfo(r){
-  const compName=String(r.comprovanteNome||"");
-  const libName=String(r.liberacaoNome||"");
-  const explicit={nome:String(r.itinerarioNome||""),url:String(r.itinerarioUrl||""),id:String(r.itinerarioId||"")};
-  if(explicit.url||explicit.id) return {itinerario:explicit,legacySlot:""};
-  if(/^ITINERARIO_/i.test(compName) && r.comprovanteUrl) return {itinerario:{nome:compName,url:String(r.comprovanteUrl||""),id:String(r.comprovanteId||"")},legacySlot:"comprovante"};
-  if(/^ITINERARIO_/i.test(libName) && r.liberacaoUrl) return {itinerario:{nome:libName,url:String(r.liberacaoUrl||""),id:String(r.liberacaoId||"")},legacySlot:"liberacao"};
-  return {itinerario:{nome:"",url:"",id:""},legacySlot:""};
+function itineraryInfo(r){
+  return {
+    nome:String(r?.itinerarioNome||""),
+    url:String(r?.itinerarioUrl||""),
+    id:String(r?.itinerarioId||"")
+  };
+}
+
+function attachmentInfo(r,type){
+  if(type==="itinerario") return itineraryInfo(r);
+  if(type==="comprovante") return {
+    nome:String(r?.comprovanteNome||""),
+    url:String(r?.comprovanteUrl||""),
+    id:String(r?.comprovanteId||"")
+  };
+  return {
+    nome:String(r?.liberacaoNome||""),
+    url:String(r?.liberacaoUrl||""),
+    id:String(r?.liberacaoId||"")
+  };
 }
 
 async function refreshData(){
@@ -70,33 +83,37 @@ function ensureInput(){
 async function filePayload(file){
   if(file.size>7*1024*1024) throw new Error("A imagem do itinerário excede 7 MB.");
   const base64=await new Promise((resolve,reject)=>{const rd=new FileReader();rd.onload=()=>resolve(String(rd.result||"").split(",").pop());rd.onerror=()=>reject(new Error("Falha ao ler a imagem."));rd.readAsDataURL(file)});
-  const clean=String(file.name||"itinerario.png").replace(/^ITINERARIO_/i,"");
-  return {fileName:"ITINERARIO_"+clean,mimeType:file.type||"image/png",base64Data:base64};
+  return {fileName:file.name||"itinerario.png",mimeType:file.type||"image/png",base64Data:base64};
 }
 
 function ensureHeader(){
   const tr=$("tbody")?.closest("table")?.querySelector("thead tr");if(!tr)return;
-  let existing=tr.querySelector("th.nf-itinerary-col");if(existing)return;
-  const ths=[...tr.children],roteiro=ths.find(x=>x.textContent.trim().toUpperCase()==="ROTEIRO");if(!roteiro)return;
+  if(tr.querySelector("th.nf-itinerary-col"))return;
+  const roteiro=[...tr.children].find(x=>x.textContent.trim().toUpperCase()==="ROTEIRO");if(!roteiro)return;
   const th=document.createElement("th");th.className="nf-itinerary-col";th.textContent="Itinerário";roteiro.insertAdjacentElement("afterend",th);
 }
 
 function renderItCell(td,id){
-  const r=records.get(String(id))||{},info=rowInfo(r).itinerario,url=safeUrl(info.url);
+  const r=records.get(String(id))||{},info=itineraryInfo(r),url=safeUrl(info.url);
   td.innerHTML="";
   if(uploading.has(String(id))){td.innerHTML='<span class="nf-it-btn busy"><i class="nf-spin"></i>Enviando</span>';return}
-  if(removing.has(String(id))){td.innerHTML='<span class="nf-it-btn busy"><i class="nf-spin"></i>Removendo</span>';return}
+  if(removing.has(String(id)+":itinerario")){td.innerHTML='<span class="nf-it-btn busy"><i class="nf-spin"></i>Removendo</span>';return}
   if(url){td.innerHTML=`<a class="nf-it-btn has-file" href="${esc(url)}" target="_blank" rel="noopener" title="Abrir print do itinerário">🖼️</a>`;return}
   const b=document.createElement("button");b.type="button";b.className="nf-it-btn";b.title="Anexar print do itinerário";b.textContent="📎";b.onclick=()=>{const inp=$("quickItineraryInput");inp.dataset.id=String(id);inp.click()};td.appendChild(b);
 }
 
-function cleanLegacyFromAnexos(tr,id){
-  const r=records.get(String(id));if(!r)return;const legacy=rowInfo(r).legacySlot;if(!legacy)return;
-  const ths=[...tr.closest("table").querySelectorAll("thead th")];const anexIdx=ths.findIndex(th=>th.textContent.trim().toUpperCase()==="ANEXOS");if(anexIdx<0)return;
-  const cell=tr.children[anexIdx];if(!cell)return;
-  const anchors=[...cell.querySelectorAll("a")];
-  anchors.forEach(a=>{const title=String(a.title||"");if(/^ITINERARIO_/i.test(title))a.remove()});
-  const box=cell.querySelector(".annexes");if(box&&!box.children.length)box.textContent="-";
+function renderAnnexesCell(tr,id){
+  const table=tr.closest("table"),r=records.get(String(id));
+  if(!table||!r)return;
+  const headers=[...table.querySelectorAll("thead th")];
+  const idx=headers.findIndex(th=>th.textContent.trim().toUpperCase()==="ANEXOS");
+  if(idx<0)return;
+  const cell=tr.children[idx];if(!cell)return;
+  const comp=attachmentInfo(r,"comprovante"),lib=attachmentInfo(r,"liberacao");
+  const items=[];
+  if(safeUrl(comp.url))items.push(`<a class="proof" href="${esc(comp.url)}" target="_blank" rel="noopener" title="${esc(comp.nome||"Comprovante de descarga")}">🖼️</a>`);
+  if(safeUrl(lib.url))items.push(`<a class="proof release" href="${esc(lib.url)}" target="_blank" rel="noopener" title="${esc(lib.nome||"Liberação do frete/embarque")}">🖼️</a>`);
+  cell.innerHTML=`<div class="annexes">${items.length?items.join(""):"-"}</div>`;
 }
 
 function decorateRows(){
@@ -105,7 +122,8 @@ function decorateRows(){
     const id=tr.dataset.id||"";
     let td=tr.querySelector("td.nf-itinerary-col");
     if(!td){const cells=[...tr.children],roteiro=cells[8];if(!roteiro)return;td=document.createElement("td");td.className="nf-itinerary-col";roteiro.insertAdjacentElement("afterend",td)}
-    renderItCell(td,id);cleanLegacyFromAnexos(tr,id);
+    renderItCell(td,id);
+    renderAnnexesCell(tr,id);
   });
 }
 function decorateTable(){ensureHeader();decorateRows()}
@@ -121,25 +139,16 @@ async function uploadItinerary(id,file){
   finally{uploading.delete(id);await refreshData();decorateTable()}
 }
 
-function attachmentInfo(r,type){
-  const legacy=rowInfo(r).legacySlot;
-  if(type==="itinerario")return rowInfo(r).itinerario;
-  if(type==="comprovante"&&legacy==="comprovante")return {nome:"",url:"",id:""};
-  if(type==="liberacao"&&legacy==="liberacao")return {nome:"",url:"",id:""};
-  if(type==="comprovante")return {nome:String(r.comprovanteNome||""),url:String(r.comprovanteUrl||""),id:String(r.comprovanteId||"")};
-  return {nome:String(r.liberacaoNome||""),url:String(r.liberacaoUrl||""),id:String(r.liberacaoId||"")};
-}
-
 async function removeAttachment(type,id){
   const labels={comprovante:"comprovante de descarga",liberacao:"liberação",itinerario:"itinerário"};
   if(!confirm(`Remover ${labels[type]}?`))return;
-  removing.add(String(id));decorateTable();refreshAttachmentManager();
+  const key=String(id)+":"+type;removing.add(key);decorateTable();refreshAttachmentManager();
   try{
     const res=await api("delete",{resource:type,id});
     if(!res||res.ok===false)throw new Error(res?.error||"Falha ao remover anexo.");
     await refreshData();
   }catch(e){alert("Não foi possível remover o anexo.\n\n"+e.message)}
-  finally{removing.delete(String(id));await refreshData();decorateTable();refreshAttachmentManager()}
+  finally{removing.delete(key);await refreshData();decorateTable();refreshAttachmentManager()}
 }
 
 function ensureAttachmentManager(){
@@ -152,12 +161,12 @@ function refreshAttachmentManager(){
   if(!box||!rows)return;if(!id){box.style.display="none";return}box.style.display="block";
   const r=records.get(String(id))||{};
   const defs=[["itinerario","Itinerário"],["comprovante","Comprovante"],["liberacao","Liberação"]];
-  rows.innerHTML=defs.map(([type,label])=>{const f=attachmentInfo(r,type),url=safeUrl(f.url),busy=removing.has(String(id));return `<div class="nf-attach-row"><span class="nf-attach-label">${label}</span><span class="nf-attach-name">${esc(f.nome|| (url?"Arquivo anexado":"Nenhum arquivo"))}</span>${url?`<a class="nf-mini" href="${esc(url)}" target="_blank" rel="noopener">Abrir</a>`:'<span></span>'}${url?`<button type="button" class="nf-mini danger" data-remove-attach="${type}" ${busy?"disabled":""}>Remover</button>`:'<span></span>'}</div>`}).join("");
+  rows.innerHTML=defs.map(([type,label])=>{const f=attachmentInfo(r,type),url=safeUrl(f.url),busy=removing.has(String(id)+":"+type);return `<div class="nf-attach-row"><span class="nf-attach-label">${label}</span><span class="nf-attach-name">${esc(f.nome||(url?"Arquivo anexado":"Nenhum arquivo"))}</span>${url?`<a class="nf-mini" href="${esc(url)}" target="_blank" rel="noopener">Abrir</a>`:'<span></span>'}${url?`<button type="button" class="nf-mini danger" data-remove-attach="${type}" ${busy?"disabled":""}>Remover</button>`:'<span></span>'}</div>`}).join("");
   rows.querySelectorAll("[data-remove-attach]").forEach(b=>b.onclick=()=>removeAttachment(b.dataset.removeAttach,id));
 }
 
 function bindModalManager(){
-  document.addEventListener("click",e=>{if(e.target.closest(".iconbtn.edit"))setTimeout(()=>{refreshAttachmentManager()},60)},true);
+  document.addEventListener("click",e=>{if(e.target.closest(".iconbtn.edit"))setTimeout(refreshAttachmentManager,60)},true);
   const modal=$("modal");if(modal)new MutationObserver(()=>{if(modal.classList.contains("show"))setTimeout(refreshAttachmentManager,20)}).observe(modal,{attributes:true,attributeFilter:["class"]});
 }
 

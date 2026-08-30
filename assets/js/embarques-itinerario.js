@@ -86,7 +86,7 @@ async function filePayload(file){
   return {fileName:file.name||"itinerario.png",mimeType:file.type||"image/png",base64Data:base64};
 }
 
-function ensureHeader(){
+function ensureHeader_DISABLED(){
   const tr=$("tbody")?.closest("table")?.querySelector("thead tr");if(!tr)return;
   if(tr.querySelector("th.nf-itinerary-col"))return;
   const roteiro=[...tr.children].find(x=>x.textContent.trim().toUpperCase()==="ROTEIRO");if(!roteiro)return;
@@ -116,7 +116,7 @@ function renderAnnexesCell(tr,id){
   cell.innerHTML=`<div class="annexes">${items.length?items.join(""):"-"}</div>`;
 }
 
-function decorateRows(){
+function decorateRows_DISABLED(){
   const body=$("tbody");if(!body)return;
   [...body.querySelectorAll("tr[data-id]")].forEach(tr=>{
     const id=tr.dataset.id||"";
@@ -126,7 +126,21 @@ function decorateRows(){
     renderAnnexesCell(tr,id);
   });
 }
-function decorateTable(){ensureHeader();decorateRows()}
+function decorateTable(){ refreshNativeItinerary() }
+
+
+function refreshNativeItinerary(){
+  const body=$("tbody"); if(!body) return;
+  [...body.querySelectorAll("tr[data-id]")].forEach(tr=>{
+    const id=tr.dataset.id||"", r=records.get(String(id))||{}, info=rowInfo(r).itinerario;
+    const cell=tr.querySelector("td.native-itinerary"); if(!cell) return;
+    if(uploading.has(String(id))){ cell.innerHTML='<span class="nf-it-btn busy"><i class="nf-spin"></i>Enviando</span>'; return; }
+    const url=safeUrl(info.url);
+    if(url){ cell.innerHTML=`<a class="nf-it-btn has-file" href="${esc(url)}" target="_blank" rel="noopener" title="Abrir print do itinerário">🖼️</a>`; return; }
+    cell.innerHTML=`<button type="button" class="nf-it-btn native-itinerary-upload" data-id="${esc(id)}" title="Anexar print do itinerário">📎</button>`;
+    const b=cell.querySelector("button"); if(b)b.onclick=()=>{const inp=$("quickItineraryInput"); inp.dataset.id=String(id); inp.value=""; inp.click()};
+  });
+}
 
 async function uploadItinerary(id,file){
   id=String(id);if(uploading.has(id))return;uploading.add(id);decorateTable();

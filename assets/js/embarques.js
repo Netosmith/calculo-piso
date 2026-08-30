@@ -7,7 +7,7 @@ const up=v=>String(v??"").trim().toUpperCase().normalize("NFD").replace(/[\u0300
 const num=v=>{if(typeof v==="number")return Number.isFinite(v)?v:0;let s=String(v??"").replace(/[^\d,.-]/g,"");if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");const n=Number(s);return Number.isFinite(n)?n:0};
 const esc=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const safeUrl=v=>{const s=String(v??"").trim();return /^https?:\/\//i.test(s)?s:""};
-let rows=[],filtered=[],page=1,shareView="cliente",freteMotoristaOculto=false,quickProofId="",quickReleaseId="";
+let rows=[],filtered=[],page=1,shareView="cliente",freteMotoristaOculto=false,quickProofId="",quickReleaseId="",quickItineraryId="";
 const PAGE_SIZE=12;
 const STATUS_OPTIONS=["PENDENTE","PORTA","TRANSITO/COLETA","TRANSITO/DESCARGA","NA DESCARGA","CONCLUIDA","ATRASADA"];
 
@@ -50,6 +50,7 @@ body.querySelectorAll(".inlineObs").forEach(input=>{input.onclick=e=>e.stopPropa
 body.querySelectorAll(".attach").forEach(b=>b.onclick=()=>{quickProofId=b.dataset.id;$("quickProofInput").value="";$("quickProofInput").click()});
 body.querySelectorAll(".native-itinerary-upload").forEach(b=>b.onclick=()=>{let inp=$("quickItineraryInput");if(inp){inp.dataset.id=b.dataset.id;inp.value="";inp.click()}});
 body.querySelectorAll(".iconbtn.release").forEach(b=>b.onclick=()=>{quickReleaseId=b.dataset.id;$("quickReleaseInput").value="";$("quickReleaseInput").click()});
+body.querySelectorAll(".native-itinerary-upload").forEach(b=>b.onclick=()=>{quickItineraryId=b.dataset.id;$("quickItineraryInput").value="";$("quickItineraryInput").click()});
 body.querySelectorAll(".edit").forEach(b=>b.onclick=()=>{const item=rows.find(r=>r.id===b.dataset.id);if(item)openModal(item)});
 body.querySelectorAll(".del").forEach(b=>b.onclick=()=>removeRow(b.dataset.id));
 applyFreteMotoristaVisibility()
@@ -60,7 +61,34 @@ function renderAll(){renderKpis();renderTable();renderPagination();renderShare()
 function clearFilters(){["fPeriodo","fCliente","fOrigem","fDestino","fSituacao","fTipo","fBusca"].forEach(id=>$(id).value="");applyFilters()}
 function resetModal(){["mId","mNumeroCarga","mDataCarga","mCliente","mOrigem","mLocalOrigem","mDestino","mLocalDestino","mRoteiro","mPlaca","mTipoVeiculo","mPeso","mFreteEmpresa","mFreteMotorista","mPrevisao","mObservacao"].forEach(id=>$(id).value="");$("mTipoCarga").value="SEMENTE";$("mSituacao").value="PENDENTE";$("mComprovante").value="";$("mLiberacao").value="";if($("mItinerario"))$("mItinerario").value=""}
 function toDT(v){if(!v)return"";const d=new Date(v);if(Number.isNaN(d.getTime()))return"";return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
-function openModal(item=null){resetModal();$("modalTitle").textContent=item?"Editar embarque":"Novo embarque";if(item){$("mId").value=item.id;$("mNumeroCarga").value=item.numeroCarga;$("mDataCarga").value=toDT(item.dataCarga);$("mCliente").value=item.cliente;$("mOrigem").value=item.origem;$("mLocalOrigem").value=item.localOrigem;$("mDestino").value=item.destino;$("mLocalDestino").value=item.localDestino;$("mRoteiro").value=item.roteiro||"";$("mPlaca").value=item.placa;$("mTipoVeiculo").value=item.tipoVeiculo;$("mTipoCarga").value=item.tipoCarga;$("mPeso").value=item.pesoKg||"";$("mFreteEmpresa").value=item.freteEmpresa||"";$("mFreteMotorista").value=item.freteMotorista||"";$("mSituacao").value=STATUS_OPTIONS.includes(item.situacao)?item.situacao:"PORTA";$("mPrevisao").value=toDT(item.previsaoChegada);$("mObservacao").value=item.observacao}$("modal").classList.add("show")}
+function openModal(item=null){resetModal();$("modalTitle").textContent=item?"Editar embarque":"Novo embarque";if(item){$("mId").value=item.id;$("mNumeroCarga").value=item.numeroCarga;$("mDataCarga").value=toDT(item.dataCarga);$("mCliente").value=item.cliente;$("mOrigem").value=item.origem;$("mLocalOrigem").value=item.localOrigem;$("mDestino").value=item.destino;$("mLocalDestino").value=item.localDestino;$("mRoteiro").value=item.roteiro||"";$("mPlaca").value=item.placa;$("mTipoVeiculo").value=item.tipoVeiculo;$("mTipoCarga").value=item.tipoCarga;$("mPeso").value=item.pesoKg||"";$("mFreteEmpresa").value=item.freteEmpresa||"";$("mFreteMotorista").value=item.freteMotorista||"";$("mSituacao").value=STATUS_OPTIONS.includes(item.situacao)?item.situacao:"PORTA";$("mPrevisao").value=toDT(item.previsaoChegada);$("mObservacao").value=item.observacao;renderCurrentAttachments(item)}else{renderCurrentAttachments(null)}$("modal").classList.add("show")}
+
+function attachmentDescriptor(item,type){
+  if(type==="itinerario")return{label:"Itinerário",nome:item.itinerarioNome,url:item.itinerarioUrl};
+  if(type==="comprovante")return{label:"Comprovante",nome:item.comprovanteNome,url:item.comprovanteUrl};
+  return{label:"Liberação",nome:item.liberacaoNome,url:item.liberacaoUrl};
+}
+function renderCurrentAttachments(item){
+  const box=$("currentAttachments"),list=$("currentAttachmentsList");if(!box||!list||!item){if(box)box.style.display="none";return}
+  const types=["itinerario","comprovante","liberacao"];
+  const existing=types.map(t=>[t,attachmentDescriptor(item,t)]).filter(([,f])=>safeUrl(f.url));
+  if(!existing.length){box.style.display="none";list.innerHTML="";return}
+  box.style.display="block";
+  list.innerHTML=existing.map(([type,f])=>`<div style="display:grid;grid-template-columns:120px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid #e0e8f1;border-radius:8px;background:#fff"><strong style="font-size:8px;text-transform:uppercase">${esc(f.label)}</strong><span style="font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.nome||"Arquivo anexado")}</span><a class="btn ghost" style="height:29px;display:inline-flex;align-items:center;text-decoration:none" href="${esc(safeUrl(f.url))}" target="_blank" rel="noopener">Abrir</a><button type="button" class="btn ghost remove-single-attachment" style="height:29px;color:#b4232f;border-color:#efb5ba" data-type="${type}" data-id="${esc(item.id)}">Remover</button></div>`).join("");
+  list.querySelectorAll(".remove-single-attachment").forEach(btn=>btn.onclick=()=>removeSingleAttachment(btn.dataset.id,btn.dataset.type));
+}
+async function removeSingleAttachment(id,type){
+  const labels={itinerario:"itinerário",comprovante:"comprovante",liberacao:"liberação"};
+  if(!confirm(`Remover o ${labels[type]} desta carga?`))return;
+  loading(true,"Removendo anexo...");
+  try{
+    const res=await api("delete",{resource:type,id});
+    if(!res||res.ok===false)throw new Error(res?.error||"Falha ao remover anexo.");
+    await load();
+    const updated=rows.find(r=>r.id===id);if(updated){openModal(updated)}
+  }catch(error){alert("Não foi possível remover o anexo.\n\n"+error.message)}finally{loading(false)}
+}
+
 function closeModal(){$("modal").classList.remove("show")}
 function formPayload(){const id=$("mId").value,current=rows.find(r=>r.id===id)||{};return{id,numeroCarga:up($("mNumeroCarga").value),dataCarga:$("mDataCarga").value,cliente:up($("mCliente").value),origem:up($("mOrigem").value),localOrigem:up($("mLocalOrigem").value),destino:up($("mDestino").value),localDestino:up($("mLocalDestino").value),roteiro:$("mRoteiro").value.trim(),placa:up($("mPlaca").value),tipoVeiculo:up($("mTipoVeiculo").value),tipoCarga:$("mTipoCarga").value,pesoKg:num($("mPeso").value),freteEmpresa:num($("mFreteEmpresa").value),freteMotorista:num($("mFreteMotorista").value),situacao:$("mSituacao").value,previsaoChegada:$("mPrevisao").value,observacao:$("mObservacao").value.trim(),comprovanteNome:current.comprovanteNome||"",comprovanteUrl:current.comprovanteUrl||"",comprovanteId:current.comprovanteId||"",liberacaoNome:current.liberacaoNome||"",liberacaoUrl:current.liberacaoUrl||"",liberacaoId:current.liberacaoId||"",itinerarioNome:current.itinerarioNome||"",itinerarioUrl:current.itinerarioUrl||"",itinerarioId:current.itinerarioId||""}}
 async function filePayload(file){if(!file)return null;if(file.size>7*1024*1024)throw new Error("O anexo excede 7 MB.");const base64=await new Promise((resolve,reject)=>{const rd=new FileReader();rd.onload=()=>resolve(String(rd.result||"").split(",").pop());rd.onerror=()=>reject(new Error("Falha ao ler arquivo."));rd.readAsDataURL(file)});return{fileName:file.name,mimeType:file.type||"application/octet-stream",base64Data:base64}}
@@ -77,6 +105,7 @@ closeModal();await load()
 }catch(error){console.error(error);alert("Não foi possível salvar o embarque.\n\n"+error.message)}finally{loading(false)}
 }
 async function removeRow(id){const item=rows.find(r=>r.id===id);if(!item||!confirm(`Excluir a carga ${item.numeroCarga}?`))return;loading(true,"Excluindo...");try{await api("delete",{id,resource:"registros"});await load()}catch(error){alert("Não foi possível excluir.\n\n"+error.message)}finally{loading(false)}}
+async function uploadQuickItinerary(id,file){if(!id||!file)return;loading(true,"Enviando itinerário...");try{const fp=await filePayload(file);await api("update",{resource:"itinerario",id,...fp});await load()}catch(error){alert("Não foi possível anexar o itinerário.\n\n"+error.message)}finally{loading(false);quickItineraryId="";if($("quickItineraryInput"))$("quickItineraryInput").value=""}}
 async function uploadQuickProof(id,file){if(!id||!file)return;loading(true,"Enviando comprovante...");try{const fp=await filePayload(file);await api("update",{resource:"comprovante",id,...fp});await load();alert("Comprovante anexado com sucesso.")}catch(error){alert("Não foi possível anexar o comprovante.\n\n"+error.message)}finally{loading(false);quickProofId="";if($("quickProofInput"))$("quickProofInput").value=""}}
 async function uploadQuickRelease(id,file){if(!id||!file)return;loading(true,"Enviando liberação...");try{const fp=await filePayload(file);await api("update",{resource:"liberacao",id,...fp});await load();alert("Liberação anexada com sucesso.")}catch(error){alert("Não foi possível anexar a liberação.\\n\\n"+error.message)}finally{loading(false);quickReleaseId="";if($("quickReleaseInput"))$("quickReleaseInput").value=""}}
 function setFreteMotoristaHidden(hidden){freteMotoristaOculto=!!hidden;try{localStorage.setItem("nf_embarques_hide_driver_freight",freteMotoristaOculto?"1":"0")}catch(e){}applyFreteMotoristaVisibility()}

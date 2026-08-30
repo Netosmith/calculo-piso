@@ -1,0 +1,23 @@
+name: Fix Embarques Attachments Safe
+on:
+  push:
+    paths:
+      - '.github/fix-embarques-anexos-safe.trigger'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python .github/scripts/fix_embarques_anexos_safe.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/embarques.js pages/embarques.html
+          git diff --cached --quiet || git commit -m "fix: corrige anexos seguros e indicadores de upload"
+          git push

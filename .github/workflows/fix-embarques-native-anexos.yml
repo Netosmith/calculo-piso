@@ -1,0 +1,22 @@
+name: Fix Embarques Native Attachments
+on:
+  push:
+    paths:
+      - '.github/fix-embarques-native-anexos.trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch embarques
+        run: python .github/scripts/fix-embarques-native-anexos.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/embarques.html assets/js/embarques.js assets/js/embarques-itinerario.js
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: separa itinerario comprovante e liberacao"
+          git push

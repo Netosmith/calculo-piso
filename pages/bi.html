@@ -22,7 +22,7 @@
     .filtersBI{margin-top:14px;display:grid;grid-template-columns:repeat(5,minmax(150px,1fr)) 1.4fr auto auto;gap:10px}.filtersCommercial{margin-top:10px;display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px}.fieldBox{display:flex;flex-direction:column;gap:5px}.fieldBox label{font-size:10px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
     .filtersBI select,.filtersBI input,.filtersCommercial select,.filtersCommercial input{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--text);outline:none;padding:0 12px;font-size:14px}.btnBI{height:42px;padding:0 16px;border-radius:12px;border:1px solid transparent;font-weight:900;cursor:pointer;white-space:nowrap;align-self:end}.btnBI.primary{background:var(--blue-dark);color:#fff}.btnBI.success{background:var(--green);color:#fff}.btnBI.ghost{background:#fff;color:#0f172a;border-color:var(--line)}
     .modeSection{display:none}.modeSection.active{display:block}.sectionHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0 10px}.sectionHeader h2{margin:0;font-size:19px;font-weight:1000}.sectionHeader p{margin:3px 0 0;font-size:12px;color:var(--muted)}
-    .kpiGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}.kpiCard{border-radius:18px;padding:16px;min-height:110px;display:flex;flex-direction:column;justify-content:space-between}.kpiLabel{font-size:11px;font-weight:1000;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.kpiValue{font-size:21px;font-weight:1000;margin-top:6px}.kpiFoot{font-size:12px;color:var(--muted);margin-top:4px}
+    .kpiGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:14px}.kpiCard{border-radius:18px;padding:16px;min-height:110px;display:flex;flex-direction:column;justify-content:space-between}.kpiLabel{font-size:11px;font-weight:1000;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.kpiValue{font-size:21px;font-weight:1000;margin-top:6px}.kpiFoot{font-size:12px;color:var(--muted);margin-top:4px}
     .biGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.biGrid.three{grid-template-columns:repeat(3,1fr)}.chartCard,.tableCard,.panelCard,.insightCard{border-radius:20px;overflow:hidden}.chartHead,.tableHead,.panelHead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.chartHead h3,.tableHead h3,.panelHead h3{margin:0;font-size:16px;font-weight:1000}.headNote{font-size:11px;color:var(--muted);font-weight:800}.chartBody{padding:14px 16px 10px;height:320px}.chartBody.tall{height:380px}.chartBody.large{height:430px}
     .tableWrap{overflow:auto;max-height:480px}table{width:100%;border-collapse:collapse;min-width:980px;background:#fff}th,td{padding:10px 12px;border-bottom:1px solid #edf2f7;font-size:13px;white-space:nowrap;color:#0f172a}th{position:sticky;top:0;z-index:2;background:#f8fafc;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}td.num,th.num{text-align:right}.empty{padding:28px;text-align:center;color:#64748b;font-weight:800}
     .routeSummary{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:12px;margin-bottom:14px}.routeHero{background:linear-gradient(135deg,#102a6b,#1d4ed8);color:#fff;border-radius:20px;padding:18px;min-height:150px;box-shadow:var(--shadow)}.routeHero small{display:block;opacity:.76;text-transform:uppercase;letter-spacing:.08em;font-weight:900;margin-bottom:8px}.routeHero h2{margin:0;font-size:26px;font-weight:1000}.routeHero p{margin:10px 0 0;opacity:.84;font-size:13px}.miniStat{border-radius:18px;padding:16px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}.miniStat .label{font-size:10px;font-weight:1000;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.miniStat .value{font-size:20px;font-weight:1000;margin-top:8px}.miniStat .sub{margin-top:4px;font-size:12px;color:var(--muted)}
@@ -66,7 +66,8 @@
         <div class="kpiCard"><div class="kpiLabel">Veículos Totais</div><div class="kpiValue" id="kpiVeiculos">0</div><div class="kpiFoot">Porta + Trânsito</div></div>
         <div class="kpiCard"><div class="kpiLabel">Volume Total</div><div class="kpiValue" id="kpiVolume">0 t</div><div class="kpiFoot">38 t por veículo</div></div>
         <div class="kpiCard"><div class="kpiLabel">Frete Médio Empresa</div><div class="kpiValue" id="kpiFreteMedio">R$ 0,00</div><div class="kpiFoot">Média do valor empresa</div></div>
-        <div class="kpiCard"><div class="kpiLabel">Margem Média</div><div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div><div class="kpiFoot">Empresa - Motorista</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Margem Média R$</div><div class="kpiValue" id="kpiMargemMedia">R$ 0,00</div><div class="kpiFoot">Empresa - Motorista</div></div>
+        <div class="kpiCard"><div class="kpiLabel">Margem Média %</div><div class="kpiValue" id="kpiMargemMediaPercent">0,00%</div><div class="kpiFoot">Média percentual por frete</div></div>
       </div>
       <div class="biGrid">
         <div class="chartCard"><div class="chartHead"><h3>Veículos por Filial</h3></div><div class="chartBody"><canvas id="chartVeiculosFilial"></canvas></div></div>
@@ -75,7 +76,7 @@
         <div class="chartCard"><div class="chartHead"><h3>Porta x Trânsito por Filial</h3></div><div class="chartBody"><canvas id="chartPortaTransito"></canvas></div></div>
         <div class="chartCard"><div class="chartHead"><h3>Margem Média por Cliente</h3></div><div class="chartBody tall"><canvas id="chartMargemCliente"></canvas></div></div>
         <div class="chartCard"><div class="chartHead"><h3>Evolução Diária de Veículos</h3></div><div class="chartBody tall"><canvas id="chartEvolucaoDiaria"></canvas></div></div>
-        <div class="tableCard" style="grid-column:1/-1"><div class="tableHead"><h3>Indicativo Fixo por Filial</h3></div><div class="tableWrap"><table><thead><tr><th>Filial</th><th class="num">Porta</th><th class="num">Trânsito</th><th class="num">Veículos</th><th class="num">Volume (t)</th><th class="num">Frete Médio</th><th class="num">Margem Média</th></tr></thead><tbody id="tbodyIndicativo"></tbody></table></div></div>
+        <div class="tableCard" style="grid-column:1/-1"><div class="tableHead"><h3>Indicativo Fixo por Filial</h3></div><div class="tableWrap"><table><thead><tr><th>Filial</th><th class="num">Porta</th><th class="num">Trânsito</th><th class="num">Veículos</th><th class="num">Volume (t)</th><th class="num">Frete Médio</th><th class="num">Margem Média R$</th><th class="num">Margem Média %</th></tr></thead><tbody id="tbodyIndicativo"></tbody></table></div></div>
       </div>
     </section>
 
@@ -119,7 +120,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/bi.js?v=5"></script>
+  <script src="../assets/js/bi.js?v=6"></script>
   <script>
     requireHomeAuth(); bindLogoutButton();
     (function(){

@@ -608,8 +608,23 @@
     const valid = rows.filter((row) => row.valorEmpresa > 0);
     const freteMedio = average(valid.map((row) => row.valorEmpresa));
     const margemMedia = average(valid.map((row) => row.valorEmpresa - row.valorMotorista));
+    const margemMediaPercent = average(
+      valid.map((row) =>
+        row.valorEmpresa > 0
+          ? ((row.valorEmpresa - row.valorMotorista) / row.valorEmpresa) * 100
+          : 0
+      )
+    );
 
-    return { porta, transito, totalVeiculos, volume, freteMedio, margemMedia };
+    return {
+      porta,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemMedia,
+      margemMediaPercent
+    };
   }
 
   function buildResumoFilial(rows) {
@@ -747,6 +762,7 @@
     setText("#kpiVolume", `${intBR(k.volume)} t`);
     setText("#kpiFreteMedio", moneyBR(k.freteMedio));
     setText("#kpiMargemMedia", moneyBR(k.margemMedia));
+    setText("#kpiMargemMediaPercent", percentBR(k.margemMediaPercent));
 
     renderIndicativoFilial(rows);
     renderCurrentCharts(rows);
@@ -758,7 +774,7 @@
 
     const resumo = buildResumoFilial(rows);
     if (!resumo.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum registro encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">Nenhum registro encontrado.</td></tr>`;
       return;
     }
 
@@ -771,6 +787,7 @@
         <td class="num">${intBR(row.volume)} t</td>
         <td class="num">${moneyBR(row.freteMedio)}</td>
         <td class="num">${moneyBR(row.margemMedia)}</td>
+        <td class="num">${percentBR(row.margemMediaPercent)}</td>
       </tr>
     `).join("");
   }

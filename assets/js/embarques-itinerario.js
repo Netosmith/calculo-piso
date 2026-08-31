@@ -132,7 +132,7 @@ function decorateTable(){ refreshNativeItinerary() }
 function refreshNativeItinerary(){
   const body=$("tbody"); if(!body) return;
   [...body.querySelectorAll("tr[data-id]")].forEach(tr=>{
-    const id=tr.dataset.id||"", r=records.get(String(id))||{}, info=rowInfo(r).itinerario;
+    const id=tr.dataset.id||"", r=records.get(String(id))||{}, info=itineraryInfo(r);
     const cell=tr.querySelector("td.native-itinerary"); if(!cell) return;
     if(uploading.has(String(id))){ cell.innerHTML='<span class="nf-it-btn busy"><i class="nf-spin"></i>Enviando</span>'; return; }
     const url=safeUrl(info.url);

@@ -1,0 +1,24 @@
+name: Fix Itinerario Minimal
+on:
+  push:
+    paths:
+      - '.github/fix-itinerario-minimal.trigger'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python .github/scripts/fix-itinerario-minimal.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/embarques-itinerario.js pages/embarques.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: restaura clipe e upload do itinerario"
+          git push

@@ -334,7 +334,7 @@
     .cards{
       margin-top:16px;
       display:grid;
-      grid-template-columns:repeat(6,minmax(0,1fr));
+      grid-template-columns:repeat(7,minmax(0,1fr));
       gap:12px;
     }
     .metric{
@@ -914,6 +914,12 @@
         <div class="metricTop"><span class="metricLabel">Margem líquida</span><span class="metricIcon">📊</span></div>
         <strong id="kpiMargemLiquida">R$ 0,00</strong>
         <small>Soma da coluna Margem Liq</small>
+      </article>
+
+      <article class="metric green">
+        <div class="metricTop"><span class="metricLabel">Margem Real R$</span><span class="metricIcon">💰</span></div>
+        <strong id="kpiMargemReal">R$ 0,00</strong>
+        <small>Soma da coluna Margem real</small>
       </article>
 
       <article class="metric cyan">
@@ -1621,6 +1627,65 @@ function lerMapaGruposOrdens(){
     return s;
   }
 
+  function popularTiposCte(){
+    const menu = $("menuTipoCte");
+    if(!menu) return;
+
+    const mapa = new Map();
+    dados.forEach(r => {
+      const chave = chaveTipoCte(r.tipoCte);
+      const label = normalizarTipoCte(r.tipoCte);
+      if(chave && !mapa.has(chave)){
+        mapa.set(chave,label || chave);
+      }
+    });
+
+    const ordem = [...mapa.entries()].sort((a,b) => {
+      const na = Number(a[0]);
+      const nb = Number(b[0]);
+      if(Number.isFinite(na) && Number.isFinite(nb)) return na-nb;
+      return String(a[1]).localeCompare(String(b[1]),"pt-BR");
+    });
+
+    menu.innerHTML = `
+      <div class="multiSelectActions">
+        <button class="multiMiniBtn" id="btnTipoCteTodos" type="button">Selecionar todos</button>
+        <button class="multiMiniBtn" id="btnTipoCteLimpar" type="button">Limpar</button>
+      </div>
+      ${ordem.length ? ordem.map(([chave,label]) => `
+        <label class="multiOption">
+          <input type="checkbox" name="tipoCteOption" value="${escapar(chave)}">
+          <span>${escapar(label)}</span>
+        </label>
+      `).join("") : `
+        <div style="padding:14px;color:#9fb3ca;font-size:10px">Nenhum Tipo CTE foi identificado no CSV importado.</div>
+      `}
+    `;
+
+    menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
+      input.addEventListener("change",() => {
+        atualizarResumoTipoCte();
+        aplicarFiltros();
+      });
+    });
+
+    $("btnTipoCteTodos")?.addEventListener("click",e => {
+      e.stopPropagation();
+      menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => input.checked = true);
+      atualizarResumoTipoCte();
+      aplicarFiltros();
+    });
+
+    $("btnTipoCteLimpar")?.addEventListener("click",e => {
+      e.stopPropagation();
+      menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => input.checked = false);
+      atualizarResumoTipoCte();
+      aplicarFiltros();
+    });
+
+    atualizarResumoTipoCte();
+  }
+
   function parseDate(v){
     const s = txt(v);
     const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):?(\d{2})?)?/);
@@ -1834,61 +1899,6 @@ function lerMapaGruposOrdens(){
     popularSelect("filtroFilial",unique("filial"),"Todas as filiais");
   }
 
-  function popularTiposCte(){
-    const menu = $("menuTipoCte");
-    if(!menu) return;
-
-    const mapa = new Map();
-    dados.forEach(r => {
-      const chave = chaveTipoCte(r.tipoCte);
-      const label = normalizarTipoCte(r.tipoCte);
-      if(chave && !mapa.has(chave)) mapa.set(chave,label || chave);
-    });
-
-    const ordem = [...mapa.entries()].sort((a,b) => {
-      const na = Number(a[0]);
-      const nb = Number(b[0]);
-      if(Number.isFinite(na) && Number.isFinite(nb)) return na-nb;
-      return String(a[1]).localeCompare(String(b[1]),"pt-BR");
-    });
-
-    menu.innerHTML = `
-      <div class="multiSelectActions">
-        <button class="multiMiniBtn" id="btnTipoCteTodos" type="button">Selecionar todos</button>
-        <button class="multiMiniBtn" id="btnTipoCteLimpar" type="button">Limpar</button>
-      </div>
-      ${ordem.length ? ordem.map(([chave,label]) => `
-        <label class="multiOption">
-          <input type="checkbox" name="tipoCteOption" value="${escapar(chave)}">
-          <span>${escapar(label)}</span>
-        </label>
-      `).join("") : `<div style="padding:14px;color:#9fb3ca;font-size:10px">Nenhum Tipo CTE foi identificado no CSV importado.</div>`}
-    `;
-
-    menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
-      input.addEventListener("change",() => {
-        atualizarResumoTipoCte();
-        aplicarFiltros();
-      });
-    });
-
-    $("btnTipoCteTodos")?.addEventListener("click",e => {
-      e.stopPropagation();
-      menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => input.checked = true);
-      atualizarResumoTipoCte();
-      aplicarFiltros();
-    });
-
-    $("btnTipoCteLimpar")?.addEventListener("click",e => {
-      e.stopPropagation();
-      menu.querySelectorAll('input[name="tipoCteOption"]').forEach(input => input.checked = false);
-      atualizarResumoTipoCte();
-      aplicarFiltros();
-    });
-
-    atualizarResumoTipoCte();
-  }
-
   function tiposCteSelecionados(){
     return [...document.querySelectorAll('input[name="tipoCteOption"]:checked')]
       .map(input => chaveTipoCte(input.value))
@@ -1908,7 +1918,9 @@ function lerMapaGruposOrdens(){
     }
 
     if(selecionados.length === 1){
-      resumo.textContent = selecionados[0];
+      const input = document.querySelector('input[name="tipoCteOption"]:checked');
+      const label = input?.closest("label")?.querySelector("span")?.textContent;
+      resumo.textContent = label || selecionados[0];
       return;
     }
 
@@ -2068,6 +2080,7 @@ function lerMapaGruposOrdens(){
     const volume = soma(filtrados,"volume");
     const faturamento = soma(filtrados,"freteEmpresa");
     const margemLiquida = soma(filtrados,"margemLiquida");
+    const margemReal = soma(filtrados,"margemReal");
     const margemPct = faturamento > 0 ? (margemLiquida / faturamento) * 100 : 0;
     const freteMedio = volume > 0 ? faturamento / volume : 0;
 
@@ -2076,6 +2089,7 @@ function lerMapaGruposOrdens(){
     $("kpiFreteMedio").textContent = moeda(freteMedio);
     $("kpiFaturamento").textContent = moeda(faturamento);
     $("kpiMargemLiquida").textContent = moeda(margemLiquida);
+    $("kpiMargemReal").textContent = moeda(margemReal);
     $("kpiViagens").textContent = distinct(filtrados,"viagem").toLocaleString("pt-BR");
   }
 
@@ -3197,31 +3211,6 @@ function lerMapaGruposOrdens(){
     btnTipo?.addEventListener("click",e => {
       e.stopPropagation();
       multi?.classList.toggle("open");
-    });
-
-    document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
-      input.addEventListener("change",() => {
-        atualizarResumoTipoCte();
-        aplicarFiltros();
-      });
-    });
-
-    $("btnTipoCteTodos")?.addEventListener("click",e => {
-      e.stopPropagation();
-      document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
-        input.checked = true;
-      });
-      atualizarResumoTipoCte();
-      aplicarFiltros();
-    });
-
-    $("btnTipoCteLimpar")?.addEventListener("click",e => {
-      e.stopPropagation();
-      document.querySelectorAll('input[name="tipoCteOption"]').forEach(input => {
-        input.checked = false;
-      });
-      atualizarResumoTipoCte();
-      aplicarFiltros();
     });
 
     document.addEventListener("click",e => {

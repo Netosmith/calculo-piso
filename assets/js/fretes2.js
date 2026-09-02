@@ -1833,16 +1833,22 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     if (!validateModalPayload(payload)) return;
 
     try {
-      showModalLoading("Salvando Frete...", "Sincronizando. Aguarde alguns segundos.");
+      showModalLoading("Salvando Frete...", "Gravando o frete. Aguarde alguns segundos.");
       setStatus("💾 Salvando...");
 
+      // A confirmação do CREATE/UPDATE é suficiente para liberar o usuário.
+      // A recarga completa da tabela acontece depois, sem segurar o modal aberto.
       await saveFrete(payload);
 
-      showModalLoading("Frete salvo com sucesso ✓", "Atualizando a lista de fretes.");
-      await atualizar();
-
       modalShow(false);
-      setStatus("✅ Salvo");
+      setStatus("✅ Frete salvo");
+
+      setTimeout(() => {
+        atualizar().catch((erroAtualizacao) => {
+          console.error("[fretes2] frete salvo, mas a atualização da lista falhou:", erroAtualizacao);
+          setStatus("✅ Salvo • atualize a lista se necessário");
+        });
+      }, 80);
     } catch (e) {
       setStatus("❌ Erro ao salvar");
       alert(e.message || "Falha ao salvar.");

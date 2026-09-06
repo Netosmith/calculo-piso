@@ -692,6 +692,80 @@
         0 0 6px rgba(0,0,0,.50);
     }
 
+
+    .nfPreviewMeta{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;
+    }
+    .nfPreviewMeta .nfProductBadge{margin-bottom:0}
+    .nfModelSelector{
+      display:inline-flex;gap:4px;padding:3px;border:1px solid #d1d5db;
+      border-radius:9px;background:#f8fafc;
+    }
+    .nfModelBtn{
+      height:24px;min-width:58px;padding:0 8px;border:1px solid transparent;
+      border-radius:6px;background:transparent;color:#475569;font-size:9px;
+      font-weight:950;cursor:pointer;
+    }
+    .nfModelBtn.active{
+      background:#0f2e6e;border-color:#0f2e6e;color:#fff;
+    }
+
+    .nfArtCard:not(.modelo2) .previewFilial{display:none!important}
+
+    .nfArtCard.modelo2{
+      width:240px;height:360px;
+    }
+    .nfArtCard.modelo2 .nfArtScale{
+      width:380px;height:570px;transform:scale(.63158);transform-origin:top left;
+    }
+    .nfArtCard.modelo2 .previewColeta,
+    .nfArtCard.modelo2 .previewDescarga,
+    .nfArtCard.modelo2 .previewPrice,
+    .nfArtCard.modelo2 .previewNote,
+    .nfArtCard.modelo2 .previewContacts,
+    .nfArtCard.modelo2 .previewFilial{
+      position:absolute;z-index:2;box-sizing:border-box;margin:0;padding:0;
+      font-family:Arial,Helvetica,sans-serif;text-shadow:none!important;filter:none!important;
+    }
+    .nfArtCard.modelo2 .previewColeta{top:47.8%;left:26%;width:67.5%;text-align:left}
+    .nfArtCard.modelo2 .previewDescarga{top:57.25%;left:26%;width:67.5%;text-align:left}
+    .nfArtCard.modelo2 .previewValue{
+      color:#082f6b!important;font-size:23px;line-height:1.02;font-weight:900;
+      text-transform:uppercase;white-space:nowrap;overflow:visible;text-overflow:clip;
+      text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewSmall{
+      margin-top:2px;color:#17662a!important;font-size:15px;line-height:1.04;
+      font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:visible;
+      text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewProduct{display:none!important}
+    .nfArtCard.modelo2 .previewPrice{
+      top:75.15%;left:50%;width:39.5%;color:#fff!important;font-size:22px;line-height:1;
+      font-weight:900;text-align:left;text-transform:uppercase;white-space:nowrap;
+      overflow:visible;text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewFilial{
+      display:block;top:87.1%;left:18.3%;width:31%;color:#082f6b!important;font-size:13px;
+      line-height:1.02;font-weight:900;text-align:left;text-transform:uppercase;
+      white-space:nowrap;overflow:visible;text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewContacts{
+      top:83.65%;left:56%;width:41.5%;color:#082f6b!important;font-size:10.5px;
+      line-height:1.28;font-weight:900;text-transform:uppercase;text-align:left;
+      text-shadow:none!important;overflow:visible;
+    }
+    .nfArtCard.modelo2 .previewContactLine{
+      color:#082f6b!important;font-size:10.5px;font-weight:900;line-height:1.28;
+      white-space:nowrap;overflow:visible;text-overflow:clip;text-shadow:none!important;
+    }
+    .nfArtCard.modelo2 .previewNote{
+      top:94.15%;left:8.6%;width:82.8%;min-height:3.9%;display:flex;align-items:center;
+      justify-content:center;color:#fff!important;font-size:13px;line-height:1.12;font-weight:800;
+      text-align:center;text-transform:uppercase;white-space:normal;overflow:hidden;
+      text-overflow:clip;text-shadow:none!important;padding:0 3%;
+    }
+
     .nfPreviewButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
 
     .nfPreviewButtons button{
@@ -820,6 +894,11 @@
       filter:grayscale(.1);
     }
 
+
+    .nfAdherenceBadge{
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+    }
   </style>
 </head>
 
@@ -892,7 +971,6 @@
                 <th>Destino</th>
                 <th>UF</th>
                 <th>Descarga</th>
-                <th class="num">Volume</th>
                 <th class="num">Vlr Empresa</th>
                 <th class="num">Vlr Motorista</th>
                 <th class="num">KM</th>
@@ -905,8 +983,11 @@
                 <th>Produto</th>
                 <th>ICMS</th>
                 <th class="num">Pedido SAT</th>
+                <th class="num">Cadência</th>
                 <th class="num">Porta</th>
                 <th class="num">Trânsito</th>
+                <th class="num">Carregado</th>
+                <th class="num">Aderência %</th>
                 <th>Status</th>
                 <th>Observações</th>
                 <th class="thUltimaAlteracao">Última Alteração</th>
@@ -990,13 +1071,14 @@
             <div class="field"><label>Produto</label><input id="mProduto" /></div>
             <div class="field"><label>KM</label><input id="mKM" inputmode="decimal" /></div>
             <div class="field"><label>Pedágio/Eixo</label><input id="mPed" inputmode="decimal" /></div>
-            <div class="field"><label>Volume</label><input id="mVolume" inputmode="decimal" /></div>
+            <div class="field"><label>Cadência</label><input id="mCadencia" inputmode="numeric" /></div>
             <div class="field"><label>ICMS</label><input id="mICMS" inputmode="decimal" /></div>
             <div class="field"><label>Vlr Empresa</label><input id="mEmpresa" inputmode="decimal" /></div>
             <div class="field"><label>Vlr Motorista</label><input id="mMotorista" inputmode="decimal" /></div>
             <div class="field"><label>Pedido SAT</label><input id="mSat" /></div>
-            <div class="field"><label>Porta</label><input id="mPorta" /></div>
-            <div class="field"><label>Trânsito</label><input id="mTransito" /></div>
+            <div class="field"><label>Porta</label><input id="mPorta" inputmode="numeric" /></div>
+            <div class="field"><label>Trânsito</label><input id="mTransito" inputmode="numeric" /></div>
+            <div class="field"><label>Carregado</label><input id="mCarregado" inputmode="numeric" /></div>
             <div class="field">
               <label>Status</label>
               <select id="mStatus">
@@ -1030,7 +1112,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/fretes2.js?v=12"></script>
+  <script src="../assets/js/fretes2.js?v=13"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

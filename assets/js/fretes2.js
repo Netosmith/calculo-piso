@@ -1400,8 +1400,14 @@ function formatDateTimeBR(value) {
   }
 
   function restorePreviewModel() {
-    STATE.previewModel = 1;
-    applyPreviewModelClass();
+    let modelo = 1;
+
+    try {
+      modelo = Number(localStorage.getItem("nf_divulgacao_modelo")) === 2 ? 2 : 1;
+    } catch {}
+
+    STATE.previewModel = modelo;
+    syncPreviewModelUI();
   }
 
   function ajustarFonteModelo2(target, field, value) {

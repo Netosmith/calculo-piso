@@ -451,7 +451,7 @@
       throw new Error("API segura do Portal indisponível.");
     }
 
-    if (typeof canAccessFeature === "function" && !canAccessFeature("fretes")) {
+    if (typeof canAccessFeature === "function" && !canAccessFeature("fretes2")) {
       const error = new Error("Seu perfil não possui permissão para consultar os fretes.");
       error.status = 403;
       throw error;
@@ -496,17 +496,11 @@ function formatDateTimeBR(value) {
     const raw = safeText(value);
     if (!raw) return "";
 
-    // A partir de agora, o Apps Script deve gravar a coluna ultimaAlteracao
-    // já formatada como dd/MM/yyyy HH:mm. Então, quando vier nesse padrão,
-    // apenas mostramos o texto como está.
     if (/^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}/.test(raw)) return raw;
     if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) return raw;
     if (/^\d{2}\/\d{2}\/\d{2}/.test(raw)) return raw;
-
-    // Evita mostrar timestamps antigos do updatedAt/Date.now como números soltos.
     if (/^\d{12,}$/.test(raw)) return "";
 
-    // Compatibilidade: se algum retorno vier como ISO, exibe em pt-BR.
     const d = new Date(raw);
     if (Number.isNaN(d.getTime())) return raw;
 
@@ -553,7 +547,6 @@ function formatDateTimeBR(value) {
     td.textContent = getUltimaAlteracao(row) || "-";
     return td;
   }
-
 
   function nowUltimaAlteracaoBR() {
     const d = new Date();
@@ -642,7 +635,6 @@ function formatDateTimeBR(value) {
       data: result?.data ?? {}
     };
   }
-
 
   function normalizeDirectoryData(data) {
     const regionais = Array.isArray(data?.regionais)
@@ -1158,7 +1150,6 @@ function formatDateTimeBR(value) {
           return;
         }
 
-        
         if (["e5", "e6", "e7", "e4", "e9"].includes(col.key)) {
           tr.appendChild(buildPillSNCell(row[col.key]));
           return;
@@ -1329,52 +1320,39 @@ function formatDateTimeBR(value) {
   }
 
   function divulgacaoDataFromRow(row) {
-  const produto = upper(row.produto || "SOJA");
-  const family = productFamilyNF(produto);
-  const contatos = contactsFromFilial(row);
-  const modelo = Number(STATE.previewModel) === 2 ? 2 : 1;
-  const mapaModelo = PRODUCT_BG_MAP_NF[modelo] || PRODUCT_BG_MAP_NF[1];
+    const produto = upper(row.produto || "SOJA");
+    const family = productFamilyNF(produto);
+    const contatos = contactsFromFilial(row);
+    const modelo = Number(STATE.previewModel) === 2 ? 2 : 1;
+    const mapaModelo = PRODUCT_BG_MAP_NF[modelo] || PRODUCT_BG_MAP_NF[1];
 
-  const valor = safeText(row.valorMotorista)
-    ? formatMoneyBR(row.valorMotorista)
-    : "A COMBINAR";
+    const valor = safeText(row.valorMotorista)
+      ? formatMoneyBR(row.valorMotorista)
+      : "A COMBINAR";
 
-  return {
-    // COLETA = SOMENTE ORIGEM
-    coletaCidade: upper(row.origem || ""),
-
-    coletaLocal: upper(row.coleta || ""),
-
-    // DESCARGA = DESTINO + UF
-    descargaCidade: cityUf(row, "destino", "uf"),
-
-    descargaLocal: upper(row.descarga || ""),
-
-    produto,
-    productFamily: family,
-
-    modelo,
-    bg: mapaModelo[family] || mapaModelo.SOJA,
-
-    valor,
-
-    obs: upper(row.obs || ""),
-    filial: upper(row.filial || ""),
-
-    contatos,
-
-    contatoPrincipal: upper(row.contato || ""),
-
-    phone: extractPhoneBR(row.contato),
-
-    filename:
-      `MOD${modelo}_` +
-      `${family}_` +
-      `${normalizeKeyNF(row.origem)}_` +
-      `${normalizeKeyNF(row.destino)}_` +
-      `${normalizeKeyNF(valor)}.jpg`
-  };
-}
+    return {
+      coletaCidade: upper(row.origem || ""),
+      coletaLocal: upper(row.coleta || ""),
+      descargaCidade: cityUf(row, "destino", "uf"),
+      descargaLocal: upper(row.descarga || ""),
+      produto,
+      productFamily: family,
+      modelo,
+      bg: mapaModelo[family] || mapaModelo.SOJA,
+      valor,
+      obs: upper(row.obs || ""),
+      filial: upper(row.filial || ""),
+      contatos,
+      contatoPrincipal: upper(row.contato || ""),
+      phone: extractPhoneBR(row.contato),
+      filename:
+        `MOD${modelo}_` +
+        `${family}_` +
+        `${normalizeKeyNF(row.origem)}_` +
+        `${normalizeKeyNF(row.destino)}_` +
+        `${normalizeKeyNF(valor)}.jpg`
+    };
+  }
 
   function setText(id, txt) {
     const el = document.getElementById(id);
@@ -1473,45 +1451,44 @@ function formatDateTimeBR(value) {
   }
 
   function buildFreteBloco(row) {
-  const origem = upper(row.origem || "");
-  const coleta = upper(row.coleta || "");
-  const destino = cityUf(row, "destino", "uf");
-  const descarga = upper(row.descarga || "");
-  const produto = upper(row.produto || "");
+    const origem = upper(row.origem || "");
+    const coleta = upper(row.coleta || "");
+    const destino = cityUf(row, "destino", "uf");
+    const descarga = upper(row.descarga || "");
+    const produto = upper(row.produto || "");
 
-  const valor = safeText(row.valorMotorista)
-    ? formatMoneyBR(row.valorMotorista)
-    : "A COMBINAR";
+    const valor = safeText(row.valorMotorista)
+      ? formatMoneyBR(row.valorMotorista)
+      : "A COMBINAR";
 
-  return [
-    `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`,
-    `🏁 ${destino}${descarga ? ` (${descarga})` : ""}`,
-    `💢 ${produto}`,
-    `💰${valor}`
-  ].join("\n");
-}
+    return [
+      `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`,
+      `🏁 ${destino}${descarga ? ` (${descarga})` : ""}`,
+      `💢 ${produto}`,
+      `💰${valor}`
+    ].join("\n");
+  }
 
-function buildMessage(row) {
-  const selected = getSelectedRows();
+  function buildMessage(row) {
+    const selected = getSelectedRows();
 
-  const rows = selected.length
-    ? selected
-    : row
-      ? [row]
-      : STATE.previewRow
-        ? [STATE.previewRow]
-        : [];
+    const rows = selected.length
+      ? selected
+      : row
+        ? [row]
+        : STATE.previewRow
+          ? [STATE.previewRow]
+          : [];
 
-  if (!rows.length) return "";
+    if (!rows.length) return "";
 
-  return [
-    "🇸🇱🇸🇱🇸🇱 NOVA FROTA 🇸🇱🇸🇱🇸🇱",
-    "✅ FRETES LIBERADOS",
-    "",
-    rows.map(buildFreteBloco).join("\n🟰🟰🟰🟰🟰🟰🟰🟰🟰\n")
-  ].join("\n");
-}
-
+    return [
+      "🇸🇱🇸🇱🇸🇱 NOVA FROTA 🇸🇱🇸🇱🇸🇱",
+      "✅ FRETES LIBERADOS",
+      "",
+      rows.map(buildFreteBloco).join("\n🟰🟰🟰🟰🟰🟰🟰🟰🟰\n")
+    ].join("\n");
+  }
 
   function loadHtml2CanvasNF() {
     return new Promise((resolve, reject) => {
@@ -1668,34 +1645,35 @@ function buildMessage(row) {
   }
 
   function updateBulkUI() {
-  const selected = getSelectedRows();
-  const n = selected.length;
+    const selected = getSelectedRows();
+    const n = selected.length;
 
-  const a = document.getElementById("nfSelecionadosTxt");
-  const b = document.getElementById("nfArtesTxt");
-  const c = document.getElementById("nfMsgsTxt");
+    const a = document.getElementById("nfSelecionadosTxt");
+    const b = document.getElementById("nfArtesTxt");
+    const c = document.getElementById("nfMsgsTxt");
 
-  if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
-  if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
-  if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
+    if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
+    if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
+    if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
 
-  const selectAll = document.getElementById("nfSelectAll");
-  if (selectAll) {
-    const visible = getFilteredRows().filter((r) => safeText(r.id));
-    selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
-    selectAll.indeterminate =
-      visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
+    const selectAll = document.getElementById("nfSelectAll");
+    if (selectAll) {
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
+      selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
+      selectAll.indeterminate =
+        visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
+    }
+
+    const msg = document.getElementById("nfMensagemPronta");
+    if (msg) {
+      msg.value = selected.length
+        ? buildMessage()
+        : STATE.previewRow
+          ? buildMessage(STATE.previewRow)
+          : "";
+    }
   }
 
-  const msg = document.getElementById("nfMensagemPronta");
-  if (msg) {
-    msg.value = selected.length
-      ? buildMessage()
-      : STATE.previewRow
-        ? buildMessage(STATE.previewRow)
-        : "";
-  }
-}
   function renderStats(rows) {
     rows = rows || [];
 
@@ -1736,21 +1714,21 @@ function buildMessage(row) {
   }
 
   async function enviarWhatsAppPacote() {
-  const rows = getSelectedRows();
+    const rows = getSelectedRows();
 
-  if (!rows.length) {
-    alert("Selecione uma ou mais linhas.");
-    return;
+    if (!rows.length) {
+      alert("Selecione uma ou mais linhas.");
+      return;
+    }
+
+    const msg = buildMessage();
+
+    try {
+      await navigator.clipboard.writeText(msg);
+    } catch {}
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   }
-
-  const msg = buildMessage();
-
-  try {
-    await navigator.clipboard.writeText(msg);
-  } catch {}
-
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-}
 
   function buildDivulgacaoHtml(rows) {
     const linhas = rows.map((row) => `
@@ -1865,7 +1843,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     el.style.display = show ? "flex" : "none";
     el.setAttribute("aria-hidden", show ? "false" : "true");
   }
-
 
   function getModalLoadingElements() {
     return {
@@ -2384,7 +2361,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   function bindButtons() {
-    // Amarração direta dos botões principais
     $("#btnReloadFromSheets")?.addEventListener("click", atualizar);
     $("#btnNew")?.addEventListener("click", openNewModal);
     $("#btnCloseModal")?.addEventListener("click", closeModal);
@@ -2396,8 +2372,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     $("#btnShareCliente")?.addEventListener("click", abrirShareClientes);
     $("#btnShare")?.addEventListener("click", abrirShareClientes);
 
-    // Segurança extra: captura por delegação.
-    // Isso resolve casos de botão recriado, botão duplicado ou listener perdido.
     if (!document.body.dataset.nfFretesDelegatedClicks) {
       document.body.dataset.nfFretesDelegatedClicks = "1";
 
@@ -2601,8 +2575,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     setStatus("🔐 Validando sessão...");
     await waitForPortalReady();
 
-    // A tabela é a informação principal da tela e deve começar primeiro.
-    // Os cadastros usam os dados locais de contingência e são atualizados em paralelo.
     const fretesPromise = atualizar();
     void carregarCadastrosFretes({ background: true })
       .then(() => fillModalSelectors())

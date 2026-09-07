@@ -318,8 +318,17 @@ function featuresForProfile(profile){
 }
 
 function canAccessFeature(featureKey){
-  const feature = String(featureKey || "").trim().toLowerCase();
+  let feature = String(featureKey || "").trim().toLowerCase();
   const profile = getProfile();
+
+  // Compatibilidade da tela Fretes MT:
+  // o fretes2.js ainda valida "fretes" na inicialização, mas nesta página
+  // a permissão correta é "fretes2". A conversão é limitada à rota Fretes2,
+  // sem liberar o módulo Fretes GO para o perfil MT.
+  const currentPath = String(window.location.pathname || "").toLowerCase();
+  if(feature === "fretes" && currentPath.endsWith("/fretes2.html")){
+    feature = "fretes2";
+  }
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.
   // Assim, novos módulos não precisam ser adicionados manualmente ao array ADMINISTRADOR.

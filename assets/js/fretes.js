@@ -209,7 +209,7 @@
     { key: "filial", label: "Filial" },
     { key: "cliente", label: "Cliente", isColorTag: "cliente" },
     { key: "origem", label: "Origem" },
-    { key: "coleta", label: "Coleta" },
+    { key: "coleta", label: "Coleta", isColeta: true },
     { key: "contato", label: "Contato", isContato: true, isColorTag: "contato" },
     { key: "destino", label: "Destino" },
     { key: "uf", label: "UF" },
@@ -244,6 +244,7 @@
     contato: () => document.getElementById("mContato"),
     origem: () => document.getElementById("mOrigem"),
     coleta: () => document.getElementById("mColeta"),
+    localizacao: () => document.getElementById("mLocalizacao"),
     destino: () => document.getElementById("mDestino"),
     uf: () => document.getElementById("mUF"),
     descarga: () => document.getElementById("mDescarga"),
@@ -589,6 +590,61 @@ function formatDateTimeBR(value) {
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+
+  const NF_MAP_RE = /(?:^|\n)\[\[NF_MAP:([^\]]+)\]\]/i;
+
+  function extractLocationFromObs(obs) {
+    const match = String(obs ?? "").match(NF_MAP_RE);
+    return match ? safeText(match[1]) : "";
+  }
+
+  function cleanObsText(obs) {
+    return String(obs ?? "")
+      .replace(/(?:^|\n)\[\[NF_MAP:[^\]]+\]\]/ig, "")
+      .trim();
+  }
+
+  function encodeObsLocation(obs, location) {
+    const clean = cleanObsText(obs);
+    const loc = safeText(location);
+    if (!loc) return clean;
+    return `${clean}${clean ? "\n" : ""}[[NF_MAP:${loc}]]`;
+  }
+
+  function getRowLocation(row) {
+    if (!row) return "";
+    return safeText(row.localizacao || extractLocationFromObs(row.obs));
+  }
+
+  function buildColetaCell(row) {
+    const td = document.createElement("td");
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.alignItems = "center";
+    wrap.style.gap = "5px";
+
+    const location = getRowLocation(row);
+    if (location) {
+      const a = document.createElement("a");
+      a.href = location;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "🗺️";
+      a.title = "Abrir localização da coleta";
+      a.style.textDecoration = "none";
+      a.style.fontSize = "14px";
+      a.style.lineHeight = "1";
+      a.addEventListener("click", (event) => event.stopPropagation());
+      wrap.appendChild(a);
+    }
+
+    const text = document.createElement("span");
+    text.textContent = safeText(row.coleta);
+    wrap.appendChild(text);
+    td.appendChild(wrap);
+    return td;
   }
 
   function ceil0(n) {
@@ -1070,6 +1126,11 @@ function formatDateTimeBR(value) {
           return;
         }
 
+        if (col.isColeta) {
+          tr.appendChild(buildColetaCell(row));
+          return;
+        }
+
         if (col.isContato) {
           tr.appendChild(buildContatoCell(row.contato || ""));
           return;
@@ -1111,6 +1172,8 @@ function formatDateTimeBR(value) {
           td.appendChild(createColorTag(row[col.key], col.isColorTag));
         } else if (col.isMoney) {
           td.textContent = safeText(row[col.key]) ? formatMoneyBR(row[col.key]) : "";
+        } else if (col.key === "obs") {
+          td.textContent = cleanObsText(row[col.key]);
         } else {
           td.textContent = safeText(row[col.key]);
         }
@@ -1280,7 +1343,7 @@ function formatDateTimeBR(value) {
 
     valor,
 
-    obs: upper(row.obs || ""),
+    obs: upper(cleanObsText(row.obs || "")),
     filial: upper(row.filial || ""),
 
     contatos,
@@ -1397,6 +1460,7 @@ function formatDateTimeBR(value) {
   function buildFreteBloco(row) {
   const origem = upper(row.origem || "");
   const coleta = upper(row.coleta || "");
+  const localizacao = getRowLocation(row);
   const destino = cityUf(row, "destino", "uf");
   const descarga = upper(row.descarga || "");
   const produto = upper(row.produto || "");
@@ -1405,12 +1469,19 @@ function formatDateTimeBR(value) {
     ? formatMoneyBR(row.valorMotorista)
     : "A COMBINAR";
 
-  return [
-    `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`,
+  const linhas = [
+    `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`
+  ];
+
+  if (localizacao) linhas.push(`🗺️  ${localizacao}`);
+
+  linhas.push(
     `🏁 ${destino}${descarga ? ` (${descarga})` : ""}`,
     `💢 ${produto}`,
     `💰${valor}`
-  ].join("\n");
+  );
+
+  return linhas.join("\n");
 }
 
 function buildMessage(row) {
@@ -1841,7 +1912,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     if (MODAL.title()) MODAL.title().textContent = "Novo Frete";
 
     [
-      MODAL.origem(), MODAL.coleta(), MODAL.destino(), MODAL.uf(), MODAL.descarga(),
+      MODAL.origem(), MODAL.coleta(), MODAL.localizacao(), MODAL.destino(), MODAL.uf(), MODAL.descarga(),
       MODAL.produto(), MODAL.km(), MODAL.ped(), MODAL.volume(), MODAL.icms(),
       MODAL.empresa(), MODAL.motorista(), MODAL.sat(), MODAL.porta(),
       MODAL.transito(), MODAL.obs()
@@ -1911,6 +1982,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
     if (MODAL.origem()) MODAL.origem().value = safeText(row.origem);
     if (MODAL.coleta()) MODAL.coleta().value = safeText(row.coleta);
+    if (MODAL.localizacao()) MODAL.localizacao().value = getRowLocation(row);
     if (MODAL.destino()) MODAL.destino().value = safeText(row.destino);
     if (MODAL.uf()) MODAL.uf().value = safeText(row.uf);
     if (MODAL.descarga()) MODAL.descarga().value = safeText(row.descarga);
@@ -1925,7 +1997,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     if (MODAL.porta()) MODAL.porta().value = safeText(row.porta);
     if (MODAL.transito()) MODAL.transito().value = safeText(row.transito);
     if (MODAL.status()) MODAL.status().value = normalizeFreteStatus(row.status) || "LIBERADO";
-    if (MODAL.obs()) MODAL.obs().value = safeText(row.obs);
+    if (MODAL.obs()) MODAL.obs().value = cleanObsText(row.obs);
   }
 
   function collectModalPayload() {
@@ -1950,7 +2022,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       porta: safeText(MODAL.porta()?.value),
       transito: safeText(MODAL.transito()?.value),
       status: normalizeFreteStatus(MODAL.status()?.value),
-      obs: upperKeepSpaces(MODAL.obs()?.value).trim(),
+      localizacao: safeText(MODAL.localizacao()?.value),
+      obs: encodeObsLocation(
+        upperKeepSpaces(MODAL.obs()?.value).trim(),
+        safeText(MODAL.localizacao()?.value)
+      ),
     };
   }
 

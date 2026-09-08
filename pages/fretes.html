@@ -1065,6 +1065,10 @@
             </div>
             <div class="field"><label>Origem</label><input id="mOrigem" /></div>
             <div class="field"><label>Coleta</label><input id="mColeta" /></div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Localização da coleta (Google Maps)</label>
+              <input id="mLocalizacao" type="url" placeholder="https://maps.app.goo.gl/..." style="text-transform:none;" />
+            </div>
             <div class="field"><label>Destino</label><input id="mDestino" /></div>
             <div class="field"><label>UF</label><input id="mUF" /></div>
             <div class="field"><label>Descarga</label><input id="mDescarga" /></div>
@@ -1111,7 +1115,7 @@
 
   <script src="../assets/js/api.js?v=5"></script>
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/fretes.js?v=15"></script>
+  <script src="../assets/js/fretes.js?v=16"></script>
   <script>
     bindLogoutButton();
   </script>

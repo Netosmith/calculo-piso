@@ -18,26 +18,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update Fretes
+      - name: Update Fretes asset version
         run: python .github/scripts/bump_fretes_asset_version.py
 
-      - name: Validate JavaScript
-        run: node --check assets/js/fretes.js
-
-      - name: Validate location field
-        run: |
-          grep -F 'id="mLocalizacao"' pages/fretes.html
-          grep -F 'buildColetaCell' assets/js/fretes.js
-          grep -F '🗺️  ${localizacao}' assets/js/fretes.js
+      - name: Validate target
+        run: grep -F '<script src="../assets/js/fretes.js?v=12"></script>' pages/fretes.html
 
       - name: Commit correction
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pages/fretes.html assets/js/fretes.js
+          git add pages/fretes.html
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "feat(fretes): adiciona localização da coleta"
+          git commit -m "fix(fretes): load corrected script version"
           git push

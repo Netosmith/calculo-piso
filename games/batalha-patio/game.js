@@ -1,9 +1,7 @@
 (() => {
   "use strict";
 
-  // TROQUE pelo endereço do seu Cloudflare Worker publicado.
-  // Ex.: "wss://nova-frota-battle.seu-usuario.workers.dev/ws"
-  const WS_ENDPOINT = "wss://SEU-WORKER.workers.dev/ws";
+  const WS_ENDPOINT = "wss://nova-frota-batalha-patio.luziano-transportes.workers.dev/ws";
 
   const $ = (id) => document.getElementById(id);
   const canvas = $("game");
@@ -61,11 +59,6 @@
   }
 
   function connect(room, name) {
-    if (WS_ENDPOINT.includes("SEU-WORKER")) {
-      toast("Configure o endereço do Worker em game.js.");
-      return;
-    }
-
     roomCode = room.trim().toUpperCase();
     const url = new URL(WS_ENDPOINT);
     url.searchParams.set("room", roomCode);
@@ -196,7 +189,6 @@
     }
     ctx.globalAlpha = 1;
 
-    // galpões ao fundo
     for (let i = 0; i < 4; i++) {
       const x = 70 + i * 245;
       ctx.fillStyle = "#7f99a8";
@@ -229,7 +221,6 @@
     ctx.fillStyle = grd;
     ctx.fill();
 
-    // estrada
     ctx.strokeStyle = "#5b6169";
     ctx.lineWidth = 30;
     ctx.beginPath();
@@ -260,13 +251,11 @@
     ctx.save();
     if (p.hp <= 0) ctx.globalAlpha = .35;
 
-    // sombra
     ctx.fillStyle = "rgba(0,0,0,.18)";
     ctx.beginPath();
     ctx.ellipse(pos.x, pos.y + 21, 26, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // personagem
     ctx.fillStyle = idx === 0 ? "#2479ff" : "#ff5268";
     ctx.fillRect(pos.x - 17, pos.y - 17, 34, 30);
     ctx.fillStyle = "#0b1725";
@@ -277,7 +266,6 @@
     ctx.arc(pos.x, pos.y - 24, 12, 0, Math.PI * 2);
     ctx.fill();
 
-    // canhão
     const facing = idx === 0 ? 1 : -1;
     const a = (p.angle || 45) * Math.PI / 180;
     ctx.strokeStyle = "#1f2933";
@@ -288,7 +276,6 @@
     ctx.lineTo(pos.x + facing * Math.cos(a) * 28, pos.y - 10 - Math.sin(a) * 28);
     ctx.stroke();
 
-    // nome
     ctx.font = "700 13px system-ui";
     ctx.textAlign = "center";
     ctx.fillStyle = "#06223a";
@@ -301,7 +288,7 @@
     if (!anim || !anim.path.length) return;
 
     const now = performance.now();
-    const speed = 85; // pontos de trajetória por segundo
+    const speed = 85;
     const elapsed = (now - anim.lastTime) / 1000;
     if (elapsed > 1 / speed) {
       const advance = Math.max(1, Math.floor(elapsed * speed));

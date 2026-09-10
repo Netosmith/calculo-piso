@@ -1,3 +1,4 @@
+export {GamesRoom} from "../../games/server/rooms.js";
 import { routeRequest } from "./router.js";
 import { handlePreflight, corsHeaders } from "./middleware/cors.js";
 import {
@@ -30,7 +31,7 @@ export default {
 
     try {
       const response = await routeRequest(request, env);
-      if (!cors) return response;
+      if (response.webSocket || !cors) return response;
 
       const headers = new Headers(response.headers);
       Object.entries(cors).forEach(([key, value]) => headers.set(key, value));

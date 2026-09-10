@@ -717,6 +717,7 @@
       </section>
 
       <section class="nf-tools" aria-label="Ferramentas do portal">
+        <a id="novaFrotaGamesCard" class="nf-tool green" href="../games/" hidden style="display:none"><span class="nf-tool-icon" aria-hidden="true">🎮</span><h2>Nova Frota Games</h2><p>Guerra de Escritório: treino e salas multiplayer.</p><span class="nf-tool-arrow">→</span></a>
         <a class="nf-tool" data-feature="piso" href="./calculo-piso.html">
           <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M7 15l4-4 3 2 6-7"/></svg></span><h2>Cálculo de Piso - 1 </h2><p>Faça o cálculo do piso mínimo de frete.</p><span class="nf-tool-arrow">→</span>
         </a>
@@ -1329,5 +1330,6 @@
 
     window.addEventListener("home:metrics",(evento) => atualizarMetricasHome(evento.detail || {}));
   </script>
+  <script src="../games/home-card.js?v=1"></script>
 </body>
 </html>

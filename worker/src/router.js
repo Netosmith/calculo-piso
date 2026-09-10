@@ -1,3 +1,4 @@
+import {gamesController} from "../../games/server/api.js";
 import { healthController } from "./controllers/health.js";
 import { gatewayTestController } from "./controllers/gateway.js";
 import { portalGatewayController } from "./controllers/portal-gateway.js";
@@ -12,6 +13,8 @@ import { notFound, methodNotAllowed } from "./utils/response.js";
 export async function routeRequest(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/v1/games" || path.startsWith("/v1/games/")) return gamesController(request, env);
 
   if (path === "/health") {
     if (request.method !== "GET") return methodNotAllowed(["GET"]);

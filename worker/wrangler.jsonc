@@ -12,5 +12,21 @@
       "binding": "SESSIONS",
       "id": "84be58f84dc54949af897d6f63c69689"
     }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAMES_ROOMS",
+        "class_name": "GamesRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "games-v1",
+      "new_sqlite_classes": [
+        "GamesRoom"
+      ]
+    }
   ]
 }

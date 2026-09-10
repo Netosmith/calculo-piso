@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Batalha de Pátio | Nova Frota Games</title>
+  <meta name="theme-color" content="#07111f" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">NOVA FROTA GAMES</div>
+        <h1>Batalha de Pátio</h1>
+      </div>
+      <div class="status">
+        <span id="connDot" class="dot offline"></span>
+        <span id="connText">Desconectado</span>
+      </div>
+    </header>
+
+    <section id="lobby" class="panel lobby">
+      <div class="hero">
+        <div class="hero-copy">
+          <span class="badge">MVP MULTIPLAYER</span>
+          <h2>Artilharia 2D por turnos, direto no navegador.</h2>
+          <p>Crie uma sala, envie o código para outro jogador e resolvam tudo com ângulo, força, vento e uma bela bola de energia.</p>
+        </div>
+        <div class="hero-orb">🔥</div>
+      </div>
+
+      <div class="join-grid">
+        <label>
+          Seu nome
+          <input id="nameInput" maxlength="18" placeholder="Ex.: Luziano" />
+        </label>
+        <label>
+          Código da sala
+          <input id="roomInput" maxlength="8" placeholder="Ex.: NF1234" />
+        </label>
+        <button id="createBtn" class="btn primary">Criar sala</button>
+        <button id="joinBtn" class="btn">Entrar na sala</button>
+      </div>
+
+      <div class="hint">
+        <strong>Antes de publicar:</strong> troque o endereço do Worker em <code>game.js</code>.
+      </div>
+    </section>
+
+    <section id="gameArea" class="game-area hidden">
+      <div class="game-head panel">
+        <div>
+          <span class="muted">Sala</span>
+          <strong id="roomLabel">----</strong>
+        </div>
+        <div>
+          <span class="muted">Vento</span>
+          <strong id="windLabel">0</strong>
+        </div>
+        <div>
+          <span class="muted">Turno</span>
+          <strong id="turnLabel">Aguardando</strong>
+        </div>
+        <button id="copyRoomBtn" class="btn small">Copiar código</button>
+      </div>
+
+      <div class="arena-wrap panel">
+        <canvas id="game" width="1000" height="560"></canvas>
+        <div id="waitingOverlay" class="overlay">
+          <div class="overlay-card">
+            <div class="spinner"></div>
+            <strong>Aguardando o segundo jogador...</strong>
+            <span>Compartilhe o código da sala.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud">
+        <section class="panel controls">
+          <div class="control-title">
+            <div>
+              <span class="muted">Sua arma</span>
+              <strong>Bola de Energia</strong>
+            </div>
+            <div id="turnPill" class="turn-pill">AGUARDE</div>
+          </div>
+
+          <label>
+            Ângulo <b><span id="angleValue">45</span>°</b>
+            <input id="angleSlider" type="range" min="10" max="80" value="45" />
+          </label>
+
+          <label>
+            Força <b><span id="powerValue">65</span>%</b>
+            <input id="powerSlider" type="range" min="20" max="100" value="65" />
+          </label>
+
+          <button id="fireBtn" class="btn fire" disabled>🔥 DISPARAR</button>
+        </section>
+
+        <section class="panel players">
+          <div id="player1Card" class="player-card">
+            <div class="avatar">1</div>
+            <div class="pinfo">
+              <strong id="p1Name">Jogador 1</strong>
+              <div class="hp-track"><div id="p1Hp" class="hp-fill" style="width:100%"></div></div>
+              <small id="p1HpText">100 HP</small>
+            </div>
+          </div>
+          <div id="player2Card" class="player-card">
+            <div class="avatar">2</div>
+            <div class="pinfo">
+              <strong id="p2Name">Aguardando...</strong>
+              <div class="hp-track"><div id="p2Hp" class="hp-fill" style="width:100%"></div></div>
+              <small id="p2HpText">100 HP</small>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <div id="toast" class="toast"></div>
+  </main>
+
+  <script src="./game.js"></script>
+</body>
+</html>

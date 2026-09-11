@@ -56,3 +56,17 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           GAMES_ACCESS_PASSWORD: ${{ secrets.GAMES_ACCESS_PASSWORD }}
         run: printf '%s' "$GAMES_ACCESS_PASSWORD" | npx wrangler secret put GAMES_ACCESS_PASSWORD
+      - name: Configurar Cine quando os secrets estiverem disponíveis
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CINE_PLAYLIST_URL: ${{ secrets.CINE_PLAYLIST_URL }}
+          CINE_TOKEN_KEY: ${{ secrets.CINE_TOKEN_KEY }}
+          CINE_ALLOWED_ORIGINS: ${{ secrets.CINE_ALLOWED_ORIGINS }}
+        run: |
+          if [ -z "$CINE_PLAYLIST_URL" ] || [ -z "$CINE_TOKEN_KEY" ]; then
+            echo "Cine em preparação: configure CINE_PLAYLIST_URL e CINE_TOKEN_KEY para ativar."
+            exit 0
+          fi
+          node -e 'const e=process.env;if(!e.CINE_PLAYLIST_URL.startsWith("https://")||e.CINE_TOKEN_KEY.length<32)process.exit(1);process.stdout.write(JSON.stringify({CINE_PLAYLIST_URL:e.CINE_PLAYLIST_URL,CINE_TOKEN_KEY:e.CINE_TOKEN_KEY,CINE_ALLOWED_ORIGINS:e.CINE_ALLOWED_ORIGINS||""}))' | npx wrangler secret bulk

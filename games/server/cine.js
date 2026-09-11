@@ -1,0 +1,108 @@
+const enc=new TextEncoder(),dec=new TextDecoder();
+const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
+const mediaPath='/v1/games/cine/media';
+let cached=null;
+export function allowedURL(value,env,base){
+ const url=new URL(value,base),source=new URL(env.CINE_PLAYLIST_URL);
+ const origins=new Set([source.origin,...String(env.CINE_ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean)]);
+ if(url.protocol!=='https:'||url.username||url.password||!origins.has(url.origin)||/^(localhost|.*\.local|.*\.internal|\[.*\]|[\d.]+)$/i.test(url.hostname))throw new Error('Origem de transmissão não configurada.');
+ return url;
+}
+export function parseM3U(text){
+ if(!text.trimStart().startsWith('#EXTM3U'))throw new Error('O provedor não retornou uma lista M3U.');
+ const channels=[];let info=null;
+ for(const raw of text.split(/\r?\n/)){
+  const line=raw.trim();
+  if(line.startsWith('#EXTINF:')){
+   const match=line.match(/^#EXTINF:(?:[^",]|"[^"]*")*,(.*)$/);
+   info={name:(match?.[1]||'Canal').slice(0,160),group:(line.match(/group-title="([^"]*)"/)?.[1]||'Outros').slice(0,100)};
+  }else if(line&&!line.startsWith('#')&&info){channels.push({...info,url:line});info=null;if(channels.length>20000)throw new Error('Lista muito grande. Configure uma lista de até 20 mil canais.');}
+ }
+ return channels;
+}
+async function readText(response,max){
+ const reader=response.body?.getReader();if(!reader)throw new Error('Resposta vazia.');let size=0,text='';const decoder=new TextDecoder();
+ try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>max)throw new Error('Lista excedeu o tamanho permitido.');text+=decoder.decode(value,{stream:true})}return text+decoder.decode()}finally{await reader.cancel()}
+}
+async function upstream(value,env,headers={}){
+ let url=allowedURL(value,env);
+ for(let n=0;n<4;n++){
+  const response=await fetch(url,{headers,redirect:'manual',signal:AbortSignal.timeout(20000)});
+  if([301,302,303,307,308].includes(response.status)){const location=response.headers.get('Location');await response.body?.cancel();if(!location)break;url=allowedURL(location,env,url);continue}
+  if(!response.ok){await response.body?.cancel();throw new Error('O provedor está indisponível ou recusou o acesso.')}
+  return {response,url:url.href};
+ }
+ throw new Error('Redirecionamento inválido do provedor.');
+}
+async function catalog(env){
+ if(cached?.source===env.CINE_PLAYLIST_URL&&cached.expires>Date.now())return cached.channels;
+ const {response}=await upstream(env.CINE_PLAYLIST_URL,env);
+ const parsed=parseM3U(await readText(response,15000000)),channels=[];
+ for(const channel of parsed){
+  // Only HLS playlists; raw MPEG-TS requires conversion by the provider.
+  let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL)}catch{continue}
+  if(!url.pathname.toLowerCase().endsWith('.m3u8'))continue;
+  const digest=await crypto.subtle.digest('SHA-256',enc.encode(url.href));
+  const id=Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  channels.push({...channel,url:url.href,id});
+ }
+ if(!channels.length)throw new Error('A lista não contém canais HTTPS/HLS compatíveis. Solicite ao provedor uma lista com links .m3u8.');
+ cached={source:env.CINE_PLAYLIST_URL,channels,expires:Date.now()+300000};return channels;
+}
+async function key(env){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',enc.encode(env.CINE_TOKEN_KEY)),{name:'AES-GCM'},false,['encrypt','decrypt'])}
+function base64(bytes){return btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')}
+export async function seal(data,env){const iv=crypto.getRandomValues(new Uint8Array(12));const body=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(env),enc.encode(JSON.stringify(data))));return base64(iv)+'.'+base64(body)}
+export async function unseal(token,env,sessionId){
+ if(!token||token.length>16000)throw new Error('Acesso ao vídeo expirado.');
+ const parts=token.split('.');if(parts.length!==2)throw new Error('Acesso inválido.');
+ const bytes=s=>Uint8Array.from(atob(s.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));
+ const data=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(parts[0])},await key(env),bytes(parts[1]))));
+ if(data.session!==sessionId||data.expires<=Date.now())throw new Error('Acesso ao vídeo expirado.');return data;
+}
+export async function rewriteManifest(text,base,issue){
+ if(!text.trimStart().startsWith('#EXTM3U'))throw new Error('Formato de transmissão incompatível.');
+ const lines=[];
+ for(const line of text.split(/\r?\n/)){
+  if(!line.trim()){lines.push(line);continue}
+  if(!line.startsWith('#')){lines.push(await issue(new URL(line.trim(),base).href));continue}
+  // These extensions may contain alternative origin URLs outside URI attributes.
+  if(line.startsWith('#EXT-X-CONTENT-STEERING')||line.startsWith('#EXT-X-DEFINE')||line.startsWith('#EXT-X-SESSION-DATA'))continue;
+  let result='',start=0;
+  for(const match of line.matchAll(/URI="([^"]*)"/g)){result+=line.slice(start,match.index)+'URI="'+await issue(new URL(match[1],base).href)+'"';start=match.index+match[0].length}
+  const rewritten=result+line.slice(start);
+  // Never return an unrecognized absolute upstream URL to the browser.
+  if(/https?:\/\//i.test(rewritten))throw new Error('A transmissão usa metadados não suportados.');
+  lines.push(rewritten);
+ }
+ return lines.join('\n');
+}
+export async function cineController(request,env,sessionId,session){
+ if(!env.CINE_PLAYLIST_URL||!env.CINE_TOKEN_KEY||env.CINE_TOKEN_KEY.length<32)return reply({ok:false,error:'Cine em preparação. A lista de canais ainda precisa ser configurada.'},503);
+ const url=new URL(request.url),path=url.pathname.replace(/\/+$/,'');
+ if(request.method!=='GET')return reply({ok:false,error:'Método não permitido.'},405);
+ try{
+  if(path==='/v1/games/cine/catalog')return reply({ok:true,channels:(await catalog(env)).map(({id,name,group})=>({id,name,group}))});
+  const play=path.match(/^\/v1\/games\/cine\/play\/([a-f0-9]{64})$/);
+  if(play){
+   const channel=(await catalog(env)).find(c=>c.id===play[1]);if(!channel)return reply({ok:false,error:'Canal não encontrado.'},404);
+   const ticket=await seal({url:channel.url,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
+   return reply({ok:true,path:mediaPath+'?ticket='+ticket});
+  }
+  if(path===mediaPath){
+   let grant;try{grant=await unseal(url.searchParams.get('ticket'),env,sessionId)}catch{return reply({ok:false,error:'Acesso ao vídeo expirado. Selecione o canal novamente.'},403)}
+   const headers={},range=request.headers.get('Range');if(range&&/^bytes=\d+-\d*$/.test(range))headers.Range=range;
+   const {response,url:finalURL}=await upstream(grant.url,env,headers);
+   const type=response.headers.get('Content-Type')||'';
+   if(type.includes('mpegurl')||new URL(finalURL).pathname.toLowerCase().endsWith('.m3u8')){
+    const text=await readText(response,2000000);
+    const rewritten=await rewriteManifest(text,finalURL,async target=>{allowedURL(target,env);return mediaPath+'?ticket='+await seal({...grant,url:target},env)});
+    return new Response(rewritten,{headers:{'Content-Type':'application/vnd.apple.mpegurl','Cache-Control':'no-store'}});
+   }
+   if(!/^(video\/|audio\/|application\/octet-stream)/i.test(type)){await response.body?.cancel();throw new Error('Formato de mídia não suportado.')}
+   const outgoing=new Headers({'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+   for(const name of ['Content-Length','Content-Range','Accept-Ranges'])if(response.headers.has(name))outgoing.set(name,response.headers.get(name));
+   return new Response(response.body,{status:response.status,headers:outgoing});
+  }
+  return reply({ok:false,error:'Rota não encontrada.'},404);
+ }catch{return reply({ok:false,error:'Não foi possível carregar a transmissão. Verifique a lista HTTPS/HLS e os servidores autorizados na configuração do Cine.'},502)}
+}

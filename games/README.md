@@ -19,3 +19,7 @@ Depois da publicação, abra `https://portalfrete.net.br/pages/home.html` com AD
 ## Testes
 
 `node --test games/tests/*.test.js` verifica autorização, isolamento das entradas, troca de estados entre dois clientes simulados, bloqueio de início por não-dono e cancelamento por desconexão. Isso não substitui o teste ponta a ponta em Cloudflare com dois navegadores.
+
+## Central e Cine Nova Frota
+
+`/games/` agora abre a central de cards. Guerra de Escritório está em `guerra-de-escritorio.html`, preservando os arquivos JS e as salas existentes; convites antigos com `?sala=` são encaminhados. Cine Nova Frota está em `cine-nova-frota/`, com instruções de ativação em `cine-nova-frota/README.md`. A HOME do Portal permanece sem o card do Games. O Cine exige os mesmos controles de acesso e sua própria configuração de playlist HTTPS/HLS.

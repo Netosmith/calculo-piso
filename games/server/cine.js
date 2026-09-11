@@ -15,14 +15,14 @@ export function parseM3U(text){
  for(const raw of text.split(/\r?\n/)){
   const line=raw.trim();
   if(line.startsWith('#EXTINF:')){
-   const match=line.match(/^#EXTINF:(?:[^",]|"[^"]*")*,(.*)$/);
-   info={name:(match?.[1]||'Canal').slice(0,160),group:(line.match(/group-title="([^"]*)"/)?.[1]||'Outros').slice(0,100)};
+   const match=line.match(/^#EXTINF:(?:[^\",]|\"[^\"]*\")*,(.*)$/);
+   info={name:(match?.[1]||'Canal').slice(0,160),group:(line.match(/group-title=\"([^\"]*)\"/)?.[1]||'Outros').slice(0,100)};
   }else if(line&&!line.startsWith('#')&&info){channels.push({...info,url:line});info=null;if(channels.length>20000)throw new Error('Lista muito grande. Configure uma lista de até 20 mil canais.');}
  }
  return channels;
 }
 async function readText(response,max){
- const reader=response.body?.getReader();if(!reader)throw new Error('Resposta vazia.');let size=0,text='';const decoder=new TextDecoder();
+ const reader=response.body?.getReader();if(!reader)throw new Error('Resposta vazia do provedor.');let size=0,text='';const decoder=new TextDecoder();
  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>max)throw new Error('Lista excedeu o tamanho permitido.');text+=decoder.decode(value,{stream:true})}return text+decoder.decode()}finally{await reader.cancel()}
 }
 async function upstream(value,env,headers={}){
@@ -66,16 +66,31 @@ export async function rewriteManifest(text,base,issue){
  for(const line of text.split(/\r?\n/)){
   if(!line.trim()){lines.push(line);continue}
   if(!line.startsWith('#')){lines.push(await issue(new URL(line.trim(),base).href));continue}
-  // These extensions may contain alternative origin URLs outside URI attributes.
   if(line.startsWith('#EXT-X-CONTENT-STEERING')||line.startsWith('#EXT-X-DEFINE')||line.startsWith('#EXT-X-SESSION-DATA'))continue;
   let result='',start=0;
-  for(const match of line.matchAll(/URI="([^"]*)"/g)){result+=line.slice(start,match.index)+'URI="'+await issue(new URL(match[1],base).href)+'"';start=match.index+match[0].length}
+  for(const match of line.matchAll(/URI=\"([^\"]*)\"/g)){result+=line.slice(start,match.index)+'URI=\"'+await issue(new URL(match[1],base).href)+'\"';start=match.index+match[0].length}
   const rewritten=result+line.slice(start);
-  // Never return an unrecognized absolute upstream URL to the browser.
   if(/https?:\/\//i.test(rewritten))throw new Error('A transmissão usa metadados não suportados.');
   lines.push(rewritten);
  }
  return lines.join('\n');
+}
+function publicFailure(error){
+ const message=String(error?.message||'');
+ const known=new Map([
+  ['Origem de transmissão não configurada.',['ORIGIN_NOT_ALLOWED','O servidor de mídia usado pela lista ainda não está autorizado no Cine.']],
+  ['O provedor está indisponível ou recusou o acesso.',['UPSTREAM_DENIED','O provedor recusou ou não respondeu à solicitação da playlist.']],
+  ['Redirecionamento inválido do provedor.',['BAD_REDIRECT','O provedor redirecionou a playlist para um endereço não permitido.']],
+  ['O provedor não retornou uma lista M3U.',['NOT_M3U','O endereço configurado não retornou uma playlist M3U válida.']],
+  ['Lista muito grande. Configure uma lista de até 20 mil canais.',['LIST_TOO_LARGE','A playlist ultrapassa o limite de 20 mil canais.']],
+  ['Lista excedeu o tamanho permitido.',['LIST_TOO_LARGE','A playlist ultrapassa o limite de tamanho permitido pelo Cine.']],
+  ['A lista não contém canais HLS compatíveis. Use a lista do provedor com output=hls e links .m3u8.',['NO_HLS_CHANNELS','A lista abriu, mas nenhum canal HLS com link .m3u8 foi encontrado.']],
+  ['Formato de transmissão incompatível.',['BAD_MANIFEST','O canal selecionado não retornou um manifesto HLS válido.']],
+  ['Formato de mídia não suportado.',['UNSUPPORTED_MEDIA','O canal usa um formato de mídia que este player não suporta.']],
+  ['A transmissão usa metadados não suportados.',['UNSUPPORTED_HLS_METADATA','O manifesto HLS usa recursos ainda não suportados pelo Cine.']],
+  ['Resposta vazia do provedor.',['EMPTY_RESPONSE','O provedor respondeu sem conteúdo.']]
+ ]);
+ const hit=known.get(message);return hit?{code:hit[0],error:hit[1]}:{code:'CINE_UPSTREAM_ERROR',error:'Não foi possível carregar a transmissão. O diagnóstico seguro não identificou a causa.'};
 }
 export async function cineController(request,env,sessionId,session){
  const url=new URL(request.url),path=url.pathname.replace(/\/+$/,'');
@@ -120,5 +135,5 @@ export async function cineController(request,env,sessionId,session){
    return new Response(response.body,{status:response.status,headers:outgoing});
   }
   return reply({ok:false,error:'Rota não encontrada.'},404);
- }catch{return reply({ok:false,error:'Não foi possível carregar a transmissão. Verifique a lista HLS e os servidores autorizados na configuração do Cine.'},502)}
+ }catch(error){const safe=publicFailure(error);return reply({ok:false,...safe},502)}
 }

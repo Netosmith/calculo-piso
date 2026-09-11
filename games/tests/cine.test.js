@@ -59,7 +59,7 @@ test('catalog and media proxy serve HTTP-origin HLS without disclosing provider 
   const list=await (await cineController(req('catalog'),bindings,'s',session)).json();assert.equal(list.channels.length,1);assert.ok(!JSON.stringify(list).includes('secret'));assert.ok(!JSON.stringify(list).includes('provider'));
   const play=await (await cineController(req('play/'+list.channels[0].id),bindings,'s',session)).json();
   const manifest=await (await cineController(new Request('https://api.example'+play.path),bindings,'s',session)).text();assert.ok(!manifest.includes('provider'));assert.ok(manifest.includes('/v1/games/cine/media?ticket='));
-  const segment=manifest.split('\n').find(l=>l.startsWith('/v1/'));const media=await cineController(new Request('https://api.example'+segment),bindings,'s',session);assert.equal(media.status,200);assert.equal((await media.arrayBuffer()).byteLength,3);assert.equal(calls,4);
+  const segment=manifest.split('\n').find(l=>l.startsWith('/v1/'));const media=await cineController(new Request('https://api.example'+segment),bindings,'s',session);assert.equal(media.status,200);assert.equal((await media.arrayBuffer()).byteLength,3);assert.equal(calls,3);
  }finally{globalThis.fetch=original}
 });
 

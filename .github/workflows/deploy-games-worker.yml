@@ -69,7 +69,7 @@ jobs:
             echo "Cine em preparação: configure CINE_PLAYLIST_URL e CINE_TOKEN_KEY para ativar."
             exit 0
           fi
-          node -e 'const e=process.env;let u;try{u=new URL(e.CINE_PLAYLIST_URL)}catch{process.exit(1)};if(!["http:","https:"].includes(u.protocol)||e.CINE_TOKEN_KEY.length<32)process.exit(1);process.stdout.write(JSON.stringify({CINE_PLAYLIST_URL:e.CINE_PLAYLIST_URL,CINE_TOKEN_KEY:e.CINE_TOKEN_KEY,CINE_ALLOWED_ORIGINS:e.CINE_ALLOWED_ORIGINS||""}))' | npx wrangler secret bulk
+          node -e 'const e=process.env;const clean=v=>{let s=String(v||"").trim().replace(/[\r\n\t]/g,"");if((s.startsWith("\"")&&s.endsWith("\""))||(s.startsWith("\x27")&&s.endsWith("\x27"))||(s.startsWith("`")&&s.endsWith("`")))s=s.slice(1,-1).trim();return s};const p=clean(e.CINE_PLAYLIST_URL);let u;try{u=new URL(p)}catch{console.error("CINE_PLAYLIST_URL inválido");process.exit(1)};if(!["http:","https:"].includes(u.protocol)||e.CINE_TOKEN_KEY.length<32)process.exit(1);process.stdout.write(JSON.stringify({CINE_PLAYLIST_URL:p,CINE_TOKEN_KEY:e.CINE_TOKEN_KEY,CINE_ALLOWED_ORIGINS:clean(e.CINE_ALLOWED_ORIGINS)}))' | npx wrangler secret bulk
       - name: Configurar listas dos dez acessos quando disponíveis
         working-directory: worker
         env:
@@ -93,4 +93,4 @@ jobs:
             echo "Listas dos acessos aguardam configuração."
             exit 0
           fi
-          node -e 'const e=process.env;if(e.CINE_TOKEN_KEY.length<32)process.exit(1);const data={CINE_TOKEN_KEY:e.CINE_TOKEN_KEY};if(e.CINE_ALLOWED_ORIGINS)data.CINE_ALLOWED_ORIGINS=e.CINE_ALLOWED_ORIGINS;for(let i=1;i<=10;i++){const k="CINE_PLAYLIST_"+String(i).padStart(2,"0");if(!e[k])continue;try{if(!["http:","https:"].includes(new URL(e[k]).protocol))throw Error()}catch{console.error("Secret inválido: "+k);process.exit(1)}data[k]=e[k]}process.stdout.write(JSON.stringify(data))' | npx wrangler secret bulk
+          node -e 'const e=process.env;if(e.CINE_TOKEN_KEY.length<32){console.error("CINE_TOKEN_KEY deve ter pelo menos 32 caracteres");process.exit(1)};const clean=v=>{let s=String(v||"").trim().replace(/[\r\n\t]/g,"");if((s.startsWith("\"")&&s.endsWith("\""))||(s.startsWith("\x27")&&s.endsWith("\x27"))||(s.startsWith("`")&&s.endsWith("`")))s=s.slice(1,-1).trim();return s};const data={CINE_TOKEN_KEY:e.CINE_TOKEN_KEY};const origins=clean(e.CINE_ALLOWED_ORIGINS);if(origins)data.CINE_ALLOWED_ORIGINS=origins;for(let i=1;i<=10;i++){const k="CINE_PLAYLIST_"+String(i).padStart(2,"0");const value=clean(e[k]);if(!value)continue;let u;try{u=new URL(value)}catch{console.error("Secret inválido: "+k+". O valor deve conter somente a URL completa.");process.exit(1)}if(!["http:","https:"].includes(u.protocol)){console.error("Secret inválido: "+k+". Use http:// ou https://.");process.exit(1)}data[k]=value;console.log(k+" aceito ("+u.protocol+"//"+u.host+")")}process.stdout.write(JSON.stringify(data))' | npx wrangler secret bulk

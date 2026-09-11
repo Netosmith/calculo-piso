@@ -44,11 +44,11 @@ async function claimSeat(id){
  if(claiming||seat)return;claiming=true;document.querySelectorAll('[data-access]').forEach(b=>b.disabled=true);status('Reservando acesso…');
  try{
   const reservation=await api('/cine/accesses/'+id+'/claim',{});seat={id,lease:reservation.lease};
-  $('accessPicker').hidden=true;$('watchArea').hidden=false;$('activeSeat').textContent='Acesso '+id;
   $('search').value='';$('group').replaceChildren(new Option('Todas as categorias',''));channels=[];limit=80;onlyFavorites=false;$('favorites').setAttribute('aria-pressed','false');render();
   status('Carregando canais…');const selected=seat,data=await api('/cine/catalog'+seatQuery());if(seat!==selected)return;
-  channels=data.channels;for(const group of [...new Set(channels.map(c=>c.group))].sort())$('group').append(new Option(group,group));render();status('Escolha um canal para começar.');
- }catch(error){status(error.message);if(seat){await releaseSeat(false);status(error.message)}}finally{claiming=false;refreshSeats().catch(()=>{})}
+  channels=data.channels;for(const group of [...new Set(channels.map(c=>c.group))].sort())$('group').append(new Option(group,group));
+  $('activeSeat').textContent='Acesso '+id;$('accessPicker').hidden=true;$('watchArea').hidden=false;render();status('Escolha um canal para começar.');
+ }catch(error){const message=error.message;if(seat)await releaseSeat(false);status(message)}finally{claiming=false;refreshSeats().catch(()=>{})}
 }
 async function releaseSeat(update=true){
  stop();const old=seat;seat=null;channels=[];render();$('watchArea').hidden=true;$('accessPicker').hidden=false;

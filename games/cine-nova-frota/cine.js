@@ -20,16 +20,31 @@ function render(){
  if(!filtered.length){const empty=document.createElement('p');empty.className='empty';empty.textContent=channels.length?'Nenhum canal encontrado.':'A lista de canais ainda não está disponível.';$('channels').append(empty)}
  $('more').hidden=filtered.length<=limit;
 }
+function responseError(error,fallback){
+ const text=error?.response?.text;
+ if(text){try{const data=JSON.parse(text);if(data?.error)return data.error}catch{}}
+ const code=error?.response?.code;
+ return code?fallback+' (HTTP '+code+')':fallback;
+}
 async function play(channel){
  stop();const attempt=sequence;current=channel.id;$('channelTitle').textContent=channel.name;$('stop').disabled=false;render();status('Conectando ao canal…');
  try{
   const data=await api('/cine/play/'+channel.id+seatQuery());if(attempt!==sequence)return;
   const source=new URL(data.path,API).href;
+  const probe=await fetch(source,{credentials:'include',cache:'no-store'});
+  if(!probe.ok){
+   let message='Não foi possível abrir a transmissão deste canal.';
+   try{const body=await probe.json();if(body?.error)message=body.error}catch{}
+   throw new Error(message+' (HTTP '+probe.status+')');
+  }
+  const probeType=probe.headers.get('Content-Type')||'';
+  if(probeType.includes('json')){let body=null;try{body=await probe.json()}catch{}throw new Error(body?.error||'O servidor não retornou um manifesto HLS válido.')}
+  await probe.body?.cancel();
   $('placeholder').hidden=true;
   if(window.Hls?.isSupported()){
    hls=new window.Hls({maxBufferLength:30,xhrSetup:xhr=>{xhr.withCredentials=true}});hls.loadSource(source);hls.attachMedia(video);
    hls.on(window.Hls.Events.MANIFEST_PARSED,()=>{if(attempt===sequence)video.play().catch(()=>status('Clique no botão de reprodução para assistir.'))});
-   hls.on(window.Hls.Events.ERROR,(_,error)=>{if(error.fatal&&attempt===sequence){stop();render();status('Não foi possível reproduzir este canal. Selecione novamente ou tente outro canal.')}});
+   hls.on(window.Hls.Events.ERROR,(_,error)=>{if(error.fatal&&attempt===sequence){const message=responseError(error,'Não foi possível reproduzir este canal. Selecione novamente ou tente outro canal.');stop();render();status(message)}});
   }else if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=source;await video.play()}else{throw new Error('Seu navegador não oferece suporte a este formato de vídeo.')}
  }catch(error){if(attempt!==sequence)return;stop();render();status(error.message)}
 }

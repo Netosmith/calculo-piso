@@ -2,6 +2,7 @@ import {configuredSlots,sourceEnvironment,accessCall} from './cine-access.js';
 const enc=new TextEncoder(),dec=new TextDecoder();
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const mediaPath='/v1/games/cine/media';
+const playlistAccept='application/vnd.apple.mpegurl,application/x-mpegURL,audio/mpegurl,audio/x-mpegurl,text/plain,*/*';
 let cached=null;
 export function allowedURL(value,env,base){
  const url=new URL(value,base),source=new URL(env.CINE_PLAYLIST_URL);
@@ -9,8 +10,15 @@ export function allowedURL(value,env,base){
  if(!['http:','https:'].includes(url.protocol)||url.username||url.password||!origins.has(url.origin)||/^(localhost|.*\.local|.*\.internal|\[.*\]|[\d.]+)$/i.test(url.hostname))throw new Error('Origem de transmissão não configurada.');
  return url;
 }
+function normalizeM3U(text){
+ let value=String(text||'').replace(/^\uFEFF/,'');
+ const marker=value.indexOf('#EXTM3U');
+ if(marker<0||marker>4096)throw new Error('O provedor não retornou uma lista M3U.');
+ value=value.slice(marker);
+ return value;
+}
 export function parseM3U(text){
- if(!text.trimStart().startsWith('#EXTM3U'))throw new Error('O provedor não retornou uma lista M3U.');
+ text=normalizeM3U(text);
  const channels=[];let info=null;
  for(const raw of text.split(/\r?\n/)){
   const line=raw.trim();
@@ -37,10 +45,9 @@ async function upstream(value,env,headers={}){
 }
 async function catalog(env){
  if(cached?.source===env.CINE_PLAYLIST_URL&&cached.expires>Date.now())return cached.channels;
- const {response}=await upstream(env.CINE_PLAYLIST_URL,env);
+ const {response}=await upstream(env.CINE_PLAYLIST_URL,env,{'Accept':playlistAccept,'Cache-Control':'no-cache','Pragma':'no-cache'});
  const parsed=parseM3U(await readText(response,15000000)),channels=[];
  for(const channel of parsed){
-  // O Worker pode buscar HTTP ou HTTPS no provedor, mas o player continua exigindo HLS.
   let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL)}catch{continue}
   if(!url.pathname.toLowerCase().endsWith('.m3u8'))continue;
   const digest=await crypto.subtle.digest('SHA-256',enc.encode(url.href));

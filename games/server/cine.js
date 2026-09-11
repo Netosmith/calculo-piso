@@ -1,3 +1,4 @@
+import {configuredSlots,sourceEnvironment,accessCall} from './cine-access.js';
 const enc=new TextEncoder(),dec=new TextDecoder();
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const mediaPath='/v1/games/cine/media';
@@ -77,19 +78,34 @@ export async function rewriteManifest(text,base,issue){
  return lines.join('\n');
 }
 export async function cineController(request,env,sessionId,session){
- if(!env.CINE_PLAYLIST_URL||!env.CINE_TOKEN_KEY||env.CINE_TOKEN_KEY.length<32)return reply({ok:false,error:'Cine em preparação. A lista de canais ainda precisa ser configurada.'},503);
  const url=new URL(request.url),path=url.pathname.replace(/\/+$/,'');
+ const slots=configuredSlots(env);
+ if(path==='/v1/games/cine/accesses'&&request.method==='GET')return accessCall(env,sessionId,session,{action:'list',slots});
+ const action=path.match(/^\/v1\/games\/cine\/accesses\/(0[1-9]|10)\/(claim|heartbeat|release)$/);
+ if(action&&request.method==='POST'){
+  const text=await request.text();if(text.length>256)return reply({ok:false,error:'Pedido inválido.'},400);
+  let data;try{data=JSON.parse(text)}catch{return reply({ok:false,error:'Pedido inválido.'},400)}
+  if(action[2]!=='release'&&!slots.find(s=>s.id===action[1])?.configured)return reply({ok:false,error:'Este acesso está em configuração.'},503);
+  return accessCall(env,sessionId,session,{action:action[2],slot:action[1],lease:data?.lease});
+ }
  if(request.method!=='GET')return reply({ok:false,error:'Método não permitido.'},405);
+ let grant=null;
+ if(path===mediaPath){try{grant=await unseal(url.searchParams.get('ticket'),env,sessionId);if(!grant.slot||!grant.lease||!grant.playback)throw new Error('Reserva ausente')}catch{return reply({ok:false,error:'Acesso ao vídeo expirado. Selecione o canal novamente.'},403)}}
+ const slot=grant?.slot||url.searchParams.get('slot'),lease=grant?.lease||url.searchParams.get('lease');
+ if(!slots.find(s=>s.id===slot)?.configured)return reply({ok:false,error:'Escolha um acesso configurado antes de assistir.'},503);
+ const check=await accessCall(env,sessionId,session,{action:'check',slot,lease,...(grant?{playback:grant.playback}:{})});if(!check.ok)return check;
+ const rootEnv=env;env=sourceEnvironment(env,slot);
  try{
   if(path==='/v1/games/cine/catalog')return reply({ok:true,channels:(await catalog(env)).map(({id,name,group})=>({id,name,group}))});
   const play=path.match(/^\/v1\/games\/cine\/play\/([a-f0-9]{64})$/);
   if(play){
    const channel=(await catalog(env)).find(c=>c.id===play[1]);if(!channel)return reply({ok:false,error:'Canal não encontrado.'},404);
-   const ticket=await seal({url:channel.url,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
+   const start=await accessCall(rootEnv,sessionId,session,{action:'play',slot,lease});if(!start.ok)return start;
+   const {playback}=await start.json();
+   const ticket=await seal({url:channel.url,slot,lease,playback,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
    return reply({ok:true,path:mediaPath+'?ticket='+ticket});
   }
   if(path===mediaPath){
-   let grant;try{grant=await unseal(url.searchParams.get('ticket'),env,sessionId)}catch{return reply({ok:false,error:'Acesso ao vídeo expirado. Selecione o canal novamente.'},403)}
    const headers={},range=request.headers.get('Range');if(range&&/^bytes=\d+-\d*$/.test(range))headers.Range=range;
    const {response,url:finalURL}=await upstream(grant.url,env,headers);
    const type=response.headers.get('Content-Type')||'';

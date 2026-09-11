@@ -70,3 +70,27 @@ jobs:
             exit 0
           fi
           node -e 'const e=process.env;if(!e.CINE_PLAYLIST_URL.startsWith("https://")||e.CINE_TOKEN_KEY.length<32)process.exit(1);process.stdout.write(JSON.stringify({CINE_PLAYLIST_URL:e.CINE_PLAYLIST_URL,CINE_TOKEN_KEY:e.CINE_TOKEN_KEY,CINE_ALLOWED_ORIGINS:e.CINE_ALLOWED_ORIGINS||""}))' | npx wrangler secret bulk
+      - name: Configurar listas dos dez acessos quando disponíveis
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CINE_TOKEN_KEY: ${{ secrets.CINE_TOKEN_KEY }}
+          CINE_ALLOWED_ORIGINS: ${{ secrets.CINE_ALLOWED_ORIGINS }}
+          CINE_PLAYLIST_01: ${{ secrets.CINE_PLAYLIST_01 }}
+          CINE_PLAYLIST_02: ${{ secrets.CINE_PLAYLIST_02 }}
+          CINE_PLAYLIST_03: ${{ secrets.CINE_PLAYLIST_03 }}
+          CINE_PLAYLIST_04: ${{ secrets.CINE_PLAYLIST_04 }}
+          CINE_PLAYLIST_05: ${{ secrets.CINE_PLAYLIST_05 }}
+          CINE_PLAYLIST_06: ${{ secrets.CINE_PLAYLIST_06 }}
+          CINE_PLAYLIST_07: ${{ secrets.CINE_PLAYLIST_07 }}
+          CINE_PLAYLIST_08: ${{ secrets.CINE_PLAYLIST_08 }}
+          CINE_PLAYLIST_09: ${{ secrets.CINE_PLAYLIST_09 }}
+          CINE_PLAYLIST_10: ${{ secrets.CINE_PLAYLIST_10 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CINE_TOKEN_KEY" ]; then
+            echo "Listas dos acessos aguardam configuração."
+            exit 0
+          fi
+          node -e 'const e=process.env;if(e.CINE_TOKEN_KEY.length<32)process.exit(1);const data={CINE_TOKEN_KEY:e.CINE_TOKEN_KEY};if(e.CINE_ALLOWED_ORIGINS)data.CINE_ALLOWED_ORIGINS=e.CINE_ALLOWED_ORIGINS;for(let i=1;i<=10;i++){const k="CINE_PLAYLIST_"+String(i).padStart(2,"0");if(!e[k])continue;try{if(new URL(e[k]).protocol!=="https:")throw Error()}catch{console.error("Secret inválido: "+k);process.exit(1)}data[k]=e[k]}process.stdout.write(JSON.stringify(data))' | npx wrangler secret bulk

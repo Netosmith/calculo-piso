@@ -1,3 +1,4 @@
+import {fixture} from './cine-fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseM3U,allowedURL,seal,unseal,rewriteManifest,cineController} from '../server/cine.js';
@@ -42,10 +43,13 @@ test('catalog and media proxy serve HLS without disclosing provider URLs',async(
   return new Response(new Uint8Array([71,0,0]),{headers:{'Content-Type':'video/mp2t'}});
  };
  try{
-  const session={expiresAt:new Date(Date.now()+60000).toISOString()},req=path=>new Request('https://api.example/v1/games/cine/'+path);
-  const list=await (await cineController(req('catalog'),env,'s',session)).json();assert.equal(list.channels.length,1);assert.ok(!JSON.stringify(list).includes('secret'));assert.ok(!JSON.stringify(list).includes('provider'));
-  const play=await (await cineController(req('play/'+list.channels[0].id),env,'s',session)).json();
-  const manifest=await (await cineController(new Request('https://api.example'+play.path),env,'s',session)).text();assert.ok(!manifest.includes('provider'));assert.ok(manifest.includes('/v1/games/cine/media?ticket='));
-  const segment=manifest.split('\n').find(l=>l.startsWith('/v1/'));const media=await cineController(new Request('https://api.example'+segment),env,'s',session);assert.equal(media.status,200);assert.equal((await media.arrayBuffer()).byteLength,3);assert.equal(calls,3);
+  const session={usuario:'test',expiresAt:new Date(Date.now()+60000).toISOString()};
+  const {room}=fixture();const bindings={...env,CINE_ACCESS:{idFromName:x=>x,get:()=>room}};
+  const claim=await (await cineController(new Request('https://api.example/v1/games/cine/accesses/01/claim',{method:'POST',body:'{}'}),bindings,'s',session)).json();
+  const req=path=>new Request('https://api.example/v1/games/cine/'+path+'?slot=01&lease='+claim.lease);
+  const list=await (await cineController(req('catalog'),bindings,'s',session)).json();assert.equal(list.channels.length,1);assert.ok(!JSON.stringify(list).includes('secret'));assert.ok(!JSON.stringify(list).includes('provider'));
+  const play=await (await cineController(req('play/'+list.channels[0].id),bindings,'s',session)).json();
+  const manifest=await (await cineController(new Request('https://api.example'+play.path),bindings,'s',session)).text();assert.ok(!manifest.includes('provider'));assert.ok(manifest.includes('/v1/games/cine/media?ticket='));
+  const segment=manifest.split('\n').find(l=>l.startsWith('/v1/'));const media=await cineController(new Request('https://api.example'+segment),bindings,'s',session);assert.equal(media.status,200);assert.equal((await media.arrayBuffer()).byteLength,3);assert.equal(calls,3);
  }finally{globalThis.fetch=original}
 });

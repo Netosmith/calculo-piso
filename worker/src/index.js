@@ -1,3 +1,4 @@
+export {CineAccess} from "../../games/server/cine-access.js";
 export {GamesRoom} from "../../games/server/rooms.js";
 import { routeRequest } from "./router.js";
 import { handlePreflight, corsHeaders } from "./middleware/cors.js";

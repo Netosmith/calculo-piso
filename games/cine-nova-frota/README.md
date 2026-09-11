@@ -29,3 +29,19 @@ O Worker transfere o tráfego de vídeo; valide capacidade, plano e condições 
 Após configurar os secrets e publicar: acessar com administrador, informar a senha, abrir Cine, buscar canal, reproduzir, alternar, parar, favoritar, testar tela cheia e expiração de sessão. Confirmar com um canal real do provedor. A integração real não foi validada sem URL HTTPS/HLS e configuração de produção.
 
 HLS.js 1.7.2 distribuído localmente em vendor/ sob licença Apache-2.0 (LICENSE-hls.txt). O player é carregado apenas na tela Cine.
+
+## Dez acessos independentes
+
+A tela do Cine apresenta Acesso 01 até Acesso 10. Cada um deve ter uma **assinatura/lista independente**, com uma conexão disponível. Não use a mesma assinatura com URLs diferentes para multiplicar acessos; isso não aumenta o limite do provedor.
+
+Cadastre as URLs como secrets de GitHub Actions `CINE_PLAYLIST_01`, `CINE_PLAYLIST_02`, …, `CINE_PLAYLIST_10`. Cada valor é a URL HTTPS completa da lista HLS/M3U; nunca faça commit desses valores. Você pode preencher aos poucos. O secret anterior `CINE_PLAYLIST_URL` funciona como alternativa apenas para Acesso 01. `CINE_TOKEN_KEY` continua obrigatório. Origens de CDNs adicionais podem ser configuradas com `CINE_ALLOWED_ORIGINS` ou, diretamente no Worker, `CINE_ALLOWED_ORIGINS_01` até `CINE_ALLOWED_ORIGINS_10`.
+
+Execute **Deploy Games Worker** após cadastrar os secrets. O workflow publica o binding `CINE_ACCESS` e a migração `cine-access-v1`, preservando a migração de Games. Não exclua migrações anteriores. Apenas secrets preenchidos são enviados; remover um valor do GitHub não apaga o secret existente da Cloudflare. Para desativar uma lista já instalada, remova o secret correspondente no Worker.
+
+Estados: **Livre**, **Em uso**, **Em configuração**. Cards sem URL HTTPS ou sem chave de tickets não permitem entrada. Isso verifica a configuração básica, não comprova que a conta está ativa no provedor. URLs idênticas configuradas em cards diferentes só habilitam o primeiro.
+
+O Durable Object mantém as dez reservas de forma atômica e persistente. Apenas um usuário pode ocupar cada card, e cada conta do Portal só pode reservar um card por vez. A reserva pertence à sessão e a um identificador aleatório; outra aba não recebe a reserva existente. A interface renova a reserva a cada 15 segundos e os pedidos de mídia também a renovam. Sem atividade, a reserva expira em 90 segundos. Sair libera imediatamente quando o pedido chega ao servidor; ao fechar uma aba, a liberação é tentada com keepalive e a expiração cobre falhas. Ao retornar de uma página em cache, a tela consulta novamente as reservas.
+
+Cada pedido de catálogo, playlist, chave e segmento verifica a reserva. Trocar de canal invalida os tickets do canal anterior. Ao sair ou expirar, tickets antigos deixam de obter novos dados. Trechos já carregados e pedidos em andamento podem terminar; isto não é DRM. A proteção coordena os acessos **dentro do Cine** e não bloqueia o uso da mesma assinatura em aplicativos externos. Evite utilizar as dez contas em outros aparelhos simultaneamente.
+
+Sem as dez listas configuradas e o backend publicado, não há dez acessos de reprodução ativos. A HOME do Portal continua sem o card de Games.

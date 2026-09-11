@@ -18,6 +18,10 @@
       {
         "name": "GAMES_ROOMS",
         "class_name": "GamesRoom"
+      },
+      {
+        "name": "CINE_ACCESS",
+        "class_name": "CineAccess"
       }
     ]
   },
@@ -26,6 +30,12 @@
       "tag": "games-v1",
       "new_sqlite_classes": [
         "GamesRoom"
+      ]
+    },
+    {
+      "tag": "cine-access-v1",
+      "new_sqlite_classes": [
+        "CineAccess"
       ]
     }
   ]

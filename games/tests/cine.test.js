@@ -4,16 +4,19 @@ import assert from 'node:assert/strict';
 import {parseM3U,allowedURL,seal,unseal,rewriteManifest,cineController} from '../server/cine.js';
 import {gamesController} from '../server/api.js';
 const env={CINE_PLAYLIST_URL:'http://provider.example/list?username=test&password=fixture&output=hls',CINE_TOKEN_KEY:'fixture-key-only-not-a-production-secret'};
+
 test('M3U parser handles quoted commas, CRLF, groups and ignores comments',()=>{
  assert.deepEqual(parseM3U('\uFEFF#EXTM3U\r\n#EXTINF:-1 tvg-name="TV, Test" group-title="Notícias",Canal, local\r\n#comment\r\nhttp://provider.example/1.m3u8'),[{name:'Canal, local',group:'Notícias',url:'http://provider.example/1.m3u8'}]);
  assert.throws(()=>parseM3U('<html>Invalid credentials</html>'));
 });
+
 test('upstream allowlist accepts configured HTTP/HTTPS origins and rejects unknown hosts, URL credentials and local addresses',()=>{
  assert.equal(allowedURL('/1.m3u8',env,env.CINE_PLAYLIST_URL).origin,'http://provider.example');
  for(const url of ['http://evil.example/x','https://evil.example/x','http://user:pass@provider.example/x','http://127.0.0.1/x'])assert.throws(()=>allowedURL(url,env));
  const secureEnv={...env,CINE_PLAYLIST_URL:'https://provider.example/list'};
  assert.equal(allowedURL('/1.m3u8',secureEnv,secureEnv.CINE_PLAYLIST_URL).origin,'https://provider.example');
 });
+
 test('media tickets conceal credentials, bind session, expire and reject tampering',async()=>{
  const data={url:env.CINE_PLAYLIST_URL,session:'session-A',expires:Date.now()+60000};
  const token=await seal(data,env);assert.ok(!token.includes('provider'));assert.deepEqual(await unseal(token,env,'session-A'),data);
@@ -21,10 +24,12 @@ test('media tickets conceal credentials, bind session, expire and reject tamperi
  await assert.rejects(unseal(token+'x',env,'session-A'));
  await assert.rejects(unseal(await seal({...data,expires:0},env),env,'session-A'));
 });
+
 test('manifest rewrites playlists, encryption keys and initialization segments without leaking URLs',async()=>{
  const seen=[];const result=await rewriteManifest('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key"\n#EXT-X-MAP:URI="init.mp4"\nsegment.ts\nhttp://provider.example/variant.m3u8','http://provider.example/live/list.m3u8',async url=>{seen.push(url);return '/protected/'+seen.length});
  assert.equal(seen.length,4);assert.ok(result.includes('URI="/protected/1"'));assert.ok(!result.includes('provider.example'));assert.ok(!result.includes('segment.ts'));
 });
+
 test('Cine routes require an administrator and password unlock, then report missing configuration',async()=>{
  const session={perfil:'ADMINISTRADOR',estado:'GO',usuario:'A',expiresAt:new Date(Date.now()+60000).toISOString()};
  const request=new Request('https://api.example/v1/games/cine/catalog',{headers:{Cookie:'__Host-portal_session=s'}});
@@ -33,9 +38,11 @@ test('Cine routes require an administrator and password unlock, then report miss
  assert.equal((await gamesController(request,bindings)).status,503);session.perfil='COMERCIAL';
  assert.equal((await gamesController(request,bindings)).status,403);
 });
+
 test('media route rejects forged tokens before contacting upstream',async()=>{
  assert.equal((await cineController(new Request('https://api.example/v1/games/cine/media?ticket=forged'),env,'s',{})).status,403);
 });
+
 test('catalog and media proxy serve HTTP-origin HLS without disclosing provider URLs',async()=>{
  const original=globalThis.fetch;let calls=0;
  globalThis.fetch=async request=>{
@@ -53,5 +60,26 @@ test('catalog and media proxy serve HTTP-origin HLS without disclosing provider 
   const play=await (await cineController(req('play/'+list.channels[0].id),bindings,'s',session)).json();
   const manifest=await (await cineController(new Request('https://api.example'+play.path),bindings,'s',session)).text();assert.ok(!manifest.includes('provider'));assert.ok(manifest.includes('/v1/games/cine/media?ticket='));
   const segment=manifest.split('\n').find(l=>l.startsWith('/v1/'));const media=await cineController(new Request('https://api.example'+segment),bindings,'s',session);assert.equal(media.status,200);assert.equal((await media.arrayBuffer()).byteLength,3);assert.equal(calls,3);
+ }finally{globalThis.fetch=original}
+});
+
+test('catalog falls back to Xtream API when get.php does not return M3U',async()=>{
+ const original=globalThis.fetch;
+ const xtreamEnv={CINE_PLAYLIST_URL:'http://provider.example/get.php?username=test&password=fixture&type=m3u_plus&output=hls',CINE_TOKEN_KEY:'fixture-key-only-not-a-production-secret'};
+ globalThis.fetch=async request=>{
+  const u=new URL(request);
+  if(u.pathname==='/get.php')return new Response('<html>player page</html>',{headers:{'Content-Type':'text/html'}});
+  if(u.pathname==='/player_api.php'&&u.searchParams.get('action')==='get_live_streams')return Response.json([{stream_id:123,name:'Canal API',category_id:'7'}]);
+  if(u.pathname==='/player_api.php'&&u.searchParams.get('action')==='get_live_categories')return Response.json([{category_id:'7',category_name:'Notícias'}]);
+  throw new Error('unexpected '+u.href);
+ };
+ try{
+  const session={usuario:'test',expiresAt:new Date(Date.now()+60000).toISOString()};
+  const {room}=fixture();const bindings={...xtreamEnv,CINE_ACCESS:{idFromName:x=>x,get:()=>room}};
+  const claim=await (await cineController(new Request('https://api.example/v1/games/cine/accesses/01/claim',{method:'POST',body:'{}'}),bindings,'xtream',session)).json();
+  const response=await cineController(new Request('https://api.example/v1/games/cine/catalog?slot=01&lease='+claim.lease),bindings,'xtream',session);
+  const data=await response.json();
+  assert.equal(response.status,200);assert.equal(data.channels.length,1);assert.equal(data.channels[0].name,'Canal API');assert.equal(data.channels[0].group,'Notícias');
+  assert.ok(!JSON.stringify(data).includes('fixture'));
  }finally{globalThis.fetch=original}
 });

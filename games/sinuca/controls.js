@@ -17,10 +17,11 @@ export function bindControls({canvas,keyboard,power,canPlay,needsPlacement,place
  keyboard.addEventListener('keydown',event=>{
   // Typing a room code/password must never change the game or fire a shot.
   if(event.target?.closest?.('input:not([type="range"]), textarea, select, [contenteditable="true"]'))return;
-  if(event.altKey||event.ctrlKey||event.metaKey||!canPlay())return;
+  if(event.altKey||event.ctrlKey||event.metaKey)return;
   const key=event.key.toLowerCase();
   if(!['a','d',' ','escape'].includes(key))return;
   event.preventDefault();
+  if(!canPlay())return;
   if(key==='escape'){reset();return}
   if(key===' '){if(!event.repeat)shoot();return}
   const step=key==='a'?-2:2;

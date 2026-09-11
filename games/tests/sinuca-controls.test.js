@@ -19,7 +19,7 @@ test('unlock, placement, busy state and typing never accidentally fire or move a
  const f=fixture();f.click(100,2);assert.equal(f.controls.locked,false);
  f.click(100);f.click(200);assert.equal(f.controls.locked,false);f.move(250);assert.equal(f.state.aim,250);
  f.state.placing=true;f.click(300);assert.equal(f.controls.locked,false);assert.equal(f.state.placing,false);f.click(350);assert.equal(f.controls.locked,true);
- f.state.ready=false;f.key('d');f.key(' ');f.click(450);assert.equal(f.state.shots.length,0);assert.equal(f.power.value,'55');assert.equal(f.state.aim,350);
+ f.state.ready=false;f.key('d');assert.equal(f.key(' ').defaultPrevented,true);f.click(450);assert.equal(f.state.shots.length,0);assert.equal(f.power.value,'55');assert.equal(f.state.aim,350);
  f.state.ready=true;f.key('a',{target:{closest:()=>true}});f.key(' ',{target:{closest:()=>true}});assert.equal(f.power.value,'55');assert.equal(f.state.shots.length,0);
  f.key(' ',{repeat:true});assert.equal(f.state.shots.length,0);f.key('Escape');assert.equal(f.controls.locked,false);
 });

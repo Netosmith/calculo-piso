@@ -1,6 +1,6 @@
 # Nova Frota Games — Portal Frete
 
-Jogo em `games/`, com treino, mapa ampliado, supervelocidade, papel duplo e bola de fogo. HOME possui card exclusivo ADMINISTRADOR. A página verifica a sessão real do Portal antes de iniciar. Salas e WebSocket também exigem sessão válida ADMINISTRADOR no servidor. Os arquivos frontend e o repositório continuam públicos; a autorização protege a entrada pelo Portal e o multiplayer, não impede cópia do código público.
+Jogo em `games/`, com treino, mapa ampliado, supervelocidade, papel duplo e bola de fogo. HOME possui card exclusivo ADMINISTRADOR. A página verifica a sessão real do Portal e exige uma segunda senha antes de iniciar. Salas e WebSocket também exigem sessão válida ADMINISTRADOR e liberação da senha no servidor. Os arquivos frontend e o repositório continuam públicos; a autorização protege a entrada pelo Portal e o multiplayer, não impede cópia do código público.
 
 ## Multiplayer
 
@@ -10,9 +10,9 @@ Desconexão cancela a partida em andamento e retorna os outros à sala. É poss�
 
 ## Publicação
 
-Frontend: publicação existente do Portal, com `/games/` e HOME no repositório. Backend: `worker/`, classe exportada no entrypoint e binding `GAMES_ROOMS` com migração `games-v1` já configurados em `worker/wrangler.jsonc`. Nenhum novo secret é usado pelo jogo; ele reutiliza `SESSIONS` e a autenticação do Portal.
+Frontend: publicação existente do Portal, com `/games/` e HOME no repositório. Backend: `worker/`, classe exportada no entrypoint e binding `GAMES_ROOMS` com migração `games-v1` já configurados em `worker/wrangler.jsonc`. O segredo `GAMES_ACCESS_PASSWORD` guarda a senha somente na Cloudflare; nunca coloque a senha diretamente no HTML ou JavaScript público.
 
-O workflow **Deploy Games Worker** publica ao alterar games/worker na main. Precisa de `CLOUDFLARE_API_TOKEN` em GitHub → Settings → Secrets and variables → Actions; `CLOUDFLARE_ACCOUNT_ID` identifica a conta, quando necessário. Também é possível publicar com a integração Git da Cloudflare: diretório raiz `worker`, comando `npx wrangler deploy`. Preserve os secrets APPS_SCRIPT_URL/PORTAL_KEY e o KV já existentes. Não apague a migração games-v1 após publicar.
+O workflow **Deploy Games Worker** publica ao alterar games/worker na main. Ele precisa de `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` e `GAMES_ACCESS_PASSWORD` em GitHub → Settings → Secrets and variables → Actions. Também é possível publicar com a integração Git da Cloudflare: diretório raiz `worker`, comando `npx wrangler deploy`; nesse caso, configure `GAMES_ACCESS_PASSWORD` como Worker secret no painel da Cloudflare. Preserve os secrets APPS_SCRIPT_URL/PORTAL_KEY e o KV já existentes. Não apague a migração games-v1 após publicar.
 
 Depois da publicação, abra `https://portalfrete.net.br/pages/home.html` com ADMINISTRADOR, entre em Nova Frota Games e crie uma sala. Abra o convite em outro computador usando OUTRO usuário ADMINISTRADOR; uma mesma conta ocupa uma única vaga. Ambos marcam Pronto e o dono inicia. Valide o teste com duas conexões reais antes de ampliar o uso. Perfis COMERCIAL/OPERACIONAL/PISO devem receber 403 mesmo acessando a API diretamente.
 

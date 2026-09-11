@@ -4,19 +4,38 @@ import {GamesRoom,sanitizeInput} from '../server/rooms.js';
 import {gamesController} from '../server/api.js';
 import {Match} from '../js/simulation.js';
 const admin={perfil:'ADMINISTRADOR',estado:'GO',usuario:'ADMIN',nome:'Admin',expiresAt:new Date(Date.now()+3600000).toISOString()};
+const testPassword='7391';
 const req=(path,options={})=>new Request('https://api.portalfrete.net.br/v1/games'+path,{...options,headers:{Cookie:'__Host-portal_session=test',...options.headers}});
-const envFor=session=>({SESSIONS:{get:async()=>session,put:async()=>{}}});
+const envFor=session=>{
+ const values=new Map();if(session)values.set('session:test',session);
+ return {GAMES_ACCESS_PASSWORD:testPassword,SESSIONS:{
+  get:async(key,options)=>{const value=values.get(key);if(options?.type==='json'&&typeof value==='string')return JSON.parse(value);return value??null},
+  put:async(key,value)=>values.set(key,value),delete:async key=>values.delete(key)
+ },values};
+};
+const unlock=env=>gamesController(req('/unlock',{method:'POST',body:JSON.stringify({password:testPassword})}),env);
 test('admin-only guard rejects absent, expired and all non-admin profiles',async()=>{
  for(const profile of ['COMERCIAL','OPERACIONAL','PISO','GOADM','ESTADIAS_ADMIN','MT','ADMIN']){
   const r=await gamesController(req('/access'),envFor({...admin,perfil:profile}));assert.equal(r.status,403);
  }
  assert.equal((await gamesController(req('/access'),envFor(null))).status,401);
  assert.equal((await gamesController(req('/access'),envFor({...admin,expiresAt:'2000-01-01'}))).status,401);
- assert.equal((await gamesController(req('/access'),envFor(admin))).status,200);
- assert.equal((await gamesController(req('/rooms'),envFor(admin))).status,503);
+ const env=envFor(admin),access=await gamesController(req('/access'),env);assert.equal(access.status,200);assert.equal((await access.json()).unlocked,false);
+ assert.equal((await gamesController(req('/rooms'),env)).status,423);
+ assert.equal((await unlock(env)).status,200);
+ assert.equal((await gamesController(req('/rooms'),env)).status,503);
+});
+test('password is checked on the server and failed attempts are limited',async()=>{
+ const env=envFor(admin);
+ const wrong=()=>gamesController(req('/unlock',{method:'POST',body:JSON.stringify({password:'0000'})}),env);
+ for(let attempt=1;attempt<5;attempt++)assert.equal((await wrong()).status,403);
+ assert.equal((await wrong()).status,429);assert.equal((await unlock(env)).status,429);
+ const fresh=envFor(admin);assert.equal((await unlock(fresh)).status,200);
+ const access=await gamesController(req('/access'),fresh);assert.equal((await access.json()).unlocked,true);
 });
 test('websocket forwards server identity, never user-supplied role or identity',async()=>{
  let forwarded;const env=envFor(admin);env.GAMES_ROOMS={idFromName:x=>x,get:()=>({fetch:async r=>{forwarded=r;return new Response('upgrade fixture')}})};
+ await unlock(env);
  const r=await gamesController(req('/rooms/ABCDEF1234/connect',{headers:{Origin:'https://portalfrete.net.br',Upgrade:'websocket','X-Games-User':'FAKE','X-Games-Session':'forged'}}),env);
  assert.equal(r.status,200);assert.equal(forwarded.headers.get('X-Games-User'),'ADMIN');assert.equal(forwarded.headers.get('X-Games-Session'),'test');
  assert.equal((await gamesController(req('/rooms/ABCDEF1234/connect',{headers:{Origin:'https://evil.example',Upgrade:'websocket'}}),env)).status,403);

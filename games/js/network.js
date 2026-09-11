@@ -5,7 +5,12 @@ export async function api(path,body){
  if(!response.ok||!data.ok)throw new Error(response.status===404?'O multiplayer ainda não foi publicado na Cloudflare.':data.error||'Acesso negado.');return data;
 }
 export async function authorize(){
- try{return await api('/access')}catch(error){document.body.replaceChildren();const panel=document.createElement('main'),title=document.createElement('h1'),msg=document.createElement('p'),back=document.createElement('a');title.textContent='Nova Frota Games';msg.textContent=error.message;back.textContent='Voltar ao Portal';back.href='../pages/home.html';panel.append(title,msg,back);document.body.append(panel);throw error;}
+ try{
+  const access=await api('/access');if(access.unlocked){document.body.classList.remove('games-locked');return access}
+  const screen=document.getElementById('accessScreen'),form=document.getElementById('accessForm'),password=document.getElementById('accessPassword'),error=document.getElementById('accessError'),button=document.getElementById('unlockGames');
+  document.getElementById('accessUser').textContent=access.name||access.user;screen.hidden=false;password.focus();
+  return await new Promise(resolve=>{form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';const value=password.value.trim();if(!/^\d{4}$/.test(value)){error.textContent='Digite os 4 números da senha.';password.focus();return}button.disabled=true;button.textContent='Verificando…';try{const result=await api('/unlock',{password:value});password.value='';screen.hidden=true;document.body.classList.remove('games-locked');resolve(result)}catch(reason){password.value='';error.textContent=reason.message;password.focus()}finally{button.disabled=false;button.textContent='Entrar no Games ↗'}})})
+ }catch(error){document.body.replaceChildren();const panel=document.createElement('main'),title=document.createElement('h1'),msg=document.createElement('p'),back=document.createElement('a');title.textContent='Nova Frota Games';msg.textContent=error.message;back.textContent='Voltar ao Portal';back.href='../pages/home.html';panel.append(title,msg,back);document.body.append(panel);throw error;}
 }
 export class Connection {
  constructor(onMessage,onClose){this.onMessage=onMessage;this.onClose=onClose;this.socket=null;}

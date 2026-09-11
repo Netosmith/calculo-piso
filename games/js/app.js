@@ -51,5 +51,5 @@ $('ready').onclick=()=>connection.send({type:'ready',ready:!ready});$('startOnli
 $('copyInvite').onclick=async()=>{const url=new URL(location.href);url.search='';url.searchParams.set('sala',currentCode);try{await navigator.clipboard.writeText(url.href);$('copyInvite').textContent='Convite copiado!'}catch{$('lobbyError').textContent='Código da sala: '+currentCode}};
 const invite=new URLSearchParams(location.search).get('sala');if(invite)$('roomCode').value=invite.toUpperCase();
 $('nickname').value=portalIdentity.name||portalIdentity.user;
-setInterval(async()=>{try{await api('/access')}catch{connection.close();location.reload()}},30000);
+setInterval(async()=>{try{const access=await api('/access');if(!access.unlocked){connection.close();location.reload()}}catch{connection.close();location.reload()}},30000);
 sync();requestAnimationFrame(frame);

@@ -32,7 +32,7 @@ test('release frees seat and selecting a new channel invalidates prior playback'
  await call(room,{action:'release',lease});assert.equal((await call(room,{action:'check',lease})).status,409);
  assert.equal((await call(room,{action:'claim',user:'next'})).status,200);
 });
-test('ten cards conceal sources and only distinct configured HTTPS lists are offered',()=>{
+test('ten cards conceal sources and offer only distinct configured HTTP/HTTPS lists',()=>{
  const slots=configuredSlots({CINE_TOKEN_KEY:'x'.repeat(32),CINE_PLAYLIST_01:'https://provider.example/a',CINE_PLAYLIST_02:'https://provider.example/a',CINE_PLAYLIST_03:'http://provider.example/b'});
- assert.equal(slots.length,10);assert.equal(slots.filter(s=>s.configured).length,1);assert.ok(!JSON.stringify(slots).includes('provider'));
+ assert.equal(slots.length,10);assert.equal(slots.filter(s=>s.configured).length,2);assert.ok(!JSON.stringify(slots).includes('provider'));
 });

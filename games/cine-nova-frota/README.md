@@ -6,19 +6,19 @@ Player HLS com busca, categorias, favoritos locais, controles de volume e tela c
 
 Em GitHub → Settings → Secrets and variables → Actions, adicione:
 
-- `CINE_PLAYLIST_URL`: URL HTTPS completa da playlist M3U com canais HLS (`.m3u8`). Preserve os parâmetros de autenticação somente neste secret.
+- `CINE_PLAYLIST_URL`: URL completa `http://` ou `https://` da playlist M3U com canais HLS (`.m3u8`). Preserve os parâmetros de autenticação somente neste secret.
 - `CINE_TOKEN_KEY`: segredo aleatório de pelo menos 32 caracteres. Gere, por exemplo, com `openssl rand -hex 32` e salve como secret; não faça commit.
-- `CINE_ALLOWED_ORIGINS`: opcional, origens HTTPS adicionais fornecidas pelo provedor, separadas por vírgula. Exemplo fictício: `https://cdn.example.com`. Sem curingas. O domínio da playlist já está permitido.
+- `CINE_ALLOWED_ORIGINS`: opcional, origens adicionais fornecidas pelo provedor, separadas por vírgula. Exemplo fictício: `http://cdn.example.com,https://cdn2.example.com`. Sem curingas. A origem da playlist já é permitida automaticamente.
 
 Execute o workflow **Deploy Games Worker**. Ele mantém a configuração existente do Portal e adiciona os secrets do Cine quando disponíveis. Alternativamente, cadastre os secrets diretamente no Worker `portalfrete-api` e publique o código atualizado. Os secrets GAMES_ACCESS_PASSWORD, CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID continuam necessários para o workflow.
 
-O arquivo Webarchive recebido contém um link autenticado HTTP com saída MPEG-TS, não o conteúdo de uma playlist. Nenhuma credencial desse anexo foi incorporada ao código. Solicite ao provedor uma URL HTTPS com saída HLS; não basta trocar a extensão dos canais. O catálogo mostra somente entradas HTTPS com caminho `.m3u8`. MPEG-TS contínuo, DRM e conversão/transcodificação não fazem parte desta versão.
+O Worker pode buscar a lista e a mídia HLS de uma origem HTTP legada e continuar servindo o player pelo Portal em HTTPS. Mesmo assim, o Cine continua sendo um player HLS: para provedores Xtream/M3U, use a variante `output=hls`. A variante `output=mpegts` e fluxos MPEG-TS contínuos não são tratados como catálogo HLS nesta versão. Não basta trocar extensões de URLs manualmente.
 
 ## Proteção e operação
 
 Todas as rotas de catálogo e mídia passam pelo mesmo controle de sessão ADMINISTRADOR + senha do Games. O servidor entrega apenas nomes, categorias e IDs opacos no catálogo. As URLs de reprodução e suas credenciais ficam em tickets AES-GCM autenticados, vinculados à sessão e com validade máxima de quatro horas. Playlists HLS, variantes, chaves e segmentos são servidos pelo Worker; URLs de origem e cabeçalhos de autenticação não são enviados em claro ao cliente. O navegador continua recebendo a mídia para reprodução, portanto isto não é DRM.
 
-Redirecionamentos só podem alcançar origens HTTPS explicitamente autorizadas. Nenhuma URL arbitrária enviada pelo navegador é aceita. O catálogo fica em memória por cinco minutos, com limite de 15 MB e 20 mil entradas. Playlists de mídia têm limite de 2 MB. Os favoritos guardam apenas IDs neste navegador. Não há gravação, downloads ou compartilhamento de credenciais.
+Redirecionamentos só podem alcançar origens HTTP/HTTPS explicitamente autorizadas. Nenhuma URL arbitrária enviada pelo navegador é aceita. Endereços locais, IPs literais e credenciais no componente `userinfo` da URL continuam bloqueados. O catálogo fica em memória por cinco minutos, com limite de 15 MB e 20 mil entradas. Playlists de mídia têm limite de 2 MB. Os favoritos guardam apenas IDs neste navegador. Não há gravação, downloads ou compartilhamento de credenciais.
 
 O Worker transfere o tráfego de vídeo; valide capacidade, plano e condições de uso da Cloudflare e do provedor antes de ampliar o acesso. CDN adicional precisa constar na allowlist. Para AES-128, o servidor deve fornecer as chaves como application/octet-stream. Fluxos com metadados HLS não suportados falham fechados.
 
@@ -26,7 +26,7 @@ O Worker transfere o tráfego de vídeo; valide capacidade, plano e condições 
 
 `node --test games/tests/*.test.js`
 
-Após configurar os secrets e publicar: acessar com administrador, informar a senha, abrir Cine, buscar canal, reproduzir, alternar, parar, favoritar, testar tela cheia e expiração de sessão. Confirmar com um canal real do provedor. A integração real não foi validada sem URL HTTPS/HLS e configuração de produção.
+Após configurar os secrets e publicar: acessar com administrador, informar a senha, abrir Cine, buscar canal, reproduzir, alternar, parar, favoritar, testar tela cheia e expiração de sessão. Confirmar com um canal real do provedor. Para origem HTTP, valide especificamente a variante HLS e os domínios/CDNs usados pelos canais.
 
 HLS.js 1.7.2 distribuído localmente em vendor/ sob licença Apache-2.0 (LICENSE-hls.txt). O player é carregado apenas na tela Cine.
 
@@ -34,11 +34,11 @@ HLS.js 1.7.2 distribuído localmente em vendor/ sob licença Apache-2.0 (LICENSE
 
 A tela do Cine apresenta Acesso 01 até Acesso 10. Cada um deve ter uma **assinatura/lista independente**, com uma conexão disponível. Não use a mesma assinatura com URLs diferentes para multiplicar acessos; isso não aumenta o limite do provedor.
 
-Cadastre as URLs como secrets de GitHub Actions `CINE_PLAYLIST_01`, `CINE_PLAYLIST_02`, …, `CINE_PLAYLIST_10`. Cada valor é a URL HTTPS completa da lista HLS/M3U; nunca faça commit desses valores. Você pode preencher aos poucos. O secret anterior `CINE_PLAYLIST_URL` funciona como alternativa apenas para Acesso 01. `CINE_TOKEN_KEY` continua obrigatório. Origens de CDNs adicionais podem ser configuradas com `CINE_ALLOWED_ORIGINS` ou, diretamente no Worker, `CINE_ALLOWED_ORIGINS_01` até `CINE_ALLOWED_ORIGINS_10`.
+Cadastre as URLs como secrets de GitHub Actions `CINE_PLAYLIST_01`, `CINE_PLAYLIST_02`, …, `CINE_PLAYLIST_10`. Cada valor é a URL completa HTTP ou HTTPS da lista HLS/M3U; nunca faça commit desses valores. Você pode preencher aos poucos. O secret anterior `CINE_PLAYLIST_URL` funciona como alternativa apenas para Acesso 01. `CINE_TOKEN_KEY` continua obrigatório. Origens de CDNs adicionais podem ser configuradas com `CINE_ALLOWED_ORIGINS` ou, diretamente no Worker, `CINE_ALLOWED_ORIGINS_01` até `CINE_ALLOWED_ORIGINS_10`.
 
 Execute **Deploy Games Worker** após cadastrar os secrets. O workflow publica o binding `CINE_ACCESS` e a migração `cine-access-v1`, preservando a migração de Games. Não exclua migrações anteriores. Apenas secrets preenchidos são enviados; remover um valor do GitHub não apaga o secret existente da Cloudflare. Para desativar uma lista já instalada, remova o secret correspondente no Worker.
 
-Estados: **Livre**, **Em uso**, **Em configuração**. Cards sem URL HTTPS ou sem chave de tickets não permitem entrada. Isso verifica a configuração básica, não comprova que a conta está ativa no provedor. URLs idênticas configuradas em cards diferentes só habilitam o primeiro.
+Estados: **Livre**, **Em uso**, **Em configuração**. Cards sem URL HTTP/HTTPS válida ou sem chave de tickets não permitem entrada. Isso verifica a configuração básica, não comprova que a conta está ativa no provedor. URLs idênticas configuradas em cards diferentes só habilitam o primeiro.
 
 O Durable Object mantém as dez reservas de forma atômica e persistente. Apenas um usuário pode ocupar cada card, e cada conta do Portal só pode reservar um card por vez. A reserva pertence à sessão e a um identificador aleatório; outra aba não recebe a reserva existente. A interface renova a reserva a cada 15 segundos e os pedidos de mídia também a renovam. Sem atividade, a reserva expira em 90 segundos. Sair libera imediatamente quando o pedido chega ao servidor; ao fechar uma aba, a liberação é tentada com keepalive e a expiração cobre falhas. Ao retornar de uma página em cache, a tela consulta novamente as reservas.
 

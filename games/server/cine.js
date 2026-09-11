@@ -97,7 +97,7 @@ async function xtreamRequest(env,config,action){
   url.searchParams.set('password',config.password);
   url.searchParams.set('action',action);
   const {response}=await upstream(url.href,env,{'Accept':'application/json,text/plain,*/*'});
-  const text=await readText(response,15000000);
+  const text=await readText(response,25000000);
   try{return JSON.parse(text)}catch{throw new Error('A API compatível do provedor não retornou JSON válido.')}
 }
 
@@ -128,8 +128,17 @@ async function catalogXtream(env){
 
 async function catalog(env){
   if(cached?.source===env.CINE_PLAYLIST_URL&&cached.expires>Date.now())return cached.channels;
+
+  // Listas Xtream/get.php podem ter dezenas de MB. Para esse formato, usamos
+  // primeiro a API de catálogo do próprio servidor e evitamos baixar o M3U gigante.
+  const apiChannels=await catalogXtream(env);
+  if(apiChannels.length){
+    cached={source:env.CINE_PLAYLIST_URL,channels:apiChannels,expires:Date.now()+300000};
+    return apiChannels;
+  }
+
   const {response}=await upstream(env.CINE_PLAYLIST_URL,env);
-  const body=await readText(response,15000000);
+  const body=await readText(response,25000000);
   let parsed=[];
   try{parsed=parseM3U(body)}catch(error){
     if(error?.message!=='O provedor não retornou uma lista M3U.')throw error;
@@ -139,10 +148,6 @@ async function catalog(env){
     let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL)}catch{continue}
     if(!url.pathname.toLowerCase().endsWith('.m3u8'))continue;
     channels.push({...channel,url:url.href,id:await channelId(url.href)});
-  }
-  if(!channels.length){
-    const fallback=await catalogXtream(env);
-    if(fallback.length){cached={source:env.CINE_PLAYLIST_URL,channels:fallback,expires:Date.now()+300000};return fallback}
   }
   if(!parsed.length&&!channels.length)throw new Error('O provedor não retornou uma lista M3U.');
   if(!channels.length)throw new Error('A lista não contém canais HLS compatíveis. Use a lista do provedor com output=hls e links .m3u8.');

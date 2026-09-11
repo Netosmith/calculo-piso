@@ -31,15 +31,6 @@ async function play(channel){
  try{
   const data=await api('/cine/play/'+channel.id+seatQuery());if(attempt!==sequence)return;
   const source=new URL(data.path,API).href;
-  const probe=await fetch(source,{credentials:'include',cache:'no-store'});
-  if(!probe.ok){
-   let message='Não foi possível abrir a transmissão deste canal.';
-   try{const body=await probe.json();if(body?.error)message=body.error}catch{}
-   throw new Error(message+' (HTTP '+probe.status+')');
-  }
-  const probeType=probe.headers.get('Content-Type')||'';
-  if(probeType.includes('json')){let body=null;try{body=await probe.json()}catch{}throw new Error(body?.error||'O servidor não retornou um manifesto HLS válido.')}
-  await probe.body?.cancel();
   $('placeholder').hidden=true;
   if(window.Hls?.isSupported()){
    hls=new window.Hls({maxBufferLength:30,xhrSetup:xhr=>{xhr.withCredentials=true}});hls.loadSource(source);hls.attachMedia(video);

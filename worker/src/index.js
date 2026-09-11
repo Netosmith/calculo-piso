@@ -1,3 +1,4 @@
+export {SinucaRoom} from "../../games/server/sinuca.js";
 export {CineAccess} from "../../games/server/cine-access.js";
 export {GamesRoom} from "../../games/server/rooms.js";
 import { routeRequest } from "./router.js";

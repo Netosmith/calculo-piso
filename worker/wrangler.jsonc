@@ -22,6 +22,10 @@
       {
         "name": "CINE_ACCESS",
         "class_name": "CineAccess"
+      },
+      {
+        "name": "SINUCA_ROOMS",
+        "class_name": "SinucaRoom"
       }
     ]
   },
@@ -36,6 +40,12 @@
       "tag": "cine-access-v1",
       "new_sqlite_classes": [
         "CineAccess"
+      ]
+    },
+    {
+      "tag": "sinuca-v1",
+      "new_sqlite_classes": [
+        "SinucaRoom"
       ]
     }
   ]

@@ -1,5 +1,6 @@
 import {getSession,readSessionId} from '../../worker/src/services/session.js';
 import {validSession} from './rooms.js';
+import {sinucaController} from './sinuca.js';
 import {cineController} from './cine.js';
 
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -35,6 +36,7 @@ export async function gamesController(request,env){
   return reply({ok:true,unlocked:true,user:session.usuario,name:session.nome});
  }
  if(!await unlocked(env,sessionId))return reply({ok:false,error:'Digite a senha do Nova Frota Games para continuar.'},423);
+ if(path.startsWith('/v1/games/sinuca'))return sinucaController(request,env,session);
  if(path.startsWith('/v1/games/cine/'))return cineController(request,env,sessionId,session);
  if(!env.GAMES_ROOMS)return reply({ok:false,error:'Multiplayer aguardando configuração na Cloudflare.'},503);
  if(path==='/v1/games/rooms'&&request.method==='POST'){

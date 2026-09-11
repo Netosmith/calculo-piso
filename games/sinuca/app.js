@@ -1,7 +1,8 @@
 import {authorize,api} from '../js/network.js';
+import {bindControls} from './controls.js';
 import {W,H,R,POCKETS,newMatch,simulate,place} from './engine.js';
 const $=id=>document.getElementById(id),canvas=$('table'),ctx=canvas.getContext('2d');
-let state=newMatch(),display=state.balls,angle=0,room=null,seat=0,animation=null,pending=false,polling=false,availableAt=0,lastShot=-1,epoch=0,placement=null;
+let state=newMatch(),display=state.balls,angle=0,room=null,seat=0,animation=null,pending=false,polling=false,availableAt=0,lastShot=-1,epoch=0,placement=null,authorized=false;
 const colors=['#f6f5e9','#f7c53d','#4473dd','#e64c4e','#9d66db','#f38a33','#3ca882','#a84345','#141b25'];
 function render(){
  ctx.clearRect(0,0,1080,600);ctx.save();ctx.translate(60,60);
@@ -11,31 +12,44 @@ function render(){
  for(const [x,y] of POCKETS){ctx.beginPath();ctx.fillStyle='#07171c';ctx.arc(x,y,26,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#466459';ctx.lineWidth=5;ctx.stroke()}
  ctx.save();ctx.globalAlpha=.12;ctx.fillStyle='#d2f9e9';ctx.font='600 22px system-ui';ctx.textAlign='center';ctx.fillText('NOVA FROTA',W/2,H/2+7);ctx.restore();
  const cue=display.find(b=>b.id===0);
- if(cue&&!cue.pocketed&&!animation&&state.winner===null){ctx.save();ctx.translate(cue.x,cue.y);ctx.rotate(angle);ctx.setLineDash([7,7]);ctx.strokeStyle='#e7fff9a0';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(R+3,0);ctx.lineTo(190,0);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#ceb78b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-30,0);ctx.lineTo(-170,0);ctx.stroke();ctx.strokeStyle='#eaf2ed';ctx.beginPath();ctx.moveTo(-25,0);ctx.lineTo(-32,0);ctx.stroke();ctx.restore()}
+ if(cue&&!cue.pocketed&&!animation&&state.winner===null){ctx.save();ctx.translate(cue.x,cue.y);ctx.rotate(angle);ctx.setLineDash([7,7]);ctx.strokeStyle=controls.locked?'#fff0a8':'#e7fff9a0';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(R+3,0);ctx.lineTo(190,0);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#ceb78b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-30,0);ctx.lineTo(-170,0);ctx.stroke();ctx.strokeStyle='#eaf2ed';ctx.beginPath();ctx.moveTo(-25,0);ctx.lineTo(-32,0);ctx.stroke();ctx.restore()}
  for(const b of display){if(b.pocketed)continue;ctx.save();ctx.translate(b.x,b.y);ctx.shadowColor='#0008';ctx.shadowBlur=5;ctx.shadowOffsetY=3;ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fillStyle=b.id>8?'#f5f2e9':colors[b.id];ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.clip();if(b.id>8){ctx.fillStyle=colors[b.id-8];ctx.fillRect(-R,-6,2*R,12)}const grad=ctx.createRadialGradient(-4,-4,1,0,0,R);grad.addColorStop(0,'#ffffff70');grad.addColorStop(.5,'#ffffff00');grad.addColorStop(1,'#00000060');ctx.fillStyle=grad;ctx.fillRect(-R,-R,2*R,2*R);if(b.id){ctx.beginPath();ctx.arc(0,0,5.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.fillStyle='#162125';ctx.font='bold 8px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.id,0,.5)}ctx.restore()}
  ctx.restore();
 }
-function update(){const busy=Boolean(animation)||pending||Date.now()<availableAt;$('shoot').disabled=busy||state.winner!==null||(room&&(state.turn!==seat||!room.players[1]||!room.players[1-seat]?.online));$('practice').disabled=pending;$('create').disabled=pending;$('turn').textContent=state.winner!==null?(state.winner===seat?'Você venceu!':'Fim de partida'):animation?'Bolas em movimento':state.ballInHand?'Posicione a branca':room?(state.turn===seat?'Sua vez':'Vez do adversário'):'Prepare a tacada';}
-function animate(frames,offset=0){animation={frames,start:performance.now()-offset};}
+function canPlay(){return authorized&&!animation&&!pending&&Date.now()>=availableAt&&state.winner===null&&(!room||(state.turn===seat&&room.players.length===2&&room.players[1-seat]?.online))}
+function update(){
+ $('shoot').disabled=!canPlay()||!controls.locked;
+ $('practice').disabled=pending;$('create').disabled=pending;
+ $('turn').textContent=state.winner!==null?(state.winner===seat?'Você venceu!':'Fim de partida'):animation?'Bolas em movimento':state.ballInHand&&!placement?'Posicione a branca':room&&state.turn!==seat?'Vez do adversário':controls.locked?'Mira fixada':'Mire e clique para fixar';
+ $('controlHint').textContent=animation?'Aguarde as bolas pararem.':state.ballInHand&&!placement?'Clique em um espaço livre para posicionar a branca.':controls.locked?'Mira fixada · A diminui · D aumenta · ESPAÇO dispara · Clique novamente para soltar.':'Mova o mouse para mirar e clique com o botão esquerdo para fixar.';
+ $('controlHint').classList.toggle('locked',controls.locked);
+}
+function animate(frames,offset=0){controls.reset();animation={frames,start:performance.now()-offset};}
 function loop(now){if(animation){const index=Math.floor((now-animation.start)/1000*30);if(index>=animation.frames.length){animation=null;display=structuredClone(state.balls)}else display=state.balls.map((b,i)=>({...b,x:animation.frames[index][i][0],y:animation.frames[index][i][1],pocketed:!!animation.frames[index][i][2]}))}update();render();requestAnimationFrame(loop)}
 function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*1080/r.width-60,y:(e.clientY-r.top)*600/r.height-60}}
-canvas.addEventListener('pointermove',e=>{if(animation)return;const p=point(e),cue=display.find(b=>b.id===0);angle=Math.atan2(p.y-cue.y,p.x-cue.x)});
-canvas.addEventListener('pointerdown',e=>{canvas.focus();if(!state.ballInHand||animation||pending||(room&&state.turn!==seat))return;const p=point(e);if(place(state.balls,p.x,p.y)){placement={x:p.x,y:p.y};Object.assign(state.balls.find(b=>b.id===0),{x:p.x,y:p.y,pocketed:false});display=structuredClone(state.balls);$('status').textContent='Branca posicionada. Mire e dê a tacada.'}});
-canvas.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft')angle-=.025;if(e.key==='ArrowRight')angle+=.025;if(e.key===' '&&!$('shoot').disabled)$('shoot').click()});
-$('power').oninput=()=>$('powerValue').textContent=$('power').value+'%';
-function accept(data){if(!room||room.code!==data.code){animation=null;placement=null}if(data.match.revision!==state.revision)placement=null;room=data;seat=data.seat;state=data.match;if(placement&&state.ballInHand)Object.assign(state.balls.find(b=>b.id===0),{...placement,pocketed:false});availableAt=Date.now()+Math.max(0,data.availableAt-data.serverNow);$('mode').textContent='1×1 online';$('roomInfo').hidden=false;$('roomCode').textContent=data.code;$('practice').textContent='Sair da sala e treinar';for(let i=0;i<2;i++){$('p'+i).textContent=(data.players[i]?.name||'Aguardando colega')+(i===seat?' (você)':'');$('g'+i).textContent=data.players[i]&&!data.players[i].online?'Reconectando…':state.groups[i]||'Mesa aberta'}
+const controls=bindControls({
+ canvas,keyboard:document,power:$('power'),canPlay,
+ needsPlacement:()=>state.ballInHand&&!placement,
+ placeCue:event=>{const p=point(event);if(!place(state.balls,p.x,p.y)){$('error').textContent='Escolha um espaço livre dentro da mesa.';return}
+  placement={x:p.x,y:p.y};Object.assign(state.balls.find(b=>b.id===0),{...placement,pocketed:false});display=structuredClone(state.balls);$('error').textContent='';$('status').textContent='Branca posicionada. Mire e clique para fixar.';
+ },
+ aim:event=>{const p=point(event),cue=display.find(b=>b.id===0);angle=Math.atan2(p.y-cue.y,p.x-cue.x)},
+ fire:()=>$('shoot').click(),
+ changed:()=>{$('powerValue').textContent=$('power').value+'%';update()}
+});
+function accept(data){if(!room||room.code!==data.code){animation=null;placement=null;controls.reset()}if(data.match.revision!==state.revision){placement=null;controls.reset()}room=data;seat=data.seat;state=data.match;if(placement&&state.ballInHand)Object.assign(state.balls.find(b=>b.id===0),{...placement,pocketed:false});availableAt=Date.now()+Math.max(0,data.availableAt-data.serverNow);$('mode').textContent='1×1 online';$('roomInfo').hidden=false;$('roomCode').textContent=data.code;$('practice').textContent='Sair da sala e treinar';for(let i=0;i<2;i++){$('p'+i).textContent=(data.players[i]?.name||'Aguardando colega')+(i===seat?' (você)':'');$('g'+i).textContent=data.players[i]&&!data.players[i].online?'Reconectando…':state.groups[i]||'Mesa aberta'}
  if(data.shot&&data.shot.revision!==lastShot){lastShot=data.shot.revision;animate(data.shot.frames,Math.max(0,data.serverNow-data.shot.startedAt))}else if(!animation)display=structuredClone(state.balls);
  $('status').textContent=state.winner!==null?`${data.players[state.winner].name} venceu. Crie outra sala para jogar novamente.`:data.players.length<2?'Compartilhe o convite e aguarde seu colega.':state.message;
 }
 async function action(fn){if(pending)return;pending=true;const token=epoch;$('error').textContent='';update();try{const result=await fn();if(token===epoch&&result)accept(result)}catch(e){$('error').textContent=e.message}finally{pending=false;update()}}
-$('shoot').onclick=()=>{if($('shoot').disabled)return;const cue=state.balls.find(b=>b.id===0),command={action:'shot',angle,power:Number($('power').value)/100,x:cue.x,y:cue.y,revision:state.revision};if(state.ballInHand&&(cue.pocketed||!place(state.balls,cue.x,cue.y))){$('error').textContent='Clique em um espaço livre para posicionar a branca.';return}
+$('shoot').onclick=()=>{if(!canPlay()||!controls.locked)return;const cue=state.balls.find(b=>b.id===0),command={action:'shot',angle,power:Number($('power').value)/100,x:cue.x,y:cue.y,revision:state.revision};if(state.ballInHand&&(cue.pocketed||!place(state.balls,cue.x,cue.y))){$('error').textContent='Clique em um espaço livre para posicionar a branca.';return}
  if(room){action(()=>api('/sinuca/'+room.code,command));return}
- const result=simulate(state.balls,angle,command.power);state.balls=result.balls;state.ballInHand=!!state.balls[0].pocketed;animate(result.frames);$('status').textContent=state.ballInHand?'Clique na mesa para recolocar a branca após as bolas pararem.':'Mire para a próxima tacada.';
+ const result=simulate(state.balls,angle,command.power);placement=null;state.balls=result.balls;state.ballInHand=!!state.balls[0].pocketed;animate(result.frames);$('status').textContent=state.ballInHand?'Clique na mesa para recolocar a branca após as bolas pararem.':'Mire para a próxima tacada.';
 };
 $('create').onclick=()=>{epoch++;lastShot=-1;action(()=>api('/sinuca',{action:'create'}))};
 $('join').onsubmit=e=>{e.preventDefault();if(pending)return;const code=$('code').value.trim().toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return;epoch++;lastShot=-1;action(()=>api('/sinuca/'+code,{action:'join'}))};
-$('practice').onclick=()=>{if(pending)return;epoch++;placement=null;room=null;animation=null;availableAt=0;lastShot=-1;state=newMatch();display=state.balls;$('mode').textContent='Treino livre';$('roomInfo').hidden=true;$('p0').textContent='Você';$('p1').textContent='Mesa livre';$('g0').textContent='Treino sem adversário';$('g1').textContent='Sem limite de tempo';$('practice').textContent='Recomeçar treino';$('status').textContent='Mova o mouse sobre a mesa para mirar.';$('error').textContent=''};
+$('practice').onclick=()=>{if(pending)return;epoch++;controls.reset();placement=null;room=null;animation=null;availableAt=0;lastShot=-1;state=newMatch();display=state.balls;$('mode').textContent='Treino livre';$('roomInfo').hidden=true;$('p0').textContent='Você';$('p1').textContent='Mesa livre';$('g0').textContent='Treino sem adversário';$('g1').textContent='Sem limite de tempo';$('practice').textContent='Recomeçar treino';$('status').textContent='Mova o mouse sobre a mesa para mirar.';$('error').textContent=''};
 $('copy').onclick=async()=>{if(!room)return;const url=new URL(location.href);url.searchParams.set('sala',room.code);try{await navigator.clipboard.writeText(url.href);$('status').textContent='Convite copiado.'}catch{$('status').textContent='Compartilhe o código: '+room.code}};
-try{await authorize();requestAnimationFrame(loop);const invite=new URLSearchParams(location.search).get('sala');if(invite&&/^[A-Fa-f0-9]{10}$/.test(invite)){$('code').value=invite;await action(()=>api('/sinuca/'+invite.toUpperCase(),{action:'join'}))}
+try{await authorize();authorized=true;update();requestAnimationFrame(loop);const invite=new URLSearchParams(location.search).get('sala');if(invite&&/^[A-Fa-f0-9]{10}$/.test(invite)){$('code').value=invite;await action(()=>api('/sinuca/'+invite.toUpperCase(),{action:'join'}))}
  setInterval(async()=>{if(!room||pending||polling)return;polling=true;const token=epoch;try{const data=await api('/sinuca/'+room.code);if(token===epoch&&!pending&&data.match.revision>=state.revision){accept(data);$('error').textContent=''}}catch(e){if(token===epoch){availableAt=Date.now()+5000;$('error').textContent=e.message}}finally{polling=false}},2000);
 }catch{}

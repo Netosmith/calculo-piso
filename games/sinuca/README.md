@@ -2,7 +2,7 @@
 
 Jogo Canvas 2D sem dependências externas. Abra `/games/sinuca/` depois de entrar no Portal como ADMINISTRADOR, selecionar o estado e desbloquear o Nova Frota Games. O card da HOME permanece oculto.
 
-- Treino livre: mirar com mouse ou setas, força pelo controle, botão ou espaço para jogar. Clique na mesa para recolocar a branca após ela cair. Recomeçar treino monta a mesa novamente.
+- Treino livre: mirar com o mouse, fixar a direção com o clique esquerdo, diminuir/aumentar a força com A/D e disparar com ESPAÇO. Outro clique solta a mira. A mira também é liberada após cada tacada. O controle de força e o botão continuam disponíveis. Clique na mesa para recolocar a branca após ela cair. Recomeçar treino monta a mesa novamente.
 - Online: crie uma sala e compartilhe o convite com outro administrador autorizado. São dois lugares por sala e a partida começa quando o colega entra. A sala dura duas horas. Reabrir o convite com a mesma conta recupera seu lugar. Não é possível jogar enquanto o adversário está desconectado; ele pode retornar pelo convite.
 - Bola 8 simplificada: primeira bola encaçapada sem falta define o grupo; acertar primeiro seu grupo e encaçapá-lo mantém a vez. Depois de limpar o grupo, jogue a 8. Bola 8 antecipada ou com falta perde, inclusive na saída. Não exige caçapa anunciada. Sem contato, contato inicial errado, branca encaçapada ou ausência de caçapa/tabela após contato são faltas com bola na mão para o adversário.
 

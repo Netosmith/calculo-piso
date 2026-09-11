@@ -172,21 +172,6 @@ async function catalogXtream(env){
   return channels;
 }
 
-async function resolveChannelURL(channel,env){
-  const candidates=Array.isArray(channel.urls)&&channel.urls.length?channel.urls:[channel.url];
-  let lastError=null;
-  for(const candidate of candidates){
-    try{
-      const {response,url}=await upstream(candidate,env,{},Boolean(channel.providerDerived));
-      const type=response.headers.get('Content-Type')||'';
-      const manifest=type.includes('mpegurl')||new URL(url).pathname.toLowerCase().endsWith('.m3u8');
-      await response.body?.cancel();
-      if(manifest)return candidate;
-    }catch(error){lastError=error}
-  }
-  throw lastError||new Error('Formato de transmissão incompatível.');
-}
-
 async function catalog(env){
   if(cached?.source===env.CINE_PLAYLIST_URL&&cached.expires>Date.now())return cached.channels;
 
@@ -263,6 +248,16 @@ function publicFailure(error){
   const hit=known.get(message);return hit?{code:hit[0],error:hit[1]}:{code:'CINE_UPSTREAM_ERROR',error:'Não foi possível carregar a transmissão. O diagnóstico seguro não identificou a causa.'};
 }
 
+async function openGrant(grant,env,headers){
+  const candidates=Array.isArray(grant.urls)&&grant.urls.length?grant.urls:[grant.url];
+  let lastError=null;
+  for(const candidate of candidates){
+    try{return await upstream(candidate,env,headers,Boolean(grant.providerDerived))}
+    catch(error){lastError=error}
+  }
+  throw lastError||new Error('Formato de transmissão incompatível.');
+}
+
 export async function cineController(request,env,sessionId,session){
   const url=new URL(request.url),path=url.pathname.replace(/\/+$/,'');
   const slots=configuredSlots(env);
@@ -291,17 +286,21 @@ export async function cineController(request,env,sessionId,session){
       const channel=(await catalog(env)).find(c=>c.id===play[1]);if(!channel)return reply({ok:false,error:'Canal não encontrado.'},404);
       const start=await accessCall(rootEnv,sessionId,session,{action:'play',slot,lease});if(!start.ok)return start;
       const {playback}=await start.json();
-      const source=await resolveChannelURL(channel,env);
-      const ticket=await seal({url:source,providerDerived:Boolean(channel.providerDerived),slot,lease,playback,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
+      const urls=Array.isArray(channel.urls)&&channel.urls.length?channel.urls:[channel.url];
+      const ticket=await seal({url:urls[0],urls,providerDerived:Boolean(channel.providerDerived),slot,lease,playback,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
       return reply({ok:true,path:mediaPath+'?ticket='+ticket});
     }
     if(path===mediaPath){
       const headers={},range=request.headers.get('Range');if(range&&/^bytes=\d+-\d*$/.test(range))headers.Range=range;
-      const {response,url:finalURL}=await upstream(grant.url,env,headers,Boolean(grant.providerDerived));
+      const {response,url:finalURL}=await openGrant(grant,env,headers);
       const type=response.headers.get('Content-Type')||'';
       if(type.includes('mpegurl')||new URL(finalURL).pathname.toLowerCase().endsWith('.m3u8')){
         const text=await readText(response,2000000);
-        const rewritten=await rewriteManifest(text,finalURL,async target=>{allowedURL(target,env,finalURL,true);return mediaPath+'?ticket='+await seal({...grant,url:target,providerDerived:true},env)});
+        const rewritten=await rewriteManifest(text,finalURL,async target=>{
+          allowedURL(target,env,finalURL,true);
+          const next={...grant,url:target,providerDerived:true};delete next.urls;
+          return mediaPath+'?ticket='+await seal(next,env)
+        });
         return new Response(rewritten,{headers:{'Content-Type':'application/vnd.apple.mpegurl','Cache-Control':'no-store'}});
       }
       if(!/^(video\/|audio\/|application\/octet-stream)/i.test(type)){await response.body?.cancel();throw new Error('Formato de mídia não suportado.')}

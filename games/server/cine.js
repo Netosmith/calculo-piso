@@ -6,7 +6,7 @@ let cached=null;
 export function allowedURL(value,env,base){
  const url=new URL(value,base),source=new URL(env.CINE_PLAYLIST_URL);
  const origins=new Set([source.origin,...String(env.CINE_ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean)]);
- if(url.protocol!=='https:'||url.username||url.password||!origins.has(url.origin)||/^(localhost|.*\.local|.*\.internal|\[.*\]|[\d.]+)$/i.test(url.hostname))throw new Error('Origem de transmissão não configurada.');
+ if(!['http:','https:'].includes(url.protocol)||url.username||url.password||!origins.has(url.origin)||/^(localhost|.*\.local|.*\.internal|\[.*\]|[\d.]+)$/i.test(url.hostname))throw new Error('Origem de transmissão não configurada.');
  return url;
 }
 export function parseM3U(text){
@@ -40,14 +40,14 @@ async function catalog(env){
  const {response}=await upstream(env.CINE_PLAYLIST_URL,env);
  const parsed=parseM3U(await readText(response,15000000)),channels=[];
  for(const channel of parsed){
-  // Only HLS playlists; raw MPEG-TS requires conversion by the provider.
+  // O Worker pode buscar HTTP ou HTTPS no provedor, mas o player continua exigindo HLS.
   let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL)}catch{continue}
   if(!url.pathname.toLowerCase().endsWith('.m3u8'))continue;
   const digest=await crypto.subtle.digest('SHA-256',enc.encode(url.href));
   const id=Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,'0')).join('');
   channels.push({...channel,url:url.href,id});
  }
- if(!channels.length)throw new Error('A lista não contém canais HTTPS/HLS compatíveis. Solicite ao provedor uma lista com links .m3u8.');
+ if(!channels.length)throw new Error('A lista não contém canais HLS compatíveis. Use a lista do provedor com output=hls e links .m3u8.');
  cached={source:env.CINE_PLAYLIST_URL,channels,expires:Date.now()+300000};return channels;
 }
 async function key(env){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',enc.encode(env.CINE_TOKEN_KEY)),{name:'AES-GCM'},false,['encrypt','decrypt'])}
@@ -120,5 +120,5 @@ export async function cineController(request,env,sessionId,session){
    return new Response(response.body,{status:response.status,headers:outgoing});
   }
   return reply({ok:false,error:'Rota não encontrada.'},404);
- }catch{return reply({ok:false,error:'Não foi possível carregar a transmissão. Verifique a lista HTTPS/HLS e os servidores autorizados na configuração do Cine.'},502)}
+ }catch{return reply({ok:false,error:'Não foi possível carregar a transmissão. Verifique a lista HLS e os servidores autorizados na configuração do Cine.'},502)}
 }

@@ -5,7 +5,7 @@ export function configuredSlots(env){
  return Array.from({length:10},(_,i)=>{
   const id=String(i+1).padStart(2,'0'),source=env['CINE_PLAYLIST_'+id]||(i===0?env.CINE_PLAYLIST_URL:'');
   let configured=false;
-  try{const url=new URL(source);configured=url.protocol==='https:'&&!seen.has(url.href)&&Boolean(env.CINE_TOKEN_KEY?.length>=32);seen.add(url.href)}catch{}
+  try{const url=new URL(source);configured=['http:','https:'].includes(url.protocol)&&!seen.has(url.href)&&Boolean(env.CINE_TOKEN_KEY?.length>=32);seen.add(url.href)}catch{}
   return {id,configured};
  });
 }

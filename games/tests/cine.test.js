@@ -3,14 +3,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseM3U,allowedURL,seal,unseal,rewriteManifest,cineController} from '../server/cine.js';
 import {gamesController} from '../server/api.js';
-const env={CINE_PLAYLIST_URL:'https://provider.example/list?username=test&password=fixture',CINE_TOKEN_KEY:'fixture-key-only-not-a-production-secret'};
+const env={CINE_PLAYLIST_URL:'http://provider.example/list?username=test&password=fixture&output=hls',CINE_TOKEN_KEY:'fixture-key-only-not-a-production-secret'};
 test('M3U parser handles quoted commas, CRLF, groups and ignores comments',()=>{
- assert.deepEqual(parseM3U('\uFEFF#EXTM3U\r\n#EXTINF:-1 tvg-name="TV, Test" group-title="Notícias",Canal, local\r\n#comment\r\nhttps://provider.example/1.m3u8'),[{name:'Canal, local',group:'Notícias',url:'https://provider.example/1.m3u8'}]);
+ assert.deepEqual(parseM3U('\uFEFF#EXTM3U\r\n#EXTINF:-1 tvg-name="TV, Test" group-title="Notícias",Canal, local\r\n#comment\r\nhttp://provider.example/1.m3u8'),[{name:'Canal, local',group:'Notícias',url:'http://provider.example/1.m3u8'}]);
  assert.throws(()=>parseM3U('<html>Invalid credentials</html>'));
 });
-test('upstream allowlist rejects http, unknown hosts, URL credentials and local addresses',()=>{
- for(const url of ['http://provider.example/x','https://evil.example/x','https://user:pass@provider.example/x','https://127.0.0.1/x'])assert.throws(()=>allowedURL(url,env));
- assert.equal(allowedURL('/1.m3u8',env,env.CINE_PLAYLIST_URL).origin,'https://provider.example');
+test('upstream allowlist accepts configured HTTP/HTTPS origins and rejects unknown hosts, URL credentials and local addresses',()=>{
+ assert.equal(allowedURL('/1.m3u8',env,env.CINE_PLAYLIST_URL).origin,'http://provider.example');
+ for(const url of ['http://evil.example/x','https://evil.example/x','http://user:pass@provider.example/x','http://127.0.0.1/x'])assert.throws(()=>allowedURL(url,env));
+ const secureEnv={...env,CINE_PLAYLIST_URL:'https://provider.example/list'};
+ assert.equal(allowedURL('/1.m3u8',secureEnv,secureEnv.CINE_PLAYLIST_URL).origin,'https://provider.example');
 });
 test('media tickets conceal credentials, bind session, expire and reject tampering',async()=>{
  const data={url:env.CINE_PLAYLIST_URL,session:'session-A',expires:Date.now()+60000};
@@ -20,7 +22,7 @@ test('media tickets conceal credentials, bind session, expire and reject tamperi
  await assert.rejects(unseal(await seal({...data,expires:0},env),env,'session-A'));
 });
 test('manifest rewrites playlists, encryption keys and initialization segments without leaking URLs',async()=>{
- const seen=[];const result=await rewriteManifest('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key"\n#EXT-X-MAP:URI="init.mp4"\nsegment.ts\nhttps://provider.example/variant.m3u8','https://provider.example/live/list.m3u8',async url=>{seen.push(url);return '/protected/'+seen.length});
+ const seen=[];const result=await rewriteManifest('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key"\n#EXT-X-MAP:URI="init.mp4"\nsegment.ts\nhttp://provider.example/variant.m3u8','http://provider.example/live/list.m3u8',async url=>{seen.push(url);return '/protected/'+seen.length});
  assert.equal(seen.length,4);assert.ok(result.includes('URI="/protected/1"'));assert.ok(!result.includes('provider.example'));assert.ok(!result.includes('segment.ts'));
 });
 test('Cine routes require an administrator and password unlock, then report missing configuration',async()=>{
@@ -34,11 +36,11 @@ test('Cine routes require an administrator and password unlock, then report miss
 test('media route rejects forged tokens before contacting upstream',async()=>{
  assert.equal((await cineController(new Request('https://api.example/v1/games/cine/media?ticket=forged'),env,'s',{})).status,403);
 });
-test('catalog and media proxy serve HLS without disclosing provider URLs',async()=>{
+test('catalog and media proxy serve HTTP-origin HLS without disclosing provider URLs',async()=>{
  const original=globalThis.fetch;let calls=0;
  globalThis.fetch=async request=>{
   const u=new URL(request);calls++;
-  if(u.pathname==='/list')return new Response('#EXTM3U\n#EXTINF:-1 group-title="TV",Test TV\nhttps://provider.example/live/fixture/secret/1.m3u8');
+  if(u.pathname==='/list')return new Response('#EXTM3U\n#EXTINF:-1 group-title="TV",Test TV\nhttp://provider.example/live/fixture/secret/1.m3u8');
   if(u.pathname.endsWith('.m3u8'))return new Response('#EXTM3U\n#EXT-X-TARGETDURATION:5\n#EXTINF:5,\nsegment.ts\n',{headers:{'Content-Type':'application/vnd.apple.mpegurl'}});
   return new Response(new Uint8Array([71,0,0]),{headers:{'Content-Type':'video/mp2t'}});
  };

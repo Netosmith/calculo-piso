@@ -5,10 +5,21 @@ const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Contro
 const mediaPath='/v1/games/cine/media';
 let cached=null;
 
-export function allowedURL(value,env,base){
+function blockedHost(hostname){
+  const host=String(hostname||'').toLowerCase();
+  if(!host||host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||host.includes(':'))return true;
+  const ip=host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if(!ip)return false;
+  const parts=ip.slice(1).map(Number);
+  if(parts.some(n=>n<0||n>255))return true;
+  const [a,b]=parts;
+  return a===0||a===10||a===127||a>=224||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&b===168)||(a===198&&(b===18||b===19));
+}
+
+export function allowedURL(value,env,base,providerDerived=false){
   const url=new URL(value,base),source=new URL(env.CINE_PLAYLIST_URL);
   const origins=new Set([source.origin,...String(env.CINE_ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean)]);
-  if(!['http:','https:'].includes(url.protocol)||url.username||url.password||!origins.has(url.origin)||/^(localhost|.*\.local|.*\.internal|\[.*\]|[\d.]+)$/i.test(url.hostname)){
+  if(!['http:','https:'].includes(url.protocol)||url.username||url.password||(!providerDerived&&!origins.has(url.origin))||blockedHost(url.hostname)){
     throw new Error('Origem de transmissão não configurada.');
   }
   return url;
@@ -67,7 +78,9 @@ async function upstream(value,env,headers={}){
     if([301,302,303,307,308].includes(response.status)){
       const location=response.headers.get('Location');await response.body?.cancel();
       if(!location)break;
-      url=allowedURL(location,env,url);continue;
+      // Redirecionamentos definidos pelo próprio provedor podem usar outra CDN pública.
+      // Hosts locais, privados e endereços internos continuam bloqueados.
+      url=allowedURL(location,env,url,true);continue;
     }
     if(!response.ok){await response.body?.cancel();throw new Error('O provedor está indisponível ou recusou o acesso.')}
     return {response,url:url.href};
@@ -129,8 +142,6 @@ async function catalogXtream(env){
 async function catalog(env){
   if(cached?.source===env.CINE_PLAYLIST_URL&&cached.expires>Date.now())return cached.channels;
 
-  // Listas Xtream/get.php podem ter dezenas de MB. Para esse formato, usamos
-  // primeiro a API de catálogo do próprio servidor e evitamos baixar o M3U gigante.
   const apiChannels=await catalogXtream(env);
   if(apiChannels.length){
     cached={source:env.CINE_PLAYLIST_URL,channels:apiChannels,expires:Date.now()+300000};
@@ -145,7 +156,7 @@ async function catalog(env){
   }
   const channels=[];
   for(const channel of parsed){
-    let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL)}catch{continue}
+    let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL,true)}catch{continue}
     if(!url.pathname.toLowerCase().endsWith('.m3u8'))continue;
     channels.push({...channel,url:url.href,id:await channelId(url.href)});
   }
@@ -238,7 +249,7 @@ export async function cineController(request,env,sessionId,session){
       const type=response.headers.get('Content-Type')||'';
       if(type.includes('mpegurl')||new URL(finalURL).pathname.toLowerCase().endsWith('.m3u8')){
         const text=await readText(response,2000000);
-        const rewritten=await rewriteManifest(text,finalURL,async target=>{allowedURL(target,env);return mediaPath+'?ticket='+await seal({...grant,url:target},env)});
+        const rewritten=await rewriteManifest(text,finalURL,async target=>{allowedURL(target,env,finalURL,true);return mediaPath+'?ticket='+await seal({...grant,url:target},env)});
         return new Response(rewritten,{headers:{'Content-Type':'application/vnd.apple.mpegurl','Cache-Control':'no-store'}});
       }
       if(!/^(video\/|audio\/|application\/octet-stream)/i.test(type)){await response.body?.cancel();throw new Error('Formato de mídia não suportado.')}

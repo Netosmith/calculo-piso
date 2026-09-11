@@ -1,6 +1,6 @@
 import {authorize,api} from '../js/network.js';
-import {bindControls} from './controls.js';
-import {W,H,R,POCKETS,newMatch,simulate,place} from './engine.js';
+import {bindControls} from './controls.js?v=shot-3';
+import {W,H,R,POCKETS,newMatch,simulate,place} from './engine.js?v=shot-3';
 const $=id=>document.getElementById(id),canvas=$('table'),ctx=canvas.getContext('2d');
 let state=newMatch(),display=state.balls,angle=0,room=null,seat=0,animation=null,pending=false,polling=false,availableAt=0,lastShot=-1,epoch=0,placement=null,authorized=false;
 const colors=['#f6f5e9','#f7c53d','#4473dd','#e64c4e','#9d66db','#f38a33','#3ca882','#a84345','#141b25'];
@@ -18,10 +18,11 @@ function render(){
 }
 function canPlay(){return authorized&&!animation&&!pending&&Date.now()>=availableAt&&state.winner===null&&(!room||(state.turn===seat&&room.players.length===2&&room.players[1-seat]?.online))}
 function update(){
- $('shoot').disabled=!canPlay()||!controls.locked;
+ $('shoot').disabled=!authorized||pending||Boolean(animation);
+ $('cancelAim').disabled=!controls.locked;
  $('practice').disabled=pending;$('create').disabled=pending;
  $('turn').textContent=state.winner!==null?(state.winner===seat?'Você venceu!':'Fim de partida'):animation?'Bolas em movimento':state.ballInHand&&!placement?'Posicione a branca':room&&state.turn!==seat?'Vez do adversário':controls.locked?'Mira fixada':'Mire e clique para fixar';
- $('controlHint').textContent=animation?'Aguarde as bolas pararem.':state.ballInHand&&!placement?'Clique em um espaço livre para posicionar a branca.':controls.locked?'Mira fixada · A diminui · D aumenta · ESPAÇO dispara · Clique novamente para soltar.':'Mova o mouse para mirar e clique com o botão esquerdo para fixar.';
+ $('controlHint').textContent=animation?'Aguarde as bolas pararem.':state.ballInHand&&!placement?'Clique em um espaço livre para posicionar a branca.':controls.locked?'Mira fixada · A diminui · D aumenta · ESPAÇO dispara · ESC ou Cancelar mira para soltar.':'Mova o mouse para mirar e clique com o botão esquerdo para fixar.';
  $('controlHint').classList.toggle('locked',controls.locked);
 }
 function animate(frames,offset=0){controls.reset();animation={frames,start:performance.now()-offset};}
@@ -34,7 +35,8 @@ const controls=bindControls({
   placement={x:p.x,y:p.y};Object.assign(state.balls.find(b=>b.id===0),{...placement,pocketed:false});display=structuredClone(state.balls);$('error').textContent='';$('status').textContent='Branca posicionada. Mire e clique para fixar.';
  },
  aim:event=>{const p=point(event),cue=display.find(b=>b.id===0);angle=Math.atan2(p.y-cue.y,p.x-cue.x)},
- fire:()=>$('shoot').click(),
+ fire:performShot,
+ blocked:()=>{$('error').textContent=shotBlockReason()},
  changed:()=>{$('powerValue').textContent=$('power').value+'%';update()}
 });
 function accept(data){if(!room||room.code!==data.code){animation=null;placement=null;controls.reset()}if(data.match.revision!==state.revision){placement=null;controls.reset()}room=data;seat=data.seat;state=data.match;if(placement&&state.ballInHand)Object.assign(state.balls.find(b=>b.id===0),{...placement,pocketed:false});availableAt=Date.now()+Math.max(0,data.availableAt-data.serverNow);$('mode').textContent='1×1 online';$('roomInfo').hidden=false;$('roomCode').textContent=data.code;$('practice').textContent='Sair da sala e treinar';for(let i=0;i<2;i++){$('p'+i).textContent=(data.players[i]?.name||'Aguardando colega')+(i===seat?' (você)':'');$('g'+i).textContent=data.players[i]&&!data.players[i].online?'Reconectando…':state.groups[i]||'Mesa aberta'}
@@ -42,14 +44,35 @@ function accept(data){if(!room||room.code!==data.code){animation=null;placement=
  $('status').textContent=state.winner!==null?`${data.players[state.winner].name} venceu. Crie outra sala para jogar novamente.`:data.players.length<2?'Compartilhe o convite e aguarde seu colega.':state.message;
 }
 async function action(fn){if(pending)return;pending=true;const token=epoch;$('error').textContent='';update();try{const result=await fn();if(token===epoch&&result)accept(result)}catch(e){$('error').textContent=e.message}finally{pending=false;update()}}
-$('shoot').onclick=()=>{if(!canPlay()||!controls.locked)return;const cue=state.balls.find(b=>b.id===0),command={action:'shot',angle,power:Number($('power').value)/100,x:cue.x,y:cue.y,revision:state.revision};if(state.ballInHand&&(cue.pocketed||!place(state.balls,cue.x,cue.y))){$('error').textContent='Clique em um espaço livre para posicionar a branca.';return}
+function shotBlockReason(){
+ if(!authorized)return 'Entre no Nova Frota Games para jogar.';
+ if(pending)return 'Aguarde a resposta da tacada anterior.';
+ if(animation||Date.now()<availableAt)return 'Aguarde as bolas pararem.';
+ if(state.winner!==null)return 'A partida terminou. Recomece o treino ou crie outra sala.';
+ if(room&&room.players.length<2)return 'Aguarde seu colega entrar na sala ou selecione o treino.';
+ if(room&&state.turn!==seat)return 'Agora é a vez do outro jogador.';
+ if(room&&!room.players[1-seat]?.online)return 'Aguarde seu colega reconectar à sala.';
+ if(state.ballInHand&&!placement)return 'Clique em um espaço livre para posicionar a branca.';
+ if(!controls.locked)return 'Mire com o mouse e clique com o botão esquerdo para fixar a direção.';
+ return '';
+}
+function performShot(){
+ const reason=shotBlockReason();if(reason){$('error').textContent=reason;return}
+ $('error').textContent='';
+ const cue=state.balls.find(b=>b.id===0),command={action:'shot',angle,power:Number($('power').value)/100,x:cue.x,y:cue.y,revision:state.revision};
+ if(state.ballInHand&&(cue.pocketed||!place(state.balls,cue.x,cue.y))){$('error').textContent='Clique em um espaço livre para posicionar a branca.';return}
  if(room){action(()=>api('/sinuca/'+room.code,command));return}
- const result=simulate(state.balls,angle,command.power);placement=null;state.balls=result.balls;state.ballInHand=!!state.balls[0].pocketed;animate(result.frames);$('status').textContent=state.ballInHand?'Clique na mesa para recolocar a branca após as bolas pararem.':'Mire para a próxima tacada.';
-};
+ try{
+  const result=simulate(state.balls,angle,command.power);placement=null;state.balls=result.balls;state.ballInHand=!!state.balls[0].pocketed;animate(result.frames);update();
+  $('status').textContent=state.ballInHand?'Clique na mesa para recolocar a branca após as bolas pararem.':'Mire para a próxima tacada.';
+ }catch(error){$('error').textContent='Não foi possível disparar: '+error.message}
+}
+$('shoot').onclick=()=>controls.shoot();
+$('cancelAim').onclick=()=>{controls.reset();$('error').textContent='';canvas.focus({preventScroll:true})};
 $('create').onclick=()=>{epoch++;lastShot=-1;action(()=>api('/sinuca',{action:'create'}))};
 $('join').onsubmit=e=>{e.preventDefault();if(pending)return;const code=$('code').value.trim().toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return;epoch++;lastShot=-1;action(()=>api('/sinuca/'+code,{action:'join'}))};
 $('practice').onclick=()=>{if(pending)return;epoch++;controls.reset();placement=null;room=null;animation=null;availableAt=0;lastShot=-1;state=newMatch();display=state.balls;$('mode').textContent='Treino livre';$('roomInfo').hidden=true;$('p0').textContent='Você';$('p1').textContent='Mesa livre';$('g0').textContent='Treino sem adversário';$('g1').textContent='Sem limite de tempo';$('practice').textContent='Recomeçar treino';$('status').textContent='Mova o mouse sobre a mesa para mirar.';$('error').textContent=''};
 $('copy').onclick=async()=>{if(!room)return;const url=new URL(location.href);url.searchParams.set('sala',room.code);try{await navigator.clipboard.writeText(url.href);$('status').textContent='Convite copiado.'}catch{$('status').textContent='Compartilhe o código: '+room.code}};
 try{await authorize();authorized=true;update();requestAnimationFrame(loop);const invite=new URLSearchParams(location.search).get('sala');if(invite&&/^[A-Fa-f0-9]{10}$/.test(invite)){$('code').value=invite;await action(()=>api('/sinuca/'+invite.toUpperCase(),{action:'join'}))}
  setInterval(async()=>{if(!room||pending||polling)return;polling=true;const token=epoch;try{const data=await api('/sinuca/'+room.code);if(token===epoch&&!pending&&data.match.revision>=state.revision){accept(data);$('error').textContent=''}}catch(e){if(token===epoch){availableAt=Date.now()+5000;$('error').textContent=e.message}}finally{polling=false}},2000);
-}catch{}
+}catch(error){$('error').textContent='Não foi possível iniciar a sinuca: '+error.message}

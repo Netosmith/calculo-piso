@@ -2,3 +2,5 @@
 #table{max-height:none;object-fit:contain}.shot-controls .primary{margin:0;width:auto;font-size:16px}.access-card input{width:100%}.access-card .primary{width:100%}aside .primary{font-size:14px}.score>div{max-width:34%;overflow-wrap:anywhere}#status{margin-top:16px}
 
 #controlHint{font-size:14px;text-align:center;color:#adc3d0;margin:16px 0 0}#controlHint.locked{color:#fff0a8}#status{margin-top:8px}
+
+.shot-controls{max-width:760px;flex-wrap:wrap}.shot-controls label{min-width:180px}#cancelAim{white-space:nowrap}

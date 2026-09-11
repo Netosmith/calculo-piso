@@ -71,18 +71,16 @@ function upstreamHeaders(headers={}){
   };
 }
 
-async function upstream(value,env,headers={}){
-  let url=allowedURL(value,env);
+async function upstream(value,env,headers={},providerDerived=false){
+  let url=allowedURL(value,env,undefined,providerDerived);
   for(let n=0;n<4;n++){
     const response=await fetch(url,{headers:upstreamHeaders(headers),redirect:'manual',signal:AbortSignal.timeout(20000)});
     if([301,302,303,307,308].includes(response.status)){
       const location=response.headers.get('Location');await response.body?.cancel();
       if(!location)break;
-      // Redirecionamentos definidos pelo próprio provedor podem usar outra CDN pública.
-      // Hosts locais, privados e endereços internos continuam bloqueados.
       url=allowedURL(location,env,url,true);continue;
     }
-    if(!response.ok){await response.body?.cancel();throw new Error('O provedor está indisponível ou recusou o acesso.')}
+    if(!response.ok){const status=response.status;await response.body?.cancel();throw new Error('UPSTREAM_HTTP_'+status)}
     return {response,url:url.href};
   }
   throw new Error('Redirecionamento inválido do provedor.');
@@ -108,35 +106,85 @@ async function xtreamRequest(env,config,action){
   const url=new URL(config.api.href);
   url.searchParams.set('username',config.username);
   url.searchParams.set('password',config.password);
-  url.searchParams.set('action',action);
+  if(action)url.searchParams.set('action',action);
   const {response}=await upstream(url.href,env,{'Accept':'application/json,text/plain,*/*'});
   const text=await readText(response,25000000);
   try{return JSON.parse(text)}catch{throw new Error('A API compatível do provedor não retornou JSON válido.')}
 }
 
+function xtreamOrigins(info,config,env){
+  const origins=[];
+  const server=info?.server_info||{};
+  const raw=String(server.url||server.domain||'').trim();
+  if(raw){
+    try{
+      const protocol=String(server.server_protocol||config.source.protocol.replace(':','')).toLowerCase()==='https'?'https':'http';
+      const base=new URL(/^https?:\/\//i.test(raw)?raw:protocol+'://'+raw);
+      const port=protocol==='https'?(server.https_port||server.port):server.port;
+      if(port&&!base.port&&String(port)!==(protocol==='https'?'443':'80'))base.port=String(port);
+      origins.push(allowedURL(base.origin,env,undefined,true).origin);
+    }catch{}
+  }
+  origins.push(config.source.origin);
+  return [...new Set(origins)];
+}
+
 async function catalogXtream(env){
   const config=xtreamConfig(env);
   if(!config)return [];
+  let accountInfo={};
+  try{accountInfo=await xtreamRequest(env,config,null)}catch{}
   let streams;
   try{streams=await xtreamRequest(env,config,'get_live_streams')}catch{return []}
   if(!Array.isArray(streams)||!streams.length)return [];
   let categories=[];
   try{categories=await xtreamRequest(env,config,'get_live_categories')}catch{}
   const names=new Map(Array.isArray(categories)?categories.map(item=>[String(item.category_id??''),String(item.category_name||'Outros').slice(0,100)]):[]);
+  const bases=xtreamOrigins(accountInfo,config,env);
   const channels=[];
   for(const item of streams.slice(0,20000)){
     const streamId=String(item?.stream_id??'').trim();if(!streamId)continue;
-    const path=config.rootPath+'live/'+encodeURIComponent(config.username)+'/'+encodeURIComponent(config.password)+'/'+encodeURIComponent(streamId)+'.m3u8';
-    const candidate=new URL(path,config.source.origin+'/');
-    let url;try{url=allowedURL(candidate.href,env)}catch{continue}
+    const urls=[];
+    const direct=String(item?.direct_source||'').trim();
+    if(direct){
+      try{
+        const directUrl=allowedURL(direct,env,undefined,true);
+        if(directUrl.pathname.toLowerCase().endsWith('.m3u8'))urls.push(directUrl.href);
+      }catch{}
+    }
+    for(const origin of bases){
+      try{
+        const path=config.rootPath+'live/'+encodeURIComponent(config.username)+'/'+encodeURIComponent(config.password)+'/'+encodeURIComponent(streamId)+'.m3u8';
+        const candidate=allowedURL(new URL(path,origin+'/').href,env,undefined,true);
+        if(!urls.includes(candidate.href))urls.push(candidate.href);
+      }catch{}
+    }
+    if(!urls.length)continue;
     channels.push({
-      id:await channelId(url.href),
+      id:await channelId(config.source.origin+'|'+streamId),
       name:String(item?.name||'Canal').slice(0,160),
       group:names.get(String(item?.category_id??''))||'Ao vivo',
-      url:url.href
+      url:urls[0],
+      urls,
+      providerDerived:true
     });
   }
   return channels;
+}
+
+async function resolveChannelURL(channel,env){
+  const candidates=Array.isArray(channel.urls)&&channel.urls.length?channel.urls:[channel.url];
+  let lastError=null;
+  for(const candidate of candidates){
+    try{
+      const {response,url}=await upstream(candidate,env,{},Boolean(channel.providerDerived));
+      const type=response.headers.get('Content-Type')||'';
+      const manifest=type.includes('mpegurl')||new URL(url).pathname.toLowerCase().endsWith('.m3u8');
+      await response.body?.cancel();
+      if(manifest)return candidate;
+    }catch(error){lastError=error}
+  }
+  throw lastError||new Error('Formato de transmissão incompatível.');
 }
 
 async function catalog(env){
@@ -158,7 +206,7 @@ async function catalog(env){
   for(const channel of parsed){
     let url;try{url=allowedURL(channel.url,env,env.CINE_PLAYLIST_URL,true)}catch{continue}
     if(!url.pathname.toLowerCase().endsWith('.m3u8'))continue;
-    channels.push({...channel,url:url.href,id:await channelId(url.href)});
+    channels.push({...channel,url:url.href,id:await channelId(url.href),providerDerived:true});
   }
   if(!parsed.length&&!channels.length)throw new Error('O provedor não retornou uma lista M3U.');
   if(!channels.length)throw new Error('A lista não contém canais HLS compatíveis. Use a lista do provedor com output=hls e links .m3u8.');
@@ -196,9 +244,12 @@ export async function rewriteManifest(text,base,issue){
 
 function publicFailure(error){
   const message=String(error?.message||'');
+  if(/^UPSTREAM_HTTP_\d{3}$/.test(message)){
+    const status=message.slice(-3);
+    return {code:'UPSTREAM_DENIED',error:'O provedor recusou a transmissão do canal (HTTP '+status+').'};
+  }
   const known=new Map([
     ['Origem de transmissão não configurada.',['ORIGIN_NOT_ALLOWED','O servidor de mídia usado pela lista ainda não está autorizado no Cine.']],
-    ['O provedor está indisponível ou recusou o acesso.',['UPSTREAM_DENIED','O provedor recusou ou não respondeu à solicitação da playlist.']],
     ['Redirecionamento inválido do provedor.',['BAD_REDIRECT','O provedor redirecionou a playlist para um endereço não permitido.']],
     ['O provedor não retornou uma lista M3U.',['NOT_M3U','O endereço configurado não retornou uma playlist M3U válida e a API compatível não disponibilizou canais HLS.']],
     ['Lista muito grande. Configure uma lista de até 20 mil canais.',['LIST_TOO_LARGE','A playlist ultrapassa o limite de 20 mil canais.']],
@@ -240,16 +291,17 @@ export async function cineController(request,env,sessionId,session){
       const channel=(await catalog(env)).find(c=>c.id===play[1]);if(!channel)return reply({ok:false,error:'Canal não encontrado.'},404);
       const start=await accessCall(rootEnv,sessionId,session,{action:'play',slot,lease});if(!start.ok)return start;
       const {playback}=await start.json();
-      const ticket=await seal({url:channel.url,slot,lease,playback,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
+      const source=await resolveChannelURL(channel,env);
+      const ticket=await seal({url:source,providerDerived:Boolean(channel.providerDerived),slot,lease,playback,session:sessionId,expires:Math.min(Date.parse(session.expiresAt),Date.now()+4*3600000)},env);
       return reply({ok:true,path:mediaPath+'?ticket='+ticket});
     }
     if(path===mediaPath){
       const headers={},range=request.headers.get('Range');if(range&&/^bytes=\d+-\d*$/.test(range))headers.Range=range;
-      const {response,url:finalURL}=await upstream(grant.url,env,headers);
+      const {response,url:finalURL}=await upstream(grant.url,env,headers,Boolean(grant.providerDerived));
       const type=response.headers.get('Content-Type')||'';
       if(type.includes('mpegurl')||new URL(finalURL).pathname.toLowerCase().endsWith('.m3u8')){
         const text=await readText(response,2000000);
-        const rewritten=await rewriteManifest(text,finalURL,async target=>{allowedURL(target,env,finalURL,true);return mediaPath+'?ticket='+await seal({...grant,url:target},env)});
+        const rewritten=await rewriteManifest(text,finalURL,async target=>{allowedURL(target,env,finalURL,true);return mediaPath+'?ticket='+await seal({...grant,url:target,providerDerived:true},env)});
         return new Response(rewritten,{headers:{'Content-Type':'application/vnd.apple.mpegurl','Cache-Control':'no-store'}});
       }
       if(!/^(video\/|audio\/|application\/octet-stream)/i.test(type)){await response.body?.cancel();throw new Error('Formato de mídia não suportado.')}

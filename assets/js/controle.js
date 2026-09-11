@@ -6,6 +6,7 @@ const S={
   rows:[],
   filial:"",
   id:"",
+  embarqueEditId:"",
   loading:false,
   veiculoEditId:""
 };
@@ -348,6 +349,9 @@ function renderFilial(){
         <button data-open="${escapeHtml(e.id)}"
           class="material-symbols-outlined text-blue-600 hover:text-blue-800"
           title="Abrir embarque">visibility</button>
+        <button data-edit-embarque="${escapeHtml(e.id)}"
+          class="material-symbols-outlined text-amber-600 hover:text-amber-800 ml-2"
+          title="Editar embarque">edit</button>
         <button data-del="${escapeHtml(e.id)}"
           class="material-symbols-outlined text-red-500 hover:text-red-700 ml-2"
           title="Excluir embarque">delete</button>
@@ -359,6 +363,10 @@ function renderFilial(){
 
   tbody.querySelectorAll("[data-open]").forEach(btn=>{
     btn.onclick=()=>openDetalhe(btn.dataset.open);
+  });
+
+  tbody.querySelectorAll("[data-edit-embarque]").forEach(btn=>{
+    btn.onclick=()=>openEmbarqueModal(btn.dataset.editEmbarque);
   });
 
   tbody.querySelectorAll("[data-status-embarque]").forEach(select=>{
@@ -680,13 +688,50 @@ function modal(id,on){
   $("#"+id)?.classList.toggle("show",on);
 }
 
-function openEmbarqueModal(){
-  ["eCliente","eOrigem","eLocal","eDestino","eProduto","eVolume"].forEach(id=>{
-    $("#"+id).value="";
-  });
+function openEmbarqueModal(id=""){
+  S.embarqueEditId=safe(id);
 
-  $("#eFilial").value=S.filial||"";
-  $("#eStatus").value="AGENDADO";
+  const titulo=$("#tituloModalEmbarque");
+  const btnSalvar=$("#salvarEmbarque");
+
+  if(S.embarqueEditId){
+    const embarque=S.rows.find(e=>e.id===S.embarqueEditId);
+
+    if(!embarque){
+      alert("Embarque não encontrado.");
+      S.embarqueEditId="";
+      return;
+    }
+
+    $("#eFilial").value=embarque.filial||"";
+    $("#eCliente").value=embarque.cliente||"";
+    $("#eOrigem").value=embarque.origem||"";
+    $("#eLocal").value=embarque.local||embarque.localEmbarque||"";
+    $("#eDestino").value=embarque.destino||"";
+    $("#eProduto").value=embarque.produto||"";
+    $("#eVolume").value=num(embarque.volume)||"";
+    $("#eStatus").value=embarque.status||"AGENDADO";
+
+    if(titulo)titulo.textContent="Editar embarque";
+    if(btnSalvar){
+      btnSalvar.textContent="Atualizar";
+      btnSalvar.dataset.originalText="Atualizar";
+    }
+  }else{
+    ["eCliente","eOrigem","eLocal","eDestino","eProduto","eVolume"].forEach(campo=>{
+      $("#"+campo).value="";
+    });
+
+    $("#eFilial").value=S.filial||"";
+    $("#eStatus").value="AGENDADO";
+
+    if(titulo)titulo.textContent="Criar embarque";
+    if(btnSalvar){
+      btnSalvar.textContent="Salvar";
+      btnSalvar.dataset.originalText="Salvar";
+    }
+  }
+
   modal("modalEmbarque",true);
 }
 
@@ -714,21 +759,42 @@ async function salvarEmbarque(){
     return;
   }
 
+  const editando=!!S.embarqueEditId;
+  const idEdicao=S.embarqueEditId;
   const btn=$("#salvarEmbarque");
-  setButtonSaving(btn,true);
-  setLoading(true,"⏳ Salvando embarque...");
+
+  setButtonSaving(
+    btn,
+    true,
+    editando?"ATUALIZANDO...":"SALVANDO..."
+  );
+  setLoading(
+    true,
+    editando?"⏳ Atualizando embarque...":"⏳ Salvando embarque..."
+  );
 
   try{
-    await api("create","embarques",payload);
+    if(editando){
+      await api("update","embarques",{id:idEdicao,...payload});
+    }else{
+      await api("create","embarques",payload);
+    }
+
+    S.embarqueEditId="";
     modal("modalEmbarque",false);
     S.filial=payload.filial;
     await carregarDados();
     openFilial(payload.filial);
-    sync("✅ Embarque salvo");
+    sync(editando?"✅ Embarque atualizado":"✅ Embarque salvo");
   }catch(err){
     console.error(err);
-    alert("Erro ao salvar embarque.\n\n"+err.message);
+    alert(
+      (editando?"Erro ao atualizar embarque.":"Erro ao salvar embarque.")+
+      "\n\n"+
+      err.message
+    );
   }finally{
+    if(btn)btn.dataset.originalText=editando?"Atualizar":"Salvar";
     setButtonSaving(btn,false);
     setLoading(false);
   }
@@ -932,7 +998,7 @@ function bind(){
 
   $("#fecharEmbarque").onclick=
   $("#cancelarEmbarque").onclick=
-    ()=>modal("modalEmbarque",false);
+    ()=>{S.embarqueEditId="";modal("modalEmbarque",false);};
 
   $("#salvarEmbarque").onclick=salvarEmbarque;
 
@@ -946,7 +1012,7 @@ function bind(){
     $("#"+id).onclick=e=>{
       if(e.target.id===id){
         if(id==="modalVeiculo")fecharVeiculoModal();
-        else modal(id,false);
+        else {S.embarqueEditId="";modal(id,false);}
       }
     };
   });
@@ -957,6 +1023,7 @@ function bind(){
 
   document.addEventListener("keydown",e=>{
     if(e.key==="Escape"){
+      S.embarqueEditId="";
       modal("modalEmbarque",false);
       fecharVeiculoModal();
       fecharPosicao();

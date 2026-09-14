@@ -26,7 +26,9 @@ function update(){
  $('controlHint').classList.toggle('locked',controls.locked);
 }
 function animate(frames,offset=0){controls.reset();animation={frames,start:performance.now()-offset};}
-function loop(now){if(animation){const index=Math.floor((now-animation.start)/1000*30);if(index>=animation.frames.length){animation=null;display=structuredClone(state.balls)}else display=state.balls.map((b,i)=>({...b,x:animation.frames[index][i][0],y:animation.frames[index][i][1],pocketed:!!animation.frames[index][i][2]}))}update();render();requestAnimationFrame(loop)}
+// A queued frame timestamp can precede a shot started by an input event.
+// Clamp to the first frame so a negative index cannot terminate rendering.
+function loop(now){if(animation){const index=Math.max(0,Math.floor((now-animation.start)/1000*30));if(index>=animation.frames.length){animation=null;display=structuredClone(state.balls)}else display=state.balls.map((b,i)=>({...b,x:animation.frames[index][i][0],y:animation.frames[index][i][1],pocketed:!!animation.frames[index][i][2]}))}update();render();requestAnimationFrame(loop)}
 function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*1080/r.width-60,y:(e.clientY-r.top)*600/r.height-60}}
 const controls=bindControls({
  canvas,keyboard:document,power:$('power'),canPlay,

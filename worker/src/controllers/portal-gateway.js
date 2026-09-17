@@ -4,6 +4,18 @@ import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js"
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
 
+const ESTADIAS_PRECISION_PREFIX = "estadias:precision:v1:";
+const ESTADIAS_PRECISION_FIELDS = [
+  "dataHoraChegada",
+  "dataHoraSaida",
+  "tempoEspera",
+  "tempoRetroativo",
+  "horasPagar",
+  "valorHora",
+  "valorTotal",
+  "pesoDestino"
+];
+
 function normalizeKey(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -34,6 +46,127 @@ function gatewayErrorMessage(error) {
   }
 
   return "Falha na comunicação segura com o Apps Script.";
+}
+
+function estadiaId(value) {
+  return String(value?.id || value?.ID || "").trim();
+}
+
+function estadiaPrecisionKey(id) {
+  return `${ESTADIAS_PRECISION_PREFIX}${String(id || "").trim()}`;
+}
+
+function precisionFromParams(params) {
+  const source = safeParams(params);
+  const precision = {};
+
+  for (const field of ESTADIAS_PRECISION_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(source, field)) {
+      precision[field] = source[field];
+    }
+  }
+
+  return precision;
+}
+
+async function readEstadiaPrecision(env, id) {
+  if (!env?.SESSIONS || !id) return null;
+
+  try {
+    const raw = await env.SESSIONS.get(estadiaPrecisionKey(id));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch (error) {
+    console.warn("[ESTADIAS] Falha ao ler precisão de horário", {
+      id,
+      message: String(error?.message || error)
+    });
+    return null;
+  }
+}
+
+async function writeEstadiaPrecision(env, id, params) {
+  if (!env?.SESSIONS || !id) return null;
+
+  const incoming = precisionFromParams(params);
+  if (!Object.keys(incoming).length) return null;
+
+  try {
+    const current = (await readEstadiaPrecision(env, id)) || {};
+    const merged = {
+      ...current,
+      ...incoming,
+      precisionUpdatedAt: Date.now()
+    };
+
+    await env.SESSIONS.put(
+      estadiaPrecisionKey(id),
+      JSON.stringify(merged)
+    );
+
+    return merged;
+  } catch (error) {
+    console.warn("[ESTADIAS] Falha ao salvar precisão de horário", {
+      id,
+      message: String(error?.message || error)
+    });
+    return null;
+  }
+}
+
+async function deleteEstadiaPrecision(env, id) {
+  if (!env?.SESSIONS || !id) return;
+
+  try {
+    await env.SESSIONS.delete(estadiaPrecisionKey(id));
+  } catch (error) {
+    console.warn("[ESTADIAS] Falha ao remover precisão de horário", {
+      id,
+      message: String(error?.message || error)
+    });
+  }
+}
+
+function applyPrecision(record, precision) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    return record;
+  }
+
+  if (!precision) return record;
+
+  for (const field of ESTADIAS_PRECISION_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(precision, field)) {
+      record[field] = precision[field];
+    }
+  }
+
+  return record;
+}
+
+async function overlayEstadiasPrecision(env, data) {
+  if (!env?.SESSIONS) return data;
+
+  if (Array.isArray(data)) {
+    await Promise.all(
+      data.map(async (record) => {
+        const id = estadiaId(record);
+        if (!id) return;
+        const precision = await readEstadiaPrecision(env, id);
+        applyPrecision(record, precision);
+      })
+    );
+    return data;
+  }
+
+  const id = estadiaId(data);
+  if (!id) return data;
+
+  const precision = await readEstadiaPrecision(env, id);
+  return applyPrecision(data, precision);
 }
 
 export async function portalGatewayController(request, env) {
@@ -129,6 +262,28 @@ export async function portalGatewayController(request, env) {
         Number(result?.status) || 502,
         result?.details
       );
+    }
+
+    // O Apps Script legado normaliza datas de ESTADIAS em HH:mm e elimina
+    // os segundos. Mantemos aqui uma camada de precisão no KV para que o
+    // Portal preserve HH:mm:ss e os cálculos monetários exatos entre usuários.
+    if (moduleName === "estadias") {
+      if (actionName === "read") {
+        result.data = await overlayEstadiasPrecision(env, result.data);
+      }
+
+      if (actionName === "create" || actionName === "update") {
+        const id = String(params.id || estadiaId(result.data) || "").trim();
+
+        if (id) {
+          const precision = await writeEstadiaPrecision(env, id, params);
+          applyPrecision(result.data, precision);
+        }
+      }
+
+      if (actionName === "delete") {
+        await deleteEstadiaPrecision(env, String(params.id || "").trim());
+      }
     }
 
     return success({

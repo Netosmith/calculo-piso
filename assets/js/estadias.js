@@ -41,27 +41,38 @@ function roundMoney(v){return Math.round((num(v)+Number.EPSILON)*100)/100}
 function lucroLinha(r){const valor=num(r?.valorTotal);const pago=num(r?.valorPago);return valor>0&&pago>0?roundMoney(valor-pago):0}
 function hoursText(v){const totalMinutes=Math.round(num(v)*60);const hours=Math.floor(totalMinutes/60);const minutes=totalMinutes%60;return `${hours}:${String(minutes).padStart(2,"0")} h`}
 
-const ESTADIA_META_RE=/\s*\[\[NF_ESTADIA_META:RECIBO=(0|1);CTE=(0|1);CHAMADO=([^\]]*)\]\]\s*/i;
+const ESTADIA_META_RE=/\s*\[\[NF_ESTADIA_META:([^\]]*)\]\]\s*/i;
 function boolValue(v,fallback=false){
   if(v===undefined||v===null||v==="")return !!fallback;
-  return ["1","SIM","S","TRUE","OK","RECEBIDO"].includes(up(v));
+  return ["1","SIM","S","TRUE","OK","RECEBIDO","PAGO","PAGA"].includes(up(v));
 }
 function parseEstadiaMeta(raw){
   const original=txt(raw);
   const match=original.match(ESTADIA_META_RE);
+  const values={};
+  if(match){
+    String(match[1]||"").split(";").forEach(part=>{
+      const pos=part.indexOf("=");
+      if(pos<0)return;
+      const key=up(part.slice(0,pos));
+      const value=txt(part.slice(pos+1));
+      values[key]=value;
+    });
+  }
   return {
-    recibo:match?match[1]==="1":false,
-    cteRecebido:match?match[2]==="1":false,
-    chamado:match?txt(match[3]):"",
+    recibo:boolValue(values.RECIBO,false),
+    pago:boolValue(values.PAGO,false),
+    cteRecebido:boolValue(values.CTE,false),
+    chamado:txt(values.CHAMADO||""),
     observacoes:original.replace(ESTADIA_META_RE,"").trim()
   };
 }
 function sanitizeMetaValue(v){
   return up(v).replace(/[\]\r\n]/g," ").replace(/;/g,",").replace(/\s+/g," ").trim();
 }
-function packEstadiaMeta(observacoes,recibo,cteRecebido,chamado){
+function packEstadiaMeta(observacoes,recibo,pago,cteRecebido,chamado){
   const clean=parseEstadiaMeta(observacoes).observacoes;
-  const meta=`[[NF_ESTADIA_META:RECIBO=${recibo?1:0};CTE=${cteRecebido?1:0};CHAMADO=${sanitizeMetaValue(chamado)}]]`;
+  const meta=`[[NF_ESTADIA_META:RECIBO=${recibo?1:0};PAGO=${pago?1:0};CTE=${cteRecebido?1:0};CHAMADO=${sanitizeMetaValue(chamado)}]]`;
   return [clean,meta].filter(Boolean).join("\n");
 }
 function setMiniSwitch(id,checked){
@@ -104,6 +115,7 @@ function normalizeRow(r,index){
   const valorTotal=roundMoney(pagar*valorHora*pesoToneladas);
   const meta=parseEstadiaMeta(r.observacoes??r.OBSERVACOES??"");
   const recibo=boolValue(r.recibo??r.RECIBO,meta.recibo);
+  const pago=boolValue(r.pago??r.PAGO??r.estadiaPaga,meta.pago);
   const cteRecebido=boolValue(r.cteRecebido??r["CTE RECEBIDO"]??r.cteOk,meta.cteRecebido);
   const chamado=txt(r.chamado??r.CHAMADO??meta.chamado);
 
@@ -131,6 +143,7 @@ function normalizeRow(r,index){
     status:normalizeStatus(r.status??r["STATUS DA ESTADIA"]??"AGUARDANDO"),
     responsavel:txt(r.responsavel??r.RESPONSAVEL),
     recibo,
+    pago,
     cteRecebido,
     chamado,
     observacoes:meta.observacoes,
@@ -149,7 +162,7 @@ async function loadData(){loading(true,"Consultando estadias...");if($("syncStat
 function populateSelect(id,values){const el=$(id);if(!el)return;const old=el.value;const first=el.querySelector("option")?.outerHTML||'<option value="">Todos</option>';el.innerHTML=first+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");el.value=values.includes(old)?old:""}
 function popularFiltros(){const unique=field=>[...new Set(dados.map(r=>txt(r[field])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));populateSelect("filtroCliente",unique("cliente"));populateSelect("filtroProduto",unique("produto"));populateSelect("filtroResponsavel",unique("responsavel"))}
 function applyDateFilter(row){const ini=$("dataInicio")?.value;const fim=$("dataFim")?.value;if(!ini&&!fim)return true;const d=new Date(row.dataHoraChegada||row.dataNf);if(Number.isNaN(d.getTime()))return false;if(ini&&d<new Date(`${ini}T00:00:00`))return false;if(fim&&d>new Date(`${fim}T23:59:59`))return false;return true}
-function aplicarFiltros(){const query=up($("busca")?.value);const cliente=up($("filtroCliente")?.value);const status=up($("filtroStatus")?.value);const produto=up($("filtroProduto")?.value);const responsavel=up($("filtroResponsavel")?.value);filtrados=dados.filter(r=>{const haystack=up([r.cliente,r.cte,r.nf,r.placa,r.motorista,r.origem,r.destino,r.produto,r.status,r.responsavel].join(" "));return (!query||haystack.includes(query))&&(!cliente||up(r.cliente)===cliente)&&(!status||up(r.status)===status)&&(!produto||up(r.produto)===produto)&&(!responsavel||up(r.responsavel)===responsavel)&&applyDateFilter(r)});paginaAtual=1;renderTudo()}
+function aplicarFiltros(){const query=up($("busca")?.value);const cliente=up($("filtroCliente")?.value);const status=up($("filtroStatus")?.value);const produto=up($("filtroProduto")?.value);const responsavel=up($("filtroResponsavel")?.value);filtrados=dados.filter(r=>{const haystack=up([r.chamado,r.cliente,r.cte,r.nf,r.placa,r.motorista,r.origem,r.destino,r.produto,r.status,r.responsavel].join(" "));return (!query||haystack.includes(query))&&(!cliente||up(r.cliente)===cliente)&&(!status||up(r.status)===status)&&(!produto||up(r.produto)===produto)&&(!responsavel||up(r.responsavel)===responsavel)&&applyDateFilter(r)});paginaAtual=1;renderTudo()}
 function renderKpis(){const total=filtrados.length;const aguardando=filtrados.filter(r=>up(r.status).includes("AGUARD")).length;const liberadas=filtrados.filter(r=>up(r.status).includes("LIBER")).length;const negadas=filtrados.filter(r=>up(r.status).includes("NEGAD")).length;const valor=filtrados.reduce((sum,r)=>sum+num(r.valorTotal),0);const valorPago=filtrados.reduce((sum,r)=>sum+num(r.valorPago),0);const lucro=roundMoney(filtrados.reduce((sum,r)=>sum+lucroLinha(r),0));$("kpiTotal").textContent=total.toLocaleString("pt-BR");$("kpiAguardando").textContent=aguardando.toLocaleString("pt-BR");$("kpiLiberadas").textContent=liberadas.toLocaleString("pt-BR");$("kpiNegadas").textContent=negadas.toLocaleString("pt-BR");$("kpiValor").textContent=money(valor);const kpiLucro=$("kpiLucro");if(kpiLucro){const cardLucro=kpiLucro.closest(".kpi");if(canWrite()){kpiLucro.textContent=money(lucro);if(cardLucro)cardLucro.style.display=""}else{kpiLucro.textContent="";if(cardLucro)cardLucro.style.display="none"}}}
 function getPageRows(){const size=num($("porPagina")?.value)||10;const start=(paginaAtual-1)*size;return filtrados.slice(start,start+size)}
 function statusOptionsHtml(current){return STATUS_OPTIONS.map(status=>`<option value="${esc(status)}" ${up(status)===up(current)?"selected":""}>${esc(status)}</option>`).join("")}
@@ -168,6 +181,7 @@ function clearForm(){
   $("responsavel").value=currentUser();
   if($("chamado"))$("chamado").value="";
   setMiniSwitch("toggleRecibo",false);
+  setMiniSwitch("togglePago",false);
   setMiniSwitch("toggleCteRecebido",false);
   updateCalculationPreview();
 }
@@ -198,6 +212,7 @@ function openModal(item=null){
     $("anexoUrl").value=item.anexoUrl;
     if($("chamado"))$("chamado").value=item.chamado||"";
     setMiniSwitch("toggleRecibo",!!item.recibo);
+    setMiniSwitch("togglePago",!!item.pago);
     setMiniSwitch("toggleCteRecebido",!!item.cteRecebido);
   }
   updateCalculationPreview();
@@ -209,9 +224,10 @@ function updateCalculationPreview(){const c=calculateFormValues();if($("calcTemp
 function formPayload(){
   const c=calculateFormValues();
   const recibo=miniSwitchChecked("toggleRecibo");
+  const pago=miniSwitchChecked("togglePago");
   const cteRecebido=miniSwitchChecked("toggleCteRecebido");
   const chamado=up($("chamado")?.value||"");
-  const observacoes=packEstadiaMeta(up($("observacoes").value),recibo,cteRecebido,chamado);
+  const observacoes=packEstadiaMeta(up($("observacoes").value),recibo,pago,cteRecebido,chamado);
 
   return {
     id:$("registroId").value,
@@ -233,6 +249,7 @@ function formPayload(){
     valorHora:c.valorHora,
     valorTotal:c.valorTotal,
     recibo:recibo?"SIM":"NÃO",
+    pago:pago?"SIM":"NÃO",
     cteRecebido:cteRecebido?"SIM":"NÃO",
     chamado,
     motivo:up($("motivo").value),
@@ -252,6 +269,7 @@ function bind(){
   renderUser();
   ["dataHoraChegada","dataHoraSaida"].forEach(id=>{const el=$(id);if(el)el.step="1"});
   bindMiniSwitch("toggleRecibo");
+  bindMiniSwitch("togglePago");
   bindMiniSwitch("toggleCteRecebido");
   if($("btnNovaEstadia"))$("btnNovaEstadia").onclick=()=>{if(ensureWrite())openModal()};
   $("btnAtualizar").onclick=loadData;

@@ -77,6 +77,7 @@ function shouldRetry(payload, attempt, error) {
 
   const isRetryableRead =
     context.action === "read" &&
+    context.module !== "estadias" &&
     RETRYABLE_MODULES.has(context.module);
   const isRetryableLogin = context.outerAction === "login";
   const isIdempotentFretesWrite =

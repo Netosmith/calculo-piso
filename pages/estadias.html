@@ -402,6 +402,83 @@
     }
 
     .modalHead h3{margin:0;color:var(--navy);font-size:15px}
+
+    .modalHeadTools{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .modalSwitchGroup{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      color:var(--navy);
+      font-size:10px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.03em;
+    }
+
+    .miniSwitch{
+      width:42px;
+      height:24px;
+      padding:2px;
+      border:0;
+      border-radius:999px;
+      background:#ef4444;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      transition:.18s ease;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .miniSwitch::after{
+      content:"";
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow:0 1px 4px rgba(15,23,42,.25);
+      transition:.18s ease;
+    }
+
+    .miniSwitch[aria-checked="true"]{
+      background:#10b981;
+      justify-content:flex-end;
+    }
+
+    .chamadoHead{
+      display:flex;
+      align-items:center;
+      gap:7px;
+    }
+    .chamadoHead label{
+      color:var(--navy);
+      font-size:10px;
+      font-weight:950;
+      text-transform:uppercase;
+    }
+    .chamadoHead input{
+      width:145px;
+      height:30px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      color:var(--text);
+      padding:0 9px;
+      outline:none;
+      font-size:10px;
+      font-weight:800;
+    }
+    .chamadoHead input:focus{
+      border-color:#4d83f3;
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
+    }
     .modalBody{padding:16px;overflow:auto}
     .modalFoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}
 
@@ -443,6 +520,10 @@
       .span2,.span4{grid-column:auto}
       .estadiasHero{align-items:flex-start;flex-direction:column}
       .userBox{display:none}
+      .modalHead{align-items:flex-start;flex-wrap:wrap}
+      .modalHeadTools{order:3;width:100%;margin-left:0;justify-content:flex-start;gap:10px}
+      .chamadoHead{width:100%}
+      .chamadoHead input{flex:1;width:auto}
     }
   </style>
 </head>
@@ -582,6 +663,24 @@
     <div class="modalCard">
       <div class="modalHead">
         <h3 id="modalTitulo">Nova Solicitação de Estadia</h3>
+
+        <div class="modalHeadTools" data-estadias-write>
+          <div class="modalSwitchGroup">
+            <span>Recibo</span>
+            <button type="button" class="miniSwitch" id="toggleRecibo" role="switch" aria-checked="false" title="Marcar recebimento do recibo"></button>
+          </div>
+
+          <div class="modalSwitchGroup">
+            <span>CTE</span>
+            <button type="button" class="miniSwitch" id="toggleCteRecebido" role="switch" aria-checked="false" title="Marcar recebimento do CTE"></button>
+          </div>
+
+          <div class="chamadoHead">
+            <label for="chamado">Chamado</label>
+            <input id="chamado" type="text" maxlength="60" placeholder="Nº Chamado" autocomplete="off">
+          </div>
+        </div>
+
         <button class="closeBtn" id="btnFecharModal">✕</button>
       </div>
 
@@ -641,7 +740,7 @@
 
   <div class="loading" id="loading"><div class="loadingBox" id="loadingText">Processando...</div></div>
 
-  <script src="../assets/js/estadias.js?v=6"></script>
+  <script src="../assets/js/estadias.js?v=7"></script>
   <script>
     try{
       if(typeof requireFeatureAuth==="function"){

@@ -25,6 +25,36 @@ let dados=[];
 let filtrados=[];
 let paginaAtual=1;
 
+const ESTADIAS_CACHE_TTL_MS=10*60*1000;
+function estadiasCacheKey(){
+  const a=authContext();
+  return `nf_estadias_cache_v1_${up(a.estado||"GO")}`;
+}
+function saveEstadiasCache(){
+  try{
+    sessionStorage.setItem(estadiasCacheKey(),JSON.stringify({ts:Date.now(),rows:dados}));
+  }catch(error){
+    console.warn("[ESTADIAS] Cache local indisponível.",error);
+  }
+}
+function restoreEstadiasCache(){
+  try{
+    const raw=sessionStorage.getItem(estadiasCacheKey());
+    if(!raw)return false;
+    const cached=JSON.parse(raw);
+    if(!Array.isArray(cached?.rows)||!cached.rows.length)return false;
+    if(Date.now()-Number(cached.ts||0)>ESTADIAS_CACHE_TTL_MS)return false;
+    dados=cached.rows.map(normalizeRow);
+    popularFiltros();
+    aplicarFiltros();
+    if($("syncStatus"))$("syncStatus").textContent="Exibindo última consulta • atualizando...";
+    return true;
+  }catch(error){
+    console.warn("[ESTADIAS] Não foi possível restaurar o cache local.",error);
+    return false;
+  }
+}
+
 function txt(v){return String(v??"").trim()}
 function up(v){return txt(v).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function num(v){if(typeof v==="number")return Number.isFinite(v)?v:0;let s=txt(v).replace(/[^\d,.-]/g,"");if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");const n=Number(s);return Number.isFinite(n)?n:0}
@@ -158,7 +188,37 @@ function loading(show,text="Processando..."){$("loading")?.classList.toggle("sho
 function currentUser(){const a=authContext();return txt(a.nome||a.usuario||"USUÁRIO")}
 function currentRole(){return txt(authContext().perfil||"PERFIL")}
 function renderUser(){const name=currentUser();const role=currentRole();if($("userName"))$("userName").textContent=up(name);if($("userRole"))$("userRole").textContent=up(role);const initials=txt(name).split(/\s+/).filter(Boolean).slice(0,2).map(v=>v[0]).join("").toUpperCase()||"NF";if($("userInitials"))$("userInitials").textContent=initials}
-async function loadData(){loading(true,"Consultando estadias...");if($("syncStatus"))$("syncStatus").textContent="Atualizando...";try{const a=auditPayload();const res=await readApi({action:ACTIONS.list,usuario:a.usuario,perfil:a.perfil,estado:a.estado});if(!res||res.ok===false)throw new Error(res?.error||"O serviço de estadias não respondeu.");const rows=Array.isArray(res.data)?res.data:Array.isArray(res)?res:[];dados=rows.map(normalizeRow);popularFiltros();aplicarFiltros();if($("syncStatus"))$("syncStatus").textContent=`Atualizado às ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`}catch(error){console.error("[ESTADIAS] Erro ao carregar:",error);dados=[];filtrados=[];renderTudo();if($("syncStatus"))$("syncStatus").textContent="Serviço de estadias indisponível";$("tabelaEstadias").innerHTML=`<tr><td colspan="14" class="empty">Não foi possível consultar as estadias pelo servidor seguro.</td></tr>`}finally{loading(false)}}
+async function loadData(options={}){
+  const silent=options?.silent===true;
+  if(!silent)loading(true,"Consultando estadias...");
+  if($("syncStatus"))$("syncStatus").textContent=silent?"Atualizando em segundo plano...":"Atualizando...";
+  try{
+    const a=auditPayload();
+    const res=await readApi({action:ACTIONS.list,usuario:a.usuario,perfil:a.perfil,estado:a.estado});
+    if(!res||res.ok===false)throw new Error(res?.error||"O serviço de estadias não respondeu.");
+    const rows=Array.isArray(res.data)?res.data:Array.isArray(res)?res:[];
+    dados=rows.map(normalizeRow);
+    popularFiltros();
+    aplicarFiltros();
+    saveEstadiasCache();
+    if($("syncStatus"))$("syncStatus").textContent=`Atualizado às ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
+    return true;
+  }catch(error){
+    console.error("[ESTADIAS] Erro ao carregar:",error);
+    if(silent&&dados.length){
+      if($("syncStatus"))$("syncStatus").textContent="Última consulta mantida • atualização indisponível";
+      return false;
+    }
+    dados=[];
+    filtrados=[];
+    renderTudo();
+    if($("syncStatus"))$("syncStatus").textContent="Serviço de estadias indisponível";
+    $("tabelaEstadias").innerHTML=`<tr><td colspan="14" class="empty">Não foi possível consultar as estadias pelo servidor seguro.</td></tr>`;
+    return false;
+  }finally{
+    if(!silent)loading(false);
+  }
+}
 function populateSelect(id,values){const el=$(id);if(!el)return;const old=el.value;const first=el.querySelector("option")?.outerHTML||'<option value="">Todos</option>';el.innerHTML=first+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");el.value=values.includes(old)?old:""}
 function popularFiltros(){const unique=field=>[...new Set(dados.map(r=>txt(r[field])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));populateSelect("filtroCliente",unique("cliente"));populateSelect("filtroProduto",unique("produto"));populateSelect("filtroResponsavel",unique("responsavel"))}
 function applyDateFilter(row){const ini=$("dataInicio")?.value;const fim=$("dataFim")?.value;if(!ini&&!fim)return true;const d=new Date(row.dataHoraChegada||row.dataNf);if(Number.isNaN(d.getTime()))return false;if(ini&&d<new Date(`${ini}T00:00:00`))return false;if(fim&&d>new Date(`${fim}T23:59:59`))return false;return true}
@@ -260,9 +320,58 @@ function formPayload(){
     ...auditPayload()
   };
 }
-async function saveItem(){if(!ensureWrite())return;if(!$("formEstadia").reportValidity())return;const payload=formPayload();const isEdit=!!payload.id;loading(true,isEdit?"Atualizando solicitação...":"Salvando solicitação...");try{const res=await postApi({action:isEdit?ACTIONS.update:ACTIONS.save,data:payload,auth:auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Não foi possível salvar.");closeModal();await loadData()}catch(error){console.error("[ESTADIAS] Erro ao salvar:",error);alert(`Não foi possível ${isEdit?"atualizar":"salvar"} a estadia.\n\n${error.message}`)}finally{loading(false)}}
+async function saveItem(){
+  if(!ensureWrite())return;
+  if(!$("formEstadia").reportValidity())return;
+  const payload=formPayload();
+  const isEdit=!!payload.id;
+  loading(true,isEdit?"Atualizando solicitação...":"Salvando solicitação...");
+  try{
+    const res=await postApi({action:isEdit?ACTIONS.update:ACTIONS.save,data:payload,auth:auditPayload()});
+    if(!res||res.ok===false)throw new Error(res?.error||"Não foi possível salvar.");
+
+    if(isEdit){
+      const index=dados.findIndex(r=>r.id===payload.id);
+      if(index>=0){
+        dados[index]=normalizeRow({...dados[index],...payload},index);
+        popularFiltros();
+        aplicarFiltros();
+        saveEstadiasCache();
+      }
+    }
+
+    closeModal();
+    if($("syncStatus"))$("syncStatus").textContent=isEdit?"Estadia atualizada • sincronizando...":"Estadia salva • atualizando lista...";
+    setTimeout(()=>loadData({silent:true}),80);
+  }catch(error){
+    console.error("[ESTADIAS] Erro ao salvar:",error);
+    alert(`Não foi possível ${isEdit?"atualizar":"salvar"} a estadia.\n\n${error.message}`);
+  }finally{
+    loading(false);
+  }
+}
 async function updateStatus(id,status,oldStatus){if(!ensureWrite())return false;const item=dados.find(r=>r.id===id);if(!item){alert("Registro não encontrado.");return false}const newStatus=normalizeStatus(status);if(up(newStatus)===up(item.status))return true;if(!confirm(`Alterar o status de "${item.status}" para "${newStatus}"?`))return false;statusEmAtualizacao.add(id);renderTable();try{const res=await postApi({action:ACTIONS.status,id,status:newStatus,statusAnterior:oldStatus||item.status,responsavel:item.responsavel||currentUser(),auth:auditPayload(),...auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Falha ao atualizar status.");item.status=newStatus;item.atualizadoPor=currentUser();item.atualizadoEm=new Date().toISOString();aplicarFiltros();return true}catch(error){console.error(error);alert(`Não foi possível atualizar o status.\n\n${error.message}`);return false}finally{statusEmAtualizacao.delete(id);renderTudo()}}
-async function deleteItem(id){if(!canDelete()){alert("Somente administradores podem excluir estadias.");return}const item=dados.find(r=>r.id===id);if(!item)return;if(!confirm(`Excluir definitivamente a estadia da placa ${item.placa||"-"}?`))return;loading(true,"Excluindo solicitação...");try{const res=await postApi({action:ACTIONS.remove,id,auth:auditPayload(),...auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Falha ao excluir.");await loadData()}catch(error){alert(`Não foi possível excluir a estadia.\n\n${error.message}`)}finally{loading(false)}}
+async function deleteItem(id){
+  if(!canDelete()){alert("Somente administradores podem excluir estadias.");return}
+  const item=dados.find(r=>r.id===id);
+  if(!item)return;
+  if(!confirm(`Excluir definitivamente a estadia da placa ${item.placa||"-"}?`))return;
+  loading(true,"Excluindo solicitação...");
+  try{
+    const res=await postApi({action:ACTIONS.remove,id,auth:auditPayload(),...auditPayload()});
+    if(!res||res.ok===false)throw new Error(res?.error||"Falha ao excluir.");
+    dados=dados.filter(r=>r.id!==id);
+    popularFiltros();
+    aplicarFiltros();
+    saveEstadiasCache();
+    if($("syncStatus"))$("syncStatus").textContent="Estadia excluída • sincronizando...";
+    setTimeout(()=>loadData({silent:true}),80);
+  }catch(error){
+    alert(`Não foi possível excluir a estadia.\n\n${error.message}`);
+  }finally{
+    loading(false);
+  }
+}
 function clearFilters(){$("busca").value="";$("filtroCliente").value="";$("filtroStatus").value="";$("dataInicio").value="";$("dataFim").value="";$("filtroProduto").value="";$("filtroResponsavel").value="";aplicarFiltros()}
 function exportCsv(){if(!filtrados.length)return alert("Não há dados para exportar.");const header=["CLIENTE","CTE","NF","DATA NF","PLACA","MOTORISTA","ORIGEM","DESTINO","PRODUTO","PESO DESTINO (KG)","DATA/HORA CHEGADA","DATA/HORA SAÍDA","TEMPO ESPERA (HORAS)","TEMPO RETROATIVO (HS)","HORA A PAGAR","VALOR ESTADIA (H)","VALOR ESTADIA (R$)","VALOR PAGO (R$)","LUCRO (R$)","MOTIVO DA ESTADIA","STATUS DA ESTADIA","RESPONSÁVEL","OBSERVAÇÕES","ANEXO"];const rows=filtrados.map(r=>[r.cliente,r.cte,r.nf,dateOnlyBR(r.dataNf),r.placa,r.motorista,r.origem,r.destino,r.produto,r.pesoDestino,dateTimeBR(r.dataHoraChegada),dateTimeBR(r.dataHoraSaida),r.tempoEspera,r.tempoRetroativo,r.horasPagar,r.valorHora,r.valorTotal,r.valorPago,lucroLinha(r),r.motivo,r.status,r.responsavel,r.observacoes,r.anexoUrl]);const csv=[header,...rows].map(row=>row.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(";")).join("\n");const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`estadias_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function bind(){
@@ -272,7 +381,7 @@ function bind(){
   bindMiniSwitch("togglePago");
   bindMiniSwitch("toggleCteRecebido");
   if($("btnNovaEstadia"))$("btnNovaEstadia").onclick=()=>{if(ensureWrite())openModal()};
-  $("btnAtualizar").onclick=loadData;
+  $("btnAtualizar").onclick=()=>loadData({silent:false});
   $("btnExportar").onclick=exportCsv;
   $("btnFiltrar").onclick=aplicarFiltros;
   $("btnLimparFiltros").onclick=clearFilters;
@@ -287,5 +396,5 @@ function bind(){
   $("porPagina").addEventListener("change",()=>{paginaAtual=1;renderTable();renderPagination()});
   ["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora","pesoDestino"].forEach(id=>{$(id)?.addEventListener("input",updateCalculationPreview);$(id)?.addEventListener("change",updateCalculationPreview)});
 }
-window.addEventListener("DOMContentLoaded",()=>{if(typeof requireEstadiasAuth==="function"&&requireEstadiasAuth()!==true)return;bind();loadData()});
+window.addEventListener("DOMContentLoaded",()=>{if(typeof requireEstadiasAuth==="function"&&requireEstadiasAuth()!==true)return;bind();const restored=restoreEstadiasCache();loadData({silent:restored})});
 })();

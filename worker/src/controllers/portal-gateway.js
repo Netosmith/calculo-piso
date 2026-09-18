@@ -151,14 +151,49 @@ async function overlayEstadiasPrecision(env, data) {
   if (!env?.SESSIONS) return data;
 
   if (Array.isArray(data)) {
-    await Promise.all(
-      data.map(async (record) => {
-        const id = estadiaId(record);
-        if (!id) return;
-        const precision = await readEstadiaPrecision(env, id);
-        applyPrecision(record, precision);
-      })
-    );
+    // Antes era feito 1 KV.get para CADA estadia. Com dezenas/centenas de
+    // registros isso acrescentava muita latência em toda abertura da tela.
+    // Agora listamos somente as chaves que realmente possuem precisão salva
+    // e lemos apenas esses poucos registros.
+    const recordsById = new Map();
+
+    for (const record of data) {
+      const id = estadiaId(record);
+      if (id) recordsById.set(id, record);
+    }
+
+    if (!recordsById.size) return data;
+
+    try {
+      const listed = await env.SESSIONS.list({
+        prefix: ESTADIAS_PRECISION_PREFIX,
+        limit: 1000
+      });
+
+      const keys = Array.isArray(listed?.keys) ? listed.keys : [];
+      const precisionKeys = keys
+        .map((entry) => String(entry?.name || ""))
+        .filter((key) => key.startsWith(ESTADIAS_PRECISION_PREFIX))
+        .filter((key) => {
+          const id = key.slice(ESTADIAS_PRECISION_PREFIX.length);
+          return recordsById.has(id);
+        });
+
+      await Promise.all(
+        precisionKeys.map(async (key) => {
+          const id = key.slice(ESTADIAS_PRECISION_PREFIX.length);
+          const precision = await readEstadiaPrecision(env, id);
+          applyPrecision(recordsById.get(id), precision);
+        })
+      );
+    } catch (error) {
+      // Precisão é uma camada complementar. Nunca deve atrasar ou impedir
+      // a listagem principal das estadias.
+      console.warn("[ESTADIAS] Overlay de precisão ignorado nesta leitura", {
+        message: String(error?.message || error)
+      });
+    }
+
     return data;
   }
 

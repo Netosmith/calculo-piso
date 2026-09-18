@@ -40,6 +40,50 @@ function hoursBetween(start,end){const a=parseDateValue(start),b=parseDateValue(
 function roundMoney(v){return Math.round((num(v)+Number.EPSILON)*100)/100}
 function lucroLinha(r){const valor=num(r?.valorTotal);const pago=num(r?.valorPago);return valor>0&&pago>0?roundMoney(valor-pago):0}
 function hoursText(v){const totalMinutes=Math.round(num(v)*60);const hours=Math.floor(totalMinutes/60);const minutes=totalMinutes%60;return `${hours}:${String(minutes).padStart(2,"0")} h`}
+
+const ESTADIA_META_RE=/\s*\[\[NF_ESTADIA_META:RECIBO=(0|1);CTE=(0|1);CHAMADO=([^\]]*)\]\]\s*/i;
+function boolValue(v,fallback=false){
+  if(v===undefined||v===null||v==="")return !!fallback;
+  return ["1","SIM","S","TRUE","OK","RECEBIDO"].includes(up(v));
+}
+function parseEstadiaMeta(raw){
+  const original=txt(raw);
+  const match=original.match(ESTADIA_META_RE);
+  return {
+    recibo:match?match[1]==="1":false,
+    cteRecebido:match?match[2]==="1":false,
+    chamado:match?txt(match[3]):"",
+    observacoes:original.replace(ESTADIA_META_RE,"").trim()
+  };
+}
+function sanitizeMetaValue(v){
+  return up(v).replace(/[\]\r\n]/g," ").replace(/;/g,",").replace(/\s+/g," ").trim();
+}
+function packEstadiaMeta(observacoes,recibo,cteRecebido,chamado){
+  const clean=parseEstadiaMeta(observacoes).observacoes;
+  const meta=`[[NF_ESTADIA_META:RECIBO=${recibo?1:0};CTE=${cteRecebido?1:0};CHAMADO=${sanitizeMetaValue(chamado)}]]`;
+  return [clean,meta].filter(Boolean).join("\n");
+}
+function setMiniSwitch(id,checked){
+  const el=$(id);
+  if(!el)return;
+  el.setAttribute("aria-checked",checked?"true":"false");
+}
+function miniSwitchChecked(id){
+  return $(id)?.getAttribute("aria-checked")==="true";
+}
+function bindMiniSwitch(id){
+  const el=$(id);
+  if(!el)return;
+  const toggle=()=>setMiniSwitch(id,!miniSwitchChecked(id));
+  el.addEventListener("click",toggle);
+  el.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){
+      e.preventDefault();
+      toggle();
+    }
+  });
+}
 function normalizeStatus(status){const normalized=up(status);return STATUS_OPTIONS.find(item=>up(item)===normalized)||"AGUARDANDO"}
 function statusClass(status){const s=up(status);if(s.includes("PAGA"))return "paid";if(s.includes("LIBER"))return "ok";if(s.includes("NEGAD"))return "no";if(s.includes("CORRE"))return "correct";if(s.includes("ANAL"))return "analysis";return "wait"}
 function readonlyStatusStyle(status){const s=up(status);if(s.includes("PAGA"))return "background:#e7f8ef;color:#006b44;border:1px solid #8ed8b4;";if(s.includes("LIBER"))return "background:#e8f8ef;color:#087e4b;border:1px solid #9be0bf;";if(s.includes("NEGAD"))return "background:#ffebed;color:#c9212b;border:1px solid #ffb2b8;";if(s.includes("CORRE"))return "background:#f1ebff;color:#6b35d0;border:1px solid #d9c8ff;";if(s.includes("ANAL"))return "background:#e8efff;color:#255bd0;border:1px solid #b8cbff;";return "background:#fff5df;color:#a85f00;border:1px solid #ffd27d;"}
@@ -48,7 +92,51 @@ function canWrite(){return typeof canWriteEstadias==="function"?canWriteEstadias
 function canDelete(){return typeof canDeleteEstadias==="function"?canDeleteEstadias():up(currentRole())==="ADMINISTRADOR"}
 function ensureWrite(){if(canWrite())return true;alert("Seu perfil possui acesso somente para consulta.");return false}
 function auditPayload(){const a=authContext();return {usuario:up(a.usuario),nomeUsuario:up(a.nome),perfil:up(a.perfil),estado:up(a.estado),atualizadoPor:up(a.nome||a.usuario),atualizadoEm:new Date().toISOString()}}
-function normalizeRow(r,index){const chegada=r.dataHoraChegada??r["DATA/HORA CHEGADA"]??r.chegada??"";const saida=r.dataHoraSaida??r["DATA/HORA SAÍDA"]??r.saida??"";const espera=(chegada&&saida)?hoursBetween(chegada,saida):num(r.tempoEspera??r["TEMPO ESPERA (HORAS)"]);const retro=Math.max(0,num(r.tempoRetroativo??r["TEMPO RETROATIVO (HS)"]));const pagar=Math.max(0,espera-retro);const valorHora=Math.max(0,num(r.valorHora??r["VALOR ESTADIA (H)"]));const pesoDestino=num(r.pesoDestino??r["PESO DESTINO (kg)"]??r["PESO DESTINO (KG)"]);const pesoToneladas=Math.max(0,pesoDestino/1000);const valorTotal=roundMoney(pagar*valorHora*pesoToneladas);return {id:txt(r.id??r.ID??r.rowId??index+2),cliente:txt(r.cliente??r.CLIENTE),cte:txt(r.cte??r.CTE),nf:txt(r.nf??r.NF),dataNf:r.dataNf??r["DATA NF"]??"",placa:txt(r.placa??r.PLACA),motorista:txt(r.motorista??r.MOTORISTA),origem:txt(r.origem??r.ORIGEM),destino:txt(r.destino??r.DESTINO),produto:txt(r.produto??r.PRODUTO),pesoDestino,dataHoraChegada:chegada,dataHoraSaida:saida,tempoEspera:espera,tempoRetroativo:retro,horasPagar:pagar,valorHora,valorTotal,valorPago:Math.max(0,num(r.valorPago??r["VALOR PAGO"]??r["VALOR PAGO (R$)"]??r["VALOR_PAGO"])),motivo:txt(r.motivo??r["MOTIVO DA ESTADIA"]),status:normalizeStatus(r.status??r["STATUS DA ESTADIA"]??"AGUARDANDO"),responsavel:txt(r.responsavel??r.RESPONSAVEL),observacoes:txt(r.observacoes??r.OBSERVACOES),anexoUrl:txt(r.anexoUrl??r.ANEXO_URL??r.anexo)}}
+function normalizeRow(r,index){
+  const chegada=r.dataHoraChegada??r["DATA/HORA CHEGADA"]??r.chegada??"";
+  const saida=r.dataHoraSaida??r["DATA/HORA SAÍDA"]??r.saida??"";
+  const espera=(chegada&&saida)?hoursBetween(chegada,saida):num(r.tempoEspera??r["TEMPO ESPERA (HORAS)"]);
+  const retro=Math.max(0,num(r.tempoRetroativo??r["TEMPO RETROATIVO (HS)"]));
+  const pagar=Math.max(0,espera-retro);
+  const valorHora=Math.max(0,num(r.valorHora??r["VALOR ESTADIA (H)"]));
+  const pesoDestino=num(r.pesoDestino??r["PESO DESTINO (kg)"]??r["PESO DESTINO (KG)"]);
+  const pesoToneladas=Math.max(0,pesoDestino/1000);
+  const valorTotal=roundMoney(pagar*valorHora*pesoToneladas);
+  const meta=parseEstadiaMeta(r.observacoes??r.OBSERVACOES??"");
+  const recibo=boolValue(r.recibo??r.RECIBO,meta.recibo);
+  const cteRecebido=boolValue(r.cteRecebido??r["CTE RECEBIDO"]??r.cteOk,meta.cteRecebido);
+  const chamado=txt(r.chamado??r.CHAMADO??meta.chamado);
+
+  return {
+    id:txt(r.id??r.ID??r.rowId??index+2),
+    cliente:txt(r.cliente??r.CLIENTE),
+    cte:txt(r.cte??r.CTE),
+    nf:txt(r.nf??r.NF),
+    dataNf:r.dataNf??r["DATA NF"]??"",
+    placa:txt(r.placa??r.PLACA),
+    motorista:txt(r.motorista??r.MOTORISTA),
+    origem:txt(r.origem??r.ORIGEM),
+    destino:txt(r.destino??r.DESTINO),
+    produto:txt(r.produto??r.PRODUTO),
+    pesoDestino,
+    dataHoraChegada:chegada,
+    dataHoraSaida:saida,
+    tempoEspera:espera,
+    tempoRetroativo:retro,
+    horasPagar:pagar,
+    valorHora,
+    valorTotal,
+    valorPago:Math.max(0,num(r.valorPago??r["VALOR PAGO"]??r["VALOR PAGO (R$)"]??r["VALOR_PAGO"])),
+    motivo:txt(r.motivo??r["MOTIVO DA ESTADIA"]),
+    status:normalizeStatus(r.status??r["STATUS DA ESTADIA"]??"AGUARDANDO"),
+    responsavel:txt(r.responsavel??r.RESPONSAVEL),
+    recibo,
+    cteRecebido,
+    chamado,
+    observacoes:meta.observacoes,
+    anexoUrl:txt(r.anexoUrl??r.ANEXO_URL??r.anexo)
+  };
+}
 async function portalCall(action,params={}){const session=window.portalAuthReady?await window.portalAuthReady:null;if(!session)throw new Error("Sessão inválida ou expirada.");if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");return window.PortalAPI.call("estadias",action,params)}
 async function readApi(params={}){const {action,...filters}=params;return portalCall("read",{...filters,resource:"registros"})}
 async function postApi(payload={}){const action=payload.action;if(action===ACTIONS.save||action===ACTIONS.update){const operation=action===ACTIONS.save?"create":"update";return portalCall(operation,{...(payload.data||{}),resource:"registros"})}if(action===ACTIONS.status){const current=dados.find(item=>item.id===payload.id);if(!current)throw new Error("Registro não encontrado.");return portalCall("update",{...current,status:payload.status,responsavel:payload.responsavel||current.responsavel,resource:"registros"})}if(action===ACTIONS.remove)return portalCall("delete",{id:payload.id,resource:"registros"});throw new Error(`Operação de estadia inválida: ${action||"vazia"}.`)}
@@ -71,17 +159,115 @@ function renderActionsCell(r){const actions=[];if(canWrite())actions.push(`<butt
 function renderTable(){const tbody=$("tabelaEstadias");const rows=getPageRows();if($("tableMeta"))$("tableMeta").textContent=`${filtrados.length} registro(s)`;if(!rows.length){tbody.innerHTML='<tr><td colspan="14" class="empty">Nenhuma estadia encontrada para os filtros selecionados.</td></tr>';return}tbody.innerHTML=rows.map(r=>`<tr data-id="${esc(r.id)}"><td>${renderStatusCell(r)}</td><td>${esc(r.cliente||"-")}</td><td>${esc(r.cte||"-")}</td><td>${esc(r.nf||"-")}</td><td><b>${esc(r.placa||"-")}</b></td><td>${esc(r.origem||"-")}</td><td>${esc(r.destino||"-")}</td><td>${esc(dateTimeBR(r.dataHoraChegada))}</td><td>${esc(dateTimeBR(r.dataHoraSaida))}</td><td>${r.horasPagar>0?hoursText(r.horasPagar):"-"}</td><td class="moneyCell">${canWrite()?(r.valorTotal>0?money(r.valorTotal):"-"):"••••••"}</td><td class="paidValueCell">${renderValorPagoCell(r)}</td><td>${esc(r.responsavel||"-")}</td><td>${renderActionsCell(r)}</td></tr>`).join("");tbody.querySelectorAll(".paidValueInput").forEach(input=>{input.addEventListener("click",e=>e.stopPropagation());input.addEventListener("mouseenter",()=>{if(document.activeElement!==input){input.style.borderColor="#dfe6ef";input.style.background="#fff";input.style.padding="0 8px"}});input.addEventListener("mouseleave",()=>{if(document.activeElement!==input){input.style.borderColor="transparent";input.style.background="transparent";input.style.padding="0"}});input.addEventListener("focus",()=>{input.style.borderColor="#4d83f3";input.style.background="#fff";input.style.padding="0 8px";input.style.boxShadow="0 0 0 3px rgba(37,99,235,.12)";input.select()});input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}if(e.key==="Escape"){const item=dados.find(r=>r.id===input.dataset.id);input.value=moneyInput(Math.max(0,num(item?.valorPago)));input.blur()}});input.addEventListener("blur",async e=>{e.stopPropagation();const id=input.dataset.id;const valor=Math.max(0,num(input.value));input.value=moneyInput(valor);input.style.borderColor="transparent";input.style.background="transparent";input.style.padding="0";input.style.boxShadow="none";await updateValorPago(id,valor,input)})});tbody.querySelectorAll(".statusSelect").forEach(select=>{select.addEventListener("click",e=>e.stopPropagation());select.addEventListener("change",async e=>{e.stopPropagation();const oldStatus=select.dataset.oldStatus||"AGUARDANDO";const newStatus=normalizeStatus(select.value);select.className=`statusSelect ${statusClass(newStatus)}`;const ok=await updateStatus(select.dataset.id,newStatus,oldStatus);if(!ok){select.value=oldStatus;select.className=`statusSelect ${statusClass(oldStatus)}`}})});tbody.querySelectorAll(".btnEdit").forEach(btn=>btn.onclick=e=>{e.stopPropagation();const item=dados.find(r=>r.id===btn.dataset.id);if(item)openModal(item)});tbody.querySelectorAll(".btnDelete").forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteItem(btn.dataset.id)})}
 function renderPagination(){const wrap=$("paginacao");const size=num($("porPagina")?.value)||10;const pages=Math.max(1,Math.ceil(filtrados.length/size));if(paginaAtual>pages)paginaAtual=pages;const items=[];items.push(`<button class="pageBtn" data-page="${paginaAtual-1}" ${paginaAtual===1?"disabled":""}>‹</button>`);const start=Math.max(1,paginaAtual-2);const end=Math.min(pages,start+4);for(let p=start;p<=end;p++)items.push(`<button class="pageBtn ${p===paginaAtual?"active":""}" data-page="${p}">${p}</button>`);items.push(`<button class="pageBtn" data-page="${paginaAtual+1}" ${paginaAtual===pages?"disabled":""}>›</button>`);wrap.innerHTML=items.join("");wrap.querySelectorAll("button:not(:disabled)").forEach(btn=>{btn.onclick=()=>{paginaAtual=Number(btn.dataset.page);renderTable();renderPagination()}})}
 function renderTudo(){renderKpis();renderTable();renderPagination();if(typeof applyEstadiasAccessUI==="function")applyEstadiasAccessUI()}
-function clearForm(){$("formEstadia").reset();$("registroId").value="";$("status").value="AGUARDANDO";$("tempoRetroativo").value="0";$("valorHora").value="0";$("responsavel").value=currentUser();updateCalculationPreview()}
-function openModal(item=null){if(!ensureWrite())return;clearForm();$("modalTitulo").textContent=item?"Editar solicitação":"Nova solicitação de estadia";if(item){$("registroId").value=item.id;$("cliente").value=item.cliente;$("cte").value=item.cte;$("nf").value=item.nf;$("dataNf").value=toDateInput(item.dataNf);$("placa").value=item.placa;$("motorista").value=item.motorista;$("origem").value=item.origem;$("destino").value=item.destino;$("produto").value=item.produto;$("pesoDestino").value=item.pesoDestino||"";$("dataHoraChegada").value=toDateTimeInput(item.dataHoraChegada);$("dataHoraSaida").value=toDateTimeInput(item.dataHoraSaida);$("tempoRetroativo").value=item.tempoRetroativo||0;$("valorHora").value=item.valorHora||0;$("status").value=item.status||"AGUARDANDO";$("responsavel").value=item.responsavel||currentUser();$("motivo").value=item.motivo;$("observacoes").value=item.observacoes;$("anexoUrl").value=item.anexoUrl}updateCalculationPreview();$("modalEstadia").classList.add("show")}
+function clearForm(){
+  $("formEstadia").reset();
+  $("registroId").value="";
+  $("status").value="AGUARDANDO";
+  $("tempoRetroativo").value="0";
+  $("valorHora").value="0";
+  $("responsavel").value=currentUser();
+  if($("chamado"))$("chamado").value="";
+  setMiniSwitch("toggleRecibo",false);
+  setMiniSwitch("toggleCteRecebido",false);
+  updateCalculationPreview();
+}
+function openModal(item=null){
+  if(!ensureWrite())return;
+  clearForm();
+  $("modalTitulo").textContent=item?"Editar solicitação":"Nova solicitação de estadia";
+  if(item){
+    $("registroId").value=item.id;
+    $("cliente").value=item.cliente;
+    $("cte").value=item.cte;
+    $("nf").value=item.nf;
+    $("dataNf").value=toDateInput(item.dataNf);
+    $("placa").value=item.placa;
+    $("motorista").value=item.motorista;
+    $("origem").value=item.origem;
+    $("destino").value=item.destino;
+    $("produto").value=item.produto;
+    $("pesoDestino").value=item.pesoDestino||"";
+    $("dataHoraChegada").value=toDateTimeInput(item.dataHoraChegada);
+    $("dataHoraSaida").value=toDateTimeInput(item.dataHoraSaida);
+    $("tempoRetroativo").value=item.tempoRetroativo||0;
+    $("valorHora").value=item.valorHora||0;
+    $("status").value=item.status||"AGUARDANDO";
+    $("responsavel").value=item.responsavel||currentUser();
+    $("motivo").value=item.motivo;
+    $("observacoes").value=item.observacoes;
+    $("anexoUrl").value=item.anexoUrl;
+    if($("chamado"))$("chamado").value=item.chamado||"";
+    setMiniSwitch("toggleRecibo",!!item.recibo);
+    setMiniSwitch("toggleCteRecebido",!!item.cteRecebido);
+  }
+  updateCalculationPreview();
+  $("modalEstadia").classList.add("show");
+}
 function closeModal(){$("modalEstadia").classList.remove("show")}
 function calculateFormValues(){const espera=hoursBetween($("dataHoraChegada")?.value,$("dataHoraSaida")?.value);const retro=Math.max(0,num($("tempoRetroativo")?.value));const pagar=Math.max(0,espera-retro);const valorHora=Math.max(0,num($("valorHora")?.value));const pesoDestino=Math.max(0,num($("pesoDestino")?.value));const pesoToneladas=pesoDestino/1000;const valorTotal=roundMoney(pagar*valorHora*pesoToneladas);return {espera,retro,pagar,valorHora,pesoDestino,pesoToneladas,valorTotal}}
 function updateCalculationPreview(){const c=calculateFormValues();if($("calcTempoEspera"))$("calcTempoEspera").textContent=hoursText(c.espera);if($("calcHorasPagar"))$("calcHorasPagar").textContent=hoursText(c.pagar);if($("calcValorTotal"))$("calcValorTotal").textContent=money(c.valorTotal);return c}
-function formPayload(){const c=calculateFormValues();return {id:$("registroId").value,cliente:up($("cliente").value),cte:txt($("cte").value),nf:txt($("nf").value),dataNf:$("dataNf").value,placa:up($("placa").value),motorista:up($("motorista").value),origem:up($("origem").value),destino:up($("destino").value),produto:up($("produto").value),pesoDestino:c.pesoDestino,dataHoraChegada:$("dataHoraChegada").value,dataHoraSaida:$("dataHoraSaida").value,tempoEspera:c.espera,tempoRetroativo:c.retro,horasPagar:c.pagar,valorHora:c.valorHora,valorTotal:c.valorTotal,motivo:up($("motivo").value),status:normalizeStatus($("status").value),responsavel:up($("responsavel").value||currentUser()),observacoes:up($("observacoes").value),anexoUrl:txt($("anexoUrl").value),...auditPayload()}}
+function formPayload(){
+  const c=calculateFormValues();
+  const recibo=miniSwitchChecked("toggleRecibo");
+  const cteRecebido=miniSwitchChecked("toggleCteRecebido");
+  const chamado=up($("chamado")?.value||"");
+  const observacoes=packEstadiaMeta(up($("observacoes").value),recibo,cteRecebido,chamado);
+
+  return {
+    id:$("registroId").value,
+    cliente:up($("cliente").value),
+    cte:txt($("cte").value),
+    nf:txt($("nf").value),
+    dataNf:$("dataNf").value,
+    placa:up($("placa").value),
+    motorista:up($("motorista").value),
+    origem:up($("origem").value),
+    destino:up($("destino").value),
+    produto:up($("produto").value),
+    pesoDestino:c.pesoDestino,
+    dataHoraChegada:$("dataHoraChegada").value,
+    dataHoraSaida:$("dataHoraSaida").value,
+    tempoEspera:c.espera,
+    tempoRetroativo:c.retro,
+    horasPagar:c.pagar,
+    valorHora:c.valorHora,
+    valorTotal:c.valorTotal,
+    recibo:recibo?"SIM":"NÃO",
+    cteRecebido:cteRecebido?"SIM":"NÃO",
+    chamado,
+    motivo:up($("motivo").value),
+    status:normalizeStatus($("status").value),
+    responsavel:up($("responsavel").value||currentUser()),
+    observacoes,
+    anexoUrl:txt($("anexoUrl").value),
+    ...auditPayload()
+  };
+}
 async function saveItem(){if(!ensureWrite())return;if(!$("formEstadia").reportValidity())return;const payload=formPayload();const isEdit=!!payload.id;loading(true,isEdit?"Atualizando solicitação...":"Salvando solicitação...");try{const res=await postApi({action:isEdit?ACTIONS.update:ACTIONS.save,data:payload,auth:auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Não foi possível salvar.");closeModal();await loadData()}catch(error){console.error("[ESTADIAS] Erro ao salvar:",error);alert(`Não foi possível ${isEdit?"atualizar":"salvar"} a estadia.\n\n${error.message}`)}finally{loading(false)}}
 async function updateStatus(id,status,oldStatus){if(!ensureWrite())return false;const item=dados.find(r=>r.id===id);if(!item){alert("Registro não encontrado.");return false}const newStatus=normalizeStatus(status);if(up(newStatus)===up(item.status))return true;if(!confirm(`Alterar o status de "${item.status}" para "${newStatus}"?`))return false;statusEmAtualizacao.add(id);renderTable();try{const res=await postApi({action:ACTIONS.status,id,status:newStatus,statusAnterior:oldStatus||item.status,responsavel:item.responsavel||currentUser(),auth:auditPayload(),...auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Falha ao atualizar status.");item.status=newStatus;item.atualizadoPor=currentUser();item.atualizadoEm=new Date().toISOString();aplicarFiltros();return true}catch(error){console.error(error);alert(`Não foi possível atualizar o status.\n\n${error.message}`);return false}finally{statusEmAtualizacao.delete(id);renderTudo()}}
 async function deleteItem(id){if(!canDelete()){alert("Somente administradores podem excluir estadias.");return}const item=dados.find(r=>r.id===id);if(!item)return;if(!confirm(`Excluir definitivamente a estadia da placa ${item.placa||"-"}?`))return;loading(true,"Excluindo solicitação...");try{const res=await postApi({action:ACTIONS.remove,id,auth:auditPayload(),...auditPayload()});if(!res||res.ok===false)throw new Error(res?.error||"Falha ao excluir.");await loadData()}catch(error){alert(`Não foi possível excluir a estadia.\n\n${error.message}`)}finally{loading(false)}}
 function clearFilters(){$("busca").value="";$("filtroCliente").value="";$("filtroStatus").value="";$("dataInicio").value="";$("dataFim").value="";$("filtroProduto").value="";$("filtroResponsavel").value="";aplicarFiltros()}
 function exportCsv(){if(!filtrados.length)return alert("Não há dados para exportar.");const header=["CLIENTE","CTE","NF","DATA NF","PLACA","MOTORISTA","ORIGEM","DESTINO","PRODUTO","PESO DESTINO (KG)","DATA/HORA CHEGADA","DATA/HORA SAÍDA","TEMPO ESPERA (HORAS)","TEMPO RETROATIVO (HS)","HORA A PAGAR","VALOR ESTADIA (H)","VALOR ESTADIA (R$)","VALOR PAGO (R$)","LUCRO (R$)","MOTIVO DA ESTADIA","STATUS DA ESTADIA","RESPONSÁVEL","OBSERVAÇÕES","ANEXO"];const rows=filtrados.map(r=>[r.cliente,r.cte,r.nf,dateOnlyBR(r.dataNf),r.placa,r.motorista,r.origem,r.destino,r.produto,r.pesoDestino,dateTimeBR(r.dataHoraChegada),dateTimeBR(r.dataHoraSaida),r.tempoEspera,r.tempoRetroativo,r.horasPagar,r.valorHora,r.valorTotal,r.valorPago,lucroLinha(r),r.motivo,r.status,r.responsavel,r.observacoes,r.anexoUrl]);const csv=[header,...rows].map(row=>row.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(";")).join("\n");const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`estadias_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function bind(){renderUser();["dataHoraChegada","dataHoraSaida"].forEach(id=>{const el=$(id);if(el)el.step="1"});if($("btnNovaEstadia"))$("btnNovaEstadia").onclick=()=>{if(ensureWrite())openModal()};$("btnAtualizar").onclick=loadData;$("btnExportar").onclick=exportCsv;$("btnFiltrar").onclick=aplicarFiltros;$("btnLimparFiltros").onclick=clearFilters;$("btnFecharModal").onclick=closeModal;$("btnCancelarModal").onclick=closeModal;$("btnSalvarEstadia").onclick=saveItem;let modalBackdropMouseDown=false;$("modalEstadia").addEventListener("mousedown",e=>{modalBackdropMouseDown=e.target===$("modalEstadia")});$("modalEstadia").addEventListener("click",e=>{if(e.target===$("modalEstadia")&&modalBackdropMouseDown)closeModal();modalBackdropMouseDown=false});$("busca").addEventListener("input",()=>{clearTimeout(window.__nfEstadiaSearch);window.__nfEstadiaSearch=setTimeout(aplicarFiltros,250)});["filtroCliente","filtroStatus","dataInicio","dataFim","filtroProduto","filtroResponsavel"].forEach(id=>{$(id).addEventListener("change",aplicarFiltros)});$("porPagina").addEventListener("change",()=>{paginaAtual=1;renderTable();renderPagination()});["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora","pesoDestino"].forEach(id=>{$(id)?.addEventListener("input",updateCalculationPreview);$(id)?.addEventListener("change",updateCalculationPreview)})}
+function bind(){
+  renderUser();
+  ["dataHoraChegada","dataHoraSaida"].forEach(id=>{const el=$(id);if(el)el.step="1"});
+  bindMiniSwitch("toggleRecibo");
+  bindMiniSwitch("toggleCteRecebido");
+  if($("btnNovaEstadia"))$("btnNovaEstadia").onclick=()=>{if(ensureWrite())openModal()};
+  $("btnAtualizar").onclick=loadData;
+  $("btnExportar").onclick=exportCsv;
+  $("btnFiltrar").onclick=aplicarFiltros;
+  $("btnLimparFiltros").onclick=clearFilters;
+  $("btnFecharModal").onclick=closeModal;
+  $("btnCancelarModal").onclick=closeModal;
+  $("btnSalvarEstadia").onclick=saveItem;
+  let modalBackdropMouseDown=false;
+  $("modalEstadia").addEventListener("mousedown",e=>{modalBackdropMouseDown=e.target===$("modalEstadia")});
+  $("modalEstadia").addEventListener("click",e=>{if(e.target===$("modalEstadia")&&modalBackdropMouseDown)closeModal();modalBackdropMouseDown=false});
+  $("busca").addEventListener("input",()=>{clearTimeout(window.__nfEstadiaSearch);window.__nfEstadiaSearch=setTimeout(aplicarFiltros,250)});
+  ["filtroCliente","filtroStatus","dataInicio","dataFim","filtroProduto","filtroResponsavel"].forEach(id=>{$(id).addEventListener("change",aplicarFiltros)});
+  $("porPagina").addEventListener("change",()=>{paginaAtual=1;renderTable();renderPagination()});
+  ["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora","pesoDestino"].forEach(id=>{$(id)?.addEventListener("input",updateCalculationPreview);$(id)?.addEventListener("change",updateCalculationPreview)});
+}
 window.addEventListener("DOMContentLoaded",()=>{if(typeof requireEstadiasAuth==="function"&&requireEstadiasAuth()!==true)return;bind();loadData()});
 })();

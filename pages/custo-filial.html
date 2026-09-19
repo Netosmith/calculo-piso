@@ -253,6 +253,14 @@
       color:#1d4ed8;
       border-color:#cfe0ff;
     }
+    .miniBtn.deleteLaunch{
+      background:var(--cf-red-soft);
+      color:var(--cf-red);
+      border-color:#fecaca;
+    }
+    .miniBtn.deleteLaunch:hover{
+      background:#fee2e2;
+    }
 
     .cfCostLayout{
       display:grid;
@@ -791,7 +799,7 @@
   <div class="cfLoading" id="loading"><div class="cfLoadingBox" id="loadingText">Carregando...</div></div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/custo-filial.js?v=6"></script>
+  <script src="../assets/js/custo-filial.js?v=7"></script>
   <script>
     try{
       if(typeof requireFeatureAuth==="function") requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.");

@@ -224,6 +224,35 @@
       align-items:end;
     }
     .cfLaunchGrid textarea.cfControl{min-height:40px;height:40px}
+    .cfEditNotice{
+      display:none;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:0 0 13px;
+      padding:10px 12px;
+      border:1px solid #bfdbfe;
+      border-radius:11px;
+      background:#eff6ff;
+    }
+    .cfEditNotice.show{display:flex}
+    .cfEditNotice strong{
+      display:block;
+      color:var(--cf-blue);
+      font-size:10px;
+    }
+    .cfEditNotice span{
+      display:block;
+      margin-top:3px;
+      color:var(--cf-muted);
+      font-size:8px;
+    }
+    .cfBtn.editing{background:#2563eb;color:#fff}
+    .miniBtn.editLaunch{
+      background:#eef4ff;
+      color:#1d4ed8;
+      border-color:#cfe0ff;
+    }
 
     .cfCostLayout{
       display:grid;
@@ -568,13 +597,21 @@
       </article>
     </section>
 
-    <section class="cfCard cfSection">
+    <section class="cfCard cfSection" id="secaoLancamento">
       <div class="cfSectionHead">
         <div>
           <h2>Lançamento diário</h2>
           <p>Atualize todos os dias apenas o volume embarcado e o lucro da filial.</p>
         </div>
         <span class="cfBadge" id="editHint">Novo lançamento</span>
+      </div>
+
+      <div class="cfEditNotice" id="editNotice">
+        <div>
+          <strong id="editNoticeTitle">Editando lançamento</strong>
+          <span id="editNoticeText">Altere os dados abaixo e salve novamente.</span>
+        </div>
+        <button class="cfBtn ghost" id="btnCancelarEdicao" type="button">Cancelar edição</button>
       </div>
 
       <div class="cfLaunchGrid">
@@ -754,7 +791,7 @@
   <div class="cfLoading" id="loading"><div class="cfLoadingBox" id="loadingText">Carregando...</div></div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/custo-filial.js?v=5"></script>
+  <script src="../assets/js/custo-filial.js?v=6"></script>
   <script>
     try{
       if(typeof requireFeatureAuth==="function") requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.");

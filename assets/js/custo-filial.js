@@ -66,6 +66,7 @@ async function portalCall(action,params={}){
 }
 async function readAll(){const r=await portalCall("read",{resource:"all"});return r?.data||{}}
 async function saveLaunch(payload,isUpdate){return portalCall(isUpdate?"update":"create",{...payload,resource:"lancamentos"})}
+async function deleteLaunch(id){return portalCall("delete",{resource:"lancamentos",id})}
 
 function normalizeLaunch(x){
   const rawObs=text(x.observacao);
@@ -232,9 +233,14 @@ function renderLaunchTable(){
     <td class="num">${tons(x.volume)}</td>
     <td class="num money ${x.lucro>=0?'good':'bad'}">${brl(x.lucro)}</td>
     <td>${esc(x.observacao||'-')}</td>
-    <td><button class="miniBtn editLaunch" data-edit="${esc(x.id)}">✏ Editar lançamento</button></td>
+    <td>
+      <button class="miniBtn editLaunch" data-edit="${esc(x.id)}">✏ Editar</button>
+      <button class="miniBtn deleteLaunch" data-delete="${esc(x.id)}">🗑 Excluir</button>
+    </td>
   </tr>`).join("");
+
   tb.querySelectorAll("[data-edit]").forEach(btn=>btn.addEventListener("click",()=>editLaunch(btn.dataset.edit)));
+  tb.querySelectorAll("[data-delete]").forEach(btn=>btn.addEventListener("click",()=>removeLaunch(btn.dataset.delete)));
 }
 function dailySeries(key){
   const rows=filteredLaunches();const map=new Map();for(let d=1;d<=daysInMonth();d++)map.set(d,0);rows.forEach(x=>{const p=parseYmd(x.data);if(p)map.set(p.dia,(map.get(p.dia)||0)+num(x[key]))});return [...map.values()];
@@ -412,8 +418,8 @@ function renderCharts(){
         {
           label:"Lucro do mês",
           data:s.map(x=>x.lucro),
-          backgroundColor:s.map(x=>x.level==="good"?"rgba(5,150,105,.72)":x.level==="bad"?"rgba(220,38,38,.68)":"rgba(37,99,235,.72)"),
-          borderColor:s.map(x=>x.level==="good"?"#059669":x.level==="bad"?"#dc2626":"#2563eb"),
+          backgroundColor:s.map(x=>x.lucro>=x.fixo?"rgba(15,61,120,.82)":"rgba(220,38,38,.72)"),
+          borderColor:s.map(x=>x.lucro>=x.fixo?"#0f3d78":"#dc2626"),
           borderWidth:1,
           borderRadius:6,
           barPercentage:.76,
@@ -524,6 +530,44 @@ function editLaunch(id){
   $("secaoLancamento")?.scrollIntoView({behavior:"smooth",block:"start"});
   setTimeout(()=>$("lancVolume")?.focus(),320);
 }
+async function removeLaunch(id){
+  const x=DB.lancamentos.find(r=>r.id===id&&r.tipo==="diario");
+  if(!x)return;
+
+  const ok=confirm(
+    `Excluir este lançamento?\n\n`+
+    `${filialLabel(x.filial)} • ${dateBR(x.data)}\n`+
+    `Volume: ${tons(x.volume)}\n`+
+    `Lucro: ${brl(x.lucro)}\n\n`+
+    `Essa ação remove o lançamento do painel.`
+  );
+  if(!ok)return;
+
+  loading(true,"Excluindo lançamento...");
+
+  try{
+    const r=await deleteLaunch(x.id);
+    if(r?.ok===false)throw new Error(r.error||"Falha ao excluir.");
+
+    DB.lancamentos=DB.lancamentos.filter(item=>item.id!==x.id);
+
+    if(STATE.editId===x.id){
+      clearLaunch();
+    }
+
+    saveCache();
+    renderAll();
+    setStatus("Lançamento excluído com sucesso. Sincronizando...","ok");
+    setTimeout(()=>loadData(true),120);
+  }catch(e){
+    console.error(e);
+    setStatus(e.message,"bad");
+    alert(`Não foi possível excluir o lançamento.\n\n${e.message}`);
+  }finally{
+    loading(false);
+  }
+}
+
 async function saveDaily(){
   const filial=up($("lancFilial").value);
   const data=text($("lancData").value);

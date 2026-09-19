@@ -3,8 +3,9 @@
 "use strict";
 
 const $=id=>document.getElementById(id);
-const MARKER="CF_SIMPLE|";
-const CACHE_KEY="nf_custo_filial_simple_v1";
+const DAILY_MARKER="CF_SIMPLE|";
+const COST_MARKER="CF_COST|";
+const CACHE_KEY="nf_custo_filial_simple_v2";
 
 const FILIAIS=[
   {id:"RIO VERDE",label:"RIO VERDE",salarios:159200,carros:7},
@@ -42,7 +43,16 @@ function dateBR(v){const p=parseYmd(v);return p?`${pad(p.dia)}/${pad(p.mes)}/${p
 function filialById(id){return FILIAIS.find(f=>f.id===up(id))||null}
 function filialLabel(id){return filialById(id)?.label||text(id)}
 function combustivel(f){return f.combustivelFixo!=null?f.combustivelFixo:f.carros*FIXOS.combustivelCarro}
-function custoFixo(f){return f.salarios+FIXOS.aluguel+(f.carros*FIXOS.carro)+combustivel(f)+FIXOS.aguaEnergia}
+function custoFixoBase(f){return f.salarios+FIXOS.aluguel+(f.carros*FIXOS.carro)+combustivel(f)+FIXOS.aguaEnergia}
+function costOverrideRecord(id){
+  return DB.lancamentos
+    .filter(x=>x.tipo==="custo"&&x.filial===id&&Number(x.ano)===STATE.ano&&Number(x.mes)===STATE.mes)
+    .sort((a,b)=>String(b.updatedAt||b.createdAt||"").localeCompare(String(a.updatedAt||a.createdAt||"")))[0]||null;
+}
+function custoFixo(f){
+  const override=costOverrideRecord(f.id);
+  return override&&num(override.custo)>0?num(override.custo):custoFixoBase(f);
+}
 function metaFilial(f){return custoFixo(f)*1.40}
 function setText(id,v){const el=$(id);if(el)el.textContent=v}
 function setStatus(msg,type=""){const el=$("syncStatus");if(!el)return;el.textContent=msg;el.className="sync"+(type?` ${type}`:"")}
@@ -59,15 +69,18 @@ async function saveLaunch(payload,isUpdate){return portalCall(isUpdate?"update":
 
 function normalizeLaunch(x){
   const rawObs=text(x.observacao);
-  const novo=rawObs.startsWith(MARKER);
+  const isDaily=rawObs.startsWith(DAILY_MARKER);
+  const isCost=rawObs.startsWith(COST_MARKER);
   const p=parseYmd(x.data);
+  const cleanObs=isDaily?rawObs.slice(DAILY_MARKER.length):isCost?rawObs.slice(COST_MARKER.length):rawObs;
   return {
     id:text(x.id),data:text(x.data),ano:Number(x.ano||(p?.ano||0)),mes:Number(x.mes||(p?.mes||0)),
-    filial:up(x.filial),volume:num(x.toneladas),lucro:num(x.faturamento),
-    observacao:novo?rawObs.slice(MARKER.length):rawObs,novo,createdAt:x.createdAt||"",updatedAt:x.updatedAt||""
+    filial:up(x.filial),volume:num(x.toneladas),lucro:num(x.faturamento),custo:num(x.custo),
+    observacao:cleanObs,tipo:isDaily?"diario":isCost?"custo":"legado",
+    createdAt:x.createdAt||"",updatedAt:x.updatedAt||""
   };
 }
-function newLaunches(){return DB.lancamentos.filter(x=>x.novo&&FILIAIS.some(f=>f.id===x.filial))}
+function newLaunches(){return DB.lancamentos.filter(x=>x.tipo==="diario"&&FILIAIS.some(f=>f.id===x.filial))}
 function filteredLaunches(){return newLaunches().filter(x=>Number(x.ano)===STATE.ano&&Number(x.mes)===STATE.mes&&(!STATE.filial||x.filial===STATE.filial))}
 function launchesForFilial(id){return newLaunches().filter(x=>x.filial===id&&Number(x.ano)===STATE.ano&&Number(x.mes)===STATE.mes)}
 function sum(list,key){return list.reduce((a,x)=>a+num(x[key]),0)}
@@ -98,7 +111,38 @@ function renderCost(){
   const list=selectedFiliais();
   const agg={salarios:0,aluguel:0,carros:0,carroCusto:0,comb:0,agua:0,fixo:0,meta:0};
   list.forEach(f=>{agg.salarios+=f.salarios;agg.aluguel+=FIXOS.aluguel;agg.carros+=f.carros;agg.carroCusto+=f.carros*FIXOS.carro;agg.comb+=combustivel(f);agg.agua+=FIXOS.aguaEnergia;agg.fixo+=custoFixo(f);agg.meta+=metaFilial(f)});
-  setText("costFilialName",STATE.filial?filialLabel(STATE.filial):`${list.length} filiais`);setText("costSalarios",brl(agg.salarios));setText("costAluguel",brl(agg.aluguel));setText("costCarros",`${agg.carros} • ${brl(agg.carroCusto)}`);setText("costCombustivel",brl(agg.comb));setText("costAguaEnergia",brl(agg.agua));setText("costFixo",brl(agg.fixo));setText("costMeta",brl(agg.meta));
+  setText("costFilialName",STATE.filial?filialLabel(STATE.filial):`${list.length} filiais`);
+  setText("costSalarios",brl(agg.salarios));
+  setText("costAluguel",brl(agg.aluguel));
+  setText("costCarros",`${agg.carros} • ${brl(agg.carroCusto)}`);
+  setText("costCombustivel",brl(agg.comb));
+  setText("costAguaEnergia",brl(agg.agua));
+  setText("costFixo",brl(agg.fixo));
+  setText("costMeta",brl(agg.meta));
+
+  const input=$("costOverrideInput"),saveBtn=$("btnSalvarCusto"),autoBtn=$("btnCustoAutomatico");
+  if(!input||!saveBtn||!autoBtn)return;
+
+  if(!STATE.filial){
+    input.value="";
+    input.disabled=true;
+    saveBtn.disabled=true;
+    autoBtn.disabled=true;
+    setText("costEditNote","Selecione uma filial para ajustar o custo fixo do mês.");
+    return;
+  }
+
+  const f=filialById(STATE.filial);
+  const base=custoFixoBase(f);
+  const override=costOverrideRecord(f.id);
+  const efetivo=custoFixo(f);
+  input.disabled=false;
+  saveBtn.disabled=false;
+  autoBtn.disabled=false;
+  input.value=efetivo.toFixed(2);
+  setText("costEditNote",override&&num(override.custo)>0
+    ?`Ajuste manual ativo. Cálculo automático seria ${brl(base)}.`
+    :`Usando cálculo automático: ${brl(base)}.`);
 }
 function renderKpis(){
   const s=summaries();const lucro=sum(s,"lucro"),volume=sum(s,"volume"),fixo=sum(s,"fixo"),meta=sum(s,"meta");const diff=lucro-meta;const dias=elapsedDays();const proj=dias>0?lucro/dias*daysInMonth():0;
@@ -133,13 +177,69 @@ function clearLaunch(){STATE.editId="";$("lancFilial").value=STATE.filial||"";$(
 function editLaunch(id){const x=DB.lancamentos.find(r=>r.id===id);if(!x)return;STATE.editId=x.id;$("lancFilial").value=x.filial;$("lancData").value=x.data;$("lancVolume").value=x.volume;$("lancLucro").value=x.lucro;$("lancObs").value=x.observacao;setText("editHint","Editando lançamento");setText("btnSalvarLanc","Atualizar lançamento");$("lancFilial").scrollIntoView({behavior:"smooth",block:"center"})}
 async function saveDaily(){
   const filial=up($("lancFilial").value),data=text($("lancData").value),volume=num($("lancVolume").value),lucro=num($("lancLucro").value),obs=text($("lancObs").value);if(!filial)return alert("Selecione a filial.");if(!data)return alert("Informe a data.");if(!text($("lancVolume").value))return alert("Informe o volume embarcado.");if(!text($("lancLucro").value))return alert("Informe o lucro do dia.");
-  const p=parseYmd(data);const existing=STATE.editId?DB.lancamentos.find(x=>x.id===STATE.editId):newLaunches().find(x=>x.filial===filial&&x.data===data);const payload={id:existing?.id||"",filial,data,ano:p?.ano||0,mes:p?.mes||0,faturamento:lucro,toneladas:volume,custo:0,observacao:MARKER+obs};loading(true,existing?"Atualizando lançamento...":"Salvando lançamento...");
+  const p=parseYmd(data);const existing=STATE.editId?DB.lancamentos.find(x=>x.id===STATE.editId):newLaunches().find(x=>x.filial===filial&&x.data===data);const payload={id:existing?.id||"",filial,data,ano:p?.ano||0,mes:p?.mes||0,faturamento:lucro,toneladas:volume,custo:0,observacao:DAILY_MARKER+obs};loading(true,existing?"Atualizando lançamento...":"Salvando lançamento...");
   try{const r=await saveLaunch(payload,!!existing);if(r?.ok===false)throw new Error(r.error||"Falha ao salvar.");const local=normalizeLaunch({...payload,id:existing?.id||r?.data?.id||`LOCAL-${Date.now()}`});if(existing){const i=DB.lancamentos.findIndex(x=>x.id===existing.id);if(i>=0)DB.lancamentos[i]=local}else DB.lancamentos.push(local);saveCache();clearLaunch();renderAll();setStatus(existing?"Lançamento atualizado. Sincronizando...":"Lançamento salvo. Sincronizando...","ok");setTimeout(()=>loadData(true),120)}catch(e){console.error(e);setStatus(e.message,"bad");alert(`Não foi possível salvar.\n\n${e.message}`)}finally{loading(false)}
 }
+async function saveCostOverride(useAutomatic=false){
+  if(!STATE.filial)return alert("Selecione uma filial no filtro.");
+  const f=filialById(STATE.filial);
+  if(!f)return;
+
+  const value=useAutomatic?0:num($("costOverrideInput")?.value);
+  if(!useAutomatic&&value<=0)return alert("Informe um custo fixo maior que zero.");
+
+  const existing=costOverrideRecord(f.id);
+  const data=`${STATE.ano}-${pad(STATE.mes)}-01`;
+  const payload={
+    id:existing?.id||"",
+    filial:f.id,
+    data,
+    ano:STATE.ano,
+    mes:STATE.mes,
+    faturamento:0,
+    toneladas:0,
+    custo:value,
+    observacao:COST_MARKER+(useAutomatic?"AUTOMATICO":"MANUAL")
+  };
+
+  loading(true,useAutomatic?"Restaurando custo automático...":"Salvando custo fixo...");
+  try{
+    const r=await saveLaunch(payload,!!existing);
+    if(r?.ok===false)throw new Error(r.error||"Falha ao salvar o custo fixo.");
+    const local=normalizeLaunch({...payload,id:existing?.id||r?.data?.id||`LOCAL-COST-${Date.now()}`,updatedAt:new Date().toISOString()});
+    if(existing){
+      const i=DB.lancamentos.findIndex(x=>x.id===existing.id);
+      if(i>=0)DB.lancamentos[i]=local;
+    }else{
+      DB.lancamentos.push(local);
+    }
+    saveCache();
+    renderAll();
+    setStatus(useAutomatic?"Custo automático restaurado.":"Custo fixo atualizado.","ok");
+    setTimeout(()=>loadData(true),120);
+  }catch(e){
+    console.error(e);
+    setStatus(e.message,"bad");
+    alert(`Não foi possível atualizar o custo fixo.\n\n${e.message}`);
+  }finally{
+    loading(false);
+  }
+}
+
 async function loadData(silent=false){if(!silent)loading(true,"Carregando resultados...");try{const data=await readAll();DB.lancamentos=Array.isArray(data.lancamentos)?data.lancamentos.map(normalizeLaunch):[];saveCache();renderAll();setStatus("Dados sincronizados.","ok")}catch(e){console.error(e);setStatus(e.message,"bad")}finally{if(!silent)loading(false)}}
 
 function bind(){
-  fillFiliais();initPeriod();$("btnAplicar").addEventListener("click",applyFilters);$("filtroFilial").addEventListener("change",applyFilters);$("filtroMes").addEventListener("change",applyFilters);$("btnMesAtual").addEventListener("click",()=>{const d=new Date();$("filtroMes").value=monthValue(d.getFullYear(),d.getMonth()+1);STATE.ano=d.getFullYear();STATE.mes=d.getMonth()+1;renderAll()});$("btnAtualizar").addEventListener("click",()=>loadData(false));$("btnSalvarLanc").addEventListener("click",saveDaily);$("btnLimparLanc").addEventListener("click",clearLaunch);
+  fillFiliais();
+  initPeriod();
+  $("btnAplicar").addEventListener("click",applyFilters);
+  $("filtroFilial").addEventListener("change",applyFilters);
+  $("filtroMes").addEventListener("change",applyFilters);
+  $("btnMesAtual").addEventListener("click",()=>{const d=new Date();$("filtroMes").value=monthValue(d.getFullYear(),d.getMonth()+1);STATE.ano=d.getFullYear();STATE.mes=d.getMonth()+1;renderAll()});
+  $("btnAtualizar").addEventListener("click",()=>loadData(false));
+  $("btnSalvarLanc").addEventListener("click",saveDaily);
+  $("btnLimparLanc").addEventListener("click",clearLaunch);
+  $("btnSalvarCusto").addEventListener("click",()=>saveCostOverride(false));
+  $("btnCustoAutomatico").addEventListener("click",()=>saveCostOverride(true));
 }
 
 document.addEventListener("DOMContentLoaded",()=>{bind();const cached=restoreCache();if(cached){renderAll();setStatus("Exibindo dados em cache. Atualizando...","");loadData(true)}else loadData(false)});

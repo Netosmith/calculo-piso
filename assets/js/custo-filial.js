@@ -25,7 +25,7 @@ const FILIAIS=[
 
 const FIXOS={aluguel:3500,carro:2000,combustivelCarro:800,aguaEnergia:1000};
 let DB={lancamentos:[]};
-let STATE={filial:"",ano:0,mes:0,editId:"",costEditFilial:""};
+let STATE={filial:"",ano:0,mes:0,editId:"",editSnapshot:null,costEditFilial:""};
 let charts={resultado:null,volume:null,lucroDia:null,volumeDia:null};
 
 function text(v){return String(v??"").trim()}
@@ -226,7 +226,14 @@ function renderResultTable(){
 }
 function renderLaunchTable(){
   const rows=filteredLaunches().slice().sort((a,b)=>b.data.localeCompare(a.data)||a.filial.localeCompare(b.filial,"pt-BR"));const tb=$("tbodyLancamentos");if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="cfEmpty">Nenhum lançamento neste período.</td></tr>';return}
-  tb.innerHTML=rows.map(x=>`<tr><td>${dateBR(x.data)}</td><td>${esc(filialLabel(x.filial))}</td><td class="num">${tons(x.volume)}</td><td class="num money ${x.lucro>=0?'good':'bad'}">${brl(x.lucro)}</td><td>${esc(x.observacao||'-')}</td><td><button class="miniBtn" data-edit="${esc(x.id)}">Editar</button></td></tr>`).join("");
+  tb.innerHTML=rows.map(x=>`<tr>
+    <td>${dateBR(x.data)}</td>
+    <td>${esc(filialLabel(x.filial))}</td>
+    <td class="num">${tons(x.volume)}</td>
+    <td class="num money ${x.lucro>=0?'good':'bad'}">${brl(x.lucro)}</td>
+    <td>${esc(x.observacao||'-')}</td>
+    <td><button class="miniBtn editLaunch" data-edit="${esc(x.id)}">✏ Editar lançamento</button></td>
+  </tr>`).join("");
   tb.querySelectorAll("[data-edit]").forEach(btn=>btn.addEventListener("click",()=>editLaunch(btn.dataset.edit)));
 }
 function dailySeries(key){
@@ -480,13 +487,122 @@ function renderCharts(){
 }
 function renderAll(){renderCost();renderKpis();renderResultTable();renderLaunchTable();renderCharts()}
 
-function clearLaunch(){STATE.editId="";$("lancFilial").value=STATE.filial||"";$("lancData").value=todayYmd();$("lancVolume").value="";$("lancLucro").value="";$("lancObs").value="";setText("editHint","Novo lançamento");setText("btnSalvarLanc","Salvar lançamento")}
-function editLaunch(id){const x=DB.lancamentos.find(r=>r.id===id);if(!x)return;STATE.editId=x.id;$("lancFilial").value=x.filial;$("lancData").value=x.data;$("lancVolume").value=x.volume;$("lancLucro").value=x.lucro;$("lancObs").value=x.observacao;setText("editHint","Editando lançamento");setText("btnSalvarLanc","Atualizar lançamento");$("lancFilial").scrollIntoView({behavior:"smooth",block:"center"})}
-async function saveDaily(){
-  const filial=up($("lancFilial").value),data=text($("lancData").value),volume=num($("lancVolume").value),lucro=num($("lancLucro").value),obs=text($("lancObs").value);if(!filial)return alert("Selecione a filial.");if(!data)return alert("Informe a data.");if(!text($("lancVolume").value))return alert("Informe o volume embarcado.");if(!text($("lancLucro").value))return alert("Informe o lucro do dia.");
-  const p=parseYmd(data);const existing=STATE.editId?DB.lancamentos.find(x=>x.id===STATE.editId):newLaunches().find(x=>x.filial===filial&&x.data===data);const payload={id:existing?.id||"",filial,data,ano:p?.ano||0,mes:p?.mes||0,faturamento:lucro,toneladas:volume,custo:0,observacao:DAILY_MARKER+obs};loading(true,existing?"Atualizando lançamento...":"Salvando lançamento...");
-  try{const r=await saveLaunch(payload,!!existing);if(r?.ok===false)throw new Error(r.error||"Falha ao salvar.");const local=normalizeLaunch({...payload,id:existing?.id||r?.data?.id||`LOCAL-${Date.now()}`});if(existing){const i=DB.lancamentos.findIndex(x=>x.id===existing.id);if(i>=0)DB.lancamentos[i]=local}else DB.lancamentos.push(local);saveCache();clearLaunch();renderAll();setStatus(existing?"Lançamento atualizado. Sincronizando...":"Lançamento salvo. Sincronizando...","ok");setTimeout(()=>loadData(true),120)}catch(e){console.error(e);setStatus(e.message,"bad");alert(`Não foi possível salvar.\n\n${e.message}`)}finally{loading(false)}
+function clearLaunch(){
+  STATE.editId="";
+  STATE.editSnapshot=null;
+  $("lancFilial").value=STATE.filial||"";
+  $("lancData").value=todayYmd();
+  $("lancVolume").value="";
+  $("lancLucro").value="";
+  $("lancObs").value="";
+  setText("editHint","Novo lançamento");
+  setText("btnSalvarLanc","Salvar lançamento");
+  $("btnSalvarLanc")?.classList.remove("editing");
+  $("editNotice")?.classList.remove("show");
 }
+function editLaunch(id){
+  const x=DB.lancamentos.find(r=>r.id===id&&r.tipo==="diario");
+  if(!x)return;
+
+  STATE.editId=x.id;
+  STATE.editSnapshot={...x};
+
+  $("lancFilial").value=x.filial;
+  $("lancData").value=x.data;
+  $("lancVolume").value=x.volume;
+  $("lancLucro").value=x.lucro;
+  $("lancObs").value=x.observacao;
+
+  setText("editHint","Modo edição");
+  setText("btnSalvarLanc","Salvar alterações");
+  $("btnSalvarLanc")?.classList.add("editing");
+
+  setText("editNoticeTitle",`Editando • ${filialLabel(x.filial)} • ${dateBR(x.data)}`);
+  setText("editNoticeText",`Antes: ${tons(x.volume)} • ${brl(x.lucro)}. Corrija os valores e clique em Salvar alterações.`);
+  $("editNotice")?.classList.add("show");
+
+  $("secaoLancamento")?.scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(()=>$("lancVolume")?.focus(),320);
+}
+async function saveDaily(){
+  const filial=up($("lancFilial").value);
+  const data=text($("lancData").value);
+  const volume=num($("lancVolume").value);
+  const lucro=num($("lancLucro").value);
+  const obs=text($("lancObs").value);
+
+  if(!filial)return alert("Selecione a filial.");
+  if(!data)return alert("Informe a data.");
+  if(!text($("lancVolume").value))return alert("Informe o volume embarcado.");
+  if(!text($("lancLucro").value))return alert("Informe o lucro do dia.");
+
+  const p=parseYmd(data);
+  const editing=!!STATE.editId;
+  const byId=editing?DB.lancamentos.find(x=>x.id===STATE.editId&&x.tipo==="diario"):null;
+
+  if(editing&&!byId){
+    STATE.editId="";
+    STATE.editSnapshot=null;
+    return alert("Este lançamento não está mais disponível para edição. Atualize a página e tente novamente.");
+  }
+
+  const conflicting=newLaunches().find(x=>
+    x.filial===filial &&
+    x.data===data &&
+    (!editing||x.id!==STATE.editId)
+  );
+
+  if(conflicting){
+    return alert("Já existe outro lançamento para esta filial nesta data. Edite o lançamento existente em vez de criar uma duplicidade.");
+  }
+
+  const existing=editing?byId:newLaunches().find(x=>x.filial===filial&&x.data===data);
+
+  const payload={
+    id:existing?.id||"",
+    filial,
+    data,
+    ano:p?.ano||0,
+    mes:p?.mes||0,
+    faturamento:lucro,
+    toneladas:volume,
+    custo:0,
+    observacao:DAILY_MARKER+obs
+  };
+
+  loading(true,existing?"Atualizando lançamento...":"Salvando lançamento...");
+
+  try{
+    const r=await saveLaunch(payload,!!existing);
+    if(r?.ok===false)throw new Error(r.error||"Falha ao salvar.");
+
+    const local=normalizeLaunch({
+      ...payload,
+      id:existing?.id||r?.data?.id||`LOCAL-${Date.now()}`,
+      updatedAt:new Date().toISOString()
+    });
+
+    if(existing){
+      const i=DB.lancamentos.findIndex(x=>x.id===existing.id);
+      if(i>=0)DB.lancamentos[i]=local;
+    }else{
+      DB.lancamentos.push(local);
+    }
+
+    saveCache();
+    clearLaunch();
+    renderAll();
+    setStatus(existing?"Lançamento corrigido com sucesso. Sincronizando...":"Lançamento salvo. Sincronizando...","ok");
+    setTimeout(()=>loadData(true),120);
+  }catch(e){
+    console.error(e);
+    setStatus(e.message,"bad");
+    alert(`Não foi possível ${existing?"atualizar":"salvar"} o lançamento.\n\n${e.message}`);
+  }finally{
+    loading(false);
+  }
+}
+
 async function saveCostOverride(useAutomatic=false){
   const filial=up($("costEditFilial")?.value||STATE.costEditFilial);
   if(!filial)return alert("Selecione a filial que deseja editar.");
@@ -567,6 +683,7 @@ function bind(){
   $("btnAtualizar").addEventListener("click",()=>loadData(false));
   $("btnSalvarLanc").addEventListener("click",saveDaily);
   $("btnLimparLanc").addEventListener("click",clearLaunch);
+  $("btnCancelarEdicao").addEventListener("click",clearLaunch);
 
   $("costEditFilial").addEventListener("change",e=>{
     STATE.costEditFilial=up(e.target.value);

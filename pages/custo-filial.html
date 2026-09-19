@@ -1,1040 +1,126 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Custo / Filial | NOVA FROTA</title>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Custo / Filial | Nova Frota</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     :root{
-      --bg:#0f172a;
-      --card:#1e293b;
-      --card2:#111827;
-      --line:rgba(255,255,255,.08);
-      --text:#f8fafc;
-      --muted:#94a3b8;
-      --green:#22c55e;
-      --red:#ef4444;
-      --yellow:#f59e0b;
-      --blue:#3b82f6;
-      --purple:#8b5cf6;
-      --shadow:0 12px 32px rgba(0,0,0,.28);
-      --radius:18px;
-    }
-
-    *{ box-sizing:border-box; }
-
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family:Arial, sans-serif;
-    }
-
-    .topbar .actions a.icon-btn{ text-decoration:none; }
-
-    .container{
-      max-width:1600px;
-      margin:auto;
-      padding:20px;
-    }
-
-    .pageHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-      margin-bottom:18px;
-    }
-
-    .pageHeader h1{
-      margin:0;
-      font-size:28px;
-      font-weight:1000;
-    }
-
-    .subTitle{
-      margin:6px 0 0;
-      color:var(--muted);
-      font-size:14px;
-    }
-
-    .headerActions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .btnAction{
-      height:44px;
-      padding:0 18px;
-      border:none;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:900;
-      color:#fff;
-      box-shadow:var(--shadow);
-      transition:transform .12s ease, filter .12s ease, opacity .12s ease;
-    }
-
-    .btnAction:hover{
-      transform:translateY(-1px);
-      filter:brightness(1.05);
-    }
-
-    .btnAction:disabled{
-      opacity:.7;
-      cursor:not-allowed;
-      transform:none;
-    }
-
-    .btnAction.green{ background:linear-gradient(135deg,#16a34a,#22c55e); }
-    .btnAction.blue{ background:linear-gradient(135deg,#2563eb,#3b82f6); }
-    .btnAction.gray{ background:linear-gradient(135deg,#334155,#475569); }
-    .btnAction.red{ background:linear-gradient(135deg,#b91c1c,#ef4444); }
-    .btnAction.purple{ background:linear-gradient(135deg,#7c3aed,#8b5cf6); }
-
-    .syncStatus{
-      margin-bottom:16px;
-      font-size:13px;
-      font-weight:900;
-      color:#93c5fd;
-    }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
-    }
-
-    .filterRow{
-      display:grid;
-      grid-template-columns:1.2fr .8fr .8fr auto auto;
-      gap:12px;
-      align-items:end;
-      margin-bottom:16px;
-    }
-
-    .field label{
-      display:block;
-      margin:0 0 6px;
-      font-size:11px;
-      font-weight:900;
-      color:#cbd5e1;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-    }
-
-    .field input,
-    .field select{
-      width:100%;
-      height:44px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:#0b1327;
-      color:#fff;
-      padding:0 12px;
-      outline:none;
-    }
-
-    .kpiGrid{
-      display:grid;
-      grid-template-columns:repeat(4, minmax(0, 1fr));
-      gap:12px;
-      margin-bottom:16px;
-    }
-
-    .kpiGrid.biCards{
-      grid-template-columns:repeat(6, minmax(0, 1fr));
-      margin-bottom:0;
-    }
-
-    .kpiCard{
-      display:grid;
-      grid-template-columns:minmax(0, 1fr) auto;
-      grid-template-rows:auto auto;
-      grid-template-areas:
-        "label value"
-        "sub value";
-      column-gap:14px;
-      row-gap:6px;
-      align-items:start;
-      min-width:0;
-    }
-
-    .kpiLabel{
-      grid-area:label;
-      color:var(--muted);
-      font-size:11px;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.04em;
-      line-height:1.2;
-      min-width:0;
-    }
-
-    .kpiValue{
-      grid-area:value;
-      align-self:center;
-      justify-self:end;
-      margin:0;
-      font-size:22px;
-      font-weight:1000;
-      color:#fff;
-      line-height:1.05;
-      text-align:right;
-      white-space:normal;
-      word-break:keep-all;
-      overflow-wrap:anywhere;
-      max-width:170px;
-    }
-
-    .kpiSub{
-      grid-area:sub;
-      margin:0;
-      color:var(--muted);
-      font-size:11px;
-      line-height:1.25;
-      min-width:0;
-      overflow-wrap:anywhere;
-    }
-
-    .mainGrid{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-      gap:14px;
-      margin-bottom:16px;
-      align-items:start;
-    }
-
-    .chartCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:14px;
-      box-shadow:var(--shadow);
-      min-width:0;
-      overflow:hidden;
-    }
-
-    .chartTitle{
-      margin:0 0 10px;
-      font-size:15px;
-      font-weight:1000;
-    }
-
-    .chartBox{
-      height:290px;
-      width:100%;
-      min-width:0;
-    }
-
-    .alertCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
-      max-height:320px;
-      overflow:auto;
-    }
-
-    .alertTitle{
-      margin:0 0 12px;
-      font-size:16px;
-      font-weight:1000;
-    }
-
-    .alertItem{
-      padding:10px 12px;
-      border-radius:12px;
-      margin-bottom:8px;
-      font-size:13px;
-      font-weight:800;
-      border:1px solid transparent;
-    }
-
-    .alertItem.ok{
-      background:rgba(34,197,94,.14);
-      color:#86efac;
-      border-color:rgba(34,197,94,.28);
-    }
-
-    .alertItem.warn{
-      background:rgba(245,158,11,.14);
-      color:#fcd34d;
-      border-color:rgba(245,158,11,.28);
-    }
-
-    .alertItem.bad{
-      background:rgba(239,68,68,.14);
-      color:#fca5a5;
-      border-color:rgba(239,68,68,.28);
-    }
-
-    .tableCard{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      margin-bottom:16px;
-    }
-
-    .tableHead{
-      padding:14px 16px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-
-    .tableHead h3{
-      margin:0;
-      font-size:16px;
-      font-weight:1000;
-    }
-
-    .tableWrap{
-      overflow:auto;
-      max-height:460px;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:1100px;
-      background:transparent;
-    }
-
-    th, td{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      text-align:left;
-      font-size:13px;
-      white-space:nowrap;
-    }
-
-    th{
-      position:sticky;
-      top:0;
-      z-index:2;
-      background:#162033;
-      color:#cbd5e1;
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-    }
-
-    td.num, th.num{
-      text-align:right;
-    }
-
-    .rankBadge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:28px;
-      height:28px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:1000;
-      background:#334155;
-      color:#fff;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:1000;
-      border:1px solid transparent;
-    }
-
-    .pill.ok{
-      color:#86efac;
-      background:rgba(34,197,94,.14);
-      border-color:rgba(34,197,94,.28);
-    }
-
-    .pill.warn{
-      color:#fcd34d;
-      background:rgba(245,158,11,.14);
-      border-color:rgba(245,158,11,.28);
-    }
-
-    .pill.bad{
-      color:#fca5a5;
-      background:rgba(239,68,68,.14);
-      border-color:rgba(239,68,68,.28);
-    }
-
-    .emptyState{
-      padding:24px;
-      text-align:center;
-      color:var(--muted);
-      font-weight:800;
-    }
-
-    .overlayPanel{
-      position:fixed;
-      inset:0;
-      background:rgba(3,7,18,.72);
-      backdrop-filter:blur(8px);
-      display:none;
-      z-index:9998;
-      padding:24px;
-      overflow:auto;
-    }
-
-    .overlayPanel.active{
-      display:block;
-    }
-
-    .overlayCard{
-      width:min(1500px, 96vw);
-      margin:0 auto;
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:24px;
-      box-shadow:0 24px 70px rgba(0,0,0,.45);
-      overflow:hidden;
-    }
-
-    .overlayHead{
-      padding:16px 18px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-      background:rgba(11,19,39,.55);
-      position:sticky;
-      top:0;
-      z-index:5;
-    }
-
-    .overlayTitle{
-      font-size:18px;
-      font-weight:1000;
-      margin:0;
-    }
-
-    .overlayActions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .tabBtn{
-      height:42px;
-      padding:0 18px;
-      border:none;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:900;
-      color:#fff;
-      background:#334155;
-      transition:.15s ease;
-    }
-
-    .tabBtn.active.meta{
-      background:linear-gradient(135deg,#16a34a,#22c55e);
-    }
-
-    .tabBtn.active.lanc{
-      background:linear-gradient(135deg,#2563eb,#3b82f6);
-    }
-
-    .closeBtn{
-      height:42px;
-      padding:0 18px;
-      border:none;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:900;
-      color:#fff;
-      background:linear-gradient(135deg,#334155,#475569);
-    }
-
-    .overlayBody{
-      padding:18px;
-    }
-
-    .crudPanel{
-      display:none;
-    }
-
-    .crudPanel.active{
-      display:block;
-    }
-
-    .formGrid{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:12px;
-    }
-
-    .formGrid .full{
-      grid-column:1 / -1;
-    }
-
-    .formActions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:16px;
-      margin-bottom:6px;
-    }
-
-    .miniBtn{
-      height:34px;
-      padding:0 12px;
-      border:none;
-      border-radius:10px;
-      cursor:pointer;
-      font-weight:800;
-      color:#fff;
-      margin-right:6px;
-    }
-
-    .miniBtn.edit{ background:#2563eb; }
-
-    @media (max-width: 1500px){
-      .kpiGrid.biCards{
-        grid-template-columns:repeat(3, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width:1400px){
-      .chartBox{
-        height:270px;
-      }
-    }
-
-    @media (max-width:1200px){
-      .filterRow{
-        grid-template-columns:1fr 1fr 1fr;
-      }
-
-      .kpiGrid{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-      }
-
-      .kpiGrid.biCards{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-      }
-
-      .kpiValue{
-        font-size:20px;
-        max-width:150px;
-      }
-
-      .mainGrid{
-        grid-template-columns:1fr;
-      }
-
-      .formGrid{
-        grid-template-columns:repeat(2,1fr);
-      }
-
-      .chartBox{
-        height:260px;
-      }
-    }
-
-    @media (max-width:800px){
-      .filterRow,
-      .formGrid{
-        grid-template-columns:1fr;
-      }
-
-      .overlayPanel{
-        padding:10px;
-      }
-    }
-
-    @media (max-width:700px){
-      .kpiGrid,
-      .kpiGrid.biCards{
-        grid-template-columns:1fr;
-      }
-
-      .kpiCard{
-        grid-template-columns:1fr;
-        grid-template-areas:
-          "label"
-          "value"
-          "sub";
-      }
-
-      .kpiValue{
-        justify-self:start;
-        text-align:left;
-        max-width:none;
-      }
-    }
+      --bg:#f4f7fb;--card:#fff;--blue:#123b73;--blue2:#2563eb;--blueSoft:#eef4ff;
+      --green:#0f9f63;--greenSoft:#e9f8f1;--red:#dc3545;--redSoft:#fff0f1;
+      --text:#15243b;--muted:#6d7d93;--line:#dfe7f1;--shadow:0 8px 24px rgba(18,59,115,.07);
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,input,select,textarea{font:inherit}.page{max-width:1720px;margin:0 auto;padding:18px}.topbar .actions a{color:inherit;text-decoration:none}
+    .hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:2px 0 16px}.hero h1{margin:0;color:var(--blue);font-size:26px}.hero p{margin:5px 0 0;color:var(--muted);font-size:12px}.heroActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn{height:38px;border:0;border-radius:10px;padding:0 14px;font-size:10px;font-weight:900;cursor:pointer;transition:.15s}.btn:hover{transform:translateY(-1px)}.btn.primary{background:var(--blue);color:#fff}.btn.green{background:var(--green);color:#fff}.btn.ghost{background:#fff;color:var(--blue);border:1px solid var(--line)}.btn:disabled{opacity:.55;cursor:wait;transform:none}
+    .sync{min-height:20px;margin:0 0 10px;color:var(--muted);font-size:10px;font-weight:800}.sync.ok{color:var(--green)}.sync.bad{color:var(--red)}
+    .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+    .toolbar{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(180px,.7fr) auto auto;gap:10px;padding:14px;margin-bottom:14px;align-items:end}.field label{display:block;margin-bottom:5px;color:#43536a;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}.control{width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:#fff;color:var(--text);outline:none;font-size:10px}.control:focus{border-color:#5b8def;box-shadow:0 0 0 3px rgba(37,99,235,.10)}textarea.control{height:auto;min-height:70px;padding:9px;resize:vertical}
+    .quickGrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:14px;margin-bottom:14px}.launchCard{padding:15px}.sectionTitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}.sectionTitle h2,.sectionTitle h3{margin:0;color:var(--blue);font-size:15px}.sectionTitle small{color:var(--muted);font-size:9px}.launchGrid{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:10px}.launchGrid .obs{grid-column:1/-1}.launchActions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+    .costBox{padding:15px}.costHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.costHeader h3{margin:0;color:var(--blue);font-size:15px}.costStatus{padding:5px 9px;border-radius:999px;font-size:9px;font-weight:900;background:var(--blueSoft);color:var(--blue)}.costRows{display:grid;gap:7px}.costRow{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:9px;background:#f8fafc;font-size:10px}.costRow strong{color:var(--blue)}.costRow.total{background:var(--blueSoft);font-size:11px}.costRow.goal{background:var(--greenSoft)}
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}.kpi{padding:13px 14px;min-height:92px}.kpiLabel{font-size:8px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.kpiValue{margin-top:8px;font-size:20px;font-weight:1000;color:var(--blue);line-height:1}.kpiSub{margin-top:7px;font-size:8px;color:var(--muted)}.kpi.good .kpiValue{color:var(--green)}.kpi.bad .kpiValue{color:var(--red)}
+    .charts{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}.chartCard{padding:14px;min-width:0}.chartBox{height:300px}.charts.secondary{grid-template-columns:1fr 1fr}.charts.secondary .chartBox{height:250px}
+    .tableCard{overflow:hidden;margin-bottom:14px}.tableHead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.tableHead h3{margin:0;color:var(--blue);font-size:14px}.tableHead span{font-size:9px;color:var(--muted)}.tableWrap{overflow:auto;max-height:480px}table{width:100%;border-collapse:collapse;min-width:1160px}th,td{padding:9px 10px;border-bottom:1px solid #edf1f6;font-size:9px;text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#f5f8fc;color:#52627a;text-transform:uppercase;font-size:8px;letter-spacing:.035em}td.num,th.num{text-align:right}tbody tr:hover{background:#f8fbff}.statusPill{display:inline-flex;align-items:center;justify-content:center;min-width:78px;height:23px;padding:0 8px;border-radius:999px;font-size:8px;font-weight:950}.statusPill.good{background:var(--greenSoft);color:var(--green)}.statusPill.bad{background:var(--redSoft);color:var(--red)}.statusPill.mid{background:var(--blueSoft);color:var(--blue)}.money.good{color:var(--green);font-weight:900}.money.bad{color:var(--red);font-weight:900}.miniBtn{height:27px;border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:7px;padding:0 9px;font-size:8px;font-weight:900;cursor:pointer}
+    .empty{padding:28px;text-align:center;color:var(--muted);font-size:10px}.footNote{padding:0 2px 14px;color:var(--muted);font-size:9px}.loadingLayer{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;background:rgba(244,247,251,.72);backdrop-filter:blur(2px)}.loadingLayer.show{display:flex}.loadingBox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 17px;box-shadow:var(--shadow);font-size:10px;font-weight:900;color:var(--blue)}
+    @media(max-width:1300px){.kpis{grid-template-columns:repeat(3,1fr)}.quickGrid,.charts{grid-template-columns:1fr}.charts.secondary{grid-template-columns:1fr 1fr}}
+    @media(max-width:850px){.page{padding:10px}.hero{flex-direction:column}.toolbar,.launchGrid{grid-template-columns:1fr 1fr}.quickGrid,.charts,.charts.secondary{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.launchGrid .obs{grid-column:1/-1}}
+    @media(max-width:560px){.toolbar,.launchGrid,.kpis{grid-template-columns:1fr}.launchGrid .obs{grid-column:auto}.chartBox,.charts.secondary .chartBox{height:230px}}
   </style>
 </head>
-
 <body>
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="brand">
-        <a class="burger" href="./home.html" title="Voltar">🏠</a>
-        <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
-      </div>
-
-      <div class="actions">
-        <div class="icon-btn" title="Sair" data-logout>SAIR</div>
-      </div>
+      <div class="brand"><a class="burger" href="./home.html" title="Voltar">🏠</a><img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA"></div>
+      <div class="actions"><div class="icon-btn" title="Sair" data-logout>SAIR</div></div>
     </div>
   </div>
 
-  <div class="container">
-    <div class="pageHeader">
-      <div>
-        <h1>CUSTO / FILIAL</h1>
-        <p class="subTitle">Dashboard, metas e lançamentos em um único lugar</p>
-      </div>
+  <main class="page">
+    <section class="hero">
+      <div><h1>Resultado por Filial</h1><p>Controle mensal simples de custo fixo, volume embarcado e lucro operacional.</p></div>
+      <div class="heroActions"><button class="btn ghost" id="btnAtualizar">↻ Atualizar</button></div>
+    </section>
+    <div class="sync" id="syncStatus">Preparando painel...</div>
 
-      <div class="headerActions">
-        <button class="btnAction green" id="btnIrMeta" type="button">Meta</button>
-        <button class="btnAction blue" id="btnIrLancamento" type="button">Lançamento</button>
-        <button class="btnAction purple" id="btnImportarBase" type="button">Importar Metas Base</button>
-        <button class="btnAction gray" id="btnAtualizar" type="button">Atualizar</button>
-      </div>
-    </div>
+    <section class="card toolbar">
+      <div class="field"><label>Filial</label><select class="control" id="filtroFilial"><option value="">Todas as filiais</option></select></div>
+      <div class="field"><label>Mês</label><input class="control" type="month" id="filtroMes"></div>
+      <button class="btn ghost" id="btnMesAtual">Mês atual</button>
+      <button class="btn primary" id="btnAplicar">Aplicar filtro</button>
+    </section>
 
-    <div class="syncStatus" id="syncStatus">🔄 Carregando...</div>
-
-    <div class="card" style="margin-bottom:16px;">
-      <div class="filterRow">
-        <div class="field">
-          <label>Filial</label>
-          <select id="filtroFilial">
-            <option value="">Todas</option>
-          </select>
+    <section class="quickGrid">
+      <article class="card launchCard">
+        <div class="sectionTitle"><div><h2>Lançamento diário</h2><small>Informe apenas o que mudou no dia.</small></div><span id="editHint"></span></div>
+        <div class="launchGrid">
+          <div class="field"><label>Filial *</label><select class="control" id="lancFilial"><option value="">Selecione</option></select></div>
+          <div class="field"><label>Data *</label><input class="control" type="date" id="lancData"></div>
+          <div class="field"><label>Volume embarcado (t) *</label><input class="control" type="number" min="0" step="0.01" id="lancVolume" placeholder="Ex.: 850"></div>
+          <div class="field"><label>Lucro do dia (R$) *</label><input class="control" type="number" step="0.01" id="lancLucro" placeholder="Ex.: 12.500,00"></div>
+          <div class="field obs"><label>Observação</label><textarea class="control" id="lancObs" placeholder="Opcional"></textarea></div>
         </div>
+        <div class="launchActions"><button class="btn ghost" id="btnLimparLanc">Limpar</button><button class="btn green" id="btnSalvarLanc">Salvar lançamento</button></div>
+      </article>
 
-        <div class="field">
-          <label>Ano</label>
-          <input id="filtroAno" type="number" placeholder="Ex: 2026" />
+      <aside class="card costBox">
+        <div class="costHeader"><h3>Composição do custo fixo</h3><span class="costStatus" id="costFilialName">Todas</span></div>
+        <div class="costRows">
+          <div class="costRow"><span>Salários</span><strong id="costSalarios">R$ 0,00</strong></div>
+          <div class="costRow"><span>Aluguel</span><strong id="costAluguel">R$ 0,00</strong></div>
+          <div class="costRow"><span>Veículos</span><strong id="costCarros">R$ 0,00</strong></div>
+          <div class="costRow"><span>Combustível</span><strong id="costCombustivel">R$ 0,00</strong></div>
+          <div class="costRow"><span>Água + energia</span><strong id="costAguaEnergia">R$ 0,00</strong></div>
+          <div class="costRow total"><span>Custo fixo mensal</span><strong id="costFixo">R$ 0,00</strong></div>
+          <div class="costRow goal"><span>Meta mensal (+40%)</span><strong id="costMeta">R$ 0,00</strong></div>
         </div>
+      </aside>
+    </section>
 
-        <div class="field">
-          <label>Mês</label>
-          <input id="filtroMes" type="number" min="1" max="12" placeholder="Ex: 4" />
-        </div>
+    <section class="kpis">
+      <article class="card kpi"><div class="kpiLabel">Lucro no mês</div><div class="kpiValue" id="kpiLucro">R$ 0,00</div><div class="kpiSub">Somatório dos lançamentos</div></article>
+      <article class="card kpi"><div class="kpiLabel">Volume no mês</div><div class="kpiValue" id="kpiVolume">0,00 t</div><div class="kpiSub">Toneladas embarcadas</div></article>
+      <article class="card kpi"><div class="kpiLabel">Custo fixo</div><div class="kpiValue" id="kpiCusto">R$ 0,00</div><div class="kpiSub">Estrutura mensal</div></article>
+      <article class="card kpi good"><div class="kpiLabel">Meta +40%</div><div class="kpiValue" id="kpiMeta">R$ 0,00</div><div class="kpiSub">Lucro desejado no mês</div></article>
+      <article class="card kpi" id="kpiSaldoCard"><div class="kpiLabel">Saldo para meta</div><div class="kpiValue" id="kpiSaldo">R$ 0,00</div><div class="kpiSub" id="kpiSaldoSub">Falta para atingir a meta</div></article>
+      <article class="card kpi"><div class="kpiLabel">Projeção do mês</div><div class="kpiValue" id="kpiProjecao">R$ 0,00</div><div class="kpiSub" id="kpiProjecaoSub">Baseada nos dias transcorridos</div></article>
+    </section>
 
-        <button class="btnAction gray" id="btnAplicarFiltros" type="button">Aplicar</button>
-        <button class="btnAction gray" id="btnLimparFiltros" type="button">Limpar</button>
-      </div>
-    </div>
+    <section class="charts">
+      <article class="card chartCard"><div class="sectionTitle"><h3>Lucro x custo fixo x meta</h3><small>Verde = meta atingida • vermelho = abaixo do custo</small></div><div class="chartBox"><canvas id="chartResultado"></canvas></div></article>
+      <article class="card chartCard"><div class="sectionTitle"><h3>Volume embarcado por filial</h3><small>Acumulado do mês</small></div><div class="chartBox"><canvas id="chartVolume"></canvas></div></article>
+    </section>
 
-    <div class="tableCard" style="margin-bottom:16px;">
-      <div class="tableHead">
-        <h3>B.I. Fretes</h3>
-      </div>
+    <section class="charts secondary">
+      <article class="card chartCard"><div class="sectionTitle"><h3>Lucro diário</h3><small id="dailyProfitLabel">Evolução do período</small></div><div class="chartBox"><canvas id="chartLucroDia"></canvas></div></article>
+      <article class="card chartCard"><div class="sectionTitle"><h3>Volume diário</h3><small id="dailyVolumeLabel">Evolução do período</small></div><div class="chartBox"><canvas id="chartVolumeDia"></canvas></div></article>
+    </section>
 
-      <div style="padding:16px;">
-        <div class="kpiGrid biCards" id="biFretesCards" style="margin-bottom:0;">
-          <div class="card kpiCard">
-            <div class="kpiLabel">Veículos Porta</div>
-            <div class="kpiValue" id="biKpiPorta">0</div>
-            <div class="kpiSub">Soma da coluna Porta</div>
-          </div>
+    <section class="card tableCard">
+      <div class="tableHead"><h3>Resultado das filiais</h3><span id="resultMeta">0 filiais</span></div>
+      <div class="tableWrap"><table><thead><tr><th>Filial</th><th class="num">Salários</th><th class="num">Carros</th><th class="num">Custo fixo</th><th class="num">Meta +40%</th><th class="num">Lucro mês</th><th class="num">Volume</th><th class="num">% Meta</th><th class="num">Dif. Meta</th><th>Status</th></tr></thead><tbody id="tbodyResultados"></tbody></table></div>
+    </section>
 
-          <div class="card kpiCard">
-            <div class="kpiLabel">Veículos Trânsito</div>
-            <div class="kpiValue" id="biKpiTransito">0</div>
-            <div class="kpiSub">Soma da coluna Trânsito</div>
-          </div>
+    <section class="card tableCard">
+      <div class="tableHead"><h3>Lançamentos do mês</h3><span>Um lançamento por filial/dia. Salvar novamente atualiza o dia existente.</span></div>
+      <div class="tableWrap"><table><thead><tr><th>Data</th><th>Filial</th><th class="num">Volume (t)</th><th class="num">Lucro do dia</th><th>Observação</th><th>Ações</th></tr></thead><tbody id="tbodyLancamentos"></tbody></table></div>
+    </section>
 
-          <div class="card kpiCard">
-            <div class="kpiLabel">Veículos Totais</div>
-            <div class="kpiValue" id="biKpiVeiculos">0</div>
-            <div class="kpiSub">Porta + Trânsito</div>
-          </div>
+    <div class="footNote">Custo fixo = salários + R$ 3.500 aluguel + R$ 2.000 por carro + R$ 800 de combustível por carro + R$ 1.000 água/energia. Sorocaba: sem carro e R$ 800 de combustível fixo. Meta = custo fixo × 1,40.</div>
+  </main>
 
-          <div class="card kpiCard">
-            <div class="kpiLabel">Volume Total</div>
-            <div class="kpiValue" id="biKpiVolume">0 t</div>
-            <div class="kpiSub">38 t por veículo</div>
-          </div>
-
-          <div class="card kpiCard">
-            <div class="kpiLabel">Frete Médio Empresa</div>
-            <div class="kpiValue" id="biKpiFreteMedio">R$ 0,00</div>
-            <div class="kpiSub">Média do Vlr Empresa</div>
-          </div>
-
-          <div class="card kpiCard">
-            <div class="kpiLabel">Margem Média</div>
-            <div class="kpiValue" id="biKpiMargemMedia">0,00%</div>
-            <div class="kpiSub">Empresa - Motorista</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="kpiGrid">
-      <div class="card kpiCard">
-        <div class="kpiLabel">Faturamento Diário</div>
-        <div class="kpiValue" id="kpiFatDia">R$ 0,00</div>
-        <div class="kpiSub" id="kpiFatDiaSub">Sem lançamentos no período</div>
-      </div>
-
-      <div class="card kpiCard">
-        <div class="kpiLabel">Faturamento Acumulado Mensal</div>
-        <div class="kpiValue" id="kpiFatMes">R$ 0,00</div>
-        <div class="kpiSub" id="kpiFatMesSub">Acumulado do mês</div>
-      </div>
-
-      <div class="card kpiCard">
-        <div class="kpiLabel">Toneladas Diária</div>
-        <div class="kpiValue" id="kpiTonDia">0,00 t</div>
-        <div class="kpiSub" id="kpiTonDiaSub">Sem lançamentos no período</div>
-      </div>
-
-      <div class="card kpiCard">
-        <div class="kpiLabel">Toneladas Acumulada Mensal</div>
-        <div class="kpiValue" id="kpiTonMes">0,00 t</div>
-        <div class="kpiSub" id="kpiTonMesSub">Acumulado do mês</div>
-      </div>
-    </div>
-
-    <div class="mainGrid">
-      <div class="chartCard">
-        <h3 class="chartTitle">Faturamento Real x Meta Mensal</h3>
-        <div class="chartBox">
-          <canvas id="graficoFaturamento"></canvas>
-        </div>
-      </div>
-
-      <div class="chartCard">
-        <h3 class="chartTitle">Toneladas Reais x Meta Mensal</h3>
-        <div class="chartBox">
-          <canvas id="graficoTon"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="mainGrid">
-      <div class="chartCard">
-        <h3 class="chartTitle">Projeção até o fim do mês</h3>
-        <div class="chartBox">
-          <canvas id="graficoProjecao"></canvas>
-        </div>
-      </div>
-
-      <div class="alertCard">
-        <h3 class="alertTitle">Alertas e Tendências</h3>
-        <div id="alertas"></div>
-      </div>
-    </div>
-
-    <div class="tableCard">
-      <div class="tableHead">
-        <h3>Ranking de Filiais</h3>
-      </div>
-
-      <div class="tableWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Filial</th>
-              <th class="num">Fat. Real</th>
-              <th class="num">Meta Fat.</th>
-              <th class="num">% Fat.</th>
-              <th class="num">Proj. Fat.</th>
-              <th class="num">Ton Real</th>
-              <th class="num">Meta Ton</th>
-              <th class="num">% Ton</th>
-              <th>Tendência</th>
-              <th>Alerta</th>
-            </tr>
-          </thead>
-          <tbody id="ranking"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlayPanel" id="crudOverlay">
-    <div class="overlayCard">
-      <div class="overlayHead">
-        <h3 class="overlayTitle">Gestão de Metas e Lançamentos</h3>
-
-        <div class="overlayActions">
-          <button class="tabBtn meta active" id="tabMeta" type="button">Tela de Meta</button>
-          <button class="tabBtn lanc" id="tabLancamento" type="button">Tela de Lançamento</button>
-          <button class="closeBtn" id="btnFecharCrud" type="button">Fechar</button>
-        </div>
-      </div>
-
-      <div class="overlayBody">
-        <div id="panelMeta" class="crudPanel active">
-          <div class="formGrid">
-            <div class="field">
-              <label>Filial</label>
-              <select id="metaFilial">
-                <option value="">Selecione a filial</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>Ano</label>
-              <input id="metaAno" type="number" placeholder="2026" />
-            </div>
-
-            <div class="field">
-              <label>Mês</label>
-              <input id="metaMes" type="number" min="1" max="12" placeholder="4" />
-            </div>
-
-            <div class="field">
-              <label>Meta Dia Fat</label>
-              <input id="metaDiaFat" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Meta Mês Fat</label>
-              <input id="metaMesFat" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Meta Ano Fat</label>
-              <input id="metaAnoFat" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Meta Dia Ton</label>
-              <input id="metaDiaTon" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Meta Mês Ton</label>
-              <input id="metaMesTon" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Meta Ano Ton</label>
-              <input id="metaAnoTon" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Custo Filial Mês</label>
-              <input id="metaCustoMes" type="number" step="0.01" placeholder="0,00" />
-            </div>
-          </div>
-
-          <div class="formActions">
-            <button class="btnAction green" id="btnSalvarMeta" type="button">Salvar Meta</button>
-            <button class="btnAction purple" id="btnImportarBaseMeta" type="button">Importar Base</button>
-            <button class="btnAction gray" id="btnLimparMeta" type="button">Limpar</button>
-          </div>
-
-          <div class="tableCard" style="margin-top:16px;">
-            <div class="tableHead">
-              <h3>Metas Cadastradas</h3>
-            </div>
-            <div class="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Filial</th>
-                    <th>Ano</th>
-                    <th>Mês</th>
-                    <th class="num">Meta Dia Fat</th>
-                    <th class="num">Meta Mês Fat</th>
-                    <th class="num">Meta Ano Fat</th>
-                    <th class="num">Meta Dia Ton</th>
-                    <th class="num">Meta Mês Ton</th>
-                    <th class="num">Meta Ano Ton</th>
-                    <th class="num">Custo Filial Mês</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="tbodyMetas"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="panelLancamento" class="crudPanel">
-          <div class="formGrid">
-            <div class="field">
-              <label>Filial</label>
-              <select id="lancFilial">
-                <option value="">Selecione a filial</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>Data</label>
-              <input id="lancData" type="date" />
-            </div>
-
-            <div class="field">
-              <label>Faturamento</label>
-              <input id="lancFaturamento" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Toneladas</label>
-              <input id="lancToneladas" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field">
-              <label>Custo</label>
-              <input id="lancCusto" type="number" step="0.01" placeholder="0,00" />
-            </div>
-
-            <div class="field full">
-              <label>Observação</label>
-              <input id="lancObservacao" type="text" placeholder="Observação" />
-            </div>
-          </div>
-
-          <div class="formActions">
-            <button class="btnAction blue" id="btnSalvarLancamento" type="button">Salvar Lançamento</button>
-            <button class="btnAction gray" id="btnLimparLancamento" type="button">Limpar</button>
-          </div>
-
-          <div class="tableCard" style="margin-top:16px;">
-            <div class="tableHead">
-              <h3>Lançamentos Cadastrados</h3>
-            </div>
-            <div class="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Filial</th>
-                    <th>Ano</th>
-                    <th>Mês</th>
-                    <th class="num">Faturamento</th>
-                    <th class="num">Toneladas</th>
-                    <th class="num">Custo</th>
-                    <th>Observação</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="tbodyLancamentos"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="loadingLayer" id="loading"><div class="loadingBox" id="loadingText">Carregando...</div></div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/custo-filial.js?v=2"></script>
+  <script src="../assets/js/custo-filial.js?v=3"></script>
   <script>
-    requireHomeAuth();
-    bindLogoutButton();
-
-    document.addEventListener("DOMContentLoaded", function(){
-      const overlay = document.getElementById("crudOverlay");
-      const btnMeta = document.getElementById("btnIrMeta");
-      const btnLanc = document.getElementById("btnIrLancamento");
-      const btnFechar = document.getElementById("btnFecharCrud");
-      const btnImportarTopo = document.getElementById("btnImportarBase");
-      const btnImportarMeta = document.getElementById("btnImportarBaseMeta");
-      const tabMeta = document.getElementById("tabMeta");
-      const tabLanc = document.getElementById("tabLancamento");
-      const panelMeta = document.getElementById("panelMeta");
-      const panelLanc = document.getElementById("panelLancamento");
-
-      function abrirOverlay() {
-        if (overlay) overlay.classList.add("active");
-      }
-
-      function fecharOverlay() {
-        if (overlay) overlay.classList.remove("active");
-      }
-
-      function ativarAba(tipo) {
-        const isMeta = tipo === "meta";
-
-        if (tabMeta) {
-          tabMeta.classList.toggle("active", isMeta);
-          tabMeta.classList.toggle("meta", true);
-        }
-
-        if (tabLanc) {
-          tabLanc.classList.toggle("active", !isMeta);
-          tabLanc.classList.toggle("lanc", true);
-        }
-
-        if (panelMeta) panelMeta.classList.toggle("active", isMeta);
-        if (panelLanc) panelLanc.classList.toggle("active", !isMeta);
-      }
-
-      if (btnMeta) {
-        btnMeta.addEventListener("click", function(){
-          abrirOverlay();
-          ativarAba("meta");
-        });
-      }
-
-      if (btnLanc) {
-        btnLanc.addEventListener("click", function(){
-          abrirOverlay();
-          ativarAba("lanc");
-        });
-      }
-
-      if (tabMeta) {
-        tabMeta.addEventListener("click", function(){
-          ativarAba("meta");
-        });
-      }
-
-      if (tabLanc) {
-        tabLanc.addEventListener("click", function(){
-          ativarAba("lanc");
-        });
-      }
-
-      if (btnFechar) {
-        btnFechar.addEventListener("click", fecharOverlay);
-      }
-
-      if (overlay) {
-        overlay.addEventListener("click", function(e){
-          if (e.target === overlay) fecharOverlay();
-        });
-      }
-
-      document.addEventListener("keydown", function(e){
-        if (e.key === "Escape") fecharOverlay();
-      });
-
-      if (btnImportarTopo && typeof importarMetasBase === "function") {
-        btnImportarTopo.addEventListener("click", importarMetasBase);
-      }
-
-      if (btnImportarMeta && typeof importarMetasBase === "function") {
-        btnImportarMeta.addEventListener("click", importarMetasBase);
-      }
-    });
+    try{
+      if(typeof requireFeatureAuth==="function") requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.");
+      else if(typeof requireHomeAuth==="function") requireHomeAuth();
+      if(typeof bindLogoutButton==="function") bindLogoutButton();
+    }catch(e){ console.warn("[CUSTO-FILIAL] Auth ainda não disponível.",e); }
   </script>
 </body>
 </html>

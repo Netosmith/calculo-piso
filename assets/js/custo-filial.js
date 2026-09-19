@@ -25,7 +25,7 @@ const FILIAIS=[
 
 const FIXOS={aluguel:3500,carro:2000,combustivelCarro:800,aguaEnergia:1000};
 let DB={lancamentos:[]};
-let STATE={filial:"",ano:0,mes:0,editId:""};
+let STATE={filial:"",ano:0,mes:0,editId:"",costEditFilial:""};
 let charts={resultado:null,volume:null,lucroDia:null,volumeDia:null};
 
 function text(v){return String(v??"").trim()}
@@ -95,11 +95,18 @@ function fillFiliais(){
   const opts=FILIAIS.map(f=>`<option value="${f.id}">${f.label}</option>`).join("");
   $("filtroFilial").innerHTML='<option value="">Todas as filiais</option>'+opts;
   $("lancFilial").innerHTML='<option value="">Selecione</option>'+opts;
+  $("costEditFilial").innerHTML='<option value="">Selecione a filial</option>'+opts;
 }
 function applyFilters(){
   STATE.filial=up($("filtroFilial").value);
-  const mv=text($("filtroMes").value);const m=mv.match(/^(\d{4})-(\d{2})$/);if(m){STATE.ano=+m[1];STATE.mes=+m[2]}
-  if(STATE.filial)$("lancFilial").value=STATE.filial;
+  const mv=text($("filtroMes").value);
+  const m=mv.match(/^(\d{4})-(\d{2})$/);
+  if(m){STATE.ano=+m[1];STATE.mes=+m[2]}
+  if(STATE.filial){
+    $("lancFilial").value=STATE.filial;
+    STATE.costEditFilial=STATE.filial;
+    $("costEditFilial").value=STATE.filial;
+  }
   renderAll();
 }
 
@@ -110,39 +117,79 @@ function summaries(){return selectedFiliais().map(filialSummary)}
 function renderCost(){
   const list=selectedFiliais();
   const agg={salarios:0,aluguel:0,carros:0,carroCusto:0,comb:0,agua:0,fixo:0,meta:0};
-  list.forEach(f=>{agg.salarios+=f.salarios;agg.aluguel+=FIXOS.aluguel;agg.carros+=f.carros;agg.carroCusto+=f.carros*FIXOS.carro;agg.comb+=combustivel(f);agg.agua+=FIXOS.aguaEnergia;agg.fixo+=custoFixo(f);agg.meta+=metaFilial(f)});
+
+  list.forEach(f=>{
+    agg.salarios+=f.salarios;
+    agg.aluguel+=FIXOS.aluguel;
+    agg.carros+=f.carros;
+    agg.carroCusto+=f.carros*FIXOS.carro;
+    agg.comb+=combustivel(f);
+    agg.agua+=FIXOS.aguaEnergia;
+    agg.fixo+=custoFixo(f);
+    agg.meta+=metaFilial(f);
+  });
+
   setText("costFilialName",STATE.filial?filialLabel(STATE.filial):`${list.length} filiais`);
   setText("costSalarios",brl(agg.salarios));
   setText("costAluguel",brl(agg.aluguel));
-  setText("costCarros",`${agg.carros} • ${brl(agg.carroCusto)}`);
+  setText("costCarros",`${agg.carros} carro(s) • ${brl(agg.carroCusto)}`);
   setText("costCombustivel",brl(agg.comb));
   setText("costAguaEnergia",brl(agg.agua));
   setText("costFixo",brl(agg.fixo));
   setText("costMeta",brl(agg.meta));
 
-  const input=$("costOverrideInput"),saveBtn=$("btnSalvarCusto"),autoBtn=$("btnCustoAutomatico");
-  if(!input||!saveBtn||!autoBtn)return;
+  renderCostEditor();
+}
 
-  if(!STATE.filial){
+function renderCostEditor(){
+  const select=$("costEditFilial");
+  const input=$("costOverrideInput");
+  const saveBtn=$("btnSalvarCusto");
+  const autoBtn=$("btnCustoAutomatico");
+  if(!select||!input||!saveBtn||!autoBtn)return;
+
+  const id=up(select.value||STATE.costEditFilial);
+  STATE.costEditFilial=id;
+
+  if(!id){
     input.value="";
     input.disabled=true;
     saveBtn.disabled=true;
     autoBtn.disabled=true;
-    setText("costEditNote","Selecione uma filial para ajustar o custo fixo do mês.");
+    setText("costAutoPreview","R$ 0,00");
+    setText("costEffectivePreview","R$ 0,00");
+    setText("costGoalPreview","R$ 0,00");
+    setText("costEditNote","Escolha uma filial para editar o custo do mês selecionado.");
     return;
   }
 
-  const f=filialById(STATE.filial);
+  const f=filialById(id);
+  if(!f)return;
+
   const base=custoFixoBase(f);
   const override=costOverrideRecord(f.id);
   const efetivo=custoFixo(f);
+
   input.disabled=false;
   saveBtn.disabled=false;
   autoBtn.disabled=false;
   input.value=efetivo.toFixed(2);
+
+  setText("costAutoPreview",brl(base));
+  setText("costEffectivePreview",brl(efetivo));
+  setText("costGoalPreview",brl(efetivo*1.40));
   setText("costEditNote",override&&num(override.custo)>0
-    ?`Ajuste manual ativo. Cálculo automático seria ${brl(base)}.`
-    :`Usando cálculo automático: ${brl(base)}.`);
+    ?`Custo manual ativo para ${f.label} em ${pad(STATE.mes)}/${STATE.ano}. O cálculo automático seria ${brl(base)}.`
+    :`Usando cálculo automático para ${f.label} em ${pad(STATE.mes)}/${STATE.ano}.`);
+}
+
+function openCostEditor(id){
+  const filial=up(id);
+  if(!filialById(filial))return;
+  STATE.costEditFilial=filial;
+  $("costEditFilial").value=filial;
+  renderCostEditor();
+  $("secaoCustos")?.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function renderKpis(){
   const s=summaries();const lucro=sum(s,"lucro"),volume=sum(s,"volume"),fixo=sum(s,"fixo"),meta=sum(s,"meta");const diff=lucro-meta;const dias=elapsedDays();const proj=dias>0?lucro/dias*daysInMonth():0;
@@ -150,11 +197,35 @@ function renderKpis(){
   const card=$("kpiSaldoCard");card?.classList.remove("good","bad");card?.classList.add(diff>=0?"good":"bad");
 }
 function renderResultTable(){
-  const s=summaries();setText("resultMeta",`${s.length} filial(is)`);const tb=$("tbodyResultados");if(!s.length){tb.innerHTML='<tr><td colspan="10" class="empty">Sem filiais.</td></tr>';return}
-  tb.innerHTML=s.map(x=>`<tr><td><b>${esc(x.f.label)}</b></td><td class="num">${brl(x.f.salarios)}</td><td class="num">${x.f.carros}</td><td class="num">${brl(x.fixo)}</td><td class="num">${brl(x.meta)}</td><td class="num money ${x.lucro>=x.fixo?'good':'bad'}">${brl(x.lucro)}</td><td class="num">${tons(x.volume)}</td><td class="num">${pct(x.metaPct)}</td><td class="num money ${x.diff>=0?'good':'bad'}">${x.diff>=0?'+':''}${brl(x.diff)}</td><td><span class="statusPill ${x.level}">${x.status}</span></td></tr>`).join("");
+  const s=summaries();
+  setText("resultMeta",`${s.length} filial(is)`);
+  const tb=$("tbodyResultados");
+
+  if(!s.length){
+    tb.innerHTML='<tr><td colspan="11" class="cfEmpty">Sem filiais para o período selecionado.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML=s.map(x=>`<tr>
+    <td><b>${esc(x.f.label)}</b></td>
+    <td class="num">${brl(x.f.salarios)}</td>
+    <td class="num">${x.f.carros}</td>
+    <td class="num">${brl(x.fixo)}</td>
+    <td class="num">${brl(x.meta)}</td>
+    <td class="num money ${x.lucro>=x.fixo?'good':'bad'}">${brl(x.lucro)}</td>
+    <td class="num">${tons(x.volume)}</td>
+    <td class="num">${pct(x.metaPct)}</td>
+    <td class="num money ${x.diff>=0?'good':'bad'}">${x.diff>=0?'+':''}${brl(x.diff)}</td>
+    <td><span class="statusPill ${x.level}">${x.status}</span></td>
+    <td><button class="miniBtn" data-edit-cost="${esc(x.f.id)}">Editar custo</button></td>
+  </tr>`).join("");
+
+  tb.querySelectorAll("[data-edit-cost]").forEach(btn=>{
+    btn.addEventListener("click",()=>openCostEditor(btn.dataset.editCost));
+  });
 }
 function renderLaunchTable(){
-  const rows=filteredLaunches().slice().sort((a,b)=>b.data.localeCompare(a.data)||a.filial.localeCompare(b.filial,"pt-BR"));const tb=$("tbodyLancamentos");if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nenhum lançamento neste período.</td></tr>';return}
+  const rows=filteredLaunches().slice().sort((a,b)=>b.data.localeCompare(a.data)||a.filial.localeCompare(b.filial,"pt-BR"));const tb=$("tbodyLancamentos");if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="cfEmpty">Nenhum lançamento neste período.</td></tr>';return}
   tb.innerHTML=rows.map(x=>`<tr><td>${dateBR(x.data)}</td><td>${esc(filialLabel(x.filial))}</td><td class="num">${tons(x.volume)}</td><td class="num money ${x.lucro>=0?'good':'bad'}">${brl(x.lucro)}</td><td>${esc(x.observacao||'-')}</td><td><button class="miniBtn" data-edit="${esc(x.id)}">Editar</button></td></tr>`).join("");
   tb.querySelectorAll("[data-edit]").forEach(btn=>btn.addEventListener("click",()=>editLaunch(btn.dataset.edit)));
 }
@@ -162,18 +233,254 @@ function dailySeries(key){
   const rows=filteredLaunches();const map=new Map();for(let d=1;d<=daysInMonth();d++)map.set(d,0);rows.forEach(x=>{const p=parseYmd(x.data);if(p)map.set(p.dia,(map.get(p.dia)||0)+num(x[key]))});return [...map.values()];
 }
 function destroy(name){if(charts[name]){charts[name].destroy();charts[name]=null}}
-function chartBase(){return {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#52627a",font:{size:10,weight:"bold"}}}},scales:{x:{ticks:{color:"#68778e",font:{size:9}},grid:{display:false}},y:{ticks:{color:"#68778e",font:{size:9}},grid:{color:"#edf1f6"}}}}}
+function chartBase(){
+  return {
+    responsive:true,
+    maintainAspectRatio:false,
+    animation:{duration:300},
+    plugins:{
+      legend:{
+        position:"top",
+        align:"start",
+        labels:{color:"#52627a",font:{size:11,weight:"bold"},boxWidth:14,boxHeight:8,usePointStyle:true}
+      },
+      tooltip:{
+        backgroundColor:"#102846",
+        titleColor:"#fff",
+        bodyColor:"#fff",
+        padding:10,
+        cornerRadius:8
+      }
+    },
+    scales:{
+      x:{
+        beginAtZero:true,
+        ticks:{color:"#68778e",font:{size:10}},
+        grid:{color:"#edf1f6"}
+      },
+      y:{
+        ticks:{color:"#44546b",font:{size:10,weight:"bold"}},
+        grid:{display:false}
+      }
+    }
+  };
+}
+
+function horizontalMoneyOptions(){
+  const base=chartBase();
+  return {
+    ...base,
+    indexAxis:"y",
+    scales:{
+      ...base.scales,
+      x:{
+        ...base.scales.x,
+        ticks:{
+          ...base.scales.x.ticks,
+          callback:value=>Number(value).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0})
+        }
+      }
+    },
+    plugins:{
+      ...base.plugins,
+      tooltip:{
+        ...base.plugins.tooltip,
+        callbacks:{
+          label:ctx=>`${ctx.dataset.label}: ${brl(ctx.raw)}`
+        }
+      }
+    }
+  };
+}
+
+function horizontalTonsOptions(){
+  const base=chartBase();
+  return {
+    ...base,
+    indexAxis:"y",
+    scales:{
+      ...base.scales,
+      x:{
+        ...base.scales.x,
+        ticks:{
+          ...base.scales.x.ticks,
+          callback:value=>`${Number(value).toLocaleString("pt-BR",{maximumFractionDigits:0})} t`
+        }
+      }
+    },
+    plugins:{
+      ...base.plugins,
+      tooltip:{
+        ...base.plugins.tooltip,
+        callbacks:{label:ctx=>`${ctx.dataset.label}: ${tons(ctx.raw)}`}
+      }
+    }
+  };
+}
+
+function dailyMoneyOptions(){
+  const base=chartBase();
+  return {
+    ...base,
+    scales:{
+      ...base.scales,
+      y:{
+        beginAtZero:true,
+        ticks:{
+          color:"#68778e",
+          font:{size:10},
+          callback:value=>Number(value).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0})
+        },
+        grid:{color:"#edf1f6"}
+      }
+    },
+    plugins:{
+      ...base.plugins,
+      tooltip:{
+        ...base.plugins.tooltip,
+        callbacks:{label:ctx=>`Lucro: ${brl(ctx.raw)}`}
+      }
+    }
+  };
+}
+
+function dailyTonsOptions(){
+  const base=chartBase();
+  return {
+    ...base,
+    scales:{
+      ...base.scales,
+      y:{
+        beginAtZero:true,
+        ticks:{
+          color:"#68778e",
+          font:{size:10},
+          callback:value=>`${Number(value).toLocaleString("pt-BR",{maximumFractionDigits:0})} t`
+        },
+        grid:{color:"#edf1f6"}
+      }
+    },
+    plugins:{
+      ...base.plugins,
+      tooltip:{
+        ...base.plugins.tooltip,
+        callbacks:{label:ctx=>`Volume: ${tons(ctx.raw)}`}
+      }
+    }
+  };
+}
+
 function renderCharts(){
-  if(typeof Chart==="undefined")return;const s=summaries();const labels=s.map(x=>x.f.label);
-  destroy("resultado");charts.resultado=new Chart($("chartResultado"),{type:"bar",data:{labels,datasets:[{label:"Custo fixo",data:s.map(x=>x.fixo),backgroundColor:"rgba(37,99,235,.25)",borderColor:"#2563eb",borderWidth:1,borderRadius:5},{label:"Meta +40%",data:s.map(x=>x.meta),backgroundColor:"rgba(18,59,115,.55)",borderColor:"#123b73",borderWidth:1,borderRadius:5},{label:"Lucro do mês",data:s.map(x=>x.lucro),backgroundColor:s.map(x=>x.level==="good"?"rgba(15,159,99,.68)":x.level==="bad"?"rgba(220,53,69,.68)":"rgba(37,99,235,.68)"),borderColor:s.map(x=>x.level==="good"?"#0f9f63":x.level==="bad"?"#dc3545":"#2563eb"),borderWidth:1,borderRadius:5}]},options:chartBase()});
-  destroy("volume");charts.volume=new Chart($("chartVolume"),{type:"bar",data:{labels,datasets:[{label:"Toneladas",data:s.map(x=>x.volume),backgroundColor:"rgba(15,159,99,.62)",borderColor:"#0f9f63",borderWidth:1,borderRadius:5}]},options:chartBase()});
-  const days=Array.from({length:daysInMonth()},(_,i)=>String(i+1));setText("dailyProfitLabel",STATE.filial?filialLabel(STATE.filial):"Todas as filiais somadas");setText("dailyVolumeLabel",STATE.filial?filialLabel(STATE.filial):"Todas as filiais somadas");
-  destroy("lucroDia");charts.lucroDia=new Chart($("chartLucroDia"),{type:"line",data:{labels:days,datasets:[{label:"Lucro diário",data:dailySeries("lucro"),borderColor:"#0f9f63",backgroundColor:"rgba(15,159,99,.10)",fill:true,tension:.25,pointRadius:2}]},options:chartBase()});
-  destroy("volumeDia");charts.volumeDia=new Chart($("chartVolumeDia"),{type:"bar",data:{labels:days,datasets:[{label:"Volume diário",data:dailySeries("volume"),backgroundColor:"rgba(37,99,235,.60)",borderColor:"#2563eb",borderWidth:1,borderRadius:3}]},options:chartBase()});
+  if(typeof Chart==="undefined")return;
+
+  const s=summaries();
+  const labels=s.map(x=>x.f.label);
+
+  destroy("resultado");
+  charts.resultado=new Chart($("chartResultado"),{
+    type:"bar",
+    data:{
+      labels,
+      datasets:[
+        {
+          label:"Custo fixo",
+          data:s.map(x=>x.fixo),
+          backgroundColor:"rgba(37,99,235,.20)",
+          borderColor:"#2563eb",
+          borderWidth:1,
+          borderRadius:6,
+          barPercentage:.76,
+          categoryPercentage:.82
+        },
+        {
+          label:"Meta +40%",
+          data:s.map(x=>x.meta),
+          backgroundColor:"rgba(15,61,120,.55)",
+          borderColor:"#0f3d78",
+          borderWidth:1,
+          borderRadius:6,
+          barPercentage:.76,
+          categoryPercentage:.82
+        },
+        {
+          label:"Lucro do mês",
+          data:s.map(x=>x.lucro),
+          backgroundColor:s.map(x=>x.level==="good"?"rgba(5,150,105,.72)":x.level==="bad"?"rgba(220,38,38,.68)":"rgba(37,99,235,.72)"),
+          borderColor:s.map(x=>x.level==="good"?"#059669":x.level==="bad"?"#dc2626":"#2563eb"),
+          borderWidth:1,
+          borderRadius:6,
+          barPercentage:.76,
+          categoryPercentage:.82
+        }
+      ]
+    },
+    options:horizontalMoneyOptions()
+  });
+
+  destroy("volume");
+  charts.volume=new Chart($("chartVolume"),{
+    type:"bar",
+    data:{
+      labels,
+      datasets:[{
+        label:"Toneladas embarcadas",
+        data:s.map(x=>x.volume),
+        backgroundColor:"rgba(5,150,105,.62)",
+        borderColor:"#059669",
+        borderWidth:1,
+        borderRadius:6,
+        barPercentage:.7,
+        categoryPercentage:.76
+      }]
+    },
+    options:horizontalTonsOptions()
+  });
+
+  const days=Array.from({length:daysInMonth()},(_,i)=>String(i+1));
+  setText("dailyProfitLabel",STATE.filial?filialLabel(STATE.filial):"Todas as filiais somadas");
+  setText("dailyVolumeLabel",STATE.filial?filialLabel(STATE.filial):"Todas as filiais somadas");
+
+  destroy("lucroDia");
+  charts.lucroDia=new Chart($("chartLucroDia"),{
+    type:"line",
+    data:{
+      labels:days,
+      datasets:[{
+        label:"Lucro diário",
+        data:dailySeries("lucro"),
+        borderColor:"#059669",
+        backgroundColor:"rgba(5,150,105,.10)",
+        fill:true,
+        tension:.28,
+        pointRadius:2.5,
+        pointHoverRadius:5,
+        borderWidth:2
+      }]
+    },
+    options:dailyMoneyOptions()
+  });
+
+  destroy("volumeDia");
+  charts.volumeDia=new Chart($("chartVolumeDia"),{
+    type:"bar",
+    data:{
+      labels:days,
+      datasets:[{
+        label:"Volume diário",
+        data:dailySeries("volume"),
+        backgroundColor:"rgba(37,99,235,.64)",
+        borderColor:"#2563eb",
+        borderWidth:1,
+        borderRadius:4,
+        maxBarThickness:28
+      }]
+    },
+    options:dailyTonsOptions()
+  });
 }
 function renderAll(){renderCost();renderKpis();renderResultTable();renderLaunchTable();renderCharts()}
 
-function clearLaunch(){STATE.editId="";$("lancFilial").value=STATE.filial||"";$("lancData").value=todayYmd();$("lancVolume").value="";$("lancLucro").value="";$("lancObs").value="";setText("editHint","");setText("btnSalvarLanc","Salvar lançamento")}
+function clearLaunch(){STATE.editId="";$("lancFilial").value=STATE.filial||"";$("lancData").value=todayYmd();$("lancVolume").value="";$("lancLucro").value="";$("lancObs").value="";setText("editHint","Novo lançamento");setText("btnSalvarLanc","Salvar lançamento")}
 function editLaunch(id){const x=DB.lancamentos.find(r=>r.id===id);if(!x)return;STATE.editId=x.id;$("lancFilial").value=x.filial;$("lancData").value=x.data;$("lancVolume").value=x.volume;$("lancLucro").value=x.lucro;$("lancObs").value=x.observacao;setText("editHint","Editando lançamento");setText("btnSalvarLanc","Atualizar lançamento");$("lancFilial").scrollIntoView({behavior:"smooth",block:"center"})}
 async function saveDaily(){
   const filial=up($("lancFilial").value),data=text($("lancData").value),volume=num($("lancVolume").value),lucro=num($("lancLucro").value),obs=text($("lancObs").value);if(!filial)return alert("Selecione a filial.");if(!data)return alert("Informe a data.");if(!text($("lancVolume").value))return alert("Informe o volume embarcado.");if(!text($("lancLucro").value))return alert("Informe o lucro do dia.");
@@ -181,10 +488,13 @@ async function saveDaily(){
   try{const r=await saveLaunch(payload,!!existing);if(r?.ok===false)throw new Error(r.error||"Falha ao salvar.");const local=normalizeLaunch({...payload,id:existing?.id||r?.data?.id||`LOCAL-${Date.now()}`});if(existing){const i=DB.lancamentos.findIndex(x=>x.id===existing.id);if(i>=0)DB.lancamentos[i]=local}else DB.lancamentos.push(local);saveCache();clearLaunch();renderAll();setStatus(existing?"Lançamento atualizado. Sincronizando...":"Lançamento salvo. Sincronizando...","ok");setTimeout(()=>loadData(true),120)}catch(e){console.error(e);setStatus(e.message,"bad");alert(`Não foi possível salvar.\n\n${e.message}`)}finally{loading(false)}
 }
 async function saveCostOverride(useAutomatic=false){
-  if(!STATE.filial)return alert("Selecione uma filial no filtro.");
-  const f=filialById(STATE.filial);
+  const filial=up($("costEditFilial")?.value||STATE.costEditFilial);
+  if(!filial)return alert("Selecione a filial que deseja editar.");
+
+  const f=filialById(filial);
   if(!f)return;
 
+  STATE.costEditFilial=filial;
   const value=useAutomatic?0:num($("costOverrideInput")?.value);
   if(!useAutomatic&&value<=0)return alert("Informe um custo fixo maior que zero.");
 
@@ -206,16 +516,26 @@ async function saveCostOverride(useAutomatic=false){
   try{
     const r=await saveLaunch(payload,!!existing);
     if(r?.ok===false)throw new Error(r.error||"Falha ao salvar o custo fixo.");
-    const local=normalizeLaunch({...payload,id:existing?.id||r?.data?.id||`LOCAL-COST-${Date.now()}`,updatedAt:new Date().toISOString()});
+
+    const local=normalizeLaunch({
+      ...payload,
+      id:existing?.id||r?.data?.id||`LOCAL-COST-${Date.now()}`,
+      updatedAt:new Date().toISOString()
+    });
+
     if(existing){
       const i=DB.lancamentos.findIndex(x=>x.id===existing.id);
       if(i>=0)DB.lancamentos[i]=local;
     }else{
       DB.lancamentos.push(local);
     }
+
     saveCache();
     renderAll();
-    setStatus(useAutomatic?"Custo automático restaurado.":"Custo fixo atualizado.","ok");
+    setStatus(useAutomatic
+      ?`Cálculo automático restaurado para ${f.label}.`
+      :`Custo fixo de ${f.label} atualizado.`,"ok");
+
     setTimeout(()=>loadData(true),120);
   }catch(e){
     console.error(e);
@@ -231,16 +551,37 @@ async function loadData(silent=false){if(!silent)loading(true,"Carregando result
 function bind(){
   fillFiliais();
   initPeriod();
+
   $("btnAplicar").addEventListener("click",applyFilters);
   $("filtroFilial").addEventListener("change",applyFilters);
   $("filtroMes").addEventListener("change",applyFilters);
-  $("btnMesAtual").addEventListener("click",()=>{const d=new Date();$("filtroMes").value=monthValue(d.getFullYear(),d.getMonth()+1);STATE.ano=d.getFullYear();STATE.mes=d.getMonth()+1;renderAll()});
+
+  $("btnMesAtual").addEventListener("click",()=>{
+    const d=new Date();
+    $("filtroMes").value=monthValue(d.getFullYear(),d.getMonth()+1);
+    STATE.ano=d.getFullYear();
+    STATE.mes=d.getMonth()+1;
+    renderAll();
+  });
+
   $("btnAtualizar").addEventListener("click",()=>loadData(false));
   $("btnSalvarLanc").addEventListener("click",saveDaily);
   $("btnLimparLanc").addEventListener("click",clearLaunch);
+
+  $("costEditFilial").addEventListener("change",e=>{
+    STATE.costEditFilial=up(e.target.value);
+    renderCostEditor();
+  });
+  $("costOverrideInput").addEventListener("input",()=>{
+    const id=STATE.costEditFilial;
+    if(!id)return;
+    const valor=num($("costOverrideInput").value);
+    setText("costEffectivePreview",brl(valor));
+    setText("costGoalPreview",brl(valor*1.40));
+  });
+
   $("btnSalvarCusto").addEventListener("click",()=>saveCostOverride(false));
   $("btnCustoAutomatico").addEventListener("click",()=>saveCostOverride(true));
 }
-
 document.addEventListener("DOMContentLoaded",()=>{bind();const cached=restoreCache();if(cached){renderAll();setStatus("Exibindo dados em cache. Atualizando...","");loadData(true)}else loadData(false)});
 })();

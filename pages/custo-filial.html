@@ -14,19 +14,23 @@
     }
     *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
     button,input,select,textarea{font:inherit}.page{max-width:1720px;margin:0 auto;padding:18px}.topbar .actions a{color:inherit;text-decoration:none}
-    .hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:2px 0 16px}.hero h1{margin:0;color:var(--blue);font-size:26px}.hero p{margin:5px 0 0;color:var(--muted);font-size:12px}.heroActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pageHero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:2px 0 16px}.pageHero h1{margin:0;color:var(--blue);font-size:26px}.pageHero p{margin:5px 0 0;color:var(--muted);font-size:12px}.heroActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btn{height:38px;border:0;border-radius:10px;padding:0 14px;font-size:10px;font-weight:900;cursor:pointer;transition:.15s}.btn:hover{transform:translateY(-1px)}.btn.primary{background:var(--blue);color:#fff}.btn.green{background:var(--green);color:#fff}.btn.ghost{background:#fff;color:var(--blue);border:1px solid var(--line)}.btn:disabled{opacity:.55;cursor:wait;transform:none}
     .sync{min-height:20px;margin:0 0 10px;color:var(--muted);font-size:10px;font-weight:800}.sync.ok{color:var(--green)}.sync.bad{color:var(--red)}
     .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
     .toolbar{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(180px,.7fr) auto auto;gap:10px;padding:14px;margin-bottom:14px;align-items:end}.field label{display:block;margin-bottom:5px;color:#43536a;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}.control{width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:#fff;color:var(--text);outline:none;font-size:10px}.control:focus{border-color:#5b8def;box-shadow:0 0 0 3px rgba(37,99,235,.10)}textarea.control{height:auto;min-height:70px;padding:9px;resize:vertical}
     .quickGrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:14px;margin-bottom:14px}.launchCard{padding:15px}.sectionTitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}.sectionTitle h2,.sectionTitle h3{margin:0;color:var(--blue);font-size:15px}.sectionTitle small{color:var(--muted);font-size:9px}.launchGrid{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:10px}.launchGrid .obs{grid-column:1/-1}.launchActions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
     .costBox{padding:15px}.costHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.costHeader h3{margin:0;color:var(--blue);font-size:15px}.costStatus{padding:5px 9px;border-radius:999px;font-size:9px;font-weight:900;background:var(--blueSoft);color:var(--blue)}.costRows{display:grid;gap:7px}.costRow{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:9px;background:#f8fafc;font-size:10px}.costRow strong{color:var(--blue)}.costRow.total{background:var(--blueSoft);font-size:11px}.costRow.goal{background:var(--greenSoft)}
+    .costEdit{margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+    .costEditGrid{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end}
+    .costEditNote{margin-top:7px;color:var(--muted);font-size:8px;line-height:1.35}
+    .costEdit .control:disabled{background:#f5f7fb;color:#8a97aa;cursor:not-allowed}
     .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}.kpi{padding:13px 14px;min-height:92px}.kpiLabel{font-size:8px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.kpiValue{margin-top:8px;font-size:20px;font-weight:1000;color:var(--blue);line-height:1}.kpiSub{margin-top:7px;font-size:8px;color:var(--muted)}.kpi.good .kpiValue{color:var(--green)}.kpi.bad .kpiValue{color:var(--red)}
     .charts{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}.chartCard{padding:14px;min-width:0}.chartBox{height:300px}.charts.secondary{grid-template-columns:1fr 1fr}.charts.secondary .chartBox{height:250px}
     .tableCard{overflow:hidden;margin-bottom:14px}.tableHead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.tableHead h3{margin:0;color:var(--blue);font-size:14px}.tableHead span{font-size:9px;color:var(--muted)}.tableWrap{overflow:auto;max-height:480px}table{width:100%;border-collapse:collapse;min-width:1160px}th,td{padding:9px 10px;border-bottom:1px solid #edf1f6;font-size:9px;text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#f5f8fc;color:#52627a;text-transform:uppercase;font-size:8px;letter-spacing:.035em}td.num,th.num{text-align:right}tbody tr:hover{background:#f8fbff}.statusPill{display:inline-flex;align-items:center;justify-content:center;min-width:78px;height:23px;padding:0 8px;border-radius:999px;font-size:8px;font-weight:950}.statusPill.good{background:var(--greenSoft);color:var(--green)}.statusPill.bad{background:var(--redSoft);color:var(--red)}.statusPill.mid{background:var(--blueSoft);color:var(--blue)}.money.good{color:var(--green);font-weight:900}.money.bad{color:var(--red);font-weight:900}.miniBtn{height:27px;border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:7px;padding:0 9px;font-size:8px;font-weight:900;cursor:pointer}
     .empty{padding:28px;text-align:center;color:var(--muted);font-size:10px}.footNote{padding:0 2px 14px;color:var(--muted);font-size:9px}.loadingLayer{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;background:rgba(244,247,251,.72);backdrop-filter:blur(2px)}.loadingLayer.show{display:flex}.loadingBox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 17px;box-shadow:var(--shadow);font-size:10px;font-weight:900;color:var(--blue)}
     @media(max-width:1300px){.kpis{grid-template-columns:repeat(3,1fr)}.quickGrid,.charts{grid-template-columns:1fr}.charts.secondary{grid-template-columns:1fr 1fr}}
-    @media(max-width:850px){.page{padding:10px}.hero{flex-direction:column}.toolbar,.launchGrid{grid-template-columns:1fr 1fr}.quickGrid,.charts,.charts.secondary{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.launchGrid .obs{grid-column:1/-1}}
+    @media(max-width:850px){.page{padding:10px}.pageHero{flex-direction:column}.toolbar,.launchGrid{grid-template-columns:1fr 1fr}.quickGrid,.charts,.charts.secondary{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.launchGrid .obs{grid-column:1/-1}}
     @media(max-width:560px){.toolbar,.launchGrid,.kpis{grid-template-columns:1fr}.launchGrid .obs{grid-column:auto}.chartBox,.charts.secondary .chartBox{height:230px}}
   </style>
 </head>
@@ -39,7 +43,7 @@
   </div>
 
   <main class="page">
-    <section class="hero">
+    <section class="pageHero">
       <div><h1>Resultado por Filial</h1><p>Controle mensal simples de custo fixo, volume embarcado e lucro operacional.</p></div>
       <div class="heroActions"><button class="btn ghost" id="btnAtualizar">↻ Atualizar</button></div>
     </section>
@@ -75,6 +79,18 @@
           <div class="costRow"><span>Água + energia</span><strong id="costAguaEnergia">R$ 0,00</strong></div>
           <div class="costRow total"><span>Custo fixo mensal</span><strong id="costFixo">R$ 0,00</strong></div>
           <div class="costRow goal"><span>Meta mensal (+40%)</span><strong id="costMeta">R$ 0,00</strong></div>
+        </div>
+
+        <div class="costEdit">
+          <div class="costEditGrid">
+            <div class="field">
+              <label>Custo fixo editável (R$)</label>
+              <input class="control" id="costOverrideInput" type="number" min="0" step="0.01" placeholder="Selecione uma filial">
+            </div>
+            <button class="btn primary" id="btnSalvarCusto" type="button">Salvar custo</button>
+            <button class="btn ghost" id="btnCustoAutomatico" type="button">Usar automático</button>
+          </div>
+          <div class="costEditNote" id="costEditNote">Selecione uma filial para ajustar o custo fixo do mês.</div>
         </div>
       </aside>
     </section>
@@ -114,7 +130,7 @@
   <div class="loadingLayer" id="loading"><div class="loadingBox" id="loadingText">Carregando...</div></div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/custo-filial.js?v=3"></script>
+  <script src="../assets/js/custo-filial.js?v=4"></script>
   <script>
     try{
       if(typeof requireFeatureAuth==="function") requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.");

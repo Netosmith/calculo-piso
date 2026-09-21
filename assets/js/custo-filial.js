@@ -43,14 +43,41 @@ function dateBR(v){const p=parseYmd(v);return p?`${pad(p.dia)}/${pad(p.mes)}/${p
 function filialById(id){return FILIAIS.find(f=>f.id===up(id))||null}
 function filialLabel(id){return filialById(id)?.label||text(id)}
 function combustivel(f){return f.combustivelFixo!=null?f.combustivelFixo:f.carros*FIXOS.combustivelCarro}
-function custoFixoBase(f){return f.salarios+FIXOS.aluguel+(f.carros*FIXOS.carro)+combustivel(f)+FIXOS.aguaEnergia}
+function costComponentsBase(f){
+  return {
+    salarios:num(f.salarios),
+    aluguel:num(FIXOS.aluguel),
+    veiculos:num(f.carros*FIXOS.carro),
+    combustivel:num(combustivel(f)),
+    aguaEnergia:num(FIXOS.aguaEnergia)
+  };
+}
+function sumCostComponents(v){
+  return num(v?.salarios)+num(v?.aluguel)+num(v?.veiculos)+num(v?.combustivel)+num(v?.aguaEnergia);
+}
+function custoFixoBase(f){return sumCostComponents(costComponentsBase(f))}
 function costOverrideRecord(id){
   return DB.lancamentos
     .filter(x=>x.tipo==="custo"&&x.filial===id&&Number(x.ano)===STATE.ano&&Number(x.mes)===STATE.mes)
     .sort((a,b)=>String(b.updatedAt||b.createdAt||"").localeCompare(String(a.updatedAt||a.createdAt||"")))[0]||null;
 }
+function costComponentsEffective(f){
+  const base=costComponentsBase(f);
+  const override=costOverrideRecord(f.id);
+  if(override?.costComponents){
+    return {
+      salarios:num(override.costComponents.salarios),
+      aluguel:num(override.costComponents.aluguel),
+      veiculos:num(override.costComponents.veiculos),
+      combustivel:num(override.costComponents.combustivel),
+      aguaEnergia:num(override.costComponents.aguaEnergia)
+    };
+  }
+  return base;
+}
 function custoFixo(f){
   const override=costOverrideRecord(f.id);
+  if(override?.costComponents)return sumCostComponents(override.costComponents);
   return override&&num(override.custo)>0?num(override.custo):custoFixoBase(f);
 }
 function metaFilial(f){return custoFixo(f)*1.40}
@@ -74,10 +101,27 @@ function normalizeLaunch(x){
   const isCost=rawObs.startsWith(COST_MARKER);
   const p=parseYmd(x.data);
   const cleanObs=isDaily?rawObs.slice(DAILY_MARKER.length):isCost?rawObs.slice(COST_MARKER.length):rawObs;
+  let costComponents=null;
+
+  if(isCost&&cleanObs.startsWith("COMP|")){
+    try{
+      const parsed=JSON.parse(cleanObs.slice(5));
+      costComponents={
+        salarios:num(parsed.salarios),
+        aluguel:num(parsed.aluguel),
+        veiculos:num(parsed.veiculos),
+        combustivel:num(parsed.combustivel),
+        aguaEnergia:num(parsed.aguaEnergia)
+      };
+    }catch(error){
+      console.warn("[CUSTO-FILIAL] Componentes de custo inválidos.",error);
+    }
+  }
+
   return {
     id:text(x.id),data:text(x.data),ano:Number(x.ano||(p?.ano||0)),mes:Number(x.mes||(p?.mes||0)),
     filial:up(x.filial),volume:num(x.toneladas),lucro:num(x.faturamento),custo:num(x.custo),
-    observacao:cleanObs,tipo:isDaily?"diario":isCost?"custo":"legado",
+    observacao:cleanObs,tipo:isDaily?"diario":isCost?"custo":"legado",costComponents,
     createdAt:x.createdAt||"",updatedAt:x.updatedAt||""
   };
 }

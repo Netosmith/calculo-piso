@@ -929,6 +929,12 @@
         sessionStorage.setItem(ACCESS_KEY,"1");
         gate.hidden=true;
         content.hidden=false;
+
+        const logoutButton=document.querySelector("[data-logout]");
+        if(logoutButton){
+          logoutButton.addEventListener("click",()=>sessionStorage.removeItem(ACCESS_KEY),{once:true,capture:true});
+        }
+
         if(typeof bindLogoutButton==="function") bindLogoutButton();
         loadModule();
       }

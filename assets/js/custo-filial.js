@@ -164,12 +164,13 @@ function renderCost(){
   const agg={salarios:0,aluguel:0,carros:0,carroCusto:0,comb:0,agua:0,fixo:0,meta:0};
 
   list.forEach(f=>{
-    agg.salarios+=f.salarios;
-    agg.aluguel+=FIXOS.aluguel;
+    const comp=costComponentsEffective(f);
+    agg.salarios+=comp.salarios;
+    agg.aluguel+=comp.aluguel;
     agg.carros+=f.carros;
-    agg.carroCusto+=f.carros*FIXOS.carro;
-    agg.comb+=combustivel(f);
-    agg.agua+=FIXOS.aguaEnergia;
+    agg.carroCusto+=comp.veiculos;
+    agg.comb+=comp.combustivel;
+    agg.agua+=comp.aguaEnergia;
     agg.fixo+=custoFixo(f);
     agg.meta+=metaFilial(f);
   });
@@ -186,46 +187,88 @@ function renderCost(){
   renderCostEditor();
 }
 
+function costEditorInputs(){
+  return {
+    salarios:$("costSalariosInput"),
+    aluguel:$("costAluguelInput"),
+    veiculos:$("costVeiculosInput"),
+    combustivel:$("costCombustivelInput"),
+    aguaEnergia:$("costAguaInput")
+  };
+}
+
+function editorComponents(){
+  const inputs=costEditorInputs();
+  return {
+    salarios:num(inputs.salarios?.value),
+    aluguel:num(inputs.aluguel?.value),
+    veiculos:num(inputs.veiculos?.value),
+    combustivel:num(inputs.combustivel?.value),
+    aguaEnergia:num(inputs.aguaEnergia?.value)
+  };
+}
+
+function updateCostEditorPreview(){
+  const id=STATE.costEditFilial;
+  if(!id)return;
+  const total=sumCostComponents(editorComponents());
+  setText("costEffectivePreview",brl(total));
+  setText("costGoalPreview",brl(total*1.40));
+}
+
 function renderCostEditor(){
   const select=$("costEditFilial");
-  const input=$("costOverrideInput");
   const saveBtn=$("btnSalvarCusto");
   const autoBtn=$("btnCustoAutomatico");
-  if(!select||!input||!saveBtn||!autoBtn)return;
+  const inputs=costEditorInputs();
+  if(!select||!saveBtn||!autoBtn)return;
 
   const id=up(select.value||STATE.costEditFilial);
   STATE.costEditFilial=id;
 
+  const allInputs=Object.values(inputs).filter(Boolean);
+
   if(!id){
-    input.value="";
-    input.disabled=true;
+    allInputs.forEach(input=>{input.value="";input.disabled=true});
     saveBtn.disabled=true;
     autoBtn.disabled=true;
     setText("costAutoPreview","R$ 0,00");
     setText("costEffectivePreview","R$ 0,00");
     setText("costGoalPreview","R$ 0,00");
-    setText("costEditNote","Escolha uma filial para editar o custo do mês selecionado.");
+    setText("costEditNote","Escolha uma filial para editar os custos do mês selecionado.");
     return;
   }
 
   const f=filialById(id);
   if(!f)return;
 
-  const base=custoFixoBase(f);
+  const baseComp=costComponentsBase(f);
+  const effComp=costComponentsEffective(f);
   const override=costOverrideRecord(f.id);
-  const efetivo=custoFixo(f);
+  const baseTotal=sumCostComponents(baseComp);
+  const effectiveTotal=custoFixo(f);
 
-  input.disabled=false;
+  allInputs.forEach(input=>input.disabled=false);
   saveBtn.disabled=false;
   autoBtn.disabled=false;
-  input.value=efetivo.toFixed(2);
 
-  setText("costAutoPreview",brl(base));
-  setText("costEffectivePreview",brl(efetivo));
-  setText("costGoalPreview",brl(efetivo*1.40));
-  setText("costEditNote",override&&num(override.custo)>0
-    ?`Custo manual ativo para ${f.label} em ${pad(STATE.mes)}/${STATE.ano}. O cálculo automático seria ${brl(base)}.`
-    :`Usando cálculo automático para ${f.label} em ${pad(STATE.mes)}/${STATE.ano}.`);
+  inputs.salarios.value=effComp.salarios.toFixed(2);
+  inputs.aluguel.value=effComp.aluguel.toFixed(2);
+  inputs.veiculos.value=effComp.veiculos.toFixed(2);
+  inputs.combustivel.value=effComp.combustivel.toFixed(2);
+  inputs.aguaEnergia.value=effComp.aguaEnergia.toFixed(2);
+
+  setText("costAutoPreview",brl(baseTotal));
+  setText("costEffectivePreview",brl(effectiveTotal));
+  setText("costGoalPreview",brl(effectiveTotal*1.40));
+
+  if(override?.costComponents){
+    setText("costEditNote",`Custos ajustados manualmente para ${f.label} em ${pad(STATE.mes)}/${STATE.ano}.`);
+  }else if(override&&num(override.custo)>0){
+    setText("costEditNote",`Existe um ajuste antigo de custo total em ${f.label}. Ao salvar, ele será convertido para edição por componentes.`);
+  }else{
+    setText("costEditNote",`Usando a composição automática de ${f.label} em ${pad(STATE.mes)}/${STATE.ano}.`);
+  }
 }
 
 function openCostEditor(id){
@@ -699,9 +742,15 @@ async function saveCostOverride(useAutomatic=false){
   if(!f)return;
 
   STATE.costEditFilial=filial;
-  const value=useAutomatic?0:num($("costOverrideInput")?.value);
-  if(!useAutomatic&&value<=0)return alert("Informe um custo fixo maior que zero.");
+  const baseComp=costComponentsBase(f);
+  const components=useAutomatic?baseComp:editorComponents();
 
+  if(!useAutomatic){
+    const invalid=Object.values(components).some(value=>!Number.isFinite(value)||value<0);
+    if(invalid)return alert("Confira os valores dos custos. Não use valores negativos.");
+  }
+
+  const value=useAutomatic?0:sumCostComponents(components);
   const existing=costOverrideRecord(f.id);
   const data=`${STATE.ano}-${pad(STATE.mes)}-01`;
   const payload={
@@ -713,13 +762,15 @@ async function saveCostOverride(useAutomatic=false){
     faturamento:0,
     toneladas:0,
     custo:value,
-    observacao:COST_MARKER+(useAutomatic?"AUTOMATICO":"MANUAL")
+    observacao:useAutomatic
+      ?COST_MARKER+"AUTOMATICO"
+      :COST_MARKER+"COMP|"+JSON.stringify(components)
   };
 
-  loading(true,useAutomatic?"Restaurando custo automático...":"Salvando custo fixo...");
+  loading(true,useAutomatic?"Restaurando custos automáticos...":"Salvando custos ajustados...");
   try{
     const r=await saveLaunch(payload,!!existing);
-    if(r?.ok===false)throw new Error(r.error||"Falha ao salvar o custo fixo.");
+    if(r?.ok===false)throw new Error(r.error||"Falha ao salvar os custos.");
 
     const local=normalizeLaunch({
       ...payload,
@@ -737,14 +788,14 @@ async function saveCostOverride(useAutomatic=false){
     saveCache();
     renderAll();
     setStatus(useAutomatic
-      ?`Cálculo automático restaurado para ${f.label}.`
-      :`Custo fixo de ${f.label} atualizado.`,"ok");
+      ?`Custos automáticos restaurados para ${f.label}.`
+      :`Custos de ${f.label} atualizados com sucesso.`,"ok");
 
     setTimeout(()=>loadData(true),120);
   }catch(e){
     console.error(e);
     setStatus(e.message,"bad");
-    alert(`Não foi possível atualizar o custo fixo.\n\n${e.message}`);
+    alert(`Não foi possível atualizar os custos fixos.\n\n${e.message}`);
   }finally{
     loading(false);
   }
@@ -777,12 +828,9 @@ function bind(){
     STATE.costEditFilial=up(e.target.value);
     renderCostEditor();
   });
-  $("costOverrideInput").addEventListener("input",()=>{
-    const id=STATE.costEditFilial;
-    if(!id)return;
-    const valor=num($("costOverrideInput").value);
-    setText("costEffectivePreview",brl(valor));
-    setText("costGoalPreview",brl(valor*1.40));
+
+  ["costSalariosInput","costAluguelInput","costVeiculosInput","costCombustivelInput","costAguaInput"].forEach(id=>{
+    $(id)?.addEventListener("input",updateCostEditorPreview);
   });
 
   $("btnSalvarCusto").addEventListener("click",()=>saveCostOverride(false));

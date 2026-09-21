@@ -324,9 +324,16 @@
     }
     .cfCostEditGrid{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:1fr;
       gap:9px;
     }
+    .cfCostComponentGrid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:9px;
+      margin-top:10px;
+    }
+    .cfCostComponentGrid .wide{grid-column:1/-1}
     .cfCostPreview{
       display:grid;
       grid-template-columns:repeat(3,1fr);
@@ -593,7 +600,7 @@
       .cfChartBox,.cfChartBox.tall{height:420px}
     }
     @media(max-width:580px){
-      .cfFilters,.cfKpis,.cfLaunchGrid,.cfCostSummary,.cfCostEditGrid,.cfCostPreview{grid-template-columns:1fr}
+      .cfFilters,.cfKpis,.cfLaunchGrid,.cfCostSummary,.cfCostEditGrid,.cfCostComponentGrid,.cfCostPreview{grid-template-columns:1fr}
       .cfLaunchActions{grid-column:auto}
       .cfLaunchActions .cfBtn{flex:1}
       .cfCostEditorActions{flex-direction:column}
@@ -759,17 +766,36 @@
         </div>
 
         <div class="cfCostEditor">
-          <h4>Ajustar custo de uma filial</h4>
-          <p>Selecione a filial. O sistema mostra o custo calculado automaticamente e o valor efetivo usado no mês.</p>
+          <h4>Editar composição do custo</h4>
+          <p>Selecione uma filial e ajuste somente os itens que mudaram. O custo total e a meta são recalculados automaticamente.</p>
 
           <div class="cfCostEditGrid">
             <div class="cfField">
               <label>Filial para editar</label>
               <select class="cfControl" id="costEditFilial"><option value="">Selecione a filial</option></select>
             </div>
+          </div>
+
+          <div class="cfCostComponentGrid">
             <div class="cfField">
-              <label>Novo custo fixo (R$)</label>
-              <input class="cfControl" id="costOverrideInput" type="number" min="0" step="0.01" placeholder="Ex.: 45.000,00">
+              <label>Salários (R$)</label>
+              <input class="cfControl" id="costSalariosInput" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+            <div class="cfField">
+              <label>Aluguel (R$)</label>
+              <input class="cfControl" id="costAluguelInput" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+            <div class="cfField">
+              <label>Veículos (R$)</label>
+              <input class="cfControl" id="costVeiculosInput" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+            <div class="cfField">
+              <label>Combustível (R$)</label>
+              <input class="cfControl" id="costCombustivelInput" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+            <div class="cfField wide">
+              <label>Água + energia (R$)</label>
+              <input class="cfControl" id="costAguaInput" type="number" min="0" step="0.01" placeholder="0,00">
             </div>
           </div>
 
@@ -780,11 +806,11 @@
           </div>
 
           <div class="cfCostEditorActions">
-            <button class="cfBtn primary" id="btnSalvarCusto" type="button">Salvar custo manual</button>
-            <button class="cfBtn ghost" id="btnCustoAutomatico" type="button">Restaurar cálculo automático</button>
+            <button class="cfBtn primary" id="btnSalvarCusto" type="button">Salvar custos ajustados</button>
+            <button class="cfBtn ghost" id="btnCustoAutomatico" type="button">Restaurar valores automáticos</button>
           </div>
 
-          <div class="cfCostNote" id="costEditNote">Escolha uma filial para editar o custo do mês selecionado.</div>
+          <div class="cfCostNote" id="costEditNote">Escolha uma filial para editar os custos do mês selecionado.</div>
         </div>
       </div>
     </section>
@@ -916,7 +942,7 @@
         if(moduleLoaded)return;
         moduleLoaded=true;
         const script=document.createElement("script");
-        script.src="../assets/js/custo-filial.js?v=9";
+        script.src="../assets/js/custo-filial.js?v=10";
         script.dataset.custoFilial="1";
         script.onerror=()=>{
           moduleLoaded=false;

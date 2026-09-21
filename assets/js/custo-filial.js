@@ -744,5 +744,21 @@ function bind(){
   $("btnSalvarCusto").addEventListener("click",()=>saveCostOverride(false));
   $("btnCustoAutomatico").addEventListener("click",()=>saveCostOverride(true));
 }
-document.addEventListener("DOMContentLoaded",()=>{bind();const cached=restoreCache();if(cached){renderAll();setStatus("Exibindo dados em cache. Atualizando...","");loadData(true)}else loadData(false)});
+function startCustoFilial(){
+  bind();
+  const cached=restoreCache();
+  if(cached){
+    renderAll();
+    setStatus("Exibindo dados em cache. Atualizando...","");
+    loadData(true);
+  }else{
+    loadData(false);
+  }
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",startCustoFilial,{once:true});
+}else{
+  startCustoFilial();
+}
 })();

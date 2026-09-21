@@ -512,6 +512,71 @@
       font-weight:900;
     }
 
+    .cfProtectedContent[hidden]{display:none!important}
+    .cfPinGate{
+      position:fixed;
+      inset:0;
+      z-index:3000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:#f4f7fb;
+    }
+    .cfPinGate[hidden]{display:none!important}
+    .cfPinCard{
+      width:min(420px,100%);
+      padding:28px;
+      background:#fff;
+      border:1px solid var(--cf-line);
+      border-radius:18px;
+      box-shadow:0 20px 55px rgba(15,61,120,.14);
+      text-align:center;
+    }
+    .cfPinLogo{
+      height:42px;
+      width:auto;
+      margin-bottom:16px;
+    }
+    .cfPinCard h2{
+      margin:0;
+      color:var(--cf-blue);
+      font-size:22px;
+    }
+    .cfPinCard p{
+      margin:8px 0 20px;
+      color:var(--cf-muted);
+      font-size:11px;
+      line-height:1.45;
+    }
+    .cfPinForm{
+      display:grid;
+      gap:10px;
+    }
+    .cfPinInput{
+      width:100%;
+      height:46px;
+      border:1px solid var(--cf-line);
+      border-radius:11px;
+      padding:0 13px;
+      text-align:center;
+      font-size:18px;
+      font-weight:900;
+      letter-spacing:.18em;
+      outline:none;
+    }
+    .cfPinInput:focus{
+      border-color:#7aa5ef;
+      box-shadow:0 0 0 3px rgba(37,99,235,.10);
+    }
+    .cfPinError{
+      min-height:18px;
+      margin-top:8px;
+      color:var(--cf-red);
+      font-size:10px;
+      font-weight:800;
+    }
+
     @media(max-width:1350px){
       .cfKpis{grid-template-columns:repeat(3,1fr)}
       .cfCostLayout{grid-template-columns:1fr}
@@ -538,6 +603,29 @@
 </head>
 
 <body class="cfBody">
+  <div class="cfPinGate" id="cfPinGate">
+    <div class="cfPinCard">
+      <img class="cfPinLogo" src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">
+      <h2>Acesso protegido</h2>
+      <p>Informe a senha de acesso para abrir o módulo Resultado por Filial.</p>
+      <form class="cfPinForm" id="cfPinForm" autocomplete="off">
+        <input
+          class="cfPinInput"
+          id="cfPinInput"
+          type="password"
+          inputmode="numeric"
+          maxlength="4"
+          placeholder="••••"
+          aria-label="Senha de acesso"
+          required
+        >
+        <button class="cfBtn primary" id="cfPinButton" type="submit">Entrar</button>
+      </form>
+      <div class="cfPinError" id="cfPinError"></div>
+    </div>
+  </div>
+
+  <div class="cfProtectedContent" id="cfProtectedContent" hidden>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
@@ -797,15 +885,112 @@
   </main>
 
   <div class="cfLoading" id="loading"><div class="cfLoadingBox" id="loadingText">Carregando...</div></div>
+  </div>
 
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/custo-filial.js?v=7"></script>
   <script>
-    try{
-      if(typeof requireFeatureAuth==="function") requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.");
-      else if(typeof requireHomeAuth==="function") requireHomeAuth();
-      if(typeof bindLogoutButton==="function") bindLogoutButton();
-    }catch(e){ console.warn("[CUSTO-FILIAL] Auth ainda não disponível.",e); }
+    (function(){
+      const PIN_HASH="73a2af8864fc500fa49048bf3003776c19938f360e56bd03663866fb3087884a";
+      const ACCESS_KEY="nf_custo_filial_pin_ok";
+
+      const gate=document.getElementById("cfPinGate");
+      const content=document.getElementById("cfProtectedContent");
+      const form=document.getElementById("cfPinForm");
+      const input=document.getElementById("cfPinInput");
+      const error=document.getElementById("cfPinError");
+      let moduleLoaded=false;
+
+      function bytesToHex(buffer){
+        return Array.from(new Uint8Array(buffer))
+          .map(b=>b.toString(16).padStart(2,"0"))
+          .join("");
+      }
+
+      async function sha256(value){
+        const bytes=new TextEncoder().encode(String(value||""));
+        const digest=await crypto.subtle.digest("SHA-256",bytes);
+        return bytesToHex(digest);
+      }
+
+      function loadModule(){
+        if(moduleLoaded)return;
+        moduleLoaded=true;
+        const script=document.createElement("script");
+        script.src="../assets/js/custo-filial.js?v=8";
+        script.dataset.custoFilial="1";
+        script.onerror=()=>{
+          moduleLoaded=false;
+          error.textContent="Não foi possível carregar o módulo. Atualize a página.";
+        };
+        document.body.appendChild(script);
+      }
+
+      function unlock(){
+        sessionStorage.setItem(ACCESS_KEY,"1");
+        gate.hidden=true;
+        content.hidden=false;
+        if(typeof bindLogoutButton==="function") bindLogoutButton();
+        loadModule();
+      }
+
+      function lock(){
+        sessionStorage.removeItem(ACCESS_KEY);
+        content.hidden=true;
+        gate.hidden=false;
+        setTimeout(()=>input?.focus(),50);
+      }
+
+      async function validatePortal(){
+        try{
+          if(typeof requireFeatureAuth==="function"){
+            if(requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.")!==true)return false;
+          }else if(typeof requireHomeAuth==="function"){
+            if(requireHomeAuth()!==true)return false;
+          }
+
+          if(window.portalAuthReady){
+            const session=await window.portalAuthReady;
+            if(!session)return false;
+          }
+
+          return true;
+        }catch(err){
+          console.warn("[CUSTO-FILIAL] Falha na validação do Portal.",err);
+          return false;
+        }
+      }
+
+      form.addEventListener("submit",async function(event){
+        event.preventDefault();
+        error.textContent="";
+        const value=String(input.value||"").trim();
+        if(!value){
+          error.textContent="Informe a senha.";
+          return;
+        }
+
+        const hash=await sha256(value);
+        if(hash!==PIN_HASH){
+          input.value="";
+          error.textContent="Senha incorreta.";
+          input.focus();
+          return;
+        }
+
+        unlock();
+      });
+
+      document.addEventListener("DOMContentLoaded",async function(){
+        const allowed=await validatePortal();
+        if(!allowed)return;
+
+        if(sessionStorage.getItem(ACCESS_KEY)==="1"){
+          unlock();
+        }else{
+          lock();
+        }
+      });
+    })();
   </script>
 </body>
 </html>

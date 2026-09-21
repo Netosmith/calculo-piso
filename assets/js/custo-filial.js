@@ -23,7 +23,7 @@ const FILIAIS=[
   {id:"SOROCABA",label:"SOROCABA",salarios:18500,carros:0,combustivelFixo:800}
 ];
 
-const FIXOS={aluguel:3500,carro:2000,combustivelCarro:800,aguaEnergia:1000};
+const FIXOS={aluguel:3500,carro:2000,combustivelCarro:800,aguaEnergia:350};
 let DB={lancamentos:[]};
 let STATE={filial:"",ano:0,mes:0,editId:"",editSnapshot:null,costEditFilial:""};
 let charts={resultado:null,volume:null,lucroDia:null,volumeDia:null};

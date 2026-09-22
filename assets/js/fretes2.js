@@ -1294,10 +1294,34 @@ function formatDateTimeBR(value) {
 
   function contactsFromFilial(row) {
     const filialKey = normalizeFilialKeyNF(row.filial);
-    const lista = FILIAIS_CONTATOS_ARTE[filialKey];
 
-    if (lista && lista.length) return lista.slice(0, 5);
+    const contatosCadastro = Object.entries(DIRECTORY.contatosPorFilial || {})
+      .filter(([filial]) => normalizeFilialKeyNF(filial) === filialKey)
+      .flatMap(([, contatos]) => Array.isArray(contatos) ? contatos : [])
+      .map((contato) => {
+        const nome = upper(contato?.nome);
+        const fone = formatPhoneNF(contato?.fone);
+        return [nome, fone].filter(Boolean).join(" ");
+      })
+      .filter(Boolean);
 
+    const contatosUnicos = [...new Set(contatosCadastro)];
+
+    const contatosArte = (FILIAIS_CONTATOS_ARTE[filialKey] || [])
+      .map((value) => safeText(value))
+      .filter((value) => value && !/^-+$/.test(value.replace(/\s/g, "")));
+
+    // Para filiais novas, usa todos os contatos cadastrados da filial.
+    if (contatosUnicos.length) {
+      return contatosUnicos.slice(0, 5);
+    }
+
+    // Mantém a base visual já usada pelos MOD 01 e MOD 02 como contingência.
+    if (contatosArte.length) {
+      return contatosArte.slice(0, 5);
+    }
+
+    // Último fallback: responsável principal do frete.
     const contato = safeText(row.contato);
     const phone = CONTACT_PHONE[upper(contato)] || "";
 
@@ -1359,7 +1383,6 @@ function formatDateTimeBR(value) {
       descargaLocal: upper(row.descarga || ""),
       produto,
       productFamily: family,
-      tonelagem: formatTonelagemNF(row),
       modelo,
       bg: mapaModelo[family] || mapaModelo.SOJA,
       valor,
@@ -1502,7 +1525,6 @@ function formatDateTimeBR(value) {
     setText("nfM3DescargaLocal", d.descargaLocal);
     setText("nfM3Valor", d.valor);
     setText("nfM3Produto", d.produto);
-    setText("nfM3Tonelagem", d.tonelagem || "");
     setText("nfM3Filial", d.filial);
     setText("nfM3Contato1", d.contatos[0] || "");
     setText("nfM3Contato2", d.contatos[1] || "");

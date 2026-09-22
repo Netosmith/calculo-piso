@@ -717,7 +717,17 @@
     });
   }
 
+  function priorizarModelo3() {
+    const principal = document.querySelector('.templateCard[data-template="3"]');
+    const primeiro = document.querySelector('.templateCard[data-template="1"]');
+
+    if (principal && primeiro && primeiro.parentNode) {
+      primeiro.parentNode.insertBefore(principal, primeiro);
+    }
+  }
+
   function bindActions() {
+    priorizarModelo3();
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const eventName = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(eventName, handleInput);

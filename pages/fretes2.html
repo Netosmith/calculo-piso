@@ -899,6 +899,186 @@
       font-variant-numeric:tabular-nums;
       white-space:nowrap;
     }
+  
+    /* =========================
+       MOD 03 - STATUS WHATSAPP
+       Canvas real 1080 x 1920
+    ========================= */
+    .nfArtCard .nfM3Canvas{display:none}
+    .nfArtCard.modelo3{
+      width:240px;
+      height:426.667px;
+      overflow:hidden;
+      border-radius:14px;
+      background:#eef4f8;
+    }
+    .nfArtCard.modelo3 .nfArtScale{display:none!important}
+    .nfArtCard.modelo3 .nfM3Canvas{
+      display:block;
+      width:1080px;
+      height:1920px;
+      transform:scale(.2222222222);
+      transform-origin:top left;
+      position:relative;
+      overflow:hidden;
+      background:#eef4f8;
+      font-family:Arial,Helvetica,sans-serif;
+      color:#062b5b;
+    }
+
+    .nfM3Hero{
+      position:absolute;inset:0 0 auto 0;height:520px;overflow:hidden;background:#dce9f3;
+    }
+    .nfM3HeroImg{
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%;display:block;
+    }
+    .nfM3HeroWash{
+      position:absolute;inset:0;
+      background:
+        linear-gradient(90deg,rgba(255,255,255,.97) 0%,rgba(255,255,255,.90) 28%,rgba(255,255,255,.20) 58%,rgba(6,43,91,.05) 100%),
+        linear-gradient(180deg,rgba(255,255,255,.02) 55%,rgba(3,35,75,.34) 100%);
+    }
+    .nfM3Logo{
+      position:absolute;top:38px;left:48px;width:360px;height:auto;object-fit:contain;z-index:2;
+    }
+    .nfM3Headline{
+      position:absolute;left:48px;top:146px;width:430px;z-index:3;
+      display:flex;flex-direction:column;align-items:flex-start;
+    }
+    .nfM3Headline span{
+      color:#062b69;font-size:108px;line-height:.86;font-weight:950;letter-spacing:-5px;
+    }
+    .nfM3Headline strong{
+      margin-top:9px;color:#08a968;font-size:82px;line-height:.92;font-weight:950;letter-spacing:-4px;
+    }
+    .nfM3Headline small{
+      margin-top:20px;max-width:330px;color:#062b69;font-size:27px;line-height:1.08;font-weight:900;
+    }
+    .nfM3Headline small::after{
+      content:"";display:block;width:72px;height:8px;margin-top:14px;border-radius:999px;background:#16c784;
+    }
+    .nfM3HeroPhrase{
+      position:absolute;top:50px;right:52px;width:270px;z-index:3;padding-left:18px;
+      border-left:6px solid #16c784;display:flex;flex-direction:column;gap:3px;
+      color:#062b69;font-size:24px;line-height:1.06;font-weight:900;
+    }
+    .nfM3Trust{
+      position:absolute;z-index:3;left:0;right:0;bottom:0;height:68px;
+      display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:center;gap:16px;
+      padding:0 48px;box-sizing:border-box;background:#073e7d;color:#fff;
+      font-size:17px;line-height:1.12;font-weight:800;
+    }
+
+    .nfM3Content{
+      position:absolute;top:520px;left:0;right:0;height:1180px;z-index:5;
+      padding:28px 34px 30px;box-sizing:border-box;border-radius:34px 34px 0 0;
+      background:linear-gradient(180deg,#edf4f8 0%,#f8fbfd 100%);
+    }
+    .nfM3RouteStack{position:relative;height:430px}
+    .nfM3RouteCard{
+      position:absolute;width:calc(100% - 38px);height:210px;box-sizing:border-box;
+      padding:22px 30px 20px;border-radius:28px;background:#fff;border:2px solid #e0e9f0;
+      box-shadow:0 8px 20px rgba(21,53,88,.07);overflow:hidden;
+    }
+    .nfM3RouteCard.origin{top:0;left:0}
+    .nfM3RouteCard.destination{right:0;bottom:0}
+    .nfM3RouteLabel{color:#0aa66c;font-size:24px;line-height:1;font-weight:900}
+    .nfM3RouteLabel .pin{display:inline-block;margin-right:7px;color:#14c984;font-size:24px}
+    .nfM3RouteCity{
+      width:100%;height:88px;margin-top:11px;display:flex;align-items:center;
+      color:#062b69;font-size:58px;line-height:1.01;font-weight:950;letter-spacing:-1.5px;
+      text-transform:uppercase;white-space:normal;overflow:hidden;
+    }
+    .nfM3RouteLocal{
+      width:100%;height:36px;margin-top:5px;padding:0 16px;box-sizing:border-box;
+      display:flex;align-items:center;border-radius:12px;background:#edf4f8;color:#234a78;
+      font-size:28px;line-height:1;font-weight:800;text-transform:uppercase;
+      white-space:nowrap;overflow:hidden;
+    }
+    .nfM3Arrow{
+      position:absolute;left:50%;top:50%;z-index:4;width:58px;height:58px;margin:-29px 0 0 -29px;
+      display:flex;align-items:center;justify-content:center;border-radius:50%;
+      background:#12c77f;color:#fff;font-size:42px;line-height:1;font-weight:900;
+      box-shadow:0 8px 18px rgba(18,199,127,.28);
+    }
+
+    .nfM3PriceCard{
+      height:132px;margin-top:16px;display:grid;grid-template-columns:300px 1fr;align-items:center;
+      overflow:hidden;border-radius:28px;
+      background:linear-gradient(100deg,#073e7d 0%,#07366e 33%,#13c77f 33%,#08a968 100%);
+      box-shadow:0 9px 22px rgba(12,74,119,.12);
+    }
+    .nfM3PriceLabel{padding-left:38px;color:#fff;font-size:33px;line-height:1.05;font-weight:900}
+    .nfM3PriceValue{
+      width:100%;height:108px;padding:0 34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:98px;line-height:1;font-weight:950;letter-spacing:-3px;white-space:nowrap;overflow:hidden;
+    }
+
+    .nfM3MetaGrid{height:115px;margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .nfM3MetaCard{
+      min-width:0;box-sizing:border-box;padding:18px 23px 15px;border-radius:22px;
+      background:#fff;border:2px solid #e0e9f0;overflow:hidden;
+    }
+    .nfM3MetaCard span{display:block;color:#54708d;font-size:20px;font-weight:800}
+    .nfM3MetaCard strong{
+      width:100%;height:50px;margin-top:5px;display:flex;align-items:center;
+      color:#062b69;font-size:40px;line-height:1;font-weight:950;text-transform:uppercase;
+      white-space:nowrap;overflow:hidden;
+    }
+
+    .nfM3ContactsCard{
+      height:218px;margin-top:16px;overflow:hidden;border-radius:24px;background:#fff;border:2px solid #dce7ef;
+    }
+    .nfM3ContactsHead{
+      height:56px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;
+      background:#073e7d;color:#fff;
+    }
+    .nfM3ContactsHead strong{font-size:27px;font-weight:950}
+    .nfM3ContactsHead span{font-size:17px;font-weight:800;color:#b9f4dc}
+    .nfM3ContactsList{padding:6px 28px 7px}
+    .nfM3Contact{
+      position:relative;width:100%;height:29px;padding-left:30px;box-sizing:border-box;
+      display:flex;align-items:center;border-bottom:1px solid #d8e3eb;color:#102f5d;
+      font-size:24px;line-height:1;font-weight:800;white-space:nowrap;overflow:hidden;
+    }
+    .nfM3Contact:last-child{border-bottom:0}
+    .nfM3Contact:not(:empty)::before{
+      content:"●";position:absolute;left:0;top:50%;transform:translateY(-50%);
+      color:#13c77f;font-size:15px;
+    }
+    .nfM3Contact:empty{display:none}
+
+    .nfM3Note{
+      height:102px;margin-top:16px;box-sizing:border-box;padding:16px 28px;border-radius:22px;
+      background:#fff;border:2px solid #dce7ef;
+    }
+    .nfM3Note span{display:block;color:#54708d;font-size:19px;font-weight:800}
+    .nfM3Note strong{
+      width:100%;height:46px;margin-top:3px;display:flex;align-items:center;color:#062b69;
+      font-size:38px;line-height:1;font-weight:950;text-transform:uppercase;white-space:nowrap;overflow:hidden;
+    }
+
+    .nfM3Footer{
+      position:absolute;left:0;right:0;bottom:0;height:220px;z-index:7;box-sizing:border-box;
+      padding:42px 62px 32px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;
+      background:
+        linear-gradient(135deg,transparent 0 72%,rgba(16,199,127,.15) 72% 76%,transparent 76%),
+        linear-gradient(120deg,#053469 0%,#032954 100%);
+      color:#fff;
+    }
+    .nfM3Footer::after{
+      content:"";position:absolute;right:-60px;bottom:-30px;width:330px;height:150px;
+      transform:rotate(-30deg);background:linear-gradient(90deg,#0f6aa4 0 35%,#08a968 35% 63%,#1ee19a 63%);opacity:.95;
+    }
+    .nfM3FooterQuote{position:relative;z-index:2;padding-left:42px;font-size:34px;line-height:1.12;font-style:italic}
+    .nfM3FooterQuote::before{
+      content:"";position:absolute;left:0;top:7px;width:25px;height:6px;border-radius:999px;background:#1ee19a;
+    }
+    .nfM3FooterRight{
+      position:relative;z-index:2;margin-right:210px;padding-left:21px;border-left:5px solid #1ee19a;
+      font-size:23px;line-height:1.1;font-weight:900;
+    }
+
   </style>
 </head>
 
@@ -1003,7 +1183,14 @@
           <h3>Prévia da Divulgação</h3>
           <button class="nfClosePreview" id="nfClosePreview" type="button">×</button>
         </div>
-        <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
+        <div class="nfPreviewMeta">
+          <div class="nfProductBadge" id="nfPreviewProdutoBadge">SOJA</div>
+          <div class="nfModelSelector" aria-label="Modelo de divulgação">
+            <button class="nfModelBtn active" id="nfModel1Btn" type="button">MOD 01</button>
+            <button class="nfModelBtn" id="nfModel2Btn" type="button">MOD 02</button>
+            <button class="nfModelBtn" id="nfModel3Btn" type="button">MOD 03</button>
+          </div>
+        </div>
         <div class="nfArtCard" id="nfArtCard">
           <div class="nfArtScale">
             <img class="previewBg" id="nfArtBg" src="../assets/img/SOJATESTE.png" alt="" />
@@ -1018,12 +1205,94 @@
             <div class="previewProduct" id="nfArtProduto"></div>
             <div class="previewPrice" id="nfArtValor"></div>
             <div class="previewNote" id="nfArtObs"></div>
+            <div class="previewFilial" id="nfArtFilial"></div>
             <div class="previewContacts">
               <div class="previewContactLine" id="nfArtContato1"></div>
               <div class="previewContactLine" id="nfArtContato2"></div>
               <div class="previewContactLine" id="nfArtContato3"></div>
               <div class="previewContactLine" id="nfArtContato4"></div>
             </div>
+          </div>
+
+          <div class="nfM3Canvas" id="nfM3Canvas">
+            <section class="nfM3Hero">
+              <img class="nfM3HeroImg" src="../assets/img/hero.jpg" alt="" crossorigin="anonymous" />
+              <div class="nfM3HeroWash"></div>
+              <img class="nfM3Logo" src="../assets/img/logo-novafrota.png" alt="Nova Frota" crossorigin="anonymous" />
+              <div class="nfM3Headline">
+                <span>FRETE</span>
+                <strong>DISPONÍVEL</strong>
+                <small>QUALIDADE QUE TE LEVA MAIS LONGE</small>
+              </div>
+              <div class="nfM3HeroPhrase">MAIS QUE FRETES,<br>NOVAS OPORTUNIDADES.</div>
+              <div class="nfM3Trust">
+                <span>✓ SEGURANÇA EM TODA A OPERAÇÃO</span>
+                <span>◈ TRANSPORTE QUE IMPULSIONA O AGRO</span>
+                <span>↗ PARCERIA PARA MAIS RESULTADOS</span>
+              </div>
+            </section>
+
+            <section class="nfM3Content">
+              <div class="nfM3RouteStack">
+                <article class="nfM3RouteCard origin">
+                  <div class="nfM3RouteLabel"><span class="pin">●</span> ORIGEM / COLETA</div>
+                  <div class="nfM3RouteCity" id="nfM3ColetaCidade" data-nf-fit data-max="58" data-min="31"></div>
+                  <div class="nfM3RouteLocal" id="nfM3ColetaLocal" data-nf-fit data-max="28" data-min="20"></div>
+                </article>
+
+                <div class="nfM3Arrow">↓</div>
+
+                <article class="nfM3RouteCard destination">
+                  <div class="nfM3RouteLabel"><span class="pin">●</span> DESTINO / DESCARGA</div>
+                  <div class="nfM3RouteCity" id="nfM3DescargaCidade" data-nf-fit data-max="58" data-min="31"></div>
+                  <div class="nfM3RouteLocal" id="nfM3DescargaLocal" data-nf-fit data-max="28" data-min="20"></div>
+                </article>
+              </div>
+
+              <div class="nfM3PriceCard">
+                <div class="nfM3PriceLabel">VALOR DO<br>FRETE</div>
+                <div class="nfM3PriceValue" id="nfM3Valor" data-nf-fit data-max="98" data-min="55"></div>
+              </div>
+
+              <div class="nfM3MetaGrid">
+                <div class="nfM3MetaCard">
+                  <span>PRODUTO</span>
+                  <strong id="nfM3Produto" data-nf-fit data-max="40" data-min="24"></strong>
+                </div>
+                <div class="nfM3MetaCard">
+                  <span>TONELAGEM</span>
+                  <strong id="nfM3Tonelagem" data-nf-fit data-max="40" data-min="24"></strong>
+                </div>
+                <div class="nfM3MetaCard">
+                  <span>FILIAL</span>
+                  <strong id="nfM3Filial" data-nf-fit data-max="40" data-min="24"></strong>
+                </div>
+              </div>
+
+              <div class="nfM3ContactsCard">
+                <div class="nfM3ContactsHead">
+                  <strong>FALE COM NOSSA EQUIPE</strong>
+                  <span>ATENDIMENTO VIA WHATSAPP</span>
+                </div>
+                <div class="nfM3ContactsList">
+                  <div class="nfM3Contact" id="nfM3Contato1" data-nf-fit data-max="24" data-min="18"></div>
+                  <div class="nfM3Contact" id="nfM3Contato2" data-nf-fit data-max="24" data-min="18"></div>
+                  <div class="nfM3Contact" id="nfM3Contato3" data-nf-fit data-max="24" data-min="18"></div>
+                  <div class="nfM3Contact" id="nfM3Contato4" data-nf-fit data-max="24" data-min="18"></div>
+                  <div class="nfM3Contact" id="nfM3Contato5" data-nf-fit data-max="24" data-min="18"></div>
+                </div>
+              </div>
+
+              <div class="nfM3Note">
+                <span>OBSERVAÇÕES</span>
+                <strong id="nfM3Obs" data-nf-fit data-max="38" data-min="23"></strong>
+              </div>
+            </section>
+
+            <footer class="nfM3Footer">
+              <div class="nfM3FooterQuote">O Brasil produz.<br><strong>A Nova Frota conecta.</strong></div>
+              <div class="nfM3FooterRight">EM TODO O BRASIL,<br>SEMPRE AO SEU LADO.</div>
+            </footer>
           </div>
         </div>
         <div class="nfPreviewButtons">
@@ -1112,7 +1381,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/fretes2.js?v=13"></script>
+  <script src="../assets/js/fretes2.js?v=14"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

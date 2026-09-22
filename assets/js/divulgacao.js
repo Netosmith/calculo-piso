@@ -449,46 +449,16 @@
     return [nome, telefone].filter(Boolean).join(" ");
   }
 
-  async function preencherContatosFilialModelo3(templateId, filialValue) {
+  function preencherContatosFilialModelo3(templateId, filialValue) {
     const key = normalizeKey(filialValue);
 
-    if (!key) {
-      ["contato1", "contato2", "contato3", "contato4", "contato5"].forEach((campo) => {
-        const input = document.querySelector(
-          `[data-template="${templateId}"][data-field="${campo}"]`
-        );
-        if (input) input.value = "";
-        updatePreview(templateId, campo, "");
-      });
-      fitModel3(getPreview(templateId));
-      return;
-    }
-
-    const contatos = await carregarContatosCadastro();
-
-    const select = document.querySelector(
-      `[data-template="${templateId}"][data-field="filial"]`
-    );
-
-    if (!select || normalizeKey(select.value) !== key) return;
-
-    let lista = contatos
-      .filter((row) => normalizeKey(row?.Filial ?? row?.filial) === key)
-      .sort((a, b) => {
-        const oa = Number(a?.Ordem ?? a?.ordem ?? 9999);
-        const ob = Number(b?.Ordem ?? b?.ordem ?? 9999);
-        return oa - ob;
+    let lista = (FILIAIS_CONTATOS[key] || [])
+      .map((value) => {
+        const text = String(value || "").trim();
+        return /^[-\s]+$/.test(text) ? "" : text;
       })
-      .map(contatoTextoCadastro)
       .filter(Boolean)
       .slice(0, 5);
-
-    if (!lista.length) {
-      lista = (FILIAIS_CONTATOS[key] || [])
-        .map((value) => /^-+$/.test(String(value || "").trim()) ? "" : String(value || "").trim())
-        .filter(Boolean)
-        .slice(0, 5);
-    }
 
     while (lista.length < 5) lista.push("");
 
@@ -717,17 +687,7 @@
     });
   }
 
-  function priorizarModelo3() {
-    const principal = document.querySelector('.templateCard[data-template="3"]');
-    const primeiro = document.querySelector('.templateCard[data-template="1"]');
-
-    if (principal && primeiro && primeiro.parentNode) {
-      primeiro.parentNode.insertBefore(principal, primeiro);
-    }
-  }
-
   function bindActions() {
-    priorizarModelo3();
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const eventName = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(eventName, handleInput);

@@ -1311,12 +1311,21 @@ function formatDateTimeBR(value) {
       .map((value) => safeText(value))
       .filter((value) => value && !/^-+$/.test(value.replace(/\s/g, "")));
 
-    // Para filiais novas, usa todos os contatos cadastrados da filial.
+    // Prefere a relação completa cadastrada para a filial.
+    if (contatosUnicos.length > 1) {
+      return contatosUnicos.slice(0, 5);
+    }
+
+    // Preserva a relação completa já usada pelos MOD 01 e MOD 02.
+    if (contatosArte.length > 1) {
+      return contatosArte.slice(0, 5);
+    }
+
+    // Filiais novas podem ter inicialmente apenas um contato cadastrado.
     if (contatosUnicos.length) {
       return contatosUnicos.slice(0, 5);
     }
 
-    // Mantém a base visual já usada pelos MOD 01 e MOD 02 como contingência.
     if (contatosArte.length) {
       return contatosArte.slice(0, 5);
     }

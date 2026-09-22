@@ -54,7 +54,7 @@
       "CHAP CEU": [{ nome: "RICARDO", fone: "5564999913512" }],
       CRISTALINA: [{ nome: "EVERALDO", fone: "5561996924906" }],
       "RIO VERDE FERT": [{ nome: "NARCISO", fone: "5564999365343" }],
-      VIANOPOLIS: [{ nome: "FHELLIPE", fone: "5562999307778" }],
+      VIANOPOLIS: [{ nome: "FERNANDO", fone: "5562999307778" }],
       FORMOSA: [{ nome: "FABIOLA", fone: "5562996017658" }],
       CATAlÃO: [{ nome: "EVERALDO JR", fone: "556492373735" }],
       "CATALÃO": [{ nome: "EVERALDO JR", fone: "556492373735" }],

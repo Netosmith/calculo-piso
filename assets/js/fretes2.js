@@ -196,7 +196,7 @@
     floatingSyncing: false,
     selectedIds: new Set(),
     previewRow: null,
-    previewModel: 1,
+    previewModel: 3,
     modalBusy: false,
     pendingCreateId: "",
   };
@@ -1443,11 +1443,25 @@ function formatDateTimeBR(value) {
   }
 
   function restorePreviewModel() {
-    let modelo = 1;
+    let modelo = 3;
 
     try {
-      modelo = normalizePreviewModelNF(localStorage.getItem("nf_divulgacao_modelo"));
-    } catch {}
+      const migrationKey = "nf_divulgacao_modelo_principal_v3";
+      const migrated = localStorage.getItem(migrationKey) === "1";
+
+      if (!migrated) {
+        modelo = 3;
+        localStorage.setItem("nf_divulgacao_modelo", "3");
+        localStorage.setItem(migrationKey, "1");
+      } else {
+        const saved = localStorage.getItem("nf_divulgacao_modelo");
+        modelo = saved == null || saved === ""
+          ? 3
+          : normalizePreviewModelNF(saved);
+      }
+    } catch {
+      modelo = 3;
+    }
 
     STATE.previewModel = modelo;
     syncPreviewModelUI();

@@ -200,6 +200,35 @@
       .replace(/[^A-Z0-9]/g, "");
   }
 
+  function fitModel3Text(target) {
+    if (!target || !target.hasAttribute("data-fit")) return;
+
+    const max = Number(target.dataset.fitMax || 40);
+    const min = Number(target.dataset.fitMin || Math.max(16, max * 0.55));
+    let size = max;
+
+    target.style.fontSize = max + "px";
+
+    let guard = 0;
+    while (
+      size > min &&
+      guard < 120 &&
+      (target.scrollWidth > target.clientWidth + 1 ||
+       target.scrollHeight > target.clientHeight + 1)
+    ) {
+      size -= 1;
+      target.style.fontSize = size + "px";
+      guard += 1;
+    }
+  }
+
+  function fitModel3(preview) {
+    if (!preview) return;
+    window.requestAnimationFrame(() => {
+      preview.querySelectorAll("[data-fit]").forEach(fitModel3Text);
+    });
+  }
+
   function updatePreview(templateId, field, value) {
     const preview = getPreview(templateId);
     if (!preview) return;
@@ -211,6 +240,8 @@
 
     if (String(templateId) === "2") {
       ajustarFonteModelo2(target, field, value || "");
+    } else if (String(templateId) === "3") {
+      fitModel3Text(target);
     }
   }
 
@@ -327,6 +358,11 @@
     const preview = getPreview(templateId);
     if (!preview) return;
 
+    if (String(templateId) === "3") {
+      fitModel3(preview);
+      return;
+    }
+
     const img = productToImage(templateId, productValue);
     const bgImg = getBgImgEl(preview);
 
@@ -337,7 +373,131 @@
     }
   }
 
+  let CADASTRO_CONTATOS_CACHE = null;
+  let CADASTRO_CONTATOS_PROMISE = null;
+
+  function rowsFromCadastro(data) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.rows)) return data.rows;
+    return [];
+  }
+
+  function telefoneFormatado(value) {
+    const raw = String(value || "").trim();
+    const digits = raw.replace(/\D/g, "");
+
+    if (digits.length === 11) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    }
+
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+
+    return raw;
+  }
+
+  async function carregarContatosCadastro() {
+    if (Array.isArray(CADASTRO_CONTATOS_CACHE)) {
+      return CADASTRO_CONTATOS_CACHE;
+    }
+
+    if (CADASTRO_CONTATOS_PROMISE) {
+      return CADASTRO_CONTATOS_PROMISE;
+    }
+
+    CADASTRO_CONTATOS_PROMISE = (async () => {
+      try {
+        if (!window.PortalAPI && typeof ensurePortalApi === "function") {
+          await ensurePortalApi();
+        }
+
+        if (!window.PortalAPI) {
+          throw new Error("API segura do Portal indisponível.");
+        }
+
+        const result = await window.PortalAPI.call("cadastros", "read", {
+          resource: "contatos",
+          operation: "list"
+        });
+
+        CADASTRO_CONTATOS_CACHE = rowsFromCadastro(result?.data)
+          .filter((row) => normalizeKey(row?.Ativo ?? row?.ativo) !== "NAO")
+          .filter((row) => {
+            const ativo = normalizeKey(row?.Ativo ?? row?.ativo);
+            return !ativo || ativo === "SIM";
+          });
+
+        return CADASTRO_CONTATOS_CACHE;
+      } catch (error) {
+        console.warn("[DIVULGACAO] Não foi possível carregar contatos cadastrados:", error);
+        CADASTRO_CONTATOS_CACHE = [];
+        return CADASTRO_CONTATOS_CACHE;
+      } finally {
+        CADASTRO_CONTATOS_PROMISE = null;
+      }
+    })();
+
+    return CADASTRO_CONTATOS_PROMISE;
+  }
+
+  function contatoTextoCadastro(row) {
+    const nome = String(row?.Nome ?? row?.nome ?? "").trim().toUpperCase();
+    const telefone = telefoneFormatado(row?.Telefone ?? row?.telefone ?? "");
+
+    return [nome, telefone].filter(Boolean).join(" ");
+  }
+
+  async function preencherContatosFilialModelo3(templateId, filialValue) {
+    const key = normalizeKey(filialValue);
+    const contatos = await carregarContatosCadastro();
+
+    const select = document.querySelector(
+      `[data-template="${templateId}"][data-field="filial"]`
+    );
+
+    if (!select || normalizeKey(select.value) !== key) return;
+
+    let lista = contatos
+      .filter((row) => normalizeKey(row?.Filial ?? row?.filial) === key)
+      .sort((a, b) => {
+        const oa = Number(a?.Ordem ?? a?.ordem ?? 9999);
+        const ob = Number(b?.Ordem ?? b?.ordem ?? 9999);
+        return oa - ob;
+      })
+      .map(contatoTextoCadastro)
+      .filter(Boolean)
+      .slice(0, 5);
+
+    if (!lista.length) {
+      lista = (FILIAIS_CONTATOS[key] || [])
+        .map((value) => /^-+$/.test(String(value || "").trim()) ? "" : String(value || "").trim())
+        .filter(Boolean)
+        .slice(0, 5);
+    }
+
+    while (lista.length < 5) lista.push("");
+
+    ["contato1", "contato2", "contato3", "contato4", "contato5"].forEach((campo, index) => {
+      const input = document.querySelector(
+        `[data-template="${templateId}"][data-field="${campo}"]`
+      );
+
+      const valor = lista[index] || "";
+      if (input) input.value = valor;
+      updatePreview(templateId, campo, valor);
+    });
+
+    fitModel3(getPreview(templateId));
+  }
+
   function preencherContatosFilial(templateId, filialValue) {
+    if (String(templateId) === "3") {
+      preencherContatosFilialModelo3(templateId, filialValue);
+      return;
+    }
+
     const key = normalizeKey(filialValue);
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
 
@@ -397,6 +557,7 @@
       field === "descargaCidade" ||
       field === "descargaLocal" ||
       field === "produto" ||
+      field === "tonelagem" ||
       field === "obs"
     ) {
       value = value.toUpperCase();
@@ -442,7 +603,11 @@
       }
     });
 
-    setPreviewBackgroundByProduct(templateId, "SOJA");
+    if (String(templateId) === "3") {
+      fitModel3(getPreview(templateId));
+    } else {
+      setPreviewBackgroundByProduct(templateId, "SOJA");
+    }
   }
 
   async function waitForImage(img) {
@@ -462,14 +627,39 @@
     const bgImg = getBgImgEl(preview);
     await waitForImage(bgImg);
 
-    const canvas = await html2canvas(preview, {
-      backgroundColor: null,
-      scale: 2,
-      useCORS: true
-    });
+    let canvas;
+
+    if (String(templateId) === "3") {
+      fitModel3(preview);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const previousTransform = preview.style.transform;
+      preview.style.transform = "none";
+
+      try {
+        canvas = await html2canvas(preview, {
+          backgroundColor: "#eef4f8",
+          scale: 1,
+          width: 1080,
+          height: 1920,
+          useCORS: true,
+          logging: false
+        });
+      } finally {
+        preview.style.transform = previousTransform;
+      }
+    } else {
+      canvas = await html2canvas(preview, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true
+      });
+    }
 
     const link = document.createElement("a");
-    link.download = `divulgacao-modelo-${templateId}.jpg`;
+    link.download = String(templateId) === "3"
+      ? "divulgacao-modelo-3-status-whatsapp.jpg"
+      : `divulgacao-modelo-${templateId}.jpg`;
     link.href = canvas.toDataURL("image/jpeg", 0.95);
     link.click();
   }
@@ -483,7 +673,12 @@
       );
 
       const produtoVal = produtoEl ? produtoEl.value.trim() : "";
-      setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
+
+      if (String(templateId) === "3") {
+        fitModel3(preview);
+      } else {
+        setPreviewBackgroundByProduct(templateId, produtoVal || "SOJA");
+      }
 
       const filialEl = document.querySelector(
         `[data-template="${templateId}"][data-field="filial"]`
@@ -530,6 +725,8 @@
     });
 
     initDefaults();
+
+    document.querySelectorAll('[data-template-preview="3"]').forEach(fitModel3);
 
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       handleInput({ target: el });

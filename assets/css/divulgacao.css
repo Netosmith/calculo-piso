@@ -552,29 +552,6 @@
   background:#16c784;
 }
 
-.m3HeroPhrase{
-  position:absolute;
-  top:55px;
-  right:54px;
-  width:270px;
-  z-index:3;
-  padding-left:18px;
-  border-left:6px solid #16c784;
-  display:flex;
-  flex-direction:column;
-  gap:3px;
-  color:#062b69;
-  font-size:25px;
-  line-height:1.06;
-}
-
-.m3HeroPhrase b{
-  font-weight:950;
-}
-
-.m3HeroPhrase span{
-  font-weight:800;
-}
 
 .m3Trust{
   position:absolute;
@@ -756,7 +733,7 @@
   height:115px;
   margin-top:16px;
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:14px;
 }
 

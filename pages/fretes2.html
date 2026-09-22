@@ -957,11 +957,6 @@
     .nfM3Headline small::after{
       content:"";display:block;width:72px;height:8px;margin-top:14px;border-radius:999px;background:#16c784;
     }
-    .nfM3HeroPhrase{
-      position:absolute;top:50px;right:52px;width:270px;z-index:3;padding-left:18px;
-      border-left:6px solid #16c784;display:flex;flex-direction:column;gap:3px;
-      color:#062b69;font-size:24px;line-height:1.06;font-weight:900;
-    }
     .nfM3Trust{
       position:absolute;z-index:3;left:0;right:0;bottom:0;height:68px;
       display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:center;gap:16px;
@@ -1014,7 +1009,7 @@
       color:#fff;font-size:98px;line-height:1;font-weight:950;letter-spacing:-3px;white-space:nowrap;overflow:hidden;
     }
 
-    .nfM3MetaGrid{height:115px;margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .nfM3MetaGrid{height:115px;margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .nfM3MetaCard{
       min-width:0;box-sizing:border-box;padding:18px 23px 15px;border-radius:22px;
       background:#fff;border:2px solid #e0e9f0;overflow:hidden;
@@ -1224,8 +1219,7 @@
                 <strong>DISPONÍVEL</strong>
                 <small>QUALIDADE QUE TE LEVA MAIS LONGE</small>
               </div>
-              <div class="nfM3HeroPhrase">MAIS QUE FRETES,<br>NOVAS OPORTUNIDADES.</div>
-              <div class="nfM3Trust">
+<div class="nfM3Trust">
                 <span>✓ SEGURANÇA EM TODA A OPERAÇÃO</span>
                 <span>◈ TRANSPORTE QUE IMPULSIONA O AGRO</span>
                 <span>↗ PARCERIA PARA MAIS RESULTADOS</span>
@@ -1258,10 +1252,6 @@
                 <div class="nfM3MetaCard">
                   <span>PRODUTO</span>
                   <strong id="nfM3Produto" data-nf-fit data-max="40" data-min="24"></strong>
-                </div>
-                <div class="nfM3MetaCard">
-                  <span>TONELAGEM</span>
-                  <strong id="nfM3Tonelagem" data-nf-fit data-max="40" data-min="24"></strong>
                 </div>
                 <div class="nfM3MetaCard">
                   <span>FILIAL</span>
@@ -1381,7 +1371,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/fretes2.js?v=14"></script>
+  <script src="../assets/js/fretes2.js?v=15"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

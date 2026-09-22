@@ -1290,7 +1290,7 @@ function formatDateTimeBR(value) {
     const filialKey = normalizeFilialKeyNF(row.filial);
     const lista = FILIAIS_CONTATOS_ARTE[filialKey];
 
-    if (lista && lista.length) return lista.slice(0, 4);
+    if (lista && lista.length) return lista.slice(0, 5);
 
     const contato = safeText(row.contato);
     const phone = CONTACT_PHONE[upper(contato)] || "";
@@ -1299,8 +1299,29 @@ function formatDateTimeBR(value) {
       contato ? `${contato} ${formatPhoneNF(phone)}` : "",
       "",
       "",
+      "",
       ""
     ];
+  }
+
+  function formatTonelagemNF(row) {
+    const raw = safeText(row?.tonelagem ?? row?.volume ?? "");
+    if (!raw) return "";
+
+    if (/[A-ZÀ-Ü]/i.test(raw)) return upper(raw);
+
+    let numeric = NaN;
+    try {
+      numeric = typeof parsePtNumber === "function"
+        ? parsePtNumber(raw)
+        : Number(String(raw).replace(/\./g, "").replace(",", "."));
+    } catch {}
+
+    if (Number.isFinite(numeric)) {
+      return `${numeric.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} TON`;
+    }
+
+    return upper(raw);
   }
 
   function cityUf(row, cityKey, ufKey) {
@@ -1317,7 +1338,8 @@ function formatDateTimeBR(value) {
   const produto = upper(row.produto || "SOJA");
   const family = productFamilyNF(produto);
   const contatos = contactsFromFilial(row);
-  const modelo = Number(STATE.previewModel) === 2 ? 2 : 1;
+  const previewModel = Number(STATE.previewModel);
+    const modelo = previewModel === 3 ? 3 : previewModel === 2 ? 2 : 1;
   const mapaModelo = PRODUCT_BG_MAP_NF[modelo] || PRODUCT_BG_MAP_NF[1];
 
   const valor = safeText(row.valorMotorista)
@@ -1337,6 +1359,7 @@ function formatDateTimeBR(value) {
 
     produto,
     productFamily: family,
+    tonelagem: formatTonelagemNF(row),
 
     modelo,
     bg: mapaModelo[family] || mapaModelo.SOJA,
@@ -1366,15 +1389,25 @@ function formatDateTimeBR(value) {
     if (el) el.textContent = txt || "";
   }
 
+  function normalizePreviewModelNF(modelo) {
+    const n = Number(modelo);
+    return n === 3 ? 3 : n === 2 ? 2 : 1;
+  }
+
   function syncPreviewModelUI() {
-    const modelo = Number(STATE.previewModel) === 2 ? 2 : 1;
-    document.getElementById("nfArtCard")?.classList.toggle("modelo2", modelo === 2);
+    const modelo = normalizePreviewModelNF(STATE.previewModel);
+    const card = document.getElementById("nfArtCard");
+
+    card?.classList.toggle("modelo2", modelo === 2);
+    card?.classList.toggle("modelo3", modelo === 3);
+
     document.getElementById("nfModel1Btn")?.classList.toggle("active", modelo === 1);
     document.getElementById("nfModel2Btn")?.classList.toggle("active", modelo === 2);
+    document.getElementById("nfModel3Btn")?.classList.toggle("active", modelo === 3);
   }
 
   function setPreviewModel(modelo) {
-    STATE.previewModel = Number(modelo) === 2 ? 2 : 1;
+    STATE.previewModel = normalizePreviewModelNF(modelo);
 
     try {
       localStorage.setItem("nf_divulgacao_modelo", String(STATE.previewModel));
@@ -1385,13 +1418,13 @@ function formatDateTimeBR(value) {
   }
 
   function restorePreviewModel() {
-    try {
-      const saved = Number(localStorage.getItem("nf_divulgacao_modelo"));
-      STATE.previewModel = saved === 2 ? 2 : 1;
-    } catch {
-      STATE.previewModel = 1;
-    }
+    let modelo = 1;
 
+    try {
+      modelo = normalizePreviewModelNF(localStorage.getItem("nf_divulgacao_modelo"));
+    } catch {}
+
+    STATE.previewModel = modelo;
     syncPreviewModelUI();
   }
 
@@ -1412,6 +1445,34 @@ function formatDateTimeBR(value) {
     } else if (field === "filial" && len >= 16) {
       target.style.fontSize = "11px";
     }
+  }
+
+  function fitModel3TextNF(target) {
+    if (!target || !target.hasAttribute("data-nf-fit")) return;
+
+    const max = Number(target.dataset.max || 40);
+    const min = Number(target.dataset.min || Math.max(16, max * 0.55));
+    let size = max;
+
+    target.style.fontSize = max + "px";
+
+    let guard = 0;
+    while (
+      size > min &&
+      guard < 120 &&
+      (target.scrollWidth > target.clientWidth + 1 ||
+       target.scrollHeight > target.clientHeight + 1)
+    ) {
+      size -= 1;
+      target.style.fontSize = size + "px";
+      guard += 1;
+    }
+  }
+
+  function fitModel3PreviewNF() {
+    const canvas = document.getElementById("nfM3Canvas");
+    if (!canvas) return;
+    canvas.querySelectorAll("[data-nf-fit]").forEach(fitModel3TextNF);
   }
 
   function renderPreview(row) {
@@ -1441,6 +1502,25 @@ function formatDateTimeBR(value) {
     setText("nfArtContato2", d.contatos[1] || "");
     setText("nfArtContato3", d.contatos[2] || "");
     setText("nfArtContato4", d.contatos[3] || "");
+
+    setText("nfM3ColetaCidade", d.coletaCidade);
+    setText("nfM3ColetaLocal", d.coletaLocal);
+    setText("nfM3DescargaCidade", d.descargaCidade);
+    setText("nfM3DescargaLocal", d.descargaLocal);
+    setText("nfM3Valor", d.valor);
+    setText("nfM3Produto", d.produto);
+    setText("nfM3Tonelagem", d.tonelagem || "");
+    setText("nfM3Filial", d.filial);
+    setText("nfM3Contato1", d.contatos[0] || "");
+    setText("nfM3Contato2", d.contatos[1] || "");
+    setText("nfM3Contato3", d.contatos[2] || "");
+    setText("nfM3Contato4", d.contatos[3] || "");
+    setText("nfM3Contato5", d.contatos[4] || "");
+    setText("nfM3Obs", d.obs);
+
+    if (d.modelo === 3) {
+      requestAnimationFrame(fitModel3PreviewNF);
+    }
 
     if (d.modelo === 2) {
       ajustarFonteModelo2(document.getElementById("nfArtColetaCidade"), "cidade", d.coletaCidade);
@@ -1553,6 +1633,7 @@ function buildMessage(row) {
 
     const card = document.getElementById("nfArtCard");
     const img = document.getElementById("nfArtBg");
+    const modelo = normalizePreviewModelNF(STATE.previewModel);
 
     if (!card) {
       alert("Prévia da divulgação não encontrada na página.");
@@ -1562,6 +1643,49 @@ function buildMessage(row) {
     try {
       setStatus("🖼️ Gerando imagem...");
       const html2canvasLib = await loadHtml2CanvasNF();
+
+      if (modelo === 3) {
+        const source = document.getElementById("nfM3Canvas");
+        if (!source) throw new Error("Canvas do MOD 03 não encontrado.");
+
+        await Promise.all(
+          Array.from(source.querySelectorAll("img")).map(waitForImage)
+        );
+
+        fitModel3PreviewNF();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const oldCardStyle = card.getAttribute("style");
+        const oldSourceStyle = source.getAttribute("style");
+
+        card.style.position = "fixed";
+        card.style.left = "-12000px";
+        card.style.top = "0";
+        card.style.width = "1080px";
+        card.style.height = "1920px";
+        card.style.overflow = "visible";
+
+        source.style.transform = "none";
+
+        try {
+          return await html2canvasLib(source, {
+            backgroundColor: "#eef4f8",
+            scale: 1,
+            width: 1080,
+            height: 1920,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            imageTimeout: 8000
+          });
+        } finally {
+          if (oldCardStyle == null) card.removeAttribute("style");
+          else card.setAttribute("style", oldCardStyle);
+
+          if (oldSourceStyle == null) source.removeAttribute("style");
+          else source.setAttribute("style", oldSourceStyle);
+        }
+      }
 
       await waitForImage(img);
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -2490,6 +2614,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   function bindModoRaio() {
     const model1Btn = document.getElementById("nfModel1Btn");
     const model2Btn = document.getElementById("nfModel2Btn");
+    const model3Btn = document.getElementById("nfModel3Btn");
 
     if (model1Btn && !model1Btn.dataset.nfModelBound) {
       model1Btn.dataset.nfModelBound = "1";
@@ -2506,6 +2631,15 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         e.preventDefault();
         e.stopPropagation();
         setPreviewModel(2);
+      });
+    }
+
+    if (model3Btn && !model3Btn.dataset.nfModelBound) {
+      model3Btn.dataset.nfModelBound = "1";
+      model3Btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewModel(3);
       });
     }
 

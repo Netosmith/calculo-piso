@@ -451,6 +451,19 @@
 
   async function preencherContatosFilialModelo3(templateId, filialValue) {
     const key = normalizeKey(filialValue);
+
+    if (!key) {
+      ["contato1", "contato2", "contato3", "contato4", "contato5"].forEach((campo) => {
+        const input = document.querySelector(
+          `[data-template="${templateId}"][data-field="${campo}"]`
+        );
+        if (input) input.value = "";
+        updatePreview(templateId, campo, "");
+      });
+      fitModel3(getPreview(templateId));
+      return;
+    }
+
     const contatos = await carregarContatosCadastro();
 
     const select = document.querySelector(
@@ -630,6 +643,8 @@
     let canvas;
 
     if (String(templateId) === "3") {
+      const previewImages = Array.from(preview.querySelectorAll("img"));
+      await Promise.all(previewImages.map(waitForImage));
       fitModel3(preview);
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 

@@ -315,7 +315,7 @@
 
 
 /* =========================================================
-   MODELO 3 - STATUS WHATSAPP | 1080 x 1920
+   MODELO 3 - PRINCIPAL | WHATSAPP 3:4 | 1080 x 1440
 ========================================================= */
 
 .templateCard3{
@@ -334,14 +334,14 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-width:58px;
+  min-width:76px;
   height:28px;
   padding:0 12px;
   border-radius:999px;
   background:#16c784;
   color:#06335f;
-  font-size:11px;
-  font-weight:900;
+  font-size:10px;
+  font-weight:950;
   letter-spacing:.08em;
 }
 
@@ -374,6 +374,7 @@
 }
 
 .model3ContactsEditor{
+  grid-column:1 / -1;
   margin-top:4px;
   padding:16px;
   border:1px solid #dbe7f3;
@@ -441,38 +442,40 @@
 
 .templatePreview3Shell{
   width:405px;
-  height:720px;
+  height:540px;
   margin:0 auto;
   position:relative;
   overflow:hidden;
-  border-radius:22px;
-  background:#dce8f2;
-  box-shadow:0 18px 42px rgba(15,23,42,.24);
+  border-radius:20px;
+  background:#eaf1f6;
+  box-shadow:0 18px 42px rgba(15,23,42,.23);
 }
 
 .templatePreview3{
   width:1080px !important;
-  height:1920px !important;
+  height:1440px !important;
   border-radius:0 !important;
   box-shadow:none !important;
   transform:scale(.375);
   transform-origin:top left;
   position:relative;
   overflow:hidden;
-  background:#eef4f8;
+  background:#f5f9fc;
   font-family:Arial,Helvetica,sans-serif;
   color:#062b5b;
+  text-rendering:geometricPrecision;
+  -webkit-font-smoothing:antialiased;
 }
 
 .templatePreview3::before{
   display:none !important;
 }
 
-/* Hero */
+/* HERO */
 .m3Hero{
   position:absolute;
   inset:0 0 auto 0;
-  height:520px;
+  height:455px;
   overflow:hidden;
   background:#dce9f3;
 }
@@ -483,7 +486,7 @@
   width:100%;
   height:100%;
   object-fit:cover;
-  object-position:center 45%;
+  object-position:center 48%;
   display:block;
 }
 
@@ -491,175 +494,159 @@
   position:absolute;
   inset:0;
   background:
-    linear-gradient(90deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.88) 28%,rgba(255,255,255,.18) 57%,rgba(6,43,91,.04) 100%),
-    linear-gradient(180deg,rgba(255,255,255,.03) 55%,rgba(3,35,75,.32) 100%);
+    linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 28%,rgba(255,255,255,.34) 48%,rgba(255,255,255,.06) 72%),
+    linear-gradient(180deg,rgba(255,255,255,.04) 55%,rgba(4,46,91,.12) 100%);
 }
 
 .m3Logo{
   position:absolute;
-  top:42px;
-  left:48px;
-  width:370px;
+  z-index:4;
+  top:38px;
+  right:118px;
+  width:395px;
   height:auto;
   object-fit:contain;
-  z-index:2;
 }
 
 .m3Headline{
   position:absolute;
-  left:48px;
-  top:155px;
-  width:430px;
   z-index:3;
+  left:48px;
+  top:112px;
+  width:470px;
   display:flex;
   flex-direction:column;
   align-items:flex-start;
 }
 
 .m3Headline > span{
-  color:#062b69;
-  font-size:112px;
-  line-height:.86;
+  color:#06366f;
+  font-size:98px;
+  line-height:.85;
   font-weight:950;
-  letter-spacing:-5px;
+  letter-spacing:-4px;
 }
 
 .m3Headline > strong{
   margin-top:10px;
   color:#08a968;
-  font-size:86px;
+  font-size:76px;
   line-height:.92;
   font-weight:950;
-  letter-spacing:-4px;
+  letter-spacing:-3px;
 }
 
 .m3Headline > small{
-  margin-top:22px;
-  max-width:330px;
-  color:#062b69;
-  font-size:29px;
-  line-height:1.08;
-  font-weight:900;
+  margin-top:18px;
+  max-width:350px;
+  color:#06366f;
+  font-size:26px;
+  line-height:1.06;
+  font-weight:950;
 }
 
 .m3Headline > small::after{
   content:"";
   display:block;
-  width:74px;
-  height:8px;
-  margin-top:16px;
+  width:78px;
+  height:7px;
+  margin-top:14px;
   border-radius:999px;
-  background:#16c784;
+  background:#13bd76;
 }
 
-
-.m3Trust{
-  position:absolute;
-  z-index:3;
-  left:48px;
-  right:48px;
-  bottom:20px;
-  height:70px;
-  display:grid;
-  grid-template-columns:1fr 1.25fr 1fr;
-  align-items:center;
-  gap:18px;
-  padding:0 22px;
-  border-radius:18px;
-  background:rgba(4,39,80,.87);
-  color:#fff;
-  font-size:18px;
-  line-height:1.12;
-  font-weight:800;
-}
-
-/* Conteúdo principal */
+/* CONTEÚDO */
 .m3Content{
   position:absolute;
-  top:520px;
+  z-index:5;
+  top:455px;
   left:0;
   right:0;
-  height:1180px;
-  z-index:5;
-  padding:28px 34px 30px;
+  height:790px;
   box-sizing:border-box;
-  border-radius:34px 34px 0 0;
-  background:linear-gradient(180deg,#edf4f8 0%,#f8fbfd 100%);
+  padding:28px 34px 26px;
+  background:linear-gradient(180deg,#f8fbfd 0%,#f3f8fb 100%);
 }
 
-.m3RouteGrid{
+.m3RouteRow{
   position:relative;
-  height:430px;
+  height:260px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:26px;
 }
 
 .m3RouteCard{
-  position:absolute;
-  width:calc(100% - 38px);
-  height:210px;
   min-width:0;
+  height:260px;
   box-sizing:border-box;
-  padding:22px 30px 20px;
-  border-radius:28px;
-  background:#fff;
-  border:2px solid #e0e9f0;
-  box-shadow:0 8px 20px rgba(21,53,88,.07);
+  padding:18px 22px 17px;
+  border-radius:24px;
   overflow:hidden;
-}
-
-.m3RouteCard:first-of-type{
-  top:0;
-  left:0;
-}
-
-.m3RouteCard:last-of-type{
-  right:0;
-  bottom:0;
+  background:#fff;
+  border:2px solid #d8e4ec;
+  box-shadow:0 7px 18px rgba(21,53,88,.07);
 }
 
 .m3RouteLabel{
-  color:#0aa66c;
+  height:48px;
+  margin:-18px -22px 0;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  background:linear-gradient(90deg,#08a968,#13c77f);
+  color:#fff;
   font-size:24px;
   line-height:1;
-  font-weight:900;
+  font-weight:950;
+  white-space:nowrap;
 }
 
 .m3Pin{
-  display:inline-block;
-  margin-right:7px;
-  color:#14c984;
-  font-size:24px;
+  display:inline-flex;
+  width:34px;
+  height:34px;
+  margin-right:10px;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#fff;
+  color:#0cad6d;
+  font-size:19px;
+  flex:0 0 auto;
 }
 
 .m3RouteCity{
   width:100%;
-  height:88px;
-  margin-top:11px;
+  height:122px;
+  margin-top:13px;
   display:flex;
   align-items:center;
-  color:#062b69;
-  font-size:58px;
-  line-height:1.01;
+  color:#062f68;
+  font-size:56px;
+  line-height:.98;
   font-weight:950;
-  letter-spacing:-1.5px;
+  letter-spacing:-1.8px;
   text-transform:uppercase;
   white-space:normal;
+  word-break:normal;
+  overflow-wrap:normal;
   overflow:hidden;
 }
 
 .m3RouteLocal{
   width:100%;
-  height:36px;
-  margin-top:5px;
-  padding:0 16px;
+  height:42px;
+  padding:0 14px;
   box-sizing:border-box;
   display:flex;
   align-items:center;
-  border-radius:12px;
+  border-radius:11px;
   background:#edf4f8;
-  color:#234a78;
+  color:#294f78;
   font-size:28px;
   line-height:1;
-  font-weight:800;
+  font-weight:850;
   text-transform:uppercase;
   white-space:nowrap;
   overflow:hidden;
@@ -667,71 +654,28 @@
 
 .m3Arrow{
   position:absolute;
+  z-index:8;
   left:50%;
   top:50%;
-  z-index:4;
-  width:58px;
-  height:58px;
-  margin:-29px 0 0 -29px;
+  width:64px;
+  height:64px;
+  margin:-32px 0 0 -32px;
   display:flex;
   align-items:center;
   justify-content:center;
   border-radius:50%;
-  background:#12c77f;
+  border:7px solid #f7fbfd;
+  background:#10bd76;
   color:#fff;
-  font-size:0;
-  line-height:1;
-  font-weight:900;
-  box-shadow:0 8px 18px rgba(18,199,127,.28);
-}
-
-.m3Arrow::before{
-  content:"↓";
-  font-size:42px;
-  line-height:1;
-}
-
-.m3PriceCard{
-  height:132px;
-  margin-top:16px;
-  display:grid;
-  grid-template-columns:300px 1fr;
-  align-items:center;
-  overflow:hidden;
-  border-radius:28px;
-  background:linear-gradient(100deg,#073e7d 0%,#07366e 33%,#13c77f 33%,#08a968 100%);
-  box-shadow:0 9px 22px rgba(12,74,119,.12);
-}
-
-.m3PriceLabel{
-  padding-left:38px;
-  color:#fff;
-  font-size:33px;
-  line-height:1.05;
-  font-weight:900;
-  letter-spacing:.2px;
-}
-
-.m3PriceValue{
-  width:100%;
-  height:108px;
-  padding:0 34px;
-  box-sizing:border-box;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-  font-size:98px;
+  font-size:43px;
   line-height:1;
   font-weight:950;
-  letter-spacing:-3px;
-  white-space:nowrap;
-  overflow:hidden;
+  box-shadow:0 6px 16px rgba(13,178,111,.28);
 }
 
 .m3MetaGrid{
-  height:115px;
-  margin-top:16px;
+  height:108px;
+  margin-top:14px;
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:14px;
@@ -739,29 +683,50 @@
 
 .m3MetaCard{
   min-width:0;
+  display:grid;
+  grid-template-columns:100px minmax(0,1fr);
+  align-items:center;
+  gap:18px;
   box-sizing:border-box;
-  padding:18px 23px 15px;
-  border-radius:22px;
+  padding:10px 20px 10px 12px;
+  border-radius:20px;
   background:#fff;
-  border:2px solid #e0e9f0;
+  border:2px solid #dbe6ed;
   overflow:hidden;
 }
 
-.m3MetaCard span{
-  display:block;
-  color:#54708d;
-  font-size:20px;
-  font-weight:800;
-}
-
-.m3MetaCard strong{
-  width:100%;
-  height:50px;
-  margin-top:5px;
+.m3MetaIcon{
+  width:82px;
+  height:82px;
   display:flex;
   align-items:center;
-  color:#062b69;
-  font-size:40px;
+  justify-content:center;
+  border-radius:16px;
+  background:linear-gradient(145deg,#a9becc,#d5e0e8);
+  color:#fff;
+  font-size:44px;
+  font-weight:900;
+}
+
+.m3MetaText{
+  min-width:0;
+}
+
+.m3MetaText span{
+  display:block;
+  color:#56738f;
+  font-size:19px;
+  font-weight:900;
+}
+
+.m3MetaText strong{
+  width:100%;
+  height:48px;
+  margin-top:4px;
+  display:flex;
+  align-items:center;
+  color:#062f68;
+  font-size:42px;
   line-height:1;
   font-weight:950;
   text-transform:uppercase;
@@ -769,178 +734,265 @@
   overflow:hidden;
 }
 
-.m3ContactsCard{
-  height:218px;
-  margin-top:16px;
+.m3PriceCard{
+  height:122px;
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:360px minmax(0,1fr);
+  align-items:center;
   overflow:hidden;
-  border-radius:24px;
-  background:#fff;
-  border:2px solid #dce7ef;
+  border-radius:22px;
+  background:linear-gradient(104deg,#063a75 0%,#063a75 36%,#13c77f 36%,#08a968 100%);
+  box-shadow:0 8px 20px rgba(12,74,119,.12);
 }
 
-.m3ContactsHead{
-  height:56px;
+.m3PriceLabel{
+  height:100%;
   padding:0 28px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:20px;
-  background:#073e7d;
+  gap:22px;
   color:#fff;
+  box-sizing:border-box;
 }
 
-.m3ContactsHead strong{
-  font-size:27px;
+.m3PriceLabel b{
+  font-size:31px;
+  line-height:1.02;
   font-weight:950;
 }
 
-.m3ContactsHead span{
-  font-size:17px;
-  font-weight:800;
-  color:#b9f4dc;
+.m3Currency{
+  width:72px;
+  height:72px;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:5px solid #fff;
+  border-radius:50%;
+  font-size:29px;
+  font-weight:950;
 }
 
-.m3ContactsList{
-  padding:6px 28px 7px;
-}
-
-.m3ContactLine{
-  position:relative;
+.m3PriceValue{
   width:100%;
-  height:29px;
-  padding-left:30px;
+  height:100px;
+  padding:0 30px;
   box-sizing:border-box;
   display:flex;
   align-items:center;
-  border-bottom:1px solid #d8e3eb;
-  color:#102f5d;
-  font-size:24px;
+  justify-content:center;
+  color:#fff;
+  font-size:92px;
   line-height:1;
-  font-weight:800;
+  font-weight:950;
+  letter-spacing:-2.5px;
   white-space:nowrap;
   overflow:hidden;
 }
 
-.m3ContactLine:last-child{
-  border-bottom:0;
+.m3ContactsCard{
+  height:178px;
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:330px minmax(0,1fr);
+  align-items:stretch;
+  overflow:hidden;
+  border-radius:22px;
+  background:#fff;
+  border:2px solid #dbe6ed;
+}
+
+.m3ContactsIntro{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:20px 20px 20px 22px;
+  border-right:2px solid #d8e4ec;
+}
+
+.m3WhatsappIcon{
+  width:78px;
+  height:78px;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:linear-gradient(145deg,#15c978,#079f60);
+  color:#fff;
+  font-size:43px;
+  font-weight:900;
+  box-shadow:0 5px 12px rgba(8,169,104,.18);
+}
+
+.m3ContactsIntro strong{
+  display:block;
+  color:#062f68;
+  font-size:27px;
+  line-height:.96;
+  font-weight:950;
+}
+
+.m3ContactsIntro span{
+  display:block;
+  margin-top:8px;
+  color:#667f97;
+  font-size:15px;
+  line-height:1;
+  font-weight:850;
+  white-space:nowrap;
+}
+
+.m3ContactsList{
+  min-width:0;
+  padding:18px 22px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-auto-rows:40px;
+  column-gap:24px;
+  row-gap:4px;
+  align-content:center;
+}
+
+.m3ContactLine{
+  position:relative;
+  min-width:0;
+  height:40px;
+  padding-left:36px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  color:#0b376d;
+  font-size:24px;
+  line-height:1;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  border-bottom:1px solid #e2eaf0;
 }
 
 .m3ContactLine:not(:empty)::before{
-  content:"●";
+  content:"☎";
   position:absolute;
   left:0;
   top:50%;
+  width:27px;
+  height:27px;
   transform:translateY(-50%);
-  color:#13c77f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:3px solid #10b86f;
+  border-radius:50%;
+  color:#10b86f;
   font-size:15px;
+  font-weight:950;
 }
 
 .m3ContactLine:empty{
   display:none;
 }
 
-.m3NoteCard{
-  height:102px;
-  margin-top:16px;
-  box-sizing:border-box;
-  padding:16px 28px;
-  border-radius:22px;
-  background:#fff;
-  border:2px solid #dce7ef;
-}
-
-.m3NoteCard > div{
-  min-width:0;
-}
-
-.m3NoteCard span{
-  display:block;
-  color:#54708d;
-  font-size:19px;
-  font-weight:800;
-}
-
-.m3NoteCard strong{
-  width:100%;
-  height:46px;
-  margin-top:3px;
-  display:flex;
-  align-items:center;
-  color:#062b69;
-  font-size:38px;
-  line-height:1;
-  font-weight:950;
-  text-transform:uppercase;
-  white-space:nowrap;
-  overflow:hidden;
-}
-
-/* Rodapé */
+/* RODAPÉ */
 .m3Footer{
   position:absolute;
+  z-index:7;
   left:0;
   right:0;
   bottom:0;
-  height:220px;
-  z-index:7;
+  height:195px;
   box-sizing:border-box;
-  padding:44px 62px 34px;
-  display:flex;
+  padding:30px 38px 28px;
+  display:grid;
+  grid-template-columns:330px minmax(0,1fr);
   align-items:center;
-  justify-content:space-between;
+  gap:28px;
   overflow:hidden;
   background:
-    linear-gradient(135deg,transparent 0 72%,rgba(16,199,127,.15) 72% 76%,transparent 76%),
-    linear-gradient(120deg,#053469 0%,#032954 100%);
+    linear-gradient(135deg,transparent 0 77%,rgba(18,188,116,.20) 77% 80%,transparent 80%),
+    linear-gradient(120deg,#053b76 0%,#032b59 100%);
   color:#fff;
 }
 
 .m3Footer::after{
   content:"";
   position:absolute;
-  right:-60px;
-  bottom:-30px;
-  width:330px;
-  height:150px;
-  transform:rotate(-30deg);
-  background:linear-gradient(90deg,#0f6aa4 0 35%,#08a968 35% 63%,#1ee19a 63%);
+  z-index:0;
+  right:-48px;
+  bottom:-54px;
+  width:270px;
+  height:145px;
+  transform:rotate(-28deg);
+  background:linear-gradient(90deg,#0d66a3 0 32%,#08a968 32% 62%,#1edc98 62%);
   opacity:.95;
 }
 
 .m3FooterQuote{
   position:relative;
   z-index:2;
-  padding-left:42px;
-  font-size:35px;
-  line-height:1.12;
+  padding-left:32px;
+  font-size:29px;
+  line-height:1.08;
   font-style:italic;
 }
 
-.m3FooterQuote::before{
-  content:"";
+.m3FooterQuote > span{
   position:absolute;
   left:0;
-  top:7px;
-  width:25px;
+  top:9px;
+  width:22px;
   height:6px;
   border-radius:999px;
-  background:#1ee19a;
+  background:#1edc98;
 }
 
 .m3FooterQuote strong{
-  color:#fff;
-  font-weight:900;
+  font-weight:950;
 }
 
-.m3FooterRight{
+.m3Benefits{
   position:relative;
   z-index:2;
-  margin-right:210px;
-  padding-left:21px;
-  border-left:5px solid #1ee19a;
-  font-size:24px;
-  line-height:1.1;
-  font-weight:900;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  padding-right:110px;
+}
+
+.m3Benefit{
+  min-width:0;
+  display:grid;
+  grid-template-columns:48px minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  padding-left:14px;
+  border-left:2px solid rgba(255,255,255,.72);
+}
+
+.m3Benefit b{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:34px;
+}
+
+.m3Benefit span{
+  min-width:0;
+  color:#fff;
+  font-size:14px;
+  line-height:1.05;
+  font-weight:700;
+}
+
+.m3Benefit strong{
+  display:block;
+  margin-bottom:3px;
+  font-size:16px;
+  font-weight:950;
 }
 
 /* Modelo 3 não usa as regras de overlay dos modelos 1 e 2 */
@@ -968,12 +1020,13 @@
   .contactsEditorGrid{
     grid-template-columns:1fr;
   }
-  .templateForm3 .formFieldFull{
+  .templateForm3 .formFieldFull,
+  .model3ContactsEditor{
     grid-column:1;
   }
   .templatePreview3Shell{
     width:337.5px;
-    height:600px;
+    height:450px;
   }
   .templatePreview3{
     transform:scale(.3125);
@@ -983,7 +1036,7 @@
 @media (max-width:390px){
   .templatePreview3Shell{
     width:303.75px;
-    height:540px;
+    height:405px;
   }
   .templatePreview3{
     transform:scale(.28125);

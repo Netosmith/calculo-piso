@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Divulgação | NOVA FROTA</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <link rel="stylesheet" href="../assets/css/divulgacao.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/divulgacao.css?v=10" />
 
   <style>
     /* MODELO 2 - ajuste fino para artes 1024 x 1536 */
@@ -212,7 +212,7 @@
       <div class="templateHeader">
         <div>
           <h2>Modelo 3 - Status WhatsApp</h2>
-          <p>Arte vertical 1080 x 1920, com origem, destino e valor em destaque e até 5 contatos da filial.</p>
+          <p>Arte compacta 3:4 (1080 x 1440), otimizada para visualização direta nos grupos do WhatsApp.</p>
         </div>
         <span class="model3Badge">PRINCIPAL</span>
       </div>
@@ -274,11 +274,6 @@
             </select>
           </div>
 
-          <div class="formField formFieldFull">
-            <label>Observações</label>
-            <input data-template="3" data-field="obs" placeholder="Ex: CARREGAMENTO IMEDIATO" />
-          </div>
-
           <div class="model3ContactsEditor formFieldFull">
             <div class="contactsEditorHead">
               <div>
@@ -316,7 +311,7 @@
         <div class="model3PreviewColumn">
           <div class="model3PreviewLabel">
             <strong>Prévia do Status</strong>
-            <span>saída 1080 × 1920</span>
+            <span>saída 1080 × 1440</span>
           </div>
 
           <div class="templatePreview3Shell">
@@ -331,71 +326,72 @@
                   <strong>DISPONÍVEL</strong>
                   <small>QUALIDADE QUE TE LEVA MAIS LONGE</small>
                 </div>
-<div class="m3Trust">
-                  <span>✓ SEGURANÇA EM TODA A OPERAÇÃO</span>
-                  <span>▣ TRANSPORTE QUE IMPULSIONA O AGRO</span>
-                  <span>↗ PARCERIA PARA MAIS RESULTADOS</span>
-                </div>
               </section>
 
               <section class="m3Content">
-                <div class="m3RouteGrid">
+                <div class="m3RouteRow">
                   <article class="m3RouteCard">
                     <div class="m3RouteLabel"><span class="m3Pin">●</span> ORIGEM / COLETA</div>
-                    <div class="m3RouteCity" data-bind="coletaCidade" data-fit data-fit-max="58" data-fit-min="32"></div>
-                    <div class="m3RouteLocal" data-bind="coletaLocal" data-fit data-fit-max="31" data-fit-min="22"></div>
+                    <div class="m3RouteCity" data-bind="coletaCidade" data-fit data-fit-max="56" data-fit-min="28" data-fit-lines="2"></div>
+                    <div class="m3RouteLocal" data-bind="coletaLocal" data-fit data-fit-max="28" data-fit-min="18" data-fit-lines="1"></div>
                   </article>
 
-                  <div class="m3Arrow">››</div>
+                  <div class="m3Arrow">→</div>
 
                   <article class="m3RouteCard">
                     <div class="m3RouteLabel"><span class="m3Pin">●</span> DESTINO / DESCARGA</div>
-                    <div class="m3RouteCity" data-bind="descargaCidade" data-fit data-fit-max="58" data-fit-min="32"></div>
-                    <div class="m3RouteLocal" data-bind="descargaLocal" data-fit data-fit-max="31" data-fit-min="22"></div>
+                    <div class="m3RouteCity" data-bind="descargaCidade" data-fit data-fit-max="56" data-fit-min="28" data-fit-lines="2"></div>
+                    <div class="m3RouteLocal" data-bind="descargaLocal" data-fit data-fit-max="28" data-fit-min="18" data-fit-lines="1"></div>
                   </article>
-                </div>
-
-                <div class="m3PriceCard">
-                  <div class="m3PriceLabel">VALOR DO FRETE</div>
-                  <div class="m3PriceValue" data-bind="valor" data-fit data-fit-max="104" data-fit-min="58"></div>
                 </div>
 
                 <div class="m3MetaGrid">
                   <div class="m3MetaCard">
-                    <span>PRODUTO</span>
-                    <strong data-bind="produto" data-fit data-fit-max="44" data-fit-min="27"></strong>
+                    <div class="m3MetaIcon">◌</div>
+                    <div class="m3MetaText">
+                      <span>PRODUTO</span>
+                      <strong data-bind="produto" data-fit data-fit-max="42" data-fit-min="24" data-fit-lines="1"></strong>
+                    </div>
                   </div>
                   <div class="m3MetaCard">
-                    <span>FILIAL</span>
-                    <strong data-bind="filial" data-fit data-fit-max="44" data-fit-min="25"></strong>
+                    <div class="m3MetaIcon">▣</div>
+                    <div class="m3MetaText">
+                      <span>FILIAL</span>
+                      <strong data-bind="filial" data-fit data-fit-max="42" data-fit-min="23" data-fit-lines="1"></strong>
+                    </div>
                   </div>
+                </div>
+
+                <div class="m3PriceCard">
+                  <div class="m3PriceLabel"><span class="m3Currency">R$</span><b>VALOR DO<br>FRETE</b></div>
+                  <div class="m3PriceValue" data-bind="valor" data-fit data-fit-max="92" data-fit-min="52" data-fit-lines="1"></div>
                 </div>
 
                 <div class="m3ContactsCard">
-                  <div class="m3ContactsHead">
-                    <strong>FALE COM NOSSA EQUIPE</strong>
-                    <span>ATENDIMENTO VIA WHATSAPP</span>
+                  <div class="m3ContactsIntro">
+                    <div class="m3WhatsappIcon">☎</div>
+                    <div>
+                      <strong>FALE COM<br>NOSSA EQUIPE</strong>
+                      <span>ATENDIMENTO VIA WHATSAPP</span>
+                    </div>
                   </div>
                   <div class="m3ContactsList">
-                    <div class="m3ContactLine" data-bind="contato1" data-fit data-fit-max="29" data-fit-min="20"></div>
-                    <div class="m3ContactLine" data-bind="contato2" data-fit data-fit-max="29" data-fit-min="20"></div>
-                    <div class="m3ContactLine" data-bind="contato3" data-fit data-fit-max="29" data-fit-min="20"></div>
-                    <div class="m3ContactLine" data-bind="contato4" data-fit data-fit-max="29" data-fit-min="20"></div>
-                    <div class="m3ContactLine" data-bind="contato5" data-fit data-fit-max="29" data-fit-min="20"></div>
-                  </div>
-                </div>
-
-                <div class="m3NoteCard">
-                  <div>
-                    <span>OBSERVAÇÕES</span>
-                    <strong data-bind="obs" data-fit data-fit-max="42" data-fit-min="24"></strong>
+                    <div class="m3ContactLine" data-bind="contato1" data-fit data-fit-max="24" data-fit-min="16" data-fit-lines="1"></div>
+                    <div class="m3ContactLine" data-bind="contato2" data-fit data-fit-max="24" data-fit-min="16" data-fit-lines="1"></div>
+                    <div class="m3ContactLine" data-bind="contato3" data-fit data-fit-max="24" data-fit-min="16" data-fit-lines="1"></div>
+                    <div class="m3ContactLine" data-bind="contato4" data-fit data-fit-max="24" data-fit-min="16" data-fit-lines="1"></div>
+                    <div class="m3ContactLine" data-bind="contato5" data-fit data-fit-max="24" data-fit-min="16" data-fit-lines="1"></div>
                   </div>
                 </div>
               </section>
 
               <footer class="m3Footer">
-                <div class="m3FooterQuote">O Brasil produz.<br><strong>A Nova Frota conecta.</strong></div>
-                <div class="m3FooterRight">EM TODO O BRASIL,<br>SEMPRE AO SEU LADO.</div>
+                <div class="m3FooterQuote"><span></span>O Brasil produz.<br><strong>A Nova Frota conecta.</strong></div>
+                <div class="m3Benefits">
+                  <div class="m3Benefit"><b>♢</b><span><strong>SEGURANÇA</strong>EM TODA OPERAÇÃO</span></div>
+                  <div class="m3Benefit"><b>◈</b><span><strong>TRANSPORTE</strong>QUE IMPULSIONA O AGRO</span></div>
+                  <div class="m3Benefit"><b>▥</b><span><strong>PARCERIA</strong>PARA MAIS RESULTADOS</span></div>
+                </div>
               </footer>
             </div>
           </div>
@@ -403,7 +399,7 @@
       </div>
 
       <div class="templateActions">
-        <button class="btnTiny green" data-action="save" data-template="3">Salvar JPG 1080×1920</button>
+        <button class="btnTiny green" data-action="save" data-template="3">Salvar JPG 1080×1440</button>
         <button class="btnTiny ghost" data-action="reset" data-template="3">Resetar</button>
       </div>
     </section>
@@ -618,7 +614,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/divulgacao.js?v=10"></script>
+  <script src="../assets/js/divulgacao.js?v=11"></script>
 
   <script>
     if (requireFeatureAuth(

@@ -389,6 +389,7 @@
       origemDados: upper(firstValue(r, [
         "origemDados", "base", "planilha", "origemBase"
       ])),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
       filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
       cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
       origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
@@ -480,6 +481,7 @@
   }
 
   function applyCommonFilters(rows) {
+    const regional = upper($("#fRegional")?.value);
     const filial = upper($("#fFilial")?.value);
     const cliente = upper($("#fCliente")?.value);
     const status = upper($("#fStatus")?.value);
@@ -487,6 +489,7 @@
     const busca = upper($("#fBusca")?.value);
 
     return rows.filter((row) => {
+      if (regional && row.regional !== regional) return false;
       if (filial && row.filial !== filial) return false;
       if (cliente && row.cliente !== cliente) return false;
       if (status && row.status !== status) return false;
@@ -494,7 +497,7 @@
 
       if (busca) {
         const blob = [
-          row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
           row.contato, row.descarga, row.obs, row.origemDados, row.status
         ].join(" ");
 
@@ -520,6 +523,7 @@
   }
 
   function getCommercialFilteredRows() {
+    const regional = upper($("#fRegional")?.value);
     const filial = upper($("#fFilial")?.value);
     const cliente = upper($("#fCliente")?.value);
     const status = upper($("#fStatus")?.value);
@@ -533,6 +537,7 @@
 
     const rows = STATE.comercialRows.filter((row) => {
       if (!inPeriod(row.dataEvento || row.dataReferencia, inicio, fim)) return false;
+      if (regional && row.regional !== regional) return false;
       if (filial && row.filial !== filial) return false;
       if (cliente && row.cliente !== cliente) return false;
       if (status && row.status !== status) return false;
@@ -544,7 +549,7 @@
 
       if (busca) {
         const blob = [
-          row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
           row.origemDados, row.status, row.evento, row.obs
         ].join(" ");
         if (!upper(blob).includes(busca)) return false;
@@ -1822,7 +1827,7 @@
 
   function clearFilters() {
     [
-      "#fFilial", "#fCliente", "#fStatus", "#fOrigemDados", "#fBusca",
+      "#fRegional", "#fFilial", "#fCliente", "#fStatus", "#fOrigemDados", "#fBusca",
       "#fOrigem", "#fDestino", "#fProduto", "#fTipoEvento", "#fMesReferencia"
     ].forEach((selector) => {
       const el = $(selector);
@@ -1855,7 +1860,7 @@
       await loadData(true, false);
     });
 
-    ["#fFilial", "#fCliente", "#fStatus", "#fOrigemDados"].forEach((selector) => {
+    ["#fRegional", "#fFilial", "#fCliente", "#fStatus", "#fOrigemDados"].forEach((selector) => {
       $(selector)?.addEventListener("change", () => renderMode());
     });
 

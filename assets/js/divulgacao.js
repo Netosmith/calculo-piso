@@ -87,10 +87,10 @@
       "--------------------"
     ],
     ANAPOLIS: [
+      "FHELLIPE (62) 99930-7778",
       "DANILO (62) 99315-5713",
-      "---------------------",
-     "---------------------",
-      "---------------------"
+      "LUCAS (62) 99318-9816",
+      "EDSON (62) 99340-5792"
     ],
     URUACU: [
       "GUILHERME (62) 99697-8707",
@@ -449,16 +449,58 @@
     return [nome, telefone].filter(Boolean).join(" ");
   }
 
-  function preencherContatosFilialModelo3(templateId, filialValue) {
+  function contactNameKey(text) {
+    const raw = String(text || "").trim();
+    const name = raw.split(/\s*\(?\d/)[0] || raw;
+    return normalizeKey(name);
+  }
+
+  async function preencherContatosFilialModelo3(templateId, filialValue) {
     const key = normalizeKey(filialValue);
 
-    let lista = (FILIAIS_CONTATOS[key] || [])
-      .map((value) => {
-        const text = String(value || "").trim();
-        return /^[-\s]+$/.test(text) ? "" : text;
+    if (!key) {
+      ["contato1", "contato2", "contato3", "contato4", "contato5"].forEach((campo) => {
+        const input = document.querySelector(
+          `[data-template="${templateId}"][data-field="${campo}"]`
+        );
+        if (input) input.value = "";
+        updatePreview(templateId, campo, "");
+      });
+      fitModel3(getPreview(templateId));
+      return;
+    }
+
+    const contatosCadastro = await carregarContatosCadastro();
+
+    const select = document.querySelector(
+      `[data-template="${templateId}"][data-field="filial"]`
+    );
+
+    if (!select || normalizeKey(select.value) !== key) return;
+
+    const dinamicos = contatosCadastro
+      .filter((row) => normalizeKey(row?.Filial ?? row?.filial) === key)
+      .sort((a, b) => {
+        const oa = Number(a?.Ordem ?? a?.ordem ?? 9999);
+        const ob = Number(b?.Ordem ?? b?.ordem ?? 9999);
+        return oa - ob;
       })
-      .filter(Boolean)
-      .slice(0, 5);
+      .map(contatoTextoCadastro)
+      .filter(Boolean);
+
+    const contingencia = (FILIAIS_CONTATOS[key] || [])
+      .map((value) => String(value || "").trim())
+      .filter((value) => value && !/^[-\s]+$/.test(value));
+
+    const lista = [];
+    const usados = new Set();
+
+    [...dinamicos, ...contingencia].forEach((contato) => {
+      const id = contactNameKey(contato) || normalizeKey(contato);
+      if (!id || usados.has(id) || lista.length >= 5) return;
+      usados.add(id);
+      lista.push(contato);
+    });
 
     while (lista.length < 5) lista.push("");
 

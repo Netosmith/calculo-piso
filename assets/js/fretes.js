@@ -1498,20 +1498,34 @@ function formatDateTimeBR(value) {
 
     const max = Number(target.dataset.max || 40);
     const min = Number(target.dataset.min || Math.max(16, max * 0.55));
+    const lines = Math.max(1, Number(target.dataset.lines || 1));
     let size = max;
 
     target.style.fontSize = max + "px";
+    target.style.letterSpacing = "";
+    target.style.whiteSpace = lines === 1 ? "nowrap" : "normal";
+    target.style.wordBreak = "normal";
+    target.style.overflowWrap = "normal";
+    target.style.textOverflow = "clip";
 
     let guard = 0;
     while (
       size > min &&
-      guard < 120 &&
+      guard < 140 &&
       (target.scrollWidth > target.clientWidth + 1 ||
        target.scrollHeight > target.clientHeight + 1)
     ) {
       size -= 1;
       target.style.fontSize = size + "px";
       guard += 1;
+    }
+
+    if (
+      lines === 1 &&
+      (target.scrollWidth > target.clientWidth + 1 ||
+       target.scrollHeight > target.clientHeight + 1)
+    ) {
+      target.style.letterSpacing = "-0.8px";
     }
   }
 
@@ -1561,7 +1575,6 @@ function formatDateTimeBR(value) {
     setText("nfM3Contato3", d.contatos[2] || "");
     setText("nfM3Contato4", d.contatos[3] || "");
     setText("nfM3Contato5", d.contatos[4] || "");
-    setText("nfM3Obs", d.obs);
 
     if (d.modelo === 3) {
       requestAnimationFrame(fitModel3PreviewNF);
@@ -1707,17 +1720,17 @@ function buildMessage(row) {
         card.style.left = "-12000px";
         card.style.top = "0";
         card.style.width = "1080px";
-        card.style.height = "1920px";
+        card.style.height = "1440px";
         card.style.overflow = "visible";
 
         source.style.transform = "none";
 
         try {
           return await html2canvasLib(source, {
-            backgroundColor: "#eef4f8",
+            backgroundColor: "#f5f9fc",
             scale: 1,
             width: 1080,
-            height: 1920,
+            height: 1440,
             useCORS: true,
             allowTaint: true,
             logging: false,

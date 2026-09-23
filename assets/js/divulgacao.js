@@ -680,7 +680,7 @@
 
       try {
         canvas = await html2canvas(preview, {
-          backgroundColor: "#eef4f8",
+          backgroundColor: "#f5f9fc",
           scale: 1,
           width: 1080,
           height: 1440,
@@ -700,7 +700,7 @@
 
     const link = document.createElement("a");
     link.download = String(templateId) === "3"
-      ? "divulgacao-modelo-3-status-whatsapp.jpg"
+      ? "divulgacao-modelo-3-whatsapp-3x4.jpg"
       : `divulgacao-modelo-${templateId}.jpg`;
     link.href = canvas.toDataURL("image/jpeg", 0.95);
     link.click();

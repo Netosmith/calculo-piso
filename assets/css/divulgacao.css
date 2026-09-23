@@ -501,9 +501,10 @@
 .m3Logo{
   position:absolute;
   z-index:4;
-  top:38px;
-  right:118px;
-  width:395px;
+  top:34px;
+  left:50%;
+  transform:translateX(-50%);
+  width:340px;
   height:auto;
   object-fit:contain;
 }

@@ -205,20 +205,35 @@
 
     const max = Number(target.dataset.fitMax || 40);
     const min = Number(target.dataset.fitMin || Math.max(16, max * 0.55));
+    const lines = Math.max(1, Number(target.dataset.fitLines || 1));
     let size = max;
 
     target.style.fontSize = max + "px";
+    target.style.letterSpacing = "";
+    target.style.whiteSpace = lines === 1 ? "nowrap" : "normal";
+    target.style.wordBreak = "normal";
+    target.style.overflowWrap = "normal";
+    target.style.textOverflow = "clip";
 
     let guard = 0;
     while (
       size > min &&
-      guard < 120 &&
+      guard < 140 &&
       (target.scrollWidth > target.clientWidth + 1 ||
        target.scrollHeight > target.clientHeight + 1)
     ) {
       size -= 1;
       target.style.fontSize = size + "px";
       guard += 1;
+    }
+
+    // Último ajuste para nomes muito largos sem quebrar o padrão visual.
+    if (
+      lines === 1 &&
+      (target.scrollWidth > target.clientWidth + 1 ||
+       target.scrollHeight > target.clientHeight + 1)
+    ) {
+      target.style.letterSpacing = "-0.8px";
     }
   }
 
@@ -668,7 +683,7 @@
           backgroundColor: "#eef4f8",
           scale: 1,
           width: 1080,
-          height: 1920,
+          height: 1440,
           useCORS: true,
           logging: false
         });

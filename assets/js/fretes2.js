@@ -2,66 +2,19 @@
 (function () {
   "use strict";
 
-  let DIRECTORY = {
-    regionais: ["GOIAS", "MINAS", "SAO PAULO"],
-    filiaisPorRegional: {
-      GOIAS: [
-        "ITUMBIARA", "RIO VERDE", "RIO VERDE FERT", "MONTIVIDIU", "ANAPOLIS",
-        "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA",
-        "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"
-      ],
-      MINAS: ["UBERLANDIA", "ARAGUARI"],
-      "SAO PAULO": ["SOROCABA"],
-    },
-    clientes: [
-      "CARGILL", "TERRA ROXA", "COMIGO", "CONCREBEL", "VITERRA", "GD AGRONEGOCIOS", "COFCO", "NOVA AGRI",
-      "JBS SEARA", "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO",
-      "C VALE", "OLAM BRASIL", "SODRU", "BOM JESUS", "OLFAR", "SOYBRASIL", "LAVORO",
-      "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE",
-      "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA",
-      "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS",
-      "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO",
-      "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO",
-      "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL",
-      "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX",
-      "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC",
-      "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN",
-      "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA",
-      "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO",
-      "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA",
-      "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL",
-      "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM",
-      "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL",
-      "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA",
-      "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL",
-      "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS",
-      "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO",
-      "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS",
-      "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA",
-      "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE",
-      "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"
-    ],
-    contatosPorFilial: {
-      MINEIROS: [{ nome: "KIEWERSON", fone: "5564999794586" }],
-      ARAGUARI: [{ nome: "GUILHERME", fone: "5564992177636" }],
-      ANAPOLIS: [{ nome: "DANILO", fone: "5562993155713" }],
-      "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
-      MONTIVIDIU: [{ nome: "MARCELO", fone: "5564996532847" }],
-      "RIO VERDE": [{ nome: "RODRIGO", fone: "5564996031200" }],
-      INDIARA: [{ nome: "RAFAEL", fone: "5564999108790" }],
-      ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992251214" }],
-      JATAI: [{ nome: "RONE", fone: "5564996264511" }],
-      "CHAP CEU": [{ nome: "RICARDO", fone: "5564999913512" }],
-      CRISTALINA: [{ nome: "EVERALDO", fone: "5561996924906" }],
-      "RIO VERDE FERT": [{ nome: "NARCISO", fone: "5564999365343" }],
-      VIANOPOLIS: [{ nome: "FHELLIPE", fone: "5562999307778" }],
-      FORMOSA: [{ nome: "FABIOLA", fone: "5562996017658" }],
-      CATAlÃO: [{ nome: "EVERALDO JR", fone: "556492373735" }],
-      "CATALÃO": [{ nome: "EVERALDO JR", fone: "556492373735" }],
-      "URUAÇU": [{ nome: "GUILHERME", fone: "5562996978707" }],
-      SOROCABA: [{ nome: "DIOGO", fone: "5515992784842" }],
-    },
-  };
+  function emptyDirectory() {
+    return {
+      regionais: [],
+      filiaisPorRegional: {},
+      clientes: [],
+      contatosPorFilial: {}
+    };
+  }
+
+  // Fonte única: cadastro retornado pelo backend.
+  // Não manter lista antiga em contingência, para nunca reaparecer
+  // GOIAS / MINAS / SAO PAULO por falha ou atraso de carregamento.
+  let DIRECTORY = emptyDirectory();
 
   const FILIAIS_CONTATOS_ARTE = {
     RIOVERDE: [
@@ -199,6 +152,8 @@
     previewModel: 3,
     modalBusy: false,
     pendingCreateId: "",
+    directoryReady: false,
+    directoryPromise: null,
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -678,33 +633,72 @@ function formatDateTimeBR(value) {
     const startedAt = nowPerformance();
 
     if (!options.background) {
-      setStatus("🔄 Carregando cadastros...");
+      setStatus("🔄 Carregando cadastros atuais...");
     }
 
     try {
       const requestStartedAt = nowPerformance();
       const res = await apiGet({ action: "cadastros_fretes_list" });
       recordPerformance("cadastros-api", requestStartedAt);
+
       const novosCadastros = normalizeDirectoryData(res?.data || {});
-
       const possuiDados =
-        novosCadastros.regionais.length ||
-        novosCadastros.clientes.length ||
-        Object.keys(novosCadastros.filiaisPorRegional).length ||
-        Object.keys(novosCadastros.contatosPorFilial).length;
+        novosCadastros.regionais.length > 0 &&
+        Object.keys(novosCadastros.filiaisPorRegional).length > 0;
 
-      if (possuiDados) {
-        DIRECTORY = novosCadastros;
-      } else {
-        console.warn("[fretes2] cadastros da planilha vazios; mantendo dados de contingência do arquivo.");
+      if (!possuiDados) {
+        throw new Error("O cadastro atual de regionais/filiais veio vazio.");
       }
+
+      DIRECTORY = novosCadastros;
+      STATE.directoryReady = true;
+      rebuildContactPhoneMap();
+      recordPerformance("cadastros-total", startedAt);
+      return true;
     } catch (e) {
-      console.error("[fretes2] erro ao carregar cadastros:", e);
-      console.warn("[fretes2] usando cadastros de contingência existentes no arquivo.");
+      // Falha fechada: melhor mostrar apenas placeholders do que ressuscitar
+      // um cadastro antigo e permitir salvar um frete com regional incorreta.
+      DIRECTORY = emptyDirectory();
+      STATE.directoryReady = false;
+      rebuildContactPhoneMap();
+      fillModalSelectors();
+
+      console.error("[fretes2] erro ao carregar cadastros atuais:", e);
+
+      if (!options.background) {
+        setStatus("⚠️ Não foi possível carregar os cadastros atuais. Tente novamente.");
+      }
+
+      recordPerformance("cadastros-total", startedAt);
+      return false;
+    }
+  }
+
+  async function ensureDirectoryReady(options = {}) {
+    if (
+      STATE.directoryReady &&
+      DIRECTORY.regionais.length > 0 &&
+      Object.keys(DIRECTORY.filiaisPorRegional || {}).length > 0
+    ) {
+      return true;
     }
 
-    rebuildContactPhoneMap();
-    recordPerformance("cadastros-total", startedAt);
+    if (STATE.directoryPromise) {
+      return await STATE.directoryPromise;
+    }
+
+    const promise = carregarCadastrosFretes(options);
+    STATE.directoryPromise = promise;
+
+    try {
+      const ok = await promise;
+      fillModalSelectors();
+      return ok;
+    } finally {
+      if (STATE.directoryPromise === promise) {
+        STATE.directoryPromise = null;
+      }
+    }
   }
 
   function getPesoFromUI(id, fallback) {
@@ -2293,12 +2287,26 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     }
   }
 
-  function openNewModal() {
+  async function openNewModal() {
+    const ok = await ensureDirectoryReady();
+
+    if (!ok) {
+      alert("Não foi possível carregar o cadastro atual de Regionais e Filiais.\n\nTente novamente em alguns segundos.");
+      return;
+    }
+
     clearModalFields();
     modalShow(true);
   }
 
-  function openEditModal(row) {
+  async function openEditModal(row) {
+    const ok = await ensureDirectoryReady();
+
+    if (!ok) {
+      alert("Não foi possível carregar o cadastro atual de Regionais e Filiais.\n\nTente novamente em alguns segundos.");
+      return;
+    }
+
     clearModalFields();
     fillModalFromRow(row);
     modalShow(true);
@@ -2753,6 +2761,9 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     const initStartedAt = nowPerformance();
     ensureFloatingHorizontalBar();
 
+    // Começa vazio de propósito. O modal só recebe opções depois que
+    // o cadastro atual vier do backend.
+    DIRECTORY = emptyDirectory();
     rebuildContactPhoneMap();
     fillModalSelectors();
 
@@ -2767,12 +2778,20 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     setStatus("🔐 Validando sessão...");
     await waitForPortalReady();
 
+    // Fretes e cadastros podem carregar juntos, mas o cadastro antigo
+    // nunca é usado como fallback.
     const fretesPromise = atualizar();
-    void carregarCadastrosFretes({ background: true })
-      .then(() => fillModalSelectors())
-      .catch((error) => console.error("[fretes2] falha ao atualizar cadastros em segundo plano:", error));
+    const directoryPromise = ensureDirectoryReady({ background: true });
 
-    await fretesPromise;
+    const [directoryOk] = await Promise.all([
+      directoryPromise,
+      fretesPromise
+    ]);
+
+    if (!directoryOk) {
+      setStatus("⚠️ Fretes carregados, mas os cadastros atuais não responderam. Clique em Novo Frete para tentar novamente.");
+    }
+
     recordPerformance("inicializacao", initStartedAt);
 
     setTimeout(syncFloatingHorizontalBar, 200);

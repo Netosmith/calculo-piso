@@ -1,11 +1,7 @@
-name: Deploy Games Worker
+name: Deploy Portal Worker (Manual)
+# Produção protegida: publicar o Worker somente por execução manual.
+# Evita que uma alteração de código substitua automaticamente a versão estável.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'games/**'
-      - 'worker/**'
-      - '.github/workflows/deploy-games-worker.yml'
   workflow_dispatch:
 permissions:
   contents: read

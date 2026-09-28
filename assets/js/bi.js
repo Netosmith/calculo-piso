@@ -13,7 +13,8 @@
     comercialRows: [],
     comercialFiltradas: [],
     regionais: [],
-    regionaisLoaded: false,
+    filiaisCadastro: [],
+    diretorioLoaded: false,
     charts: {},
     autoRefreshTimer: null,
     isLoading: false,
@@ -446,7 +447,6 @@
   }
 
   function loadCommonFilterOptions(rows) {
-    fillSelect($("#fFilial"), rows.map((r) => r.filial), "Todas as filiais");
     fillSelect($("#fCliente"), rows.map((r) => r.cliente), "Todos os clientes");
     fillSelect($("#fStatus"), rows.map((r) => r.status), "Todos os status");
   }
@@ -454,38 +454,147 @@
   function normalizeRegionalCatalogRow(row) {
     return {
       regional: upper(firstValue(row, ["regional", "Regional", "nome", "Nome"])),
+      base: upper(firstValue(row, ["base", "Base"])),
       ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
       ordem: num(firstValue(row, ["ordem", "Ordem"]))
     };
   }
 
-  async function loadRegionalFilterOptions(rows = [], forceCatalog = false) {
-    const regionalFromRows = rows.map((row) => upper(row.regional)).filter(Boolean);
+  function normalizeFilialCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional"])),
+      filial: upper(firstValue(row, ["filial", "Filial", "nomeFilial"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
 
-    if (forceCatalog || !STATE.regionaisLoaded) {
-      try {
-        const res = await portalCall("cadastros", "read", {
-          resource: "regionais",
-          operation: "list"
-        });
+  function selectedBaseCode() {
+    const origemDados = upper($("#fOrigemDados")?.value);
+    if (origemDados === "FRETES") return "GO";
+    if (origemDados === "FRETES2") return "MT";
+    return "";
+  }
 
-        STATE.regionais = extractRows(res)
-          .map(normalizeRegionalCatalogRow)
-          .filter((row) => row.regional && row.ativo !== "NÃO" && row.ativo !== "NAO")
-          .sort((a, b) =>
-            (a.ordem - b.ordem) ||
-            a.regional.localeCompare(b.regional, "pt-BR")
-          )
-          .map((row) => row.regional);
+  function origemDadosForBase(base) {
+    const value = upper(base);
+    if (value === "GO") return "FRETES";
+    if (value === "MT") return "FRETES2";
+    return "";
+  }
 
-        STATE.regionaisLoaded = true;
-      } catch (error) {
-        console.warn("[bi] não foi possível carregar o cadastro de regionais:", error);
-      }
+  function activeCatalogRow(row) {
+    return row?.ativo !== "NÃO" && row?.ativo !== "NAO";
+  }
+
+  function regionalBase(regional) {
+    const key = upper(regional);
+    return STATE.regionais.find((row) => row.regional === key)?.base || "";
+  }
+
+  function currentModeRows() {
+    const mode = getMode();
+    if (mode === "HISTORICO") return STATE.historicoRows;
+    if (mode === "COMERCIAL") return STATE.comercialRows;
+    return STATE.atualRows;
+  }
+
+  async function loadDirectoryCatalog(force = false) {
+    if (!force && STATE.diretorioLoaded) return;
+
+    const results = await Promise.allSettled([
+      portalCall("cadastros", "read", {
+        resource: "regionais",
+        operation: "list"
+      }),
+      portalCall("cadastros", "read", {
+        resource: "filiais",
+        operation: "list"
+      })
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      STATE.regionais = extractRows(results[0].value)
+        .map(normalizeRegionalCatalogRow)
+        .filter((row) => row.regional && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.regional.localeCompare(b.regional, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar REGIONAIS:", results[0].reason);
     }
 
-    const values = [...STATE.regionais, ...regionalFromRows];
-    fillSelect($("#fRegional"), values, "Todas as regionais");
+    if (results[1].status === "fulfilled") {
+      STATE.filiaisCadastro = extractRows(results[1].value)
+        .map(normalizeFilialCatalogRow)
+        .filter((row) => row.filial && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.filial.localeCompare(b.filial, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar FILIAIS:", results[1].reason);
+    }
+
+    STATE.diretorioLoaded =
+      results.some((result) => result.status === "fulfilled");
+  }
+
+  async function loadDependentFilterOptions(rows = [], forceCatalog = false) {
+    await loadDirectoryCatalog(forceCatalog);
+
+    const base = selectedBaseCode();
+    const origemDados = origemDadosForBase(base);
+    const currentRegional = upper($("#fRegional")?.value);
+
+    const regionaisCatalogo = STATE.regionais
+      .filter((row) => !base || row.base === base)
+      .map((row) => row.regional);
+
+    const regionaisDosDados = rows
+      .filter((row) => !origemDados || upper(row.origemDados) === origemDados)
+      .map((row) => upper(row.regional))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fRegional"),
+      [...regionaisCatalogo, ...regionaisDosDados],
+      "Todas as regionais"
+    );
+
+    const regional = upper($("#fRegional")?.value || currentRegional);
+    if (
+      regional &&
+      ![...$("#fRegional")?.options || []].some((option) => option.value === regional)
+    ) {
+      $("#fRegional").value = "";
+    }
+
+    const selectedRegional = upper($("#fRegional")?.value);
+
+    const filiaisCatalogo = STATE.filiaisCadastro
+      .filter((row) => {
+        if (selectedRegional && row.regional !== selectedRegional) return false;
+        if (base && regionalBase(row.regional) !== base) return false;
+        return true;
+      })
+      .map((row) => row.filial);
+
+    const filiaisDosDados = rows
+      .filter((row) => {
+        if (origemDados && upper(row.origemDados) !== origemDados) return false;
+        if (selectedRegional && upper(row.regional) !== selectedRegional) return false;
+        return true;
+      })
+      .map((row) => upper(row.filial))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fFilial"),
+      [...filiaisCatalogo, ...filiaisDosDados],
+      "Todas as filiais"
+    );
   }
 
   function loadCommercialFilterOptions(rows) {
@@ -1768,7 +1877,7 @@
         STATE.atualRows = await loadCurrentRows();
       }
       loadCommonFilterOptions(STATE.atualRows);
-      await loadRegionalFilterOptions(STATE.atualRows, forceCatalog);
+      await loadDependentFilterOptions(STATE.atualRows, forceCatalog);
       return;
     }
 
@@ -1777,7 +1886,7 @@
         STATE.historicoRows = await loadHistoricalRows();
       }
       loadCommonFilterOptions(STATE.historicoRows);
-      await loadRegionalFilterOptions(STATE.historicoRows, forceCatalog);
+      await loadDependentFilterOptions(STATE.historicoRows, forceCatalog);
       loadHistoricalMonthOptions(STATE.historicoRows);
       return;
     }
@@ -1787,7 +1896,7 @@
         STATE.comercialRows = await loadCommercialRows();
       }
       loadCommonFilterOptions(STATE.comercialRows);
-      await loadRegionalFilterOptions(STATE.comercialRows, forceCatalog);
+      await loadDependentFilterOptions(STATE.comercialRows, forceCatalog);
       loadCommercialFilterOptions(STATE.comercialRows);
     }
   }
@@ -1867,7 +1976,7 @@
     if ($("#fMesReferencia")) $("#fMesReferencia").disabled = !historical;
   }
 
-  function clearFilters() {
+  async function clearFilters() {
     [
       "#fRegional", "#fFilial", "#fCliente", "#fStatus", "#fOrigemDados", "#fBusca",
       "#fOrigem", "#fDestino", "#fProduto", "#fTipoEvento", "#fMesReferencia"
@@ -1876,6 +1985,7 @@
       if (el) el.value = "";
     });
 
+    await loadDependentFilterOptions(currentModeRows(), false);
     renderMode();
   }
 
@@ -1902,7 +2012,20 @@
       await loadData(true, false);
     });
 
-    ["#fRegional", "#fFilial", "#fCliente", "#fStatus", "#fOrigemDados"].forEach((selector) => {
+    $("#fOrigemDados")?.addEventListener("change", async () => {
+      $("#fRegional").value = "";
+      $("#fFilial").value = "";
+      await loadDependentFilterOptions(currentModeRows(), false);
+      renderMode();
+    });
+
+    $("#fRegional")?.addEventListener("change", async () => {
+      $("#fFilial").value = "";
+      await loadDependentFilterOptions(currentModeRows(), false);
+      renderMode();
+    });
+
+    ["#fFilial", "#fCliente", "#fStatus"].forEach((selector) => {
       $(selector)?.addEventListener("change", () => renderMode());
     });
 

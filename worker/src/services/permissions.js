@@ -102,7 +102,7 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
   if (
     moduleName === "cadastros" &&
     actionName === "read" &&
-    resource === "REGIONAIS"
+    ["REGIONAIS", "FILIAIS"].includes(resource)
   ) {
     const features = PROFILE_FEATURES[profile] || [];
     return ADMIN_PROFILES.has(profile) || features.includes("bi");

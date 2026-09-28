@@ -1169,8 +1169,22 @@
     .nfM4Label{display:flex;align-items:center;gap:7px;color:#496985;font-size:17px;font-weight:900;white-space:nowrap}
     .nfM4Label b{color:#0ca768;font-size:20px}
     .nfM4City{
-      width:100%;height:48px;margin-top:4px;display:flex;align-items:center;color:#062f68;
-      font-size:34px;line-height:1;font-weight:950;text-transform:uppercase;overflow:hidden;white-space:nowrap
+      width:100%;
+      height:62px;
+      margin-top:4px;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+      color:#062f68;
+      font-size:34px;
+      line-height:.96;
+      font-weight:950;
+      letter-spacing:-.35px;
+      text-transform:uppercase;
+      white-space:normal;
+      overflow-wrap:break-word;
+      word-break:normal
     }
     .nfM4Detail{
       width:100%;height:31px;margin-top:3px;padding:0 10px;box-sizing:border-box;display:flex;align-items:center;
@@ -1194,12 +1208,13 @@
 
     .nfM4Canvas.count-2 .nfM4Frete{grid-template-columns:92px minmax(0,1fr) 285px;padding:20px 20px}
     .nfM4Canvas.count-2 .nfM4Num{font-size:48px}
-    .nfM4Canvas.count-2 .nfM4City{height:60px;font-size:43px}
+    .nfM4Canvas.count-2 .nfM4City{height:84px;font-size:40px;line-height:.94}
     .nfM4Canvas.count-2 .nfM4Detail{height:38px;font-size:22px}
     .nfM4Canvas.count-2 .nfM4Product strong{font-size:33px;height:38px}
     .nfM4Canvas.count-2 .nfM4Price strong{font-size:50px;height:58px}
-    .nfM4Canvas.count-3 .nfM4City{font-size:38px}
+    .nfM4Canvas.count-3 .nfM4City{height:68px;font-size:34px;line-height:.94}
     .nfM4Canvas.count-3 .nfM4Price strong{font-size:43px}
+    .nfM4Canvas.count-4 .nfM4City{height:56px;font-size:29px;line-height:.94}
 
     .nfM4Contacts{
       height:150px;margin-top:18px;display:grid;grid-template-columns:350px minmax(0,1fr);
@@ -1570,7 +1585,7 @@
 
   <script src="../assets/js/api.js?v=5"></script>
   <script src="../assets/js/auth.js?v=6"></script>
-  <script src="../assets/js/fretes.js?v=23"></script>
+  <script src="../assets/js/fretes.js?v=24"></script>
   <script>
     bindLogoutButton();
   </script>

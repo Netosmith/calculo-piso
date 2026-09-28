@@ -1023,8 +1023,22 @@ function formatDateTimeBR(value) {
       if (cb.checked) STATE.selectedIds.add(id);
       else STATE.selectedIds.delete(id);
 
+      const selected = getSelectedRows();
+
+      if (selected.length > 4) {
+        STATE.selectedIds.delete(id);
+        cb.checked = false;
+        alert("O MOD 04 permite no máximo 4 fretes na mesma arte.");
+      }
+
       updateBulkUI();
-      renderPreview(row);
+
+      if (getSelectedRows().length >= 2) {
+        STATE.previewRow = getSelectedRows()[0] || row;
+        syncMultiFreteModelNF(getSelectedRows());
+      } else {
+        renderPreview(row);
+      }
     });
 
     td.appendChild(cb);
@@ -1474,9 +1488,10 @@ function formatDateTimeBR(value) {
         localStorage.setItem(migrationKey, "1");
       } else {
         const saved = localStorage.getItem("nf_divulgacao_modelo");
-        modelo = saved == null || saved === ""
+        const normalized = saved == null || saved === ""
           ? 3
           : normalizePreviewModelNF(saved);
+        modelo = normalized === 4 ? 3 : normalized;
       }
     } catch {
       modelo = 3;
@@ -1605,8 +1620,9 @@ function formatDateTimeBR(value) {
     const contactsEl = document.getElementById("nfM4ContactsGrid");
     if (!canvas || !fretesEl || !contactsEl) return;
 
-    const valid = Array.isArray(rows) ? rows.slice(0, 4) : [];
-    const n = valid.length;
+    const sourceRows = Array.isArray(rows) ? rows : [];
+    const n = sourceRows.length;
+    const valid = n >= 2 && n <= 4 ? sourceRows : [];
 
     canvas.classList.remove("ready", "count-2", "count-3", "count-4");
     fretesEl.innerHTML = "";
@@ -2039,6 +2055,39 @@ function buildMessage(row) {
     return STATE.rows.filter((r) => STATE.selectedIds.has(safeText(r.id)));
   }
 
+  function syncMultiFreteModelNF(selectedRows) {
+    const selected = Array.isArray(selectedRows) ? selectedRows : getSelectedRows();
+    const n = selected.length;
+    const current = normalizePreviewModelNF(STATE.previewModel);
+
+    if (n >= 2 && n <= 4) {
+      if (current !== 4) {
+        STATE.previewModel = 4;
+        syncPreviewModelUI();
+      }
+
+      const badge = document.getElementById("nfPreviewProdutoBadge");
+      if (badge) badge.textContent = `${n} FRETES`;
+
+      renderModel4PreviewNF(selected);
+      return true;
+    }
+
+    if (current === 4) {
+      STATE.previewModel = 3;
+      syncPreviewModelUI();
+
+      const row = selected[0] || STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
+      if (row) {
+        const d = divulgacaoDataFromRow(row);
+        const badge = document.getElementById("nfPreviewProdutoBadge");
+        if (badge) badge.textContent = d.productFamily;
+      }
+    }
+
+    return false;
+  }
+
   function updateBulkUI() {
   const selected = getSelectedRows();
   const n = selected.length;
@@ -2059,9 +2108,7 @@ function buildMessage(row) {
       visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
   }
 
-  if (normalizePreviewModelNF(STATE.previewModel) === 4) {
-    renderModel4PreviewNF(selected);
-  }
+  syncMultiFreteModelNF(selected);
 
   const msg = document.getElementById("nfMensagemPronta");
   if (msg) {
@@ -2928,6 +2975,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       const visible = getFilteredRows().filter((r) => safeText(r.id));
       const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
 
+      if (!allSelected && visible.length > 4) {
+        alert("Para o MOD 04, selecione manualmente de 2 a 4 fretes.");
+        return;
+      }
+
       visible.forEach((r) => {
         if (allSelected) STATE.selectedIds.delete(safeText(r.id));
         else STATE.selectedIds.add(safeText(r.id));
@@ -2935,12 +2987,25 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
       applyFilters();
       updateBulkUI();
+
+      const selected = getSelectedRows();
+      if (selected.length >= 2 && selected.length <= 4) {
+        STATE.previewRow = selected[0];
+        syncMultiFreteModelNF(selected);
+      }
     });
 
     document.getElementById("nfSelectAll")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
 
-      getFilteredRows().forEach((r) => {
+      if (checked && visible.length > 4) {
+        e.target.checked = false;
+        alert("Para o MOD 04, selecione manualmente de 2 a 4 fretes.");
+        return;
+      }
+
+      visible.forEach((r) => {
         const id = safeText(r.id);
         if (!id) return;
 
@@ -2950,6 +3015,12 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
       applyFilters();
       updateBulkUI();
+
+      const selected = getSelectedRows();
+      if (selected.length >= 2 && selected.length <= 4) {
+        STATE.previewRow = selected[0];
+        syncMultiFreteModelNF(selected);
+      }
     });
 
     document.getElementById("btnGerarPacoteJPG")?.addEventListener("click", gerarPacoteJPG);

@@ -48,3 +48,13 @@ jobs:
           npx wrangler versions view dbed9987-e03e-4b1c-8f14-4fcad14d5cf3 --json
           echo "=== PROBLEMATICA ==="
           npx wrangler versions view 86921bff-b948-4ec0-b18c-79259fe9cdb9 --json
+
+
+      - name: Testar gateway público
+        run: |
+          echo "=== workers.dev ==="
+          curl -fsS --max-time 20 https://portalfrete-api.luziano-transportes.workers.dev/v1/gateway-test
+          echo
+          echo "=== dominio ==="
+          curl -fsS --max-time 20 https://api.portalfrete.net.br/v1/gateway-test
+          echo

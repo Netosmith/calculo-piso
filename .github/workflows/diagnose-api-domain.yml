@@ -21,17 +21,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          ZONE_JSON=$(curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones?name=portalfrete.net.br")
+          ZONE_JSON=$(curl -sS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones?name=portalfrete.net.br")
 
           ZONE_ID=$(echo "$ZONE_JSON" | jq -r '.result[0].id // empty')
           echo "ZONE_ID_PRESENT=$([ -n "$ZONE_ID" ] && echo yes || echo no)"
           test -n "$ZONE_ID"
 
           echo "=== DNS api.portalfrete.net.br ==="
-          curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=api.portalfrete.net.br"             | jq '{success, result: [.result[] | {id,type,name,content,proxied}]}'
+          curl -sS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=api.portalfrete.net.br"             | jq '{success, errors, result: [(.result // [])[] | {id,type,name,content,proxied}]}'
 
           echo "=== Worker routes ==="
-          curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes"             | jq '{success, result: [.result[] | {id,pattern,script}]}'
+          curl -sS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes"             | jq '{success, errors, result: [(.result // [])[] | {id,pattern,script}]}'
 
           echo "=== Worker custom domains ==="
-          curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/domains"             | jq '{success, result: [.result[] | {id,hostname,service,environment,zone_id}]}'
+          curl -sS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/domains"             | jq '{success, errors, result: [(.result // [])[] | {id,hostname,service,environment,zone_id}]}'

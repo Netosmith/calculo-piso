@@ -20,6 +20,24 @@ const num=v=>{
 };
 const ton=v=>num(v).toLocaleString("pt-BR",{maximumFractionDigits:2})+" t";
 
+function recordId(value){
+  return safe(value).normalize("NFKC");
+}
+
+function sameRecordId(a,b){
+  const left=recordId(a);
+  const right=recordId(b);
+  return !!left && left===right;
+}
+
+function findEmbarqueById(id){
+  return S.rows.find(item=>sameRecordId(item.id,id))||null;
+}
+
+function findVeiculoById(embarque,id){
+  return (embarque?.veiculos||[]).find(item=>sameRecordId(item.id,id))||null;
+}
+
 const STATUS_EMBARQUE=["AGENDADO","EM ANDAMENTO","EM ATRASO","CONCLUÍDO","CANCELADO"];
 const STATUS_VEICULO=["PORTA","CARREGANDO","CARREGADO","TRÂNSITO","FINALIZADO","CANCELADO"];
 
@@ -160,7 +178,7 @@ async function carregarDados(){
     renderDashboard();
 
     if(S.filial)renderFilial();
-    if(S.id&&S.rows.some(e=>e.id===S.id))openDetalhe(S.id,false);
+    if(S.id&&S.rows.some(e=>sameRecordId(e.id,S.id)))openDetalhe(S.id,false);
 
     sync("✅ Dados atualizados");
   }catch(err){
@@ -212,7 +230,7 @@ function filenamePart(value){
 }
 
 function getEmbarqueAtual(){
-  return S.rows.find(x=>x.id===S.id)||null;
+  return findEmbarqueById(S.id)||null;
 }
 
 function resumo(){
@@ -361,24 +379,26 @@ function renderFilial(){
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll("[data-open]").forEach(btn=>{
-    btn.onclick=()=>openDetalhe(btn.dataset.open);
-  });
+  Array.from(tbody.querySelectorAll("tr")).forEach((tr,index)=>{
+    const embarque=rows[index];
+    if(!embarque)return;
 
-  tbody.querySelectorAll("[data-edit-embarque]").forEach(btn=>{
-    btn.onclick=()=>openEmbarqueModal(btn.dataset.editEmbarque);
-  });
+    const btnOpen=tr.querySelector("[data-open]");
+    const btnEdit=tr.querySelector("[data-edit-embarque]");
+    const btnDelete=tr.querySelector("[data-del]");
+    const status=tr.querySelector("[data-status-embarque]");
 
-  tbody.querySelectorAll("[data-status-embarque]").forEach(select=>{
-    select.onchange=()=>atualizarStatusEmbarque(
-      select.dataset.statusEmbarque,
-      select.value,
-      select
-    );
-  });
+    if(btnOpen)btnOpen.onclick=()=>openDetalhe(embarque.id);
+    if(btnEdit)btnEdit.onclick=()=>openEmbarqueModal(embarque);
+    if(btnDelete)btnDelete.onclick=()=>deleteEmbarque(embarque.id);
 
-  tbody.querySelectorAll("[data-del]").forEach(btn=>{
-    btn.onclick=()=>deleteEmbarque(btn.dataset.del);
+    if(status){
+      status.onchange=()=>atualizarStatusEmbarque(
+        embarque.id,
+        status.value,
+        status
+      );
+    }
   });
 
   const todos=S.rows.filter(e=>upper(e.filial)===upper(S.filial));
@@ -401,7 +421,7 @@ function renderFilial(){
 }
 
 function openDetalhe(id,changeView=true){
-  const e=S.rows.find(x=>x.id===id);
+  const e=findEmbarqueById(id);
   if(!e)return;
 
   S.id=id;
@@ -482,7 +502,7 @@ function renderVeiculos(e){
 }
 
 async function atualizarStatusEmbarque(id,novoStatus,select){
-  const embarque=S.rows.find(x=>x.id===id);
+  const embarque=findEmbarqueById(id);
   if(!embarque)return;
 
   const anterior=embarque.status;
@@ -495,7 +515,7 @@ async function atualizarStatusEmbarque(id,novoStatus,select){
     await carregarDados();
 
     if(S.filial)renderFilial();
-    if(S.id===id)openDetalhe(id,false);
+    if(sameRecordId(S.id,id))openDetalhe(id,false);
 
     sync("✅ Status atualizado");
   }catch(err){
@@ -509,8 +529,8 @@ async function atualizarStatusEmbarque(id,novoStatus,select){
 }
 
 async function atualizarSituacaoVeiculo(id,novaSituacao,select){
-  const embarque=S.rows.find(x=>x.id===S.id);
-  const veiculo=embarque?.veiculos?.find(v=>v.id===id);
+  const embarque=findEmbarqueById(S.id);
+  const veiculo=findVeiculoById(embarque,id);
   if(!veiculo)return;
 
   const anterior=veiculo.situacao;
@@ -688,17 +708,24 @@ function modal(id,on){
   $("#"+id)?.classList.toggle("show",on);
 }
 
-function openEmbarqueModal(id=""){
-  S.embarqueEditId=safe(id);
+function openEmbarqueModal(target=""){
+  const embarque=
+    target && typeof target==="object"
+      ? target
+      : findEmbarqueById(target);
+
+  S.embarqueEditId=embarque?recordId(embarque.id):recordId(target);
 
   const titulo=$("#tituloModalEmbarque");
   const btnSalvar=$("#salvarEmbarque");
 
   if(S.embarqueEditId){
-    const embarque=S.rows.find(e=>e.id===S.embarqueEditId);
-
     if(!embarque){
-      alert("Embarque não encontrado.");
+      console.warn("[CONTROLE] embarque não localizado para edição",{
+        id:S.embarqueEditId,
+        idsDisponiveis:S.rows.map(item=>recordId(item.id))
+      });
+      alert("Não foi possível localizar este embarque na lista atual. Atualize a página e tente novamente.");
       S.embarqueEditId="";
       return;
     }
@@ -801,7 +828,7 @@ async function salvarEmbarque(){
 }
 
 async function deleteEmbarque(id){
-  const e=S.rows.find(x=>x.id===id);
+  const e=findEmbarqueById(id);
   if(!e||!confirm("Excluir este embarque e seus veículos?"))return;
 
   setLoading(true,"⏳ Excluindo embarque...");
@@ -836,7 +863,7 @@ function fecharVeiculoModal(){
 }
 
 function openVeiculoModal(id=""){
-  const embarque=S.rows.find(x=>x.id===S.id);
+  const embarque=findEmbarqueById(S.id);
   if(!embarque)return;
 
   S.veiculoEditId=safe(id);
@@ -845,7 +872,7 @@ function openVeiculoModal(id=""){
   const btnSalvar=$("#salvarVeiculo");
 
   if(S.veiculoEditId){
-    const veiculo=(embarque.veiculos||[]).find(v=>v.id===S.veiculoEditId);
+    const veiculo=findVeiculoById(embarque,S.veiculoEditId);
 
     if(!veiculo){
       alert("Veículo não encontrado.");
@@ -882,7 +909,7 @@ function openVeiculoModal(id=""){
 }
 
 async function salvarVeiculo(){
-  const embarque=S.rows.find(x=>x.id===S.id);
+  const embarque=findEmbarqueById(S.id);
   if(!embarque)return;
 
   const payload={
@@ -948,7 +975,7 @@ async function salvarVeiculo(){
 }
 
 async function deleteVeiculo(id){
-  const embarque=S.rows.find(x=>x.id===S.id);
+  const embarque=findEmbarqueById(S.id);
   if(!embarque||!confirm("Excluir este veículo?"))return;
 
   setLoading(true,"⏳ Excluindo veículo...");

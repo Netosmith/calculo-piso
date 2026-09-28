@@ -16,6 +16,116 @@ const ESTADIAS_PRECISION_FIELDS = [
   "pesoDestino"
 ];
 
+const REGIONAL_BASE_PREFIX = "cadastros:regional-base:v1:";
+
+const REGIONAL_BASE_DEFAULTS = Object.freeze({
+  "GOIAS": "GO",
+  "SAO PAULO": "GO",
+  "MINAS": "GO",
+  "MT SUL": "MT",
+  "VALE DO ARAGUAIA": "MT",
+  "MT OESTE": "MT",
+  "BR163 SUL": "MT",
+  "BR163 NORTE": "MT",
+  "INDUSTRIAL": "MT",
+  "FERTILIZANTES": "MT",
+  "AGENCIA DANILO": "MT"
+});
+
+function normalizeRegionalBase(value) {
+  const base = String(value || "").trim().toUpperCase();
+  return base === "GO" || base === "MT" ? base : "";
+}
+
+function regionalName(value) {
+  return String(
+    value?.regional ||
+    value?.Regional ||
+    value?.nome ||
+    value?.Nome ||
+    ""
+  ).trim().toUpperCase();
+}
+
+function regionalId(value) {
+  return String(value?.id || value?.ID || "").trim();
+}
+
+function regionalBaseKvKeys(value) {
+  const keys = [];
+  const id = regionalId(value);
+  const name = regionalName(value);
+
+  if (id) keys.push(`${REGIONAL_BASE_PREFIX}id:${id}`);
+  if (name) keys.push(`${REGIONAL_BASE_PREFIX}name:${encodeURIComponent(name)}`);
+
+  return keys;
+}
+
+async function readRegionalBase(env, row) {
+  const inline = normalizeRegionalBase(row?.base || row?.Base);
+  if (inline) return inline;
+
+  if (env?.SESSIONS) {
+    for (const key of regionalBaseKvKeys(row)) {
+      try {
+        const stored = normalizeRegionalBase(await env.SESSIONS.get(key));
+        if (stored) return stored;
+      } catch (error) {
+        console.warn("[CADASTROS] Falha ao ler base da regional no KV", {
+          key,
+          message: String(error?.message || error)
+        });
+      }
+    }
+  }
+
+  return REGIONAL_BASE_DEFAULTS[regionalName(row)] || "";
+}
+
+async function writeRegionalBase(env, row, baseValue) {
+  const base = normalizeRegionalBase(baseValue);
+  if (!env?.SESSIONS || !base) return base;
+
+  const keys = regionalBaseKvKeys(row);
+  if (!keys.length) return base;
+
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        await env.SESSIONS.put(key, base);
+      } catch (error) {
+        console.warn("[CADASTROS] Falha ao salvar base da regional no KV", {
+          key,
+          message: String(error?.message || error)
+        });
+      }
+    })
+  );
+
+  return base;
+}
+
+async function overlayRegionalBase(env, data) {
+  if (Array.isArray(data)) {
+    await Promise.all(
+      data.map(async (row) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) return;
+        const base = await readRegionalBase(env, row);
+        if (base) row.base = base;
+      })
+    );
+    return data;
+  }
+
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const base = await readRegionalBase(env, data);
+    if (base) data.base = base;
+  }
+
+  return data;
+}
+
 function normalizeKey(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -318,6 +428,44 @@ export async function portalGatewayController(request, env) {
 
       if (actionName === "delete") {
         await deleteEstadiaPrecision(env, String(params.id || "").trim());
+      }
+    }
+
+    // O Apps Script de Cadastros ainda trabalha com o esquema antigo de
+    // REGIONAIS e pode não devolver a coluna "base" mesmo ela existindo
+    // fisicamente na planilha. Mantemos a base GO/MT no gateway para que
+    // Cadastro e B.I. recebam a informação completa sem perder compatibilidade.
+    if (
+      moduleName === "cadastros" &&
+      resourceName === "regionais"
+    ) {
+      if (actionName === "read") {
+        result.data = await overlayRegionalBase(env, result.data);
+      }
+
+      if (actionName === "create" || actionName === "update") {
+        const base = normalizeRegionalBase(params.base);
+        const reference = {
+          ...(result.data && typeof result.data === "object" && !Array.isArray(result.data)
+            ? result.data
+            : {}),
+          id: params.id || result.data?.id || result.data?.ID || "",
+          regional:
+            params.regional ||
+            result.data?.regional ||
+            result.data?.Regional ||
+            ""
+        };
+
+        if (base) {
+          await writeRegionalBase(env, reference, base);
+
+          if (result.data && typeof result.data === "object" && !Array.isArray(result.data)) {
+            result.data.base = base;
+          }
+        } else {
+          result.data = await overlayRegionalBase(env, result.data);
+        }
       }
     }
 

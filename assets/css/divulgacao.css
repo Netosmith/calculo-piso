@@ -1043,3 +1043,124 @@
     transform:scale(.28125);
   }
 }
+
+
+/* =========================================================
+   MODELO 4 MANUAL - MULTI FRETES | 2, 3 ou 4 FRETES
+========================================================= */
+.multiTemplateCard{border:1px solid #dbe7f3;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
+.multiTemplateCard .templateHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.multiBadge{
+  display:inline-flex;align-items:center;justify-content:center;min-width:88px;height:28px;padding:0 12px;
+  border-radius:999px;background:#073e7d;color:#fff;font-size:10px;font-weight:950;letter-spacing:.08em
+}
+.multiManualLayout{display:grid;grid-template-columns:minmax(520px,1fr) 440px;gap:28px;align-items:start}
+.multiManualForm{display:flex;flex-direction:column;gap:14px}
+.multiFreteEditor{
+  padding:15px;border:1px solid #dbe6ef;border-radius:16px;background:#f9fbfd
+}
+.multiFreteEditorHead{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#07366f;font-size:13px;font-weight:900
+}
+.multiFreteEditorHead span{
+  display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:9px;background:#073e7d;color:#fff
+}
+.multiEditorGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.multiEditorField{min-width:0;display:flex;flex-direction:column;gap:6px}
+.multiEditorField label{font-size:11px;color:#334155;font-weight:800}
+.multiEditorField input{
+  width:100%;height:37px;box-sizing:border-box;padding:0 11px;border:1px solid #cbd8e6;border-radius:10px;
+  background:#fff;color:#0f172a;font:inherit;outline:none
+}
+.multiEditorField input:focus{border-color:#18b978;box-shadow:0 0 0 2px rgba(24,185,120,.12)}
+.multiSharedEditor{
+  padding:15px;border:1px solid #dbe6ef;border-radius:16px;background:#f4f9fc
+}
+.multiSharedGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.multiSharedGrid .wide{grid-column:1/-1}
+.multiManualActions{display:flex;gap:10px;flex-wrap:wrap}
+.multiManualActions button{
+  min-height:38px;padding:0 15px;border-radius:10px;border:1px solid #cbd8e6;background:#fff;color:#07366f;font-weight:850;cursor:pointer
+}
+.multiManualActions .save{background:#12bd75;color:#fff;border-color:#12bd75}
+.multiPreviewColumn{width:440px}
+.multiPreviewLabel{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;color:#0f172a}
+.multiPreviewLabel span{color:#64748b;font-size:11px}
+.multiPreviewShell{
+  width:405px;height:506.25px;margin:0 auto;position:relative;overflow:hidden;border-radius:20px;
+  background:#eaf1f6;box-shadow:0 18px 42px rgba(15,23,42,.23)
+}
+.multiArt{
+  width:1080px;height:1350px;transform:scale(.375);transform-origin:top left;position:relative;overflow:hidden;
+  background:#f4f8fb;font-family:Arial,Helvetica,sans-serif;color:#072f65;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased
+}
+.multiArtHero{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;background:#eaf2f7}
+.multiArtHeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 47%;opacity:.72}
+.multiArtHeroWash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%)}
+.multiArtLogo{position:absolute;z-index:3;top:28px;left:50%;transform:translateX(-50%);width:350px;height:auto}
+.multiArtTitle{position:absolute;z-index:3;left:48px;bottom:67px;font-size:74px;line-height:.92;font-weight:950;letter-spacing:-2.5px;color:#07366f}
+.multiArtTitle strong{color:#08a968}
+.multiArtSubtitle{position:absolute;z-index:3;left:52px;bottom:29px;font-size:24px;letter-spacing:3px;font-weight:850;color:#254d76}
+.multiArtBody{
+  position:absolute;z-index:5;left:0;right:0;top:300px;height:870px;box-sizing:border-box;padding:24px 34px 22px;
+  background:linear-gradient(180deg,#f9fbfd,#eef5f9)
+}
+.multiArtFretes{height:650px;display:grid;gap:14px}
+.multiArt.count-2 .multiArtFretes{grid-template-rows:repeat(2,1fr)}
+.multiArt.count-3 .multiArtFretes{grid-template-rows:repeat(3,1fr)}
+.multiArt.count-4 .multiArtFretes{grid-template-rows:repeat(4,1fr)}
+.multiArtFrete{
+  min-height:0;display:grid;grid-template-columns:78px minmax(0,1fr) 258px;gap:18px;align-items:stretch;
+  box-sizing:border-box;padding:14px 16px;border-radius:22px;background:#fff;border:2px solid #d9e5ed;
+  box-shadow:0 6px 15px rgba(24,54,83,.06);overflow:hidden
+}
+.multiArtNum{display:flex;align-items:center;justify-content:center;border-radius:16px;background:linear-gradient(155deg,#073e7d,#062f63);color:#fff;font-size:38px;font-weight:950}
+.multiArtRoute{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);align-items:center;gap:10px}
+.multiArtRouteSide{min-width:0}
+.multiArtLabel{display:flex;align-items:center;gap:7px;color:#496985;font-size:17px;font-weight:900;white-space:nowrap}
+.multiArtLabel b{color:#0ca768;font-size:20px}
+.multiArtCity{width:100%;height:48px;margin-top:4px;display:flex;align-items:center;color:#062f68;font-size:34px;line-height:1;font-weight:950;text-transform:uppercase;overflow:hidden;white-space:nowrap}
+.multiArtDetail{width:100%;height:31px;margin-top:3px;padding:0 10px;box-sizing:border-box;display:flex;align-items:center;border-radius:8px;background:#eef4f7;color:#496985;font-size:18px;font-weight:800;text-transform:uppercase;overflow:hidden;white-space:nowrap}
+.multiArtArrow{display:flex;align-items:center;justify-content:center;color:#0bb16c;font-size:34px;font-weight:950}
+.multiArtMeta{min-width:0;display:grid;grid-template-rows:1fr 1.2fr;gap:8px}
+.multiArtProduct{min-width:0;padding:9px 14px;border-radius:12px;background:#f0f5f8;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.multiArtProduct span{font-size:15px;color:#607a91;font-weight:850}
+.multiArtProduct strong{height:30px;margin-top:2px;display:flex;align-items:center;color:#07366f;font-size:27px;font-weight:950;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.multiArtPrice{min-width:0;padding:8px 12px;border-radius:13px;background:linear-gradient(145deg,#16c77d,#079d5f);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.multiArtPrice span{font-size:15px;font-weight:850}
+.multiArtPrice strong{height:44px;display:flex;align-items:center;font-size:38px;line-height:1;font-weight:950;white-space:nowrap;overflow:hidden}
+.multiArt.count-2 .multiArtFrete{grid-template-columns:92px minmax(0,1fr) 285px;padding:20px}
+.multiArt.count-2 .multiArtNum{font-size:48px}
+.multiArt.count-2 .multiArtCity{height:60px;font-size:43px}
+.multiArt.count-2 .multiArtDetail{height:38px;font-size:22px}
+.multiArt.count-2 .multiArtProduct strong{font-size:33px;height:38px}
+.multiArt.count-2 .multiArtPrice strong{font-size:50px;height:58px}
+.multiArt.count-3 .multiArtCity{font-size:38px}
+.multiArt.count-3 .multiArtPrice strong{font-size:43px}
+.multiArtContacts{
+  height:150px;margin-top:18px;display:grid;grid-template-columns:350px minmax(0,1fr);overflow:hidden;
+  border-radius:21px;background:#fff;border:2px solid #d8e4ec
+}
+.multiArtContactsIntro{display:flex;align-items:center;gap:16px;padding:18px 22px;background:#073e7d;color:#fff}
+.multiArtWa{width:72px;height:72px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#12bf74;color:#fff;font-size:39px;font-weight:950}
+.multiArtContactsIntro strong{display:block;font-size:24px;line-height:1.04}
+.multiArtContactsIntro span{display:block;margin-top:6px;color:#72efb6;font-size:19px;font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.multiArtContactsGrid{min-width:0;padding:17px 22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:53px;column-gap:20px;align-content:center}
+.multiArtContact{min-width:0;display:flex;align-items:center;gap:9px;color:#103a6c;font-size:19px;font-weight:850;white-space:nowrap;overflow:hidden;border-bottom:1px solid #e1e9ef}
+.multiArtContact:not(:empty)::before{content:"☎";color:#0caf69;font-weight:950}
+.multiArtFooter{
+  position:absolute;z-index:6;left:0;right:0;bottom:0;height:180px;box-sizing:border-box;padding:30px 48px;
+  display:flex;align-items:center;justify-content:space-between;gap:30px;background:linear-gradient(120deg,#063d78,#032b59);color:#fff;font-size:27px;line-height:1.08
+}
+.multiArtFooter b{font-size:31px}
+.multiArtFooterBenefits{display:flex;gap:24px;font-size:18px;font-weight:850}
+@media(max-width:1100px){
+  .multiManualLayout{grid-template-columns:1fr}
+  .multiPreviewColumn{width:100%}
+}
+@media(max-width:720px){
+  .multiEditorGrid,.multiSharedGrid{grid-template-columns:1fr}
+  .multiSharedGrid .wide{grid-column:1}
+  .multiPreviewShell{width:337.5px;height:421.875px}
+  .multiArt{transform:scale(.3125)}
+}

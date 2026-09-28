@@ -17,9 +17,10 @@
     },
     regionais: {
       title:"Regional", idField:"id",
-      columns:[["regional","Regional"],["ordem","Ordem"],["ativo","Status"]],
+      columns:[["regional","Regional"],["base","Base"],["ordem","Ordem"],["ativo","Status"]],
       fields:[
         {key:"regional",label:"Regional",required:true},
+        {key:"base",label:"Base",type:"select",options:["GO","MT"],required:true,hint:"Define em qual divisão do Portal esta regional será exibida."},
         {key:"ordem",label:"Ordem",type:"number"},
         {key:"ativo",label:"Ativo",type:"select",options:["SIM","NÃO"],required:true}
       ]

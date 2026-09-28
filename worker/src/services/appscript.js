@@ -61,6 +61,7 @@ function isTransientError(error) {
     message.includes("fetch failed") ||
     message.includes("network") ||
     message.includes("temporarily") ||
+    message.includes("resposta inválida do apps script (http 404)") ||
     message.includes("502") ||
     message.includes("503") ||
     message.includes("504")
@@ -80,12 +81,24 @@ function shouldRetry(payload, attempt, error) {
     context.module !== "estadias" &&
     RETRYABLE_MODULES.has(context.module);
   const isRetryableLogin = context.outerAction === "login";
+  const hasStableId = Boolean(String(context.params?.id || "").trim());
+
   const isIdempotentFretesWrite =
     context.module === "fretes" &&
     (context.action === "create" || context.action === "update") &&
-    Boolean(String(context.params?.id || "").trim());
+    hasStableId;
 
-  return isRetryableRead || isRetryableLogin || isIdempotentFretesWrite;
+  const isIdempotentCadastrosWrite =
+    context.module === "cadastros" &&
+    (context.action === "update" || context.action === "delete") &&
+    hasStableId;
+
+  return (
+    isRetryableRead ||
+    isRetryableLogin ||
+    isIdempotentFretesWrite ||
+    isIdempotentCadastrosWrite
+  );
 }
 
 function wait(ms) {

@@ -744,7 +744,315 @@
     });
   }
 
+  function fitManualMultiText(target) {
+    if (!target || !target.hasAttribute("data-multi-fit")) return;
+
+    const max = Number(target.dataset.max || 34);
+    const min = Number(target.dataset.min || 14);
+    let size = max;
+
+    target.style.fontSize = max + "px";
+    target.style.letterSpacing = "";
+    target.style.whiteSpace = "nowrap";
+
+    let guard = 0;
+    while (
+      size > min &&
+      guard < 100 &&
+      (target.scrollWidth > target.clientWidth + 1 ||
+       target.scrollHeight > target.clientHeight + 1)
+    ) {
+      size -= 1;
+      target.style.fontSize = size + "px";
+      guard += 1;
+    }
+
+    if (target.scrollWidth > target.clientWidth + 1) {
+      target.style.letterSpacing = "-0.8px";
+    }
+  }
+
+  function fitManualMulti(section) {
+    section?.querySelectorAll("[data-multi-fit]").forEach(fitManualMultiText);
+  }
+
+  function multiInput(section, field, index = null) {
+    const suffix = index == null ? "" : `[data-multi-index="${index}"]`;
+    return section.querySelector(`[data-multi-field="${field}"]${suffix}`);
+  }
+
+  function multiBind(section, field, index = null) {
+    const suffix = index == null ? "" : `[data-multi-index="${index}"]`;
+    return section.querySelector(`[data-multi-bind="${field}"]${suffix}`);
+  }
+
+  function setMultiBind(section, field, value, index = null) {
+    const el = multiBind(section, field, index);
+    if (el) el.textContent = String(value || "").toUpperCase();
+  }
+
+  function renderManualMulti(section) {
+    const count = Number(section?.dataset.multiCount || 0);
+    if (![2,3,4].includes(count)) return;
+
+    for (let i = 1; i <= count; i += 1) {
+      const read = (field) => multiInput(section, field, i)?.value?.trim() || "";
+
+      setMultiBind(section, "origem", read("origem"), i);
+      setMultiBind(section, "coleta", read("coleta"), i);
+      setMultiBind(section, "destino", read("destino"), i);
+      setMultiBind(section, "descarga", read("descarga"), i);
+      setMultiBind(section, "produto", read("produto"), i);
+      setMultiBind(section, "valor", read("valor"), i);
+    }
+
+    const filial = multiInput(section, "filial")?.value?.trim() || "NOVA FROTA";
+    setMultiBind(section, "filial", filial);
+
+    for (let i = 1; i <= 4; i += 1) {
+      const value = multiInput(section, `contato${i}`)?.value?.trim() || "";
+      setMultiBind(section, `contato${i}`, value);
+    }
+
+    requestAnimationFrame(() => fitManualMulti(section));
+  }
+
+  function buildManualMultiTemplate(section) {
+    const count = Number(section.dataset.multiCount || 0);
+    const mount = section.querySelector(".multiManualMount");
+    if (!mount || ![2,3,4].includes(count)) return;
+
+    const freteForms = Array.from({ length: count }, (_, idx) => {
+      const i = idx + 1;
+      return `
+        <div class="multiFreteEditor">
+          <div class="multiFreteEditorHead">
+            <strong>Frete ${i}</strong>
+            <span>${String(i).padStart(2,"0")}</span>
+          </div>
+          <div class="multiEditorGrid">
+            <div class="multiEditorField">
+              <label>Origem / Coleta (Cidade-UF)</label>
+              <input data-multi-field="origem" data-multi-index="${i}" placeholder="Ex: RIO VERDE-GO">
+            </div>
+            <div class="multiEditorField">
+              <label>Detalhe da coleta</label>
+              <input data-multi-field="coleta" data-multi-index="${i}" placeholder="Ex: Fazenda / Armazém">
+            </div>
+            <div class="multiEditorField">
+              <label>Destino / Descarga (Cidade-UF)</label>
+              <input data-multi-field="destino" data-multi-index="${i}" placeholder="Ex: UBERLÂNDIA-MG">
+            </div>
+            <div class="multiEditorField">
+              <label>Detalhe da descarga</label>
+              <input data-multi-field="descarga" data-multi-index="${i}" placeholder="Ex: Unidade / Terminal">
+            </div>
+            <div class="multiEditorField">
+              <label>Produto</label>
+              <input data-multi-field="produto" data-multi-index="${i}" placeholder="Ex: SOJA">
+            </div>
+            <div class="multiEditorField">
+              <label>Valor do frete</label>
+              <input data-multi-field="valor" data-multi-index="${i}" placeholder="Ex: R$ 95,00 / A COMBINAR">
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+
+    const freteCards = Array.from({ length: count }, (_, idx) => {
+      const i = idx + 1;
+      const cityMax = count === 2 ? 43 : count === 3 ? 38 : 34;
+      const detailMax = count === 2 ? 22 : 18;
+      const productMax = count === 2 ? 33 : 27;
+      const priceMax = count === 2 ? 50 : count === 3 ? 43 : 38;
+
+      return `
+        <article class="multiArtFrete">
+          <div class="multiArtNum">${String(i).padStart(2,"0")}</div>
+          <div class="multiArtRoute">
+            <div class="multiArtRouteSide">
+              <div class="multiArtLabel"><b>●</b> ORIGEM / COLETA</div>
+              <div class="multiArtCity" data-multi-bind="origem" data-multi-index="${i}" data-multi-fit data-max="${cityMax}" data-min="20"></div>
+              <div class="multiArtDetail" data-multi-bind="coleta" data-multi-index="${i}" data-multi-fit data-max="${detailMax}" data-min="14"></div>
+            </div>
+            <div class="multiArtArrow">→</div>
+            <div class="multiArtRouteSide">
+              <div class="multiArtLabel"><b>●</b> DESTINO / DESCARGA</div>
+              <div class="multiArtCity" data-multi-bind="destino" data-multi-index="${i}" data-multi-fit data-max="${cityMax}" data-min="20"></div>
+              <div class="multiArtDetail" data-multi-bind="descarga" data-multi-index="${i}" data-multi-fit data-max="${detailMax}" data-min="14"></div>
+            </div>
+          </div>
+          <div class="multiArtMeta">
+            <div class="multiArtProduct">
+              <span>PRODUTO</span>
+              <strong data-multi-bind="produto" data-multi-index="${i}" data-multi-fit data-max="${productMax}" data-min="18"></strong>
+            </div>
+            <div class="multiArtPrice">
+              <span>VALOR DO FRETE</span>
+              <strong data-multi-bind="valor" data-multi-index="${i}" data-multi-fit data-max="${priceMax}" data-min="23"></strong>
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+
+    mount.innerHTML = `
+      <div class="multiManualLayout">
+        <div class="multiManualForm">
+          ${freteForms}
+
+          <div class="multiSharedEditor">
+            <div class="multiFreteEditorHead">
+              <strong>Filial e contatos</strong>
+              <span>☎</span>
+            </div>
+            <div class="multiSharedGrid">
+              <div class="multiEditorField wide">
+                <label>Filial</label>
+                <input data-multi-field="filial" placeholder="Ex: RIO VERDE">
+              </div>
+              <div class="multiEditorField">
+                <label>Contato 1</label>
+                <input data-multi-field="contato1" placeholder="Nome + telefone">
+              </div>
+              <div class="multiEditorField">
+                <label>Contato 2</label>
+                <input data-multi-field="contato2" placeholder="Nome + telefone">
+              </div>
+              <div class="multiEditorField">
+                <label>Contato 3</label>
+                <input data-multi-field="contato3" placeholder="Nome + telefone">
+              </div>
+              <div class="multiEditorField">
+                <label>Contato 4</label>
+                <input data-multi-field="contato4" placeholder="Nome + telefone">
+              </div>
+            </div>
+          </div>
+
+          <div class="multiManualActions">
+            <button type="button" class="save" data-multi-action="save">Salvar JPG 1080×1350</button>
+            <button type="button" data-multi-action="reset">Resetar</button>
+          </div>
+        </div>
+
+        <div class="multiPreviewColumn">
+          <div class="multiPreviewLabel">
+            <strong>Prévia da arte</strong>
+            <span>saída 1080 × 1350</span>
+          </div>
+          <div class="multiPreviewShell">
+            <div class="multiArt count-${count}">
+              <section class="multiArtHero">
+                <img class="multiArtHeroImg" src="../assets/img/hero.jpg" alt="" crossorigin="anonymous">
+                <div class="multiArtHeroWash"></div>
+                <img class="multiArtLogo" src="../assets/img/logo-novafrota.png" alt="Nova Frota" crossorigin="anonymous">
+                <div class="multiArtTitle">FRETES <strong>DISPONÍVEIS</strong></div>
+                <div class="multiArtSubtitle">CARGAS CONFIRMADAS • PRONTAS PARA CARREGAR</div>
+              </section>
+
+              <section class="multiArtBody">
+                <div class="multiArtFretes">${freteCards}</div>
+                <div class="multiArtContacts">
+                  <div class="multiArtContactsIntro">
+                    <div class="multiArtWa">☎</div>
+                    <div>
+                      <strong>FALE COM NOSSA EQUIPE</strong>
+                      <span data-multi-bind="filial">NOVA FROTA</span>
+                    </div>
+                  </div>
+                  <div class="multiArtContactsGrid">
+                    <div class="multiArtContact" data-multi-bind="contato1" data-multi-fit data-max="19" data-min="14"></div>
+                    <div class="multiArtContact" data-multi-bind="contato2" data-multi-fit data-max="19" data-min="14"></div>
+                    <div class="multiArtContact" data-multi-bind="contato3" data-multi-fit data-max="19" data-min="14"></div>
+                    <div class="multiArtContact" data-multi-bind="contato4" data-multi-fit data-max="19" data-min="14"></div>
+                  </div>
+                </div>
+              </section>
+
+              <footer class="multiArtFooter">
+                <div><b>MAIS QUE FRETES,</b><br>PARCERIA EM CADA DESTINO.</div>
+                <div class="multiArtFooterBenefits">
+                  <span>◇ SEGURANÇA</span>
+                  <span>◈ AGILIDADE</span>
+                  <span>▥ RESULTADOS</span>
+                </div>
+              </footer>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    mount.querySelectorAll("[data-multi-field]").forEach((input) => {
+      input.addEventListener("input", () => renderManualMulti(section));
+
+      if (input.dataset.multiField === "valor") {
+        input.addEventListener("blur", () => {
+          const raw = String(input.value || "").toUpperCase().trim();
+          if (raw) input.value = formatarMoedaBR(raw);
+          renderManualMulti(section);
+        });
+      }
+    });
+
+    mount.querySelector('[data-multi-action="reset"]')?.addEventListener("click", () => {
+      mount.querySelectorAll("[data-multi-field]").forEach((input) => {
+        input.value = "";
+      });
+      renderManualMulti(section);
+    });
+
+    mount.querySelector('[data-multi-action="save"]')?.addEventListener("click", async () => {
+      await saveManualMultiTemplate(section);
+    });
+
+    renderManualMulti(section);
+  }
+
+  async function saveManualMultiTemplate(section) {
+    const count = Number(section?.dataset.multiCount || 0);
+    const preview = section?.querySelector(".multiArt");
+    if (!preview || ![2,3,4].includes(count)) return;
+
+    const images = Array.from(preview.querySelectorAll("img"));
+    await Promise.all(images.map(waitForImage));
+    renderManualMulti(section);
+    fitManualMulti(section);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    if (typeof window.html2canvas !== "function") {
+      alert("Não foi possível carregar o gerador de imagem.");
+      return;
+    }
+
+    const previousTransform = preview.style.transform;
+    preview.style.transform = "none";
+
+    try {
+      const canvas = await window.html2canvas(preview, {
+        backgroundColor: "#f4f8fb",
+        scale: 1,
+        width: 1080,
+        height: 1350,
+        useCORS: true,
+        logging: false
+      });
+
+      const link = document.createElement("a");
+      link.download = `divulgacao-mod04-${count}-fretes.jpg`;
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    } finally {
+      preview.style.transform = previousTransform;
+    }
+  }
+
+  function initManualMultiTemplates() {
+    document.querySelectorAll(".multiTemplateCard[data-multi-count]").forEach(buildManualMultiTemplate);
+  }
+
   function bindActions() {
+    initManualMultiTemplates();
+
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const eventName = el.tagName === "SELECT" ? "change" : "input";
       el.addEventListener(eventName, handleInput);

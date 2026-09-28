@@ -1,4 +1,4 @@
-name: Deploy BI Regional Hotfix
+name: Deploy BI Base Hotfix
 
 on:
   push:
@@ -44,5 +44,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx wrangler rollback 036921bc-c671-4ddc-96c6-0bb9728ed1c7 --message "Rollback automatico apos falha no hotfix regional BI"
+          npx wrangler rollback 84216bb3-56c3-4fab-a85e-a8f76553c7f2 --message "Rollback automatico apos falha no hotfix base/regional BI"
           exit 1

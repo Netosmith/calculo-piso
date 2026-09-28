@@ -97,6 +97,16 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
   }
 
   if (!hasFeature(session, moduleName)) return false;
+
+  // Controle de Embarque é colaborativo: qualquer perfil que já tenha
+  // acesso ao módulo pode editar e excluir embarques/veículos.
+  if (
+    moduleName === "controle" &&
+    ["update", "delete"].includes(actionName)
+  ) {
+    return true;
+  }
+
   if (ADMIN_PROFILES.has(profile)) return true;
 
   if (["read", "calculate", "export"].includes(actionName)) return true;

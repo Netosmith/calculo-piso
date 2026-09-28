@@ -12,6 +12,8 @@
     historicoRows: [],
     comercialRows: [],
     comercialFiltradas: [],
+    regionais: [],
+    regionaisLoaded: false,
     charts: {},
     autoRefreshTimer: null,
     isLoading: false,
@@ -447,6 +449,43 @@
     fillSelect($("#fFilial"), rows.map((r) => r.filial), "Todas as filiais");
     fillSelect($("#fCliente"), rows.map((r) => r.cliente), "Todos os clientes");
     fillSelect($("#fStatus"), rows.map((r) => r.status), "Todos os status");
+  }
+
+  function normalizeRegionalCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional", "nome", "Nome"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  async function loadRegionalFilterOptions(rows = [], forceCatalog = false) {
+    const regionalFromRows = rows.map((row) => upper(row.regional)).filter(Boolean);
+
+    if (forceCatalog || !STATE.regionaisLoaded) {
+      try {
+        const res = await portalCall("cadastros", "read", {
+          resource: "regionais",
+          operation: "list"
+        });
+
+        STATE.regionais = extractRows(res)
+          .map(normalizeRegionalCatalogRow)
+          .filter((row) => row.regional && row.ativo !== "NÃO" && row.ativo !== "NAO")
+          .sort((a, b) =>
+            (a.ordem - b.ordem) ||
+            a.regional.localeCompare(b.regional, "pt-BR")
+          )
+          .map((row) => row.regional);
+
+        STATE.regionaisLoaded = true;
+      } catch (error) {
+        console.warn("[bi] não foi possível carregar o cadastro de regionais:", error);
+      }
+    }
+
+    const values = [...STATE.regionais, ...regionalFromRows];
+    fillSelect($("#fRegional"), values, "Todas as regionais");
   }
 
   function loadCommercialFilterOptions(rows) {
@@ -1723,12 +1762,13 @@
     return extractRows(res).map(normalizeCommercialRow);
   }
 
-  async function ensureModeData(mode, force = false) {
+  async function ensureModeData(mode, force = false, forceCatalog = false) {
     if (mode === "ATUAL") {
       if (force || !STATE.atualRows.length) {
         STATE.atualRows = await loadCurrentRows();
       }
       loadCommonFilterOptions(STATE.atualRows);
+      await loadRegionalFilterOptions(STATE.atualRows, forceCatalog);
       return;
     }
 
@@ -1737,6 +1777,7 @@
         STATE.historicoRows = await loadHistoricalRows();
       }
       loadCommonFilterOptions(STATE.historicoRows);
+      await loadRegionalFilterOptions(STATE.historicoRows, forceCatalog);
       loadHistoricalMonthOptions(STATE.historicoRows);
       return;
     }
@@ -1746,6 +1787,7 @@
         STATE.comercialRows = await loadCommercialRows();
       }
       loadCommonFilterOptions(STATE.comercialRows);
+      await loadRegionalFilterOptions(STATE.comercialRows, forceCatalog);
       loadCommercialFilterOptions(STATE.comercialRows);
     }
   }
@@ -1760,7 +1802,7 @@
 
       if (showStatus) setStatus("🔄 Carregando...", true);
 
-      await ensureModeData(mode, force);
+      await ensureModeData(mode, force, showStatus && force);
       if (requestId !== STATE.loadSequence) return;
 
       renderMode(mode);

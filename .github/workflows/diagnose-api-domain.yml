@@ -1,0 +1,37 @@
+name: Diagnose API Domain
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-api-domain.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect Cloudflare zone, DNS and Worker routes
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+
+          ZONE_JSON=$(curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones?name=portalfrete.net.br")
+
+          ZONE_ID=$(echo "$ZONE_JSON" | jq -r '.result[0].id // empty')
+          echo "ZONE_ID_PRESENT=$([ -n "$ZONE_ID" ] && echo yes || echo no)"
+          test -n "$ZONE_ID"
+
+          echo "=== DNS api.portalfrete.net.br ==="
+          curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=api.portalfrete.net.br"             | jq '{success, result: [.result[] | {id,type,name,content,proxied}]}'
+
+          echo "=== Worker routes ==="
+          curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes"             | jq '{success, result: [.result[] | {id,pattern,script}]}'
+
+          echo "=== Worker custom domains ==="
+          curl -fsS             -H "Authorization: Bearer $CF_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/domains"             | jq '{success, result: [.result[] | {id,hostname,service,environment,zone_id}]}'

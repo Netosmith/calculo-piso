@@ -96,6 +96,18 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
     return HOME_REQUEST_CREATE_PROFILES.has(profile);
   }
 
+  // O filtro REGIONAL do B.I. usa a fonte única de cadastro.
+  // Perfis com acesso ao B.I. podem consultar somente REGIONAIS,
+  // sem liberar as demais telas/recursos do módulo Cadastros.
+  if (
+    moduleName === "cadastros" &&
+    actionName === "read" &&
+    resource === "REGIONAIS"
+  ) {
+    const features = PROFILE_FEATURES[profile] || [];
+    return ADMIN_PROFILES.has(profile) || features.includes("bi");
+  }
+
   if (!hasFeature(session, moduleName)) return false;
 
   // Controle de Embarque é colaborativo: qualquer perfil que já tenha

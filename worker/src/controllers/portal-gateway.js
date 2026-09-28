@@ -119,8 +119,24 @@ async function overlayRegionalBase(env, data) {
   }
 
   if (data && typeof data === "object" && !Array.isArray(data)) {
-    const base = await readRegionalBase(env, data);
-    if (base) data.base = base;
+    // O Apps Script pode responder a listagem como {data:[...]},
+    // {rows:[...]} ou diretamente como array. Cobrimos os três formatos.
+    let nested = false;
+
+    if (Array.isArray(data.data)) {
+      data.data = await overlayRegionalBase(env, data.data);
+      nested = true;
+    }
+
+    if (Array.isArray(data.rows)) {
+      data.rows = await overlayRegionalBase(env, data.rows);
+      nested = true;
+    }
+
+    if (!nested) {
+      const base = await readRegionalBase(env, data);
+      if (base) data.base = base;
+    }
   }
 
   return data;

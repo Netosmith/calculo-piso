@@ -1372,7 +1372,7 @@ function formatDateTimeBR(value) {
   const family = productFamilyNF(produto);
   const contatos = contactsFromFilial(row);
   const previewModel = Number(STATE.previewModel);
-    const modelo = previewModel === 3 ? 3 : previewModel === 2 ? 2 : 1;
+    const modelo = previewModel === 4 ? 4 : previewModel === 3 ? 3 : previewModel === 2 ? 2 : 1;
   const mapaModelo = PRODUCT_BG_MAP_NF[modelo] || PRODUCT_BG_MAP_NF[1];
 
   const valor = safeText(row.valorMotorista)
@@ -1423,7 +1423,7 @@ function formatDateTimeBR(value) {
 
   function normalizePreviewModelNF(modelo) {
     const n = Number(modelo);
-    return n === 3 ? 3 : n === 2 ? 2 : 1;
+    return n === 4 ? 4 : n === 3 ? 3 : n === 2 ? 2 : 1;
   }
 
   function syncPreviewModelUI() {
@@ -1432,14 +1432,26 @@ function formatDateTimeBR(value) {
 
     card?.classList.toggle("modelo2", modelo === 2);
     card?.classList.toggle("modelo3", modelo === 3);
+    card?.classList.toggle("modelo4", modelo === 4);
 
     document.getElementById("nfModel1Btn")?.classList.toggle("active", modelo === 1);
     document.getElementById("nfModel2Btn")?.classList.toggle("active", modelo === 2);
     document.getElementById("nfModel3Btn")?.classList.toggle("active", modelo === 3);
+    document.getElementById("nfModel4Btn")?.classList.toggle("active", modelo === 4);
   }
 
   function setPreviewModel(modelo) {
-    STATE.previewModel = normalizePreviewModelNF(modelo);
+    const requested = normalizePreviewModelNF(modelo);
+
+    if (requested === 4) {
+      const selected = getSelectedRows();
+      if (selected.length < 2 || selected.length > 4) {
+        alert("O MOD 04 precisa de 2 a 4 fretes selecionados.");
+        return;
+      }
+    }
+
+    STATE.previewModel = requested;
 
     try {
       localStorage.setItem("nf_divulgacao_modelo", String(STATE.previewModel));
@@ -1535,12 +1547,150 @@ function formatDateTimeBR(value) {
     canvas.querySelectorAll("[data-nf-fit]").forEach(fitModel3TextNF);
   }
 
+  function fitModel4TextNF(target) {
+    if (!target || !target.hasAttribute("data-nf-m4-fit")) return;
+
+    const max = Number(target.dataset.max || 36);
+    const min = Number(target.dataset.min || 15);
+    let size = max;
+
+    target.style.fontSize = max + "px";
+    target.style.letterSpacing = "";
+    target.style.whiteSpace = "nowrap";
+
+    let guard = 0;
+    while (
+      size > min &&
+      guard < 100 &&
+      (target.scrollWidth > target.clientWidth + 1 ||
+       target.scrollHeight > target.clientHeight + 1)
+    ) {
+      size -= 1;
+      target.style.fontSize = size + "px";
+      guard += 1;
+    }
+
+    if (target.scrollWidth > target.clientWidth + 1) {
+      target.style.letterSpacing = "-0.8px";
+    }
+  }
+
+  function fitModel4PreviewNF() {
+    const canvas = document.getElementById("nfM4Canvas");
+    if (!canvas) return;
+    canvas.querySelectorAll("[data-nf-m4-fit]").forEach(fitModel4TextNF);
+  }
+
+  function model4ContactsNF(rows) {
+    const seen = new Set();
+    const result = [];
+
+    rows.forEach((row) => {
+      contactsFromFilial(row).forEach((contact) => {
+        const value = safeText(contact);
+        const key = normalizeKeyNF(value);
+        if (!value || !key || seen.has(key) || result.length >= 4) return;
+        seen.add(key);
+        result.push(value);
+      });
+    });
+
+    return result;
+  }
+
+  function renderModel4PreviewNF(rows) {
+    const canvas = document.getElementById("nfM4Canvas");
+    const fretesEl = document.getElementById("nfM4Fretes");
+    const filialEl = document.getElementById("nfM4Filial");
+    const contactsEl = document.getElementById("nfM4ContactsGrid");
+    if (!canvas || !fretesEl || !contactsEl) return;
+
+    const valid = Array.isArray(rows) ? rows.slice(0, 4) : [];
+    const n = valid.length;
+
+    canvas.classList.remove("ready", "count-2", "count-3", "count-4");
+    fretesEl.innerHTML = "";
+    contactsEl.innerHTML = "";
+
+    if (n < 2 || n > 4) {
+      if (filialEl) filialEl.textContent = "NOVA FROTA";
+      return;
+    }
+
+    canvas.classList.add("ready", `count-${n}`);
+
+    valid.forEach((row, index) => {
+      const origem = upper(row.origem || "");
+      const coleta = upper(row.coleta || "");
+      const destino = cityUf(row, "destino", "uf");
+      const descarga = upper(row.descarga || "");
+      const produto = upper(row.produto || "");
+      const valor = safeText(row.valorMotorista)
+        ? formatMoneyBR(row.valorMotorista)
+        : "A COMBINAR";
+
+      const item = document.createElement("article");
+      item.className = "nfM4Frete";
+      item.innerHTML = `
+        <div class="nfM4Num">${String(index + 1).padStart(2, "0")}</div>
+        <div class="nfM4Route">
+          <div class="nfM4RouteSide">
+            <div class="nfM4Label"><b>●</b> ORIGEM / COLETA</div>
+            <div class="nfM4City" data-nf-m4-fit data-max="${n === 2 ? 43 : n === 3 ? 38 : 34}" data-min="20">${escapeHtml(origem)}</div>
+            <div class="nfM4Detail" data-nf-m4-fit data-max="${n === 2 ? 22 : 18}" data-min="14">${escapeHtml(coleta)}</div>
+          </div>
+          <div class="nfM4RouteArrow">→</div>
+          <div class="nfM4RouteSide">
+            <div class="nfM4Label"><b>●</b> DESTINO / DESCARGA</div>
+            <div class="nfM4City" data-nf-m4-fit data-max="${n === 2 ? 43 : n === 3 ? 38 : 34}" data-min="20">${escapeHtml(destino)}</div>
+            <div class="nfM4Detail" data-nf-m4-fit data-max="${n === 2 ? 22 : 18}" data-min="14">${escapeHtml(descarga)}</div>
+          </div>
+        </div>
+        <div class="nfM4Meta">
+          <div class="nfM4Product">
+            <span>PRODUTO</span>
+            <strong data-nf-m4-fit data-max="${n === 2 ? 33 : 27}" data-min="18">${escapeHtml(produto)}</strong>
+          </div>
+          <div class="nfM4Price">
+            <span>VALOR DO FRETE</span>
+            <strong data-nf-m4-fit data-max="${n === 2 ? 50 : n === 3 ? 43 : 38}" data-min="23">${escapeHtml(valor)}</strong>
+          </div>
+        </div>`;
+      fretesEl.appendChild(item);
+    });
+
+    const filiais = [...new Set(valid.map((r) => upper(r.filial || "")).filter(Boolean))];
+    if (filialEl) {
+      filialEl.textContent = filiais.length === 1 ? filiais[0] : "NOVA FROTA";
+    }
+
+    model4ContactsNF(valid).forEach((contact) => {
+      const div = document.createElement("div");
+      div.className = "nfM4Contact";
+      div.setAttribute("data-nf-m4-fit", "");
+      div.dataset.max = "19";
+      div.dataset.min = "14";
+      div.textContent = contact;
+      contactsEl.appendChild(div);
+    });
+
+    requestAnimationFrame(fitModel4PreviewNF);
+  }
+
   function renderPreview(row) {
     if (!row) row = STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
     if (!row) return;
 
     STATE.previewRow = row;
     syncPreviewModelUI();
+
+    if (normalizePreviewModelNF(STATE.previewModel) === 4) {
+      renderModel4PreviewNF(getSelectedRows());
+      const msg = document.getElementById("nfMensagemPronta");
+      if (msg) msg.value = buildMessage();
+      return;
+    }
+
     const d = divulgacaoDataFromRow(row);
 
     const bg = document.getElementById("nfArtBg");
@@ -1702,6 +1852,51 @@ function buildMessage(row) {
       setStatus("🖼️ Gerando imagem...");
       const html2canvasLib = await loadHtml2CanvasNF();
 
+      if (modelo === 4) {
+        const source = document.getElementById("nfM4Canvas");
+        const selected = getSelectedRows();
+
+        if (selected.length < 2 || selected.length > 4) {
+          throw new Error("O MOD 04 precisa de 2 a 4 fretes selecionados.");
+        }
+        if (!source) throw new Error("Canvas do MOD 04 não encontrado.");
+
+        renderModel4PreviewNF(selected);
+        await Promise.all(Array.from(source.querySelectorAll("img")).map(waitForImage));
+        fitModel4PreviewNF();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const oldCardStyle = card.getAttribute("style");
+        const oldSourceStyle = source.getAttribute("style");
+
+        card.style.position = "fixed";
+        card.style.left = "-12000px";
+        card.style.top = "0";
+        card.style.width = "1080px";
+        card.style.height = "1350px";
+        card.style.overflow = "visible";
+        source.style.transform = "none";
+
+        try {
+          return await html2canvasLib(source, {
+            backgroundColor: "#f4f8fb",
+            scale: 1,
+            width: 1080,
+            height: 1350,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            imageTimeout: 8000
+          });
+        } finally {
+          if (oldCardStyle == null) card.removeAttribute("style");
+          else card.setAttribute("style", oldCardStyle);
+
+          if (oldSourceStyle == null) source.removeAttribute("style");
+          else source.setAttribute("style", oldSourceStyle);
+        }
+      }
+
       if (modelo === 3) {
         const source = document.getElementById("nfM3Canvas");
         if (!source) throw new Error("Canvas do MOD 03 não encontrado.");
@@ -1777,7 +1972,9 @@ function buildMessage(row) {
 
     try {
       const link = document.createElement("a");
-      link.download = d.filename || "divulgacao-frete.jpg";
+      link.download = normalizePreviewModelNF(STATE.previewModel) === 4
+        ? `MOD04_${getSelectedRows().length}_FRETES.jpg`
+        : (d.filename || "divulgacao-frete.jpg");
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       document.body.appendChild(link);
       link.click();
@@ -1862,6 +2059,10 @@ function buildMessage(row) {
       visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
   }
 
+  if (normalizePreviewModelNF(STATE.previewModel) === 4) {
+    renderModel4PreviewNF(selected);
+  }
+
   const msg = document.getElementById("nfMensagemPronta");
   if (msg) {
     msg.value = selected.length
@@ -1897,6 +2098,16 @@ function buildMessage(row) {
 
     if (!rows.length) {
       alert("Selecione uma ou mais linhas para gerar o pacote JPG.");
+      return;
+    }
+
+    if (normalizePreviewModelNF(STATE.previewModel) === 4) {
+      if (rows.length < 2 || rows.length > 4) {
+        alert("O MOD 04 permite de 2 a 4 fretes na mesma arte.");
+        return;
+      }
+      setStatus(`⚡ Gerando arte com ${rows.length} fretes...`);
+      await downloadDivulgacaoJPG(rows[0]);
       return;
     }
 
@@ -2673,6 +2884,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     const model1Btn = document.getElementById("nfModel1Btn");
     const model2Btn = document.getElementById("nfModel2Btn");
     const model3Btn = document.getElementById("nfModel3Btn");
+    const model4Btn = document.getElementById("nfModel4Btn");
 
     if (model1Btn && !model1Btn.dataset.nfModelBound) {
       model1Btn.dataset.nfModelBound = "1";
@@ -2698,6 +2910,15 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         e.preventDefault();
         e.stopPropagation();
         setPreviewModel(3);
+      });
+    }
+
+    if (model4Btn && !model4Btn.dataset.nfModelBound) {
+      model4Btn.dataset.nfModelBound = "1";
+      model4Btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewModel(4);
       });
     }
 

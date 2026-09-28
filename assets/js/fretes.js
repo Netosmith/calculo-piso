@@ -1567,25 +1567,48 @@ function formatDateTimeBR(value) {
 
     const max = Number(target.dataset.max || 36);
     const min = Number(target.dataset.min || 15);
+    const lines = Math.max(1, Number(target.dataset.lines || 1));
     let size = max;
 
     target.style.fontSize = max + "px";
     target.style.letterSpacing = "";
-    target.style.whiteSpace = "nowrap";
+
+    if (lines > 1) {
+      target.style.whiteSpace = "normal";
+      target.style.display = "-webkit-box";
+      target.style.webkitBoxOrient = "vertical";
+      target.style.webkitLineClamp = String(lines);
+      target.style.overflow = "hidden";
+      target.style.overflowWrap = "break-word";
+      target.style.wordBreak = "normal";
+    } else {
+      target.style.display = "";
+      target.style.webkitBoxOrient = "";
+      target.style.webkitLineClamp = "";
+      target.style.whiteSpace = "nowrap";
+      target.style.overflow = "hidden";
+    }
 
     let guard = 0;
-    while (
-      size > min &&
-      guard < 100 &&
-      (target.scrollWidth > target.clientWidth + 1 ||
-       target.scrollHeight > target.clientHeight + 1)
-    ) {
+
+    while (size > min && guard < 120) {
+      const overflowY = target.scrollHeight > target.clientHeight + 1;
+      const overflowX = lines === 1 && target.scrollWidth > target.clientWidth + 1;
+
+      if (!overflowY && !overflowX) break;
+
       size -= 1;
       target.style.fontSize = size + "px";
       guard += 1;
     }
 
-    if (target.scrollWidth > target.clientWidth + 1) {
+    if (
+      size <= min &&
+      (
+        target.scrollHeight > target.clientHeight + 1 ||
+        (lines === 1 && target.scrollWidth > target.clientWidth + 1)
+      )
+    ) {
       target.style.letterSpacing = "-0.8px";
     }
   }
@@ -1652,24 +1675,24 @@ function formatDateTimeBR(value) {
         <div class="nfM4Route">
           <div class="nfM4RouteSide">
             <div class="nfM4Label"><b>●</b> ORIGEM / COLETA</div>
-            <div class="nfM4City" data-nf-m4-fit data-max="${n === 2 ? 43 : n === 3 ? 38 : 34}" data-min="20">${escapeHtml(origem)}</div>
-            <div class="nfM4Detail" data-nf-m4-fit data-max="${n === 2 ? 22 : 18}" data-min="14">${escapeHtml(coleta)}</div>
+            <div class="nfM4City" data-nf-m4-fit data-lines="2" data-max="${n === 2 ? 40 : n === 3 ? 34 : 29}" data-min="16">${escapeHtml(origem)}</div>
+            <div class="nfM4Detail" data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 22 : 18}" data-min="13">${escapeHtml(coleta)}</div>
           </div>
           <div class="nfM4RouteArrow">→</div>
           <div class="nfM4RouteSide">
             <div class="nfM4Label"><b>●</b> DESTINO / DESCARGA</div>
-            <div class="nfM4City" data-nf-m4-fit data-max="${n === 2 ? 43 : n === 3 ? 38 : 34}" data-min="20">${escapeHtml(destino)}</div>
-            <div class="nfM4Detail" data-nf-m4-fit data-max="${n === 2 ? 22 : 18}" data-min="14">${escapeHtml(descarga)}</div>
+            <div class="nfM4City" data-nf-m4-fit data-lines="2" data-max="${n === 2 ? 40 : n === 3 ? 34 : 29}" data-min="16">${escapeHtml(destino)}</div>
+            <div class="nfM4Detail" data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 22 : 18}" data-min="13">${escapeHtml(descarga)}</div>
           </div>
         </div>
         <div class="nfM4Meta">
           <div class="nfM4Product">
             <span>PRODUTO</span>
-            <strong data-nf-m4-fit data-max="${n === 2 ? 33 : 27}" data-min="18">${escapeHtml(produto)}</strong>
+            <strong data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 33 : 27}" data-min="16">${escapeHtml(produto)}</strong>
           </div>
           <div class="nfM4Price">
             <span>VALOR DO FRETE</span>
-            <strong data-nf-m4-fit data-max="${n === 2 ? 50 : n === 3 ? 43 : 38}" data-min="23">${escapeHtml(valor)}</strong>
+            <strong data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 50 : n === 3 ? 43 : 38}" data-min="21">${escapeHtml(valor)}</strong>
           </div>
         </div>`;
       fretesEl.appendChild(item);

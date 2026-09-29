@@ -1026,8 +1026,22 @@ function formatDateTimeBR(value) {
       if (cb.checked) STATE.selectedIds.add(id);
       else STATE.selectedIds.delete(id);
 
+      const selected = getSelectedRows();
+
+      if (selected.length > 4) {
+        STATE.selectedIds.delete(id);
+        cb.checked = false;
+        alert("O MOD 04 permite no máximo 4 fretes na mesma arte.");
+      }
+
       updateBulkUI();
-      renderPreview(row);
+
+      if (getSelectedRows().length >= 2) {
+        STATE.previewRow = getSelectedRows()[0] || row;
+        syncMultiFreteModelNF(getSelectedRows());
+      } else {
+        renderPreview(row);
+      }
     });
 
     td.appendChild(cb);
@@ -1372,7 +1386,7 @@ function formatDateTimeBR(value) {
     const family = productFamilyNF(produto);
     const contatos = contactsFromFilial(row);
     const previewModel = Number(STATE.previewModel);
-    const modelo = previewModel === 3 ? 3 : previewModel === 2 ? 2 : 1;
+    const modelo = previewModel === 4 ? 4 : previewModel === 3 ? 3 : previewModel === 2 ? 2 : 1;
     const mapaModelo = PRODUCT_BG_MAP_NF[modelo] || PRODUCT_BG_MAP_NF[1];
 
     const valor = safeText(row.valorMotorista)
@@ -1410,7 +1424,7 @@ function formatDateTimeBR(value) {
 
   function normalizePreviewModelNF(modelo) {
     const n = Number(modelo);
-    return n === 3 ? 3 : n === 2 ? 2 : 1;
+    return n === 4 ? 4 : n === 3 ? 3 : n === 2 ? 2 : 1;
   }
 
   function syncPreviewModelUI() {
@@ -1419,14 +1433,26 @@ function formatDateTimeBR(value) {
 
     card?.classList.toggle("modelo2", modelo === 2);
     card?.classList.toggle("modelo3", modelo === 3);
+    card?.classList.toggle("modelo4", modelo === 4);
 
     document.getElementById("nfModel1Btn")?.classList.toggle("active", modelo === 1);
     document.getElementById("nfModel2Btn")?.classList.toggle("active", modelo === 2);
     document.getElementById("nfModel3Btn")?.classList.toggle("active", modelo === 3);
+    document.getElementById("nfModel4Btn")?.classList.toggle("active", modelo === 4);
   }
 
   function setPreviewModel(modelo) {
-    STATE.previewModel = normalizePreviewModelNF(modelo);
+    const requested = normalizePreviewModelNF(modelo);
+
+    if (requested === 4) {
+      const selected = getSelectedRows();
+      if (selected.length < 2 || selected.length > 4) {
+        alert("O MOD 04 precisa de 2 a 4 fretes selecionados.");
+        return;
+      }
+    }
+
+    STATE.previewModel = requested;
 
     try {
       localStorage.setItem("nf_divulgacao_modelo", String(STATE.previewModel));
@@ -1449,9 +1475,10 @@ function formatDateTimeBR(value) {
         localStorage.setItem(migrationKey, "1");
       } else {
         const saved = localStorage.getItem("nf_divulgacao_modelo");
-        modelo = saved == null || saved === ""
+        const normalized = saved == null || saved === ""
           ? 3
           : normalizePreviewModelNF(saved);
+        modelo = normalized === 4 ? 3 : normalized;
       }
     } catch {
       modelo = 3;
@@ -1522,12 +1549,174 @@ function formatDateTimeBR(value) {
     canvas.querySelectorAll("[data-nf-fit]").forEach(fitModel3TextNF);
   }
 
+  function fitModel4TextNF(target) {
+    if (!target || !target.hasAttribute("data-nf-m4-fit")) return;
+
+    const max = Number(target.dataset.max || 36);
+    const min = Number(target.dataset.min || 15);
+    const lines = Math.max(1, Number(target.dataset.lines || 1));
+    let size = max;
+
+    target.style.fontSize = max + "px";
+    target.style.letterSpacing = "";
+
+    if (lines > 1) {
+      target.style.whiteSpace = "normal";
+      target.style.display = "-webkit-box";
+      target.style.webkitBoxOrient = "vertical";
+      target.style.webkitLineClamp = String(lines);
+      target.style.overflow = "hidden";
+      target.style.overflowWrap = "break-word";
+      target.style.wordBreak = "normal";
+    } else {
+      target.style.display = "";
+      target.style.webkitBoxOrient = "";
+      target.style.webkitLineClamp = "";
+      target.style.whiteSpace = "nowrap";
+      target.style.overflow = "hidden";
+    }
+
+    let guard = 0;
+
+    while (size > min && guard < 120) {
+      const overflowY = target.scrollHeight > target.clientHeight + 1;
+      const overflowX = lines === 1 && target.scrollWidth > target.clientWidth + 1;
+
+      if (!overflowY && !overflowX) break;
+
+      size -= 1;
+      target.style.fontSize = size + "px";
+      guard += 1;
+    }
+
+    if (
+      size <= min &&
+      (
+        target.scrollHeight > target.clientHeight + 1 ||
+        (lines === 1 && target.scrollWidth > target.clientWidth + 1)
+      )
+    ) {
+      target.style.letterSpacing = "-0.8px";
+    }
+  }
+
+  function fitModel4PreviewNF() {
+    const canvas = document.getElementById("nfM4Canvas");
+    if (!canvas) return;
+    canvas.querySelectorAll("[data-nf-m4-fit]").forEach(fitModel4TextNF);
+  }
+
+  function model4ContactsNF(rows) {
+    const seen = new Set();
+    const result = [];
+
+    rows.forEach((row) => {
+      contactsFromFilial(row).forEach((contact) => {
+        const value = safeText(contact);
+        const key = normalizeKeyNF(value);
+        if (!value || !key || seen.has(key) || result.length >= 4) return;
+        seen.add(key);
+        result.push(value);
+      });
+    });
+
+    return result;
+  }
+
+  function renderModel4PreviewNF(rows) {
+    const canvas = document.getElementById("nfM4Canvas");
+    const fretesEl = document.getElementById("nfM4Fretes");
+    const filialEl = document.getElementById("nfM4Filial");
+    const contactsEl = document.getElementById("nfM4ContactsGrid");
+    if (!canvas || !fretesEl || !contactsEl) return;
+
+    const sourceRows = Array.isArray(rows) ? rows : [];
+    const n = sourceRows.length;
+    const valid = n >= 2 && n <= 4 ? sourceRows : [];
+
+    canvas.classList.remove("ready", "count-2", "count-3", "count-4");
+    fretesEl.innerHTML = "";
+    contactsEl.innerHTML = "";
+
+    if (n < 2 || n > 4) {
+      if (filialEl) filialEl.textContent = "NOVA FROTA";
+      return;
+    }
+
+    canvas.classList.add("ready", `count-${n}`);
+
+    valid.forEach((row, index) => {
+      const origem = upper(row.origem || "");
+      const coleta = upper(row.coleta || "");
+      const destino = cityUf(row, "destino", "uf");
+      const descarga = upper(row.descarga || "");
+      const produto = upper(row.produto || "");
+      const valor = safeText(row.valorMotorista)
+        ? formatMoneyBR(row.valorMotorista)
+        : "A COMBINAR";
+
+      const item = document.createElement("article");
+      item.className = "nfM4Frete";
+      item.innerHTML = `
+        <div class="nfM4Num">${String(index + 1).padStart(2, "0")}</div>
+        <div class="nfM4Route">
+          <div class="nfM4RouteSide">
+            <div class="nfM4Label"><b>●</b> ORIGEM / COLETA</div>
+            <div class="nfM4City" data-nf-m4-fit data-lines="2" data-max="${n === 2 ? 40 : n === 3 ? 34 : 29}" data-min="16">${escapeHtml(origem)}</div>
+            <div class="nfM4Detail" data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 22 : 18}" data-min="13">${escapeHtml(coleta)}</div>
+          </div>
+          <div class="nfM4RouteArrow">→</div>
+          <div class="nfM4RouteSide">
+            <div class="nfM4Label"><b>●</b> DESTINO / DESCARGA</div>
+            <div class="nfM4City" data-nf-m4-fit data-lines="2" data-max="${n === 2 ? 40 : n === 3 ? 34 : 29}" data-min="16">${escapeHtml(destino)}</div>
+            <div class="nfM4Detail" data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 22 : 18}" data-min="13">${escapeHtml(descarga)}</div>
+          </div>
+        </div>
+        <div class="nfM4Meta">
+          <div class="nfM4Product">
+            <span>PRODUTO</span>
+            <strong data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 33 : 27}" data-min="16">${escapeHtml(produto)}</strong>
+          </div>
+          <div class="nfM4Price">
+            <span>VALOR DO FRETE</span>
+            <strong data-nf-m4-fit data-lines="1" data-max="${n === 2 ? 50 : n === 3 ? 43 : 38}" data-min="21">${escapeHtml(valor)}</strong>
+          </div>
+        </div>`;
+      fretesEl.appendChild(item);
+    });
+
+    const filiais = [...new Set(valid.map((r) => upper(r.filial || "")).filter(Boolean))];
+    if (filialEl) {
+      filialEl.textContent = filiais.length === 1 ? filiais[0] : "NOVA FROTA";
+    }
+
+    model4ContactsNF(valid).forEach((contact) => {
+      const div = document.createElement("div");
+      div.className = "nfM4Contact";
+      div.setAttribute("data-nf-m4-fit", "");
+      div.dataset.max = "19";
+      div.dataset.min = "14";
+      div.textContent = contact;
+      contactsEl.appendChild(div);
+    });
+
+    requestAnimationFrame(fitModel4PreviewNF);
+  }
+
   function renderPreview(row) {
     if (!row) row = STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
     if (!row) return;
 
     STATE.previewRow = row;
     syncPreviewModelUI();
+
+    if (normalizePreviewModelNF(STATE.previewModel) === 4) {
+      renderModel4PreviewNF(getSelectedRows());
+      const msg = document.getElementById("nfMensagemPronta");
+      if (msg) msg.value = buildMessage();
+      return;
+    }
+
     const d = divulgacaoDataFromRow(row);
 
     const bg = document.getElementById("nfArtBg");
@@ -1680,6 +1869,51 @@ function formatDateTimeBR(value) {
       setStatus("🖼️ Gerando imagem...");
       const html2canvasLib = await loadHtml2CanvasNF();
 
+      if (modelo === 4) {
+        const source = document.getElementById("nfM4Canvas");
+        const selected = getSelectedRows();
+
+        if (selected.length < 2 || selected.length > 4) {
+          throw new Error("O MOD 04 precisa de 2 a 4 fretes selecionados.");
+        }
+        if (!source) throw new Error("Canvas do MOD 04 não encontrado.");
+
+        renderModel4PreviewNF(selected);
+        await Promise.all(Array.from(source.querySelectorAll("img")).map(waitForImage));
+        fitModel4PreviewNF();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const oldCardStyle = card.getAttribute("style");
+        const oldSourceStyle = source.getAttribute("style");
+
+        card.style.position = "fixed";
+        card.style.left = "-12000px";
+        card.style.top = "0";
+        card.style.width = "1080px";
+        card.style.height = "1350px";
+        card.style.overflow = "visible";
+        source.style.transform = "none";
+
+        try {
+          return await html2canvasLib(source, {
+            backgroundColor: "#f4f8fb",
+            scale: 1,
+            width: 1080,
+            height: 1350,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            imageTimeout: 8000
+          });
+        } finally {
+          if (oldCardStyle == null) card.removeAttribute("style");
+          else card.setAttribute("style", oldCardStyle);
+
+          if (oldSourceStyle == null) source.removeAttribute("style");
+          else source.setAttribute("style", oldSourceStyle);
+        }
+      }
+
       if (modelo === 3) {
         const source = document.getElementById("nfM3Canvas");
         if (!source) throw new Error("Canvas do MOD 03 não encontrado.");
@@ -1755,7 +1989,9 @@ function formatDateTimeBR(value) {
 
     try {
       const link = document.createElement("a");
-      link.download = d.filename || "divulgacao-frete.jpg";
+      link.download = normalizePreviewModelNF(STATE.previewModel) === 4
+        ? `MOD04_${getSelectedRows().length}_FRETES.jpg`
+        : (d.filename || "divulgacao-frete.jpg");
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       document.body.appendChild(link);
       link.click();
@@ -1820,36 +2056,70 @@ function formatDateTimeBR(value) {
     return STATE.rows.filter((r) => STATE.selectedIds.has(safeText(r.id)));
   }
 
-  function updateBulkUI() {
-    const selected = getSelectedRows();
+  function syncMultiFreteModelNF(selectedRows) {
+    const selected = Array.isArray(selectedRows) ? selectedRows : getSelectedRows();
     const n = selected.length;
+    const current = normalizePreviewModelNF(STATE.previewModel);
 
-    const a = document.getElementById("nfSelecionadosTxt");
-    const b = document.getElementById("nfArtesTxt");
-    const c = document.getElementById("nfMsgsTxt");
+    if (n >= 2 && n <= 4) {
+      if (current !== 4) {
+        STATE.previewModel = 4;
+        syncPreviewModelUI();
+      }
 
-    if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
-    if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
-    if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
+      const badge = document.getElementById("nfPreviewProdutoBadge");
+      if (badge) badge.textContent = `${n} FRETES`;
 
-    const selectAll = document.getElementById("nfSelectAll");
-    if (selectAll) {
-      const visible = getFilteredRows().filter((r) => safeText(r.id));
-      selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
-      selectAll.indeterminate =
-        visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
+      renderModel4PreviewNF(selected);
+      return true;
     }
 
-    const msg = document.getElementById("nfMensagemPronta");
-    if (msg) {
-      msg.value = selected.length
-        ? buildMessage()
-        : STATE.previewRow
-          ? buildMessage(STATE.previewRow)
-          : "";
+    if (current === 4) {
+      STATE.previewModel = 3;
+      syncPreviewModelUI();
+
+      const row = selected[0] || STATE.previewRow || getFilteredRows()[0] || STATE.rows[0];
+      if (row) {
+        const d = divulgacaoDataFromRow(row);
+        const badge = document.getElementById("nfPreviewProdutoBadge");
+        if (badge) badge.textContent = d.productFamily;
+      }
     }
+
+    return false;
   }
 
+  function updateBulkUI() {
+  const selected = getSelectedRows();
+  const n = selected.length;
+
+  const a = document.getElementById("nfSelecionadosTxt");
+  const b = document.getElementById("nfArtesTxt");
+  const c = document.getElementById("nfMsgsTxt");
+
+  if (a) a.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
+  if (b) b.textContent = `${n} arte${n === 1 ? "" : "s"}`;
+  if (c) c.textContent = `${n} mensagem${n === 1 ? "" : "s"}`;
+
+  const selectAll = document.getElementById("nfSelectAll");
+  if (selectAll) {
+    const visible = getFilteredRows().filter((r) => safeText(r.id));
+    selectAll.checked = visible.length > 0 && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
+    selectAll.indeterminate =
+      visible.some((r) => STATE.selectedIds.has(safeText(r.id))) && !selectAll.checked;
+  }
+
+  syncMultiFreteModelNF(selected);
+
+  const msg = document.getElementById("nfMensagemPronta");
+  if (msg) {
+    msg.value = selected.length
+      ? buildMessage()
+      : STATE.previewRow
+        ? buildMessage(STATE.previewRow)
+        : "";
+  }
+}
   function renderStats(rows) {
     rows = rows || [];
 
@@ -1876,6 +2146,16 @@ function formatDateTimeBR(value) {
 
     if (!rows.length) {
       alert("Selecione uma ou mais linhas para gerar o pacote JPG.");
+      return;
+    }
+
+    if (normalizePreviewModelNF(STATE.previewModel) === 4) {
+      if (rows.length < 2 || rows.length > 4) {
+        alert("O MOD 04 permite de 2 a 4 fretes na mesma arte.");
+        return;
+      }
+      setStatus(`⚡ Gerando arte com ${rows.length} fretes...`);
+      await downloadDivulgacaoJPG(rows[0]);
       return;
     }
 
@@ -2674,6 +2954,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     const model1Btn = document.getElementById("nfModel1Btn");
     const model2Btn = document.getElementById("nfModel2Btn");
     const model3Btn = document.getElementById("nfModel3Btn");
+    const model4Btn = document.getElementById("nfModel4Btn");
 
     if (model1Btn && !model1Btn.dataset.nfModelBound) {
       model1Btn.dataset.nfModelBound = "1";
@@ -2702,11 +2983,25 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       });
     }
 
+    if (model4Btn && !model4Btn.dataset.nfModelBound) {
+      model4Btn.dataset.nfModelBound = "1";
+      model4Btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewModel(4);
+      });
+    }
+
     syncPreviewModelUI();
 
     document.getElementById("btnSelecionarTodosVisiveis")?.addEventListener("click", () => {
       const visible = getFilteredRows().filter((r) => safeText(r.id));
       const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
+
+      if (!allSelected && visible.length > 4) {
+        alert("Para o MOD 04, selecione manualmente de 2 a 4 fretes.");
+        return;
+      }
 
       visible.forEach((r) => {
         if (allSelected) STATE.selectedIds.delete(safeText(r.id));
@@ -2715,12 +3010,25 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
       applyFilters();
       updateBulkUI();
+
+      const selected = getSelectedRows();
+      if (selected.length >= 2 && selected.length <= 4) {
+        STATE.previewRow = selected[0];
+        syncMultiFreteModelNF(selected);
+      }
     });
 
     document.getElementById("nfSelectAll")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
+      const visible = getFilteredRows().filter((r) => safeText(r.id));
 
-      getFilteredRows().forEach((r) => {
+      if (checked && visible.length > 4) {
+        e.target.checked = false;
+        alert("Para o MOD 04, selecione manualmente de 2 a 4 fretes.");
+        return;
+      }
+
+      visible.forEach((r) => {
         const id = safeText(r.id);
         if (!id) return;
 
@@ -2730,6 +3038,12 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
       applyFilters();
       updateBulkUI();
+
+      const selected = getSelectedRows();
+      if (selected.length >= 2 && selected.length <= 4) {
+        STATE.previewRow = selected[0];
+        syncMultiFreteModelNF(selected);
+      }
     });
 
     document.getElementById("btnGerarPacoteJPG")?.addEventListener("click", gerarPacoteJPG);

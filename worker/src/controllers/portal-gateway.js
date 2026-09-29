@@ -4,6 +4,52 @@ import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js"
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
 
+const FREIGHT_READ_CACHE_PREFIX = "gateway:freights:v1:";
+const FREIGHT_READ_CACHE_TTL_SECONDS = 6 * 60 * 60;
+
+function freightReadCacheKey(session, moduleName) {
+  const estado = String(session?.estado || "GLOBAL").trim().toUpperCase() || "GLOBAL";
+  return `${FREIGHT_READ_CACHE_PREFIX}${moduleName}:${estado}`;
+}
+
+async function readFreightReadCache(env, session, moduleName) {
+  if (!env?.SESSIONS) return null;
+  try {
+    const raw = await env.SESSIONS.get(freightReadCacheKey(session, moduleName));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!parsed.data) return null;
+    return parsed;
+  } catch (error) {
+    console.warn("[FRETES CACHE] Falha ao ler cache", {
+      moduleName,
+      message: String(error?.message || error)
+    });
+    return null;
+  }
+}
+
+async function writeFreightReadCache(env, session, moduleName, data) {
+  if (!env?.SESSIONS || data == null) return;
+  try {
+    await env.SESSIONS.put(
+      freightReadCacheKey(session, moduleName),
+      JSON.stringify({ cachedAt: Date.now(), data }),
+      { expirationTtl: FREIGHT_READ_CACHE_TTL_SECONDS }
+    );
+  } catch (error) {
+    console.warn("[FRETES CACHE] Falha ao salvar cache", {
+      moduleName,
+      message: String(error?.message || error)
+    });
+  }
+}
+
+function isFreightRead(moduleName, actionName) {
+  return ["fretes", "fretes2"].includes(moduleName) && actionName === "read";
+}
+
 const HOME_METRICS_CACHE_PREFIX = "home:metrics:v2:";
 const HOME_METRICS_FRESH_MS = 45 * 1000;
 const HOME_METRICS_STALE_MS = 12 * 60 * 60 * 1000;
@@ -517,11 +563,35 @@ export async function portalGatewayController(request, env, ctx) {
     });
 
     if (!result?.ok) {
+      if (isFreightRead(moduleName, actionName)) {
+        const cached = await readFreightReadCache(env, session, moduleName);
+        if (cached?.data) {
+          console.warn("[FRETES CACHE] Usando dados anteriores após falha do Apps Script", {
+            moduleName,
+            cachedAt: cached.cachedAt
+          });
+
+          return success({
+            module: moduleName,
+            action: actionName,
+            data: cached.data,
+            cache: {
+              fallback: true,
+              cachedAt: cached.cachedAt
+            }
+          });
+        }
+      }
+
       return errorResponse(
         result?.error || "O Apps Script recusou a operação.",
         Number(result?.status) || 502,
         result?.details
       );
+    }
+
+    if (isFreightRead(moduleName, actionName)) {
+      await writeFreightReadCache(env, session, moduleName, result.data ?? result);
     }
 
     if (moduleName === "home" && actionName === "read") {
@@ -603,6 +673,26 @@ export async function portalGatewayController(request, env, ctx) {
       resource: resourceName,
       message: String(error?.message || error)
     });
+
+    if (isFreightRead(moduleName, actionName)) {
+      const cached = await readFreightReadCache(env, session, moduleName);
+      if (cached?.data) {
+        console.warn("[FRETES CACHE] Usando cache no catch do gateway", {
+          moduleName,
+          cachedAt: cached.cachedAt
+        });
+
+        return success({
+          module: moduleName,
+          action: actionName,
+          data: cached.data,
+          cache: {
+            fallback: true,
+            cachedAt: cached.cachedAt
+          }
+        });
+      }
+    }
 
     return errorResponse(
       message,

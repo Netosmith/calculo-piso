@@ -207,13 +207,8 @@
       throw new Error("API segura do Portal indisponível.");
     }
 
-    const feature = BASE_ATUAL === "fretes2" ? "fretes2" : "fretes";
-    if (typeof canAccessFeature === "function" && !canAccessFeature(feature)) {
-      const error = new Error("Seu perfil não possui permissão para consultar esta base.");
-      error.status = 403;
-      throw error;
-    }
-
+    // A autorização final é feita no Cloudflare Worker.
+    // Não bloqueamos aqui por um mapa de permissões possivelmente desatualizado no navegador.
     return session;
   }
 
@@ -233,6 +228,39 @@
     }
   }
 
+  function shareRowsCacheKey() {
+    let estado = "GLOBAL";
+    try {
+      estado = String(localStorage.getItem("nf_selected_state") || localStorage.getItem("selectedState") || "GLOBAL").toUpperCase();
+    } catch {}
+    return `nf_share_rows_v2_${BASE_ATUAL}_${estado}`;
+  }
+
+  function saveShareRowsCache(rows) {
+    if (!Array.isArray(rows)) return;
+    try {
+      localStorage.setItem(
+        shareRowsCacheKey(),
+        JSON.stringify({ savedAt: Date.now(), rows })
+      );
+    } catch {}
+  }
+
+  function loadShareRowsCache() {
+    try {
+      const raw = localStorage.getItem(shareRowsCacheKey());
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      const ageMs = Date.now() - Number(parsed?.savedAt || 0);
+      if (!Array.isArray(parsed?.rows) || !Number.isFinite(ageMs) || ageMs < 0 || ageMs > 24 * 60 * 60 * 1000) {
+        return [];
+      }
+      return parsed.rows;
+    } catch {
+      return [];
+    }
+  }
+
   async function loadFretesRows() {
     await waitForPortalReady();
 
@@ -240,7 +268,24 @@
 
     // O Share usa exatamente a mesma leitura validada pelas telas Fretes GO/MT.
     // Isso evita manter uma segunda rota de leitura para os mesmos registros.
-    const response = await window.PortalAPI.call(BASE_ATUAL, "read", {});
+    let response;
+    let lastError;
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        response = await window.PortalAPI.call(BASE_ATUAL, "read", {});
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+      }
+    }
+
+    if (lastError) throw lastError;
+
     const elapsedMs = recordPerformance(`${BASE_ATUAL}-api`, requestStartedAt);
 
     if (response && response.ok === false) {
@@ -261,6 +306,7 @@
               ? payload.items
               : [];
 
+    saveShareRowsCache(rows);
     return { rows, elapsedMs };
   }
 
@@ -632,8 +678,23 @@
       if (sequence !== refreshSequence) return;
       console.error(err);
 
-      const hasPreviousRows = previousRows.length > 0;
-      if (!hasPreviousRows) {
+      const cachedRows = previousRows.length ? previousRows : loadShareRowsCache();
+      const hasPreviousRows = cachedRows.length > 0;
+
+      if (hasPreviousRows) {
+        state.rowsAll = cachedRows;
+        state.clientes = buildClientesList(state.rowsAll);
+        fillSelect(selCliente, state.clientes, { includeAll: false });
+
+        if (selCliente && !selCliente.value) {
+          selCliente.value = state.clientes[0] || "";
+        }
+
+        await setClientLogo(selCliente?.value || "");
+        rebuildDestinosForCliente();
+        applyFiltersAndRender();
+        toggleFreteEmpresa(ocultarFreteEmpresa);
+      } else {
         state.rowsAll = [];
         state.clientes = [];
         fillSelect(selCliente, [], { includeAll: false });

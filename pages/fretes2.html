@@ -1105,6 +1105,151 @@
     .nfM3Benefit span{min-width:0;color:#fff;font-size:14px;line-height:1.05;font-weight:700}
     .nfM3Benefit strong{display:block;margin-bottom:3px;font-size:16px;font-weight:950}
 
+    /* =========================
+       MOD 04 - MULTI FRETES
+       2, 3 ou 4 fretes | 1080 x 1350
+    ========================= */
+    .nfArtCard .nfM4Canvas{display:none}
+    .nfArtCard.modelo4{
+      width:240px;
+      height:300px;
+      overflow:hidden;
+      border-radius:14px;
+      background:#f5f9fc;
+      box-shadow:0 14px 30px rgba(15,23,42,.18);
+    }
+    .nfArtCard.modelo4 .nfArtScale,
+    .nfArtCard.modelo4 .nfM3Canvas{display:none!important}
+    .nfArtCard.modelo4 .nfM4Canvas{
+      display:block;
+      width:1080px;
+      height:1350px;
+      transform:scale(.2222222222);
+      transform-origin:top left;
+      position:relative;
+      overflow:hidden;
+      background:#f4f8fb;
+      font-family:Arial,Helvetica,sans-serif;
+      color:#072f65;
+      text-rendering:geometricPrecision;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .nfM4Hero{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;background:#eaf2f7}
+    .nfM4HeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 47%;opacity:.72}
+    .nfM4HeroWash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%)}
+    .nfM4Logo{position:absolute;z-index:3;top:28px;left:50%;transform:translateX(-50%);width:350px;height:auto}
+    .nfM4Title{position:absolute;z-index:3;left:48px;bottom:67px;font-size:74px;line-height:.92;font-weight:950;letter-spacing:-2.5px;color:#07366f}
+    .nfM4Title strong{color:#08a968}
+    .nfM4Subtitle{position:absolute;z-index:3;left:52px;bottom:29px;font-size:24px;letter-spacing:3px;font-weight:850;color:#254d76}
+
+    .nfM4Body{
+      position:absolute;z-index:5;left:0;right:0;top:300px;height:870px;
+      box-sizing:border-box;padding:24px 34px 22px;background:linear-gradient(180deg,#f9fbfd,#eef5f9)
+    }
+    .nfM4Fretes{height:650px;display:grid;gap:14px}
+    .nfM4Canvas.count-2 .nfM4Fretes{grid-template-rows:repeat(2,1fr)}
+    .nfM4Canvas.count-3 .nfM4Fretes{grid-template-rows:repeat(3,1fr)}
+    .nfM4Canvas.count-4 .nfM4Fretes{grid-template-rows:repeat(4,1fr)}
+    .nfM4Empty{
+      height:650px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      border:3px dashed #cbdbe7;border-radius:28px;background:#fff;color:#6b8298;text-align:center
+    }
+    .nfM4Empty strong{font-size:58px;color:#07366f}
+    .nfM4Empty span{margin-top:16px;font-size:30px;font-weight:750}
+    .nfM4Canvas.ready .nfM4Empty{display:none}
+    .nfM4Canvas:not(.ready) .nfM4Fretes{display:none}
+
+    .nfM4Frete{
+      min-height:0;display:grid;grid-template-columns:78px minmax(0,1fr) 258px;gap:18px;
+      align-items:stretch;box-sizing:border-box;padding:14px 16px;border-radius:22px;background:#fff;
+      border:2px solid #d9e5ed;box-shadow:0 6px 15px rgba(24,54,83,.06);overflow:hidden
+    }
+    .nfM4Num{
+      display:flex;align-items:center;justify-content:center;border-radius:16px;
+      background:linear-gradient(155deg,#073e7d,#062f63);color:#fff;font-size:38px;font-weight:950
+    }
+    .nfM4Route{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);align-items:center;gap:10px}
+    .nfM4RouteSide{min-width:0}
+    .nfM4Label{display:flex;align-items:center;gap:7px;color:#496985;font-size:17px;font-weight:900;white-space:nowrap}
+    .nfM4Label b{color:#0ca768;font-size:20px}
+    .nfM4City{
+      width:100%;
+      height:62px;
+      margin-top:4px;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+      color:#062f68;
+      font-size:34px;
+      line-height:.96;
+      font-weight:950;
+      letter-spacing:-.35px;
+      text-transform:uppercase;
+      white-space:normal;
+      overflow-wrap:break-word;
+      word-break:normal
+    }
+    .nfM4Detail{
+      width:100%;height:31px;margin-top:3px;padding:0 10px;box-sizing:border-box;display:flex;align-items:center;
+      border-radius:8px;background:#eef4f7;color:#496985;font-size:18px;font-weight:800;text-transform:uppercase;
+      overflow:hidden;white-space:nowrap
+    }
+    .nfM4RouteArrow{display:flex;align-items:center;justify-content:center;color:#0bb16c;font-size:34px;font-weight:950}
+    .nfM4Meta{min-width:0;display:grid;grid-template-rows:1fr 1.2fr;gap:8px}
+    .nfM4Product{
+      min-width:0;padding:9px 14px;border-radius:12px;background:#f0f5f8;
+      display:flex;flex-direction:column;justify-content:center;overflow:hidden
+    }
+    .nfM4Product span{font-size:15px;color:#607a91;font-weight:850}
+    .nfM4Product strong{height:30px;margin-top:2px;display:flex;align-items:center;color:#07366f;font-size:27px;font-weight:950;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+    .nfM4Price{
+      min-width:0;padding:8px 12px;border-radius:13px;background:linear-gradient(145deg,#16c77d,#079d5f);
+      color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden
+    }
+    .nfM4Price span{font-size:15px;font-weight:850}
+    .nfM4Price strong{height:44px;display:flex;align-items:center;font-size:38px;line-height:1;font-weight:950;white-space:nowrap;overflow:hidden}
+
+    .nfM4Canvas.count-2 .nfM4Frete{grid-template-columns:92px minmax(0,1fr) 285px;padding:20px 20px}
+    .nfM4Canvas.count-2 .nfM4Num{font-size:48px}
+    .nfM4Canvas.count-2 .nfM4City{height:84px;font-size:40px;line-height:.94}
+    .nfM4Canvas.count-2 .nfM4Detail{height:38px;font-size:22px}
+    .nfM4Canvas.count-2 .nfM4Product strong{font-size:33px;height:38px}
+    .nfM4Canvas.count-2 .nfM4Price strong{font-size:50px;height:58px}
+    .nfM4Canvas.count-3 .nfM4City{height:68px;font-size:34px;line-height:.94}
+    .nfM4Canvas.count-3 .nfM4Price strong{font-size:43px}
+    .nfM4Canvas.count-4 .nfM4City{height:56px;font-size:29px;line-height:.94}
+
+    .nfM4Contacts{
+      height:150px;margin-top:18px;display:grid;grid-template-columns:350px minmax(0,1fr);
+      overflow:hidden;border-radius:21px;background:#fff;border:2px solid #d8e4ec
+    }
+    .nfM4ContactsIntro{display:flex;align-items:center;gap:16px;padding:18px 22px;background:#073e7d;color:#fff}
+    .nfM4Wa{
+      width:72px;height:72px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+      border-radius:50%;background:#12bf74;color:#fff;font-size:39px;font-weight:950
+    }
+    .nfM4ContactsIntro strong{display:block;font-size:24px;line-height:1.04}
+    .nfM4ContactsIntro span{display:block;margin-top:6px;color:#72efb6;font-size:19px;font-weight:900;text-transform:uppercase}
+    .nfM4ContactsGrid{
+      min-width:0;padding:17px 22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      grid-auto-rows:53px;column-gap:20px;align-content:center
+    }
+    .nfM4Contact{
+      min-width:0;display:flex;align-items:center;gap:9px;color:#103a6c;font-size:19px;font-weight:850;
+      white-space:nowrap;overflow:hidden;border-bottom:1px solid #e1e9ef
+    }
+    .nfM4Contact::before{content:"☎";color:#0caf69;font-weight:950}
+
+    .nfM4Footer{
+      position:absolute;z-index:6;left:0;right:0;bottom:0;height:180px;box-sizing:border-box;
+      padding:30px 48px;display:flex;align-items:center;justify-content:space-between;gap:30px;
+      background:linear-gradient(120deg,#063d78,#032b59);color:#fff;font-size:27px;line-height:1.08
+    }
+    .nfM4Footer b{font-size:31px}
+    .nfM4FooterBenefits{display:flex;gap:24px;font-size:18px;font-weight:850}
+
   </style>
 </head>
 
@@ -1215,6 +1360,7 @@
             <button class="nfModelBtn" id="nfModel1Btn" type="button">MOD 01</button>
             <button class="nfModelBtn" id="nfModel2Btn" type="button">MOD 02</button>
             <button class="nfModelBtn active" id="nfModel3Btn" type="button">MOD 03</button>
+            <button class="nfModelBtn" id="nfModel4Btn" type="button" title="Selecione 2 a 4 linhas: o MOD 04 será ativado automaticamente">MOD 04</button>
           </div>
         </div>
         <div class="nfArtCard" id="nfArtCard">
@@ -1318,6 +1464,44 @@
               </div>
             </footer>
           </div>
+
+          <div class="nfM4Canvas" id="nfM4Canvas">
+            <section class="nfM4Hero">
+              <img class="nfM4HeroImg" src="../assets/img/hero.jpg" alt="" crossorigin="anonymous" />
+              <div class="nfM4HeroWash"></div>
+              <img class="nfM4Logo" src="../assets/img/logo-novafrota.png" alt="Nova Frota" crossorigin="anonymous" />
+              <div class="nfM4Title">FRETES <strong>DISPONÍVEIS</strong></div>
+              <div class="nfM4Subtitle">CARGAS CONFIRMADAS • PRONTAS PARA CARREGAR</div>
+            </section>
+
+            <section class="nfM4Body">
+              <div class="nfM4Empty" id="nfM4Empty">
+                <strong>MOD 04</strong>
+                <span>Selecione de 2 a 4 fretes na tabela.</span>
+              </div>
+              <div class="nfM4Fretes" id="nfM4Fretes"></div>
+
+              <div class="nfM4Contacts">
+                <div class="nfM4ContactsIntro">
+                  <div class="nfM4Wa">☎</div>
+                  <div>
+                    <strong>FALE COM NOSSA EQUIPE</strong>
+                    <span id="nfM4Filial">NOVA FROTA</span>
+                  </div>
+                </div>
+                <div class="nfM4ContactsGrid" id="nfM4ContactsGrid"></div>
+              </div>
+            </section>
+
+            <footer class="nfM4Footer">
+              <div><b>MAIS QUE FRETES,</b><br>PARCERIA EM CADA DESTINO.</div>
+              <div class="nfM4FooterBenefits">
+                <span>◇ SEGURANÇA</span>
+                <span>◈ AGILIDADE</span>
+                <span>▥ RESULTADOS</span>
+              </div>
+            </footer>
+          </div>
         </div>
         <div class="nfPreviewButtons">
           <button class="green" id="nfBaixarJPG" type="button">⬇ BAIXAR JPG</button>
@@ -1405,7 +1589,7 @@
 
   <script src="../assets/js/auth.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/fretes2.js?v=19"></script>
+  <script src="../assets/js/fretes2.js?v=20"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

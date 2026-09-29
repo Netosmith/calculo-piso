@@ -4,6 +4,71 @@ import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js"
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
 
+const HOME_METRICS_CACHE_PREFIX = "home:metrics:v2:";
+const HOME_METRICS_FRESH_MS = 45 * 1000;
+const HOME_METRICS_STALE_MS = 12 * 60 * 60 * 1000;
+
+function homeMetricsCacheKey(session) {
+  const estado = String(session?.estado || "GLOBAL").trim().toUpperCase() || "GLOBAL";
+  return `${HOME_METRICS_CACHE_PREFIX}${estado}`;
+}
+
+async function readHomeMetricsCache(env, session) {
+  if (!env?.SESSIONS) return null;
+  try {
+    const raw = await env.SESSIONS.get(homeMetricsCacheKey(session));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const cachedAt = Number(parsed?.cachedAt || 0);
+    const data = parsed?.data;
+    if (!cachedAt || !data || typeof data !== "object" || Array.isArray(data)) return null;
+    return { cachedAt, ageMs: Math.max(0, Date.now() - cachedAt), data };
+  } catch (error) {
+    console.warn("[HOME] Falha ao ler cache de métricas", { message: String(error?.message || error) });
+    return null;
+  }
+}
+
+async function writeHomeMetricsCache(env, session, data) {
+  if (!env?.SESSIONS || !data || typeof data !== "object" || Array.isArray(data)) return;
+  try {
+    await env.SESSIONS.put(
+      homeMetricsCacheKey(session),
+      JSON.stringify({ cachedAt: Date.now(), data }),
+      { expirationTtl: 24 * 60 * 60 }
+    );
+  } catch (error) {
+    console.warn("[HOME] Falha ao salvar cache de métricas", { message: String(error?.message || error) });
+  }
+}
+
+async function requestHomeMetricsFromAppsScript(env, session, params) {
+  const result = await callAppsScript(env, {
+    action: "portal_gateway",
+    method: "POST",
+    params: {
+      module: "home",
+      action: "read",
+      payload: params,
+      auth: {
+        usuario: session.usuario,
+        nome: session.nome,
+        perfil: session.perfil,
+        estado: session.estado,
+        estados: session.estados
+      }
+    }
+  });
+
+  if (!result?.ok) {
+    throw new Error(result?.error || "O Apps Script recusou a leitura da Home.");
+  }
+
+  const data = result.data ?? result;
+  await writeHomeMetricsCache(env, session, data);
+  return data;
+}
+
 const ESTADIAS_PRECISION_PREFIX = "estadias:precision:v1:";
 const ESTADIAS_PRECISION_FIELDS = [
   "dataHoraChegada",
@@ -330,7 +395,7 @@ async function overlayEstadiasPrecision(env, data) {
   return applyPrecision(data, precision);
 }
 
-export async function portalGatewayController(request, env) {
+export async function portalGatewayController(request, env, ctx) {
   const sessionId = readSessionId(request);
   const session = await getSession(env, sessionId);
 
@@ -400,6 +465,40 @@ export async function portalGatewayController(request, env) {
   }
 
   try {
+    if (moduleName === "home" && actionName === "read") {
+      const cached = await readHomeMetricsCache(env, session);
+
+      if (cached && cached.ageMs <= HOME_METRICS_FRESH_MS) {
+        return success({
+          module: moduleName,
+          action: actionName,
+          data: {
+            ...cached.data,
+            _cache: { source: "worker", stale: false, ageMs: cached.ageMs }
+          }
+        });
+      }
+
+      if (cached && cached.ageMs <= HOME_METRICS_STALE_MS && ctx?.waitUntil) {
+        ctx.waitUntil(
+          requestHomeMetricsFromAppsScript(env, session, params).catch((error) => {
+            console.warn("[HOME] Atualização em background falhou", {
+              message: String(error?.message || error)
+            });
+          })
+        );
+
+        return success({
+          module: moduleName,
+          action: actionName,
+          data: {
+            ...cached.data,
+            _cache: { source: "worker", stale: true, ageMs: cached.ageMs }
+          }
+        });
+      }
+    }
+
     const result = await callAppsScript(env, {
       action: "portal_gateway",
       method: "POST",
@@ -423,6 +522,10 @@ export async function portalGatewayController(request, env) {
         Number(result?.status) || 502,
         result?.details
       );
+    }
+
+    if (moduleName === "home" && actionName === "read") {
+      await writeHomeMetricsCache(env, session, result.data ?? result);
     }
 
     // O Apps Script legado normaliza datas de ESTADIAS em HH:mm e elimina

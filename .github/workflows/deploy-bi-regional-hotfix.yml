@@ -1,4 +1,4 @@
-name: Deploy Regional Base Gateway Fix v2
+name: Deploy Home Metrics Cache
 
 on:
   push:
@@ -44,5 +44,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx wrangler rollback 84216bb3-56c3-4fab-a85e-a8f76553c7f2 --message "Rollback automatico apos falha no ajuste v2 de base das regionais no gateway"
+          npx wrangler rollback 6d81c2db-d7d8-43c0-b083-b813fdbbf0fb --message "Rollback automatico apos falha no cache rápido das métricas da Home"
           exit 1

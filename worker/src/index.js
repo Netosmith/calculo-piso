@@ -11,7 +11,7 @@ import { logRequest, logError } from "./middleware/logger.js";
 import { errorResponse } from "./utils/response.js";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     logRequest(request);
 
     if (request.method === "OPTIONS") {
@@ -32,7 +32,7 @@ export default {
     }
 
     try {
-      const response = await routeRequest(request, env);
+      const response = await routeRequest(request, env, ctx);
       if (response.webSocket || !cors) return response;
 
       const headers = new Headers(response.headers);

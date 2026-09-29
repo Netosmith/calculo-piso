@@ -879,6 +879,52 @@
       if (el) el.textContent = `Atualizado às ${horarioAtualizacao(horario)}`;
     }
 
+    function homeMetricsBrowserCacheKey() {
+      const estado = typeof getSelectedState === "function"
+        ? String(getSelectedState() || "GLOBAL").toUpperCase()
+        : "GLOBAL";
+      return `nf_home_metrics_v2_${estado}`;
+    }
+
+    function salvarMetricasHomeLocal(metricas) {
+      if (!metricas || typeof metricas !== "object") return;
+      try {
+        localStorage.setItem(
+          homeMetricsBrowserCacheKey(),
+          JSON.stringify({ savedAt: Date.now(), data: metricas })
+        );
+      } catch (erro) {
+        console.warn("[HOME] cache local indisponível:", erro);
+      }
+    }
+
+    function restaurarMetricasHomeLocal() {
+      try {
+        const raw = localStorage.getItem(homeMetricsBrowserCacheKey());
+        if (!raw) return false;
+
+        const cached = JSON.parse(raw);
+        const ageMs = Date.now() - Number(cached?.savedAt || 0);
+        if (!cached?.data || !Number.isFinite(ageMs) || ageMs < 0 || ageMs > 24 * 60 * 60 * 1000) {
+          return false;
+        }
+
+        atualizarMetricasHome(cached.data);
+
+        ["homeFretesAtualizacao", "homeVeiculosAtualizacao"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = "Atualizando...";
+        });
+
+        const footer = document.querySelector(".nf-footer-status");
+        if (footer) footer.textContent = "Atualizando indicadores...";
+        return true;
+      } catch (erro) {
+        console.warn("[HOME] não foi possível restaurar o cache local:", erro);
+        return false;
+      }
+    }
+
     function atualizarMetricasHome(metricas = {}) {
       const numeroSeguro = (...valores) => {
         for (const valor of valores) {
@@ -973,6 +1019,7 @@
         const resultado = await window.PortalAPI.call("home", "read");
         const metricas = resultado.data || {};
         atualizarMetricasHome(metricas);
+        salvarMetricasHomeLocal(metricas);
 
         const footer = document.querySelector(".nf-footer-status");
         if (footer) {
@@ -1055,6 +1102,7 @@
 
       aplicarPermissoesHome();
 
+      restaurarMetricasHomeLocal();
       carregarMetricasHome();
 
       /* Mantém o total de solicitações sincronizado com o script existente. */

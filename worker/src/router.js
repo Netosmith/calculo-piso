@@ -10,7 +10,7 @@ import {
 } from "./controllers/session.js";
 import { notFound, methodNotAllowed } from "./utils/response.js";
 
-export async function routeRequest(request, env) {
+export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
@@ -48,7 +48,7 @@ export async function routeRequest(request, env) {
 
   if (path === "/v1/gateway") {
     if (request.method !== "POST") return methodNotAllowed(["POST"]);
-    return portalGatewayController(request, env);
+    return portalGatewayController(request, env, ctx);
   }
 
   return notFound();

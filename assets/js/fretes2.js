@@ -296,11 +296,11 @@
   };
 
   const PISO_PARAMS = {
-    e9: { eixos: 9, rkm: 9.2662, custoCC: 877.83, weightInputId: "w9", defaultPeso: 47 },
-    e4: { eixos: 4, rkm: 8.0855, custoCC: 792.3, weightInputId: "w4", defaultPeso: 39 },
-    e7: { eixos: 7, rkm: 8.0855, custoCC: 792.3, weightInputId: "w7", defaultPeso: 36 },
-    e6: { eixos: 6, rkm: 7.4408, custoCC: 656.76, weightInputId: "w6", defaultPeso: 31 },
-    e5: { eixos: 5, rkm: 6.7381, custoCC: 642.1, weightInputId: "w5", defaultPeso: 26 },
+    e9: { eixos: 9, rkm: 9.2231, custoCC: 908.910, weightInputId: "w9", defaultPeso: 48 },
+    e4: { eixos: 4, rkm: 8.0516, custoCC: 820.340, weightInputId: "w4", defaultPeso: 39 },
+    e7: { eixos: 7, rkm: 8.0516, custoCC: 820.340, weightInputId: "w7", defaultPeso: 36 },
+    e6: { eixos: 6, rkm: 7.3841, custoCC: 680.010, weightInputId: "w6", defaultPeso: 31 },
+    e5: { eixos: 5, rkm: 6.6983, custoCC: 664.830, weightInputId: "w5", defaultPeso: 26 },
   };
 
   function safeText(v) {

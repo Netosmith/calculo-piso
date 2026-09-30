@@ -1346,13 +1346,17 @@ function normalizeLegacyPortalChrome(){
     const usefulControls = Array.from(
       bar.querySelectorAll("button,select,input,a")
     ).filter((el) => {
-      if(el.matches("[data-logout],#btnLogout,#btnHome,.home")) return false;
+      if(el.matches("[data-logout],#btnLogout,#btnHome,.home,.burger,.back,.fleet-home")) return false;
       if(el.matches('a[href="./home.html"],a[href$="/home.html"],a[href$="home.html"]')) return false;
-      if(el.closest(".brand,.brandArea,.brandText,.userMini")) return false;
+      if(el.closest(".userMini,.userBox,.account")) return false;
       return true;
     });
 
-    if(!usefulControls.length){
+    const hasModuleTitle = Boolean(
+      bar.querySelector(".titlebar,h1,h2,.stateChip,.syncStatus,#sync")
+    );
+
+    if(!usefulControls.length && !hasModuleTitle){
       bar.classList.add("nf-global-legacy-hidden");
       return;
     }

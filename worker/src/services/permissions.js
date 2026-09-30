@@ -88,6 +88,15 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
   const profile = normalize(session?.perfil);
   const resource = normalize(params?.resource);
 
+  // O perfil PISO usa a Home, mas não pode consultar indicadores operacionais.
+  if (
+    moduleName === "home" &&
+    actionName === "read" &&
+    profile === "PISO"
+  ) {
+    return false;
+  }
+
   if (
     moduleName === "administrativo" &&
     actionName === "create" &&

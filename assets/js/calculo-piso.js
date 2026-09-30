@@ -19,7 +19,7 @@ const DATA=[
  {tipo:"6 LS Caçamba",eixos:6,rkm:7.5641,custoCC:680.01,peso:29},
  {tipo:"5 LS Graneleiro",eixos:5,rkm:6.8548,custoCC:664.83,peso:26},
  {tipo:"5 LS TOCO Caçamba",eixos:5,rkm:6.8548,custoCC:664.83,peso:25},
- {tipo:"3 Truck Graneleiro",eixos:3,rkm:5.9476,custoCC:552.24,peso:14}
+ {tipo:"3 Truck Graneleiro",eixos:3,rkm:5.2555,custoCC:552.24,peso:14}
 ];
 
 const $=id=>document.getElementById(id);

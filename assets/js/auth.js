@@ -1027,8 +1027,6 @@ function injectPortalNavStyles(){
       border-radius:14px!important;
       box-shadow:0 6px 18px rgba(15,42,72,.06)!important;
     }
-    .nf-global-module-tools .brand,
-    .nf-global-module-tools .brandArea,
     .nf-global-module-tools .brandText,
     .nf-global-module-tools .userMini,
     .nf-global-module-tools [data-logout],
@@ -1036,8 +1034,19 @@ function injectPortalNavStyles(){
     .nf-global-module-tools #btnHome,
     .nf-global-module-tools .home,
     .nf-global-module-tools a[href$="home.html"],
-    .nf-global-module-tools a[href="./home.html"]{
+    .nf-global-module-tools a[href="./home.html"],
+    .nf-global-module-tools .brand > img,
+    .nf-global-module-tools .brandArea > img,
+    .nf-global-module-tools .fleet-brand > img{
       display:none!important;
+    }
+    .nf-global-module-tools .brand,
+    .nf-global-module-tools .brandArea,
+    .nf-global-module-tools .fleet-brand{
+      display:flex!important;
+      align-items:center!important;
+      min-width:0!important;
+      gap:10px!important;
     }
     .nf-global-module-tools,
     .nf-global-module-tools .topbar-inner,

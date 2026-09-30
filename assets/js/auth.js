@@ -478,6 +478,418 @@ function bindLogoutButton(){
   };
 }
 
+// =====================================================
+// PORTAL GLOBAL NAV
+// Menu superior compartilhado entre os módulos do Portal.
+// Os itens são filtrados pelas mesmas permissões usadas na Home.
+// =====================================================
+const PORTAL_NAV_ITEMS = [
+  {
+    key:"home",
+    label:"Home",
+    href:"./home.html",
+    always:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>'
+  },
+  {
+    key:"piso",
+    label:"Cálculo Piso",
+    feature:["piso2","piso"],
+    href:() => canAccessFeature("piso2") ? "./calculo-antt.html" : "./calculo-piso.html",
+    paths:["calculo-piso.html","calculo-antt.html","calculo-antt2.html"],
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 6-7"/></svg>'
+  },
+  {
+    key:"fretes",
+    label:"Fretes",
+    feature:["fretes","fretes2"],
+    href:() => {
+      const uf = typeof getSelectedState === "function" ? getSelectedState() : "";
+      if(uf === "MT" && canAccessFeature("fretes2")) return "./fretes2.html";
+      if(canAccessFeature("fretes")) return "./fretes.html";
+      return "./fretes2.html";
+    },
+    paths:["fretes.html","fretes2.html"],
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
+  },
+  {
+    key:"controle",
+    label:"Controle Embarque",
+    feature:"controle",
+    href:"./controle.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7"/><path d="M3 20h18"/></svg>'
+  },
+  {
+    key:"share",
+    label:"Share Clientes",
+    feature:"share",
+    href:"./share-clientes.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-4 2-7 5-7s5 3 5 7M14 14c4-.8 7 1.7 7 6"/></svg>'
+  },
+  {
+    key:"divulgacao",
+    label:"Divulgação",
+    feature:"divulgacao",
+    href:"./divulgacao.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13V9l12-5v14L4 13Z"/><path d="M16 8h3a2 2 0 0 1 0 4h-3M6 13l1 6h4l-2-5"/></svg>'
+  },
+  {
+    key:"bi",
+    label:"BI Operacional",
+    feature:"bi",
+    href:"./bi.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10h3v10M11 20V4h3v16M17 20v-7h3v7M3 20h19"/></svg>'
+  },
+  {
+    key:"administrativo",
+    label:"Administrativo",
+    feature:"administrativo",
+    href:"./administrativo.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7-.7-1.7.9-1.9-2.1-2.1-1.9.9-1.7-.7L10.5 2h-3l-.7 2-1.7.7-1.9-.9L1.1 5.9l.9 1.9-.7 1.7-2 .7v3l2 .7.7 1.7-.9 1.9 2.1 2.1 1.9-.9 1.7.7.7 2h3l.7-2 1.7-.7 1.9.9 2.1-2.1-.9-1.9.7-1.7 2-.7Z" transform="translate(1.5 0) scale(.85)"/></svg>'
+  },
+  {
+    key:"cadastros",
+    label:"Cadastro",
+    feature:"cadastros",
+    href:"./cadastros.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
+  },
+  {
+    key:"relatorio",
+    label:"Relatório",
+    feature:"relatorio",
+    href:"./relatorio.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6"/></svg>'
+  },
+  {
+    key:"estadias",
+    label:"Estadia",
+    feature:"estadias",
+    href:"./estadias.html",
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>'
+  },
+  {
+    key:"embarques",
+    label:"Embarques",
+    feature:"embarques",
+    href:"./embarques.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 5v14M15 12h3"/></svg>'
+  },
+  {
+    key:"chamados",
+    label:"Suporte",
+    feature:"chamados",
+    href:"./chamados.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13a2 2 0 0 1 2-2h1v6H6a2 2 0 0 1-2-2v-2ZM20 13a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2v-2Z"/></svg>'
+  }
+];
+
+function injectPortalNavStyles(){
+  if(document.getElementById("nfGlobalNavStyle")) return;
+
+  const style = document.createElement("style");
+  style.id = "nfGlobalNavStyle";
+  style.textContent = `
+    .nf-global-nav{
+      flex:1 1 auto;
+      min-width:0;
+      height:62px;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      gap:0;
+      overflow-x:auto;
+      overflow-y:hidden;
+      scrollbar-width:none;
+      -ms-overflow-style:none;
+      position:relative;
+      z-index:80;
+      margin:0 12px;
+    }
+    .nf-global-nav::-webkit-scrollbar{display:none}
+    .nf-global-nav-item{
+      position:relative;
+      flex:0 0 auto;
+      min-width:78px;
+      height:62px;
+      padding:7px 11px 6px;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      color:#d6e7fb!important;
+      text-decoration:none!important;
+      border-left:1px solid rgba(255,255,255,.035);
+      border-right:1px solid rgba(255,255,255,.02);
+      background:transparent;
+      font-family:Inter,Arial,sans-serif;
+      transition:background .2s ease,color .2s ease,transform .2s ease;
+      white-space:nowrap;
+    }
+    .nf-global-nav-item svg{
+      width:20px;
+      height:20px;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:1.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      opacity:.95;
+      transition:filter .2s ease,transform .2s ease;
+    }
+    .nf-global-nav-item span{
+      font-size:10px;
+      line-height:1;
+      font-weight:800;
+      letter-spacing:-.01em;
+    }
+    .nf-global-nav-item::after{
+      content:"";
+      position:absolute;
+      left:11px;
+      right:11px;
+      bottom:2px;
+      height:2px;
+      border-radius:999px;
+      background:#42b9ff;
+      box-shadow:
+        0 0 4px #42b9ff,
+        0 0 10px #168fff,
+        0 0 20px rgba(0,153,255,.92),
+        0 -3px 18px rgba(61,177,255,.38);
+      transform:scaleX(0);
+      transform-origin:center;
+      opacity:0;
+      transition:transform .18s ease,opacity .18s ease;
+    }
+    .nf-global-nav-item:hover,
+    .nf-global-nav-item:focus-visible{
+      color:#fff!important;
+      background:linear-gradient(180deg,rgba(14,83,154,.14),rgba(14,115,215,.09));
+      outline:none;
+    }
+    .nf-global-nav-item:hover::after,
+    .nf-global-nav-item:focus-visible::after,
+    .nf-global-nav-item.active::after{
+      transform:scaleX(1);
+      opacity:1;
+    }
+    .nf-global-nav-item:hover svg,
+    .nf-global-nav-item:focus-visible svg,
+    .nf-global-nav-item.active svg{
+      filter:drop-shadow(0 0 5px rgba(56,189,248,.95));
+      transform:translateY(-1px);
+    }
+    .nf-global-nav-item.active{
+      color:#fff!important;
+      background:linear-gradient(180deg,rgba(18,85,157,.2),rgba(8,73,143,.12));
+    }
+
+    /* O menu entra dentro do cabeçalho que a página já possui. */
+    .topbar-inner.nf-global-nav-host,
+    .nf-topbar-inner.nf-global-nav-host,
+    .fleet-topbar-inner.nf-global-nav-host{
+      display:flex!important;
+      align-items:center!important;
+      min-width:0;
+    }
+    header.topbar.nf-global-nav-host,
+    header.portal-header.nf-global-nav-host{
+      display:flex!important;
+      align-items:center!important;
+      min-width:0;
+    }
+    .nf-global-nav-host > .nf-global-nav{min-width:240px}
+
+    /* Barra autônoma para páginas antigas que não tinham cabeçalho padrão. */
+    .nf-global-nav-standalone{
+      position:sticky;
+      top:0;
+      z-index:9999;
+      width:100%;
+      height:66px;
+      box-sizing:border-box;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:0 18px;
+      background:linear-gradient(90deg,#06152b,#071a35 62%,#06152b);
+      border-bottom:1px solid rgba(90,146,205,.22);
+      box-shadow:0 8px 24px rgba(2,12,27,.12);
+    }
+    .nf-global-nav-standalone-brand{
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      gap:9px;
+      text-decoration:none;
+    }
+    .nf-global-nav-standalone-brand img{
+      display:block;
+      width:142px;
+      max-height:42px;
+      object-fit:contain;
+    }
+
+    @media(max-width:1450px){
+      .nf-global-nav-item{min-width:62px;padding-left:8px;padding-right:8px}
+      .nf-global-nav-item span{font-size:9px}
+    }
+    @media(max-width:1180px){
+      .nf-global-nav{justify-content:flex-start}
+      .nf-global-nav-item{min-width:48px}
+      .nf-global-nav-item span{display:none}
+      .nf-global-nav-item svg{width:21px;height:21px}
+    }
+    @media(max-width:760px){
+      .nf-global-nav{height:54px;margin:0 5px}
+      .nf-global-nav-item{height:54px;min-width:44px}
+      .nf-global-nav-standalone{height:58px;padding:0 8px}
+      .nf-global-nav-standalone-brand img{width:105px}
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+function portalNavCurrentFile(){
+  return String(window.location.pathname || "")
+    .split("/")
+    .pop()
+    .toLowerCase();
+}
+
+function portalNavAllowed(item){
+  if(item.always) return isAuthedHome();
+  const features = Array.isArray(item.feature) ? item.feature : [item.feature];
+  return features.filter(Boolean).some(feature => canAccessFeature(feature));
+}
+
+function portalNavHref(item){
+  return typeof item.href === "function" ? item.href() : item.href;
+}
+
+function portalNavIsActive(item){
+  const file = portalNavCurrentFile();
+  const paths = item.paths || [String(portalNavHref(item) || "").split("/").pop().toLowerCase()];
+  return paths.map(path => String(path || "").toLowerCase()).includes(file);
+}
+
+function createPortalGlobalNav(){
+  const nav = document.createElement("nav");
+  nav.className = "nf-global-nav";
+  nav.id = "nfGlobalNav";
+  nav.setAttribute("aria-label","Navegação principal do Portal");
+
+  PORTAL_NAV_ITEMS
+    .filter(portalNavAllowed)
+    .forEach(item => {
+      const link = document.createElement("a");
+      link.className = "nf-global-nav-item";
+      if(portalNavIsActive(item)) link.classList.add("active");
+      link.href = portalNavHref(item);
+      link.title = item.label;
+      link.setAttribute("aria-label", item.label);
+      link.innerHTML = `${item.icon}<span>${item.label}</span>`;
+      nav.appendChild(link);
+    });
+
+  return nav;
+}
+
+function findPortalNavHost(){
+  const selectors = [
+    ".nf-topbar-inner",
+    ".topbar-inner",
+    ".fleet-topbar-inner",
+    "header.portal-header",
+    "header.topbar"
+  ];
+
+  for(const selector of selectors){
+    const host = document.querySelector(selector);
+    if(host) return host;
+  }
+
+  return null;
+}
+
+function insertPortalNavIntoHost(host, nav){
+  host.classList.add("nf-global-nav-host");
+
+  const preferredRight = host.querySelector(
+    ".actions,.topRight,.topActions,.userbox,.account,.fleet-logout,.nf-solic-wrap,.nf-actions"
+  );
+
+  if(preferredRight){
+    host.insertBefore(nav, preferredRight);
+    return;
+  }
+
+  if(host.children.length > 1){
+    host.insertBefore(nav, host.lastElementChild);
+    return;
+  }
+
+  host.appendChild(nav);
+}
+
+function renderPortalGlobalNav(){
+  if(!document.body || !isAuthedHome()) return;
+
+  injectPortalNavStyles();
+
+  document.getElementById("nfGlobalNav")?.remove();
+  document.querySelector(".nf-global-nav-standalone")?.remove();
+
+  const nav = createPortalGlobalNav();
+  if(!nav.children.length) return;
+
+  const host = findPortalNavHost();
+  if(host){
+    insertPortalNavIntoHost(host, nav);
+    return;
+  }
+
+  const shell = document.createElement("div");
+  shell.className = "nf-global-nav-standalone";
+
+  const brand = document.createElement("a");
+  brand.className = "nf-global-nav-standalone-brand";
+  brand.href = "./home.html";
+  brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
+
+  shell.appendChild(brand);
+  shell.appendChild(nav);
+  document.body.insertBefore(shell, document.body.firstChild);
+}
+
+async function initPortalGlobalNav(){
+  const file = portalNavCurrentFile();
+  if(["login.html","index.html","ordem.html"].includes(file)) return;
+
+  try{
+    if(window.portalAuthReady) await window.portalAuthReady;
+  }catch{}
+
+  if(!isAuthedHome()) return;
+  renderPortalGlobalNav();
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", initPortalGlobalNav, { once:true });
+}else{
+  initPortalGlobalNav();
+}
+
+window.addEventListener("portal:session", () => {
+  renderPortalGlobalNav();
+});
+
 window.portalAuthReady = refreshPortalSession()
   .then(session => {
     window.dispatchEvent(new CustomEvent("portal:session", { detail:session }));

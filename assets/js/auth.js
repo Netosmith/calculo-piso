@@ -607,6 +607,10 @@ function injectPortalNavStyles(){
       position:relative;
       z-index:80;
       margin:0 12px;
+      background:linear-gradient(90deg,rgba(4,22,47,.94),rgba(7,31,62,.94) 55%,rgba(4,22,47,.94));
+      border:1px solid rgba(67,139,210,.12);
+      border-radius:12px;
+      box-shadow:inset 0 -1px 0 rgba(255,255,255,.025);
     }
     .nf-global-nav::-webkit-scrollbar{display:none}
     .nf-global-nav-item{

@@ -7,19 +7,19 @@ const QUICK_QUOTE_KEY=`piso_${userSafeKey_()}_cotacao_rapida_v1`;
 
 /* PARÂMETROS FIXOS ANTT 6.084, DE 16/07/2026 */
 const DATA=[
- {tipo:"9 Rodotrem",eixos:9,rkm:9.2231,custoCC:908.91,peso:49},
- {tipo:"9 Rodocaçamba",eixos:9,rkm:9.2231,custoCC:908.91,peso:47},
- {tipo:"8 eixos Graneleiro",eixos:8,rkm:8.0516,custoCC:820.34,peso:45},
- {tipo:"8 eixos Caçamba",eixos:8,rkm:8.0516,custoCC:820.34,peso:43},
- {tipo:"4 eixo Graneleiro",eixos:7,rkm:8.0516,custoCC:820.34,peso:39},
- {tipo:"4 eixo Caçamba",eixos:7,rkm:8.0516,custoCC:820.34,peso:37},
- {tipo:"7 Bitrem",eixos:7,rkm:8.0516,custoCC:820.34,peso:36},
- {tipo:"7 Biçamba",eixos:7,rkm:8.0516,custoCC:820.34,peso:35},
- {tipo:"6 LS Graneleiro",eixos:6,rkm:7.3841,custoCC:680.01,peso:31},
- {tipo:"6 LS Caçamba",eixos:6,rkm:7.3841,custoCC:680.01,peso:29},
- {tipo:"5 LS Graneleiro",eixos:5,rkm:6.6983,custoCC:664.83,peso:26},
- {tipo:"5 LS TOCO Caçamba",eixos:5,rkm:6.6983,custoCC:664.83,peso:25},
- {tipo:"3 Truck Graneleiro",eixos:3,rkm:5.1355,custoCC:552.24,peso:14}
+ {tipo:"9 Rodotrem",eixos:9,rkm:9.4318,custoCC:908.91,peso:49},
+ {tipo:"9 Rodocaçamba",eixos:9,rkm:9.4318,custoCC:908.91,peso:47},
+ {tipo:"8 eixos Graneleiro",eixos:8,rkm:8.2316,custoCC:820.34,peso:45},
+ {tipo:"8 eixos Caçamba",eixos:8,rkm:8.2316,custoCC:820.34,peso:43},
+ {tipo:"4 eixo Graneleiro",eixos:7,rkm:8.2316,custoCC:820.34,peso:39},
+ {tipo:"4 eixo Caçamba",eixos:7,rkm:8.2316,custoCC:820.34,peso:37},
+ {tipo:"7 Bitrem",eixos:7,rkm:8.2316,custoCC:820.34,peso:36},
+ {tipo:"7 Biçamba",eixos:7,rkm:8.2316,custoCC:820.34,peso:35},
+ {tipo:"6 LS Graneleiro",eixos:6,rkm:7.5641,custoCC:680.01,peso:31},
+ {tipo:"6 LS Caçamba",eixos:6,rkm:7.5641,custoCC:680.01,peso:29},
+ {tipo:"5 LS Graneleiro",eixos:5,rkm:6.8548,custoCC:664.83,peso:26},
+ {tipo:"5 LS TOCO Caçamba",eixos:5,rkm:6.8548,custoCC:664.83,peso:25},
+ {tipo:"3 Truck Graneleiro",eixos:3,rkm:5.9476,custoCC:552.24,peso:14}
 ];
 
 const $=id=>document.getElementById(id);

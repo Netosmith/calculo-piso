@@ -969,17 +969,19 @@ function injectPortalNavStyles(){
       box-sizing:border-box;
       display:flex;
       align-items:center;
-      gap:14px;
-      padding:0 18px;
+      gap:12px;
+      padding:0 14px;
       background:linear-gradient(90deg,#06152b,#071a35 62%,#06152b);
       border-bottom:1px solid rgba(90,146,205,.22);
-      box-shadow:0 8px 24px rgba(2,12,27,.12);
+      box-shadow:0 8px 24px rgba(2,12,27,.16);
     }
     .nf-global-nav-standalone-brand{
-      flex:0 0 auto;
+      flex:0 0 150px;
+      min-width:150px;
+      height:54px;
       display:flex;
       align-items:center;
-      gap:9px;
+      justify-content:center;
       text-decoration:none;
     }
     .nf-global-nav-standalone-brand img{
@@ -987,6 +989,68 @@ function injectPortalNavStyles(){
       width:142px;
       max-height:42px;
       object-fit:contain;
+    }
+    .nf-global-nav-logout{
+      position:relative;
+      flex:0 0 46px;
+      width:46px;
+      height:46px;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(90,146,205,.22);
+      border-radius:12px;
+      background:linear-gradient(180deg,rgba(8,34,68,.96),rgba(4,22,47,.96));
+      color:#d9ecff;
+      font-size:18px;
+      cursor:pointer;
+      transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+    }
+    .nf-global-nav-logout:hover,
+    .nf-global-nav-logout:focus-visible{
+      color:#fff;
+      border-color:rgba(66,185,255,.72);
+      box-shadow:0 0 8px rgba(66,185,255,.3),0 0 22px rgba(22,143,255,.18);
+      transform:translateY(-1px);
+      outline:none;
+    }
+
+    /* A barra global é única. Cabeçalhos antigos viram apenas ferramentas do módulo. */
+    .nf-global-legacy-hidden{display:none!important}
+    .nf-global-module-tools{
+      min-height:0!important;
+      height:auto!important;
+      margin:10px auto 0!important;
+      padding:8px 14px!important;
+      box-sizing:border-box!important;
+      background:#fff!important;
+      border:1px solid #dbe5f0!important;
+      border-radius:14px!important;
+      box-shadow:0 6px 18px rgba(15,42,72,.06)!important;
+    }
+    .nf-global-module-tools .brand,
+    .nf-global-module-tools .brandArea,
+    .nf-global-module-tools .brandText,
+    .nf-global-module-tools .userMini,
+    .nf-global-module-tools [data-logout],
+    .nf-global-module-tools #btnLogout,
+    .nf-global-module-tools #btnHome,
+    .nf-global-module-tools .home,
+    .nf-global-module-tools a[href$="home.html"],
+    .nf-global-module-tools a[href="./home.html"]{
+      display:none!important;
+    }
+    .nf-global-module-tools,
+    .nf-global-module-tools .topbar-inner,
+    .nf-global-module-tools .nf-topbar-inner,
+    .nf-global-module-tools .fleet-topbar-inner{
+      justify-content:flex-end!important;
+      gap:8px!important;
+    }
+    body.nf-standard-shell .app,
+    body.nf-standard-shell .page,
+    body.nf-standard-shell .container,
+    body.nf-standard-shell .pageBI{
+      position:relative;
     }
 
     @media(max-width:1450px){
@@ -1002,8 +1066,10 @@ function injectPortalNavStyles(){
     @media(max-width:760px){
       .nf-global-nav{height:54px;margin:0 5px}
       .nf-global-nav-item{height:54px;min-width:44px}
-      .nf-global-nav-standalone{height:58px;padding:0 8px}
+      .nf-global-nav-standalone{height:58px;padding:0 8px;gap:6px}
+      .nf-global-nav-standalone-brand{flex-basis:108px;min-width:108px;height:48px}
       .nf-global-nav-standalone-brand img{width:105px}
+      .nf-global-nav-logout{width:42px;height:42px;flex-basis:42px}
     }
   `;
 
@@ -1258,6 +1324,64 @@ function insertPortalNavIntoHost(host, nav, more){
   host.appendChild(more);
 }
 
+function normalizeLegacyPortalChrome(){
+  document.body?.classList.add("nf-standard-shell");
+
+  const candidates = Array.from(document.querySelectorAll(
+    "body > .topbar, body > header.topbar, body > .portal-header, body > .fleet-topbar, main.app > header.topbar, .app > header.topbar"
+  ));
+
+  candidates.forEach((bar) => {
+    if(bar.closest(".nf-global-nav-standalone")) return;
+
+    const usefulControls = Array.from(
+      bar.querySelectorAll("button,select,input,a")
+    ).filter((el) => {
+      if(el.matches("[data-logout],#btnLogout,#btnHome,.home")) return false;
+      if(el.matches('a[href="./home.html"],a[href$="/home.html"],a[href$="home.html"]')) return false;
+      if(el.closest(".brand,.brandArea,.brandText,.userMini")) return false;
+      return true;
+    });
+
+    if(!usefulControls.length){
+      bar.classList.add("nf-global-legacy-hidden");
+      return;
+    }
+
+    bar.classList.add("nf-global-module-tools");
+  });
+}
+
+function createPortalGlobalShell(nav, more){
+  const shell = document.createElement("header");
+  shell.className = "nf-global-nav-standalone";
+  shell.id = "nfGlobalShell";
+
+  const brand = document.createElement("a");
+  brand.className = "nf-global-nav-standalone-brand";
+  brand.href = "./home.html";
+  brand.title = "Home";
+  brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
+
+  const logout = document.createElement("button");
+  logout.type = "button";
+  logout.className = "nf-global-nav-logout";
+  logout.title = "Sair";
+  logout.setAttribute("aria-label","Sair do Portal");
+  logout.textContent = "↪";
+  logout.addEventListener("click", async () => {
+    logout.disabled = true;
+    try{ await logoutPortal(); }catch{}
+    redirectToLogin();
+  });
+
+  shell.appendChild(brand);
+  shell.appendChild(nav);
+  shell.appendChild(more);
+  shell.appendChild(logout);
+  return shell;
+}
+
 function renderPortalGlobalNav(){
   if(!document.body || !isAuthedHome()) return;
 
@@ -1265,6 +1389,7 @@ function renderPortalGlobalNav(){
 
   document.getElementById("nfGlobalNav")?.remove();
   document.getElementById("nfGlobalNavMore")?.remove();
+  document.getElementById("nfGlobalShell")?.remove();
   document.querySelector(".nf-global-nav-standalone")?.remove();
   closePortalNavDrawer();
 
@@ -1280,31 +1405,16 @@ function renderPortalGlobalNav(){
 
   ensurePortalNavDrawer();
 
-  const host = findPortalNavHost();
-  if(host){
-    insertPortalNavIntoHost(host, nav, more);
-    schedulePortalNavOverflow();
-    return;
-  }
-
-  const shell = document.createElement("div");
-  shell.className = "nf-global-nav-standalone";
-
-  const brand = document.createElement("a");
-  brand.className = "nf-global-nav-standalone-brand";
-  brand.href = "./home.html";
-  brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
-
-  shell.appendChild(brand);
-  shell.appendChild(nav);
-  shell.appendChild(more);
+  const shell = createPortalGlobalShell(nav, more);
   document.body.insertBefore(shell, document.body.firstChild);
+
+  normalizeLegacyPortalChrome();
   schedulePortalNavOverflow();
 }
 
 async function initPortalGlobalNav(){
   const file = portalNavCurrentFile();
-  if(["login.html","index.html","ordem.html"].includes(file)) return;
+  if(["login.html","index.html","home.html","ordem.html"].includes(file)) return;
 
   try{
     if(window.portalAuthReady) await window.portalAuthReady;
@@ -1321,6 +1431,7 @@ if(document.readyState === "loading"){
 }
 
 window.addEventListener("portal:session", () => {
+  if(portalNavCurrentFile() === "home.html") return;
   renderPortalGlobalNav();
 });
 

@@ -569,6 +569,38 @@ const PORTAL_NAV_ITEMS = [
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>'
   },
   {
+    key:"fretes-mercado",
+    label:"Fretes Mercado",
+    feature:"fretes-mercado",
+    href:"./fretes-mercado.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10h4v10M10 20V6h4v14M16 20V3h4v17"/><path d="M3 20h18"/></svg>'
+  },
+  {
+    key:"custo-frota",
+    label:"Cálculo Frota",
+    feature:"custo-frota",
+    href:"./custo-frota-pesada.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17h16M6 17l2-7h8l2 7"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>'
+  },
+  {
+    key:"custo-filial",
+    label:"Resultado Filial",
+    feature:"custo-filial",
+    href:"./custo-filial.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"/><path d="M8 20v-6h8v6M8 10h.01M12 10h.01M16 10h.01"/></svg>'
+  },
+  {
+    key:"patrimonio",
+    label:"Patrimônio",
+    feature:"patrimonio",
+    href:"./patrimonio-br.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M9 12h6M9 16h6"/></svg>'
+  },
+  {
     key:"embarques",
     label:"Embarques",
     feature:"embarques",

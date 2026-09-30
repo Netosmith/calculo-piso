@@ -723,6 +723,13 @@
 </head>
 
 <body>
+  <script src="../assets/js/auth.js?v=12"></script>
+  <script>
+    if(typeof requireFeatureAuth === "function"){
+      requireFeatureAuth("relatorio","Relatório não liberado para este perfil.");
+    }
+    if(typeof bindLogoutButton === "function") bindLogoutButton();
+  </script>
   <main class="app">
     <header class="hero">
       <div>

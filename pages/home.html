@@ -572,6 +572,45 @@
       .nf-footer{ flex-wrap:wrap; padding:14px 18px; }
       .nf-footer-sep{ display:none; }
     }
+    /* =========================
+       PISO - OFUSCAÇÃO DOS INDICADORES
+       Mantém os títulos visíveis, mas não expõe os números operacionais.
+    ========================= */
+    body.nf-profile-piso .nf-stats .nf-stat-value,
+    body.nf-profile-piso .nf-stats .nf-stat-detail,
+    body.nf-profile-piso .nf-stats .nf-veiculos-resumo,
+    body.nf-profile-piso .nf-stats .nf-stat-update{
+      filter: blur(7px);
+      opacity:.52;
+      user-select:none;
+      pointer-events:none;
+    }
+
+    body.nf-profile-piso .nf-stats .nf-stat{
+      position:relative;
+      overflow:hidden;
+    }
+
+    body.nf-profile-piso .nf-stats .nf-stat::after{
+      content:"INFORMAÇÃO RESTRITA";
+      position:absolute;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      z-index:6;
+      padding:5px 10px;
+      border-radius:999px;
+      background:rgba(4,19,42,.88);
+      border:1px solid rgba(255,255,255,.14);
+      color:#dbeafe;
+      font-size:9px;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:.08em;
+      white-space:nowrap;
+      box-shadow:0 5px 16px rgba(0,0,0,.18);
+    }
+
   </style>
 </head>
 
@@ -1002,6 +1041,53 @@
 
     window.atualizarMetricasHome = atualizarMetricasHome;
 
+    function isPerfilPisoHome(session = null) {
+      const perfilSessao = String(session?.perfil || "").trim().toUpperCase();
+      const perfilLocal = typeof getProfile === "function"
+        ? String(getProfile() || "").trim().toUpperCase()
+        : "";
+
+      return (perfilSessao || perfilLocal) === "PISO";
+    }
+
+    function aplicarOfuscacaoPisoHome(session = null) {
+      const restrito = isPerfilPisoHome(session);
+      document.body.classList.toggle("nf-profile-piso", restrito);
+
+      if (!restrito) return false;
+
+      /* Remove qualquer dado operacional que possa ter ficado no DOM/cache
+         antes da confirmação da sessão atual. */
+      [
+        "homeFretesAtivos",
+        "homeFretesGO",
+        "homeFretesMT",
+        "homeVeiculosGO",
+        "homeVeiculosMT",
+        "homeVeiculosGOPorta",
+        "homeVeiculosGOTransito",
+        "homeVeiculosMTPorta",
+        "homeVeiculosMTTransito",
+        "homeSolicStat",
+        "homeFiliais"
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "•••";
+      });
+
+      [
+        "homeFretesAtualizacao",
+        "homeVeiculosAtualizacao",
+        "homeSolicAtualizacao",
+        "homeFiliaisAtualizacao"
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "Acesso restrito";
+      });
+
+      return true;
+    }
+
     async function carregarMetricasHome() {
       try {
         const session = window.portalAuthReady
@@ -1010,6 +1096,10 @@
 
         if (!session) {
           throw new Error("Sessão inválida ou expirada.");
+        }
+
+        if (aplicarOfuscacaoPisoHome(session)) {
+          return null;
         }
 
         if (!window.PortalAPI) {
@@ -1100,10 +1190,20 @@
         });
       }
 
-      aplicarPermissoesHome();
+      (async () => {
+        await aplicarPermissoesHome();
 
-      restaurarMetricasHomeLocal();
-      carregarMetricasHome();
+        const session = window.portalAuthReady
+          ? await window.portalAuthReady
+          : null;
+
+        if (aplicarOfuscacaoPisoHome(session)) {
+          return;
+        }
+
+        restaurarMetricasHomeLocal();
+        carregarMetricasHome();
+      })();
 
       /* Mantém o total de solicitações sincronizado com o script existente. */
       const solicitOpen = document.getElementById("homeSolicOpen");
@@ -1131,7 +1231,9 @@
       }
     });
 
-    window.addEventListener("portal:session", () => {
+    window.addEventListener("portal:session", (event) => {
+      aplicarOfuscacaoPisoHome(event?.detail || null);
+
       document.querySelectorAll("[data-feature]").forEach((card) => {
         const feature = card.getAttribute("data-feature");
 

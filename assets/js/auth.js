@@ -632,7 +632,7 @@ function injectPortalNavStyles(){
       align-items:stretch;
       justify-content:center;
       gap:0;
-      overflow-x:auto;
+      overflow-x:hidden;
       overflow-y:hidden;
       scrollbar-width:none;
       -ms-overflow-style:none;
@@ -741,6 +741,224 @@ function injectPortalNavStyles(){
     }
     .nf-global-nav-host > .nf-global-nav{min-width:240px}
 
+    .nf-global-nav-more-button{
+      position:relative;
+      flex:0 0 48px;
+      width:48px;
+      height:48px;
+      margin-left:2px;
+      align-self:center;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(90,146,205,.2);
+      border-radius:12px;
+      background:linear-gradient(180deg,rgba(8,34,68,.96),rgba(4,22,47,.96));
+      color:#d9ecff;
+      cursor:pointer;
+      box-shadow:inset 0 -1px 0 rgba(255,255,255,.03);
+      transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+      z-index:85;
+    }
+    .nf-global-nav-more-button[hidden]{display:none!important}
+    .nf-global-nav-more-button:hover,
+    .nf-global-nav-more-button:focus-visible{
+      color:#fff;
+      border-color:rgba(66,185,255,.72);
+      box-shadow:0 0 8px rgba(66,185,255,.3),0 0 22px rgba(22,143,255,.18);
+      transform:translateY(-1px);
+      outline:none;
+    }
+    .nf-global-nav-more-button::after{
+      content:"";
+      position:absolute;
+      left:9px;
+      right:9px;
+      bottom:2px;
+      height:2px;
+      border-radius:999px;
+      background:#42b9ff;
+      box-shadow:0 0 4px #42b9ff,0 0 10px #168fff,0 0 20px rgba(0,153,255,.92);
+      opacity:.9;
+    }
+    .nf-global-nav-more-button svg{
+      width:23px;
+      height:23px;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:2;
+      stroke-linecap:round;
+    }
+    .nf-global-nav-more-count{
+      position:absolute;
+      top:-5px;
+      right:-5px;
+      min-width:18px;
+      height:18px;
+      padding:0 4px;
+      box-sizing:border-box;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background:#168fff;
+      color:#fff;
+      font:800 10px/1 Inter,Arial,sans-serif;
+      box-shadow:0 0 0 2px #071a35,0 0 9px rgba(22,143,255,.7);
+    }
+
+    .nf-global-nav-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:10020;
+      background:rgba(1,9,21,.48);
+      backdrop-filter:blur(2px);
+      opacity:0;
+      visibility:hidden;
+      transition:opacity .2s ease,visibility .2s ease;
+    }
+    .nf-global-nav-backdrop.open{
+      opacity:1;
+      visibility:visible;
+    }
+    .nf-global-nav-drawer{
+      position:fixed;
+      top:0;
+      right:0;
+      z-index:10030;
+      width:min(360px,88vw);
+      height:100dvh;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      background:linear-gradient(180deg,#071a35 0%,#06152b 48%,#041126 100%);
+      border-left:1px solid rgba(77,157,231,.28);
+      box-shadow:-20px 0 55px rgba(0,0,0,.4);
+      transform:translateX(104%);
+      transition:transform .24s cubic-bezier(.2,.8,.2,1);
+      color:#eef7ff;
+      font-family:Inter,Arial,sans-serif;
+    }
+    .nf-global-nav-drawer.open{transform:translateX(0)}
+    .nf-global-nav-drawer-head{
+      min-height:76px;
+      padding:16px 16px 13px 20px;
+      box-sizing:border-box;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid rgba(90,146,205,.18);
+    }
+    .nf-global-nav-drawer-title strong{
+      display:block;
+      font-size:18px;
+      line-height:1.1;
+      font-weight:900;
+    }
+    .nf-global-nav-drawer-title span{
+      display:block;
+      margin-top:4px;
+      color:#8eabc7;
+      font-size:11px;
+      line-height:1.2;
+    }
+    .nf-global-nav-drawer-close{
+      width:38px;
+      height:38px;
+      flex:0 0 38px;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(102,157,210,.24);
+      border-radius:10px;
+      background:rgba(255,255,255,.035);
+      color:#fff;
+      font-size:23px;
+      line-height:1;
+      cursor:pointer;
+    }
+    .nf-global-nav-drawer-list{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding:12px;
+      scrollbar-width:thin;
+      scrollbar-color:#1f6fb8 transparent;
+    }
+    .nf-global-nav-drawer-item{
+      position:relative;
+      width:100%;
+      min-height:58px;
+      box-sizing:border-box;
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:10px 14px;
+      margin-bottom:6px;
+      border:1px solid rgba(80,137,193,.14);
+      border-radius:12px;
+      background:rgba(255,255,255,.025);
+      color:#dcecff!important;
+      text-decoration:none!important;
+      overflow:hidden;
+      transition:background .18s ease,border-color .18s ease,transform .18s ease;
+    }
+    .nf-global-nav-drawer-item::after{
+      content:"";
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:0;
+      height:2px;
+      border-radius:999px;
+      background:#42b9ff;
+      box-shadow:0 0 5px #42b9ff,0 0 14px #168fff;
+      transform:scaleX(0);
+      opacity:0;
+      transition:transform .18s ease,opacity .18s ease;
+    }
+    .nf-global-nav-drawer-item:hover,
+    .nf-global-nav-drawer-item:focus-visible{
+      background:rgba(20,100,181,.15);
+      border-color:rgba(66,185,255,.36);
+      transform:translateX(-2px);
+      outline:none;
+    }
+    .nf-global-nav-drawer-item:hover::after,
+    .nf-global-nav-drawer-item:focus-visible::after,
+    .nf-global-nav-drawer-item.active::after{
+      transform:scaleX(1);
+      opacity:1;
+    }
+    .nf-global-nav-drawer-item svg{
+      width:24px;
+      height:24px;
+      flex:0 0 24px;
+      fill:none;
+      stroke:#8fd1ff;
+      stroke-width:1.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .nf-global-nav-drawer-item-text{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+    .nf-global-nav-drawer-item-text strong{
+      color:#fff;
+      font-size:13px;
+      line-height:1.15;
+      font-weight:850;
+    }
+    .nf-global-nav-drawer-item-text span{
+      color:#7898b8;
+      font-size:10px;
+      line-height:1.1;
+    }
+    .nf-global-nav-item.nf-nav-overflow-hidden{display:none!important}
+
     /* Barra autônoma para páginas antigas que não tinham cabeçalho padrão. */
     .nf-global-nav-standalone{
       position:sticky;
@@ -826,6 +1044,8 @@ function createPortalGlobalNav(){
     .forEach(item => {
       const link = document.createElement("a");
       link.className = "nf-global-nav-item";
+      link.dataset.navKey = item.key;
+      link.dataset.secondary = item.secondary ? "1" : "0";
       if(portalNavIsActive(item)) link.classList.add("active");
       link.href = portalNavHref(item);
       link.title = item.label;
@@ -835,6 +1055,167 @@ function createPortalGlobalNav(){
     });
 
   return nav;
+}
+
+function createPortalNavMoreButton(){
+  const button = document.createElement("button");
+  button.type = "button";
+  button.id = "nfGlobalNavMore";
+  button.className = "nf-global-nav-more-button";
+  button.hidden = true;
+  button.title = "Mais módulos";
+  button.setAttribute("aria-label","Abrir mais módulos");
+  button.setAttribute("aria-expanded","false");
+  button.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 7h14M5 12h14M5 17h14"></path>
+    </svg>
+    <span class="nf-global-nav-more-count" id="nfGlobalNavMoreCount">0</span>
+  `;
+  return button;
+}
+
+function closePortalNavDrawer(){
+  document.getElementById("nfGlobalNavDrawer")?.classList.remove("open");
+  document.getElementById("nfGlobalNavBackdrop")?.classList.remove("open");
+  const button = document.getElementById("nfGlobalNavMore");
+  button?.setAttribute("aria-expanded","false");
+  document.body?.classList.remove("nf-nav-drawer-open");
+}
+
+function openPortalNavDrawer(){
+  const drawer = document.getElementById("nfGlobalNavDrawer");
+  const backdrop = document.getElementById("nfGlobalNavBackdrop");
+  const button = document.getElementById("nfGlobalNavMore");
+  if(!drawer || !backdrop || !button || button.hidden) return;
+
+  drawer.classList.add("open");
+  backdrop.classList.add("open");
+  button.setAttribute("aria-expanded","true");
+  document.body?.classList.add("nf-nav-drawer-open");
+}
+
+function ensurePortalNavDrawer(){
+  document.getElementById("nfGlobalNavDrawer")?.remove();
+  document.getElementById("nfGlobalNavBackdrop")?.remove();
+
+  const backdrop = document.createElement("div");
+  backdrop.id = "nfGlobalNavBackdrop";
+  backdrop.className = "nf-global-nav-backdrop";
+  backdrop.addEventListener("click", closePortalNavDrawer);
+
+  const drawer = document.createElement("aside");
+  drawer.id = "nfGlobalNavDrawer";
+  drawer.className = "nf-global-nav-drawer";
+  drawer.setAttribute("aria-label","Mais módulos do Portal");
+  drawer.innerHTML = `
+    <div class="nf-global-nav-drawer-head">
+      <div class="nf-global-nav-drawer-title">
+        <strong>Mais módulos</strong>
+        <span>Acessos liberados para o seu perfil</span>
+      </div>
+      <button class="nf-global-nav-drawer-close" type="button" aria-label="Fechar menu">×</button>
+    </div>
+    <nav class="nf-global-nav-drawer-list" id="nfGlobalNavDrawerList"></nav>
+  `;
+
+  drawer.querySelector(".nf-global-nav-drawer-close")?.addEventListener("click", closePortalNavDrawer);
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(drawer);
+
+  return drawer;
+}
+
+function populatePortalNavDrawer(hiddenItems){
+  const list = document.getElementById("nfGlobalNavDrawerList");
+  if(!list) return;
+  list.innerHTML = "";
+
+  hiddenItems.forEach(link => {
+    const item = document.createElement("a");
+    item.className = "nf-global-nav-drawer-item";
+    if(link.classList.contains("active")) item.classList.add("active");
+    item.href = link.href;
+    item.title = link.title || "";
+    item.innerHTML = `
+      ${link.querySelector("svg")?.outerHTML || ""}
+      <span class="nf-global-nav-drawer-item-text">
+        <strong>${link.querySelector("span")?.textContent || link.title || "Módulo"}</strong>
+        <span>Abrir módulo</span>
+      </span>
+    `;
+    item.addEventListener("click", closePortalNavDrawer);
+    list.appendChild(item);
+  });
+}
+
+function syncPortalNavOverflow(){
+  const nav = document.getElementById("nfGlobalNav");
+  const more = document.getElementById("nfGlobalNavMore");
+  if(!nav || !more) return;
+
+  const items = Array.from(nav.querySelectorAll(".nf-global-nav-item"));
+  items.forEach(item => item.classList.remove("nf-nav-overflow-hidden"));
+  more.hidden = true;
+  closePortalNavDrawer();
+
+  // Primeira medição: se couber tudo, não há menu lateral.
+  const totalWidth = items.reduce((sum,item) => sum + item.getBoundingClientRect().width, 0);
+  if(totalWidth <= nav.clientWidth + 2){
+    populatePortalNavDrawer([]);
+    return;
+  }
+
+  // Reserva o espaço do botão "Mais" e recalcula o espaço útil.
+  more.hidden = false;
+  const available = nav.clientWidth;
+  let used = items.reduce((sum,item) => sum + item.getBoundingClientRect().width, 0);
+
+  // Esconde primeiro os módulos secundários; depois, do fim para o começo.
+  const secondary = items
+    .filter(item => item.dataset.secondary === "1" && !item.classList.contains("active"))
+    .reverse();
+
+  const regular = items
+    .filter(item =>
+      item.dataset.secondary !== "1" &&
+      item.dataset.navKey !== "home" &&
+      !item.classList.contains("active")
+    )
+    .reverse();
+
+  const finalFallback = items
+    .filter(item =>
+      item.dataset.navKey === "home" &&
+      !item.classList.contains("active")
+    );
+
+  [...secondary,...regular,...finalFallback].some(item => {
+    if(used <= available + 2) return true;
+    const width = item.getBoundingClientRect().width;
+    item.classList.add("nf-nav-overflow-hidden");
+    used -= width;
+    return false;
+  });
+
+  const hiddenItems = items.filter(item => item.classList.contains("nf-nav-overflow-hidden"));
+  populatePortalNavDrawer(hiddenItems);
+
+  const count = document.getElementById("nfGlobalNavMoreCount");
+  if(count) count.textContent = String(hiddenItems.length);
+
+  if(!hiddenItems.length){
+    more.hidden = true;
+  }
+}
+
+let portalNavResizeFrame = 0;
+function schedulePortalNavOverflow(){
+  cancelAnimationFrame(portalNavResizeFrame);
+  portalNavResizeFrame = requestAnimationFrame(() => {
+    requestAnimationFrame(syncPortalNavOverflow);
+  });
 }
 
 function findPortalNavHost(){
@@ -854,7 +1235,7 @@ function findPortalNavHost(){
   return null;
 }
 
-function insertPortalNavIntoHost(host, nav){
+function insertPortalNavIntoHost(host, nav, more){
   host.classList.add("nf-global-nav-host");
 
   const preferredRight = host.querySelector(
@@ -863,15 +1244,18 @@ function insertPortalNavIntoHost(host, nav){
 
   if(preferredRight){
     host.insertBefore(nav, preferredRight);
+    host.insertBefore(more, preferredRight);
     return;
   }
 
   if(host.children.length > 1){
     host.insertBefore(nav, host.lastElementChild);
+    host.insertBefore(more, host.lastElementChild);
     return;
   }
 
   host.appendChild(nav);
+  host.appendChild(more);
 }
 
 function renderPortalGlobalNav(){
@@ -880,14 +1264,26 @@ function renderPortalGlobalNav(){
   injectPortalNavStyles();
 
   document.getElementById("nfGlobalNav")?.remove();
+  document.getElementById("nfGlobalNavMore")?.remove();
   document.querySelector(".nf-global-nav-standalone")?.remove();
+  closePortalNavDrawer();
 
   const nav = createPortalGlobalNav();
   if(!nav.children.length) return;
 
+  const more = createPortalNavMoreButton();
+  more.addEventListener("click", () => {
+    const drawer = document.getElementById("nfGlobalNavDrawer");
+    if(drawer?.classList.contains("open")) closePortalNavDrawer();
+    else openPortalNavDrawer();
+  });
+
+  ensurePortalNavDrawer();
+
   const host = findPortalNavHost();
   if(host){
-    insertPortalNavIntoHost(host, nav);
+    insertPortalNavIntoHost(host, nav, more);
+    schedulePortalNavOverflow();
     return;
   }
 
@@ -901,7 +1297,9 @@ function renderPortalGlobalNav(){
 
   shell.appendChild(brand);
   shell.appendChild(nav);
+  shell.appendChild(more);
   document.body.insertBefore(shell, document.body.firstChild);
+  schedulePortalNavOverflow();
 }
 
 async function initPortalGlobalNav(){
@@ -924,6 +1322,12 @@ if(document.readyState === "loading"){
 
 window.addEventListener("portal:session", () => {
   renderPortalGlobalNav();
+});
+
+window.addEventListener("resize", schedulePortalNavOverflow, { passive:true });
+
+document.addEventListener("keydown", (event) => {
+  if(event.key === "Escape") closePortalNavDrawer();
 });
 
 window.portalAuthReady = refreshPortalSession()

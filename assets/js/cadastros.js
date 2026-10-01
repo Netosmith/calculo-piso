@@ -321,6 +321,7 @@
   }
 
   function openModal(row){
+    if(STATE.saving)return;
     STATE.editing=row||null;const cfg=configAtual();
     $("#modalTitle").textContent=(row?"Editar ":"Novo ")+cfg.title;
     const fields=$("#formFields");fields.innerHTML="";cfg.fields.forEach(field=>fields.appendChild(createInput(field,row?row[field.key]:"")));
@@ -363,6 +364,9 @@
     STATE.loadToken++;STATE.loading=false;
     STATE.saving=true;saveButton.disabled=true;saveButton.textContent="Salvando...";
     setModalMessage("Salvando cadastro...","info");setStatus("💾 Salvando...");
+    const modal=$("#cadModal");
+    modal?.classList.remove("show");
+    modal?.setAttribute("aria-hidden","true");
     let cadastroSaved=false;
     let updated=false;
     try{
@@ -386,10 +390,13 @@
     }catch(error){
       console.error("[cadastros] salvar:",error);
       if(cadastroSaved){
+        closeModal(true);
         setStatus("⚠️ Cadastro salvo; erro na logo");
-        setModalMessage("O cadastro foi salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."),"error");
+        alert("Cadastro salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."));
         if(!updated)loadCurrent(true);
       }else{
+        $("#cadModal")?.classList.add("show");
+        $("#cadModal")?.setAttribute("aria-hidden","false");
         setStatus("❌ Erro ao salvar");
         setModalMessage(error.message||"Não foi possível salvar o cadastro.","error");
       }
@@ -427,7 +434,6 @@
     $("#btnAtualizar")?.addEventListener("click",()=>loadCurrent(true));
     $("#btnNovo")?.addEventListener("click",()=>openModal(null));
     $("#cadForm")?.addEventListener("submit",save);
-    $("#btnSalvar")?.addEventListener("click",save);
     $("#btnCancelar")?.addEventListener("click",()=>closeModal());
     $("#btnFecharModal")?.addEventListener("click",()=>closeModal());
     $("#cadModal")?.addEventListener("click",event=>{if(event.target===$("#cadModal"))closeModal();});

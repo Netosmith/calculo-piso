@@ -2,6 +2,7 @@
 (function () {
   "use strict";
   const { api, money, esc, svg, productIcon, toast, imgUrl, masks, onlyDigits, STATUS, GENDER_LABEL, fmtDate, compressImage, copyText, waLink } = PC;
+  const LOGO = "../assets/pingochic/img/logo-256.webp", BEE = "../assets/pingochic/img/bee-120.webp";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -24,13 +25,14 @@
     document.body.innerHTML = `
       <div class="login">
         <div class="login-art">
-          <div class="brand"><span class="mk">${svg("star", 16, 'fill="currentColor"')}</span>Pingo <em>Chic</em><small>Admin</small></div>
-          <div><h1>Gestão da sua loja em <em>um só lugar</em>.</h1><p>Produtos, estoque por tamanho, pedidos, clientes, cupons e frete para todo o Brasil.</p></div>
+          <div class="brand"><img class="mk bee" src="${BEE}" alt=""><span class="wm">Pingo<em>Chic</em></span><small>Admin</small></div>
+          <div><img class="login-logo" src="../assets/pingochic/img/logo-512.webp" alt="Pingo Chic"><h1>Gestão da sua loja em <em>um só lugar</em>.</h1><p>Produtos, estoque por tamanho, pedidos, clientes, cupons e frete para todo o Brasil.</p></div>
           <p style="font-size:12px;color:#6C7181">${svg("lock", 14)} Área restrita a administradores autorizados. Todos os acessos são registrados.</p>
           <div class="blob"></div>
         </div>
         <div class="login-form">
           <form id="lf" novalidate>
+            <img class="mobile-logo" src="${LOGO}" alt="Pingo Chic">
             <h2>Acesso administrativo</h2>
             <p class="sub">Entre com seu e-mail e senha de administrador.</p>
             <div class="form-err ${msg ? "show" : ""}" id="le">${esc(msg)}</div>
@@ -64,10 +66,10 @@
   ];
   function renderShell() {
     document.body.innerHTML = `
-      <div class="mobile-top"><button class="icon-btn" id="mm" style="background:none;border-color:#333;color:#fff">${svg("menu", 18)}</button><div class="brand" style="font-size:18px">Pingo <em>Chic</em></div><a class="icon-btn" href="pingochic.html" target="_blank" style="background:none;border-color:#333;color:#fff">${svg("store", 18)}</a></div>
+      <div class="mobile-top"><button class="icon-btn" id="mm" style="background:none;border-color:#333;color:#fff">${svg("menu", 18)}</button><div class="brand" style="font-size:18px"><img class="mk bee" src="${BEE}" alt="" style="width:36px"><span class="wm">Pingo<em>Chic</em></span></div><a class="icon-btn" href="pingochic.html" target="_blank" style="background:none;border-color:#333;color:#fff">${svg("store", 18)}</a></div>
       <div class="shell">
         <aside class="side" id="side">
-          <div class="brand"><span class="mk">${svg("star", 16, 'fill="currentColor"')}</span>Pingo <em>Chic</em><small>Admin</small></div>
+          <div class="brand"><img class="mk bee" src="${BEE}" alt=""><span class="wm">Pingo<em>Chic</em></span><small>Admin</small></div>
           <nav id="nav">${NAV.map((n) => typeof n === "string" ? `<div class="sep">${n}</div>` : `<button data-view="${n[0]}">${svg(n[1], 18)} ${n[2]}${n[0] === "pedidos" ? '<span class="badge" id="pend-badge" style="display:none"></span>' : ""}</button>`).join("")}
             <div class="sep">Atalhos</div>
             <button onclick="window.open('pingochic.html','_blank')">${svg("store", 18)} Ver loja</button>

@@ -1,8 +1,8 @@
 /* Pingo Chic — painel administrativo */
 :root{
   --ink:#171A23;--ink-2:#4A4F5E;--muted:#868B98;--line:#E6E7EB;--line-2:#F1F2F4;
-  --bg:#F6F7F9;--card:#fff;--side:#151821;--side-2:#232734;
-  --rose:#C9567E;--rose-s:#FBEEF2;--sky:#2F6F8F;--sky-s:#EAF3F7;--sage:#2E8B57;--sage-s:#E8F5EE;
+  --bg:#F6F7F9;--card:#fff;--side:#22160F;--side-2:#3A2A21;
+  --rose:#F0645E;--rose-s:#FFEEEC;--sky:#2F6F8F;--sky-s:#EAF3F7;--sage:#2E8B57;--sage-s:#E8F5EE;
   --warn:#B7791F;--warn-s:#FDF3E1;--bad:#C0392B;--bad-s:#FDECEA;
   --sans:'Plus Jakarta Sans',system-ui,sans-serif;--serif:'Fraunces',Georgia,serif;
 }
@@ -17,16 +17,23 @@ img{display:block;max-width:100%}
 .login{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
 .login-art{background:var(--side);color:#fff;padding:56px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
 .login-art h1{font-family:var(--serif);font-weight:500;font-size:44px;line-height:1.1;margin:0;max-width:440px}
-.login-art h1 em{color:#F4B7CB}
+.login-art h1 em{color:#FECA28}
 .login-art p{color:#A9AEBD;max-width:400px}
-.login-art .blob{position:absolute;width:420px;height:420px;border-radius:50%;background:var(--rose);filter:blur(110px);opacity:.35;right:-120px;bottom:-140px}
+.login-art .blob{position:absolute;width:420px;height:420px;border-radius:50%;background:#FECA28;filter:blur(120px);opacity:.35;right:-120px;bottom:-140px}
 .login-form{display:grid;place-items:center;padding:40px}
 .login-form form{width:100%;max-width:380px}
 .login-form h2{font-family:var(--serif);font-weight:500;font-size:30px;margin:0 0 6px}
 .login-form .sub{color:var(--muted);margin:0 0 28px}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:22px;font-weight:600}
-.brand .mk{width:34px;height:34px;border-radius:50%;background:var(--rose);display:grid;place-items:center;color:#fff}
+.brand .mk{width:42px;height:42px;border-radius:50%;flex-shrink:0;background:#FFFCF0}
+.brand .mk.bee{width:46px;height:auto;border-radius:0;background:none}
+.brand .wm{font-family:'Baloo 2',var(--sans);font-weight:800;color:#FE7D77;letter-spacing:-.01em}
+.brand .wm em{font-style:normal;color:#2BC4F5}
+.login-logo{width:220px;height:220px;border-radius:50%;box-shadow:0 20px 60px rgba(0,0,0,.35);margin-bottom:28px}
+.login-form .mobile-logo{display:none;width:96px;height:96px;border-radius:50%;margin:0 auto 18px}
+@media (max-width:860px){.login-form .mobile-logo{display:block}}
 .brand em{color:#F4B7CB;font-style:italic}
+.brand .wm em{font-style:normal;color:#2BC4F5}
 .brand small{font-family:var(--sans);font-size:10px;letter-spacing:.2em;text-transform:uppercase;background:rgba(255,255,255,.1);padding:3px 8px;border-radius:6px;margin-left:4px;font-weight:700}
 
 /* layout */

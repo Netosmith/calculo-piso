@@ -10,6 +10,7 @@
     { key: "bebe", label: "Bebê", cls: "bebe", icon: "body", text: "Bodies, macacões e enxoval" },
     { key: "acessorios", label: "Acessórios", cls: "acess", icon: "bow", text: "Laços, bonés e mais" }
   ];
+  const BEE = "../assets/pingochic/img/bee-120.webp", LOGO = "../assets/pingochic/img/logo-256.webp", LOGO_LG = "../assets/pingochic/img/logo-512.webp";
   const LS_CART = "pingochic.cart.v2", LS_FAV = "pingochic.fav.v2";
 
   const S = {
@@ -97,8 +98,8 @@
         <div class="wrap header-in">
           <button class="tool menu-btn" aria-label="Menu" data-act="mnav">${svg("menu", 22)}</button>
           <a class="logo" href="#/" aria-label="Pingo Chic — início">
-            <span class="logo-mark">${svg("star", 18, 'fill="currentColor"')}</span>
-            <span><span class="logo-word">Pingo <em>Chic</em></span><span class="logo-sub">Moda infantil</span></span>
+            <img class="logo-bee" src="${BEE}" alt="" width="62" height="53">
+            <span><span class="logo-word">Pingo<em>Chic</em></span><span class="logo-sub">Moda infantil</span></span>
           </a>
           <nav class="nav" id="nav">
             <a href="#/loja?g=menina">Menina</a>
@@ -129,7 +130,7 @@
       <aside class="drawer" id="drawer" aria-label="Sacola de compras"></aside>
       <nav class="mnav" id="mnav">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <span class="logo-word">Pingo <em>Chic</em></span>
+          <span class="mnav-logo"><img src="${BEE}" alt="" style="border-radius:0;width:46px;height:auto"><span class="logo-word" style="font-size:24px">Pingo<em>Chic</em></span></span>
           <button class="tool" data-act="close-all">${svg("close", 20)}</button>
         </div>
         <a href="#/loja?g=menina">Menina ${svg("chevron", 18)}</a>
@@ -259,7 +260,7 @@
     const news = [...S.products].sort((a, b) => b.createdAt - a.createdAt).slice(0, 4);
     const imgs = S.products.filter((p) => p.images?.length).slice(0, 3);
     const tile = (cls, i, icon) => `<div class="tile ${cls}">${imgs[i] ? `<img src="${esc(imgUrl(imgs[i].images[0]))}" alt="">` : productIcon(icon, i ? 90 : 150)}</div>`;
-    const title = esc(st.heroTitle || "").replace(/(charme|conforto|cuidado)/i, "<em>$1</em>");
+    const title = esc(st.heroTitle || "").replace(/(charme)/i, "<em>$1</em>").replace(/(conforto)/i, '<em class="blue">$1</em>');
     app().innerHTML = `
       <section class="hero">
         <div class="blob" style="width:380px;height:380px;background:#F7C9D8;left:-120px;top:-80px"></div>
@@ -280,7 +281,7 @@
             </div>
           </div>
           <div class="collage" aria-hidden="true">
-            ${tile("t1", 0, "dress")}${tile("t2", 1, "shirt")}${tile("t3", 2, "body")}
+            ${imgs[0] ? tile("t1", 0, "dress") : `<div class="tile t1 brand-tile"><img src="${LOGO_LG}" alt="Pingo Chic"></div>`}${tile("t2", imgs[0] ? 1 : 0, "dress")}${tile("t3", imgs[0] ? 2 : 1, "shirt")}
             <div class="badge"><span class="ic">${svg("truck", 22)}</span><div><b>Frete grátis</b>acima de ${money(st.freeShippingMin)}</div></div>
           </div>
         </div>
@@ -891,7 +892,7 @@
     const wa = st.whatsapp ? waLink(st.whatsapp, `Olá! Fiz o pedido #${o.number} na Pingo Chic (${money(o.total)}).${o.payment === "cartao" ? " Gostaria de receber o link de pagamento." : " Segue o comprovante do Pix."}`) : "";
     app().innerHTML = `
       <div class="wrap"><div class="done-wrap">
-        <div class="done-ic">${svg("check", 40)}</div>
+        <img class="done-logo" src="${BEE}" alt="" style="width:110px;height:auto;border-radius:0">
         <h1>Pedido #${o.number} recebido!</h1>
         <p>Obrigada pela compra, ${esc(o.customer.name.split(" ")[0])}! Guarde o número do pedido — você pode acompanhá-lo em <a class="link" href="#/rastrear">Acompanhar pedido</a> com o e-mail <b>${esc(o.email)}</b>.</p>
         ${o.payment === "pix" && o.pix ? `
@@ -1067,7 +1068,7 @@
     return `<div class="wrap">
       <div class="foot-grid">
         <div>
-          <a class="logo" href="#/"><span class="logo-mark">${svg("star", 18, 'fill="currentColor"')}</span><span class="logo-word">Pingo <em>Chic</em></span></a>
+          <a class="foot-logo" href="#/"><img src="${LOGO}" alt="Pingo Chic — Moda infantil" width="88" height="88" loading="lazy"><span><span class="logo-word" style="font-size:30px">Pingo<em>Chic</em></span><span class="logo-sub">Moda infantil</span></span></a>
           <p class="about">Moda infantil com charme, conforto e qualidade — do bebê ao juvenil. Enviamos com carinho para todo o Brasil.</p>
           <div class="social">
             ${st.instagram ? `<a href="https://instagram.com/${esc(st.instagram.replace("@", ""))}" target="_blank" rel="noopener" aria-label="Instagram">${svg("instagram", 18)}</a>` : ""}

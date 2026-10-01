@@ -85,9 +85,31 @@
     .field input[type=email]{text-transform:none}.hint{margin-top:5px;font-size:10px;color:var(--muted)}
     .modalMessage{margin-top:13px;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:800;border:1px solid transparent}
     .modalMessage.info{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}.modalMessage.error{background:#fff1f2;border-color:#fecaca;color:#b91c1c}
+
+    .clientLogoPanel{grid-column:1/-1;margin-top:4px;border:1px solid #d8e2ef;border-radius:15px;background:linear-gradient(180deg,#fbfdff,#f7faff);overflow:hidden}
+    .clientLogoPanel[hidden]{display:none!important}
+    .clientLogoHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid #e4eaf2}
+    .clientLogoTitle{display:flex;align-items:center;gap:9px;color:var(--navy);font-size:12px;font-weight:1000}
+    .clientLogoBadge{display:inline-flex;align-items:center;height:23px;padding:0 8px;border-radius:999px;background:#eaf1ff;color:#1d4ed8;font-size:9px;font-weight:1000}
+    .clientLogoBody{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:14px}
+    .clientLogoPreview{height:118px;border:1px dashed #b8c6d9;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+    .clientLogoPreview img{max-width:86%;max-height:86%;object-fit:contain;display:none}
+    .clientLogoPlaceholder{text-align:center;color:#94a3b8;font-size:10px;font-weight:900;line-height:1.45;padding:12px}
+    .clientLogoPlaceholder strong{display:block;color:#64748b;font-size:22px;margin-bottom:5px}
+    .clientLogoInfo{display:flex;flex-direction:column;justify-content:center;min-width:0}
+    .clientLogoInfo h3{margin:0;color:var(--navy);font-size:13px}
+    .clientLogoInfo p{margin:6px 0 0;color:#64748b;font-size:10px;line-height:1.45}
+    .clientLogoActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .logoAction{height:35px;border-radius:10px;padding:0 12px;border:1px solid var(--border);background:#fff;font-size:10px;font-weight:950;cursor:pointer}
+    .logoAction.include{background:#ecfdf3;border-color:#bbf7d0;color:#15803d}
+    .logoAction.change{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+    .logoAction.delete{background:#fff1f2;border-color:#fecaca;color:#b91c1c}
+    .logoAction:disabled{opacity:.5;cursor:not-allowed}
+    .clientLogoStatus{margin-top:10px;min-height:17px;color:#64748b;font-size:10px;font-weight:800}
+    .clientLogoStatus.pending{color:#b45309}.clientLogoStatus.ready{color:#15803d}.clientLogoStatus.remove{color:#b91c1c}
     .modalFoot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--border);background:#f8fafc}
     @media(max-width:1100px){.tabs{grid-template-columns:repeat(3,1fr)}.statsGrid{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 160px auto}}
-    @media(max-width:700px){.page{padding:10px}.tabs{grid-template-columns:1fr 1fr}.statsGrid,.toolbar,.formGrid{grid-template-columns:1fr}.userMini{display:none}}
+    @media(max-width:700px){.page{padding:10px}.tabs{grid-template-columns:1fr 1fr}.statsGrid,.toolbar,.formGrid{grid-template-columns:1fr}.userMini{display:none}.clientLogoBody{grid-template-columns:1fr}.clientLogoPreview{height:150px}}
   </style>
 </head>
 
@@ -172,6 +194,31 @@
       <div class="modalBody">
         <form id="cadForm">
           <div class="formGrid" id="formFields"></div>
+
+          <section class="clientLogoPanel" id="clientLogoPanel" hidden aria-label="Logo do cliente">
+            <div class="clientLogoHead">
+              <div class="clientLogoTitle">🖼️ Logo do cliente <span class="clientLogoBadge">SHARE CLIENTES</span></div>
+              <span class="clientLogoBadge" id="clientLogoState">SEM ALTERAÇÃO</span>
+            </div>
+            <div class="clientLogoBody">
+              <div class="clientLogoPreview">
+                <img id="clientLogoPreviewImg" alt="Pré-visualização da logo do cliente" />
+                <div class="clientLogoPlaceholder" id="clientLogoPlaceholder"><strong>🏭</strong>SEM LOGO<br>CADASTRADA</div>
+              </div>
+              <div class="clientLogoInfo">
+                <h3>Imagem exibida no Share Clientes</h3>
+                <p>Use PNG, JPG, JPEG ou WEBP. Recomendado: fundo transparente ou branco e imagem quadrada/horizontal de boa qualidade. Limite previsto: 2 MB.</p>
+                <div class="clientLogoActions">
+                  <button class="logoAction include" id="btnLogoIncluir" type="button">＋ Incluir logo</button>
+                  <button class="logoAction change" id="btnLogoAlterar" type="button">✎ Alterar logo</button>
+                  <button class="logoAction delete" id="btnLogoExcluir" type="button">🗑 Excluir logo</button>
+                </div>
+                <input id="clientLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+                <div class="clientLogoStatus" id="clientLogoStatus">A logo será armazenada no Cloudflare R2.</div>
+              </div>
+            </div>
+          </section>
+
           <div class="modalMessage" id="modalMessage" role="status" aria-live="polite" hidden></div>
         </form>
       </div>
@@ -223,14 +270,65 @@
         rows().forEach(r=>{const t=r.innerText.toUpperCase(),off=t.includes("INATIVO"),on=t.includes("ATIVO")&&!off;
           r.style.display=!v||(v==="ATIVO"&&on)||(v==="INATIVO"&&off)?"":"none"});
       }
+      function activeTab(){return document.querySelector(".tabBtn.active")?.dataset.tab||""}
+      function resetLogoDraft(){
+        const input=$("clientLogoFile"),img=$("clientLogoPreviewImg"),ph=$("clientLogoPlaceholder"),st=$("clientLogoStatus"),badge=$("clientLogoState");
+        if(input)input.value="";
+        if(img){img.removeAttribute("src");img.style.display="none"}
+        if(ph)ph.style.display="";
+        if(st){st.textContent="A logo será armazenada no Cloudflare R2.";st.className="clientLogoStatus"}
+        if(badge)badge.textContent="SEM ALTERAÇÃO";
+        const panel=$("clientLogoPanel");if(panel){delete panel.dataset.logoAction;delete panel.dataset.logoFileName}
+      }
+      function syncLogoPanel(){
+        const panel=$("clientLogoPanel");if(!panel)return;
+        const show=activeTab()==="clientes" && $("cadModal")?.classList.contains("show");
+        panel.hidden=!show;
+        if(!show)resetLogoDraft();
+      }
+      function chooseLogo(action){
+        const panel=$("clientLogoPanel"),input=$("clientLogoFile");
+        if(!panel||!input)return;
+        panel.dataset.logoAction=action;
+        input.click();
+      }
+      function onLogoFile(){
+        const input=$("clientLogoFile"),file=input?.files?.[0],panel=$("clientLogoPanel");
+        const img=$("clientLogoPreviewImg"),ph=$("clientLogoPlaceholder"),st=$("clientLogoStatus"),badge=$("clientLogoState");
+        if(!file||!panel)return;
+        const allowed=["image/png","image/jpeg","image/webp"];
+        if(!allowed.includes(file.type)){input.value="";if(st){st.textContent="Formato inválido. Use PNG, JPG, JPEG ou WEBP.";st.className="clientLogoStatus remove"}return}
+        if(file.size>2*1024*1024){input.value="";if(st){st.textContent="Arquivo acima de 2 MB. Escolha uma imagem menor.";st.className="clientLogoStatus remove"}return}
+        panel.dataset.logoFileName=file.name;
+        if(!panel.dataset.logoAction)panel.dataset.logoAction="include";
+        if(img){img.src=URL.createObjectURL(file);img.style.display="block"}
+        if(ph)ph.style.display="none";
+        if(st){st.textContent=`Imagem selecionada: ${file.name}. A alteração será aplicada ao salvar.`;st.className="clientLogoStatus ready"}
+        if(badge)badge.textContent=panel.dataset.logoAction==="change"?"ALTERAR":"INCLUIR";
+      }
+      function markLogoRemoval(){
+        const panel=$("clientLogoPanel"),input=$("clientLogoFile"),img=$("clientLogoPreviewImg"),ph=$("clientLogoPlaceholder"),st=$("clientLogoStatus"),badge=$("clientLogoState");
+        if(!panel)return;
+        panel.dataset.logoAction="delete";delete panel.dataset.logoFileName;
+        if(input)input.value="";
+        if(img){img.removeAttribute("src");img.style.display="none"}
+        if(ph){ph.innerHTML="<strong>🗑</strong>LOGO MARCADA<br>PARA EXCLUSÃO";ph.style.display=""}
+        if(st){st.textContent="A logo será excluída do R2 quando o cadastro for salvo.";st.className="clientLogoStatus remove"}
+        if(badge)badge.textContent="EXCLUIR";
+      }
       addEventListener("DOMContentLoaded",()=>{
         setUser();
         $("btnNovoAtalho")?.addEventListener("click",()=>$("btnNovo")?.click());
+        $("btnLogoIncluir")?.addEventListener("click",()=>chooseLogo("include"));
+        $("btnLogoAlterar")?.addEventListener("click",()=>chooseLogo("change"));
+        $("btnLogoExcluir")?.addEventListener("click",markLogoRemoval);
+        $("clientLogoFile")?.addEventListener("change",onLogoFile);
         $("statusCadastroFilter")?.addEventListener("change",filter);
-        $("tabs")?.addEventListener("click",()=>setTimeout(()=>{tabTitle();cards();filter()},80));
+        $("tabs")?.addEventListener("click",()=>setTimeout(()=>{tabTitle();cards();filter();syncLogoPanel()},80));
         $("btnAtualizar")?.addEventListener("click",()=>setTimeout(()=>{cards();filter()},250));
         const b=$("cadBody");if(b)new MutationObserver(()=>{cards();filter()}).observe(b,{childList:true,subtree:true,characterData:true});
-        setTimeout(()=>{tabTitle();cards();filter()},500);
+        const modal=$("cadModal");if(modal)new MutationObserver(syncLogoPanel).observe(modal,{attributes:true,attributeFilter:["class"]});
+        setTimeout(()=>{tabTitle();cards();filter();syncLogoPanel()},500);
       });
     })();
   </script>

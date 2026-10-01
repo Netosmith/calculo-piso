@@ -10,10 +10,13 @@ import {
   sessionController
 } from "./controllers/session.js";
 import { notFound, methodNotAllowed } from "./utils/response.js";
+import { pingoController } from "./controllers/pingochic.js";
 
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/v1/pingo" || path.startsWith("/v1/pingo/")) return pingoController(request, env);
 
   if (path === "/v1/games" || path.startsWith("/v1/games/")) return gamesController(request, env);
 

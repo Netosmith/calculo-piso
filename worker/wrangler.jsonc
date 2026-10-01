@@ -32,6 +32,10 @@
       {
         "name": "SINUCA_ROOMS",
         "class_name": "SinucaRoom"
+      },
+      {
+        "name": "PINGO_STORE",
+        "class_name": "PingoStore"
       }
     ]
   },
@@ -52,6 +56,12 @@
       "tag": "sinuca-v1",
       "new_sqlite_classes": [
         "SinucaRoom"
+      ]
+    },
+    {
+      "tag": "pingochic-v1",
+      "new_sqlite_classes": [
+        "PingoStore"
       ]
     }
   ]

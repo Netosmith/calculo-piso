@@ -717,7 +717,7 @@
               ${CO.step > 1 ? `<div class="resume"><div><b>${esc(d.name)}</b><br>${esc(d.email)} · ${esc(masks.phone(d.phone))}<br>CPF ${esc(masks.cpf(d.cpf))}</div><button class="link" data-step="1">Alterar</button></div>` : `
               <form id="f1" novalidate>
                 <div class="field"><label>Nome completo</label><input id="c-name" value="${esc(d.name)}" autocomplete="name"></div>
-                <div class="field"><label>E-mail</label><input id="c-email" type="email" value="${esc(d.email)}" autocomplete="email" ${S.user ? "readonly" : ""}><div class="hint">Enviaremos a confirmação e as atualizações do pedido para este e-mail.</div></div>
+                <div class="field"><label>E-mail</label><input id="c-email" type="email" value="${esc(d.email)}" autocomplete="email" ${S.user ? "readonly" : ""}><div class="hint">Usado para identificar e acompanhar o seu pedido.</div></div>
                 <div class="row">
                   <div class="field"><label>CPF</label><input id="c-cpf" data-mask="cpf" inputmode="numeric" value="${esc(d.cpf)}"><div class="hint">Necessário para emissão da nota fiscal.</div></div>
                   <div class="field"><label>Celular / WhatsApp</label><input id="c-phone" data-mask="phone" inputmode="tel" value="${esc(d.phone)}" autocomplete="tel"></div>
@@ -848,7 +848,7 @@
     if (pe) {
       if (CO.payment === "cartao") {
         CO.installments = Math.min(CO.installments, q.installments.at(-1)?.n || 1);
-        pe.innerHTML = `<div class="field"><label>Parcelamento</label><select id="c-inst">${q.installments.map((i) => `<option value="${i.n}" ${CO.installments === i.n ? "selected" : ""}>${i.n}x de ${money(i.value)} sem juros</option>`).join("")}</select><div class="hint">Após confirmar, enviaremos um link de pagamento seguro por WhatsApp e e-mail.</div></div>`;
+        pe.innerHTML = `<div class="field"><label>Parcelamento</label><select id="c-inst">${q.installments.map((i) => `<option value="${i.n}" ${CO.installments === i.n ? "selected" : ""}>${i.n}x de ${money(i.value)} sem juros</option>`).join("")}</select><div class="hint">Após confirmar, nossa equipe envia um link de pagamento seguro pelo WhatsApp.</div></div>`;
         $("#c-inst").onchange = (e) => { CO.installments = Number(e.target.value); };
       } else {
         pe.innerHTML = `<div class="guest-note" style="margin:0">${svg("pix", 20)}<span style="flex:1">O QR Code e o código copia-e-cola aparecem na próxima tela. O pedido é aprovado assim que identificarmos o pagamento.</span></div>`;
@@ -893,7 +893,7 @@
       <div class="wrap"><div class="done-wrap">
         <div class="done-ic">${svg("check", 40)}</div>
         <h1>Pedido #${o.number} recebido!</h1>
-        <p>Obrigada pela compra, ${esc(o.customer.name.split(" ")[0])}! Enviamos os detalhes para <b>${esc(o.email)}</b>.</p>
+        <p>Obrigada pela compra, ${esc(o.customer.name.split(" ")[0])}! Guarde o número do pedido — você pode acompanhá-lo em <a class="link" href="#/rastrear">Acompanhar pedido</a> com o e-mail <b>${esc(o.email)}</b>.</p>
         ${o.payment === "pix" && o.pix ? `
           <div class="pixbox">
             <div class="qr" id="qr"></div>
@@ -906,7 +906,7 @@
           </div>` : `
           <div class="order-card" style="margin-top:28px">
             <b>${o.payment === "cartao" ? `Pagamento no cartão em ${o.installments}x` : "Pagamento"}</b>
-            <p style="color:var(--ink-2);margin:8px 0 14px">${o.payment === "cartao" ? "Em instantes nossa equipe enviará um link de pagamento seguro para o seu WhatsApp e e-mail." : "Nossa equipe entrará em contato com as instruções de pagamento."}</p>
+            <p style="color:var(--ink-2);margin:8px 0 14px">${o.payment === "cartao" ? "Nossa equipe enviará um link de pagamento seguro para o seu WhatsApp." : "Nossa equipe entrará em contato com as instruções de pagamento."}</p>
             ${wa ? `<a class="btn btn-dark" href="${wa}" target="_blank" rel="noopener">${svg("whatsapp", 16)} Falar no WhatsApp</a>` : ""}
           </div>`}
         ${orderCard(o)}

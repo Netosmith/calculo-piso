@@ -230,8 +230,8 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=15"></script>
-  <script src="../assets/js/cadastros.js?v=4"></script>
+  <script src="../assets/js/auth.js?v=16"></script>
+  <script src="../assets/js/cadastros.js?v=5"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
@@ -275,7 +275,7 @@
         const input=$("clientLogoFile"),img=$("clientLogoPreviewImg"),ph=$("clientLogoPlaceholder"),st=$("clientLogoStatus"),badge=$("clientLogoState");
         if(input)input.value="";
         if(img){img.removeAttribute("src");img.style.display="none"}
-        if(ph)ph.style.display="";
+        if(ph){ph.innerHTML="<strong>🏭</strong>SEM LOGO<br>CADASTRADA";ph.style.display="";}
         if(st){st.textContent="A logo será armazenada no Cloudflare R2.";st.className="clientLogoStatus"}
         if(badge)badge.textContent="SEM ALTERAÇÃO";
         const panel=$("clientLogoPanel");if(panel){delete panel.dataset.logoAction;delete panel.dataset.logoFileName}

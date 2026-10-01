@@ -113,6 +113,119 @@
     return {ok:true,data:operation==="list"?rowsFrom(result.data):(result.data||{})};
   }
 
+  const CLIENT_LOGO_LEGACY_PATH="../assets/img/clientes/";
+  const CLIENT_LOGO_LEGACY_EXTS=["png","jpg","jpeg","webp"];
+
+  function logoElements(){
+    return {
+      panel:$("#clientLogoPanel"),
+      input:$("#clientLogoFile"),
+      image:$("#clientLogoPreviewImg"),
+      placeholder:$("#clientLogoPlaceholder"),
+      status:$("#clientLogoStatus"),
+      badge:$("#clientLogoState")
+    };
+  }
+
+  function setLogoPlaceholder(html="SEM LOGO<br>CADASTRADA"){
+    const {image,placeholder}=logoElements();
+    if(image){image.removeAttribute("src");image.style.display="none";}
+    if(placeholder){
+      placeholder.innerHTML="<strong>🏭</strong>"+html;
+      placeholder.style.display="";
+    }
+  }
+
+  function probeImage(src){
+    return new Promise(resolve=>{
+      const image=new Image();
+      image.onload=()=>resolve(true);
+      image.onerror=()=>resolve(false);
+      image.src=src;
+    });
+  }
+
+  function clientLogoUrl(cliente,cacheBust=Date.now()){
+    if(window.PortalAPI?.clientLogoUrl)return window.PortalAPI.clientLogoUrl(cliente,cacheBust);
+    return "https://api.portalfrete.net.br/v1/client-logos/"+encodeURIComponent(safe(cliente))+"?v="+encodeURIComponent(cacheBust);
+  }
+
+  async function loadClientLogoPreview(cliente){
+    if(STATE.tab!=="clientes")return;
+    if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
+
+    const name=upper(cliente);
+    const {panel,input,image,placeholder,status,badge}=logoElements();
+    if(!panel)return;
+
+    panel.hidden=false;
+    delete panel.dataset.logoAction;
+    delete panel.dataset.logoFileName;
+    delete panel.dataset.logoExists;
+    if(input)input.value="";
+    setLogoPlaceholder();
+
+    if(!name){
+      if(status){status.textContent="Selecione a logo do novo cliente. Ela será armazenada no Cloudflare R2.";status.className="clientLogoStatus";}
+      if(badge)badge.textContent="SEM LOGO";
+      return;
+    }
+
+    if(status){status.textContent="🔄 Verificando logo atual...";status.className="clientLogoStatus";}
+    if(badge)badge.textContent="CARREGANDO";
+
+    const r2Src=clientLogoUrl(name,Date.now());
+    if(await probeImage(r2Src)){
+      if(image){image.src=r2Src;image.style.display="block";}
+      if(placeholder)placeholder.style.display="none";
+      panel.dataset.logoExists="r2";
+      if(status){status.textContent="✅ Logo atual armazenada no Cloudflare R2.";status.className="clientLogoStatus ready";}
+      if(badge)badge.textContent="R2";
+      return;
+    }
+
+    for(const ext of CLIENT_LOGO_LEGACY_EXTS){
+      const src=CLIENT_LOGO_LEGACY_PATH+encodeURIComponent(name)+"."+ext;
+      if(await probeImage(src)){
+        if(image){image.src=src;image.style.display="block";}
+        if(placeholder)placeholder.style.display="none";
+        panel.dataset.logoExists="github";
+        if(status){status.textContent="Logo atual ainda está no GitHub. Ao incluir/alterar, a nova versão irá para o R2.";status.className="clientLogoStatus pending";}
+        if(badge)badge.textContent="LEGADO";
+        return;
+      }
+    }
+
+    setLogoPlaceholder();
+    if(status){status.textContent="Nenhuma logo cadastrada. Clique em Incluir logo.";status.className="clientLogoStatus";}
+    if(badge)badge.textContent="SEM LOGO";
+  }
+
+  async function applyClientLogoDraft(cliente){
+    const {panel,input}=logoElements();
+    if(!panel||STATE.tab!=="clientes")return false;
+
+    const action=safe(panel.dataset.logoAction).toLowerCase();
+    if(!action)return false;
+
+    if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
+    if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
+
+    if(action==="delete"){
+      await window.PortalAPI.deleteClientLogo(cliente);
+      return true;
+    }
+
+    if(action==="include"||action==="change"){
+      const file=input?.files?.[0];
+      if(!file)throw new Error("Selecione a imagem da logo antes de salvar.");
+      await window.PortalAPI.putClientLogo(cliente,file);
+      return true;
+    }
+
+    return false;
+  }
+
   function rowIdentity(row,cfg=configAtual()){
     return safe(row?.[cfg.idField]);
   }
@@ -213,6 +326,9 @@
     const fields=$("#formFields");fields.innerHTML="";cfg.fields.forEach(field=>fields.appendChild(createInput(field,row?row[field.key]:"")));
     setModalMessage();
     $("#cadModal").classList.add("show");$("#cadModal").setAttribute("aria-hidden","false");
+    if(STATE.tab==="clientes"){
+      setTimeout(()=>loadClientLogoPreview(row?.cliente||""),70);
+    }
     setTimeout(()=>fields.querySelector("input,select")?.focus(),40);
   }
 
@@ -247,16 +363,36 @@
     STATE.loadToken++;STATE.loading=false;
     STATE.saving=true;saveButton.disabled=true;saveButton.textContent="Salvando...";
     setModalMessage("Salvando cadastro...","info");setStatus("💾 Salvando...");
+    let cadastroSaved=false;
+    let updated=false;
     try{
       const res=await api(editing?"update":"add",payload,tab);
-      const updated=mergeRow(res.data,previousId,editingRow);
+      cadastroSaved=true;
+      updated=mergeRow(res.data,previousId,editingRow);
+
+      let logoChanged=false;
+      if(tab==="clientes"){
+        const logoAction=safe($("#clientLogoPanel")?.dataset.logoAction).toLowerCase();
+        if(logoAction){
+          saveButton.textContent=logoAction==="delete"?"Excluindo logo...":"Enviando logo...";
+          setModalMessage(logoAction==="delete"?"Excluindo logo do cliente...":"Enviando logo para o Cloudflare R2...","info");
+          logoChanged=await applyClientLogoDraft(payload.cliente);
+        }
+      }
+
       closeModal(true);
-      setStatus("✅ Cadastro salvo");
+      setStatus(logoChanged?"✅ Cadastro e logo atualizados":"✅ Cadastro salvo");
       if(!updated)loadCurrent(true);
     }catch(error){
       console.error("[cadastros] salvar:",error);
-      setStatus("❌ Erro ao salvar");
-      setModalMessage(error.message||"Não foi possível salvar o cadastro.","error");
+      if(cadastroSaved){
+        setStatus("⚠️ Cadastro salvo; erro na logo");
+        setModalMessage("O cadastro foi salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."),"error");
+        if(!updated)loadCurrent(true);
+      }else{
+        setStatus("❌ Erro ao salvar");
+        setModalMessage(error.message||"Não foi possível salvar o cadastro.","error");
+      }
     }finally{
       STATE.saving=false;saveButton.disabled=false;saveButton.textContent=originalLabel;
     }

@@ -1,0 +1,82 @@
+name: Fix Cadastros Save Close
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-cadastros-save-close.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Corrigir fechamento e disparo unico do cadastro
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          js_path = Path('assets/js/cadastros.js')
+          html_path = Path('pages/cadastros.html')
+          js = js_path.read_text(encoding='utf-8')
+          html = html_path.read_text(encoding='utf-8')
+
+          # 1) Não permitir abrir outro modal enquanto um salvamento está em andamento.
+          old = '''  function openModal(row){\n    STATE.editing=row||null;const cfg=configAtual();'''
+          new = '''  function openModal(row){\n    if(STATE.saving)return;\n    STATE.editing=row||null;const cfg=configAtual();'''
+          if old not in js:
+              raise SystemExit('Padrão openModal não encontrado')
+          js = js.replace(old, new, 1)
+
+          # 2) Ao iniciar o salvamento, ocultar o modal imediatamente sem limpar o formulário.
+          #    Os dados e eventual arquivo de logo continuam disponíveis para a operação em curso.
+          old = '''    STATE.saving=true;saveButton.disabled=true;saveButton.textContent="Salvando...";\n    setModalMessage("Salvando cadastro...","info");setStatus("💾 Salvando...");'''
+          new = '''    STATE.saving=true;saveButton.disabled=true;saveButton.textContent="Salvando...";\n    setModalMessage("Salvando cadastro...","info");setStatus("💾 Salvando...");\n    const modal=$("#cadModal");\n    modal?.classList.remove("show");\n    modal?.setAttribute("aria-hidden","true");'''
+          if old not in js:
+              raise SystemExit('Padrão de início do save não encontrado')
+          js = js.replace(old, new, 1)
+
+          # 3) Se o cadastro principal falhar, reabrir o modal. Se só a logo falhar,
+          #    manter a tela fechada, limpar o modal e avisar sem permitir novo clique duplicado.
+          old = '''      if(cadastroSaved){\n        setStatus("⚠️ Cadastro salvo; erro na logo");\n        setModalMessage("O cadastro foi salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."),"error");\n        if(!updated)loadCurrent(true);\n      }else{\n        setStatus("❌ Erro ao salvar");\n        setModalMessage(error.message||"Não foi possível salvar o cadastro.","error");\n      }'''
+          new = '''      if(cadastroSaved){\n        closeModal(true);\n        setStatus("⚠️ Cadastro salvo; erro na logo");\n        alert("Cadastro salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."));\n        if(!updated)loadCurrent(true);\n      }else{\n        $("#cadModal")?.classList.add("show");\n        $("#cadModal")?.setAttribute("aria-hidden","false");\n        setStatus("❌ Erro ao salvar");\n        setModalMessage(error.message||"Não foi possível salvar o cadastro.","error");\n      }'''
+          if old not in js:
+              raise SystemExit('Padrão de tratamento de erro não encontrado')
+          js = js.replace(old, new, 1)
+
+          # 4) Um único caminho de disparo: submit do formulário.
+          old = '''    $("#cadForm")?.addEventListener("submit",save);\n    $("#btnSalvar")?.addEventListener("click",save);'''
+          new = '''    $("#cadForm")?.addEventListener("submit",save);'''
+          if old not in js:
+              raise SystemExit('Padrão dos listeners de salvar não encontrado')
+          js = js.replace(old, new, 1)
+
+          # O botão está fora do <form>, então associamos explicitamente ao formulário.
+          old = '<button class="btn green" id="btnSalvar" type="button">Salvar</button>'
+          new = '<button class="btn green" id="btnSalvar" type="submit" form="cadForm">Salvar</button>'
+          if old not in html:
+              raise SystemExit('Botão Salvar não encontrado')
+          html = html.replace(old, new, 1)
+
+          # Forçar atualização do JS no navegador.
+          html = html.replace('../assets/js/cadastros.js?v=5', '../assets/js/cadastros.js?v=6', 1)
+
+          js_path.write_text(js, encoding='utf-8')
+          html_path.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Validar sintaxe JavaScript
+        run: node --check assets/js/cadastros.js
+
+      - name: Commitar correção e remover workflow temporário
+        run: |
+          rm .github/workflows/fix-cadastros-save-close.yml
+          git config user.name "Nova Frota Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets/js/cadastros.js pages/cadastros.html .github/workflows/fix-cadastros-save-close.yml
+          git commit -m "fix(cadastros): fechar modal ao salvar e evitar duplicidade"
+          git push

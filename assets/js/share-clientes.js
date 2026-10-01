@@ -9,6 +9,7 @@
 
   const LOGO_BASE_PATH = "../assets/img/clientes/";
   const LOGO_EXTS = ["png", "jpg", "jpeg", "webp"];
+  const LOGO_API_BASE = "https://api.portalfrete.net.br/v1/client-logos/";
 
   let BASE_ATUAL = "fretes";
   let refreshSequence = 0;
@@ -374,6 +375,13 @@
     if (!name) {
       fb.textContent = "SELECIONE UM CLIENTE";
       fb.style.display = "block";
+      return;
+    }
+
+    const r2Src = `${LOGO_API_BASE}${encodeURIComponent(name)}?v=${Date.now()}`;
+    if (await probeImage(r2Src)) {
+      img.src = r2Src;
+      img.style.display = "block";
       return;
     }
 

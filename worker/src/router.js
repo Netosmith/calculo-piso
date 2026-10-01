@@ -2,6 +2,7 @@ import {gamesController} from "../../games/server/api.js";
 import { healthController } from "./controllers/health.js";
 import { gatewayTestController } from "./controllers/gateway.js";
 import { portalGatewayController } from "./controllers/portal-gateway.js";
+import { clientLogoController } from "./controllers/client-logos.js";
 import {
   loginController,
   logoutController,
@@ -49,6 +50,14 @@ export async function routeRequest(request, env, ctx) {
   if (path === "/v1/gateway") {
     if (request.method !== "POST") return methodNotAllowed(["POST"]);
     return portalGatewayController(request, env, ctx);
+  }
+
+  if (path.startsWith("/v1/client-logos/")) {
+    if (!["GET", "HEAD", "PUT", "DELETE"].includes(request.method)) {
+      return methodNotAllowed(["GET", "HEAD", "PUT", "DELETE"]);
+    }
+    const encodedClientName = path.slice("/v1/client-logos/".length);
+    return clientLogoController(request, env, encodedClientName);
   }
 
   return notFound();

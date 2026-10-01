@@ -74,6 +74,35 @@ async function portalApiRequest(path, options = {}) {
   throw lastError || new Error("Falha na API do Portal Frete.");
 }
 
+
+async function portalFileRequest(path, options = {}) {
+  const response = await fetch(`${PORTAL_API_BASE}${path}`, {
+    method: options.method || "GET",
+    credentials: "include",
+    cache: "no-store",
+    headers: options.headers || {},
+    body: options.body
+  });
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    const error = new Error("Resposta inválida da API de arquivos do Portal Frete.");
+    error.status = response.status;
+    throw error;
+  }
+
+  if (!response.ok || data?.ok !== true) {
+    const error = new Error(data?.error || "Falha na API de arquivos do Portal Frete.");
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}
+
 function normalizeGatewayEnvelope(result) {
   const inner = result?.data;
 
@@ -119,5 +148,27 @@ window.PortalAPI = {
     });
 
     return normalizeGatewayEnvelope(result);
+  },
+  clientLogoUrl(cliente, cacheBust = "") {
+    const name = String(cliente || "").trim();
+    const suffix = cacheBust ? `?v=${encodeURIComponent(cacheBust)}` : "";
+    return `${PORTAL_API_BASE}/v1/client-logos/${encodeURIComponent(name)}${suffix}`;
+  },
+  putClientLogo(cliente, file) {
+    if (!file) return Promise.reject(new Error("Selecione uma imagem."));
+    return portalFileRequest(
+      `/v1/client-logos/${encodeURIComponent(String(cliente || "").trim())}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file
+      }
+    );
+  },
+  deleteClientLogo(cliente) {
+    return portalFileRequest(
+      `/v1/client-logos/${encodeURIComponent(String(cliente || "").trim())}`,
+      { method: "DELETE" }
+    );
   }
 };

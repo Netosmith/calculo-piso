@@ -13,6 +13,12 @@
       "id": "84be58f84dc54949af897d6f63c69689"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "CLIENT_LOGOS",
+      "bucket_name": "portal-clientes"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {

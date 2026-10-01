@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/deploy-portal-hotfix.yml'
+      - 'worker/**'
 
 permissions:
   contents: read
@@ -23,6 +24,19 @@ jobs:
         working-directory: worker
         run: npm ci --ignore-scripts
 
+      - name: Garantir bucket R2 de logos
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if npx wrangler r2 bucket info portal-clientes >/dev/null 2>&1; then
+            echo "Bucket portal-clientes já existe."
+          else
+            echo "Criando bucket portal-clientes..."
+            npx wrangler r2 bucket create portal-clientes
+          fi
+
       - name: Publicar hotfix do Worker
         working-directory: worker
         env:
@@ -37,8 +51,18 @@ jobs:
           sleep 3
           curl -fsS --max-time 25 https://portalfrete-api.luziano-transportes.workers.dev/v1/gateway-test
 
-      - name: Rollback automático se o gateway falhar
-        if: steps.health.outcome != 'success'
+      - name: Validar rota de logos no R2
+        id: logo_route
+        continue-on-error: true
+        run: |
+          code=$(curl -sS -o /tmp/logo-route.json -w "%{http_code}" --max-time 25 \
+            https://portalfrete-api.luziano-transportes.workers.dev/v1/client-logos/CLIENTE-TESTE-R2)
+          cat /tmp/logo-route.json
+          test "$code" = "404"
+          grep -q "Logo não encontrada" /tmp/logo-route.json
+
+      - name: Rollback automático se o gateway ou R2 falhar
+        if: steps.health.outcome != 'success' || steps.logo_route.outcome != 'success'
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

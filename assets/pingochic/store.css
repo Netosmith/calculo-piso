@@ -512,3 +512,33 @@ button{cursor:pointer}
   .promos{padding-left:16px!important;padding-right:16px!important;scroll-padding-left:16px}
 }
 @media (max-width:600px){.hero .hero-in{padding-left:16px;padding-right:16px}}
+
+/* ---------- plano de fundo da marca (rosa + azul) ---------- */
+body{background:#FFFCF8}
+#app{position:relative}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url("img/bg-pattern.svg") repeat;background-size:440px;
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 9%,transparent 24%,transparent 76%,#000 91%,#000 100%);
+          mask-image:linear-gradient(90deg,#000 0,#000 9%,transparent 24%,transparent 76%,#000 91%,#000 100%)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(520px 420px at -6% 30%,rgba(251,200,212,.45),transparent 70%),
+   radial-gradient(520px 420px at 106% 65%,rgba(205,232,247,.55),transparent 70%),
+   radial-gradient(420px 340px at 100% 0%,rgba(205,232,247,.35),transparent 70%),
+   radial-gradient(460px 360px at 0% 100%,rgba(201,234,242,.40),transparent 70%)}
+.hero{background:#FFF8F5 url("img/bg-hero.svg") center/cover no-repeat;border-bottom:1px solid rgba(240,154,178,.18)}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 70% at 35% 50%,rgba(255,252,248,.75),rgba(255,252,248,0) 70%)}
+.hero .hero-in{position:relative;z-index:1}
+.header{background:rgba(255,252,248,.9)}
+.footer{background:#FFF7F4 url("img/bg-hero.svg") center bottom/cover no-repeat;position:relative}
+.footer::before{content:"";position:absolute;inset:0;background:rgba(255,250,246,.78);pointer-events:none}
+.footer .wrap{position:relative}
+/* cartões e seções em fundo claro para leitura */
+.card .media{box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.co-box,.panel,.order-card,.ship-calc,.pixbox{background:#fff}
+.trust{background:rgba(255,255,255,.7);border-radius:22px;border:1px solid var(--line);padding:24px 26px;backdrop-filter:blur(4px)}
+.list-layout .filters{background:transparent}
+.drawer,.modal,.mnav{background:#fff}
+@media (max-width:860px){
+  .hero{background-size:auto 100%;background-position:left center}
+  .hero::after{background:radial-gradient(ellipse 90% 80% at 50% 50%,rgba(255,252,248,.82),rgba(255,252,248,.2) 80%)}
+}

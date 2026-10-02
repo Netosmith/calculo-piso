@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+  <g fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".5">
+    <path transform="translate(60 70) scale(.9)" d="M0 4C-3-1-10 0-10 6c0 5 6 9 10 12 4-3 10-7 10-12 0-6-7-7-10-2z" stroke="#F4B4C5"/>
+    <path transform="translate(250 230) scale(.9)" d="M-30 10h58a12 12 0 0 0-4-23 16 16 0 0 0-30-4 13 13 0 0 0-24 6A11 11 0 0 0-30 10z" stroke="#A9D5EC"/>
+    <path transform="translate(280 60) scale(.7)" d="M0-10l3 6.5 7 .8-5.2 4.8 1.4 7L0 5.6l-6.2 3.5 1.4-7L-10-2.7l7-.8z" stroke="#A9D5EC"/>
+    <path transform="translate(90 290) scale(.75)" d="M0 4C-3-1-10 0-10 6c0 5 6 9 10 12 4-3 10-7 10-12 0-6-7-7-10-2z" stroke="#A9D5EC"/>
+    <path transform="translate(175 160) scale(.6)" d="M0-10l3 6.5 7 .8-5.2 4.8 1.4 7L0 5.6l-6.2 3.5 1.4-7L-10-2.7l7-.8z" stroke="#F4B4C5"/>
+  </g>
+  <g opacity=".45"><circle cx="160" cy="40" r="3" fill="#F4B4C5"/><circle cx="330" cy="150" r="3.5" fill="#A9D5EC"/><circle cx="30" cy="190" r="2.5" fill="#F7D48F"/><circle cx="210" cy="330" r="3" fill="#F4B4C5"/><circle cx="330" cy="320" r="2.5" fill="#F7D48F"/></g>
+</svg>

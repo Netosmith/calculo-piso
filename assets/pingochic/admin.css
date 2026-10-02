@@ -192,3 +192,7 @@ tr.click{cursor:pointer}
   .sheet{position:static;transform:none;width:100%}
   .shell{display:block}.main{display:none}
 }
+/* fundo da marca na tela de login */
+.login-form{background:#FFF8F5 url("img/bg-hero.svg") center/cover no-repeat;position:relative}
+.login-form::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 55% 55% at 50% 50%,rgba(255,252,248,.92),rgba(255,252,248,.35) 80%);pointer-events:none}
+.login-form form{position:relative;background:rgba(255,255,255,.88);padding:34px;border-radius:22px;box-shadow:0 20px 60px rgba(42,29,24,.10);backdrop-filter:blur(6px)}

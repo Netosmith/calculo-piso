@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 520" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="38"/></filter>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF4F4"/><stop offset=".5" stop-color="#FFFBF6"/><stop offset="1" stop-color="#F3F9FD"/>
+    </linearGradient>
+    <g id="heart"><path d="M0 4C-3-1-10 0-10 6c0 5 6 9 10 12 4-3 10-7 10-12 0-6-7-7-10-2z" fill="none" stroke-width="1.6" stroke-linejoin="round"/></g>
+    <g id="cloud"><path d="M-30 10h58a12 12 0 0 0-4-23 16 16 0 0 0-30-4 13 13 0 0 0-24 6A11 11 0 0 0-30 10z" fill="none" stroke-width="1.6" stroke-linejoin="round"/></g>
+    <g id="star"><path d="M0-10l3 6.5 7 .8-5.2 4.8 1.4 7L0 5.6l-6.2 3.5 1.4-7L-10-2.7l7-.8z" stroke-linejoin="round"/></g>
+    <g id="hanger"><path d="M0-12a4 4 0 1 1 4 4c-2 0-4 1-4 3v2L-22 10h44L0-3" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>
+  </defs>
+  <rect width="1440" height="520" fill="url(#base)"/>
+  <!-- manchas aquareladas -->
+  <g filter="url(#soft)" opacity=".9">
+    <ellipse cx="90" cy="60" rx="260" ry="170" fill="#FBC8D4"/>
+    <ellipse cx="40" cy="300" rx="220" ry="150" fill="#FAD3DD" opacity=".8"/>
+    <ellipse cx="120" cy="500" rx="260" ry="120" fill="#C9EAF2" opacity=".85"/>
+    <ellipse cx="1380" cy="40" rx="250" ry="150" fill="#CDE8F7"/>
+    <ellipse cx="1430" cy="260" rx="160" ry="120" fill="#DCEFFA" opacity=".8"/>
+    <ellipse cx="1260" cy="520" rx="320" ry="140" fill="#FBCAD6" opacity=".9"/>
+    <ellipse cx="760" cy="560" rx="260" ry="70" fill="#FCE0E6" opacity=".6"/>
+  </g>
+  <!-- traço pontilhado (voo da abelha) -->
+  <path d="M10 300c60 10 120-20 150-70s20-80-10-70-20 60 30 70 100-20 130-70" fill="none" stroke="#F4A6BA" stroke-width="1.6" stroke-dasharray="5 6" stroke-linecap="round" opacity=".8"/>
+  <path d="M1440 360c-60-10-110 20-140 60s-20 60 6 54 14-46-24-50" fill="none" stroke="#F4A6BA" stroke-width="1.6" stroke-dasharray="5 6" stroke-linecap="round" opacity=".75"/>
+  <!-- ícones rosa -->
+  <g stroke="#F09AB2" opacity=".85">
+    <use href="#heart" transform="translate(150 110) scale(1.5)"/>
+    <use href="#heart" transform="translate(1250 260) scale(1.15)"/>
+    <use href="#heart" transform="translate(1290 470) scale(.95)"/>
+    <use href="#cloud" transform="translate(195 420) scale(1.05)"/>
+    <use href="#heart" transform="translate(560 470) scale(.8)"/>
+  </g>
+  <!-- ícones azuis -->
+  <g stroke="#8FC7E3" opacity=".9">
+    <use href="#cloud" transform="translate(1285 85) scale(1.05)"/>
+    <use href="#hanger" transform="translate(80 330) scale(1.05)"/>
+    <use href="#hanger" transform="translate(1365 300) scale(1.05)"/>
+    <use href="#cloud" transform="translate(1000 470) scale(.95)"/>
+    <use href="#star" transform="translate(430 480) scale(1.2)" fill="none" stroke-width="1.5"/>
+  </g>
+  <!-- estrelas amarelas -->
+  <g fill="#F7CD7A" opacity=".9">
+    <use href="#star" transform="translate(95 75) scale(1.15)"/>
+    <use href="#star" transform="translate(1200 55) scale(.9)"/>
+    <use href="#star" transform="translate(1310 400) scale(1.15)"/>
+    <use href="#star" transform="translate(100 470) scale(.7)"/>
+    <use href="#star" transform="translate(700 40) scale(.6)"/>
+  </g>
+  <!-- bolinhas -->
+  <g opacity=".85">
+    <circle cx="440" cy="75" r="7" fill="#9ACFEA"/><circle cx="485" cy="140" r="3.5" fill="#9ACFEA"/>
+    <circle cx="580" cy="50" r="4" fill="#F4A6BA"/><circle cx="60" cy="225" r="4" fill="#F4A6BA"/>
+    <circle cx="195" cy="415" r="0" fill="#F4A6BA"/><circle cx="195" cy="250" r="5" fill="#9ACFEA"/>
+    <circle cx="1385" cy="215" r="9" fill="#9ACFEA"/><circle cx="1230" cy="200" r="3" fill="#9ACFEA"/>
+    <circle cx="1255" cy="190" r="2.6" fill="#9ACFEA"/><circle cx="1330" cy="215" r="3" fill="#F7CD7A"/>
+    <circle cx="1200" cy="420" r="7" fill="#F4A6BA"/><circle cx="640" cy="470" r="4" fill="#F4A6BA"/>
+    <circle cx="560" cy="500" r="3.5" fill="#F7CD7A"/><circle cx="240" cy="470" r="6.5" fill="#9ACFEA"/>
+    <circle cx="140" cy="510" r="3" fill="#9ACFEA"/><circle cx="880" cy="60" r="3.5" fill="#F4A6BA"/>
+    <circle cx="1000" cy="35" r="4" fill="#9ACFEA"/>
+  </g>
+  <!-- confetes -->
+  <g fill="#F4A6BA" opacity=".8">
+    <circle cx="1350" cy="60" r="2.5"/><circle cx="1365" cy="80" r="2.5"/><circle cx="1380" cy="62" r="2.5"/><circle cx="1395" cy="90" r="2.5"/><circle cx="1370" cy="100" r="2.5"/>
+    <circle cx="50" cy="390" r="2.5"/><circle cx="72" cy="402" r="2.5"/><circle cx="60" cy="420" r="2.5"/><circle cx="85" cy="425" r="2.5"/><circle cx="40" cy="410" r="2.5"/>
+    <circle cx="1150" cy="480" r="2.5"/><circle cx="1170" cy="495" r="2.5"/><circle cx="1185" cy="478" r="2.5"/><circle cx="1160" cy="510" r="2.5"/>
+  </g>
+</svg>

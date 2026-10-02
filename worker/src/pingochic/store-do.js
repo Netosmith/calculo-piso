@@ -28,8 +28,8 @@ const ORDER_STATUSES = ["aguardando_pagamento", "pago", "em_separacao", "enviado
 const DEFAULT_SETTINGS = {
   storeName: "Pingo Chic",
   announcement: "Frete grátis acima de R$ 199 para todo o Brasil · 5% OFF no Pix",
-  heroTitle: "Moda infantil com charme, conforto e cuidado em cada detalhe",
-  heroSubtitle: "Roupas e acessórios do bebê ao juvenil, escolhidos a dedo para acompanhar cada fase — enviamos para todo o Brasil.",
+  heroTitle: "Moda infantil com charme e conforto",
+  heroSubtitle: "Roupas e acessórios do bebê ao juvenil, com entrega para todo o Brasil.",
   whatsapp: "",
   instagram: "",
   email: "contato@pingochic.com.br",
@@ -55,9 +55,9 @@ const DEFAULT_SETTINGS = {
 };
 
 const DEFAULT_BANNERS = [
-  { id: "b1", tag: "Nova coleção", title: "Verão Encantado", text: "Peças leves e floridas com até 20% OFF", gender: "menina", color: "#C9567E", active: true },
-  { id: "b2", tag: "Entrega nacional", title: "Frete grátis acima de R$ 199", text: "Enviamos para todos os estados do Brasil", gender: "", color: "#2E3A59", active: true },
-  { id: "b3", tag: "Aventura", title: "Pequenos Exploradores", text: "Camisetas e bermudas resistentes para brincar", gender: "menino", color: "#2F6F8F", active: true }
+  { id: "b1", tag: "Nova coleção", title: "Verão Encantado", text: "Peças leves e floridas com até 20% OFF", gender: "menina", color: "#F0645E", active: true },
+  { id: "b2", tag: "Entrega nacional", title: "Frete grátis acima de R$ 199", text: "Enviamos para todos os estados do Brasil", gender: "", color: "#E9A800", active: true },
+  { id: "b3", tag: "Aventura", title: "Pequenos Exploradores", text: "Camisetas e bermudas resistentes para brincar", gender: "menino", color: "#1597C9", active: true }
 ];
 
 const DEFAULT_COUPONS = [

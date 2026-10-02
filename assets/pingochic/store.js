@@ -258,50 +258,41 @@
     const featured = S.products.filter((p) => p.featured).slice(0, 8);
     const best = [...S.products].sort((a, b) => (b.sold || 0) - (a.sold || 0)).slice(0, 8);
     const news = [...S.products].sort((a, b) => b.createdAt - a.createdAt).slice(0, 4);
-    const imgs = S.products.filter((p) => p.images?.length).slice(0, 3);
-    const tile = (cls, i, icon) => `<div class="tile ${cls}">${imgs[i] ? `<img src="${esc(imgUrl(imgs[i].images[0]))}" alt="">` : productIcon(icon, i ? 90 : 150)}</div>`;
     const title = esc(st.heroTitle || "").replace(/(charme)/i, "<em>$1</em>").replace(/(conforto)/i, '<em class="blue">$1</em>');
     app().innerHTML = `
       <section class="hero">
-        <div class="blob" style="width:380px;height:380px;background:#F7C9D8;left:-120px;top:-80px"></div>
-        <div class="blob" style="width:300px;height:300px;background:#CFE3EE;right:-60px;bottom:-120px"></div>
-        <div class="wrap hero-in" style="position:relative">
-          <div>
+        <div class="wrap hero-in">
+          <div class="hero-copy">
             <span class="eyebrow">Coleção ${new Date().getFullYear()}</span>
             <h1>${title}</h1>
             <p>${esc(st.heroSubtitle)}</p>
             <div class="hero-ctas">
-              <a class="btn btn-dark btn-lg" href="#/loja?g=menina">Moda menina</a>
-              <a class="btn btn-line btn-lg" href="#/loja?g=menino">Moda menino</a>
-            </div>
-            <div class="hero-stats">
-              <div><b>27 UFs</b><span>Entregamos em todo o Brasil</span></div>
-              <div><b>${st.maxInstallments || 1}x</b><span>Sem juros no cartão</span></div>
-              <div><b>${st.pixDiscount || 0}% OFF</b><span>Pagando no Pix</span></div>
+              <a class="btn btn-dark" href="#/loja?g=menina">Moda menina</a>
+              <a class="btn btn-line" href="#/loja?g=menino">Moda menino</a>
+              <a class="btn btn-line" href="#/loja?g=bebe">Bebê</a>
             </div>
           </div>
-          <div class="collage" aria-hidden="true">
-            ${imgs[0] ? tile("t1", 0, "dress") : `<div class="tile t1 brand-tile"><img src="${LOGO_LG}" alt="Pingo Chic"></div>`}${tile("t2", imgs[0] ? 1 : 0, "dress")}${tile("t3", imgs[0] ? 2 : 1, "shirt")}
-            <div class="badge"><span class="ic">${svg("truck", 22)}</span><div><b>Frete grátis</b>acima de ${money(st.freeShippingMin)}</div></div>
+          <div class="hero-art" aria-hidden="true">
+            <img class="hero-logo" src="${LOGO_LG}" alt="">
+            <div class="hero-pill">${svg("truck", 16)} Frete grátis acima de ${money(st.freeShippingMin)}</div>
           </div>
         </div>
       </section>
 
-      <div class="wrap">${trustHtml()}</div>
-
-      ${S.banners.length ? `<section class="section tight"><div class="wrap"><div class="promos">${S.banners.slice(0, 3).map(bannerHtml).join("")}</div></div></section>` : ""}
-
-      <section class="section tight">
+      <section class="section tight cats-sec">
         <div class="wrap">
-          <div class="sec-head"><div><h2>Compre por categoria</h2><p>Do primeiro body ao look de festa.</p></div></div>
           <div class="cats">${GENDERS.map((g) => `
             <a class="cat ${g.cls}" href="#/loja?g=${g.key}">
-              <span class="ic">${productIcon(g.icon, 56)}</span>
+              <span class="ic">${productIcon(g.icon, 34)}</span>
               <div><h3>${g.label}</h3><span>${g.text} ${svg("chevron", 14)}</span></div>
             </a>`).join("")}
           </div>
         </div>
       </section>
+
+      ${S.banners.length ? `<section class="section tight promo-sec"><div class="wrap"><div class="promos">${S.banners.slice(0, 3).map(bannerHtml).join("")}</div></div></section>` : ""}
+
+
 
       ${featured.length ? `<section class="section"><div class="wrap">
         <div class="sec-head"><div><h2>Destaques da estação</h2><p>As peças queridinhas das nossas clientes.</p></div><a class="btn btn-line btn-sm" href="#/loja">Ver tudo ${svg("chevron", 16)}</a></div>
@@ -317,6 +308,8 @@
         <div class="sec-head"><div><h2>Mais vendidos</h2></div></div>
         <div class="grid">${best.slice(0, 4).map(cardHtml).join("")}</div>
       </div></section>` : ""}
+
+      <div class="wrap">${trustHtml()}</div>
 
       <section class="section"><div class="wrap">
         <div class="news">

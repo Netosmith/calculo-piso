@@ -1,0 +1,68 @@
+name: Fix Pingo Chic Banner Save
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-pingochic-banner-save.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Corrigir persistência e exibição de mídia dos banners
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def rep(path, old, new):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              if old not in s:
+                  raise SystemExit(f'Trecho não encontrado em {path}: {old[:120]}')
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          rep(
+              'assets/pingochic/admin.js',
+              '  const A = { admin: null, view: "dashboard", products: [], orders: [], customers: [], settings: null, banners: [], coupons: [], filters: {} };',
+              '  const A = { admin: null, view: "dashboard", products: [], orders: [], customers: [], settings: null, banners: [], coupons: [], filters: {} };\n  window.PCAdminState = A;'
+          )
+
+          rep(
+              'assets/pingochic/banner-images-admin.js',
+              '      serverBanners[index].image = result.url;\n      hidden.dispatchEvent(new Event("input", { bubbles: true }));',
+              '      serverBanners[index].image = result.url;\n      if (window.PCAdminState?.banners?.[index]) window.PCAdminState.banners[index].image = result.url;\n      hidden.dispatchEvent(new Event("input", { bubbles: true }));'
+          )
+
+          rep(
+              'assets/pingochic/banner-images-admin.js',
+              '      serverBanners[index].image = "";\n      hidden.dispatchEvent(new Event("input", { bubbles: true }));',
+              '      serverBanners[index].image = "";\n      if (window.PCAdminState?.banners?.[index]) window.PCAdminState.banners[index].image = "";\n      hidden.dispatchEvent(new Event("input", { bubbles: true }));'
+          )
+
+          rep(
+              'assets/pingochic/store.css',
+              '.promo .bgimg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:.35}',
+              '.promo .bgimg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:1;z-index:0}\n.promo>small,.promo>h3,.promo>p{position:relative;z-index:1}.promo .go{z-index:2}'
+          )
+
+          for path in ['pages/pingochic.html', 'pages/pingochic-admin.html']:
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              import re
+              s = re.sub(r'v=20261003\d+', 'v=20261003174500', s)
+              p.write_text(s, encoding='utf-8')
+
+      - name: Commitar correção
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/pingochic/admin.js assets/pingochic/banner-images-admin.js assets/pingochic/store.css pages/pingochic.html pages/pingochic-admin.html
+          git commit -m "fix(pingochic): persiste e exibe mídia dos banners"
+          git push origin HEAD:main

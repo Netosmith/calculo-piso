@@ -11,6 +11,19 @@ import {
 import { logRequest, logError } from "./middleware/logger.js";
 import { errorResponse } from "./utils/response.js";
 
+function withCors(response, cors) {
+  if (!cors || response.webSocket) return response;
+
+  const headers = new Headers(response.headers);
+  Object.entries(cors).forEach(([key, value]) => headers.set(key, value));
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     logRequest(request);
@@ -25,28 +38,22 @@ export default {
 
     const missingSecrets = validateRuntimeSecrets(env);
     if (missingSecrets.length) {
-      return errorResponse(
-        "Configuração incompleta do Worker.",
-        500,
-        `Secrets ausentes: ${missingSecrets.join(", ")}`
+      return withCors(
+        errorResponse(
+          "Configuração incompleta do Worker.",
+          500,
+          `Secrets ausentes: ${missingSecrets.join(", ")}`
+        ),
+        cors
       );
     }
 
     try {
       const response = await routeRequest(request, env, ctx);
-      if (response.webSocket || !cors) return response;
-
-      const headers = new Headers(response.headers);
-      Object.entries(cors).forEach(([key, value]) => headers.set(key, value));
-
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers
-      });
+      return withCors(response, cors);
     } catch (error) {
       logError(error);
-      return errorResponse("Erro interno da API.", 500);
+      return withCors(errorResponse("Erro interno da API.", 500), cors);
     }
   }
 };

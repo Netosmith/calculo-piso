@@ -542,3 +542,67 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   .hero{background-size:auto 100%;background-position:left center}
   .hero::after{background:radial-gradient(ellipse 90% 80% at 50% 50%,rgba(255,252,248,.82),rgba(255,252,248,.2) 80%)}
 }
+
+/* =========================================================
+   AMBIENTES POR SEÇÃO (menina rosa · menino azul · bebê bege)
+   ========================================================= */
+body{transition:background-color .6s ease}
+body::before{transition:opacity .6s ease}
+body[data-theme="menina"]{background-color:#FFF4F6}
+body[data-theme="menino"]{background-color:#F1F8FD}
+body[data-theme="bebe"]{background-color:#FBF6EE}
+body[data-theme="menina"]::before{background:
+  radial-gradient(620px 520px at -6% 25%,rgba(248,180,200,.55),transparent 70%),
+  radial-gradient(620px 520px at 106% 70%,rgba(250,196,212,.55),transparent 70%),
+  radial-gradient(460px 360px at 100% 0%,rgba(252,214,224,.5),transparent 70%),
+  radial-gradient(460px 360px at 0% 100%,rgba(252,206,220,.5),transparent 70%)}
+body[data-theme="menino"]::before{background:
+  radial-gradient(620px 520px at -6% 25%,rgba(170,214,242,.55),transparent 70%),
+  radial-gradient(620px 520px at 106% 70%,rgba(160,212,244,.6),transparent 70%),
+  radial-gradient(460px 360px at 100% 0%,rgba(196,228,248,.55),transparent 70%),
+  radial-gradient(460px 360px at 0% 100%,rgba(186,226,240,.55),transparent 70%)}
+body[data-theme="bebe"]::before{background:
+  radial-gradient(620px 520px at -6% 25%,rgba(240,222,196,.6),transparent 70%),
+  radial-gradient(620px 520px at 106% 70%,rgba(238,220,192,.6),transparent 70%),
+  radial-gradient(460px 360px at 100% 0%,rgba(248,232,206,.6),transparent 70%),
+  radial-gradient(460px 360px at 0% 100%,rgba(242,226,200,.55),transparent 70%)}
+body[data-theme="menina"] .header{background:rgba(255,244,246,.92);border-bottom-color:#F6D6DF}
+body[data-theme="menino"] .header{background:rgba(241,248,253,.92);border-bottom-color:#CFE6F5}
+body[data-theme="bebe"] .header{background:rgba(251,246,238,.92);border-bottom-color:#EADCC6}
+body[data-theme="menina"] .footer{background-color:#FFF1F4}
+body[data-theme="menino"] .footer{background-color:#EEF7FD}
+body[data-theme="bebe"] .footer{background-color:#FBF4E8}
+body[data-theme="menina"] .footer::before{background:rgba(255,241,244,.8)}
+body[data-theme="menino"] .footer::before{background:rgba(238,247,253,.8)}
+body[data-theme="bebe"] .footer::before{background:rgba(251,244,232,.82)}
+
+/* destaques de cor em cada ambiente */
+body[data-theme="menina"]{--accent:#E9557A;--accent-s:#FFE3EA}
+body[data-theme="menino"]{--accent:#1E8FC6;--accent-s:#DDF0FB}
+body[data-theme="bebe"]{--accent:#B9875A;--accent-s:#F3E6D3}
+body[data-theme="menina"] .nav a.on,body[data-theme="menino"] .nav a.on,body[data-theme="bebe"] .nav a.on{background:var(--accent-s);color:var(--accent)}
+body[data-theme="menina"] .chip.on,body[data-theme="menino"] .chip.on,body[data-theme="bebe"] .chip.on,
+body[data-theme="menina"] .size.on,body[data-theme="menino"] .size.on,body[data-theme="bebe"] .size.on,
+body[data-theme="menina"] .opt.on .bx,body[data-theme="menino"] .opt.on .bx,body[data-theme="bebe"] .opt.on .bx{background:var(--accent);border-color:var(--accent);color:#fff}
+body[data-theme="menina"] .pdp .btn-dark,body[data-theme="menino"] .pdp .btn-dark,body[data-theme="bebe"] .pdp .btn-dark,
+body[data-theme="menina"] .quick,body[data-theme="menino"] .quick,body[data-theme="bebe"] .quick{background:var(--accent)}
+body[data-theme="menina"] .fav.on,body[data-theme="menino"] .fav.on,body[data-theme="bebe"] .fav.on{color:var(--accent)}
+body[data-theme="menina"] .fav.on svg,body[data-theme="menino"] .fav.on svg,body[data-theme="bebe"] .fav.on svg{fill:var(--accent)}
+body[data-theme] .crumbs a:hover{color:var(--accent,var(--ink))}
+
+/* cabeçalho da seção na listagem */
+.list-head.theme-head{margin:18px 0 26px;padding:30px 32px;border-radius:26px;position:relative;overflow:hidden}
+.list-head.theme-head::after{content:"";position:absolute;inset:0;background:url("img/bg-pattern.svg") repeat;background-size:300px;opacity:.9;pointer-events:none}
+.list-head.theme-head>*{position:relative;z-index:1}
+body[data-theme="menina"] .list-head.theme-head{background:linear-gradient(120deg,#FFD9E3 0%,#FFEFF3 60%,#FFF7F9 100%)}
+body[data-theme="menino"] .list-head.theme-head{background:linear-gradient(120deg,#CDE9FA 0%,#E7F5FD 60%,#F5FBFE 100%)}
+body[data-theme="bebe"] .list-head.theme-head{background:linear-gradient(120deg,#F1E1C8 0%,#F8EEDF 60%,#FCF8F1 100%)}
+body[data-theme="menina"] .list-head.theme-head h1{color:#B83A60}
+body[data-theme="menino"] .list-head.theme-head h1{color:#13689A}
+body[data-theme="bebe"] .list-head.theme-head h1{color:#8A6440}
+@media (max-width:600px){.list-head.theme-head{padding:22px 20px;border-radius:20px;margin:12px 0 18px}}
+.card .media.g-bebe{background:#F6ECDD;color:#B9875A}
+.cat.bebe,.cats-sec .cat.bebe{background:#F6ECDD}
+.cats-sec .cat.bebe .ic{color:#B9875A}
+body[data-theme="menina"] .card .media.g-menina{background:#FFE5EC}
+body[data-theme="menino"] .card .media.g-menino{background:#DDF0FB}

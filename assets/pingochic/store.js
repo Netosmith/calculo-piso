@@ -13,6 +13,8 @@
   const BEE = "../assets/pingochic/img/bee-120.webp", LOGO = "../assets/pingochic/img/logo-256.webp", LOGO_LG = "../assets/pingochic/img/logo-512.webp";
   const LS_CART = "pingochic.cart.v2", LS_FAV = "pingochic.fav.v2";
 
+  const LS = (() => { try { const t = "__pc"; localStorage.setItem(t, "1"); localStorage.removeItem(t); return localStorage; } catch { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; } })();
+  const SS = (() => { try { const t = "__pc"; sessionStorage.setItem(t, "1"); sessionStorage.removeItem(t); return sessionStorage; } catch { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; } })();
   const S = {
     settings: {}, products: [], banners: [], categories: [],
     user: null,
@@ -22,10 +24,10 @@
     lastOrder: null,
     quote: null
   };
-  function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+  function load(k, d) { try { return JSON.parse(LS.getItem(k)) ?? d; } catch { return d; } }
   function save() {
-    localStorage.setItem(LS_CART, JSON.stringify(S.cart));
-    if (!S.user) localStorage.setItem(LS_FAV, JSON.stringify(S.favs));
+    LS.setItem(LS_CART, JSON.stringify(S.cart));
+    if (!S.user) LS.setItem(LS_FAV, JSON.stringify(S.favs));
   }
   const $ = (sel, root = document) => root.querySelector(sel);
   const app = () => $("#app");
@@ -71,7 +73,7 @@
       const merged = [...new Set([...(user.favorites || []), ...S.favs])];
       if (merged.length !== (user.favorites || []).length) api("/me/favorites", { method: "PUT", body: { favorites: merged } }).catch(() => {});
       S.favs = merged;
-      localStorage.removeItem(LS_FAV);
+      LS.removeItem(LS_FAV);
     } else {
       S.favs = load(LS_FAV, []);
     }
@@ -225,6 +227,12 @@
   /* ===================================================== */
   /* Rotas                                                 */
   /* ===================================================== */
+  function setTheme(t) {
+    const th = { menina: "menina", menino: "menino", bebe: "bebe" }[t] || "mix";
+    document.body.dataset.theme = th;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = { menina: "#FFF1F4", menino: "#EEF7FD", bebe: "#FBF4E8", mix: "#FFF9EC" }[th];
+  }
   function parseHash() {
     const h = location.hash.replace(/^#/, "") || "/";
     const [path, qs] = h.split("?");
@@ -238,6 +246,11 @@
     document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("on", location.hash && a.getAttribute("href") === location.hash));
     if (r !== "loja") { $("#searchbar").classList.remove("open"); }
     window.scrollTo(0, 0);
+    // ambiente de cor por seção: menina = rosa, menino = azul, bebê = bege, demais = mesclado
+    let theme = "";
+    if (r === "loja") theme = q.get("g") || "";
+    else if (r === "p") { const pp = byId(Number(parts[1])); if (pp) theme = isAccessory(pp) ? "" : pp.gender; }
+    setTheme(theme);
     if (!r) return renderHome();
     if (r === "loja") return renderList(q);
     if (r === "p") return renderProduct(Number(parts[1]));
@@ -402,7 +415,7 @@
     app().innerHTML = `
       <div class="wrap">
         <div class="crumbs"><a href="#/">Início</a> ${svg("chevron", 12)} <span>${title}</span></div>
-        <div class="list-head"><div><h1>${title}</h1><p>${items.length} ${items.length === 1 ? "produto" : "produtos"}</p></div></div>
+        <div class="list-head ${["menina", "menino", "bebe"].includes(g) && !term ? "theme-head" : ""}"><div><h1>${title}</h1><p>${items.length} ${items.length === 1 ? "produto" : "produtos"}${g === "menina" ? " · vestidos, saias, conjuntos e laços" : g === "menino" ? " · camisetas, bermudas, bonés e conjuntos" : g === "bebe" ? " · bodies, macacões e enxoval" : ""}</p></div></div>
         <div class="list-layout">
           <aside class="filters" id="filters">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px" class="filter-toggle-head">
@@ -479,7 +492,7 @@
             </div>
             <div class="ship-calc">
               <h4>${svg("truck", 18)} Calcule o frete e o prazo</h4>
-              <form id="ship-form"><input data-mask="cep" id="ship-cep" placeholder="Digite seu CEP" inputmode="numeric" value="${esc(masks.cep(S.user?.address?.cep || localStorage.getItem("pingochic.cep") || ""))}"><button class="btn btn-line btn-sm">Calcular</button></form>
+              <form id="ship-form"><input data-mask="cep" id="ship-cep" placeholder="Digite seu CEP" inputmode="numeric" value="${esc(masks.cep(S.user?.address?.cep || LS.getItem("pingochic.cep") || ""))}"><button class="btn btn-line btn-sm">Calcular</button></form>
               <div class="ship-res" id="ship-res"></div>
             </div>
             <div class="perks">
@@ -523,7 +536,7 @@
       const cep = onlyDigits($("#ship-cep").value);
       const out = $("#ship-res");
       if (cep.length !== 8) { out.textContent = "Digite um CEP válido."; return; }
-      localStorage.setItem("pingochic.cep", cep);
+      LS.setItem("pingochic.cep", cep);
       out.textContent = "Calculando…";
       try {
         const { quote } = await api("/quote", { method: "POST", body: { items: [{ id: p.id, size: sel || avail[0]?.size, qty }], cep } });
@@ -676,7 +689,7 @@
   }
   async function logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => {});
-    S.favs = []; localStorage.removeItem(LS_FAV);
+    S.favs = []; LS.removeItem(LS_FAV);
     setUser(null);
     toast("Você saiu da sua conta.");
     if (parseHash().parts[0] === "conta") location.hash = "#/";
@@ -695,7 +708,7 @@
     const u = S.user || {};
     const d = CO.data;
     d.name ??= u.name || ""; d.email ??= u.email || ""; d.phone ??= u.phone || ""; d.cpf ??= u.cpf || "";
-    const a = (d.address ??= { ...(u.address || {}), cep: u.address?.cep || localStorage.getItem("pingochic.cep") || "" });
+    const a = (d.address ??= { ...(u.address || {}), cep: u.address?.cep || LS.getItem("pingochic.cep") || "" });
     if (!S.settings.pixEnabled && CO.payment === "pix") CO.payment = "cartao";
 
     app().innerHTML = `
@@ -780,7 +793,7 @@
       const lookup = async () => {
         const cep = onlyDigits(cepEl.value);
         if (cep.length !== 8) return;
-        localStorage.setItem("pingochic.cep", cep);
+        LS.setItem("pingochic.cep", cep);
         try {
           const { address } = await api("/cep/" + cep);
           if (address.rua) $("#c-rua").value = address.rua;
@@ -863,7 +876,7 @@
         body: { items: S.cart, coupon: S.coupon, payment: CO.payment, installments: CO.installments, notes: d.notes, customer: { name: d.name, email: d.email, phone: d.phone, cpf: d.cpf }, address: d.address }
       });
       S.lastOrder = order;
-      sessionStorage.setItem("pingochic.last", JSON.stringify(order));
+      SS.setItem("pingochic.last", JSON.stringify(order));
       // atualiza estoque local
       order.items.forEach((l) => { const p = byId(l.id); const s = p?.sizes.find((x) => x.size === l.size); if (s) s.stock = Math.max(0, s.stock - l.qty); });
       S.cart = []; S.coupon = ""; CO.step = 1; CO.data = {}; save(); updateBadges();
@@ -879,7 +892,7 @@
   /* Pedido confirmado / acompanhamento                    */
   /* ===================================================== */
   function renderOrderDone(number) {
-    const o = S.lastOrder?.number === number ? S.lastOrder : JSON.parse(sessionStorage.getItem("pingochic.last") || "null");
+    const o = S.lastOrder?.number === number ? S.lastOrder : JSON.parse(SS.getItem("pingochic.last") || "null");
     if (!o || o.number !== number) { location.hash = "#/rastrear"; return; }
     const st = S.settings;
     const wa = st.whatsapp ? waLink(st.whatsapp, `Olá! Fiz o pedido #${o.number} na Pingo Chic (${money(o.total)}).${o.payment === "cartao" ? " Gostaria de receber o link de pagamento." : " Segue o comprovante do Pix."}`) : "";

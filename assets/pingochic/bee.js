@@ -8,10 +8,16 @@
  */
 (function () {
   "use strict";
+  const SCRIPT_SRC = (document.currentScript && document.currentScript.src) || "";
   if (window.__pcBee) return;
   window.__pcBee = true;
 
   const KEY = "pingochic.bee.off";
+  const store = {
+    get(k, area) { try { return (area || localStorage).getItem(k); } catch (e) { return null; } },
+    set(k, v, area) { try { (area || localStorage).setItem(k, v); } catch (e) { /* ignora */ } }
+  };
+  const ss = (() => { try { return sessionStorage; } catch (e) { return null; } })();
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const SVG = `
@@ -39,7 +45,7 @@
   </svg>`;
 
   const CSS = `
-  .pc-bee{position:fixed;left:0;top:0;width:54px;height:47px;z-index:85;pointer-events:auto;cursor:pointer;will-change:transform;
+  .pc-bee{position:fixed;left:0;top:0;width:42px;height:37px;z-index:9990;pointer-events:auto;cursor:pointer;will-change:transform;
     filter:drop-shadow(0 6px 6px rgba(49,30,23,.18));-webkit-tap-highlight-color:transparent;user-select:none;transition:opacity .4s}
   .pc-bee .pcb-flip{width:100%;height:100%;transition:transform .35s ease}
   .pc-bee.left .pcb-flip{transform:scaleX(-1)}
@@ -52,15 +58,15 @@
   @keyframes pcbFlap2{from{transform:rotate(14deg) scaleY(1)}to{transform:rotate(32deg) scaleY(.5)}}
   @keyframes pcbBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
   @keyframes pcbSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(200deg) scale(1.25)}100%{transform:rotate(360deg) scale(1)}}
-  .pc-bee-trail{position:fixed;width:5px;height:5px;border-radius:50%;background:#F4A6BA;pointer-events:none;z-index:84;opacity:.55;transition:opacity 1.2s ease,transform 1.2s ease}
-  .pc-bee-heart{position:fixed;pointer-events:none;z-index:86;font-size:16px;line-height:1;color:#F0645E;animation:pcbHeart 1.1s ease-out forwards}
+  .pc-bee-trail{position:fixed;width:4px;height:4px;border-radius:50%;background:#F4A6BA;pointer-events:none;z-index:9989;opacity:.55;transition:opacity 1.2s ease,transform 1.2s ease}
+  .pc-bee-heart{position:fixed;pointer-events:none;z-index:9991;font-size:16px;line-height:1;color:#F0645E;animation:pcbHeart 1.1s ease-out forwards}
   @keyframes pcbHeart{from{opacity:1;transform:translate(0,0) scale(.6)}to{opacity:0;transform:translate(var(--dx),-46px) scale(1.2)}}
-  .pc-bee-toggle{position:fixed;left:14px;bottom:14px;z-index:84;width:40px;height:40px;border-radius:50%;border:1px solid #EADFD4;background:rgba(255,255,255,.92);
+  .pc-bee-toggle{position:fixed;left:12px;bottom:12px;z-index:9988;width:36px;height:36px;border-radius:50%;border:1px solid #EADFD4;background:rgba(255,255,255,.92);
     box-shadow:0 4px 14px rgba(49,30,23,.10);display:grid;place-items:center;cursor:pointer;padding:0;opacity:.75;transition:opacity .2s,transform .2s}
   .pc-bee-toggle:hover{opacity:1;transform:scale(1.06)}
-  .pc-bee-toggle img{width:26px;height:auto}
+  .pc-bee-toggle img{width:22px;height:auto}
   .pc-bee-toggle.off img{filter:grayscale(1);opacity:.55}
-  .pc-bee-tip{position:fixed;z-index:86;background:#311E17;color:#fff;font:600 12px/1.2 'Plus Jakarta Sans',system-ui,sans-serif;padding:7px 10px;border-radius:10px;pointer-events:none;
+  .pc-bee-tip{position:fixed;z-index:9991;background:#311E17;color:#fff;font:600 12px/1.2 'Plus Jakarta Sans',system-ui,sans-serif;padding:7px 10px;border-radius:10px;pointer-events:none;
     white-space:nowrap;opacity:0;transform:translateY(4px);transition:all .25s}
   .pc-bee-tip.show{opacity:1;transform:none}
   @media print{.pc-bee,.pc-bee-toggle,.pc-bee-trail,.pc-bee-tip{display:none!important}}
@@ -79,17 +85,17 @@
   const toggle = document.createElement("button");
   toggle.className = "pc-bee-toggle";
   toggle.type = "button";
-  toggle.innerHTML = `<img src="${new URL("img/bee-120.webp", document.currentScript ? document.currentScript.src : location.href).href}" alt="">`;
+  toggle.innerHTML = `<img src="${(SCRIPT_SRC ? new URL("img/bee-120.webp", SCRIPT_SRC).href : "../assets/pingochic/img/bee-120.webp")}" alt="">`;
 
   const tip = document.createElement("div");
   tip.className = "pc-bee-tip";
 
-  let enabled = localStorage.getItem(KEY) !== "1";
+  let enabled = store.get(KEY) !== "1";
   let running = false, raf = 0;
 
   // estado do voo
   const W = () => innerWidth, H = () => innerHeight;
-  const size = () => (innerWidth < 600 ? 40 : 54);
+  const size = () => (innerWidth < 600 ? 32 : 42);
   let x = -60, y = H() * 0.35, vx = 0, vy = 0;
   let tx = 0, ty = 0, restUntil = 0, nextVisit = 0, t0 = performance.now(), last = t0, lastTrail = 0;
   let pointer = null;
@@ -168,7 +174,7 @@
         restUntil = now + (Math.random() < 0.35 ? 900 + Math.random() * 1600 : 0);
         pickTarget();
       }
-      const speed = innerWidth < 600 ? 1.6 : 2.1;
+      const speed = (innerWidth < 600 ? 1.3 : 1.8) * (reduce ? 0.55 : 1);
       const ax = (dx / (dist || 1)) * 0.11, ay = (dy / (dist || 1)) * 0.11;
       vx = (vx + ax * dt) * 0.965; vy = (vy + ay * dt) * 0.965;
       const v = Math.hypot(vx, vy);
@@ -190,7 +196,7 @@
   }
 
   function start() {
-    if (running || !enabled || reduce) return;
+    if (running || !enabled) return;
     running = true;
     bee.style.opacity = "1";
     last = performance.now();
@@ -200,7 +206,7 @@
 
   function setEnabled(on) {
     enabled = on;
-    localStorage.setItem(KEY, on ? "0" : "1");
+    store.set(KEY, on ? "0" : "1");
     toggle.classList.toggle("off", !on);
     toggle.title = on ? "Esconder a abelhinha" : "Mostrar a abelhinha";
     toggle.setAttribute("aria-label", toggle.title);
@@ -232,7 +238,6 @@
   addEventListener("resize", () => { x = Math.min(x, W() - size()); y = Math.min(y, H() - size()); pickTarget(); });
 
   function mount() {
-    if (reduce) return; // usuário pediu menos animação no sistema
     document.body.appendChild(bee);
     document.body.appendChild(tip);
     document.body.appendChild(toggle);
@@ -243,21 +248,20 @@
     pickTarget(); nextVisit = performance.now() + 6000;
     start();
     // primeira visita da sessão: uma saudação
-    if (!sessionStorage.getItem("pingochic.bee.hi")) {
-      sessionStorage.setItem("pingochic.bee.hi", "1");
+    if (!ss || !store.get("pingochic.bee.hi", ss)) {
+      if (ss) store.set("pingochic.bee.hi", "1", ss);
       setTimeout(() => running && setTip("Bzz! Bem-vinda à Pingo Chic ♥", 2800), 1800);
     }
   }
 
   // o app da loja recria o <body> ao iniciar; montamos depois e remontamos se precisar
   function ensure() {
-    if (!document.body.contains(bee)) mount();
+    try { if (document.body && !document.body.contains(bee)) mount(); } catch (e) { /* nunca quebrar a loja */ }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(ensure, 50));
   else setTimeout(ensure, 50);
-  new MutationObserver(() => { if (!document.body.contains(toggle)) { stop(); mount(); } })
-    .observe(document.documentElement, { childList: true, subtree: false });
-  setInterval(() => { if (!document.body.contains(toggle)) { stop(); mount(); } }, 1500);
+  addEventListener("load", ensure);
+  setInterval(() => { if (document.body && !document.body.contains(toggle)) { stop(); ensure(); } }, 1200);
 
   window.PCBee = { show: () => setEnabled(true), hide: () => setEnabled(false) };
 })();

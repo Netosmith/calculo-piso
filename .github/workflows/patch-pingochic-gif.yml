@@ -27,8 +27,8 @@ jobs:
 
           replacements = [
               (
-                  r'if (!/^[a-z0-9-]+\\.(webp|jpg|jpeg|png)$/i.test(key)) throw new HttpError(400, "Chave inválida.");',
-                  r'if (!/^[a-z0-9-]+\\.(webp|jpg|jpeg|png|gif)$/i.test(key)) throw new HttpError(400, "Chave inválida.");'
+                  'if (!/^[a-z0-9-]+\\.(webp|jpg|jpeg|png)$/i.test(key)) throw new HttpError(400, "Chave inválida.");',
+                  'if (!/^[a-z0-9-]+\\.(webp|jpg|jpeg|png|gif)$/i.test(key)) throw new HttpError(400, "Chave inválida.");'
               ),
               (
                   'const ext = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }[type];',

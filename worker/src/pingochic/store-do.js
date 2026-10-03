@@ -257,7 +257,7 @@ export class PingoStore {
 
   async serveImage(key) {
     if (!this.env.CLIENT_LOGOS) throw new HttpError(404, "Imagem indisponível.");
-    if (!/^[a-z0-9-]+\.(webp|jpg|jpeg|png)$/i.test(key)) throw new HttpError(400, "Chave inválida.");
+    if (!/^[a-z0-9-]+\.(webp|jpg|jpeg|png|gif)$/i.test(key)) throw new HttpError(400, "Chave inválida.");
     const obj = await this.env.CLIENT_LOGOS.get("pingochic/" + key);
     if (!obj) throw new HttpError(404, "Imagem não encontrada.");
     return new Response(obj.body, {
@@ -598,10 +598,11 @@ export class PingoStore {
     if (action === "images" && m === "POST") {
       if (!this.env.CLIENT_LOGOS) throw new HttpError(500, "Armazenamento de imagens (R2) não configurado.");
       const type = (request.headers.get("Content-Type") || "").split(";")[0].trim();
-      const ext = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }[type];
-      if (!ext) throw new HttpError(400, "Formato de imagem não suportado (use JPG, PNG ou WEBP).");
+      const ext = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png", "image/gif": "gif" }[type];
+      if (!ext) throw new HttpError(400, "Formato de mídia não suportado (use JPG, PNG, WEBP ou GIF).");
       const buf = await request.arrayBuffer();
-      if (buf.byteLength > MAX_IMAGE_BYTES) throw new HttpError(413, "Imagem muito grande (máx. 4 MB).");
+      const maxBytes = type === "image/gif" ? 8 * 1024 * 1024 : MAX_IMAGE_BYTES;
+      if (buf.byteLength > maxBytes) throw new HttpError(413, type === "image/gif" ? "GIF muito grande (máx. 8 MB)." : "Imagem muito grande (máx. 4 MB).");
       const key = `${Date.now().toString(36)}-${randomHex(8)}.${ext}`;
       await this.env.CLIENT_LOGOS.put("pingochic/" + key, buf, { httpMetadata: { contentType: type } });
       return json({ ok: true, url: `${PREFIX}/images/${key}` }, 201);

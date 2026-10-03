@@ -22,6 +22,7 @@
     .pc-banner-image-actions .hint{width:100%;font-size:11.5px;color:#8b8e98;line-height:1.45}
     .pc-banner-file{position:absolute;inline-size:1px;block-size:1px;opacity:0;pointer-events:none}
     .pc-banner-upload-label{cursor:pointer}
+    .pc-banner-upload-label.is-busy{pointer-events:none;opacity:.65}
     .banner-prev.pc-banner-has-image{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;position:relative;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.28)}
     @media(max-width:820px){.pc-banner-thumb{width:100%;height:130px}.pc-banner-image-actions{width:100%}}
   `;
@@ -89,9 +90,10 @@
     }
 
     const label = box.querySelector(".pc-banner-upload-label");
-    const old = label.innerHTML;
-    label.style.pointerEvents = "none";
-    label.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> Enviando...';
+    const text = label.querySelector("[data-pc-upload-text]");
+    const oldText = text.textContent;
+    label.classList.add("is-busy");
+    text.textContent = "Enviando...";
 
     try {
       const blob = await compressImage(file, 1800, 0.86);
@@ -109,8 +111,8 @@
     } catch (error) {
       toast(error?.message || "Não foi possível enviar a imagem.", "bad");
     } finally {
-      label.style.pointerEvents = "";
-      label.innerHTML = old;
+      label.classList.remove("is-busy");
+      text.textContent = oldText;
       const input = box.querySelector("input[type=file]");
       if (input) input.value = "";
     }
@@ -138,7 +140,7 @@
         <div class="pc-banner-thumb"></div>
         <div class="pc-banner-image-actions">
           <label class="btn btn-line btn-sm pc-banner-upload-label">
-            ${svg("image", 15)} Escolher imagem
+            ${svg("image", 15)} <span data-pc-upload-text>Escolher imagem</span>
             <input class="pc-banner-file" type="file" accept="image/jpeg,image/png,image/webp">
           </label>
           <button type="button" class="btn btn-line btn-sm" data-pc-remove ${image ? "" : "hidden"}>${svg("trash", 14)} Remover imagem</button>

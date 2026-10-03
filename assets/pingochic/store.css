@@ -489,7 +489,7 @@ button{cursor:pointer}
 .cats-sec .cat.acess .ic{color:var(--sage)}
 /* banners compactos */
 .promo-sec{padding:28px 0 0}
-.promos .promo{min-height:132px;padding:22px 24px}
+.promos .promo{min-height:0;aspect-ratio:1200/410;padding:22px 24px}
 .promos .promo h3{font-size:21px;margin:4px 0 2px}
 .promos .promo p{font-size:13.5px}
 .promos .promo .go{top:18px;right:18px;width:32px;height:32px}

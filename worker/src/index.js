@@ -1,4 +1,4 @@
-export {PingoStore} from "./pingochic/store-do.js";
+export {PingoStore} from "./pingochic/store-do-portal.js";
 export {SinucaRoom} from "../../games/server/sinuca.js";
 export {CineAccess} from "../../games/server/cine-access.js";
 export {GamesRoom} from "../../games/server/rooms.js";

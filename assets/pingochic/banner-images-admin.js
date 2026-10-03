@@ -127,6 +127,7 @@
       hidden.value = result.url;
       if (!serverBanners[index]) serverBanners[index] = {};
       serverBanners[index].image = result.url;
+      if (window.PCAdminState?.banners?.[index]) window.PCAdminState.banners[index].image = result.url;
       hidden.dispatchEvent(new Event("input", { bubbles: true }));
       refreshThumb(box, result.url);
       queueMicrotask(() => applyPreview(card, index));
@@ -192,6 +193,7 @@
       hidden.value = "";
       if (!serverBanners[index]) serverBanners[index] = {};
       serverBanners[index].image = "";
+      if (window.PCAdminState?.banners?.[index]) window.PCAdminState.banners[index].image = "";
       hidden.dispatchEvent(new Event("input", { bubbles: true }));
       refreshThumb(box, "");
       queueMicrotask(() => applyPreview(card, index));

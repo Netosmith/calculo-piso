@@ -7,6 +7,7 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
   const A = { admin: null, view: "dashboard", products: [], orders: [], customers: [], settings: null, banners: [], coupons: [], filters: {} };
+  window.PCAdminState = A;
   const ORDER_FLOW = ["aguardando_pagamento", "pago", "em_separacao", "enviado", "entregue", "cancelado"];
   const COLORS = ["Rosa", "Azul", "Amarelo", "Verde", "Cinza", "Branco", "Bege", "Preto", "Vermelho", "Lilás", "Marrom", "Laranja", "Estampado"];
   const SIZE_PRESETS = { "Bebê": ["RN", "P", "M", "G"], "Infantil": ["1", "2", "3", "4", "6", "8"], "Juvenil": ["10", "12", "14", "16"], "Único": ["Único"] };

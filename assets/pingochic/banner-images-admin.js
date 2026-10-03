@@ -1,4 +1,4 @@
-/* Pingo Chic — extensão do painel de banners com upload de imagem */
+/* Pingo Chic — extensão do painel de banners com imagem fixa ou GIF */
 (function () {
   "use strict";
 
@@ -16,13 +16,16 @@
     .pc-banner-image-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:12.5px;font-weight:700;color:#252832}
     .pc-banner-image-title small{font-size:11px;font-weight:500;color:#8b8e98}
     .pc-banner-image-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-    .pc-banner-thumb{width:124px;height:76px;border-radius:10px;overflow:hidden;background:#f0f1f4;border:1px solid #e0e1e6;display:grid;place-items:center;color:#999;flex:0 0 auto}
+    .pc-banner-thumb{width:124px;height:76px;border-radius:10px;overflow:hidden;background:#f0f1f4;border:1px solid #e0e1e6;display:grid;place-items:center;color:#999;flex:0 0 auto;position:relative}
     .pc-banner-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .pc-banner-kind{position:absolute;left:6px;bottom:6px;padding:3px 7px;border-radius:999px;background:rgba(20,20,20,.72);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
     .pc-banner-image-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1}
     .pc-banner-image-actions .hint{width:100%;font-size:11.5px;color:#8b8e98;line-height:1.45}
     .pc-banner-file{position:absolute;inline-size:1px;block-size:1px;opacity:0;pointer-events:none}
     .pc-banner-upload-label{cursor:pointer}
     .pc-banner-upload-label.is-busy{pointer-events:none;opacity:.65}
+    .pc-banner-gif{border-color:#ef6f9d!important;color:#c74375!important;background:#fff7fa!important}
+    .pc-banner-gif:hover{background:#fdebf2!important}
     .banner-prev.pc-banner-has-image{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;position:relative;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.28)}
     @media(max-width:820px){.pc-banner-thumb{width:100%;height:130px}.pc-banner-image-actions{width:100%}}
   `;
@@ -45,7 +48,11 @@
     });
   }
 
-  function currentImage(index, card) {
+  function isGif(value) {
+    return /\.gif(?:$|[?#])/i.test(String(value || ""));
+  }
+
+  function currentMedia(index, card) {
     const hidden = card?.querySelector(`[data-pc-banner-image="${index}"]`);
     if (hidden) return hidden.value || "";
     return serverBanners[index]?.image || "";
@@ -54,8 +61,8 @@
   function applyPreview(card, index) {
     const prev = card.querySelector(".banner-prev");
     if (!prev) return;
-    const image = currentImage(index, card);
-    if (!image) {
+    const media = currentMedia(index, card);
+    if (!media) {
       prev.classList.remove("pc-banner-has-image");
       prev.style.backgroundImage = "";
       prev.style.backgroundSize = "";
@@ -63,18 +70,18 @@
       return;
     }
 
-    const url = imgUrl(image);
+    const url = imgUrl(media);
     prev.classList.add("pc-banner-has-image");
     prev.style.backgroundImage = `linear-gradient(rgba(20,20,20,.20),rgba(20,20,20,.38)),url(${JSON.stringify(url)})`;
     prev.style.backgroundSize = "cover";
     prev.style.backgroundPosition = "center";
   }
 
-  function refreshThumb(box, image) {
+  function refreshThumb(box, media) {
     const thumb = box.querySelector(".pc-banner-thumb");
     const remove = box.querySelector("[data-pc-remove]");
-    if (image) {
-      thumb.innerHTML = `<img src="${esc(imgUrl(image))}" alt="Imagem do banner">`;
+    if (media) {
+      thumb.innerHTML = `<img src="${esc(imgUrl(media))}" alt="Mídia do banner"><span class="pc-banner-kind">${isGif(media) ? "GIF" : "Imagem"}</span>`;
       remove.hidden = false;
     } else {
       thumb.innerHTML = svg("image", 24);
@@ -82,23 +89,39 @@
     }
   }
 
-  async function uploadImage(file, index, card, box) {
+  async function uploadMedia(file, kind, index, card, box) {
     if (!file) return;
-    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
-      toast("Use uma imagem JPG, PNG ou WEBP.", "bad");
-      return;
+
+    const gif = kind === "gif";
+    const type = String(file.type || "").toLowerCase();
+    const name = String(file.name || "");
+
+    if (gif) {
+      if (!(type === "image/gif" || /\.gif$/i.test(name))) {
+        toast("Selecione um arquivo GIF válido.", "bad");
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast("O GIF deve ter no máximo 8 MB.", "bad");
+        return;
+      }
+    } else {
+      if (!/^image\/(jpeg|png|webp)$/i.test(type)) {
+        toast("Use uma imagem JPG, PNG ou WEBP.", "bad");
+        return;
+      }
     }
 
-    const label = box.querySelector(".pc-banner-upload-label");
+    const label = box.querySelector(gif ? ".pc-banner-gif" : ".pc-banner-static");
     const text = label.querySelector("[data-pc-upload-text]");
     const oldText = text.textContent;
     label.classList.add("is-busy");
-    text.textContent = "Enviando...";
+    text.textContent = gif ? "Enviando GIF..." : "Enviando...";
 
     try {
-      const blob = await compressImage(file, 1800, 0.86);
+      const blob = gif ? file : await compressImage(file, 1800, 0.86);
       const result = await api("/admin/images", { method: "POST", body: blob });
-      if (!result?.url) throw new Error("A imagem não retornou uma URL válida.");
+      if (!result?.url) throw new Error("O upload não retornou uma URL válida.");
 
       const hidden = box.querySelector(`[data-pc-banner-image="${index}"]`);
       hidden.value = result.url;
@@ -107,14 +130,13 @@
       hidden.dispatchEvent(new Event("input", { bubbles: true }));
       refreshThumb(box, result.url);
       queueMicrotask(() => applyPreview(card, index));
-      toast("Imagem carregada. Clique em Salvar banners para publicar.");
+      toast(gif ? "GIF carregado. Clique em Salvar banners para publicar." : "Imagem carregada. Clique em Salvar banners para publicar.");
     } catch (error) {
-      toast(error?.message || "Não foi possível enviar a imagem.", "bad");
+      toast(error?.message || (gif ? "Não foi possível enviar o GIF." : "Não foi possível enviar a imagem."), "bad");
     } finally {
       label.classList.remove("is-busy");
       text.textContent = oldText;
-      const input = box.querySelector("input[type=file]");
-      if (input) input.value = "";
+      box.querySelectorAll("input[type=file]").forEach((input) => { input.value = ""; });
     }
   }
 
@@ -127,35 +149,42 @@
     const formSide = card.children[1];
     if (!formSide) return;
 
-    const image = serverBanners[index]?.image || "";
+    const media = serverBanners[index]?.image || "";
     const box = document.createElement("div");
     box.className = "pc-banner-image-box";
     box.dataset.pcBannerBox = String(index);
     box.innerHTML = `
       <div class="pc-banner-image-title">
-        <span>${svg("image", 15)} Imagem do banner</span>
+        <span>${svg("image", 15)} Mídia do banner</span>
         <small>opcional</small>
       </div>
       <div class="pc-banner-image-row">
         <div class="pc-banner-thumb"></div>
         <div class="pc-banner-image-actions">
-          <label class="btn btn-line btn-sm pc-banner-upload-label">
-            ${svg("image", 15)} <span data-pc-upload-text>Escolher imagem</span>
-            <input class="pc-banner-file" type="file" accept="image/jpeg,image/png,image/webp">
+          <label class="btn btn-line btn-sm pc-banner-upload-label pc-banner-static">
+            ${svg("image", 15)} <span data-pc-upload-text>Imagem fixa</span>
+            <input class="pc-banner-file" data-pc-file="image" type="file" accept="image/jpeg,image/png,image/webp">
           </label>
-          <button type="button" class="btn btn-line btn-sm" data-pc-remove ${image ? "" : "hidden"}>${svg("trash", 14)} Remover imagem</button>
-          <div class="hint">JPG, PNG ou WEBP. Recomendado: 1200 × 600 px. A imagem é otimizada automaticamente antes do envio.</div>
+          <label class="btn btn-line btn-sm pc-banner-upload-label pc-banner-gif">
+            ${svg("play", 15)} <span data-pc-upload-text>GIF animado</span>
+            <input class="pc-banner-file" data-pc-file="gif" type="file" accept="image/gif,.gif">
+          </label>
+          <button type="button" class="btn btn-line btn-sm" data-pc-remove ${media ? "" : "hidden"}>${svg("trash", 14)} Remover mídia</button>
+          <div class="hint">Imagem fixa: JPG, PNG ou WEBP, otimizada automaticamente. GIF: enviado sem conversão para preservar a animação, até 8 MB. Recomendado: 1200 × 600 px.</div>
         </div>
       </div>
-      <input type="hidden" data-pc-banner-image="${index}" data-b="${index}" data-k="image" value="${esc(image)}">
+      <input type="hidden" data-pc-banner-image="${index}" data-b="${index}" data-k="image" value="${esc(media)}">
     `;
 
     formSide.appendChild(box);
-    refreshThumb(box, image);
+    refreshThumb(box, media);
     applyPreview(card, index);
 
-    box.querySelector("input[type=file]").addEventListener("change", (event) => {
-      uploadImage(event.target.files?.[0], index, card, box);
+    box.querySelector('[data-pc-file="image"]').addEventListener("change", (event) => {
+      uploadMedia(event.target.files?.[0], "image", index, card, box);
+    });
+    box.querySelector('[data-pc-file="gif"]').addEventListener("change", (event) => {
+      uploadMedia(event.target.files?.[0], "gif", index, card, box);
     });
 
     box.querySelector("[data-pc-remove]").addEventListener("click", () => {
@@ -166,7 +195,7 @@
       hidden.dispatchEvent(new Event("input", { bubbles: true }));
       refreshThumb(box, "");
       queueMicrotask(() => applyPreview(card, index));
-      toast("Imagem removida. Clique em Salvar banners para publicar.");
+      toast("Mídia removida. Clique em Salvar banners para publicar.");
     });
   }
 

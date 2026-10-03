@@ -498,7 +498,7 @@ button{cursor:pointer}
   .promo-sec{padding-top:18px}
   .promos{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:0 -16px;padding:0 16px 4px;scrollbar-width:none}
   .promos::-webkit-scrollbar{display:none}
-  .promos .promo{flex:0 0 82%;scroll-snap-align:start;min-height:118px;padding:18px 20px}
+  .promos .promo{flex:0 0 90%;scroll-snap-align:start;min-height:0;aspect-ratio:1200/410;padding:18px 20px}
   .promos .promo h3{font-size:19px}
 }
 @media (max-width:420px){.header-in{gap:6px}.tool{width:36px;height:36px}.logo-bee{width:40px}.logo-word{font-size:21px}}

@@ -1,0 +1,40 @@
+name: Fix Pingo Chic Banner Mobile Ratio
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-pingochic-banner-mobile-ratio.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ajustar proporção mobile
+        shell: python
+        run: |
+          from pathlib import Path
+          css = Path('assets/pingochic/store.css')
+          s = css.read_text(encoding='utf-8')
+          old = '.promos .promo{flex:0 0 82%;scroll-snap-align:start;min-height:118px;padding:18px 20px}'
+          new = '.promos .promo{flex:0 0 90%;scroll-snap-align:start;min-height:0;aspect-ratio:1200/410;padding:18px 20px}'
+          if old not in s:
+              raise SystemExit('Regra mobile dos banners não encontrada.')
+          css.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          page = Path('pages/pingochic.html')
+          p = page.read_text(encoding='utf-8')
+          p = p.replace('store.css?v=20261003175500', 'store.css?v=20261003175800')
+          page.write_text(p, encoding='utf-8')
+      - name: Commitar ajuste
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/pingochic/store.css pages/pingochic.html
+          git commit -m "fix(pingochic): mantém banners 1200x410 no mobile"
+          git push origin HEAD:main

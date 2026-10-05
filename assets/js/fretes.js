@@ -10,7 +10,7 @@
         "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA",
         "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"
       ],
-      MINAS: ["UBERLANDIA", "ARAGUARI"],
+      MINAS: ["UBERLANDIA"],
       "SAO PAULO": ["SOROCABA"],
     },
     clientes: [

@@ -1,3 +1,4 @@
+// redeploy 2026-10-05: restaurar disponibilidade da API Pingo Chic
 export {PingoStore} from "./pingochic/store-do-portal.js";
 export {SinucaRoom} from "../../games/server/sinuca.js";
 export {CineAccess} from "../../games/server/cine-access.js";

@@ -1,0 +1,31 @@
+name: Diagnose Pingo Chic Live
+
+on:
+  push:
+    paths:
+      - '.github/workflows/diagnose-pingochic-live.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Testar front da loja
+        run: |
+          echo '=== FRONT ==='
+          curl -I -L --max-time 20 https://portalfrete.net.br/pages/pingochic.html || true
+      - name: Testar API workers.dev
+        run: |
+          echo '=== WORKERS.DEV ==='
+          curl -i -sS --max-time 25 -H 'Origin: https://portalfrete.net.br' https://portalfrete-api.luziano-transportes.workers.dev/v1/pingo/catalog || true
+      - name: Testar dominio customizado da API
+        run: |
+          echo '=== API DOMAIN ==='
+          curl -i -sS --max-time 25 -H 'Origin: https://portalfrete.net.br' https://api.portalfrete.net.br/v1/pingo/catalog || true
+      - name: DNS
+        run: |
+          echo '=== DNS ==='
+          getent hosts api.portalfrete.net.br || true
+          getent hosts portalfrete.net.br || true

@@ -1321,7 +1321,7 @@
                 <th>Coleta</th>
                 <th>Contato</th>
                 <th>Destino</th>
-                <th>UF</th>
+                <th>Mapa Descarga</th>
                 <th>Descarga</th>
                 <th class="num">Vlr Empresa</th>
                 <th class="num">Vlr Motorista</th>
@@ -1543,8 +1543,15 @@
             </div>
             <div class="field"><label>Origem</label><input id="mOrigem" /></div>
             <div class="field"><label>Coleta</label><input id="mColeta" /></div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>Localização da coleta (Google Maps)</label>
+              <input id="mLocalizacaoColeta" type="url" placeholder="https://maps.app.goo.gl/..." style="text-transform:none;" />
+            </div>
             <div class="field"><label>Destino</label><input id="mDestino" /></div>
-            <div class="field"><label>UF</label><input id="mUF" /></div>
+            <div class="field">
+              <label>Localização da descarga (Google Maps)</label>
+              <input id="mLocalizacaoDescarga" type="url" placeholder="https://maps.app.goo.gl/..." style="text-transform:none;" />
+            </div>
             <div class="field"><label>Descarga</label><input id="mDescarga" /></div>
             <div class="field"><label>Produto</label><input id="mProduto" /></div>
             <div class="field"><label>KM</label><input id="mKM" inputmode="decimal" /></div>
@@ -1590,7 +1597,7 @@
 
   <script src="../assets/js/auth.js?v=15"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/fretes2.js?v=20"></script>
+  <script src="../assets/js/fretes2.js?v=21"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

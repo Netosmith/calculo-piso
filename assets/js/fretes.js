@@ -594,17 +594,34 @@ function formatDateTimeBR(value) {
   }
 
 
-  const NF_MAP_RE = /(?:^|\n)\[\[NF_MAP:([^\]]+)\]\]/i;
+  const NF_MAP_LEGACY_RE = /(?:^|\n)\[\[NF_MAP:([^\]]+)\]\]/i;
+  const NF_MAP_COLETA_RE = /(?:^|\n)\[\[NF_MAP_COLETA:([^\]]+)\]\]/i;
+  const NF_MAP_DESCARGA_RE = /(?:^|\n)\[\[NF_MAP_DESCARGA:([^\]]+)\]\]/i;
 
-  function extractLocationFromObs(obs) {
-    const match = String(obs ?? "").match(NF_MAP_RE);
+  function extractMapMarker(obs, regex) {
+    const match = String(obs ?? "").match(regex);
     return match ? safeText(match[1]) : "";
   }
 
   function cleanObsText(obs) {
     return String(obs ?? "")
+      .replace(/(?:^|\n)\[\[NF_MAP_COLETA:[^\]]+\]\]/ig, "")
+      .replace(/(?:^|\n)\[\[NF_MAP_DESCARGA:[^\]]+\]\]/ig, "")
       .replace(/(?:^|\n)\[\[NF_MAP:[^\]]+\]\]/ig, "")
       .trim();
+  }
+
+  function encodeObsLocations(obs, coletaLocation, descargaLocation) {
+    const lines = [];
+    const clean = cleanObsText(obs);
+    const coleta = safeText(coletaLocation);
+    const descarga = safeText(descargaLocation);
+
+    if (clean) lines.push(clean);
+    if (coleta) lines.push(`[[NF_MAP_COLETA:${coleta}]]`);
+    if (descarga) lines.push(`[[NF_MAP_DESCARGA:${descarga}]]`);
+
+    return lines.join("\n");
   }
 
   function isHttpLocation(value) {
@@ -622,14 +639,21 @@ function formatDateTimeBR(value) {
     if (!row) return "";
     const direct = safeText(row.localizacaoColeta || row.localizacao);
     if (isHttpLocation(direct)) return direct;
-    const legacy = extractLocationFromObs(row.obs);
+
+    const marker = extractMapMarker(row.obs, NF_MAP_COLETA_RE);
+    if (isHttpLocation(marker)) return marker;
+
+    const legacy = extractMapMarker(row.obs, NF_MAP_LEGACY_RE);
     return isHttpLocation(legacy) ? legacy : "";
   }
 
   function getDescargaLocation(row) {
     if (!row) return "";
     const direct = safeText(row.localizacaoDescarga);
-    return isHttpLocation(direct) ? direct : "";
+    if (isHttpLocation(direct)) return direct;
+
+    const marker = extractMapMarker(row.obs, NF_MAP_DESCARGA_RE);
+    return isHttpLocation(marker) ? marker : "";
   }
 
   function createMapLink(location, title) {
@@ -2520,7 +2544,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       porta: safeText(MODAL.porta()?.value),
       transito: safeText(MODAL.transito()?.value),
       status: normalizeFreteStatus(MODAL.status()?.value),
-      obs: cleanObsText(upperKeepSpaces(MODAL.obs()?.value).trim()),
+      obs: encodeObsLocations(
+        cleanObsText(upperKeepSpaces(MODAL.obs()?.value).trim()),
+        safeText(MODAL.localizacaoColeta()?.value),
+        safeText(MODAL.localizacaoDescarga()?.value)
+      ),
     };
   }
 

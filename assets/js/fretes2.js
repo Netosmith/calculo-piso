@@ -2906,7 +2906,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
   function initUppercaseFields() {
     [
-      MODAL.origem(), MODAL.coleta(), MODAL.destino(), MODAL.uf(),
+      MODAL.origem(), MODAL.coleta(), MODAL.destino(),
       MODAL.descarga(), MODAL.produto(), MODAL.sat(), MODAL.obs()
     ].forEach((el) => {
       if (!el) return;

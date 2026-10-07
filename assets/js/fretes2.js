@@ -1132,17 +1132,11 @@ function formatDateTimeBR(value) {
 
       const selected = getSelectedRows();
 
-      if (selected.length > 4) {
-        STATE.selectedIds.delete(id);
-        cb.checked = false;
-        alert("O MOD 04 permite no máximo 4 fretes na mesma arte.");
-      }
-
       updateBulkUI();
 
-      if (getSelectedRows().length >= 2) {
-        STATE.previewRow = getSelectedRows()[0] || row;
-        syncMultiFreteModelNF(getSelectedRows());
+      if (selected.length >= 2) {
+        STATE.previewRow = selected[0] || row;
+        syncMultiFreteModelNF(selected);
       } else {
         renderPreview(row);
       }
@@ -1562,8 +1556,8 @@ function formatDateTimeBR(value) {
 
     if (requested === 4) {
       const selected = getSelectedRows();
-      if (selected.length < 2 || selected.length > 4) {
-        alert("O MOD 04 precisa de 2 a 4 fretes selecionados.");
+      if (selected.length < 2) {
+        alert("O MOD 04 precisa de pelo menos 2 fretes selecionados.");
         return;
       }
     }
@@ -1746,15 +1740,15 @@ function formatDateTimeBR(value) {
     const contactsEl = document.getElementById("nfM4ContactsGrid");
     if (!canvas || !fretesEl || !contactsEl) return;
 
-    const sourceRows = Array.isArray(rows) ? rows : [];
+    const sourceRows = Array.isArray(rows) ? rows.slice(0, 4) : [];
     const n = sourceRows.length;
-    const valid = n >= 2 && n <= 4 ? sourceRows : [];
+    const valid = n >= 2 ? sourceRows : [];
 
     canvas.classList.remove("ready", "count-2", "count-3", "count-4");
     fretesEl.innerHTML = "";
     contactsEl.innerHTML = "";
 
-    if (n < 2 || n > 4) {
+    if (n < 2) {
       if (filialEl) filialEl.textContent = "NOVA FROTA";
       return;
     }
@@ -1827,7 +1821,7 @@ function formatDateTimeBR(value) {
     syncPreviewModelUI();
 
     if (normalizePreviewModelNF(STATE.previewModel) === 4) {
-      renderModel4PreviewNF(getSelectedRows());
+      renderModel4PreviewNF(getPreviewSelectedRows());
       const msg = document.getElementById("nfMensagemPronta");
       if (msg) msg.value = buildMessage();
       return;
@@ -1987,10 +1981,10 @@ function formatDateTimeBR(value) {
 
       if (modelo === 4) {
         const source = document.getElementById("nfM4Canvas");
-        const selected = getSelectedRows();
+        const selected = getPreviewSelectedRows();
 
-        if (selected.length < 2 || selected.length > 4) {
-          throw new Error("O MOD 04 precisa de 2 a 4 fretes selecionados.");
+        if (selected.length < 2) {
+          throw new Error("O MOD 04 precisa de pelo menos 2 fretes selecionados.");
         }
         if (!source) throw new Error("Canvas do MOD 04 não encontrado.");
 
@@ -2106,7 +2100,7 @@ function formatDateTimeBR(value) {
     try {
       const link = document.createElement("a");
       link.download = normalizePreviewModelNF(STATE.previewModel) === 4
-        ? `MOD04_${getSelectedRows().length}_FRETES.jpg`
+        ? `MOD04_${Math.min(getSelectedRows().length, 4)}_FRETES${getSelectedRows().length > 4 ? `_DE_${getSelectedRows().length}_SELECIONADOS` : ""}.jpg`
         : (d.filename || "divulgacao-frete.jpg");
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       document.body.appendChild(link);
@@ -2172,21 +2166,27 @@ function formatDateTimeBR(value) {
     return STATE.rows.filter((r) => STATE.selectedIds.has(safeText(r.id)));
   }
 
+  function getPreviewSelectedRows(selectedRows) {
+    const selected = Array.isArray(selectedRows) ? selectedRows : getSelectedRows();
+    return selected.slice(0, 4);
+  }
+
   function syncMultiFreteModelNF(selectedRows) {
     const selected = Array.isArray(selectedRows) ? selectedRows : getSelectedRows();
     const n = selected.length;
     const current = normalizePreviewModelNF(STATE.previewModel);
 
-    if (n >= 2 && n <= 4) {
+    if (n >= 2) {
       if (current !== 4) {
         STATE.previewModel = 4;
         syncPreviewModelUI();
       }
 
+      const previewRows = getPreviewSelectedRows(selected);
       const badge = document.getElementById("nfPreviewProdutoBadge");
-      if (badge) badge.textContent = `${n} FRETES`;
+      if (badge) badge.textContent = n > 4 ? `4 DE ${n} FRETES` : `${n} FRETES`;
 
-      renderModel4PreviewNF(selected);
+      renderModel4PreviewNF(previewRows);
       return true;
     }
 
@@ -2266,12 +2266,15 @@ function formatDateTimeBR(value) {
     }
 
     if (normalizePreviewModelNF(STATE.previewModel) === 4) {
-      if (rows.length < 2 || rows.length > 4) {
-        alert("O MOD 04 permite de 2 a 4 fretes na mesma arte.");
+      const previewRows = getPreviewSelectedRows(rows);
+      if (previewRows.length < 2) {
+        alert("O MOD 04 precisa de pelo menos 2 fretes selecionados.");
         return;
       }
-      setStatus(`⚡ Gerando arte com ${rows.length} fretes...`);
-      await downloadDivulgacaoJPG(rows[0]);
+      setStatus(rows.length > 4
+        ? `⚡ Gerando arte com os primeiros 4 de ${rows.length} fretes selecionados...`
+        : `⚡ Gerando arte com ${previewRows.length} fretes...`);
+      await downloadDivulgacaoJPG(previewRows[0]);
       return;
     }
 
@@ -3133,11 +3136,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       const visible = getFilteredRows().filter((r) => safeText(r.id));
       const allSelected = visible.length && visible.every((r) => STATE.selectedIds.has(safeText(r.id)));
 
-      if (!allSelected && visible.length > 4) {
-        alert("Para o MOD 04, selecione manualmente de 2 a 4 fretes.");
-        return;
-      }
-
       visible.forEach((r) => {
         if (allSelected) STATE.selectedIds.delete(safeText(r.id));
         else STATE.selectedIds.add(safeText(r.id));
@@ -3147,7 +3145,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       updateBulkUI();
 
       const selected = getSelectedRows();
-      if (selected.length >= 2 && selected.length <= 4) {
+      if (selected.length >= 2) {
         STATE.previewRow = selected[0];
         syncMultiFreteModelNF(selected);
       }
@@ -3156,12 +3154,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     document.getElementById("nfSelectAll")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
       const visible = getFilteredRows().filter((r) => safeText(r.id));
-
-      if (checked && visible.length > 4) {
-        e.target.checked = false;
-        alert("Para o MOD 04, selecione manualmente de 2 a 4 fretes.");
-        return;
-      }
 
       visible.forEach((r) => {
         const id = safeText(r.id);
@@ -3175,7 +3167,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       updateBulkUI();
 
       const selected = getSelectedRows();
-      if (selected.length >= 2 && selected.length <= 4) {
+      if (selected.length >= 2) {
         STATE.previewRow = selected[0];
         syncMultiFreteModelNF(selected);
       }

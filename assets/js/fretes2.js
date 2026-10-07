@@ -154,6 +154,7 @@
     pendingCreateId: "",
     directoryReady: false,
     directoryPromise: null,
+    editingUf: "",
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -164,10 +165,10 @@
     { key: "filial", label: "Filial" },
     { key: "cliente", label: "Cliente", isColorTag: "cliente" },
     { key: "origem", label: "Origem" },
-    { key: "coleta", label: "Coleta" },
+    { key: "coleta", label: "Coleta", isColeta: true },
     { key: "contato", label: "Contato", isContato: true, isColorTag: "contato" },
     { key: "destino", label: "Destino" },
-    { key: "uf", label: "UF" },
+    { key: "localizacaoDescarga", label: "Mapa Descarga", isMapaDescarga: true },
     { key: "descarga", label: "Descarga" },
     { key: "valorEmpresa", label: "Vlr Empresa", isMoney: true },
     { key: "valorMotorista", label: "Vlr Motorista", isMoney: true },
@@ -201,8 +202,9 @@
     contato: () => document.getElementById("mContato"),
     origem: () => document.getElementById("mOrigem"),
     coleta: () => document.getElementById("mColeta"),
+    localizacaoColeta: () => document.getElementById("mLocalizacaoColeta"),
     destino: () => document.getElementById("mDestino"),
-    uf: () => document.getElementById("mUF"),
+    localizacaoDescarga: () => document.getElementById("mLocalizacaoDescarga"),
     descarga: () => document.getElementById("mDescarga"),
     produto: () => document.getElementById("mProduto"),
     km: () => document.getElementById("mKM"),
@@ -539,6 +541,84 @@ function formatDateTimeBR(value) {
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  const NF_MAP_RE = /(?:^|\n)\[\[NF_MAP:([^\]]+)\]\]/i;
+
+  function extractLocationFromObs(obs) {
+    const match = String(obs ?? "").match(NF_MAP_RE);
+    return match ? safeText(match[1]) : "";
+  }
+
+  function cleanObsText(obs) {
+    return String(obs ?? "")
+      .replace(/(?:^|\n)\[\[NF_MAP:[^\]]+\]\]/ig, "")
+      .trim();
+  }
+
+  function isHttpLocation(value) {
+    const raw = safeText(value);
+    if (!raw) return false;
+    try {
+      const url = new URL(raw);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      return false;
+    }
+  }
+
+  function getColetaLocation(row) {
+    if (!row) return "";
+    const direct = safeText(row.localizacaoColeta || row.localizacao);
+    if (isHttpLocation(direct)) return direct;
+    const legacy = extractLocationFromObs(row.obs);
+    return isHttpLocation(legacy) ? legacy : "";
+  }
+
+  function getDescargaLocation(row) {
+    if (!row) return "";
+    const direct = safeText(row.localizacaoDescarga);
+    return isHttpLocation(direct) ? direct : "";
+  }
+
+  function createMapLink(location, title) {
+    if (!isHttpLocation(location)) return null;
+    const a = document.createElement("a");
+    a.href = location;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "🗺️";
+    a.title = title;
+    a.style.textDecoration = "none";
+    a.style.fontSize = "15px";
+    a.style.lineHeight = "1";
+    a.addEventListener("click", (event) => event.stopPropagation());
+    return a;
+  }
+
+  function buildColetaCell(row) {
+    const td = document.createElement("td");
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.alignItems = "center";
+    wrap.style.gap = "5px";
+
+    const mapLink = createMapLink(getColetaLocation(row), "Abrir localização da coleta");
+    if (mapLink) wrap.appendChild(mapLink);
+
+    const text = document.createElement("span");
+    text.textContent = safeText(row.coleta);
+    wrap.appendChild(text);
+    td.appendChild(wrap);
+    return td;
+  }
+
+  function buildMapaDescargaCell(row) {
+    const td = document.createElement("td");
+    td.style.textAlign = "center";
+    const mapLink = createMapLink(getDescargaLocation(row), "Abrir localização da descarga");
+    if (mapLink) td.appendChild(mapLink);
+    return td;
   }
 
   function ceil0(n) {
@@ -1143,6 +1223,16 @@ function formatDateTimeBR(value) {
           return;
         }
 
+        if (col.isColeta) {
+          tr.appendChild(buildColetaCell(row));
+          return;
+        }
+
+        if (col.isMapaDescarga) {
+          tr.appendChild(buildMapaDescargaCell(row));
+          return;
+        }
+
         if (col.isContato) {
           tr.appendChild(buildContatoCell(row.contato || ""));
           return;
@@ -1188,6 +1278,8 @@ function formatDateTimeBR(value) {
           td.appendChild(createColorTag(row[col.key], col.isColorTag));
         } else if (col.isMoney) {
           td.textContent = safeText(row[col.key]) ? formatMoneyBR(row[col.key]) : "";
+        } else if (col.key === "obs") {
+          td.textContent = cleanObsText(row[col.key]);
         } else {
           td.textContent = safeText(row[col.key]);
         }
@@ -2348,11 +2440,12 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   function clearModalFields() {
     STATE.editingId = "";
     STATE.pendingCreateId = "";
+    STATE.editingUf = "";
 
     if (MODAL.title()) MODAL.title().textContent = "Novo Frete";
 
     [
-      MODAL.origem(), MODAL.coleta(), MODAL.destino(), MODAL.uf(), MODAL.descarga(),
+      MODAL.origem(), MODAL.coleta(), MODAL.localizacaoColeta(), MODAL.destino(), MODAL.localizacaoDescarga(), MODAL.descarga(),
       MODAL.produto(), MODAL.km(), MODAL.ped(), MODAL.cadencia(), MODAL.icms(),
       MODAL.empresa(), MODAL.motorista(), MODAL.sat(), MODAL.porta(),
       MODAL.transito(), MODAL.carregado(), MODAL.obs()
@@ -2420,10 +2513,12 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     if (MODAL.cliente()) MODAL.cliente().value = upper(row.cliente);
     if (MODAL.contato()) MODAL.contato().value = upper(row.contato);
 
+    STATE.editingUf = safeText(row.uf);
     if (MODAL.origem()) MODAL.origem().value = safeText(row.origem);
     if (MODAL.coleta()) MODAL.coleta().value = safeText(row.coleta);
+    if (MODAL.localizacaoColeta()) MODAL.localizacaoColeta().value = getColetaLocation(row);
     if (MODAL.destino()) MODAL.destino().value = safeText(row.destino);
-    if (MODAL.uf()) MODAL.uf().value = safeText(row.uf);
+    if (MODAL.localizacaoDescarga()) MODAL.localizacaoDescarga().value = getDescargaLocation(row);
     if (MODAL.descarga()) MODAL.descarga().value = safeText(row.descarga);
     if (MODAL.produto()) MODAL.produto().value = safeText(row.produto);
     if (MODAL.km()) MODAL.km().value = safeText(row.km);
@@ -2448,8 +2543,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       contato: upper(MODAL.contato()?.value),
       origem: upper(MODAL.origem()?.value),
       coleta: upper(MODAL.coleta()?.value),
+      localizacao: safeText(MODAL.localizacaoColeta()?.value),
+      localizacaoColeta: safeText(MODAL.localizacaoColeta()?.value),
       destino: upper(MODAL.destino()?.value),
-      uf: upper(MODAL.uf()?.value),
+      uf: safeText(STATE.editingUf),
+      localizacaoDescarga: safeText(MODAL.localizacaoDescarga()?.value),
       descarga: upper(MODAL.descarga()?.value),
       cadencia: safeText(MODAL.cadencia()?.value),
       valorEmpresa: normalizeMoneyInput(MODAL.empresa()?.value),
@@ -2463,7 +2561,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       transito: safeText(MODAL.transito()?.value),
       carregado: safeText(MODAL.carregado()?.value),
       status: normalizeFreteStatus(MODAL.status()?.value),
-      obs: upperKeepSpaces(MODAL.obs()?.value).trim(),
+      obs: cleanObsText(upperKeepSpaces(MODAL.obs()?.value).trim()),
     };
   }
 
@@ -2476,12 +2574,21 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     if (!p.contato) missing.push("CONTATO");
     if (!p.origem) missing.push("ORIGEM");
     if (!p.destino) missing.push("DESTINO");
-    if (!p.uf) missing.push("UF");
     if (!p.km) missing.push("KM");
     if (!p.valorMotorista) missing.push("VLR MOTORISTA");
 
     if (missing.length) {
       alert("Preencha: " + missing.join(", "));
+      return false;
+    }
+
+    if (p.localizacaoColeta && !isHttpLocation(p.localizacaoColeta)) {
+      alert("A Localização da coleta deve ser um link válido do Google Maps.");
+      return false;
+    }
+
+    if (p.localizacaoDescarga && !isHttpLocation(p.localizacaoDescarga)) {
+      alert("A Localização da descarga deve ser um link válido do Google Maps.");
       return false;
     }
 

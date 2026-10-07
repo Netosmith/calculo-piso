@@ -1835,7 +1835,6 @@ function formatDateTimeBR(value) {
   function buildFreteBloco(row) {
   const origem = upper(row.origem || "");
   const coleta = upper(row.coleta || "");
-  const localizacao = getColetaLocation(row);
   const destino = cityUf(row, "destino", "uf");
   const descarga = upper(row.descarga || "");
   const produto = upper(row.produto || "");
@@ -1844,19 +1843,12 @@ function formatDateTimeBR(value) {
     ? formatMoneyBR(row.valorMotorista)
     : "A COMBINAR";
 
-  const linhas = [
-    `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`
-  ];
-
-  if (localizacao) linhas.push(`🗺️  ${localizacao}`);
-
-  linhas.push(
+  return [
+    `🏷️ ${origem}${coleta ? ` (${coleta})` : ""}`,
     `🏁 ${destino}${descarga ? ` (${descarga})` : ""}`,
     `💢 ${produto}`,
     `💰${valor}`
-  );
-
-  return linhas.join("\n");
+  ].join("\n");
 }
 
 function buildMessage(row) {

@@ -1881,6 +1881,7 @@ function formatDateTimeBR(value) {
     if (msg) msg.value = buildMessage(row);
   }
 
+  // A mensagem pronta não inclui links de localização; mapas ficam somente no Portal.
   function buildFreteBloco(row) {
     const origem = upper(row.origem || "");
     const coleta = upper(row.coleta || "");

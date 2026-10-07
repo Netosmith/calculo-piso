@@ -1817,7 +1817,7 @@ function formatDateTimeBR(value) {
   function buildFreteBloco(row) {
   const origem = upper(row.origem || "");
   const coleta = upper(row.coleta || "");
-  const localizacao = getRowLocation(row);
+  const localizacao = getColetaLocation(row);
   const destino = cityUf(row, "destino", "uf");
   const descarga = upper(row.descarga || "");
   const produto = upper(row.produto || "");

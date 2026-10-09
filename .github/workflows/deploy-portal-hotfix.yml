@@ -72,6 +72,15 @@ jobs:
           fi
           test "$code" = "401" || test "$code" = "403"
 
+      - name: Validar login válido temporário
+        run: |
+          code=$(curl -sS -o /tmp/login-valid.json -w "%{http_code}" --max-time 30 \
+            -X POST https://portalfrete-api.luziano-transportes.workers.dev/v1/login \
+            -H "Content-Type: application/json" \
+            --data '{"usuario":"__PORTAL_DIAG_LOGIN__","senha":"__DIAG_ONLY__"}')
+          cat /tmp/login-valid.json
+          test "$code" = "200"
+
       - name: Validar API pública Pingo Chic
         id: pingo
         continue-on-error: true

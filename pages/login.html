@@ -70,8 +70,8 @@
     </div>
   </div>
 
-  <script src="../assets/js/api.js?v=5"></script>
-  <script src="../assets/js/auth.js?v=6"></script>
+  <script src="../assets/js/api.js?v=7"></script>
+  <script src="../assets/js/auth.js?v=16"></script>
   <script>
     const btn = document.getElementById("btnLogin");
     const err = document.getElementById("err");
@@ -161,12 +161,36 @@
       modal.setAttribute("aria-hidden", "true");
     }
 
+    async function blockIfMaintenance(session){
+      if(normalizeUpper(session?.perfil) === "ADMINISTRADOR") return false;
+
+      try{
+        const result = await PortalAPI.maintenanceStatus();
+        const maintenance = result?.maintenance || {};
+
+        if(maintenance.enabled === true){
+          if(typeof window.showPortalMaintenanceScreen === "function"){
+            window.showPortalMaintenanceScreen(maintenance);
+          }else{
+            showError(maintenance.message || "Portal temporariamente indisponível para manutenção.");
+          }
+          return true;
+        }
+      }catch(error){
+        console.warn("[LOGIN] Falha ao consultar manutenção:", error);
+      }
+
+      return false;
+    }
+
     async function restoreExistingSession(){
       try{
         const result = await PortalAPI.session();
         const session = result.session;
 
         mirrorSessionForLegacyPages(session);
+
+        if(await blockIfMaintenance(session)) return;
 
         if(session?.estado){
           window.location.href = "./home.html";
@@ -199,6 +223,9 @@
 
         mirrorSessionForLegacyPages(session);
         passEl.value = "";
+
+        if(await blockIfMaintenance(session)) return;
+
         openStateModal(session);
       }catch(error){
         showError(error?.message || "Usuário ou senha inválidos.");
@@ -229,6 +256,9 @@
         const result = await PortalAPI.selectState(selectedUF);
         mirrorSessionForLegacyPages(result.session);
         closeStateModal();
+
+        if(await blockIfMaintenance(result.session)) return;
+
         window.location.href = "./home.html";
       }catch(error){
         showError(error?.message || "Não foi possível selecionar o estado.");

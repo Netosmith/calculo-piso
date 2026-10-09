@@ -1633,94 +1633,10 @@
     if (inp) inp.addEventListener("input", renderAll);
   }
 
-  async function loadMaintenanceStatus() {
-    const control = $("#maintenanceControl");
-    if (!control) return;
-
-    const isAdmin = upper(window.getProfile?.() || "") === "ADMINISTRADOR";
-    control.hidden = !isAdmin;
-    if (!isAdmin) return;
-
-    try {
-      const api = await window.ensurePortalApi?.() || window.PortalAPI;
-      if (!api?.maintenanceStatus) throw new Error("API de manutenção indisponível.");
-
-      const result = await api.maintenanceStatus();
-      renderMaintenanceControl(result?.maintenance || {});
-    } catch (error) {
-      console.warn("[ADMIN] manutenção:", error);
-      $("#maintenanceTitle").textContent = "Status indisponível";
-      $("#maintenanceMeta").textContent = "Não foi possível consultar o modo manutenção.";
-    }
-  }
-
-  function renderMaintenanceControl(maintenance = {}) {
-    const control = $("#maintenanceControl");
-    const title = $("#maintenanceTitle");
-    const meta = $("#maintenanceMeta");
-    const input = $("#maintenanceMessage");
-    const button = $("#btnMaintenanceToggle");
-    if (!control || !button) return;
-
-    const enabled = maintenance?.enabled === true;
-    control.classList.toggle("is-on", enabled);
-    control.dataset.enabled = enabled ? "1" : "0";
-
-    if (title) title.textContent = enabled ? "Portal em MANUTENÇÃO" : "Portal ONLINE";
-    if (meta) {
-      const by = safeText(maintenance?.updatedBy);
-      const at = safeText(maintenance?.updatedAt);
-      const when = at ? new Date(at).toLocaleString("pt-BR") : "";
-      meta.textContent = enabled
-        ? `Acesso liberado somente para ADMINISTRADOR${by ? ` • por ${by}` : ""}${when ? ` • ${when}` : ""}`
-        : "Modo manutenção desativado";
-    }
-
-    if (input && maintenance?.message) input.value = maintenance.message;
-    button.textContent = enabled ? "Reabrir Portal" : "Ativar manutenção";
-  }
-
-  async function toggleMaintenance() {
-    const control = $("#maintenanceControl");
-    const button = $("#btnMaintenanceToggle");
-    const input = $("#maintenanceMessage");
-    if (!control || !button) return;
-
-    const currentlyEnabled = control.dataset.enabled === "1";
-    const nextEnabled = !currentlyEnabled;
-
-    const ok = confirm(
-      nextEnabled
-        ? "Ativar o modo manutenção? Usuários comuns serão bloqueados imediatamente."
-        : "Reabrir o Portal para todos os usuários?"
-    );
-    if (!ok) return;
-
-    button.disabled = true;
-    button.textContent = nextEnabled ? "Ativando..." : "Reabrindo...";
-
-    try {
-      const api = await window.ensurePortalApi?.() || window.PortalAPI;
-      if (!api?.setMaintenance) throw new Error("API de manutenção indisponível.");
-
-      const result = await api.setMaintenance(nextEnabled, safeText(input?.value));
-      renderMaintenanceControl(result?.maintenance || { enabled: nextEnabled });
-      setStatus(nextEnabled ? "🔴 Portal em manutenção" : "🟢 Portal online");
-    } catch (error) {
-      console.error("[ADMIN] toggle manutenção:", error);
-      alert(error?.message || "Não foi possível alterar o modo manutenção.");
-      await loadMaintenanceStatus();
-    } finally {
-      button.disabled = false;
-    }
-  }
-
   function bindActions() {
     const btnReload = $("#btnAdminReload");
     if (btnReload) btnReload.addEventListener("click", () => reloadAll(true));
 
-    const btnMaintenance = $("#btnMaintenanceToggle");
-    if (btnMaintenance) btnMaintenance.addEventListener("click", toggleMaintenance);
 
     const btnNovo = $("#btnAdminNovo");
     if (btnNovo) {
@@ -1786,7 +1702,6 @@
     selectedMaterialFilial = FILIAIS[0];
 
     renderAll();
-    loadMaintenanceStatus();
     reloadAll(false);
   }
 

@@ -3,6 +3,7 @@ import { healthController } from "./controllers/health.js";
 import { gatewayTestController } from "./controllers/gateway.js";
 import { portalGatewayController } from "./controllers/portal-gateway.js";
 import { clientLogoController } from "./controllers/client-logos.js";
+import { maintenanceController } from "./controllers/maintenance.js";
 import {
   loginController,
   logoutController,
@@ -48,6 +49,11 @@ export async function routeRequest(request, env, ctx) {
   if (path === "/v1/logout") {
     if (request.method !== "POST") return methodNotAllowed(["POST"]);
     return logoutController(request, env);
+  }
+
+  if (path === "/v1/maintenance") {
+    if (!["GET", "POST"].includes(request.method)) return methodNotAllowed(["GET", "POST"]);
+    return maintenanceController(request, env);
   }
 
   if (path === "/v1/gateway") {

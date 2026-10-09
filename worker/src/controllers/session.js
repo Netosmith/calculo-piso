@@ -105,7 +105,8 @@ export async function loginController(request, env) {
       message: String(error?.message || error)
     });
     return errorResponse("Falha ao criar a sessão do Portal.", 500, {
-      stage: "session_store"
+      stage: "session_store",
+      reason: String(error?.message || error || "erro desconhecido").slice(0, 240)
     });
   }
 

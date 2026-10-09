@@ -423,6 +423,86 @@
     finally{STATE.toggling=false;}
   }
 
+  async function loadMaintenanceStatus(){
+    const control=$("#maintenanceControl");
+    if(!control)return;
+    control.hidden=false;
+
+    try{
+      if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
+      if(!window.PortalAPI?.maintenanceStatus)throw new Error("API de manutenção indisponível.");
+
+      const result=await window.PortalAPI.maintenanceStatus();
+      renderMaintenanceControl(result?.maintenance||{});
+    }catch(error){
+      console.warn("[cadastros] manutenção:",error);
+      const title=$("#maintenanceTitle");
+      const meta=$("#maintenanceMeta");
+      if(title)title.textContent="Status indisponível";
+      if(meta)meta.textContent="Não foi possível consultar o modo manutenção.";
+    }
+  }
+
+  function renderMaintenanceControl(maintenance={}){
+    const control=$("#maintenanceControl");
+    const title=$("#maintenanceTitle");
+    const meta=$("#maintenanceMeta");
+    const input=$("#maintenanceMessage");
+    const button=$("#btnMaintenanceToggle");
+    if(!control||!button)return;
+
+    const enabled=maintenance?.enabled===true;
+    control.classList.toggle("is-on",enabled);
+    control.dataset.enabled=enabled?"1":"0";
+
+    if(title)title.textContent=enabled?"Portal em MANUTENÇÃO":"Portal ONLINE";
+    if(meta){
+      const by=safe(maintenance?.updatedBy);
+      const at=safe(maintenance?.updatedAt);
+      const when=at?new Date(at).toLocaleString("pt-BR"):"";
+      meta.textContent=enabled
+        ? `Acesso somente para ADMINISTRADOR${by?` • por ${by}`:""}${when?` • ${when}`:""}`
+        : "Modo manutenção desativado";
+    }
+
+    if(input&&maintenance?.message)input.value=maintenance.message;
+    button.textContent=enabled?"Reabrir Portal":"Ativar manutenção";
+  }
+
+  async function toggleMaintenance(){
+    const control=$("#maintenanceControl");
+    const button=$("#btnMaintenanceToggle");
+    const input=$("#maintenanceMessage");
+    if(!control||!button)return;
+
+    const enabled=control.dataset.enabled==="1";
+    const next=!enabled;
+    const ok=confirm(
+      next
+        ?"Ativar o modo manutenção? Usuários comuns serão bloqueados imediatamente."
+        :"Reabrir o Portal para todos os usuários?"
+    );
+    if(!ok)return;
+
+    button.disabled=true;
+    button.textContent=next?"Ativando...":"Reabrindo...";
+
+    try{
+      if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
+      if(!window.PortalAPI?.setMaintenance)throw new Error("API de manutenção indisponível.");
+
+      const result=await window.PortalAPI.setMaintenance(next,safe(input?.value));
+      renderMaintenanceControl(result?.maintenance||{enabled:next});
+      setStatus(next?"🔴 Portal em manutenção":"🟢 Portal online");
+    }catch(error){
+      console.error("[cadastros] manutenção:",error);
+      alert(error?.message||"Não foi possível alterar o modo manutenção.");
+      await loadMaintenanceStatus();
+    }finally{
+      button.disabled=false;
+    }
+  }
+
   function bind(){
     $("#tabs")?.addEventListener("click",event=>{
       const button=event.target.closest("[data-tab]");if(!button)return;
@@ -433,6 +513,7 @@
     $("#buscaCadastro")?.addEventListener("input",render);
     $("#btnAtualizar")?.addEventListener("click",()=>loadCurrent(true));
     $("#btnNovo")?.addEventListener("click",()=>openModal(null));
+    $("#btnMaintenanceToggle")?.addEventListener("click",toggleMaintenance);
     $("#cadForm")?.addEventListener("submit",save);
     $("#btnCancelar")?.addEventListener("click",()=>closeModal());
     $("#btnFecharModal")?.addEventListener("click",()=>closeModal());
@@ -457,6 +538,7 @@
     if(perfil!=="ADMINISTRADOR"){
       alert("Acesso permitido somente ao administrador.");window.location.href="./home.html";return;
     }
+    await loadMaintenanceStatus();
     await loadCurrent();
   }
 

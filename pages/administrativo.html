@@ -236,46 +236,6 @@
       font-size:11px !important;
     }
 
-    .maintenance-control{
-      margin:0 0 20px;
-      padding:14px 16px;
-      display:grid;
-      grid-template-columns:minmax(230px,1fr) minmax(260px,1.4fr) auto;
-      gap:12px;
-      align-items:center;
-      border:1px solid rgba(173,204,240,.18);
-      border-radius:16px;
-      background:linear-gradient(135deg,rgba(9,35,66,.90),rgba(7,26,51,.82));
-      box-shadow:0 14px 34px rgba(0,0,0,.18);
-    }
-    .maintenance-control[hidden]{display:none!important}
-    .maintenance-state{display:flex;align-items:center;gap:10px;min-width:0}
-    .maintenance-dot{
-      width:12px;height:12px;flex:0 0 12px;border-radius:999px;
-      background:#36b97e;box-shadow:0 0 0 4px rgba(54,185,126,.12),0 0 14px rgba(54,185,126,.42);
-    }
-    .maintenance-control.is-on .maintenance-dot{
-      background:#ef5350;box-shadow:0 0 0 4px rgba(239,83,80,.12),0 0 14px rgba(239,83,80,.45);
-    }
-    .maintenance-state strong{display:block;color:#fff;font-size:12px;font-weight:900}
-    .maintenance-state span{display:block;margin-top:3px;color:#91a5bd;font-size:10px}
-    .maintenance-message{
-      width:100%;height:40px;padding:0 12px;border:1px solid rgba(173,204,240,.18);
-      border-radius:10px;outline:none;background:#0a203d;color:#fff;font:600 11px "Inter",sans-serif;
-    }
-    .maintenance-message:focus{border-color:rgba(78,141,247,.70);box-shadow:0 0 0 3px rgba(78,141,247,.12)}
-    .maintenance-toggle{
-      height:40px;padding:0 16px;border:1px solid rgba(239,83,80,.55);border-radius:10px;
-      background:linear-gradient(135deg,#a92727,#d94444);color:#fff;font:850 11px "Inter",sans-serif;cursor:pointer;
-    }
-    .maintenance-control.is-on .maintenance-toggle{
-      border-color:rgba(54,185,126,.55);background:linear-gradient(135deg,#18794f,#27a66f);
-    }
-    @media(max-width:900px){
-      .maintenance-control{grid-template-columns:1fr}
-      .maintenance-toggle{width:100%}
-    }
-
     /* =========================================================
        KPIs - MESMO CONCEITO DOS CARDS ESCUROS DA HOME
        ========================================================= */
@@ -939,24 +899,6 @@
         </div>
       </div>
 
-      <div class="maintenance-control" id="maintenanceControl" hidden>
-        <div class="maintenance-state">
-          <span class="maintenance-dot"></span>
-          <div>
-            <strong id="maintenanceTitle">Portal ONLINE</strong>
-            <span id="maintenanceMeta">Modo manutenção desativado</span>
-          </div>
-        </div>
-        <input
-          class="maintenance-message"
-          id="maintenanceMessage"
-          maxlength="240"
-          value="Portal temporariamente indisponível para manutenção."
-          aria-label="Mensagem exibida durante a manutenção"
-        />
-        <button class="maintenance-toggle" id="btnMaintenanceToggle" type="button">Ativar manutenção</button>
-      </div>
-
       <div class="admin-summary">
         <button class="sumCard sumBlue" data-tab="frota" type="button">
           <div class="sumIcon">🚗</div>
@@ -1128,7 +1070,7 @@
   />
 
   <script src="../assets/js/auth.js?v=16"></script>
-  <script src="../assets/js/administrativo.js?v=5"></script>
+  <script src="../assets/js/administrativo.js?v=6"></script>
 
   <script>
     requireHomeAuth();

@@ -42,6 +42,34 @@
     .pageHeadActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .status{height:38px;display:flex;align-items:center;padding:0 12px;border:1px solid var(--border);
       border-radius:11px;background:#f8fafc;font-size:11px;font-weight:900;color:#475569}
+    .maintenanceControl{
+      margin-top:14px;padding:13px 14px;display:grid;
+      grid-template-columns:minmax(210px,.9fr) minmax(280px,1.5fr) auto;
+      gap:10px;align-items:center;background:#fff;border:1px solid var(--border);
+      border-radius:16px;box-shadow:var(--shadow);
+    }
+    .maintenanceControl[hidden]{display:none!important}
+    .maintenanceState{display:flex;align-items:center;gap:10px;min-width:0}
+    .maintenanceDot{
+      width:12px;height:12px;flex:0 0 12px;border-radius:999px;background:#16a34a;
+      box-shadow:0 0 0 4px rgba(22,163,74,.10),0 0 13px rgba(22,163,74,.30);
+    }
+    .maintenanceControl.is-on .maintenanceDot{
+      background:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.10),0 0 13px rgba(220,38,38,.30);
+    }
+    .maintenanceState strong{display:block;color:var(--navy);font-size:11px;font-weight:1000}
+    .maintenanceState span{display:block;margin-top:3px;color:#64748b;font-size:9px;font-weight:700}
+    .maintenanceMessage{
+      width:100%;height:40px;padding:0 11px;border:1px solid var(--border);
+      border-radius:10px;outline:none;background:#fbfdff;color:#334155;font-size:10px;font-weight:700;
+    }
+    .maintenanceMessage:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+    .maintenanceToggle{
+      height:40px;padding:0 14px;border:0;border-radius:10px;
+      background:linear-gradient(180deg,#dc2626,#b91c1c);color:#fff;font-size:10px;font-weight:1000;cursor:pointer;
+    }
+    .maintenanceControl.is-on .maintenanceToggle{background:linear-gradient(180deg,#16a34a,#15803d)}
+    .maintenanceToggle:disabled{opacity:.6;cursor:not-allowed}
     .tabsCard{margin-top:14px;border-radius:16px;padding:8px}
     .tabs{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:8px}
     .tabBtn{height:42px;padding:0 14px;border:1px solid transparent;border-radius:11px;
@@ -108,8 +136,8 @@
     .clientLogoStatus{margin-top:10px;min-height:17px;color:#64748b;font-size:10px;font-weight:800}
     .clientLogoStatus.pending{color:#b45309}.clientLogoStatus.ready{color:#15803d}.clientLogoStatus.remove{color:#b91c1c}
     .modalFoot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--border);background:#f8fafc}
-    @media(max-width:1100px){.tabs{grid-template-columns:repeat(3,1fr)}.statsGrid{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 160px auto}}
-    @media(max-width:700px){.page{padding:10px}.tabs{grid-template-columns:1fr 1fr}.statsGrid,.toolbar,.formGrid{grid-template-columns:1fr}.userMini{display:none}.clientLogoBody{grid-template-columns:1fr}.clientLogoPreview{height:150px}}
+    @media(max-width:1100px){.tabs{grid-template-columns:repeat(3,1fr)}.statsGrid{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 160px auto}.maintenanceControl{grid-template-columns:1fr 1fr}.maintenanceToggle{grid-column:1/-1}}
+    @media(max-width:700px){.page{padding:10px}.tabs{grid-template-columns:1fr 1fr}.statsGrid,.toolbar,.formGrid,.maintenanceControl{grid-template-columns:1fr}.maintenanceToggle{grid-column:auto}.userMini{display:none}.clientLogoBody{grid-template-columns:1fr}.clientLogoPreview{height:150px}}
   </style>
 </head>
 
@@ -143,6 +171,24 @@
         <div class="status" id="cadStatus">🔄 Carregando...</div>
         <button class="btn green" id="btnNovo" type="button">+ Novo cadastro</button>
       </div>
+    </section>
+
+    <section class="maintenanceControl" id="maintenanceControl" hidden>
+      <div class="maintenanceState">
+        <span class="maintenanceDot"></span>
+        <div>
+          <strong id="maintenanceTitle">Portal ONLINE</strong>
+          <span id="maintenanceMeta">Modo manutenção desativado</span>
+        </div>
+      </div>
+      <input
+        class="maintenanceMessage"
+        id="maintenanceMessage"
+        maxlength="240"
+        value="Portal temporariamente indisponível para manutenção."
+        aria-label="Mensagem exibida durante a manutenção"
+      />
+      <button class="maintenanceToggle" id="btnMaintenanceToggle" type="button">Ativar manutenção</button>
     </section>
 
     <section class="tabsCard">
@@ -231,7 +277,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=16"></script>
-  <script src="../assets/js/cadastros.js?v=6"></script>
+  <script src="../assets/js/cadastros.js?v=7"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

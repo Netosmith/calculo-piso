@@ -1,6 +1,7 @@
 import { callAppsScript } from "../services/appscript.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
+import { getMaintenanceState, isAdministrator } from "../services/maintenance.js";
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
 
@@ -447,6 +448,15 @@ export async function portalGatewayController(request, env, ctx) {
 
   if (!session) {
     return errorResponse("Sessão inválida ou expirada.", 401);
+  }
+
+  const maintenance = await getMaintenanceState(env);
+  if (maintenance.enabled && !isAdministrator(session)) {
+    return errorResponse(
+      maintenance.message || "Portal temporariamente indisponível para manutenção.",
+      503,
+      { maintenance: true, ...maintenance }
+    );
   }
 
   if (!session.estado) {

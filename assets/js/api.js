@@ -141,6 +141,15 @@ window.PortalAPI = {
   logout() {
     return portalApiRequest("/v1/logout", { method: "POST", body: {} });
   },
+  maintenanceStatus() {
+    return portalApiRequest("/v1/maintenance");
+  },
+  setMaintenance(enabled, message = "") {
+    return portalApiRequest("/v1/maintenance", {
+      method: "POST",
+      body: { enabled: Boolean(enabled), message }
+    });
+  },
   async call(module, action, params = {}) {
     const result = await portalApiRequest("/v1/gateway", {
       method: "POST",

@@ -1,11 +1,10 @@
 import { callAppsScript } from "../services/appscript.js";
 import {
   clearSessionCookie,
-  createSessionId,
+  createSessionToken,
   deleteSession,
   getSession,
   readSessionId,
-  saveSession,
   sessionCookie,
   sessionTtlSeconds
 } from "../services/session.js";
@@ -87,7 +86,6 @@ export async function loginController(request, env) {
   }
 
   const now = Date.now();
-  const sessionId = createSessionId();
   const session = {
     usuario: normalizeUpper(result.usuario || usuario),
     nome: String(result.nome || result.usuario || usuario).trim(),
@@ -98,15 +96,15 @@ export async function loginController(request, env) {
     expiresAt: new Date(now + sessionTtlSeconds() * 1000).toISOString()
   };
 
+  let sessionToken;
   try {
-    await saveSession(env, sessionId, session);
+    sessionToken = await createSessionToken(env, session);
   } catch (error) {
-    console.error("[LOGIN] Falha ao gravar sessão", {
+    console.error("[LOGIN] Falha ao assinar sessão", {
       message: String(error?.message || error)
     });
     return errorResponse("Falha ao criar a sessão do Portal.", 500, {
-      stage: "session_store",
-      reason: String(error?.message || error || "erro desconhecido").slice(0, 240)
+      stage: "session_token"
     });
   }
 
@@ -117,7 +115,7 @@ export async function loginController(request, env) {
         requiresStateSelection: estados.length > 1
       },
       200,
-      { "Set-Cookie": sessionCookie(sessionId) }
+      { "Set-Cookie": sessionCookie(sessionToken) }
     );
   } catch (error) {
     console.error("[LOGIN] Falha ao montar resposta", {
@@ -162,9 +160,22 @@ export async function selectStateController(request, env) {
   }
 
   session.estado = estado;
-  await saveSession(env, sessionId, session);
 
-  return success({ session: publicSession(session) });
+  let sessionToken;
+  try {
+    sessionToken = await createSessionToken(env, session);
+  } catch (error) {
+    console.error("[SESSION] Falha ao atualizar cookie assinado", {
+      message: String(error?.message || error)
+    });
+    return errorResponse("Não foi possível atualizar a sessão.", 500);
+  }
+
+  return success(
+    { session: publicSession(session) },
+    200,
+    { "Set-Cookie": sessionCookie(sessionToken) }
+  );
 }
 
 export async function logoutController(request, env) {

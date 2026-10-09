@@ -51,6 +51,19 @@ jobs:
           sleep 3
           curl -fsS --max-time 25 https://portalfrete-api.luziano-transportes.workers.dev/v1/gateway-test
 
+      - name: Validar rota de login
+        run: |
+          code=$(curl -sS -o /tmp/login-check.json -w "%{http_code}" --max-time 30 \
+            -X POST https://portalfrete-api.luziano-transportes.workers.dev/v1/login \
+            -H "Content-Type: application/json" \
+            --data '{"usuario":"__PORTAL_HEALTHCHECK__","senha":"__INVALID__"}')
+          cat /tmp/login-check.json
+          if [ "$code" -ge 500 ]; then
+            echo "A rota de login respondeu erro interno (HTTP $code)."
+            exit 1
+          fi
+          test "$code" = "401" || test "$code" = "403"
+
       - name: Validar API pública Pingo Chic
         id: pingo
         continue-on-error: true

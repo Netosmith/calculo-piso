@@ -206,7 +206,7 @@ async function ensurePortalApi(){
     }
 
     const script = document.createElement("script");
-    script.src = "../assets/js/api.js?v=6";
+    script.src = "../assets/js/api.js?v=7";
     script.dataset.portalApi = "1";
     script.onload = resolve;
     script.onerror = () => reject(new Error("Falha ao carregar a API do Portal."));
@@ -220,11 +220,99 @@ async function ensurePortalApi(){
   return window.PortalAPI;
 }
 
+function hidePortalMaintenanceScreen(){
+  document.getElementById("nfMaintenanceScreen")?.remove();
+  document.documentElement.style.removeProperty("overflow");
+  if(document.body) document.body.style.removeProperty("overflow");
+}
+
+function showPortalMaintenanceScreen(maintenance = {}){
+  if(normalizeUpper(getProfile()) === "ADMINISTRADOR"){
+    hidePortalMaintenanceScreen();
+    return false;
+  }
+
+  const existing = document.getElementById("nfMaintenanceScreen");
+  if(existing) return true;
+
+  const overlay = document.createElement("div");
+  overlay.id = "nfMaintenanceScreen";
+  overlay.setAttribute("role", "alert");
+  overlay.style.cssText = [
+    "position:fixed","inset:0","z-index:2147483647",
+    "display:grid","place-items:center","padding:24px",
+    "background:radial-gradient(circle at 50% 0%,#0c3157 0%,#071a35 42%,#041126 100%)",
+    "font-family:Inter,Arial,sans-serif","color:#eef7ff"
+  ].join(";");
+
+  const message = String(
+    maintenance?.message || "Portal temporariamente indisponível para manutenção."
+  ).trim();
+
+  const updatedAt = maintenance?.updatedAt
+    ? new Date(maintenance.updatedAt).toLocaleString("pt-BR")
+    : "";
+
+  overlay.innerHTML = `
+    <div style="width:min(560px,100%);text-align:center;padding:34px 28px;border:1px solid rgba(93,177,255,.24);border-radius:24px;background:linear-gradient(180deg,rgba(10,39,73,.94),rgba(5,24,49,.96));box-shadow:0 28px 80px rgba(0,0,0,.46);">
+      <img src="../assets/img/logo-novafrota.png" alt="Nova Frota" style="width:min(230px,70%);max-height:70px;object-fit:contain;margin-bottom:26px">
+      <div style="width:70px;height:70px;margin:0 auto 20px;display:grid;place-items:center;border-radius:20px;border:1px solid rgba(66,185,255,.35);background:rgba(66,185,255,.10);font-size:32px">🛠️</div>
+      <h1 style="margin:0;font-size:30px;line-height:1.1;font-weight:900;letter-spacing:-.8px">Portal em manutenção</h1>
+      <p style="margin:14px auto 0;max-width:440px;color:#b9cce0;font-size:14px;line-height:1.65">${message.replace(/[<>&]/g, "")}</p>
+      ${updatedAt ? `<div style="margin-top:16px;color:#7898b8;font-size:11px">Atualizado em ${updatedAt}</div>` : ""}
+      <button id="nfMaintenanceRetry" type="button" style="margin-top:24px;height:44px;padding:0 18px;border:1px solid rgba(66,185,255,.52);border-radius:12px;background:linear-gradient(180deg,#116bb3,#0b4f8b);color:#fff;font-weight:850;cursor:pointer">Verificar novamente</button>
+      <div style="margin-top:16px;color:#6685a5;font-size:10px">NOVA FROTA • Sistema Operacional</div>
+    </div>
+  `;
+
+  document.documentElement.style.overflow = "hidden";
+  if(document.body){
+    document.body.style.overflow = "hidden";
+    document.body.appendChild(overlay);
+  }else{
+    document.documentElement.appendChild(overlay);
+  }
+
+  overlay.querySelector("#nfMaintenanceRetry")?.addEventListener("click", () => {
+    window.location.reload();
+  });
+
+  return true;
+}
+
+async function applyPortalMaintenanceGate(session, apiInstance){
+  if(normalizeUpper(session?.perfil || getProfile()) === "ADMINISTRADOR"){
+    hidePortalMaintenanceScreen();
+    return false;
+  }
+
+  try{
+    const api = apiInstance || await ensurePortalApi();
+    const result = await api.maintenanceStatus();
+    const maintenance = result?.maintenance || {};
+
+    if(maintenance.enabled === true){
+      showPortalMaintenanceScreen(maintenance);
+      return true;
+    }
+
+    hidePortalMaintenanceScreen();
+  }catch(error){
+    console.warn("[MAINTENANCE] Não foi possível consultar o estado:", error);
+  }
+
+  return false;
+}
+
+window.showPortalMaintenanceScreen = showPortalMaintenanceScreen;
+window.applyPortalMaintenanceGate = applyPortalMaintenanceGate;
+
 async function refreshPortalSession(){
   try{
     const api = await ensurePortalApi();
     const result = await api.session();
     mirrorServerSession(result.session);
+    await applyPortalMaintenanceGate(result.session, api);
     return result.session;
   }catch(error){
     if(error?.status === 401){

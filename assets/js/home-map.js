@@ -361,12 +361,6 @@
     }
   }
 
-  function isPiso(session) {
-    const profile = upper(session && session.perfil) ||
-      (typeof window.getProfile === "function" ? upper(window.getProfile()) : "");
-    return profile === "PISO";
-  }
-
   async function load(force = false) {
     if (STATE.loading) return;
     STATE.loading = true;
@@ -379,20 +373,6 @@
 
       if (!session) throw new Error("Sessão inválida ou expirada.");
 
-      if (isPiso(session)) {
-        const panel = $("#homeFreightMapPanel");
-        if (panel) panel.classList.add("is-restricted");
-        const list = $("#homeMapFreightList");
-        if (list) {
-          list.innerHTML =
-            '<div class="homeMapEmpty">INFORMAÇÃO RESTRITA PARA O PERFIL PISO.</div>';
-        }
-        return;
-      }
-
-      const panel = $("#homeFreightMapPanel");
-      if (panel) panel.classList.remove("is-restricted");
-
       if (!window.PortalAPI) {
         if (typeof window.ensurePortalApi === "function") {
           await window.ensurePortalApi();
@@ -400,24 +380,10 @@
       }
       if (!window.PortalAPI) throw new Error("API segura do Portal indisponível.");
 
-      const results = await Promise.allSettled([
-        window.PortalAPI.call("fretes", "read"),
-        window.PortalAPI.call("fretes2", "read")
-      ]);
-
-      const merged = [];
-      const sources = ["FRETES", "FRETES2"];
-
-      results.forEach((result, index) => {
-        if (result.status !== "fulfilled") return;
-        merged.push(
-          ...extractRows(result.value).map((row) => normalizeRow(row, sources[index]))
-        );
-      });
-
-      if (!merged.length && results.every((result) => result.status === "rejected")) {
-        throw results[0].reason || new Error("Falha ao carregar fretes.");
-      }
+      const result = await window.PortalAPI.call("home-map", "read");
+      const merged = extractRows(result).map((row) =>
+        normalizeRow(row, upper(row?.source) || "FRETES")
+      );
 
       STATE.rows = availableRows(merged);
       render();
@@ -449,12 +415,6 @@
       refresh.addEventListener("click", () => load(true));
     }
 
-    window.addEventListener("portal:session", (event) => {
-      if (isPiso(event && event.detail)) {
-        const panel = $("#homeFreightMapPanel");
-        if (panel) panel.classList.add("is-restricted");
-      }
-    });
   }
 
   function startRefresh() {

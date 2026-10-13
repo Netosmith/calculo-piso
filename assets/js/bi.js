@@ -16,6 +16,8 @@
     filiaisCadastro: [],
     diretorioLoaded: false,
     charts: {},
+    mapSelectedUf: "",
+    mapDetailMode: "FILIAL",
     autoRefreshTimer: null,
     isLoading: false,
     loadSequence: 0
@@ -831,6 +833,3824 @@
     });
 
     return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
+  }
+
+  /* =========================================================
+     MAPA OPERACIONAL
+  ========================================================= */
+
+  const BRAZIL_STATES = {
+    AC:"Acre", AL:"Alagoas", AP:"Amapá", AM:"Amazonas", BA:"Bahia", CE:"Ceará",
+    DF:"Distrito Federal", ES:"Espírito Santo", GO:"Goiás", MA:"Maranhão",
+    MT:"Mato Grosso", MS:"Mato Grosso do Sul", MG:"Minas Gerais", PA:"Pará",
+    PB:"Paraíba", PR:"Paraná", PE:"Pernambuco", PI:"Piauí", RJ:"Rio de Janeiro",
+    RN:"Rio Grande do Norte", RS:"Rio Grande do Sul", RO:"Rondônia", RR:"Roraima",
+    SC:"Santa Catarina", SP:"São Paulo", SE:"Sergipe", TO:"Tocantins"
+  };
+  const BRAZIL_UFS = Object.keys(BRAZIL_STATES);
+  const BRAZIL_UF_RE = new RegExp(
+    `(?:^|[-/\\s,])(${BRAZIL_UFS.join("|")})(?=$|[-/\\s,])`,
+    "g"
+  );
+
+  function extractUfFromText(value) {
+    const raw = upper(value).replace(/[()]/g, " ");
+    if (!raw) return "";
+
+    BRAZIL_UF_RE.lastIndex = 0;
+    let match;
+    let found = "";
+    while ((match = BRAZIL_UF_RE.exec(raw))) {
+      found = match[1] || found;
+    }
+    BRAZIL_UF_RE.lastIndex = 0;
+    return found;
+  }
+
+  function getLoadingUf(row) {
+    const explicit =
+      extractUfFromText(row?.origem) ||
+      extractUfFromText(row?.coleta);
+
+    if (explicit) return explicit;
+
+    const source = upper(row?.origemDados);
+    if (source === "FRETES") return "GO";
+    if (source === "FRETES2") return "MT";
+    return "";
+  }
+
+  function getDestinationUf(row) {
+    const direct = upper(row?.uf);
+    if (BRAZIL_STATES[direct]) return direct;
+    return extractUfFromText(row?.destino);
+  }
+
+  function cleanLoadingCity(value, uf = "") {
+    let city = upper(value);
+    if (!city) return "";
+
+    const suffix = upper(uf);
+    if (suffix) {
+      city = city
+        .replace(new RegExp(`\\s*[-/]\\s*${suffix}\\s*/* bi.js | NOVA FROTA | ATUAL + HISTÓRICO + INTELIGÊNCIA COMERCIAL */
+(function () {
+  "use strict";
+
+  const PESO_MEDIO = 38;
+  const AUTO_REFRESH_MS = 60000;
+  const $ = (sel) => document.querySelector(sel);
+
+  const STATE = {
+    modo: "ATUAL",
+    atualRows: [],
+    historicoRows: [],
+    comercialRows: [],
+    comercialFiltradas: [],
+    regionais: [],
+    filiaisCadastro: [],
+    diretorioLoaded: false,
+    charts: {},
+    mapSelectedUf: "",
+    mapDetailMode: "FILIAL",
+    autoRefreshTimer: null,
+    isLoading: false,
+    loadSequence: 0
+  };
+
+  /* =========================================================
+     UTILITÁRIOS
+  ========================================================= */
+
+  function safeText(v) {
+    return String(v ?? "").trim();
+  }
+
+  function upper(v) {
+    return safeText(v).toUpperCase();
+  }
+
+  function firstValue(obj, keys, fallback = "") {
+    for (const key of keys) {
+      if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+        return obj[key];
+      }
+    }
+    return fallback;
+  }
+
+  function num(v) {
+    if (v === null || v === undefined || v === "") return 0;
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+    let s = String(v).trim();
+    if (!s) return 0;
+
+    s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function moneyBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+  }
+
+  function intBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      maximumFractionDigits: 0
+    });
+  }
+
+  function decimalBR(v, casas = 2) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: casas,
+      maximumFractionDigits: casas
+    });
+  }
+
+  function percentBR(v) {
+    return `${decimalBR(v, 2)}%`;
+  }
+
+  function average(values) {
+    const valid = values.filter((v) => Number.isFinite(v));
+    return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+  }
+
+  function median(values) {
+    const arr = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!arr.length) return 0;
+    const middle = Math.floor(arr.length / 2);
+    return arr.length % 2 ? arr[middle] : (arr[middle - 1] + arr[middle]) / 2;
+  }
+
+  function minValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.min(...valid) : 0;
+  }
+
+  function maxValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.max(...valid) : 0;
+  }
+
+  function isoDate(date) {
+    const d = date instanceof Date ? date : parseDate(date);
+    if (!d || Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+    const raw = safeText(value);
+    if (!raw) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (br) {
+      const d = new Date(`${br[3]}-${br[2]}-${br[1]}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDateBR(value) {
+    const d = parseDate(value);
+    return d ? d.toLocaleDateString("pt-BR") : safeText(value) || "-";
+  }
+
+  function formatDateTimeBR(value) {
+    const raw = safeText(value);
+    const d = raw ? new Date(raw) : null;
+    if (!d || Number.isNaN(d.getTime())) return formatDateBR(value);
+    return d.toLocaleString("pt-BR");
+  }
+
+  function dateKey(value) {
+    const d = parseDate(value);
+    return d ? isoDate(d) : safeText(value).slice(0, 10);
+  }
+
+  function monthKey(value) {
+    const key = dateKey(value);
+    return /^\d{4}-\d{2}/.test(key) ? key.slice(0, 7) : "";
+  }
+
+  function formatMonthBR(value) {
+    const match = safeText(value).match(/^(\d{4})-(\d{2})$/);
+    if (!match) return "Período selecionado";
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    const label = date.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric"
+    });
+
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function routeName(row) {
+    const origem = upper(row.origem) || "SEM ORIGEM";
+    const destino = upper(row.destino) || "SEM DESTINO";
+    return `${origem} → ${destino}`;
+  }
+
+  function groupBy(rows, keyOrFn) {
+    const map = new Map();
+    rows.forEach((row) => {
+      const raw = typeof keyOrFn === "function" ? keyOrFn(row) : row[keyOrFn];
+      const key = upper(raw) || "SEM DADO";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+    });
+    return map;
+  }
+
+  function setText(selector, value) {
+    const el = $(selector);
+    if (el) el.textContent = value;
+  }
+
+  function escapeHtml(value) {
+    return safeText(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function setDefaultDates() {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - 30);
+
+    if ($("#fDataInicio") && !$("#fDataInicio").value) {
+      $("#fDataInicio").value = isoDate(inicio);
+    }
+    if ($("#fDataFim") && !$("#fDataFim").value) {
+      $("#fDataFim").value = isoDate(hoje);
+    }
+  }
+
+  function setStatus(text, ok = true) {
+    const el = $("#syncStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? "#067647" : "#b42318";
+  }
+
+  function getMode() {
+    return upper($("#fModo")?.value || STATE.modo || "ATUAL");
+  }
+
+  function getPeriod() {
+    return {
+      inicio: $("#fDataInicio")?.value || "",
+      fim: $("#fDataFim")?.value || ""
+    };
+  }
+
+  function inPeriod(value, inicio, fim) {
+    const key = dateKey(value);
+    if (!key) return true;
+    if (inicio && key < inicio) return false;
+    if (fim && key > fim) return false;
+    return true;
+  }
+
+  /* =========================================================
+     API SEGURA / CLOUDFLARE WORKER
+  ========================================================= */
+
+  async function getPortalApi() {
+    if (window.portalAuthReady) {
+      await window.portalAuthReady;
+    }
+
+    if (window.PortalAPI) return window.PortalAPI;
+
+    if (typeof ensurePortalApi === "function") {
+      return ensurePortalApi();
+    }
+
+    throw new Error("API segura do Portal Frete indisponível.");
+  }
+
+  function gatewayResource(res) {
+    return safeText(
+      res?.gatewayMeta?.resource ||
+      res?.data?.resource ||
+      res?.resource
+    ).toLowerCase();
+  }
+
+  async function portalCall(moduleName, actionName, params = {}, expectedResource = "") {
+    const api = await getPortalApi();
+    const res = await api.call(moduleName, actionName, params);
+
+    if (!res) throw new Error("Resposta vazia da API do Portal Frete.");
+    if (res.ok === false) throw new Error(res.error || "Falha na API do Portal Frete.");
+
+    const actualResource = gatewayResource(res);
+    if (expectedResource && actualResource && actualResource !== expectedResource) {
+      throw new Error(
+        `Fonte incorreta recebida: ${actualResource}. Esperado: ${expectedResource}.`
+      );
+    }
+
+    return res;
+  }
+
+  function extractRows(res, depth = 0) {
+    if (Array.isArray(res)) return res;
+    if (!res || typeof res !== "object" || depth > 6) return [];
+
+    const keys = [
+      "data", "rows", "items", "fretes", "historico", "registros", "result"
+    ];
+
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(res, key)) continue;
+      const rows = extractRows(res[key], depth + 1);
+      if (rows.length || Array.isArray(res[key])) return rows;
+    }
+
+    return [];
+  }
+
+  /* =========================================================
+     NORMALIZAÇÃO
+  ========================================================= */
+
+  function normalizeCurrentRow(r, origemPadrao = "") {
+    return {
+      id: safeText(firstValue(r, ["id", "idFrete", "ID", "Id"])),
+      dataReferencia: safeText(firstValue(r, [
+        "dataReferencia", "data", "dataCriacao", "createdAt", "timestamp"
+      ])),
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ], origemPadrao)),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      contato: upper(firstValue(r, ["contato", "Contato"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      volume: num(firstValue(r, ["volume", "Volume"])),
+      valorEmpresa: num(firstValue(r, [
+        "valorEmpresa", "vlrEmpresa", "freteEmpresa", "valor_empresa", "Valor Empresa"
+      ])),
+      valorMotorista: num(firstValue(r, [
+        "valorMotorista", "vlrMotorista", "freteMotorista", "valor_motorista", "Valor Motorista"
+      ])),
+      km: num(firstValue(r, ["km", "KM"])),
+      pedagioEixo: num(firstValue(r, ["pedagioEixo", "pedagio", "Pedágio Eixo"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      icms: upper(firstValue(r, ["icms", "ICMS"])),
+      pedidoSat: safeText(firstValue(r, ["pedidoSat", "pedido", "sat", "Pedido/SAT"])),
+      porta: num(firstValue(r, ["porta", "Porta"])),
+      transito: num(firstValue(r, ["transito", "trânsito", "Transito", "Trânsito"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "Observação"]))
+    };
+  }
+
+  function normalizeCommercialRow(r) {
+    const valorEmpresa = num(firstValue(r, [
+      "valorEmpresa", "novoValorEmpresa", "valorEmpresaNovo", "vlrEmpresa",
+      "freteEmpresa", "valor_empresa", "Valor Empresa"
+    ]));
+
+    const valorMotorista = num(firstValue(r, [
+      "valorMotorista", "novoValorMotorista", "valorMotoristaNovo", "vlrMotorista",
+      "freteMotorista", "valor_motorista", "Valor Motorista"
+    ]));
+
+    const valorEmpresaAnterior = num(firstValue(r, [
+      "valorEmpresaAnterior", "antigoValorEmpresa", "valorEmpresaAntigo",
+      "vlrEmpresaAnterior"
+    ]));
+
+    const valorMotoristaAnterior = num(firstValue(r, [
+      "valorMotoristaAnterior", "antigoValorMotorista", "valorMotoristaAntigo",
+      "vlrMotoristaAnterior"
+    ]));
+
+    const evento = upper(firstValue(r, [
+      "evento", "acao", "ação", "tipoEvento", "operacao", "operação"
+    ]));
+
+    const alterouValorRaw = upper(firstValue(r, [
+      "alterouValor", "mudouValor", "precoAlterado", "preçoAlterado"
+    ]));
+
+    const alterouValor =
+      alterouValorRaw === "SIM" ||
+      alterouValorRaw === "TRUE" ||
+      alterouValorRaw === "1" ||
+      valorEmpresaAnterior !== valorEmpresa ||
+      valorMotoristaAnterior !== valorMotorista;
+
+    const dataEvento = safeText(firstValue(r, [
+      "dataEvento", "timestamp", "dataHora", "dataRegistro",
+      "dataAlteracao", "dataCriacao", "dataReferencia", "data"
+    ]));
+
+    const row = {
+      idHistorico: safeText(firstValue(r, [
+        "idHistorico", "id", "ID", "uuid"
+      ])),
+      idFrete: safeText(firstValue(r, [
+        "idFrete", "freteId", "idRegistro", "registroId"
+      ])),
+      dataEvento,
+      dataReferencia: dateKey(dataEvento),
+      evento: evento || "REGISTRO",
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ])),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      valorEmpresa,
+      valorMotorista,
+      valorEmpresaAnterior,
+      valorMotoristaAnterior,
+      alterouValor,
+      usuario: safeText(firstValue(r, ["usuario", "usuário", "emailUsuario", "responsavel"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "detalhes"]))
+    };
+
+    row.margem = row.valorEmpresa - row.valorMotorista;
+    row.margemPercentual = row.valorEmpresa > 0
+      ? (row.margem / row.valorEmpresa) * 100
+      : 0;
+    row.rota = routeName(row);
+
+    return row;
+  }
+
+  /* =========================================================
+     FILTROS
+  ========================================================= */
+
+  function fillSelect(el, values, placeholder) {
+    if (!el) return;
+
+    const current = el.value;
+    const unique = [...new Set(values.filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), "pt-BR")
+    );
+
+    el.innerHTML = `<option value="">${placeholder}</option>`;
+
+    unique.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      el.appendChild(option);
+    });
+
+    if ([...el.options].some((o) => o.value === current)) {
+      el.value = current;
+    }
+  }
+
+  function loadCommonFilterOptions(rows) {
+    fillSelect($("#fCliente"), rows.map((r) => r.cliente), "Todos os clientes");
+    fillSelect($("#fStatus"), rows.map((r) => r.status), "Todos os status");
+  }
+
+  function normalizeRegionalCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional", "nome", "Nome"])),
+      base: upper(firstValue(row, ["base", "Base"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function normalizeFilialCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional"])),
+      filial: upper(firstValue(row, ["filial", "Filial", "nomeFilial"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function selectedBaseCode() {
+    const origemDados = upper($("#fOrigemDados")?.value);
+    if (origemDados === "FRETES") return "GO";
+    if (origemDados === "FRETES2") return "MT";
+    return "";
+  }
+
+  function origemDadosForBase(base) {
+    const value = upper(base);
+    if (value === "GO") return "FRETES";
+    if (value === "MT") return "FRETES2";
+    return "";
+  }
+
+  function activeCatalogRow(row) {
+    return row?.ativo !== "NÃO" && row?.ativo !== "NAO";
+  }
+
+  function regionalBase(regional) {
+    const key = upper(regional);
+    return STATE.regionais.find((row) => row.regional === key)?.base || "";
+  }
+
+  function currentModeRows() {
+    const mode = getMode();
+    if (mode === "HISTORICO") return STATE.historicoRows;
+    if (mode === "COMERCIAL") return STATE.comercialRows;
+    return STATE.atualRows;
+  }
+
+  async function loadDirectoryCatalog(force = false) {
+    if (!force && STATE.diretorioLoaded) return;
+
+    const results = await Promise.allSettled([
+      portalCall("cadastros", "read", {
+        resource: "regionais",
+        operation: "list"
+      }),
+      portalCall("cadastros", "read", {
+        resource: "filiais",
+        operation: "list"
+      })
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      STATE.regionais = extractRows(results[0].value)
+        .map(normalizeRegionalCatalogRow)
+        .filter((row) => row.regional && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.regional.localeCompare(b.regional, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar REGIONAIS:", results[0].reason);
+    }
+
+    if (results[1].status === "fulfilled") {
+      STATE.filiaisCadastro = extractRows(results[1].value)
+        .map(normalizeFilialCatalogRow)
+        .filter((row) => row.filial && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.filial.localeCompare(b.filial, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar FILIAIS:", results[1].reason);
+    }
+
+    STATE.diretorioLoaded =
+      results.some((result) => result.status === "fulfilled");
+  }
+
+  async function loadDependentFilterOptions(rows = [], forceCatalog = false) {
+    await loadDirectoryCatalog(forceCatalog);
+
+    const base = selectedBaseCode();
+    const origemDados = origemDadosForBase(base);
+    const currentRegional = upper($("#fRegional")?.value);
+
+    const regionaisCatalogo = STATE.regionais
+      .filter((row) => !base || row.base === base)
+      .map((row) => row.regional);
+
+    const regionaisDosDados = rows
+      .filter((row) => !origemDados || upper(row.origemDados) === origemDados)
+      .map((row) => upper(row.regional))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fRegional"),
+      [...regionaisCatalogo, ...regionaisDosDados],
+      "Todas as regionais"
+    );
+
+    const regional = upper($("#fRegional")?.value || currentRegional);
+    if (
+      regional &&
+      ![...$("#fRegional")?.options || []].some((option) => option.value === regional)
+    ) {
+      $("#fRegional").value = "";
+    }
+
+    const selectedRegional = upper($("#fRegional")?.value);
+
+    const filiaisCatalogo = STATE.filiaisCadastro
+      .filter((row) => {
+        if (selectedRegional && row.regional !== selectedRegional) return false;
+        if (base && regionalBase(row.regional) !== base) return false;
+        return true;
+      })
+      .map((row) => row.filial);
+
+    const filiaisDosDados = rows
+      .filter((row) => {
+        if (origemDados && upper(row.origemDados) !== origemDados) return false;
+        if (selectedRegional && upper(row.regional) !== selectedRegional) return false;
+        return true;
+      })
+      .map((row) => upper(row.filial))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fFilial"),
+      [...filiaisCatalogo, ...filiaisDosDados],
+      "Todas as filiais"
+    );
+  }
+
+  function loadCommercialFilterOptions(rows) {
+    fillSelect($("#fOrigem"), rows.map((r) => r.origem), "Todas as origens");
+    fillSelect($("#fDestino"), rows.map((r) => r.destino), "Todos os destinos");
+    fillSelect($("#fProduto"), rows.map((r) => r.produto), "Todos os produtos");
+  }
+
+  function loadHistoricalMonthOptions(rows) {
+    const el = $("#fMesReferencia");
+    if (!el) return;
+
+    const current = el.value;
+    const months = [...new Set(
+      rows.map((row) => monthKey(row.dataReferencia)).filter(Boolean)
+    )].sort();
+
+    el.innerHTML = '<option value="">Todos os meses do período</option>';
+
+    months.forEach((month) => {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = formatMonthBR(month);
+      el.appendChild(option);
+    });
+
+    if (months.includes(current)) {
+      el.value = current;
+    } else if (months.length) {
+      el.value = months[months.length - 1];
+    }
+  }
+
+  function applyCommonFilters(rows) {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+
+    return rows.filter((row) => {
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.contato, row.descarga, row.obs, row.origemDados, row.status
+        ].join(" ");
+
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function getCurrentFilteredRows() {
+    return applyCommonFilters(STATE.atualRows);
+  }
+
+  function getHistoricalFilteredRows() {
+    const { inicio, fim } = getPeriod();
+    const referenceMonth = safeText($("#fMesReferencia")?.value);
+
+    return applyCommonFilters(STATE.historicoRows).filter((row) =>
+      inPeriod(row.dataReferencia, inicio, fim) &&
+      (!referenceMonth || monthKey(row.dataReferencia) === referenceMonth)
+    );
+  }
+
+  function getCommercialFilteredRows() {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+    const origem = upper($("#fOrigem")?.value);
+    const destino = upper($("#fDestino")?.value);
+    const produto = upper($("#fProduto")?.value);
+    const tipoEvento = upper($("#fTipoEvento")?.value);
+    const { inicio, fim } = getPeriod();
+
+    const rows = STATE.comercialRows.filter((row) => {
+      if (!inPeriod(row.dataEvento || row.dataReferencia, inicio, fim)) return false;
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+      if (origem && row.origem !== origem) return false;
+      if (destino && row.destino !== destino) return false;
+      if (produto && row.produto !== produto) return false;
+      if (tipoEvento && row.evento !== tipoEvento) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.origemDados, row.status, row.evento, row.obs
+        ].join(" ");
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return row.valorEmpresa > 0 || row.valorMotorista > 0;
+    });
+
+    return removeDuplicatePriceEvents(rows);
+  }
+
+  function removeDuplicatePriceEvents(rows) {
+    const sorted = [...rows].sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+
+    const lastByFrete = new Map();
+    const output = [];
+
+    sorted.forEach((row) => {
+      const key = row.idFrete || [
+        row.rota, row.cliente, row.produto, row.filial
+      ].join("|");
+
+      const previous = lastByFrete.get(key);
+      const samePrice = previous &&
+        previous.valorEmpresa === row.valorEmpresa &&
+        previous.valorMotorista === row.valorMotorista;
+
+      const isPriceEvent =
+        row.evento === "CRIADO" ||
+        row.evento === "ATUALIZADO" ||
+        row.alterouValor;
+
+      if (!isPriceEvent) return;
+      if (samePrice && row.evento !== "CRIADO") return;
+
+      output.push(row);
+      lastByFrete.set(key, row);
+    });
+
+    return output.sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+  }
+
+  /* =========================================================
+     RESUMOS OPERACIONAIS
+  ========================================================= */
+
+  function calcOperationalKPIs(rows) {
+    const porta = rows.reduce((acc, row) => acc + num(row.porta), 0);
+    const transito = rows.reduce((acc, row) => acc + num(row.transito), 0);
+    const totalVeiculos = porta + transito;
+
+    // O campo "volume" da planilha representa a demanda/saldo do frete.
+    // Ele não deve ser somado para medir o volume operacional dos veículos.
+    // No B.I., o volume operacional é calculado por veículo: Porta + Trânsito × 38 t.
+    const volume = totalVeiculos * PESO_MEDIO;
+
+    const valid = rows.filter((row) => row.valorEmpresa > 0);
+    const freteMedio = average(valid.map((row) => row.valorEmpresa));
+    const margemMedia = average(valid.map((row) => row.valorEmpresa - row.valorMotorista));
+    const margemMediaPercent = average(
+      valid.map((row) =>
+        row.valorEmpresa > 0
+          ? ((row.valorEmpresa - row.valorMotorista) / row.valorEmpresa) * 100
+          : 0
+      )
+    );
+
+    return {
+      porta,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemMedia,
+      margemMediaPercent
+    };
+  }
+
+  function buildResumoFilial(rows) {
+    const map = groupBy(rows, "filial");
+    const result = [];
+
+    map.forEach((list, filial) => {
+      const k = calcOperationalKPIs(list);
+      result.push({ filial, ...k });
+    });
+
+    return result.sort((a, b) =>
+      b.totalVeiculos - a.totalVeiculos || a.filial.localeCompare(b.filial)
+    );
+  }
+
+  function buildResumoCliente(rows) {
+    const map = groupBy(rows, "cliente");
+    const result = [];
+
+    map.forEach((list, cliente) => {
+      const k = calcOperationalKPIs(list);
+      result.push({
+        cliente,
+        veiculos: k.totalVeiculos,
+        margemMedia: k.margemMedia
+      });
+    });
+
+    return result.sort((a, b) =>
+      b.veiculos - a.veiculos || a.cliente.localeCompare(b.cliente)
+    );
+  }
+
+  function buildEvolucaoDiaria(rows) {
+    const map = new Map();
+
+    rows.forEach((row) => {
+      const data = dateKey(row.dataReferencia);
+      if (!data) return;
+
+      if (!map.has(data)) {
+        map.set(data, { data, porta: 0, transito: 0, veiculos: 0, volume: 0 });
+      }
+
+      const item = map.get(data);
+      item.porta += row.porta;
+      item.transito += row.transito;
+      item.veiculos += row.porta + row.transito;
+      item.volume += (row.porta + row.transito) * PESO_MEDIO;
+    });
+
+    return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
+  }
+
+, "i"), "")
+        .replace(new RegExp(`\\s*,\\s*${suffix}\\s*/* bi.js | NOVA FROTA | ATUAL + HISTÓRICO + INTELIGÊNCIA COMERCIAL */
+(function () {
+  "use strict";
+
+  const PESO_MEDIO = 38;
+  const AUTO_REFRESH_MS = 60000;
+  const $ = (sel) => document.querySelector(sel);
+
+  const STATE = {
+    modo: "ATUAL",
+    atualRows: [],
+    historicoRows: [],
+    comercialRows: [],
+    comercialFiltradas: [],
+    regionais: [],
+    filiaisCadastro: [],
+    diretorioLoaded: false,
+    charts: {},
+    mapSelectedUf: "",
+    mapDetailMode: "FILIAL",
+    autoRefreshTimer: null,
+    isLoading: false,
+    loadSequence: 0
+  };
+
+  /* =========================================================
+     UTILITÁRIOS
+  ========================================================= */
+
+  function safeText(v) {
+    return String(v ?? "").trim();
+  }
+
+  function upper(v) {
+    return safeText(v).toUpperCase();
+  }
+
+  function firstValue(obj, keys, fallback = "") {
+    for (const key of keys) {
+      if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+        return obj[key];
+      }
+    }
+    return fallback;
+  }
+
+  function num(v) {
+    if (v === null || v === undefined || v === "") return 0;
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+    let s = String(v).trim();
+    if (!s) return 0;
+
+    s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function moneyBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+  }
+
+  function intBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      maximumFractionDigits: 0
+    });
+  }
+
+  function decimalBR(v, casas = 2) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: casas,
+      maximumFractionDigits: casas
+    });
+  }
+
+  function percentBR(v) {
+    return `${decimalBR(v, 2)}%`;
+  }
+
+  function average(values) {
+    const valid = values.filter((v) => Number.isFinite(v));
+    return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+  }
+
+  function median(values) {
+    const arr = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!arr.length) return 0;
+    const middle = Math.floor(arr.length / 2);
+    return arr.length % 2 ? arr[middle] : (arr[middle - 1] + arr[middle]) / 2;
+  }
+
+  function minValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.min(...valid) : 0;
+  }
+
+  function maxValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.max(...valid) : 0;
+  }
+
+  function isoDate(date) {
+    const d = date instanceof Date ? date : parseDate(date);
+    if (!d || Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+    const raw = safeText(value);
+    if (!raw) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (br) {
+      const d = new Date(`${br[3]}-${br[2]}-${br[1]}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDateBR(value) {
+    const d = parseDate(value);
+    return d ? d.toLocaleDateString("pt-BR") : safeText(value) || "-";
+  }
+
+  function formatDateTimeBR(value) {
+    const raw = safeText(value);
+    const d = raw ? new Date(raw) : null;
+    if (!d || Number.isNaN(d.getTime())) return formatDateBR(value);
+    return d.toLocaleString("pt-BR");
+  }
+
+  function dateKey(value) {
+    const d = parseDate(value);
+    return d ? isoDate(d) : safeText(value).slice(0, 10);
+  }
+
+  function monthKey(value) {
+    const key = dateKey(value);
+    return /^\d{4}-\d{2}/.test(key) ? key.slice(0, 7) : "";
+  }
+
+  function formatMonthBR(value) {
+    const match = safeText(value).match(/^(\d{4})-(\d{2})$/);
+    if (!match) return "Período selecionado";
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    const label = date.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric"
+    });
+
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function routeName(row) {
+    const origem = upper(row.origem) || "SEM ORIGEM";
+    const destino = upper(row.destino) || "SEM DESTINO";
+    return `${origem} → ${destino}`;
+  }
+
+  function groupBy(rows, keyOrFn) {
+    const map = new Map();
+    rows.forEach((row) => {
+      const raw = typeof keyOrFn === "function" ? keyOrFn(row) : row[keyOrFn];
+      const key = upper(raw) || "SEM DADO";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+    });
+    return map;
+  }
+
+  function setText(selector, value) {
+    const el = $(selector);
+    if (el) el.textContent = value;
+  }
+
+  function escapeHtml(value) {
+    return safeText(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function setDefaultDates() {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - 30);
+
+    if ($("#fDataInicio") && !$("#fDataInicio").value) {
+      $("#fDataInicio").value = isoDate(inicio);
+    }
+    if ($("#fDataFim") && !$("#fDataFim").value) {
+      $("#fDataFim").value = isoDate(hoje);
+    }
+  }
+
+  function setStatus(text, ok = true) {
+    const el = $("#syncStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? "#067647" : "#b42318";
+  }
+
+  function getMode() {
+    return upper($("#fModo")?.value || STATE.modo || "ATUAL");
+  }
+
+  function getPeriod() {
+    return {
+      inicio: $("#fDataInicio")?.value || "",
+      fim: $("#fDataFim")?.value || ""
+    };
+  }
+
+  function inPeriod(value, inicio, fim) {
+    const key = dateKey(value);
+    if (!key) return true;
+    if (inicio && key < inicio) return false;
+    if (fim && key > fim) return false;
+    return true;
+  }
+
+  /* =========================================================
+     API SEGURA / CLOUDFLARE WORKER
+  ========================================================= */
+
+  async function getPortalApi() {
+    if (window.portalAuthReady) {
+      await window.portalAuthReady;
+    }
+
+    if (window.PortalAPI) return window.PortalAPI;
+
+    if (typeof ensurePortalApi === "function") {
+      return ensurePortalApi();
+    }
+
+    throw new Error("API segura do Portal Frete indisponível.");
+  }
+
+  function gatewayResource(res) {
+    return safeText(
+      res?.gatewayMeta?.resource ||
+      res?.data?.resource ||
+      res?.resource
+    ).toLowerCase();
+  }
+
+  async function portalCall(moduleName, actionName, params = {}, expectedResource = "") {
+    const api = await getPortalApi();
+    const res = await api.call(moduleName, actionName, params);
+
+    if (!res) throw new Error("Resposta vazia da API do Portal Frete.");
+    if (res.ok === false) throw new Error(res.error || "Falha na API do Portal Frete.");
+
+    const actualResource = gatewayResource(res);
+    if (expectedResource && actualResource && actualResource !== expectedResource) {
+      throw new Error(
+        `Fonte incorreta recebida: ${actualResource}. Esperado: ${expectedResource}.`
+      );
+    }
+
+    return res;
+  }
+
+  function extractRows(res, depth = 0) {
+    if (Array.isArray(res)) return res;
+    if (!res || typeof res !== "object" || depth > 6) return [];
+
+    const keys = [
+      "data", "rows", "items", "fretes", "historico", "registros", "result"
+    ];
+
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(res, key)) continue;
+      const rows = extractRows(res[key], depth + 1);
+      if (rows.length || Array.isArray(res[key])) return rows;
+    }
+
+    return [];
+  }
+
+  /* =========================================================
+     NORMALIZAÇÃO
+  ========================================================= */
+
+  function normalizeCurrentRow(r, origemPadrao = "") {
+    return {
+      id: safeText(firstValue(r, ["id", "idFrete", "ID", "Id"])),
+      dataReferencia: safeText(firstValue(r, [
+        "dataReferencia", "data", "dataCriacao", "createdAt", "timestamp"
+      ])),
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ], origemPadrao)),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      contato: upper(firstValue(r, ["contato", "Contato"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      volume: num(firstValue(r, ["volume", "Volume"])),
+      valorEmpresa: num(firstValue(r, [
+        "valorEmpresa", "vlrEmpresa", "freteEmpresa", "valor_empresa", "Valor Empresa"
+      ])),
+      valorMotorista: num(firstValue(r, [
+        "valorMotorista", "vlrMotorista", "freteMotorista", "valor_motorista", "Valor Motorista"
+      ])),
+      km: num(firstValue(r, ["km", "KM"])),
+      pedagioEixo: num(firstValue(r, ["pedagioEixo", "pedagio", "Pedágio Eixo"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      icms: upper(firstValue(r, ["icms", "ICMS"])),
+      pedidoSat: safeText(firstValue(r, ["pedidoSat", "pedido", "sat", "Pedido/SAT"])),
+      porta: num(firstValue(r, ["porta", "Porta"])),
+      transito: num(firstValue(r, ["transito", "trânsito", "Transito", "Trânsito"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "Observação"]))
+    };
+  }
+
+  function normalizeCommercialRow(r) {
+    const valorEmpresa = num(firstValue(r, [
+      "valorEmpresa", "novoValorEmpresa", "valorEmpresaNovo", "vlrEmpresa",
+      "freteEmpresa", "valor_empresa", "Valor Empresa"
+    ]));
+
+    const valorMotorista = num(firstValue(r, [
+      "valorMotorista", "novoValorMotorista", "valorMotoristaNovo", "vlrMotorista",
+      "freteMotorista", "valor_motorista", "Valor Motorista"
+    ]));
+
+    const valorEmpresaAnterior = num(firstValue(r, [
+      "valorEmpresaAnterior", "antigoValorEmpresa", "valorEmpresaAntigo",
+      "vlrEmpresaAnterior"
+    ]));
+
+    const valorMotoristaAnterior = num(firstValue(r, [
+      "valorMotoristaAnterior", "antigoValorMotorista", "valorMotoristaAntigo",
+      "vlrMotoristaAnterior"
+    ]));
+
+    const evento = upper(firstValue(r, [
+      "evento", "acao", "ação", "tipoEvento", "operacao", "operação"
+    ]));
+
+    const alterouValorRaw = upper(firstValue(r, [
+      "alterouValor", "mudouValor", "precoAlterado", "preçoAlterado"
+    ]));
+
+    const alterouValor =
+      alterouValorRaw === "SIM" ||
+      alterouValorRaw === "TRUE" ||
+      alterouValorRaw === "1" ||
+      valorEmpresaAnterior !== valorEmpresa ||
+      valorMotoristaAnterior !== valorMotorista;
+
+    const dataEvento = safeText(firstValue(r, [
+      "dataEvento", "timestamp", "dataHora", "dataRegistro",
+      "dataAlteracao", "dataCriacao", "dataReferencia", "data"
+    ]));
+
+    const row = {
+      idHistorico: safeText(firstValue(r, [
+        "idHistorico", "id", "ID", "uuid"
+      ])),
+      idFrete: safeText(firstValue(r, [
+        "idFrete", "freteId", "idRegistro", "registroId"
+      ])),
+      dataEvento,
+      dataReferencia: dateKey(dataEvento),
+      evento: evento || "REGISTRO",
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ])),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      valorEmpresa,
+      valorMotorista,
+      valorEmpresaAnterior,
+      valorMotoristaAnterior,
+      alterouValor,
+      usuario: safeText(firstValue(r, ["usuario", "usuário", "emailUsuario", "responsavel"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "detalhes"]))
+    };
+
+    row.margem = row.valorEmpresa - row.valorMotorista;
+    row.margemPercentual = row.valorEmpresa > 0
+      ? (row.margem / row.valorEmpresa) * 100
+      : 0;
+    row.rota = routeName(row);
+
+    return row;
+  }
+
+  /* =========================================================
+     FILTROS
+  ========================================================= */
+
+  function fillSelect(el, values, placeholder) {
+    if (!el) return;
+
+    const current = el.value;
+    const unique = [...new Set(values.filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), "pt-BR")
+    );
+
+    el.innerHTML = `<option value="">${placeholder}</option>`;
+
+    unique.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      el.appendChild(option);
+    });
+
+    if ([...el.options].some((o) => o.value === current)) {
+      el.value = current;
+    }
+  }
+
+  function loadCommonFilterOptions(rows) {
+    fillSelect($("#fCliente"), rows.map((r) => r.cliente), "Todos os clientes");
+    fillSelect($("#fStatus"), rows.map((r) => r.status), "Todos os status");
+  }
+
+  function normalizeRegionalCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional", "nome", "Nome"])),
+      base: upper(firstValue(row, ["base", "Base"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function normalizeFilialCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional"])),
+      filial: upper(firstValue(row, ["filial", "Filial", "nomeFilial"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function selectedBaseCode() {
+    const origemDados = upper($("#fOrigemDados")?.value);
+    if (origemDados === "FRETES") return "GO";
+    if (origemDados === "FRETES2") return "MT";
+    return "";
+  }
+
+  function origemDadosForBase(base) {
+    const value = upper(base);
+    if (value === "GO") return "FRETES";
+    if (value === "MT") return "FRETES2";
+    return "";
+  }
+
+  function activeCatalogRow(row) {
+    return row?.ativo !== "NÃO" && row?.ativo !== "NAO";
+  }
+
+  function regionalBase(regional) {
+    const key = upper(regional);
+    return STATE.regionais.find((row) => row.regional === key)?.base || "";
+  }
+
+  function currentModeRows() {
+    const mode = getMode();
+    if (mode === "HISTORICO") return STATE.historicoRows;
+    if (mode === "COMERCIAL") return STATE.comercialRows;
+    return STATE.atualRows;
+  }
+
+  async function loadDirectoryCatalog(force = false) {
+    if (!force && STATE.diretorioLoaded) return;
+
+    const results = await Promise.allSettled([
+      portalCall("cadastros", "read", {
+        resource: "regionais",
+        operation: "list"
+      }),
+      portalCall("cadastros", "read", {
+        resource: "filiais",
+        operation: "list"
+      })
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      STATE.regionais = extractRows(results[0].value)
+        .map(normalizeRegionalCatalogRow)
+        .filter((row) => row.regional && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.regional.localeCompare(b.regional, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar REGIONAIS:", results[0].reason);
+    }
+
+    if (results[1].status === "fulfilled") {
+      STATE.filiaisCadastro = extractRows(results[1].value)
+        .map(normalizeFilialCatalogRow)
+        .filter((row) => row.filial && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.filial.localeCompare(b.filial, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar FILIAIS:", results[1].reason);
+    }
+
+    STATE.diretorioLoaded =
+      results.some((result) => result.status === "fulfilled");
+  }
+
+  async function loadDependentFilterOptions(rows = [], forceCatalog = false) {
+    await loadDirectoryCatalog(forceCatalog);
+
+    const base = selectedBaseCode();
+    const origemDados = origemDadosForBase(base);
+    const currentRegional = upper($("#fRegional")?.value);
+
+    const regionaisCatalogo = STATE.regionais
+      .filter((row) => !base || row.base === base)
+      .map((row) => row.regional);
+
+    const regionaisDosDados = rows
+      .filter((row) => !origemDados || upper(row.origemDados) === origemDados)
+      .map((row) => upper(row.regional))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fRegional"),
+      [...regionaisCatalogo, ...regionaisDosDados],
+      "Todas as regionais"
+    );
+
+    const regional = upper($("#fRegional")?.value || currentRegional);
+    if (
+      regional &&
+      ![...$("#fRegional")?.options || []].some((option) => option.value === regional)
+    ) {
+      $("#fRegional").value = "";
+    }
+
+    const selectedRegional = upper($("#fRegional")?.value);
+
+    const filiaisCatalogo = STATE.filiaisCadastro
+      .filter((row) => {
+        if (selectedRegional && row.regional !== selectedRegional) return false;
+        if (base && regionalBase(row.regional) !== base) return false;
+        return true;
+      })
+      .map((row) => row.filial);
+
+    const filiaisDosDados = rows
+      .filter((row) => {
+        if (origemDados && upper(row.origemDados) !== origemDados) return false;
+        if (selectedRegional && upper(row.regional) !== selectedRegional) return false;
+        return true;
+      })
+      .map((row) => upper(row.filial))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fFilial"),
+      [...filiaisCatalogo, ...filiaisDosDados],
+      "Todas as filiais"
+    );
+  }
+
+  function loadCommercialFilterOptions(rows) {
+    fillSelect($("#fOrigem"), rows.map((r) => r.origem), "Todas as origens");
+    fillSelect($("#fDestino"), rows.map((r) => r.destino), "Todos os destinos");
+    fillSelect($("#fProduto"), rows.map((r) => r.produto), "Todos os produtos");
+  }
+
+  function loadHistoricalMonthOptions(rows) {
+    const el = $("#fMesReferencia");
+    if (!el) return;
+
+    const current = el.value;
+    const months = [...new Set(
+      rows.map((row) => monthKey(row.dataReferencia)).filter(Boolean)
+    )].sort();
+
+    el.innerHTML = '<option value="">Todos os meses do período</option>';
+
+    months.forEach((month) => {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = formatMonthBR(month);
+      el.appendChild(option);
+    });
+
+    if (months.includes(current)) {
+      el.value = current;
+    } else if (months.length) {
+      el.value = months[months.length - 1];
+    }
+  }
+
+  function applyCommonFilters(rows) {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+
+    return rows.filter((row) => {
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.contato, row.descarga, row.obs, row.origemDados, row.status
+        ].join(" ");
+
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function getCurrentFilteredRows() {
+    return applyCommonFilters(STATE.atualRows);
+  }
+
+  function getHistoricalFilteredRows() {
+    const { inicio, fim } = getPeriod();
+    const referenceMonth = safeText($("#fMesReferencia")?.value);
+
+    return applyCommonFilters(STATE.historicoRows).filter((row) =>
+      inPeriod(row.dataReferencia, inicio, fim) &&
+      (!referenceMonth || monthKey(row.dataReferencia) === referenceMonth)
+    );
+  }
+
+  function getCommercialFilteredRows() {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+    const origem = upper($("#fOrigem")?.value);
+    const destino = upper($("#fDestino")?.value);
+    const produto = upper($("#fProduto")?.value);
+    const tipoEvento = upper($("#fTipoEvento")?.value);
+    const { inicio, fim } = getPeriod();
+
+    const rows = STATE.comercialRows.filter((row) => {
+      if (!inPeriod(row.dataEvento || row.dataReferencia, inicio, fim)) return false;
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+      if (origem && row.origem !== origem) return false;
+      if (destino && row.destino !== destino) return false;
+      if (produto && row.produto !== produto) return false;
+      if (tipoEvento && row.evento !== tipoEvento) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.origemDados, row.status, row.evento, row.obs
+        ].join(" ");
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return row.valorEmpresa > 0 || row.valorMotorista > 0;
+    });
+
+    return removeDuplicatePriceEvents(rows);
+  }
+
+  function removeDuplicatePriceEvents(rows) {
+    const sorted = [...rows].sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+
+    const lastByFrete = new Map();
+    const output = [];
+
+    sorted.forEach((row) => {
+      const key = row.idFrete || [
+        row.rota, row.cliente, row.produto, row.filial
+      ].join("|");
+
+      const previous = lastByFrete.get(key);
+      const samePrice = previous &&
+        previous.valorEmpresa === row.valorEmpresa &&
+        previous.valorMotorista === row.valorMotorista;
+
+      const isPriceEvent =
+        row.evento === "CRIADO" ||
+        row.evento === "ATUALIZADO" ||
+        row.alterouValor;
+
+      if (!isPriceEvent) return;
+      if (samePrice && row.evento !== "CRIADO") return;
+
+      output.push(row);
+      lastByFrete.set(key, row);
+    });
+
+    return output.sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+  }
+
+  /* =========================================================
+     RESUMOS OPERACIONAIS
+  ========================================================= */
+
+  function calcOperationalKPIs(rows) {
+    const porta = rows.reduce((acc, row) => acc + num(row.porta), 0);
+    const transito = rows.reduce((acc, row) => acc + num(row.transito), 0);
+    const totalVeiculos = porta + transito;
+
+    // O campo "volume" da planilha representa a demanda/saldo do frete.
+    // Ele não deve ser somado para medir o volume operacional dos veículos.
+    // No B.I., o volume operacional é calculado por veículo: Porta + Trânsito × 38 t.
+    const volume = totalVeiculos * PESO_MEDIO;
+
+    const valid = rows.filter((row) => row.valorEmpresa > 0);
+    const freteMedio = average(valid.map((row) => row.valorEmpresa));
+    const margemMedia = average(valid.map((row) => row.valorEmpresa - row.valorMotorista));
+    const margemMediaPercent = average(
+      valid.map((row) =>
+        row.valorEmpresa > 0
+          ? ((row.valorEmpresa - row.valorMotorista) / row.valorEmpresa) * 100
+          : 0
+      )
+    );
+
+    return {
+      porta,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemMedia,
+      margemMediaPercent
+    };
+  }
+
+  function buildResumoFilial(rows) {
+    const map = groupBy(rows, "filial");
+    const result = [];
+
+    map.forEach((list, filial) => {
+      const k = calcOperationalKPIs(list);
+      result.push({ filial, ...k });
+    });
+
+    return result.sort((a, b) =>
+      b.totalVeiculos - a.totalVeiculos || a.filial.localeCompare(b.filial)
+    );
+  }
+
+  function buildResumoCliente(rows) {
+    const map = groupBy(rows, "cliente");
+    const result = [];
+
+    map.forEach((list, cliente) => {
+      const k = calcOperationalKPIs(list);
+      result.push({
+        cliente,
+        veiculos: k.totalVeiculos,
+        margemMedia: k.margemMedia
+      });
+    });
+
+    return result.sort((a, b) =>
+      b.veiculos - a.veiculos || a.cliente.localeCompare(b.cliente)
+    );
+  }
+
+  function buildEvolucaoDiaria(rows) {
+    const map = new Map();
+
+    rows.forEach((row) => {
+      const data = dateKey(row.dataReferencia);
+      if (!data) return;
+
+      if (!map.has(data)) {
+        map.set(data, { data, porta: 0, transito: 0, veiculos: 0, volume: 0 });
+      }
+
+      const item = map.get(data);
+      item.porta += row.porta;
+      item.transito += row.transito;
+      item.veiculos += row.porta + row.transito;
+      item.volume += (row.porta + row.transito) * PESO_MEDIO;
+    });
+
+    return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
+  }
+
+, "i"), "")
+        .replace(new RegExp(`\\s+${suffix}\\s*/* bi.js | NOVA FROTA | ATUAL + HISTÓRICO + INTELIGÊNCIA COMERCIAL */
+(function () {
+  "use strict";
+
+  const PESO_MEDIO = 38;
+  const AUTO_REFRESH_MS = 60000;
+  const $ = (sel) => document.querySelector(sel);
+
+  const STATE = {
+    modo: "ATUAL",
+    atualRows: [],
+    historicoRows: [],
+    comercialRows: [],
+    comercialFiltradas: [],
+    regionais: [],
+    filiaisCadastro: [],
+    diretorioLoaded: false,
+    charts: {},
+    mapSelectedUf: "",
+    mapDetailMode: "FILIAL",
+    autoRefreshTimer: null,
+    isLoading: false,
+    loadSequence: 0
+  };
+
+  /* =========================================================
+     UTILITÁRIOS
+  ========================================================= */
+
+  function safeText(v) {
+    return String(v ?? "").trim();
+  }
+
+  function upper(v) {
+    return safeText(v).toUpperCase();
+  }
+
+  function firstValue(obj, keys, fallback = "") {
+    for (const key of keys) {
+      if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+        return obj[key];
+      }
+    }
+    return fallback;
+  }
+
+  function num(v) {
+    if (v === null || v === undefined || v === "") return 0;
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+    let s = String(v).trim();
+    if (!s) return 0;
+
+    s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function moneyBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+  }
+
+  function intBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      maximumFractionDigits: 0
+    });
+  }
+
+  function decimalBR(v, casas = 2) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: casas,
+      maximumFractionDigits: casas
+    });
+  }
+
+  function percentBR(v) {
+    return `${decimalBR(v, 2)}%`;
+  }
+
+  function average(values) {
+    const valid = values.filter((v) => Number.isFinite(v));
+    return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+  }
+
+  function median(values) {
+    const arr = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!arr.length) return 0;
+    const middle = Math.floor(arr.length / 2);
+    return arr.length % 2 ? arr[middle] : (arr[middle - 1] + arr[middle]) / 2;
+  }
+
+  function minValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.min(...valid) : 0;
+  }
+
+  function maxValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.max(...valid) : 0;
+  }
+
+  function isoDate(date) {
+    const d = date instanceof Date ? date : parseDate(date);
+    if (!d || Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+    const raw = safeText(value);
+    if (!raw) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (br) {
+      const d = new Date(`${br[3]}-${br[2]}-${br[1]}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDateBR(value) {
+    const d = parseDate(value);
+    return d ? d.toLocaleDateString("pt-BR") : safeText(value) || "-";
+  }
+
+  function formatDateTimeBR(value) {
+    const raw = safeText(value);
+    const d = raw ? new Date(raw) : null;
+    if (!d || Number.isNaN(d.getTime())) return formatDateBR(value);
+    return d.toLocaleString("pt-BR");
+  }
+
+  function dateKey(value) {
+    const d = parseDate(value);
+    return d ? isoDate(d) : safeText(value).slice(0, 10);
+  }
+
+  function monthKey(value) {
+    const key = dateKey(value);
+    return /^\d{4}-\d{2}/.test(key) ? key.slice(0, 7) : "";
+  }
+
+  function formatMonthBR(value) {
+    const match = safeText(value).match(/^(\d{4})-(\d{2})$/);
+    if (!match) return "Período selecionado";
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    const label = date.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric"
+    });
+
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function routeName(row) {
+    const origem = upper(row.origem) || "SEM ORIGEM";
+    const destino = upper(row.destino) || "SEM DESTINO";
+    return `${origem} → ${destino}`;
+  }
+
+  function groupBy(rows, keyOrFn) {
+    const map = new Map();
+    rows.forEach((row) => {
+      const raw = typeof keyOrFn === "function" ? keyOrFn(row) : row[keyOrFn];
+      const key = upper(raw) || "SEM DADO";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+    });
+    return map;
+  }
+
+  function setText(selector, value) {
+    const el = $(selector);
+    if (el) el.textContent = value;
+  }
+
+  function escapeHtml(value) {
+    return safeText(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function setDefaultDates() {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - 30);
+
+    if ($("#fDataInicio") && !$("#fDataInicio").value) {
+      $("#fDataInicio").value = isoDate(inicio);
+    }
+    if ($("#fDataFim") && !$("#fDataFim").value) {
+      $("#fDataFim").value = isoDate(hoje);
+    }
+  }
+
+  function setStatus(text, ok = true) {
+    const el = $("#syncStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? "#067647" : "#b42318";
+  }
+
+  function getMode() {
+    return upper($("#fModo")?.value || STATE.modo || "ATUAL");
+  }
+
+  function getPeriod() {
+    return {
+      inicio: $("#fDataInicio")?.value || "",
+      fim: $("#fDataFim")?.value || ""
+    };
+  }
+
+  function inPeriod(value, inicio, fim) {
+    const key = dateKey(value);
+    if (!key) return true;
+    if (inicio && key < inicio) return false;
+    if (fim && key > fim) return false;
+    return true;
+  }
+
+  /* =========================================================
+     API SEGURA / CLOUDFLARE WORKER
+  ========================================================= */
+
+  async function getPortalApi() {
+    if (window.portalAuthReady) {
+      await window.portalAuthReady;
+    }
+
+    if (window.PortalAPI) return window.PortalAPI;
+
+    if (typeof ensurePortalApi === "function") {
+      return ensurePortalApi();
+    }
+
+    throw new Error("API segura do Portal Frete indisponível.");
+  }
+
+  function gatewayResource(res) {
+    return safeText(
+      res?.gatewayMeta?.resource ||
+      res?.data?.resource ||
+      res?.resource
+    ).toLowerCase();
+  }
+
+  async function portalCall(moduleName, actionName, params = {}, expectedResource = "") {
+    const api = await getPortalApi();
+    const res = await api.call(moduleName, actionName, params);
+
+    if (!res) throw new Error("Resposta vazia da API do Portal Frete.");
+    if (res.ok === false) throw new Error(res.error || "Falha na API do Portal Frete.");
+
+    const actualResource = gatewayResource(res);
+    if (expectedResource && actualResource && actualResource !== expectedResource) {
+      throw new Error(
+        `Fonte incorreta recebida: ${actualResource}. Esperado: ${expectedResource}.`
+      );
+    }
+
+    return res;
+  }
+
+  function extractRows(res, depth = 0) {
+    if (Array.isArray(res)) return res;
+    if (!res || typeof res !== "object" || depth > 6) return [];
+
+    const keys = [
+      "data", "rows", "items", "fretes", "historico", "registros", "result"
+    ];
+
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(res, key)) continue;
+      const rows = extractRows(res[key], depth + 1);
+      if (rows.length || Array.isArray(res[key])) return rows;
+    }
+
+    return [];
+  }
+
+  /* =========================================================
+     NORMALIZAÇÃO
+  ========================================================= */
+
+  function normalizeCurrentRow(r, origemPadrao = "") {
+    return {
+      id: safeText(firstValue(r, ["id", "idFrete", "ID", "Id"])),
+      dataReferencia: safeText(firstValue(r, [
+        "dataReferencia", "data", "dataCriacao", "createdAt", "timestamp"
+      ])),
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ], origemPadrao)),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      contato: upper(firstValue(r, ["contato", "Contato"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      volume: num(firstValue(r, ["volume", "Volume"])),
+      valorEmpresa: num(firstValue(r, [
+        "valorEmpresa", "vlrEmpresa", "freteEmpresa", "valor_empresa", "Valor Empresa"
+      ])),
+      valorMotorista: num(firstValue(r, [
+        "valorMotorista", "vlrMotorista", "freteMotorista", "valor_motorista", "Valor Motorista"
+      ])),
+      km: num(firstValue(r, ["km", "KM"])),
+      pedagioEixo: num(firstValue(r, ["pedagioEixo", "pedagio", "Pedágio Eixo"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      icms: upper(firstValue(r, ["icms", "ICMS"])),
+      pedidoSat: safeText(firstValue(r, ["pedidoSat", "pedido", "sat", "Pedido/SAT"])),
+      porta: num(firstValue(r, ["porta", "Porta"])),
+      transito: num(firstValue(r, ["transito", "trânsito", "Transito", "Trânsito"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "Observação"]))
+    };
+  }
+
+  function normalizeCommercialRow(r) {
+    const valorEmpresa = num(firstValue(r, [
+      "valorEmpresa", "novoValorEmpresa", "valorEmpresaNovo", "vlrEmpresa",
+      "freteEmpresa", "valor_empresa", "Valor Empresa"
+    ]));
+
+    const valorMotorista = num(firstValue(r, [
+      "valorMotorista", "novoValorMotorista", "valorMotoristaNovo", "vlrMotorista",
+      "freteMotorista", "valor_motorista", "Valor Motorista"
+    ]));
+
+    const valorEmpresaAnterior = num(firstValue(r, [
+      "valorEmpresaAnterior", "antigoValorEmpresa", "valorEmpresaAntigo",
+      "vlrEmpresaAnterior"
+    ]));
+
+    const valorMotoristaAnterior = num(firstValue(r, [
+      "valorMotoristaAnterior", "antigoValorMotorista", "valorMotoristaAntigo",
+      "vlrMotoristaAnterior"
+    ]));
+
+    const evento = upper(firstValue(r, [
+      "evento", "acao", "ação", "tipoEvento", "operacao", "operação"
+    ]));
+
+    const alterouValorRaw = upper(firstValue(r, [
+      "alterouValor", "mudouValor", "precoAlterado", "preçoAlterado"
+    ]));
+
+    const alterouValor =
+      alterouValorRaw === "SIM" ||
+      alterouValorRaw === "TRUE" ||
+      alterouValorRaw === "1" ||
+      valorEmpresaAnterior !== valorEmpresa ||
+      valorMotoristaAnterior !== valorMotorista;
+
+    const dataEvento = safeText(firstValue(r, [
+      "dataEvento", "timestamp", "dataHora", "dataRegistro",
+      "dataAlteracao", "dataCriacao", "dataReferencia", "data"
+    ]));
+
+    const row = {
+      idHistorico: safeText(firstValue(r, [
+        "idHistorico", "id", "ID", "uuid"
+      ])),
+      idFrete: safeText(firstValue(r, [
+        "idFrete", "freteId", "idRegistro", "registroId"
+      ])),
+      dataEvento,
+      dataReferencia: dateKey(dataEvento),
+      evento: evento || "REGISTRO",
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ])),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      valorEmpresa,
+      valorMotorista,
+      valorEmpresaAnterior,
+      valorMotoristaAnterior,
+      alterouValor,
+      usuario: safeText(firstValue(r, ["usuario", "usuário", "emailUsuario", "responsavel"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "detalhes"]))
+    };
+
+    row.margem = row.valorEmpresa - row.valorMotorista;
+    row.margemPercentual = row.valorEmpresa > 0
+      ? (row.margem / row.valorEmpresa) * 100
+      : 0;
+    row.rota = routeName(row);
+
+    return row;
+  }
+
+  /* =========================================================
+     FILTROS
+  ========================================================= */
+
+  function fillSelect(el, values, placeholder) {
+    if (!el) return;
+
+    const current = el.value;
+    const unique = [...new Set(values.filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), "pt-BR")
+    );
+
+    el.innerHTML = `<option value="">${placeholder}</option>`;
+
+    unique.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      el.appendChild(option);
+    });
+
+    if ([...el.options].some((o) => o.value === current)) {
+      el.value = current;
+    }
+  }
+
+  function loadCommonFilterOptions(rows) {
+    fillSelect($("#fCliente"), rows.map((r) => r.cliente), "Todos os clientes");
+    fillSelect($("#fStatus"), rows.map((r) => r.status), "Todos os status");
+  }
+
+  function normalizeRegionalCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional", "nome", "Nome"])),
+      base: upper(firstValue(row, ["base", "Base"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function normalizeFilialCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional"])),
+      filial: upper(firstValue(row, ["filial", "Filial", "nomeFilial"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function selectedBaseCode() {
+    const origemDados = upper($("#fOrigemDados")?.value);
+    if (origemDados === "FRETES") return "GO";
+    if (origemDados === "FRETES2") return "MT";
+    return "";
+  }
+
+  function origemDadosForBase(base) {
+    const value = upper(base);
+    if (value === "GO") return "FRETES";
+    if (value === "MT") return "FRETES2";
+    return "";
+  }
+
+  function activeCatalogRow(row) {
+    return row?.ativo !== "NÃO" && row?.ativo !== "NAO";
+  }
+
+  function regionalBase(regional) {
+    const key = upper(regional);
+    return STATE.regionais.find((row) => row.regional === key)?.base || "";
+  }
+
+  function currentModeRows() {
+    const mode = getMode();
+    if (mode === "HISTORICO") return STATE.historicoRows;
+    if (mode === "COMERCIAL") return STATE.comercialRows;
+    return STATE.atualRows;
+  }
+
+  async function loadDirectoryCatalog(force = false) {
+    if (!force && STATE.diretorioLoaded) return;
+
+    const results = await Promise.allSettled([
+      portalCall("cadastros", "read", {
+        resource: "regionais",
+        operation: "list"
+      }),
+      portalCall("cadastros", "read", {
+        resource: "filiais",
+        operation: "list"
+      })
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      STATE.regionais = extractRows(results[0].value)
+        .map(normalizeRegionalCatalogRow)
+        .filter((row) => row.regional && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.regional.localeCompare(b.regional, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar REGIONAIS:", results[0].reason);
+    }
+
+    if (results[1].status === "fulfilled") {
+      STATE.filiaisCadastro = extractRows(results[1].value)
+        .map(normalizeFilialCatalogRow)
+        .filter((row) => row.filial && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.filial.localeCompare(b.filial, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar FILIAIS:", results[1].reason);
+    }
+
+    STATE.diretorioLoaded =
+      results.some((result) => result.status === "fulfilled");
+  }
+
+  async function loadDependentFilterOptions(rows = [], forceCatalog = false) {
+    await loadDirectoryCatalog(forceCatalog);
+
+    const base = selectedBaseCode();
+    const origemDados = origemDadosForBase(base);
+    const currentRegional = upper($("#fRegional")?.value);
+
+    const regionaisCatalogo = STATE.regionais
+      .filter((row) => !base || row.base === base)
+      .map((row) => row.regional);
+
+    const regionaisDosDados = rows
+      .filter((row) => !origemDados || upper(row.origemDados) === origemDados)
+      .map((row) => upper(row.regional))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fRegional"),
+      [...regionaisCatalogo, ...regionaisDosDados],
+      "Todas as regionais"
+    );
+
+    const regional = upper($("#fRegional")?.value || currentRegional);
+    if (
+      regional &&
+      ![...$("#fRegional")?.options || []].some((option) => option.value === regional)
+    ) {
+      $("#fRegional").value = "";
+    }
+
+    const selectedRegional = upper($("#fRegional")?.value);
+
+    const filiaisCatalogo = STATE.filiaisCadastro
+      .filter((row) => {
+        if (selectedRegional && row.regional !== selectedRegional) return false;
+        if (base && regionalBase(row.regional) !== base) return false;
+        return true;
+      })
+      .map((row) => row.filial);
+
+    const filiaisDosDados = rows
+      .filter((row) => {
+        if (origemDados && upper(row.origemDados) !== origemDados) return false;
+        if (selectedRegional && upper(row.regional) !== selectedRegional) return false;
+        return true;
+      })
+      .map((row) => upper(row.filial))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fFilial"),
+      [...filiaisCatalogo, ...filiaisDosDados],
+      "Todas as filiais"
+    );
+  }
+
+  function loadCommercialFilterOptions(rows) {
+    fillSelect($("#fOrigem"), rows.map((r) => r.origem), "Todas as origens");
+    fillSelect($("#fDestino"), rows.map((r) => r.destino), "Todos os destinos");
+    fillSelect($("#fProduto"), rows.map((r) => r.produto), "Todos os produtos");
+  }
+
+  function loadHistoricalMonthOptions(rows) {
+    const el = $("#fMesReferencia");
+    if (!el) return;
+
+    const current = el.value;
+    const months = [...new Set(
+      rows.map((row) => monthKey(row.dataReferencia)).filter(Boolean)
+    )].sort();
+
+    el.innerHTML = '<option value="">Todos os meses do período</option>';
+
+    months.forEach((month) => {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = formatMonthBR(month);
+      el.appendChild(option);
+    });
+
+    if (months.includes(current)) {
+      el.value = current;
+    } else if (months.length) {
+      el.value = months[months.length - 1];
+    }
+  }
+
+  function applyCommonFilters(rows) {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+
+    return rows.filter((row) => {
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.contato, row.descarga, row.obs, row.origemDados, row.status
+        ].join(" ");
+
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function getCurrentFilteredRows() {
+    return applyCommonFilters(STATE.atualRows);
+  }
+
+  function getHistoricalFilteredRows() {
+    const { inicio, fim } = getPeriod();
+    const referenceMonth = safeText($("#fMesReferencia")?.value);
+
+    return applyCommonFilters(STATE.historicoRows).filter((row) =>
+      inPeriod(row.dataReferencia, inicio, fim) &&
+      (!referenceMonth || monthKey(row.dataReferencia) === referenceMonth)
+    );
+  }
+
+  function getCommercialFilteredRows() {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+    const origem = upper($("#fOrigem")?.value);
+    const destino = upper($("#fDestino")?.value);
+    const produto = upper($("#fProduto")?.value);
+    const tipoEvento = upper($("#fTipoEvento")?.value);
+    const { inicio, fim } = getPeriod();
+
+    const rows = STATE.comercialRows.filter((row) => {
+      if (!inPeriod(row.dataEvento || row.dataReferencia, inicio, fim)) return false;
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+      if (origem && row.origem !== origem) return false;
+      if (destino && row.destino !== destino) return false;
+      if (produto && row.produto !== produto) return false;
+      if (tipoEvento && row.evento !== tipoEvento) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.origemDados, row.status, row.evento, row.obs
+        ].join(" ");
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return row.valorEmpresa > 0 || row.valorMotorista > 0;
+    });
+
+    return removeDuplicatePriceEvents(rows);
+  }
+
+  function removeDuplicatePriceEvents(rows) {
+    const sorted = [...rows].sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+
+    const lastByFrete = new Map();
+    const output = [];
+
+    sorted.forEach((row) => {
+      const key = row.idFrete || [
+        row.rota, row.cliente, row.produto, row.filial
+      ].join("|");
+
+      const previous = lastByFrete.get(key);
+      const samePrice = previous &&
+        previous.valorEmpresa === row.valorEmpresa &&
+        previous.valorMotorista === row.valorMotorista;
+
+      const isPriceEvent =
+        row.evento === "CRIADO" ||
+        row.evento === "ATUALIZADO" ||
+        row.alterouValor;
+
+      if (!isPriceEvent) return;
+      if (samePrice && row.evento !== "CRIADO") return;
+
+      output.push(row);
+      lastByFrete.set(key, row);
+    });
+
+    return output.sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+  }
+
+  /* =========================================================
+     RESUMOS OPERACIONAIS
+  ========================================================= */
+
+  function calcOperationalKPIs(rows) {
+    const porta = rows.reduce((acc, row) => acc + num(row.porta), 0);
+    const transito = rows.reduce((acc, row) => acc + num(row.transito), 0);
+    const totalVeiculos = porta + transito;
+
+    // O campo "volume" da planilha representa a demanda/saldo do frete.
+    // Ele não deve ser somado para medir o volume operacional dos veículos.
+    // No B.I., o volume operacional é calculado por veículo: Porta + Trânsito × 38 t.
+    const volume = totalVeiculos * PESO_MEDIO;
+
+    const valid = rows.filter((row) => row.valorEmpresa > 0);
+    const freteMedio = average(valid.map((row) => row.valorEmpresa));
+    const margemMedia = average(valid.map((row) => row.valorEmpresa - row.valorMotorista));
+    const margemMediaPercent = average(
+      valid.map((row) =>
+        row.valorEmpresa > 0
+          ? ((row.valorEmpresa - row.valorMotorista) / row.valorEmpresa) * 100
+          : 0
+      )
+    );
+
+    return {
+      porta,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemMedia,
+      margemMediaPercent
+    };
+  }
+
+  function buildResumoFilial(rows) {
+    const map = groupBy(rows, "filial");
+    const result = [];
+
+    map.forEach((list, filial) => {
+      const k = calcOperationalKPIs(list);
+      result.push({ filial, ...k });
+    });
+
+    return result.sort((a, b) =>
+      b.totalVeiculos - a.totalVeiculos || a.filial.localeCompare(b.filial)
+    );
+  }
+
+  function buildResumoCliente(rows) {
+    const map = groupBy(rows, "cliente");
+    const result = [];
+
+    map.forEach((list, cliente) => {
+      const k = calcOperationalKPIs(list);
+      result.push({
+        cliente,
+        veiculos: k.totalVeiculos,
+        margemMedia: k.margemMedia
+      });
+    });
+
+    return result.sort((a, b) =>
+      b.veiculos - a.veiculos || a.cliente.localeCompare(b.cliente)
+    );
+  }
+
+  function buildEvolucaoDiaria(rows) {
+    const map = new Map();
+
+    rows.forEach((row) => {
+      const data = dateKey(row.dataReferencia);
+      if (!data) return;
+
+      if (!map.has(data)) {
+        map.set(data, { data, porta: 0, transito: 0, veiculos: 0, volume: 0 });
+      }
+
+      const item = map.get(data);
+      item.porta += row.porta;
+      item.transito += row.transito;
+      item.veiculos += row.porta + row.transito;
+      item.volume += (row.porta + row.transito) * PESO_MEDIO;
+    });
+
+    return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
+  }
+
+, "i"), "")
+        .replace(new RegExp(`\\s*\\(${suffix}\\)\\s*/* bi.js | NOVA FROTA | ATUAL + HISTÓRICO + INTELIGÊNCIA COMERCIAL */
+(function () {
+  "use strict";
+
+  const PESO_MEDIO = 38;
+  const AUTO_REFRESH_MS = 60000;
+  const $ = (sel) => document.querySelector(sel);
+
+  const STATE = {
+    modo: "ATUAL",
+    atualRows: [],
+    historicoRows: [],
+    comercialRows: [],
+    comercialFiltradas: [],
+    regionais: [],
+    filiaisCadastro: [],
+    diretorioLoaded: false,
+    charts: {},
+    mapSelectedUf: "",
+    mapDetailMode: "FILIAL",
+    autoRefreshTimer: null,
+    isLoading: false,
+    loadSequence: 0
+  };
+
+  /* =========================================================
+     UTILITÁRIOS
+  ========================================================= */
+
+  function safeText(v) {
+    return String(v ?? "").trim();
+  }
+
+  function upper(v) {
+    return safeText(v).toUpperCase();
+  }
+
+  function firstValue(obj, keys, fallback = "") {
+    for (const key of keys) {
+      if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+        return obj[key];
+      }
+    }
+    return fallback;
+  }
+
+  function num(v) {
+    if (v === null || v === undefined || v === "") return 0;
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+    let s = String(v).trim();
+    if (!s) return 0;
+
+    s = s.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function moneyBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+  }
+
+  function intBR(v) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      maximumFractionDigits: 0
+    });
+  }
+
+  function decimalBR(v, casas = 2) {
+    return (Number(v) || 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: casas,
+      maximumFractionDigits: casas
+    });
+  }
+
+  function percentBR(v) {
+    return `${decimalBR(v, 2)}%`;
+  }
+
+  function average(values) {
+    const valid = values.filter((v) => Number.isFinite(v));
+    return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+  }
+
+  function median(values) {
+    const arr = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!arr.length) return 0;
+    const middle = Math.floor(arr.length / 2);
+    return arr.length % 2 ? arr[middle] : (arr[middle - 1] + arr[middle]) / 2;
+  }
+
+  function minValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.min(...valid) : 0;
+  }
+
+  function maxValue(values) {
+    const valid = values.filter((v) => Number.isFinite(v) && v > 0);
+    return valid.length ? Math.max(...valid) : 0;
+  }
+
+  function isoDate(date) {
+    const d = date instanceof Date ? date : parseDate(date);
+    if (!d || Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+    const raw = safeText(value);
+    if (!raw) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(`${raw.slice(0, 10)}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (br) {
+      const d = new Date(`${br[3]}-${br[2]}-${br[1]}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDateBR(value) {
+    const d = parseDate(value);
+    return d ? d.toLocaleDateString("pt-BR") : safeText(value) || "-";
+  }
+
+  function formatDateTimeBR(value) {
+    const raw = safeText(value);
+    const d = raw ? new Date(raw) : null;
+    if (!d || Number.isNaN(d.getTime())) return formatDateBR(value);
+    return d.toLocaleString("pt-BR");
+  }
+
+  function dateKey(value) {
+    const d = parseDate(value);
+    return d ? isoDate(d) : safeText(value).slice(0, 10);
+  }
+
+  function monthKey(value) {
+    const key = dateKey(value);
+    return /^\d{4}-\d{2}/.test(key) ? key.slice(0, 7) : "";
+  }
+
+  function formatMonthBR(value) {
+    const match = safeText(value).match(/^(\d{4})-(\d{2})$/);
+    if (!match) return "Período selecionado";
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    const label = date.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric"
+    });
+
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function routeName(row) {
+    const origem = upper(row.origem) || "SEM ORIGEM";
+    const destino = upper(row.destino) || "SEM DESTINO";
+    return `${origem} → ${destino}`;
+  }
+
+  function groupBy(rows, keyOrFn) {
+    const map = new Map();
+    rows.forEach((row) => {
+      const raw = typeof keyOrFn === "function" ? keyOrFn(row) : row[keyOrFn];
+      const key = upper(raw) || "SEM DADO";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+    });
+    return map;
+  }
+
+  function setText(selector, value) {
+    const el = $(selector);
+    if (el) el.textContent = value;
+  }
+
+  function escapeHtml(value) {
+    return safeText(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function setDefaultDates() {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - 30);
+
+    if ($("#fDataInicio") && !$("#fDataInicio").value) {
+      $("#fDataInicio").value = isoDate(inicio);
+    }
+    if ($("#fDataFim") && !$("#fDataFim").value) {
+      $("#fDataFim").value = isoDate(hoje);
+    }
+  }
+
+  function setStatus(text, ok = true) {
+    const el = $("#syncStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? "#067647" : "#b42318";
+  }
+
+  function getMode() {
+    return upper($("#fModo")?.value || STATE.modo || "ATUAL");
+  }
+
+  function getPeriod() {
+    return {
+      inicio: $("#fDataInicio")?.value || "",
+      fim: $("#fDataFim")?.value || ""
+    };
+  }
+
+  function inPeriod(value, inicio, fim) {
+    const key = dateKey(value);
+    if (!key) return true;
+    if (inicio && key < inicio) return false;
+    if (fim && key > fim) return false;
+    return true;
+  }
+
+  /* =========================================================
+     API SEGURA / CLOUDFLARE WORKER
+  ========================================================= */
+
+  async function getPortalApi() {
+    if (window.portalAuthReady) {
+      await window.portalAuthReady;
+    }
+
+    if (window.PortalAPI) return window.PortalAPI;
+
+    if (typeof ensurePortalApi === "function") {
+      return ensurePortalApi();
+    }
+
+    throw new Error("API segura do Portal Frete indisponível.");
+  }
+
+  function gatewayResource(res) {
+    return safeText(
+      res?.gatewayMeta?.resource ||
+      res?.data?.resource ||
+      res?.resource
+    ).toLowerCase();
+  }
+
+  async function portalCall(moduleName, actionName, params = {}, expectedResource = "") {
+    const api = await getPortalApi();
+    const res = await api.call(moduleName, actionName, params);
+
+    if (!res) throw new Error("Resposta vazia da API do Portal Frete.");
+    if (res.ok === false) throw new Error(res.error || "Falha na API do Portal Frete.");
+
+    const actualResource = gatewayResource(res);
+    if (expectedResource && actualResource && actualResource !== expectedResource) {
+      throw new Error(
+        `Fonte incorreta recebida: ${actualResource}. Esperado: ${expectedResource}.`
+      );
+    }
+
+    return res;
+  }
+
+  function extractRows(res, depth = 0) {
+    if (Array.isArray(res)) return res;
+    if (!res || typeof res !== "object" || depth > 6) return [];
+
+    const keys = [
+      "data", "rows", "items", "fretes", "historico", "registros", "result"
+    ];
+
+    for (const key of keys) {
+      if (!Object.prototype.hasOwnProperty.call(res, key)) continue;
+      const rows = extractRows(res[key], depth + 1);
+      if (rows.length || Array.isArray(res[key])) return rows;
+    }
+
+    return [];
+  }
+
+  /* =========================================================
+     NORMALIZAÇÃO
+  ========================================================= */
+
+  function normalizeCurrentRow(r, origemPadrao = "") {
+    return {
+      id: safeText(firstValue(r, ["id", "idFrete", "ID", "Id"])),
+      dataReferencia: safeText(firstValue(r, [
+        "dataReferencia", "data", "dataCriacao", "createdAt", "timestamp"
+      ])),
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ], origemPadrao)),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      contato: upper(firstValue(r, ["contato", "Contato"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      volume: num(firstValue(r, ["volume", "Volume"])),
+      valorEmpresa: num(firstValue(r, [
+        "valorEmpresa", "vlrEmpresa", "freteEmpresa", "valor_empresa", "Valor Empresa"
+      ])),
+      valorMotorista: num(firstValue(r, [
+        "valorMotorista", "vlrMotorista", "freteMotorista", "valor_motorista", "Valor Motorista"
+      ])),
+      km: num(firstValue(r, ["km", "KM"])),
+      pedagioEixo: num(firstValue(r, ["pedagioEixo", "pedagio", "Pedágio Eixo"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      icms: upper(firstValue(r, ["icms", "ICMS"])),
+      pedidoSat: safeText(firstValue(r, ["pedidoSat", "pedido", "sat", "Pedido/SAT"])),
+      porta: num(firstValue(r, ["porta", "Porta"])),
+      transito: num(firstValue(r, ["transito", "trânsito", "Transito", "Trânsito"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "Observação"]))
+    };
+  }
+
+  function normalizeCommercialRow(r) {
+    const valorEmpresa = num(firstValue(r, [
+      "valorEmpresa", "novoValorEmpresa", "valorEmpresaNovo", "vlrEmpresa",
+      "freteEmpresa", "valor_empresa", "Valor Empresa"
+    ]));
+
+    const valorMotorista = num(firstValue(r, [
+      "valorMotorista", "novoValorMotorista", "valorMotoristaNovo", "vlrMotorista",
+      "freteMotorista", "valor_motorista", "Valor Motorista"
+    ]));
+
+    const valorEmpresaAnterior = num(firstValue(r, [
+      "valorEmpresaAnterior", "antigoValorEmpresa", "valorEmpresaAntigo",
+      "vlrEmpresaAnterior"
+    ]));
+
+    const valorMotoristaAnterior = num(firstValue(r, [
+      "valorMotoristaAnterior", "antigoValorMotorista", "valorMotoristaAntigo",
+      "vlrMotoristaAnterior"
+    ]));
+
+    const evento = upper(firstValue(r, [
+      "evento", "acao", "ação", "tipoEvento", "operacao", "operação"
+    ]));
+
+    const alterouValorRaw = upper(firstValue(r, [
+      "alterouValor", "mudouValor", "precoAlterado", "preçoAlterado"
+    ]));
+
+    const alterouValor =
+      alterouValorRaw === "SIM" ||
+      alterouValorRaw === "TRUE" ||
+      alterouValorRaw === "1" ||
+      valorEmpresaAnterior !== valorEmpresa ||
+      valorMotoristaAnterior !== valorMotorista;
+
+    const dataEvento = safeText(firstValue(r, [
+      "dataEvento", "timestamp", "dataHora", "dataRegistro",
+      "dataAlteracao", "dataCriacao", "dataReferencia", "data"
+    ]));
+
+    const row = {
+      idHistorico: safeText(firstValue(r, [
+        "idHistorico", "id", "ID", "uuid"
+      ])),
+      idFrete: safeText(firstValue(r, [
+        "idFrete", "freteId", "idRegistro", "registroId"
+      ])),
+      dataEvento,
+      dataReferencia: dateKey(dataEvento),
+      evento: evento || "REGISTRO",
+      origemDados: upper(firstValue(r, [
+        "origemDados", "base", "planilha", "origemBase"
+      ])),
+      regional: upper(firstValue(r, ["regional", "Regional"])),
+      filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
+      cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
+      origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
+      destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
+      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
+      produto: upper(firstValue(r, ["produto", "Produto"])),
+      status: upper(firstValue(r, ["status", "Status"])),
+      valorEmpresa,
+      valorMotorista,
+      valorEmpresaAnterior,
+      valorMotoristaAnterior,
+      alterouValor,
+      usuario: safeText(firstValue(r, ["usuario", "usuário", "emailUsuario", "responsavel"])),
+      obs: safeText(firstValue(r, ["obs", "observacao", "observação", "detalhes"]))
+    };
+
+    row.margem = row.valorEmpresa - row.valorMotorista;
+    row.margemPercentual = row.valorEmpresa > 0
+      ? (row.margem / row.valorEmpresa) * 100
+      : 0;
+    row.rota = routeName(row);
+
+    return row;
+  }
+
+  /* =========================================================
+     FILTROS
+  ========================================================= */
+
+  function fillSelect(el, values, placeholder) {
+    if (!el) return;
+
+    const current = el.value;
+    const unique = [...new Set(values.filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), "pt-BR")
+    );
+
+    el.innerHTML = `<option value="">${placeholder}</option>`;
+
+    unique.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      el.appendChild(option);
+    });
+
+    if ([...el.options].some((o) => o.value === current)) {
+      el.value = current;
+    }
+  }
+
+  function loadCommonFilterOptions(rows) {
+    fillSelect($("#fCliente"), rows.map((r) => r.cliente), "Todos os clientes");
+    fillSelect($("#fStatus"), rows.map((r) => r.status), "Todos os status");
+  }
+
+  function normalizeRegionalCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional", "nome", "Nome"])),
+      base: upper(firstValue(row, ["base", "Base"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function normalizeFilialCatalogRow(row) {
+    return {
+      regional: upper(firstValue(row, ["regional", "Regional"])),
+      filial: upper(firstValue(row, ["filial", "Filial", "nomeFilial"])),
+      ativo: upper(firstValue(row, ["ativo", "Ativo"], "SIM")),
+      ordem: num(firstValue(row, ["ordem", "Ordem"]))
+    };
+  }
+
+  function selectedBaseCode() {
+    const origemDados = upper($("#fOrigemDados")?.value);
+    if (origemDados === "FRETES") return "GO";
+    if (origemDados === "FRETES2") return "MT";
+    return "";
+  }
+
+  function origemDadosForBase(base) {
+    const value = upper(base);
+    if (value === "GO") return "FRETES";
+    if (value === "MT") return "FRETES2";
+    return "";
+  }
+
+  function activeCatalogRow(row) {
+    return row?.ativo !== "NÃO" && row?.ativo !== "NAO";
+  }
+
+  function regionalBase(regional) {
+    const key = upper(regional);
+    return STATE.regionais.find((row) => row.regional === key)?.base || "";
+  }
+
+  function currentModeRows() {
+    const mode = getMode();
+    if (mode === "HISTORICO") return STATE.historicoRows;
+    if (mode === "COMERCIAL") return STATE.comercialRows;
+    return STATE.atualRows;
+  }
+
+  async function loadDirectoryCatalog(force = false) {
+    if (!force && STATE.diretorioLoaded) return;
+
+    const results = await Promise.allSettled([
+      portalCall("cadastros", "read", {
+        resource: "regionais",
+        operation: "list"
+      }),
+      portalCall("cadastros", "read", {
+        resource: "filiais",
+        operation: "list"
+      })
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      STATE.regionais = extractRows(results[0].value)
+        .map(normalizeRegionalCatalogRow)
+        .filter((row) => row.regional && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.regional.localeCompare(b.regional, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar REGIONAIS:", results[0].reason);
+    }
+
+    if (results[1].status === "fulfilled") {
+      STATE.filiaisCadastro = extractRows(results[1].value)
+        .map(normalizeFilialCatalogRow)
+        .filter((row) => row.filial && activeCatalogRow(row))
+        .sort((a, b) =>
+          (a.ordem - b.ordem) ||
+          a.filial.localeCompare(b.filial, "pt-BR")
+        );
+    } else {
+      console.warn("[bi] não foi possível carregar FILIAIS:", results[1].reason);
+    }
+
+    STATE.diretorioLoaded =
+      results.some((result) => result.status === "fulfilled");
+  }
+
+  async function loadDependentFilterOptions(rows = [], forceCatalog = false) {
+    await loadDirectoryCatalog(forceCatalog);
+
+    const base = selectedBaseCode();
+    const origemDados = origemDadosForBase(base);
+    const currentRegional = upper($("#fRegional")?.value);
+
+    const regionaisCatalogo = STATE.regionais
+      .filter((row) => !base || row.base === base)
+      .map((row) => row.regional);
+
+    const regionaisDosDados = rows
+      .filter((row) => !origemDados || upper(row.origemDados) === origemDados)
+      .map((row) => upper(row.regional))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fRegional"),
+      [...regionaisCatalogo, ...regionaisDosDados],
+      "Todas as regionais"
+    );
+
+    const regional = upper($("#fRegional")?.value || currentRegional);
+    if (
+      regional &&
+      ![...$("#fRegional")?.options || []].some((option) => option.value === regional)
+    ) {
+      $("#fRegional").value = "";
+    }
+
+    const selectedRegional = upper($("#fRegional")?.value);
+
+    const filiaisCatalogo = STATE.filiaisCadastro
+      .filter((row) => {
+        if (selectedRegional && row.regional !== selectedRegional) return false;
+        if (base && regionalBase(row.regional) !== base) return false;
+        return true;
+      })
+      .map((row) => row.filial);
+
+    const filiaisDosDados = rows
+      .filter((row) => {
+        if (origemDados && upper(row.origemDados) !== origemDados) return false;
+        if (selectedRegional && upper(row.regional) !== selectedRegional) return false;
+        return true;
+      })
+      .map((row) => upper(row.filial))
+      .filter(Boolean);
+
+    fillSelect(
+      $("#fFilial"),
+      [...filiaisCatalogo, ...filiaisDosDados],
+      "Todas as filiais"
+    );
+  }
+
+  function loadCommercialFilterOptions(rows) {
+    fillSelect($("#fOrigem"), rows.map((r) => r.origem), "Todas as origens");
+    fillSelect($("#fDestino"), rows.map((r) => r.destino), "Todos os destinos");
+    fillSelect($("#fProduto"), rows.map((r) => r.produto), "Todos os produtos");
+  }
+
+  function loadHistoricalMonthOptions(rows) {
+    const el = $("#fMesReferencia");
+    if (!el) return;
+
+    const current = el.value;
+    const months = [...new Set(
+      rows.map((row) => monthKey(row.dataReferencia)).filter(Boolean)
+    )].sort();
+
+    el.innerHTML = '<option value="">Todos os meses do período</option>';
+
+    months.forEach((month) => {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = formatMonthBR(month);
+      el.appendChild(option);
+    });
+
+    if (months.includes(current)) {
+      el.value = current;
+    } else if (months.length) {
+      el.value = months[months.length - 1];
+    }
+  }
+
+  function applyCommonFilters(rows) {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+
+    return rows.filter((row) => {
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.contato, row.descarga, row.obs, row.origemDados, row.status
+        ].join(" ");
+
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function getCurrentFilteredRows() {
+    return applyCommonFilters(STATE.atualRows);
+  }
+
+  function getHistoricalFilteredRows() {
+    const { inicio, fim } = getPeriod();
+    const referenceMonth = safeText($("#fMesReferencia")?.value);
+
+    return applyCommonFilters(STATE.historicoRows).filter((row) =>
+      inPeriod(row.dataReferencia, inicio, fim) &&
+      (!referenceMonth || monthKey(row.dataReferencia) === referenceMonth)
+    );
+  }
+
+  function getCommercialFilteredRows() {
+    const regional = upper($("#fRegional")?.value);
+    const filial = upper($("#fFilial")?.value);
+    const cliente = upper($("#fCliente")?.value);
+    const status = upper($("#fStatus")?.value);
+    const origemDados = upper($("#fOrigemDados")?.value);
+    const busca = upper($("#fBusca")?.value);
+    const origem = upper($("#fOrigem")?.value);
+    const destino = upper($("#fDestino")?.value);
+    const produto = upper($("#fProduto")?.value);
+    const tipoEvento = upper($("#fTipoEvento")?.value);
+    const { inicio, fim } = getPeriod();
+
+    const rows = STATE.comercialRows.filter((row) => {
+      if (!inPeriod(row.dataEvento || row.dataReferencia, inicio, fim)) return false;
+      if (regional && row.regional !== regional) return false;
+      if (filial && row.filial !== filial) return false;
+      if (cliente && row.cliente !== cliente) return false;
+      if (status && row.status !== status) return false;
+      if (origemDados && row.origemDados !== origemDados) return false;
+      if (origem && row.origem !== origem) return false;
+      if (destino && row.destino !== destino) return false;
+      if (produto && row.produto !== produto) return false;
+      if (tipoEvento && row.evento !== tipoEvento) return false;
+
+      if (busca) {
+        const blob = [
+          row.regional, row.filial, row.cliente, row.origem, row.destino, row.produto,
+          row.origemDados, row.status, row.evento, row.obs
+        ].join(" ");
+        if (!upper(blob).includes(busca)) return false;
+      }
+
+      return row.valorEmpresa > 0 || row.valorMotorista > 0;
+    });
+
+    return removeDuplicatePriceEvents(rows);
+  }
+
+  function removeDuplicatePriceEvents(rows) {
+    const sorted = [...rows].sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+
+    const lastByFrete = new Map();
+    const output = [];
+
+    sorted.forEach((row) => {
+      const key = row.idFrete || [
+        row.rota, row.cliente, row.produto, row.filial
+      ].join("|");
+
+      const previous = lastByFrete.get(key);
+      const samePrice = previous &&
+        previous.valorEmpresa === row.valorEmpresa &&
+        previous.valorMotorista === row.valorMotorista;
+
+      const isPriceEvent =
+        row.evento === "CRIADO" ||
+        row.evento === "ATUALIZADO" ||
+        row.alterouValor;
+
+      if (!isPriceEvent) return;
+      if (samePrice && row.evento !== "CRIADO") return;
+
+      output.push(row);
+      lastByFrete.set(key, row);
+    });
+
+    return output.sort((a, b) =>
+      safeText(a.dataEvento).localeCompare(safeText(b.dataEvento))
+    );
+  }
+
+  /* =========================================================
+     RESUMOS OPERACIONAIS
+  ========================================================= */
+
+  function calcOperationalKPIs(rows) {
+    const porta = rows.reduce((acc, row) => acc + num(row.porta), 0);
+    const transito = rows.reduce((acc, row) => acc + num(row.transito), 0);
+    const totalVeiculos = porta + transito;
+
+    // O campo "volume" da planilha representa a demanda/saldo do frete.
+    // Ele não deve ser somado para medir o volume operacional dos veículos.
+    // No B.I., o volume operacional é calculado por veículo: Porta + Trânsito × 38 t.
+    const volume = totalVeiculos * PESO_MEDIO;
+
+    const valid = rows.filter((row) => row.valorEmpresa > 0);
+    const freteMedio = average(valid.map((row) => row.valorEmpresa));
+    const margemMedia = average(valid.map((row) => row.valorEmpresa - row.valorMotorista));
+    const margemMediaPercent = average(
+      valid.map((row) =>
+        row.valorEmpresa > 0
+          ? ((row.valorEmpresa - row.valorMotorista) / row.valorEmpresa) * 100
+          : 0
+      )
+    );
+
+    return {
+      porta,
+      transito,
+      totalVeiculos,
+      volume,
+      freteMedio,
+      margemMedia,
+      margemMediaPercent
+    };
+  }
+
+  function buildResumoFilial(rows) {
+    const map = groupBy(rows, "filial");
+    const result = [];
+
+    map.forEach((list, filial) => {
+      const k = calcOperationalKPIs(list);
+      result.push({ filial, ...k });
+    });
+
+    return result.sort((a, b) =>
+      b.totalVeiculos - a.totalVeiculos || a.filial.localeCompare(b.filial)
+    );
+  }
+
+  function buildResumoCliente(rows) {
+    const map = groupBy(rows, "cliente");
+    const result = [];
+
+    map.forEach((list, cliente) => {
+      const k = calcOperationalKPIs(list);
+      result.push({
+        cliente,
+        veiculos: k.totalVeiculos,
+        margemMedia: k.margemMedia
+      });
+    });
+
+    return result.sort((a, b) =>
+      b.veiculos - a.veiculos || a.cliente.localeCompare(b.cliente)
+    );
+  }
+
+  function buildEvolucaoDiaria(rows) {
+    const map = new Map();
+
+    rows.forEach((row) => {
+      const data = dateKey(row.dataReferencia);
+      if (!data) return;
+
+      if (!map.has(data)) {
+        map.set(data, { data, porta: 0, transito: 0, veiculos: 0, volume: 0 });
+      }
+
+      const item = map.get(data);
+      item.porta += row.porta;
+      item.transito += row.transito;
+      item.veiculos += row.porta + row.transito;
+      item.volume += (row.porta + row.transito) * PESO_MEDIO;
+    });
+
+    return [...map.values()].sort((a, b) => a.data.localeCompare(b.data));
+  }
+
+, "i"), "");
+    }
+
+    return city.replace(/\s{2,}/g, " ").trim();
+  }
+
+  function getLoadingCity(row) {
+    const uf = getLoadingUf(row);
+    return cleanLoadingCity(row?.origem, uf) ||
+      cleanLoadingCity(row?.coleta, uf) ||
+      "SEM CIDADE";
+  }
+
+  function mapStateSummaries(rows) {
+    const map = new Map();
+
+    rows.forEach((row) => {
+      const uf = getLoadingUf(row);
+      if (!BRAZIL_STATES[uf]) return;
+
+      if (!map.has(uf)) {
+        map.set(uf, {
+          uf,
+          fretes: 0,
+          porta: 0,
+          transito: 0,
+          veiculos: 0,
+          volume: 0,
+          filiais: new Set(),
+          regionais: new Set()
+        });
+      }
+
+      const item = map.get(uf);
+      const porta = num(row.porta);
+      const transito = num(row.transito);
+      const veiculos = porta + transito;
+
+      item.fretes += 1;
+      item.porta += porta;
+      item.transito += transito;
+      item.veiculos += veiculos;
+      item.volume += veiculos * PESO_MEDIO;
+      if (row.filial) item.filiais.add(row.filial);
+      if (row.regional) item.regionais.add(row.regional);
+    });
+
+    return map;
+  }
+
+  function mapMetricValue(item, metric = safeText($("#mapMetric")?.value || "VEICULOS")) {
+    if (!item) return 0;
+    if (metric === "FRETES") return item.fretes;
+    if (metric === "VOLUME") return item.volume;
+    return item.veiculos;
+  }
+
+  function mapHeatColor(value, max) {
+    if (!(value > 0) || !(max > 0)) return "#dbe7f3";
+    const ratio = value / max;
+    if (ratio >= .72) return "#1d4ed8";
+    if (ratio >= .42) return "#3b82f6";
+    if (ratio >= .18) return "#60a5fa";
+    return "#b9d8fb";
+  }
+
+  function mapMetricLabel(metric = safeText($("#mapMetric")?.value || "VEICULOS")) {
+    if (metric === "FRETES") return "Quantidade de Fretes";
+    if (metric === "VOLUME") return "Volume Operacional";
+    return "Quantidade de Veículos";
+  }
+
+  function renderMapKpis(rows) {
+    const k = calcOperationalKPIs(rows);
+    const filiais = new Set(rows.map((row) => row.filial).filter(Boolean));
+
+    setText("#mapKpiFretes", intBR(rows.length));
+    setText("#mapKpiVeiculos", intBR(k.totalVeiculos));
+    setText("#mapKpiVolume", `${intBR(k.volume)} t`);
+    setText("#mapKpiFiliais", intBR(filiais.size));
+  }
+
+  function selectDefaultMapState(rows) {
+    if (STATE.mapSelectedUf) return;
+    const summaries = mapStateSummaries(rows);
+    const metric = safeText($("#mapMetric")?.value || "VEICULOS");
+
+    const top = [...summaries.values()]
+      .sort((a, b) => mapMetricValue(b, metric) - mapMetricValue(a, metric))[0];
+
+    if (top?.uf) STATE.mapSelectedUf = top.uf;
+  }
+
+  function buildMapDetailGroups(rows, mode) {
+    const groups = new Map();
+
+    rows.forEach((row) => {
+      const key = upper(mode === "REGIONAL" ? row.regional : row.filial) ||
+        (mode === "REGIONAL" ? "SEM REGIONAL" : "SEM FILIAL");
+      const city = getLoadingCity(row);
+      const vehicles = num(row.porta) + num(row.transito);
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          name: key,
+          fretes: 0,
+          veiculos: 0,
+          cities: new Map()
+        });
+      }
+
+      const group = groups.get(key);
+      group.fretes += 1;
+      group.veiculos += vehicles;
+
+      if (!group.cities.has(city)) {
+        group.cities.set(city, { name: city, fretes: 0, veiculos: 0 });
+      }
+
+      const cityItem = group.cities.get(city);
+      cityItem.fretes += 1;
+      cityItem.veiculos += vehicles;
+    });
+
+    return [...groups.values()]
+      .map((group) => ({
+        ...group,
+        cities: [...group.cities.values()].sort((a, b) =>
+          b.veiculos - a.veiculos ||
+          b.fretes - a.fretes ||
+          a.name.localeCompare(b.name, "pt-BR")
+        )
+      }))
+      .sort((a, b) =>
+        b.veiculos - a.veiculos ||
+        b.fretes - a.fretes ||
+        a.name.localeCompare(b.name, "pt-BR")
+      );
+  }
+
+  function renderMapStateDetails(rows) {
+    const uf = upper(STATE.mapSelectedUf);
+    const title = $("#mapStateTitle");
+    const subtitle = $("#mapStateSubtitle");
+    const breadcrumb = $("#mapBreadcrumbState");
+    const details = $("#mapStateDetails");
+
+    if (!details) return;
+
+    if (!uf || !BRAZIL_STATES[uf]) {
+      if (title) title.textContent = "Selecione um estado";
+      if (subtitle) subtitle.textContent = "Clique no mapa para visualizar onde temos carregamentos.";
+      if (breadcrumb) breadcrumb.textContent = "Estado";
+      details.innerHTML = '<div class="mapDetailEmpty">Selecione um estado no mapa.</div>';
+      return;
+    }
+
+    const stateRows = rows.filter((row) => getLoadingUf(row) === uf);
+    const stateKpi = calcOperationalKPIs(stateRows);
+    const groups = buildMapDetailGroups(stateRows, STATE.mapDetailMode);
+
+    if (title) {
+      title.innerHTML = `${escapeHtml(BRAZIL_STATES[uf])} <span class="mapActivityBadge">${intBR(stateKpi.totalVeiculos)} veículos</span>`;
+    }
+    if (subtitle) {
+      subtitle.textContent = stateRows.length
+        ? `${intBR(stateRows.length)} carregamentos • ${intBR(stateKpi.volume)} t de volume operacional`
+        : "Nenhum carregamento encontrado com os filtros atuais.";
+    }
+    if (breadcrumb) breadcrumb.textContent = BRAZIL_STATES[uf];
+
+    if (!groups.length) {
+      details.innerHTML = '<div class="mapDetailEmpty">Nenhuma cidade encontrada neste estado para os filtros selecionados.</div>';
+      return;
+    }
+
+    const maxCity = Math.max(
+      1,
+      ...groups.flatMap((group) =>
+        group.cities.map((city) => Math.max(city.veiculos, city.fretes))
+      )
+    );
+
+    details.innerHTML = groups.map((group) => `
+      <div class="mapGroup">
+        <div class="mapGroupHead">
+          <span class="mapGroupName">${escapeHtml(group.name)}</span>
+          <span class="mapGroupTotal">${intBR(group.veiculos)} veículos • ${intBR(group.fretes)} fretes</span>
+        </div>
+        ${group.cities.map((city) => {
+          const score = Math.max(city.veiculos, city.fretes);
+          const width = Math.max(4, Math.round((score / maxCity) * 100));
+          return `
+            <div class="mapCityRow">
+              <span class="mapCityName">📍 ${escapeHtml(city.name)}</span>
+              <span class="mapCityMeta">${intBR(city.veiculos)} veículos • ${intBR(city.fretes)} fretes</span>
+              <div class="mapCityBar"><span style="width:${width}%"></span></div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `).join("");
+  }
+
+  function aggregateMetric(rows, keyFn, valueFn) {
+    const map = new Map();
+
+    rows.forEach((row) => {
+      const key = upper(keyFn(row)) || "SEM DADO";
+      map.set(key, (map.get(key) || 0) + Number(valueFn(row) || 0));
+    });
+
+    return [...map.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-BR"));
+  }
+
+  function renderMapCharts(rows) {
+    const uf = upper(STATE.mapSelectedUf);
+    const stateRows = uf
+      ? rows.filter((row) => getLoadingUf(row) === uf)
+      : [];
+
+    setText("#mapRegionalSubtitle", uf ? BRAZIL_STATES[uf] : "Estado selecionado");
+    setText(
+      "#mapRoutesSubtitle",
+      uf ? `Destinos dos carregamentos de ${BRAZIL_STATES[uf]}` : "Destinos dos carregamentos do estado"
+    );
+    setText(
+      "#mapProductsSubtitle",
+      uf ? `Produtos movimentados em ${BRAZIL_STATES[uf]}` : "Volume por produto no estado"
+    );
+
+    if (!stateRows.length) {
+      ["mapRegionalChart", "mapRoutesChart", "mapProductsChart"].forEach(destroyChart);
+      return;
+    }
+
+    const byRegional = aggregateMetric(
+      stateRows,
+      (row) => row.regional || "SEM REGIONAL",
+      (row) => num(row.porta) + num(row.transito)
+    ).slice(0, 10);
+
+    const byDestination = aggregateMetric(
+      stateRows,
+      (row) => {
+        const destinationUf = getDestinationUf(row);
+        return destinationUf
+          ? BRAZIL_STATES[destinationUf] || destinationUf
+          : "SEM UF";
+      },
+      (row) => Math.max(1, num(row.porta) + num(row.transito))
+    ).slice(0, 8);
+
+    const byProduct = aggregateMetric(
+      stateRows,
+      (row) => row.produto || "SEM PRODUTO",
+      (row) => num(row.porta) + num(row.transito)
+    ).slice(0, 10);
+
+    makeChart("mapRegionalChart", {
+      type: "bar",
+      data: {
+        labels: byRegional.map((item) => item.name),
+        datasets: [{
+          label: "Veículos",
+          data: byRegional.map((item) => item.value),
+          backgroundColor: "rgba(37,99,235,.72)",
+          borderColor: "#2563eb",
+          borderWidth: 1,
+          borderRadius: 7
+        }]
+      },
+      options: chartBaseOptions({
+        indexAxis: "y",
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0, color: "#64748b" } },
+          y: { ticks: { color: "#334155", font: { size: 10, weight: "700" } } }
+        }
+      })
+    });
+
+    makeChart("mapRoutesChart", {
+      type: "doughnut",
+      data: {
+        labels: byDestination.map((item) => item.name),
+        datasets: [{
+          data: byDestination.map((item) => item.value),
+          backgroundColor: [
+            "#2563eb","#16a34a","#f59e0b","#8b5cf6",
+            "#06b6d4","#ef4444","#84cc16","#64748b"
+          ],
+          borderWidth: 2,
+          borderColor: "#ffffff"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "62%",
+        plugins: {
+          legend: {
+            position: "right",
+            labels: { boxWidth: 10, color: "#475569", font: { size: 10, weight: "700" } }
+          }
+        }
+      }
+    });
+
+    makeChart("mapProductsChart", {
+      type: "bar",
+      data: {
+        labels: byProduct.map((item) => item.name),
+        datasets: [{
+          label: "Veículos",
+          data: byProduct.map((item) => item.value),
+          backgroundColor: "rgba(22,163,74,.70)",
+          borderColor: "#16a34a",
+          borderWidth: 1,
+          borderRadius: 7
+        }]
+      },
+      options: chartBaseOptions({
+        indexAxis: "y",
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0, color: "#64748b" } },
+          y: { ticks: { color: "#334155", font: { size: 10, weight: "700" } } }
+        }
+      })
+    });
+  }
+
+  function applyBrazilMapStyles(rows) {
+    const mapElement = $("#biBrazilMap");
+    const root = mapElement?.shadowRoot;
+    if (!root) return false;
+
+    const summaries = mapStateSummaries(rows);
+    const metric = safeText($("#mapMetric")?.value || "VEICULOS");
+    const max = Math.max(
+      0,
+      ...[...summaries.values()].map((item) => mapMetricValue(item, metric))
+    );
+
+    setText("#mapLegendTitle", mapMetricLabel(metric));
+
+    BRAZIL_UFS.forEach((uf) => {
+      const path = root.querySelector(`#BR-${uf}`);
+      if (!path) return;
+
+      const item = summaries.get(uf);
+      const value = mapMetricValue(item, metric);
+      const selected = uf === STATE.mapSelectedUf;
+      const fill = selected ? "#0b5ed7" : mapHeatColor(value, max);
+
+      path.style.fill = fill;
+      path.style.stroke = selected ? "#082f70" : "#ffffff";
+      path.style.strokeWidth = selected ? "2.2" : "0.8";
+      path.style.filter = selected ? "drop-shadow(0 4px 7px rgba(37,99,235,.32))" : "";
+      path.style.transition = "fill .18s ease, stroke .18s ease, filter .18s ease";
+      path.setAttribute(
+        "title",
+        `${BRAZIL_STATES[uf]} • ${metric === "VOLUME" ? `${intBR(value)} t` : intBR(value)}`
+      );
+
+      if (!path.dataset.nfBiMapBound) {
+        path.dataset.nfBiMapBound = "1";
+        path.addEventListener("mouseleave", () => {
+          requestAnimationFrame(() => {
+            if (getMode() === "MAPA") {
+              applyBrazilMapStyles(getCurrentFilteredRows());
+            }
+          });
+        });
+      }
+    });
+
+    return true;
+  }
+
+  async function paintBrazilMap(rows) {
+    const mapElement = $("#biBrazilMap");
+    if (!mapElement) return;
+
+    try {
+      if (window.customElements?.whenDefined) {
+        await customElements.whenDefined("brazil-component");
+      }
+      if (mapElement.updateComplete) {
+        await mapElement.updateComplete;
+      }
+      applyBrazilMapStyles(rows);
+    } catch (error) {
+      console.warn("[bi/mapa] não foi possível estilizar o mapa:", error);
+    }
+  }
+
+  function renderMapMode() {
+    const rows = getCurrentFilteredRows();
+    renderMapKpis(rows);
+    selectDefaultMapState(rows);
+    renderMapStateDetails(rows);
+    renderMapCharts(rows);
+    void paintBrazilMap(rows);
   }
 
   /* =========================================================
@@ -1872,7 +5692,7 @@
   }
 
   async function ensureModeData(mode, force = false, forceCatalog = false) {
-    if (mode === "ATUAL") {
+    if (mode === "ATUAL" || mode === "MAPA") {
       if (force || !STATE.atualRows.length) {
         STATE.atualRows = await loadCurrentRows();
       }
@@ -1917,13 +5737,13 @@
       renderMode(mode);
 
       const count =
-        mode === "ATUAL" ? STATE.atualRows.length :
+        (mode === "ATUAL" || mode === "MAPA") ? STATE.atualRows.length :
         mode === "HISTORICO" ? STATE.historicoRows.length :
         STATE.comercialRows.length;
 
       if (!count) {
         setStatus(
-          mode === "ATUAL"
+          (mode === "ATUAL" || mode === "MAPA")
             ? "⚠️ Sem dados em Fretes/Fretes2"
             : mode === "HISTORICO"
               ? "⚠️ Sem snapshots no período"
@@ -1934,6 +5754,7 @@
         const agora = new Date().toLocaleTimeString("pt-BR");
         const label =
           mode === "ATUAL" ? "Operação atual" :
+          mode === "MAPA" ? "Mapa operacional" :
           mode === "HISTORICO" ? "Histórico diário" :
           "Análise comercial";
 
@@ -1957,6 +5778,7 @@
 
   function renderMode(mode = getMode()) {
     if (mode === "ATUAL") renderCurrent();
+    else if (mode === "MAPA") renderMapMode();
     else if (mode === "HISTORICO") renderHistorical();
     else if (mode === "COMERCIAL") renderCommercial();
   }
@@ -1993,13 +5815,40 @@
     if (STATE.autoRefreshTimer) clearInterval(STATE.autoRefreshTimer);
 
     STATE.autoRefreshTimer = setInterval(() => {
-      if (document.visibilityState === "visible" && getMode() === "ATUAL") {
+      if (
+        document.visibilityState === "visible" &&
+        (getMode() === "ATUAL" || getMode() === "MAPA")
+      ) {
         loadData(false, true);
       }
     }, AUTO_REFRESH_MS);
   }
 
   function bindEvents() {
+    $("#biBrazilMap")?.addEventListener("onStateSelected", (event) => {
+      const uf = upper(event.detail);
+      if (!BRAZIL_STATES[uf]) return;
+      STATE.mapSelectedUf = uf;
+      if (getMode() === "MAPA") renderMapMode();
+    });
+
+    $("#mapMetric")?.addEventListener("change", () => {
+      if (getMode() === "MAPA") renderMapMode();
+    });
+
+    document.querySelectorAll("[data-map-detail]").forEach((button) => {
+      button.addEventListener("click", () => {
+        STATE.mapDetailMode = upper(button.dataset.mapDetail || "FILIAL");
+        document.querySelectorAll("[data-map-detail]").forEach((item) => {
+          item.classList.toggle(
+            "active",
+            upper(item.dataset.mapDetail) === STATE.mapDetailMode
+          );
+        });
+        if (getMode() === "MAPA") renderMapStateDetails(getCurrentFilteredRows());
+      });
+    });
+
     $("#btnAtualizar")?.addEventListener("click", () => loadData(true, true));
     $("#btnLimpar")?.addEventListener("click", clearFilters);
     $("#btnConsultarMercado")?.addEventListener("click", () => loadData(true, true));

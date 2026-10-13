@@ -65,8 +65,8 @@
   <div class="pageBI">
     <div class="heroBI">
       <div class="heroBITop"><div class="heroBITitle"><h1>B.I. Fretes</h1><p>Operação, histórico diário e inteligência comercial de valores praticados.</p></div><div class="syncStatus" id="syncStatus">🔄 Carregando...</div></div>
-      <div class="modeNav"><button class="modeBtn active" type="button" data-mode="ATUAL">🚛 Operação atual</button><button class="modeBtn" type="button" data-mode="MAPA">🗺️ Mapa</button><button class="modeBtn" type="button" data-mode="HISTORICO">📅 Histórico diário</button><button class="modeBtn" type="button" data-mode="COMERCIAL">💰 Análise comercial</button></div>
-      <input id="fModo" type="hidden" value="ATUAL" />
+      <div class="modeNav"><button class="modeBtn" type="button" data-mode="ATUAL">🚛 Operação atual</button><button class="modeBtn active" type="button" data-mode="MAPA">🗺️ Mapa</button><button class="modeBtn" type="button" data-mode="HISTORICO">📅 Histórico diário</button><button class="modeBtn" type="button" data-mode="COMERCIAL">💰 Análise comercial</button></div>
+      <input id="fModo" type="hidden" value="MAPA" />
       <div class="filtersBI">
         <div class="fieldBox"><label for="fDataInicio">Data inicial</label><input id="fDataInicio" type="date" /></div>
         <div class="fieldBox"><label for="fDataFim">Data final</label><input id="fDataFim" type="date" /></div>
@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <section class="modeSection active" data-section="ATUAL">
+    <section class="modeSection" data-section="ATUAL">
       <div class="kpiGrid">
         <div class="kpiCard"><div class="kpiLabel">Veículos Porta</div><div class="kpiValue" id="kpiPorta">0</div><div class="kpiFoot">Soma da coluna Porta</div></div>
         <div class="kpiCard"><div class="kpiLabel">Veículos Trânsito</div><div class="kpiValue" id="kpiTransito">0</div><div class="kpiFoot">Soma da coluna Trânsito</div></div>
@@ -107,7 +107,7 @@
       </div>
     </section>
 
-    <section class="modeSection" data-section="MAPA">
+    <section class="modeSection active" data-section="MAPA">
       <div class="mapKpiGrid">
         <div class="mapKpiCard"><div class="mapKpiIcon">🚛</div><div><div class="mapKpiLabel">Carregamentos</div><div class="mapKpiValue" id="mapKpiFretes">0</div></div></div>
         <div class="mapKpiCard"><div class="mapKpiIcon">🚚</div><div><div class="mapKpiLabel">Veículos</div><div class="mapKpiValue" id="mapKpiVeiculos">0</div></div></div>
@@ -218,7 +218,7 @@
         window.dispatchEvent(new CustomEvent('bi:modechange',{detail:{mode}}));
       }
       buttons.forEach(btn=>btn.addEventListener('click',()=>ativarModo(btn.dataset.mode)));
-      ativarModo(hiddenMode.value||'ATUAL');
+      ativarModo(hiddenMode.value||'MAPA');
     })();
   </script>
 </body>

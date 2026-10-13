@@ -169,7 +169,7 @@
     }
 
     .nf-container{ position:relative; z-index:2; width:min(100% - 56px, 1700px); margin:auto; }
-    .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(560px,620px); gap:24px; align-items:start; }
+    .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(780px,840px); gap:24px; align-items:start; }
     .nf-home-main,.nf-home-side{ min-width:0; }
     .nf-home-side{ padding-top:112px; }
     .nf-welcome{ margin-bottom:34px; }
@@ -407,7 +407,7 @@
       transition:.18s ease;
     }
     .homeMapRefresh:hover{background:rgba(37,99,235,.20);border-color:rgba(96,165,250,.40);transform:rotate(18deg)}
-    .homeMapBody{display:grid;grid-template-columns:46% 54%;min-height:680px}
+    .homeMapBody{display:grid;grid-template-columns:58% 42%;min-height:720px}
     .homeMapPane{
       position:relative;
       min-width:0;
@@ -418,7 +418,7 @@
     #homeBrazilMap{
       display:block;
       width:100%;
-      height:520px;
+      height:610px;
       --brazil-bg-color:#d7e3f0;
       --brazil-bg-hover-color:#2563eb;
       --brazil-stroke-color:#ffffff;
@@ -455,7 +455,7 @@
       box-shadow:0 5px 14px rgba(18,105,222,.24);
     }
     .homeMapFreightList{
-      height:606px;overflow:auto;padding:10px 3px 3px;
+      height:610px;overflow:auto;padding:10px 3px 3px;
       scrollbar-width:thin;scrollbar-color:#4075ad rgba(255,255,255,.04);
     }
     .homeMapFreightList::-webkit-scrollbar{width:6px}
@@ -476,7 +476,7 @@
       min-width:0;display:flex;align-items:center;gap:5px;color:#dbeafe;
       font-size:9px;font-weight:900;line-height:1.25;
     }
-    .homeFreightRoute strong{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .homeFreightRoute strong{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .homeFreightOriginDot{color:#2ad67b;font-size:9px}
     .homeFreightRef{color:#738ba5;font-size:8px;font-weight:800;white-space:nowrap}
     .homeFreightGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 9px}
@@ -491,7 +491,7 @@
     .homeFreightInfo small{display:block;color:#7891ab;font-size:7.5px;line-height:1.1}
     .homeFreightInfo b{
       display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;
-      color:#f2f7fc;font-size:8.7px;line-height:1.2;font-weight:900;white-space:nowrap;
+      color:#f2f7fc;font-size:8.7px;line-height:1.25;font-weight:900;white-space:normal;
     }
     .homeFreightInfo b.homeFreightPrice{color:#35df81;font-size:11px}
     .homeFreightProduct{
@@ -552,20 +552,29 @@
     .btnAdmin.ghost{ border-color:rgba(255,255,255,.15); background:rgba(255,255,255,.06); }
     .btnAdmin:disabled{ opacity:.6; cursor:not-allowed; }
 
-    @media (max-width:1420px){
-      .nf-home-layout{grid-template-columns:minmax(0,1fr) 470px;gap:18px}
-      .homeMapBody{grid-template-columns:1fr}
-      .homeMapPane{border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}
-      #homeBrazilMap{height:360px}
-      .homeMapLegend{position:static;margin-top:4px}
-      .homeMapFreightList{height:430px}
+    @media (max-width:1600px){
+      .nf-home-layout{grid-template-columns:minmax(0,1fr) 680px;gap:18px}
+      .homeMapBody{grid-template-columns:56% 44%;min-height:650px}
+      #homeBrazilMap{height:520px}
+      .homeMapFreightList{height:540px}
       .nf-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
       .nf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
-    @media (max-width:1100px){
+    @media (max-width:1420px){
       .nf-home-layout{grid-template-columns:1fr}
-      .nf-home-side{order:-1;padding-top:0}
+      .nf-home-side{padding-top:0}
       .homeFreightMapPanel{position:relative;top:0}
+      .homeMapBody{grid-template-columns:1fr 1fr;min-height:0}
+      .homeMapPane{border-right:1px solid rgba(255,255,255,.08);border-bottom:0}
+      #homeBrazilMap{height:460px}
+      .homeMapFreightList{height:460px}
+    }
+    @media (max-width:1100px){
+      .homeMapBody{grid-template-columns:1fr}
+      .homeMapPane{border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}
+      #homeBrazilMap{height:430px}
+      .homeMapLegend{position:static;margin-top:4px}
+      .homeMapFreightList{height:460px}
     }
     @media (max-width:900px){
       .nf-topbar{ height:auto; min-height:78px; padding:12px 0; }
@@ -575,9 +584,9 @@
       .nf-dashboard{ min-height:calc(100vh - 132px); padding-top:32px; }
       .nf-container{ width:min(100% - 30px,1560px); }
       .nf-tools{ grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .homeMapBody{grid-template-columns:1fr 1fr}
-      #homeBrazilMap{height:420px}
-      .homeMapFreightList{height:500px}
+      .homeMapBody{grid-template-columns:1fr}
+      #homeBrazilMap{height:400px}
+      .homeMapFreightList{height:460px}
       .nf-dashboard::before{ inset:0 0 auto 20%; opacity:.28; }
     }
     @media (max-width:620px){

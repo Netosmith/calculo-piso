@@ -7,7 +7,7 @@
   const $ = (sel) => document.querySelector(sel);
 
   const STATE = {
-    modo: "ATUAL",
+    modo: "MAPA",
     atualRows: [],
     historicoRows: [],
     comercialRows: [],
@@ -219,7 +219,7 @@
   }
 
   function getMode() {
-    return upper($("#fModo")?.value || STATE.modo || "ATUAL");
+    return upper($("#fModo")?.value || STATE.modo || "MAPA");
   }
 
   function getPeriod() {

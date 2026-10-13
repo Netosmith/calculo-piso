@@ -90,13 +90,13 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
   const resource = normalize(params?.resource);
 
   // O mapa de fretes da Home é uma visão colaborativa global e sanitizada.
-  // Qualquer usuário autenticado pode consultar, sem liberar os módulos
-  // completos de Fretes/Fretes2 para o perfil.
+  // Todos os perfis autenticados podem consultar, EXCETO o perfil PISO.
+  // Isso não libera os módulos completos de Fretes/Fretes2.
   if (
     moduleName === "home-map" &&
     actionName === "read"
   ) {
-    return true;
+    return profile !== "PISO";
   }
 
   // O perfil PISO usa a Home, mas não pode consultar indicadores operacionais.

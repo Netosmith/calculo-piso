@@ -169,19 +169,41 @@
     }
 
     .nf-container{ position:relative; z-index:2; width:min(100% - 56px, 1700px); margin:auto; }
-    .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(780px,840px); gap:24px; align-items:start; }
-    .nf-home-main,.nf-home-side{ min-width:0; }
-    .nf-home-side{ padding-top:112px; }
-    .nf-welcome{ margin-bottom:34px; }
+    .nf-home-layout{
+      display:grid;
+      grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+      grid-template-areas:
+        "welcome stats"
+        "tools side";
+      column-gap:24px;
+      row-gap:14px;
+      align-items:start;
+    }
+    .nf-home-main{display:contents}
+    .nf-home-side{
+      grid-area:side;
+      min-width:0;
+      padding-top:0;
+    }
+    .nf-welcome{
+      grid-area:welcome;
+      align-self:end;
+      min-width:0;
+      margin:0;
+      padding:0 0 10px;
+    }
     .nf-welcome h1{ margin:0; font-size:clamp(32px,3vw,48px); font-weight:400; letter-spacing:-1.5px; }
     .nf-welcome h1 strong{ font-weight:800; }
     .nf-welcome p{ margin:10px 0 0; color:#c4d0df; font-size:18px; font-weight:500; }
 
     .nf-stats{
+      grid-area:stats;
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
       gap:14px;
-      margin-bottom:22px;
+      min-width:0;
+      margin:0;
+      align-self:end;
     }
 
     .nf-stat{
@@ -307,9 +329,12 @@
     }
 
     .nf-tools{
+      grid-area:tools;
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
       gap:14px;
+      min-width:0;
+      align-self:start;
     }
 
     .nf-tool{
@@ -583,15 +608,34 @@
     .btnAdmin:disabled{ opacity:.6; cursor:not-allowed; }
 
     @media (max-width:1600px){
-      .nf-home-layout{grid-template-columns:minmax(0,1fr) 680px;gap:18px}
+      .nf-home-layout{
+        grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+        column-gap:18px;
+        row-gap:14px;
+      }
       .homeMapBody{grid-template-columns:56% 44%;min-height:650px}
       #homeBrazilMap{height:520px;transform:scale(1.32) translateY(6px)}
       .homeMapFreightList{height:540px}
-      .nf-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
-      .nf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .nf-tools{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+      .nf-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+      .nf-stat{padding-left:14px;padding-right:14px}
+      .nf-stat-icon{width:40px;height:40px}
+      .nf-stat-label{font-size:10.5px}
+      .nf-stat-value{font-size:34px}
     }
     @media (max-width:1420px){
-      .nf-home-layout{grid-template-columns:1fr}
+      .nf-home-layout{
+        grid-template-columns:1fr;
+        grid-template-areas:
+          "welcome"
+          "stats"
+          "tools"
+          "side";
+        row-gap:16px;
+      }
+      .nf-welcome{padding-bottom:0}
+      .nf-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .nf-tools{grid-template-columns:repeat(4,minmax(0,1fr))}
       .nf-home-side{padding-top:0}
       .homeFreightMapPanel{position:relative;top:0}
       .homeMapBody{grid-template-columns:1fr 1fr;min-height:0}
@@ -600,6 +644,8 @@
       .homeMapFreightList{height:460px}
     }
     @media (max-width:1100px){
+      .nf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .nf-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
       .homeMapBody{grid-template-columns:1fr}
       .homeMapPane{border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}
       #homeBrazilMap{height:430px;transform:scale(1.14) translateY(3px)}
@@ -625,7 +671,7 @@
       .nf-actions{ gap:6px; }
       .nf-icon-btn{ width:40px; height:40px; }
       .nf-exit{ min-width:54px; padding:0 10px; font-size:12px; }
-      .nf-welcome{ margin-bottom:24px; }
+      .nf-welcome{ margin-bottom:0; padding-bottom:0; }
       .nf-welcome h1{ font-size:31px; }
       .nf-welcome p{ font-size:14px; }
       .nf-stats{ grid-template-columns:1fr; gap:12px; }

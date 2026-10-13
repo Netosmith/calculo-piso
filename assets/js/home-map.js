@@ -361,6 +361,41 @@
     }
   }
 
+  function isPiso(session) {
+    const profile = upper(session && session.perfil) ||
+      (typeof window.getProfile === "function" ? upper(window.getProfile()) : "");
+    return profile === "PISO";
+  }
+
+  function applyPisoRestriction(session) {
+    const restricted = isPiso(session);
+    const panel = $("#homeFreightMapPanel");
+    const refresh = $("#homeMapRefresh");
+
+    if (panel) panel.classList.toggle("is-restricted", restricted);
+    if (refresh) refresh.disabled = restricted;
+
+    if (!restricted) return false;
+
+    STATE.rows = [];
+    STATE.selectedUf = "";
+
+    const title = $("#homeMapStateTitle");
+    const count = $("#homeMapStateCount");
+    const subtitle = $("#homeMapSubtitle");
+    const list = $("#homeMapFreightList");
+
+    if (title) title.textContent = "ACESSO RESTRITO";
+    if (count) count.textContent = "PISO";
+    if (subtitle) subtitle.textContent = "Mapa indisponível para este perfil.";
+    if (list) {
+      list.innerHTML =
+        '<div class="homeMapEmpty">INFORMAÇÃO RESTRITA PARA O PERFIL PISO.</div>';
+    }
+
+    return true;
+  }
+
   async function load(force = false) {
     if (STATE.loading) return;
     STATE.loading = true;
@@ -372,6 +407,8 @@
         : null;
 
       if (!session) throw new Error("Sessão inválida ou expirada.");
+
+      if (applyPisoRestriction(session)) return;
 
       if (!window.PortalAPI) {
         if (typeof window.ensurePortalApi === "function") {
@@ -414,6 +451,10 @@
     if (refresh) {
       refresh.addEventListener("click", () => load(true));
     }
+
+    window.addEventListener("portal:session", (event) => {
+      applyPisoRestriction(event && event.detail ? event.detail : null);
+    });
 
   }
 

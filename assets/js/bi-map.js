@@ -530,6 +530,9 @@
         : "";
       path.style.transition = "fill .18s ease, stroke .18s ease, filter .18s ease";
 
+      const acronym = root.querySelector("#" + uf);
+      if (acronym) acronym.style.fill = selected ? "#ffffff" : "#193a63";
+
       const valueText = metric() === "VOLUME"
         ? intBR(value) + " t"
         : intBR(value);

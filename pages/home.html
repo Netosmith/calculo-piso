@@ -328,6 +328,35 @@
       box-shadow:0 0 8px color-mix(in srgb,var(--accent) 75%,transparent);
     }
 
+    /* Veículos Totais: conteúdo compacto para manter Porta + Trânsito visíveis */
+    .nf-stat-veiculos .nf-veiculos-resumo{margin-top:8px}
+    .nf-stat-veiculos .nf-veiculos-totais{
+      gap:8px;
+      font-size:11px;
+    }
+    .nf-stat-veiculos .nf-veiculos-totais strong{font-size:17px}
+    .nf-stat-veiculos .nf-veiculos-divisor{margin:6px 0 5px}
+    .nf-stat-veiculos .nf-veiculos-linha{
+      grid-template-columns:22px minmax(0,.9fr) minmax(0,1.1fr);
+      gap:4px;
+      min-height:20px;
+      font-size:9px;
+    }
+    .nf-stat-veiculos .nf-veiculos-uf{font-size:10px}
+    .nf-stat-veiculos .nf-veiculos-status{
+      min-width:0;
+      gap:3px;
+      font-size:9px;
+    }
+    .nf-stat-veiculos .nf-veiculos-status i{
+      width:5px;
+      height:5px;
+    }
+    .nf-stat-veiculos .nf-veiculos-status b{
+      margin-left:3px;
+      font-size:10px;
+    }
+
     .nf-tools{
       grid-area:tools;
       display:grid;

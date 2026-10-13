@@ -380,6 +380,33 @@
       font-weight:900;
       letter-spacing:.04em;
     }
+    .homeFreightMapPanel.is-restricted::before{
+      content:"MAPA RESTRITO AO PERFIL PISO";
+      position:absolute;
+      inset:72px 0 0;
+      z-index:25;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      text-align:center;
+      background:rgba(4,19,40,.38);
+      color:#e8f2ff;
+      font-size:13px;
+      font-weight:1000;
+      letter-spacing:.05em;
+      text-shadow:0 2px 12px rgba(0,0,0,.55);
+      pointer-events:auto;
+    }
+    .homeFreightMapPanel.is-restricted .homeMapBody{
+      filter:blur(12px);
+      opacity:.28;
+      pointer-events:none;
+      user-select:none;
+    }
+    .homeFreightMapPanel.is-restricted .homeMapRefresh{
+      opacity:.35;
+      pointer-events:none;
+    }
     .homeMapHead{
       min-height:72px;
       padding:15px 17px;
@@ -942,7 +969,7 @@
   <script src="../assets/js/auth.js?v=16"></script>
   <script src="../assets/js/home-solicitacoes.js?v=2"></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>
-  <script src="../assets/js/home-map.js?v=2"></script>
+  <script src="../assets/js/home-map.js?v=3"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

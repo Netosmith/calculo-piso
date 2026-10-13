@@ -116,6 +116,105 @@ async function requestHomeMetricsFromAppsScript(env, session, params) {
   return data;
 }
 
+function extractGatewayRows(value, depth = 0) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object" || depth > 6) return [];
+
+  const keys = ["data", "rows", "items", "fretes", "registros", "result"];
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+    const rows = extractGatewayRows(value[key], depth + 1);
+    if (rows.length || Array.isArray(value[key])) return rows;
+  }
+
+  return [];
+}
+
+function firstGatewayValue(row, keys, fallback = "") {
+  for (const key of keys) {
+    if (
+      row &&
+      Object.prototype.hasOwnProperty.call(row, key) &&
+      row[key] !== null &&
+      row[key] !== undefined &&
+      row[key] !== ""
+    ) {
+      return row[key];
+    }
+  }
+  return fallback;
+}
+
+function sanitizeHomeMapFreight(row, source) {
+  return {
+    id: String(firstGatewayValue(row, ["id", "idFrete", "ID", "Id"])).trim(),
+    source,
+    regional: String(firstGatewayValue(row, ["regional", "Regional"])).trim(),
+    filial: String(firstGatewayValue(row, ["filial", "Filial", "nomeFilial"])).trim(),
+    origem: String(firstGatewayValue(row, ["origem", "Origem", "cidadeOrigem"])).trim(),
+    coleta: String(firstGatewayValue(row, ["coleta", "Coleta", "localColeta"])).trim(),
+    destino: String(firstGatewayValue(row, ["destino", "Destino", "cidadeDestino"])).trim(),
+    descarga: String(firstGatewayValue(row, ["descarga", "Descarga", "localDescarga"])).trim(),
+    produto: String(firstGatewayValue(row, ["produto", "Produto"])).trim(),
+    contato: String(firstGatewayValue(row, [
+      "contato", "Contato", "responsavel", "responsável", "Responsavel", "Responsável"
+    ])).trim(),
+    valorMotorista: firstGatewayValue(row, [
+      "valorMotorista", "vlrMotorista", "freteMotorista",
+      "valor_motorista", "Valor Motorista"
+    ], ""),
+    status: String(firstGatewayValue(row, ["status", "Status"], "LIBERADO")).trim()
+  };
+}
+
+async function requestGlobalHomeMapFreights(env, session) {
+  const sources = [
+    { module: "fretes", source: "FRETES", estado: "GO" },
+    { module: "fretes2", source: "FRETES2", estado: "MT" }
+  ];
+
+  const results = await Promise.allSettled(
+    sources.map(async ({ module, source, estado }) => {
+      const result = await callAppsScript(env, {
+        action: "portal_gateway",
+        method: "POST",
+        params: {
+          module,
+          action: "read",
+          payload: {},
+          // A leitura é feita pelo Worker em contexto interno e devolvida
+          // sanitizada. O usuário não recebe acesso ao módulo completo.
+          auth: {
+            usuario: session.usuario,
+            nome: session.nome,
+            perfil: "ADMINISTRADOR",
+            estado,
+            estados: ["GO", "MT"]
+          }
+        }
+      });
+
+      if (!result?.ok) {
+        throw new Error(result?.error || `Falha ao consultar ${module}.`);
+      }
+
+      return extractGatewayRows(result.data ?? result)
+        .map((row) => sanitizeHomeMapFreight(row, source));
+    })
+  );
+
+  const rows = results.flatMap((result) =>
+    result.status === "fulfilled" ? result.value : []
+  );
+
+  if (!rows.length && results.every((result) => result.status === "rejected")) {
+    const firstError = results.find((result) => result.status === "rejected");
+    throw firstError?.reason || new Error("Não foi possível carregar os fretes da Home.");
+  }
+
+  return rows;
+}
+
 const ESTADIAS_PRECISION_PREFIX = "estadias:precision:v1:";
 const ESTADIAS_PRECISION_FIELDS = [
   "dataHoraChegada",
@@ -521,6 +620,15 @@ export async function portalGatewayController(request, env, ctx) {
   }
 
   try {
+    if (moduleName === "home-map" && actionName === "read") {
+      const rows = await requestGlobalHomeMapFreights(env, session);
+      return success({
+        module: moduleName,
+        action: actionName,
+        data: rows
+      });
+    }
+
     if (moduleName === "home" && actionName === "read") {
       const cached = await readHomeMetricsCache(env, session);
 

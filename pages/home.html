@@ -169,7 +169,7 @@
     }
 
     .nf-container{ position:relative; z-index:2; width:min(100% - 56px, 1700px); margin:auto; }
-    .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:24px; align-items:start; }
+    .nf-home-layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(560px,620px); gap:24px; align-items:start; }
     .nf-home-main,.nf-home-side{ min-width:0; }
     .nf-home-side{ padding-top:112px; }
     .nf-welcome{ margin-bottom:34px; }
@@ -353,139 +353,159 @@
     .nf-tool:hover .nf-tool-arrow{ transform:translateX(4px); }
 
 
-    /* Central de Avisos */
-    .nf-notice-panel{
-      position:sticky; top:18px; overflow:hidden;
-      border:1px solid rgba(173,204,240,.22); border-radius:20px;
-      background:radial-gradient(circle at 85% 0%,rgba(78,141,247,.14),transparent 38%),
-                 linear-gradient(160deg,rgba(11,36,67,.96),rgba(5,24,46,.95));
-      box-shadow:0 20px 50px rgba(0,0,0,.28);
+    /* Fretes por Estado */
+    .homeFreightMapPanel{
+      position:sticky;
+      top:18px;
+      overflow:hidden;
+      border:1px solid rgba(67,145,255,.38);
+      border-radius:20px;
+      background:
+        radial-gradient(circle at 75% 0%,rgba(31,111,235,.18),transparent 38%),
+        linear-gradient(160deg,rgba(8,35,70,.97),rgba(4,22,45,.97));
+      box-shadow:0 20px 50px rgba(0,0,0,.30),0 0 0 1px rgba(34,105,205,.08);
       backdrop-filter:blur(16px);
     }
-    .nf-notice-head{padding:18px 18px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(255,255,255,.08)}
-    .nf-notice-head-title{display:flex;align-items:center;gap:10px}
-    .nf-notice-head-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(78,141,247,.13);border:1px solid rgba(78,141,247,.35);font-size:20px}
-    .nf-notice-head h2{margin:0;color:#fff;font-size:17px;line-height:1.1;font-weight:800}
-    .nf-notice-head p{margin:5px 0 0;color:#9fb0c4;font-size:10px}
-    .nf-notice-pin{font-size:20px}
-    .nf-notice-body{padding:16px}
-    .nf-notice-card{overflow:hidden;border-radius:16px;background:linear-gradient(160deg,#fff,#eef4fa);color:#0b1e38;box-shadow:0 14px 30px rgba(0,0,0,.22)}
-    .nf-notice-visual{position:relative;min-height:210px;padding:18px;overflow:hidden;display:flex;align-items:flex-end;background:linear-gradient(140deg,#f8fbff 0%,#e8f0f6 100%)}
-    .nf-notice-priority{position:absolute;z-index:2;left:16px;top:16px;min-height:24px;padding:0 9px;display:inline-flex;align-items:center;border-radius:999px;background:#16a34a;color:#fff;font-size:9px;font-weight:900;text-transform:uppercase}
-    .nf-notice-card.notice-risk .nf-notice-visual{
-      min-height:auto;
-      padding:16px 16px 12px;
-      display:block;
-      background:linear-gradient(145deg,#0f2b49,#183a5f);
-      color:#fff;
-    }
-    .nf-notice-card.notice-risk .nf-notice-priority{
-      position:static;
-      margin-bottom:8px;
-      background:#334155;
-      border:1px solid rgba(255,255,255,.12);
-    }
-    .nf-risk-title{
-      margin:0;
-      color:#fff;
-      font-size:18px;
-      line-height:1.15;
-      font-weight:900;
-      text-align:center;
-      letter-spacing:.03em;
-      text-transform:uppercase;
-    }
-    .nf-risk-company{
-      margin-top:6px;
+    .homeFreightMapPanel.is-loading::after{
+      content:"Atualizando fretes...";
+      position:absolute;
+      inset:0;
+      z-index:15;
+      display:grid;
+      place-items:center;
+      background:rgba(4,20,42,.64);
+      backdrop-filter:blur(3px);
       color:#dbeafe;
-      font-size:13px;
-      font-weight:800;
-      text-align:center;
-    }
-    .nf-notice-card.notice-risk .nf-notice-content{
-      padding:0;
-      background:#fff;
-    }
-    .nf-risk-section-title{
-      padding:9px 12px;
-      background:#334155;
-      color:#fff;
-      font-size:11px;
+      font-size:12px;
       font-weight:900;
-      text-align:center;
-      text-transform:uppercase;
-      letter-spacing:.045em;
+      letter-spacing:.04em;
     }
-    .nf-risk-rule{
-      padding:11px 13px;
-      border-bottom:1px solid #d7dde5;
-      color:#172033;
-      font-size:10.5px;
-      line-height:1.42;
-      text-align:center;
-      background:#fff;
+    .homeMapHead{
+      min-height:72px;
+      padding:15px 17px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid rgba(255,255,255,.09);
+      background:linear-gradient(180deg,rgba(12,54,102,.40),rgba(6,29,59,.18));
     }
-    .nf-risk-rule:last-child{ border-bottom:0; }
-    .nf-risk-rule strong{
-      color:#0f172a;
-      font-weight:900;
+    .homeMapHeadTitle{display:flex;align-items:center;gap:11px;min-width:0}
+    .homeMapHeadIcon{
+      width:42px;height:42px;display:grid;place-items:center;flex:0 0 42px;
+      border-radius:12px;color:#75b7ff;background:rgba(37,99,235,.18);
+      border:1px solid rgba(96,165,250,.42);
+      box-shadow:0 0 18px rgba(37,99,235,.15);
     }
-    .nf-risk-alert{
+    .homeMapHeadIcon svg{width:23px;height:23px}
+    .homeMapHead h2{margin:0;color:#fff;font-size:17px;line-height:1.1;font-weight:900}
+    .homeMapHead p{margin:4px 0 0;color:#91a9c3;font-size:9.5px;line-height:1.3}
+    .homeMapRefresh{
+      width:36px;height:36px;display:grid;place-items:center;flex:0 0 36px;
+      border:1px solid rgba(255,255,255,.13);border-radius:10px;
+      background:rgba(255,255,255,.05);color:#cfe3fa;cursor:pointer;
+      transition:.18s ease;
+    }
+    .homeMapRefresh:hover{background:rgba(37,99,235,.20);border-color:rgba(96,165,250,.40);transform:rotate(18deg)}
+    .homeMapBody{display:grid;grid-template-columns:46% 54%;min-height:680px}
+    .homeMapPane{
+      position:relative;
+      min-width:0;
+      padding:14px 10px 12px;
+      border-right:1px solid rgba(255,255,255,.08);
+      background:radial-gradient(circle at 55% 42%,rgba(35,106,195,.17),transparent 46%);
+    }
+    #homeBrazilMap{
       display:block;
-      margin-top:5px;
-      color:#9f1f2a;
-      font-weight:900;
-      text-transform:uppercase;
-    }
-    .nf-risk-footer{
-      padding:11px 13px 13px;
-      color:#64748b;
-      font-size:9px;
-      line-height:1.35;
-      text-align:center;
-      background:#f8fafc;
-      border-top:1px solid #e2e8f0;
-    }
-
-    /* Avisos simples continuam usando o layout padrão */
-    .nf-notice-card.notice-simple .nf-notice-visual{
-      min-height:172px;
-      background:linear-gradient(145deg,#f8fbff,#e8f0f6);
-    }
-
-    /* Preparado para flyer/imagem em uma próxima etapa */
-    .nf-notice-card.notice-flyer .nf-notice-visual{
-      min-height:420px;
-      padding:0;
-      background:#0b1e38;
-    }
-    .nf-notice-flyer-img{
       width:100%;
-      height:100%;
-      min-height:420px;
-      display:block;
-      object-fit:cover;
+      height:520px;
+      --brazil-bg-color:#d7e3f0;
+      --brazil-bg-hover-color:#2563eb;
+      --brazil-stroke-color:#ffffff;
+      --brazil-stroke-hover-color:#ffffff;
+      --brazil-acronym-color:#496782;
+      --brazil-acronym-hover-color:#ffffff;
+      --brazil-bg-color-dark:#d7e3f0;
+      --brazil-bg-hover-color-dark:#2563eb;
+      --brazil-stroke-color-dark:#ffffff;
+      --brazil-stroke-hover-color-dark:#ffffff;
+      --brazil-acronym-color-dark:#496782;
+      --brazil-acronym-hover-color-dark:#ffffff;
     }
-
-    .nf-notice-title{position:relative;z-index:2;width:70%;margin:48px 0 0;font-size:32px;line-height:1.02;font-weight:900;letter-spacing:-1px;text-transform:uppercase}
-    .nf-notice-title span{color:#159447}
-    .nf-notice-content{padding:18px}
-    .nf-notice-text{margin:0 0 14px;color:#31435a;font-size:13px;line-height:1.45;font-weight:600}
-    .nf-notice-list{display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none}
-    .nf-notice-list li{display:flex;align-items:flex-start;gap:8px;color:#293c52;font-size:11px;line-height:1.35}
-    .nf-notice-list li::before{content:"✓";width:18px;height:18px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:900}
-    .nf-notice-cta{width:100%;min-height:42px;border:0;border-radius:10px;background:linear-gradient(135deg,#11813c,#16a34a);color:#fff;font-size:11px;font-weight:900;cursor:pointer}
-    .nf-notice-nav{padding:13px 16px;display:flex;align-items:center;justify-content:center;gap:8px}
-    .nf-notice-dot{width:8px;height:8px;border:0;padding:0;border-radius:50%;background:#53677f;cursor:pointer}
-    .nf-notice-dot.active{width:22px;border-radius:999px;background:var(--home-blue)}
-    .nf-notice-listing{padding:0 16px 16px;border-top:1px solid rgba(255,255,255,.08)}
-    .nf-notice-listing h3{margin:14px 0 10px;color:#aebed0;font-size:10px;font-weight:900;text-transform:uppercase}
-    .nf-notice-mini{width:100%;display:flex;align-items:center;gap:10px;padding:9px 0;border:0;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;color:#dce6f2;text-align:left;cursor:pointer}
-    .nf-notice-mini-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:rgba(78,141,247,.12);border:1px solid rgba(78,141,247,.25)}
-    .nf-notice-mini strong{display:block;color:#fff;font-size:10px;line-height:1.25}
-    .nf-notice-mini small{display:block;margin-top:3px;color:#8195ad;font-size:9px}
-    .nf-notice-mini time{margin-left:auto;color:#a8b8ca;font-size:9px;white-space:nowrap}
-    .nf-notice-footer{min-height:50px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(255,255,255,.08);color:#e8f0f8;font-size:10px;font-weight:900}
+    .homeMapLegend{
+      position:absolute;left:13px;right:13px;bottom:13px;
+      display:flex;align-items:center;justify-content:center;gap:14px;
+      padding:9px 10px;border:1px solid rgba(255,255,255,.08);
+      border-radius:11px;background:rgba(3,20,42,.80);color:#b9cbe0;
+      font-size:8.5px;font-weight:800;
+    }
+    .homeMapLegend span{display:flex;align-items:center;gap:6px}
+    .homeMapLegend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+    .homeMapLegend i.has{background:#2f80ed;box-shadow:0 0 8px rgba(47,128,237,.55)}
+    .homeMapLegend i.none{background:#9ab7d6}
+    .homeMapListPane{min-width:0;padding:13px 11px 13px;background:rgba(3,18,39,.28)}
+    .homeMapStateHeader{
+      min-height:48px;display:flex;align-items:center;justify-content:space-between;
+      gap:10px;padding:0 4px 10px;border-bottom:1px solid rgba(255,255,255,.07);
+    }
+    .homeMapStateHeader h3{margin:0;color:#fff;font-size:18px;font-weight:1000;letter-spacing:.01em}
+    .homeMapStateCount{
+      min-height:25px;padding:0 9px;display:inline-flex;align-items:center;
+      border-radius:999px;background:#1269de;color:#fff;font-size:9px;font-weight:1000;white-space:nowrap;
+      box-shadow:0 5px 14px rgba(18,105,222,.24);
+    }
+    .homeMapFreightList{
+      height:606px;overflow:auto;padding:10px 3px 3px;
+      scrollbar-width:thin;scrollbar-color:#4075ad rgba(255,255,255,.04);
+    }
+    .homeMapFreightList::-webkit-scrollbar{width:6px}
+    .homeMapFreightList::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:999px}
+    .homeMapFreightList::-webkit-scrollbar-thumb{background:#4075ad;border-radius:999px}
+    .homeFreightItem{
+      position:relative;margin-bottom:8px;padding:10px 10px 9px;
+      overflow:hidden;border:1px solid rgba(82,142,207,.26);border-radius:12px;
+      background:linear-gradient(150deg,rgba(8,38,74,.94),rgba(5,26,54,.96));
+      box-shadow:0 8px 18px rgba(0,0,0,.14);
+    }
+    .homeFreightItem::before{
+      content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;
+      background:linear-gradient(#2a8cff,#37d67a);border-radius:0 4px 4px 0;
+    }
+    .homeFreightTop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+    .homeFreightRoute{
+      min-width:0;display:flex;align-items:center;gap:5px;color:#dbeafe;
+      font-size:9px;font-weight:900;line-height:1.25;
+    }
+    .homeFreightRoute strong{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .homeFreightOriginDot{color:#2ad67b;font-size:9px}
+    .homeFreightRef{color:#738ba5;font-size:8px;font-weight:800;white-space:nowrap}
+    .homeFreightGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 9px}
+    .homeFreightInfo{min-width:0;display:grid;grid-template-columns:23px minmax(0,1fr);gap:6px;align-items:center}
+    .homeFreightInfoIcon{
+      width:22px;height:22px;display:grid;place-items:center;border-radius:50%;
+      font-size:8px;font-weight:1000;background:rgba(59,130,246,.12);color:#60a5fa;
+    }
+    .homeFreightInfoIcon.green{background:rgba(34,197,94,.12);color:#35d07f}
+    .homeFreightInfoIcon.red{background:rgba(239,68,68,.12);color:#ff6363}
+    .homeFreightInfoIcon.money{background:rgba(34,197,94,.15);color:#31d67d;font-size:7px}
+    .homeFreightInfo small{display:block;color:#7891ab;font-size:7.5px;line-height:1.1}
+    .homeFreightInfo b{
+      display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;
+      color:#f2f7fc;font-size:8.7px;line-height:1.2;font-weight:900;white-space:nowrap;
+    }
+    .homeFreightInfo b.homeFreightPrice{color:#35df81;font-size:11px}
+    .homeFreightProduct{
+      display:inline-flex;margin-top:8px;padding:3px 7px;border-radius:999px;
+      background:rgba(37,99,235,.12);border:1px solid rgba(96,165,250,.18);
+      color:#9ecbff;font-size:7.5px;font-weight:900;text-transform:uppercase;
+    }
+    .homeMapEmpty{
+      min-height:150px;display:grid;place-items:center;padding:20px;text-align:center;
+      color:#8ea6bf;font-size:10px;font-weight:800;line-height:1.5;
+    }
+    .homeMapError{color:#ff9c9c}
+    .homeFreightMapPanel.is-restricted #homeBrazilMap{filter:blur(10px);opacity:.25;pointer-events:none}
+    .homeFreightMapPanel.is-restricted .homeMapLegend{filter:blur(7px);opacity:.25}
 
     .nf-footer{
       margin-top:28px;
@@ -533,14 +553,19 @@
     .btnAdmin:disabled{ opacity:.6; cursor:not-allowed; }
 
     @media (max-width:1420px){
-      .nf-home-layout{grid-template-columns:minmax(0,1fr) 330px;gap:18px}
+      .nf-home-layout{grid-template-columns:minmax(0,1fr) 470px;gap:18px}
+      .homeMapBody{grid-template-columns:1fr}
+      .homeMapPane{border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}
+      #homeBrazilMap{height:360px}
+      .homeMapLegend{position:static;margin-top:4px}
+      .homeMapFreightList{height:430px}
       .nf-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
       .nf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
     @media (max-width:1100px){
       .nf-home-layout{grid-template-columns:1fr}
       .nf-home-side{order:-1;padding-top:0}
-      .nf-notice-panel{position:relative;top:0}
+      .homeFreightMapPanel{position:relative;top:0}
     }
     @media (max-width:900px){
       .nf-topbar{ height:auto; min-height:78px; padding:12px 0; }
@@ -550,6 +575,9 @@
       .nf-dashboard{ min-height:calc(100vh - 132px); padding-top:32px; }
       .nf-container{ width:min(100% - 30px,1560px); }
       .nf-tools{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .homeMapBody{grid-template-columns:1fr 1fr}
+      #homeBrazilMap{height:420px}
+      .homeMapFreightList{height:500px}
       .nf-dashboard::before{ inset:0 0 auto 20%; opacity:.28; }
     }
     @media (max-width:620px){
@@ -565,6 +593,12 @@
       .nf-stat{ min-height:164px; padding:16px 18px 15px; }
       .nf-stat-value{ font-size:38px; }
       .nf-tools{ grid-template-columns:1fr; }
+      .homeMapBody{grid-template-columns:1fr}
+      #homeBrazilMap{height:330px}
+      .homeMapFreightList{height:420px}
+      .homeFreightGrid{grid-template-columns:1fr}
+      .homeMapHead{padding:13px}
+      .homeMapHead h2{font-size:15px}
       .nf-tool{ min-height:150px; padding:22px; }
       .nf-tool-icon{ width:52px; height:52px; margin-bottom:13px; }
       .nf-tool h2,.nf-tool p{ max-width:calc(100% - 40px); }
@@ -831,36 +865,43 @@
       </section>
         </div>
 
-        <aside class="nf-home-side" aria-label="Central de avisos">
-          <section class="nf-notice-panel">
-            <div class="nf-notice-head">
-              <div class="nf-notice-head-title">
-                <div class="nf-notice-head-icon">📣</div>
+        <aside class="nf-home-side" aria-label="Fretes por estado">
+          <section class="homeFreightMapPanel" id="homeFreightMapPanel">
+            <div class="homeMapHead">
+              <div class="homeMapHeadTitle">
+                <div class="homeMapHeadIcon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 5l5-2 6 2 5-2v16l-5 2-6-2-5 2V5Z"/>
+                    <path d="M9 3v16M15 5v16"/>
+                  </svg>
+                </div>
                 <div>
-                  <h2>CENTRAL DE AVISOS</h2>
-                  <p>Informações importantes para o dia a dia</p>
+                  <h2>FRETES POR ESTADO</h2>
+                  <p id="homeMapSubtitle">Carregando estados com fretes disponíveis...</p>
                 </div>
               </div>
-              <div class="nf-notice-pin">📌</div>
+              <button class="homeMapRefresh" id="homeMapRefresh" type="button" title="Atualizar fretes" aria-label="Atualizar fretes">↻</button>
             </div>
 
-            <div class="nf-notice-body">
-              <article class="nf-notice-card notice-risk" id="nfNoticeCard">
-                <div class="nf-notice-visual" id="nfNoticeVisual">
-                  <span class="nf-notice-priority" id="nfNoticePriority">IMPORTANTE</span>
-                  <h3 class="nf-risk-title" id="nfNoticeTitle">GERENCIAMENTO DE RISCO</h3>
-                  <div class="nf-risk-company" id="nfNoticeCompany">HDI</div>
+            <div class="homeMapBody">
+              <div class="homeMapPane">
+                <brazil-component id="homeBrazilMap"></brazil-component>
+                <div class="homeMapLegend">
+                  <span><i class="has"></i> Estados com frete</span>
+                  <span><i class="none"></i> Estados sem frete</span>
                 </div>
-                <div class="nf-notice-content" id="nfNoticeContent"></div>
-              </article>
-              <div class="nf-notice-nav" id="nfNoticeDots"></div>
-            </div>
+              </div>
 
-            <div class="nf-notice-listing">
-              <h3>Próximos avisos</h3>
-              <div id="nfNoticeNext"></div>
+              <div class="homeMapListPane">
+                <div class="homeMapStateHeader">
+                  <h3 id="homeMapStateTitle">Selecione um estado</h3>
+                  <span class="homeMapStateCount" id="homeMapStateCount">0 fretes</span>
+                </div>
+                <div class="homeMapFreightList" id="homeMapFreightList">
+                  <div class="homeMapEmpty">Carregando fretes disponíveis...</div>
+                </div>
+              </div>
             </div>
-            <div class="nf-notice-footer">VER TODOS OS AVISOS →</div>
           </section>
         </aside>
       </div>
@@ -888,6 +929,8 @@
 
   <script src="../assets/js/auth.js?v=16"></script>
   <script src="../assets/js/home-solicitacoes.js?v=2"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map/dist/brazil-map.umd.min.js"></script>
+  <script src="../assets/js/home-map.js?v=1"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
@@ -1251,210 +1294,7 @@
     });
 
 
-    const NF_HOME_AVISOS = [
-      {
-        tipo:"risco",
-        prioridade:"IMPORTANTE",
-        titulo:"GERENCIAMENTO DE RISCO",
-        empresa:"HDI",
-        data:"19/08",
-        secoes:[
-          {
-            titulo:"",
-            regras:[
-              "<strong>Sublimite único de R$ 300.000,00</strong>",
-              "De <strong>R$ 300.000,00 até R$ 1.000.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO",
-              "De <strong>R$ 1.000.000,00 até R$ 1.500.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO + ISCA OU ESCOLTA <span class='nf-risk-alert'>PROIBIDO RODAR ENTRE 18H00 E 05H00.</span>"
-            ]
-          },
-          {
-            titulo:"EXCLUSIVAMENTE SEMENTES",
-            regras:[
-              "Até <strong>R$ 500.000,00</strong>: CADASTRO + CONSULTA",
-              "De <strong>R$ 500.000,00 até R$ 1.500.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO",
-              "De <strong>R$ 1.500.000,00 até R$ 3.000.000,00</strong>: CADASTRO + CONSULTA + RASTREAMENTO E MONITORAMENTO + 1 ISCA OU 1 ESCOLTA OU BLOQUEADOR ADICIONAL INDEPENDENTE"
-            ]
-          }
-        ],
-        resumo:"Regras HDI para gerenciamento de risco e cargas de sementes."
-      },
-      {
-        tipo:"simples",
-        prioridade:"OPERACIONAL",
-        titulo:"NOVO PROCEDIMENTO DE EMBARQUE",
-        texto:"Padronização para liberação, conferência e comunicação das cargas.",
-        itens:[
-          "Confirmar filial e unidade de embarque",
-          "Validar motorista e placa antes da liberação",
-          "Registrar observações importantes no Portal"
-        ],
-        cta:"VER PROCEDIMENTO",
-        data:"20/08"
-      },
-      {
-        tipo:"simples",
-        prioridade:"COMERCIAL",
-        titulo:"CAMPANHA DE FRETES - AGOSTO",
-        texto:"Acompanhe as oportunidades e demandas prioritárias do período.",
-        itens:[
-          "Priorizar corredores divulgados pela Mesa Comercial",
-          "Atualizar disponibilidade de veículos",
-          "Manter contatos e valores atualizados"
-        ],
-        cta:"VER CAMPANHA",
-        data:"21/08"
-      },
-      {
-        tipo:"simples",
-        prioridade:"SISTEMA",
-        titulo:"MANUTENÇÃO PROGRAMADA DO PORTAL",
-        texto:"Janela técnica prevista para atualização e melhorias do Portal Frete.",
-        itens:[
-          "Salvar alterações antes da janela",
-          "Evitar operações durante a manutenção",
-          "Aguardar aviso de normalização"
-        ],
-        cta:"VER DETALHES",
-        data:"22/08"
-      }
-    ];
-
-    let nfAvisoAtual = 0;
-    let nfAvisoTimer = null;
-
-    function renderAvisoRisco(aviso){
-      const card = document.getElementById("nfNoticeCard");
-      const visual = document.getElementById("nfNoticeVisual");
-      const content = document.getElementById("nfNoticeContent");
-
-      card.className = "nf-notice-card notice-risk";
-      visual.innerHTML = `
-        <span class="nf-notice-priority">${aviso.prioridade}</span>
-        <h3 class="nf-risk-title">${aviso.titulo}</h3>
-        <div class="nf-risk-company">${aviso.empresa || ""}</div>
-      `;
-
-      content.innerHTML = aviso.secoes.map(secao => `
-        ${secao.titulo ? `<div class="nf-risk-section-title">${secao.titulo}</div>` : ""}
-        ${secao.regras.map(regra => `<div class="nf-risk-rule">${regra}</div>`).join("")}
-      `).join("") + `
-        <div class="nf-risk-footer">
-          Informativo operacional. Em caso de dúvida, confirme as regras vigentes com o responsável pelo gerenciamento de risco.
-        </div>
-      `;
-    }
-
-    function renderAvisoSimples(aviso){
-      const card = document.getElementById("nfNoticeCard");
-      const visual = document.getElementById("nfNoticeVisual");
-      const content = document.getElementById("nfNoticeContent");
-
-      card.className = "nf-notice-card notice-simple";
-      visual.innerHTML = `
-        <span class="nf-notice-priority">${aviso.prioridade}</span>
-        <h3 class="nf-notice-title">${aviso.titulo}</h3>
-      `;
-
-      content.innerHTML = `
-        <p class="nf-notice-text">${aviso.texto || ""}</p>
-        <ul class="nf-notice-list">
-          ${(aviso.itens || []).map(item => `<li>${item}</li>`).join("")}
-        </ul>
-        ${aviso.cta ? `<button class="nf-notice-cta" type="button">${aviso.cta}</button>` : ""}
-      `;
-    }
-
-    /*
-      Preparado para a próxima etapa:
-      tipo:"flyer", imagem:"../assets/img/seu-flyer.jpg"
-    */
-    function renderAvisoFlyer(aviso){
-      const card = document.getElementById("nfNoticeCard");
-      const visual = document.getElementById("nfNoticeVisual");
-      const content = document.getElementById("nfNoticeContent");
-
-      card.className = "nf-notice-card notice-flyer";
-      visual.innerHTML = `
-        <img class="nf-notice-flyer-img" src="${aviso.imagem}" alt="${aviso.titulo || "Flyer"}">
-      `;
-      content.innerHTML = aviso.texto
-        ? `<p class="nf-notice-text">${aviso.texto}</p>`
-        : "";
-    }
-
-    function renderHomeAviso(index){
-      if(!NF_HOME_AVISOS.length) return;
-
-      nfAvisoAtual =
-        ((index % NF_HOME_AVISOS.length) + NF_HOME_AVISOS.length) %
-        NF_HOME_AVISOS.length;
-
-      const aviso = NF_HOME_AVISOS[nfAvisoAtual];
-
-      if(aviso.tipo === "risco"){
-        renderAvisoRisco(aviso);
-      }else if(aviso.tipo === "flyer"){
-        renderAvisoFlyer(aviso);
-      }else{
-        renderAvisoSimples(aviso);
-      }
-
-      const dots = document.getElementById("nfNoticeDots");
-      dots.innerHTML = NF_HOME_AVISOS.map((_,i) =>
-        `<button
-          class="nf-notice-dot ${i===nfAvisoAtual ? "active" : ""}"
-          type="button"
-          data-i="${i}"
-          aria-label="Abrir aviso ${i+1}"
-        ></button>`
-      ).join("");
-
-      dots.querySelectorAll("[data-i]").forEach(btn => {
-        btn.onclick = () => {
-          renderHomeAviso(Number(btn.dataset.i));
-          reiniciarAvisos();
-        };
-      });
-
-      const proximos = NF_HOME_AVISOS
-        .map((item,i)=>({...item,i}))
-        .filter(item=>item.i!==nfAvisoAtual)
-        .slice(0,3);
-
-      const next = document.getElementById("nfNoticeNext");
-      next.innerHTML = proximos.map(item => `
-        <button class="nf-notice-mini" type="button" data-next="${item.i}">
-          <span class="nf-notice-mini-icon">${item.tipo === "risco" ? "🛡️" : item.tipo === "flyer" ? "🖼️" : "📄"}</span>
-          <span>
-            <strong>${item.prioridade}: ${item.titulo}</strong>
-            <small>${item.resumo || item.texto || "Informativo Nova Frota"}</small>
-          </span>
-          <time>${item.data || ""}</time>
-        </button>
-      `).join("");
-
-      next.querySelectorAll("[data-next]").forEach(btn => {
-        btn.onclick = () => {
-          renderHomeAviso(Number(btn.dataset.next));
-          reiniciarAvisos();
-        };
-      });
-    }
-
-    function reiniciarAvisos(){
-      if(nfAvisoTimer) clearInterval(nfAvisoTimer);
-      nfAvisoTimer = setInterval(
-        () => renderHomeAviso(nfAvisoAtual + 1),
-        12000
-      );
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      renderHomeAviso(0);
-      reiniciarAvisos();
-    });
-
-
+    /* Central de Avisos removida: substituída pelo mapa de fretes. */
 
     async function carregarResumoChamadosHome(){
       try{

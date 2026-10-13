@@ -7,6 +7,7 @@
 
   <link rel="stylesheet" href="../assets/css/app.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map/dist/brazil-map.umd.min.js"></script>
 
   <style>
     :root{
@@ -27,9 +28,35 @@
     .tableWrap{overflow:auto;max-height:480px}table{width:100%;border-collapse:collapse;min-width:980px;background:#fff}th,td{padding:10px 12px;border-bottom:1px solid #edf2f7;font-size:13px;white-space:nowrap;color:#0f172a}th{position:sticky;top:0;z-index:2;background:#f8fafc;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}td.num,th.num{text-align:right}.empty{padding:28px;text-align:center;color:#64748b;font-weight:800}
     .routeSummary{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:12px;margin-bottom:14px}.routeHero{background:linear-gradient(135deg,#102a6b,#1d4ed8);color:#fff;border-radius:20px;padding:18px;min-height:150px;box-shadow:var(--shadow)}.routeHero small{display:block;opacity:.76;text-transform:uppercase;letter-spacing:.08em;font-weight:900;margin-bottom:8px}.routeHero h2{margin:0;font-size:26px;font-weight:1000}.routeHero p{margin:10px 0 0;opacity:.84;font-size:13px}.miniStat{border-radius:18px;padding:16px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}.miniStat .label{font-size:10px;font-weight:1000;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.miniStat .value{font-size:20px;font-weight:1000;margin-top:8px}.miniStat .sub{margin-top:4px;font-size:12px;color:var(--muted)}
     .insightsGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.insightCard{padding:15px}.insightIcon{font-size:22px}.insightTitle{font-size:12px;font-weight:1000;margin-top:8px}.insightText{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}.toolbarInline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.smallSelect{height:34px;border:1px solid var(--line);border-radius:9px;padding:0 9px;background:#fff}.badge{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:1000;background:#eef2f7;color:#475569}
-    @media(max-width:1450px){.filtersBI{grid-template-columns:repeat(3,1fr)}.filtersCommercial{grid-template-columns:repeat(3,1fr)}.kpiGrid{grid-template-columns:repeat(3,1fr)}.routeSummary{grid-template-columns:repeat(2,1fr)}.routeHero{grid-column:span 2}.insightsGrid{grid-template-columns:repeat(2,1fr)}.biGrid.three{grid-template-columns:1fr 1fr}}
-    @media(max-width:980px){.biGrid,.biGrid.three{grid-template-columns:1fr}.filtersBI,.filtersCommercial{grid-template-columns:1fr}.kpiGrid{grid-template-columns:repeat(2,1fr)}.routeSummary{grid-template-columns:1fr}.routeHero{grid-column:auto}.insightsGrid{grid-template-columns:1fr}.heroBITitle h1{font-size:24px}}
-    @media(max-width:640px){.kpiGrid{grid-template-columns:1fr}.modeNav{width:100%}.modeBtn{flex:1}}
+    /* =========================================================
+       MAPA OPERACIONAL
+       ========================================================= */
+    .mapKpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+    .mapKpiCard{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:12px;min-height:92px}
+    .mapKpiIcon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:#eff6ff;color:#1d4ed8;font-size:20px;flex:0 0 42px}
+    .mapKpiLabel{font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+    .mapKpiValue{font-size:22px;font-weight:1000;margin-top:3px;color:#0f2e63}
+    .mapMainGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(420px,.8fr);gap:14px}
+    .mapCard{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:20px;overflow:hidden}
+    .mapCardHead{min-height:64px;padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .mapCardHead h3{margin:0;font-size:17px;font-weight:1000}.mapCardHead p{margin:3px 0 0;color:var(--muted);font-size:11px}
+    .mapMetricSelect{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 10px;font-size:11px;font-weight:850;color:#334155}
+    .mapCanvasWrap{position:relative;min-height:510px;padding:12px 16px 14px;background:radial-gradient(circle at 50% 40%,#f8fbff 0%,#eef6ff 65%,#e8f1fb 100%);overflow:hidden}
+    brazil-component#biBrazilMap{display:block;width:100%;height:480px;max-width:720px;margin:0 auto;--brazil-bg-color:#d5e3f2;--brazil-bg-hover-color:#2563eb;--brazil-stroke-color:#ffffff;--brazil-stroke-hover-color:#ffffff;--brazil-acronym-color:#193a63;--brazil-acronym-hover-color:#ffffff;--brazil-bg-color-dark:#d5e3f2;--brazil-bg-hover-color-dark:#2563eb;--brazil-stroke-color-dark:#ffffff;--brazil-stroke-hover-color-dark:#ffffff;--brazil-acronym-color-dark:#193a63;--brazil-acronym-hover-color-dark:#ffffff}
+    .mapLegend{position:absolute;left:18px;bottom:18px;width:165px;padding:11px;border-radius:13px;background:rgba(255,255,255,.94);border:1px solid #d8e4f0;box-shadow:0 8px 22px rgba(15,23,42,.10);backdrop-filter:blur(8px)}
+    .mapLegendTitle{font-size:10px;font-weight:1000;color:#17355d;margin-bottom:7px}.mapLegendRow{display:flex;align-items:center;gap:7px;font-size:9px;font-weight:800;color:#64748b;margin-top:5px}.mapLegendDot{width:11px;height:11px;border-radius:50%;border:1px solid rgba(15,23,42,.06)}
+    .mapHint{position:absolute;right:18px;top:18px;padding:8px 10px;border-radius:10px;background:rgba(12,42,83,.90);color:#fff;font-size:9px;font-weight:900;box-shadow:0 8px 18px rgba(15,23,42,.18);pointer-events:none}
+    .mapStatePanel{min-height:575px;display:flex;flex-direction:column}
+    .mapStateIntro{padding:17px 18px 10px}.mapBreadcrumb{font-size:9px;font-weight:900;color:#7290ad;text-transform:uppercase;letter-spacing:.06em}.mapStateTitleRow{display:flex;align-items:center;gap:10px;margin-top:9px}.mapStatePin{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#e9f2ff;color:#1d4ed8;font-size:20px}.mapStateTitle{font-size:22px;font-weight:1000;color:#12315e}.mapStateSubtitle{font-size:11px;color:var(--muted);margin-top:2px}
+    .mapDetailTabs{display:flex;gap:8px;padding:6px 18px 13px;border-bottom:1px solid var(--line)}.mapDetailBtn{height:36px;padding:0 14px;border:1px solid #d9e3ef;border-radius:10px;background:#fff;color:#475569;font-size:10px;font-weight:950;cursor:pointer}.mapDetailBtn.active{background:#0f62d7;border-color:#0f62d7;color:#fff;box-shadow:0 5px 14px rgba(37,99,235,.20)}
+    .mapStateDetails{padding:12px 16px 16px;overflow:auto;max-height:448px;flex:1}.mapDetailEmpty{padding:38px 20px;text-align:center;color:#64748b;font-size:12px;font-weight:800}.mapGroup{border:1px solid #e4ebf3;border-radius:13px;overflow:hidden;margin-bottom:10px;background:#fff}.mapGroupHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;background:#f7faff;border-bottom:1px solid #e9eff6}.mapGroupName{font-size:11px;font-weight:1000;color:#17355d}.mapGroupTotal{font-size:9px;font-weight:950;color:#2563eb;white-space:nowrap}
+    .mapCityRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:9px 11px;border-bottom:1px solid #f0f4f8}.mapCityRow:last-child{border-bottom:0}.mapCityName{font-size:10px;font-weight:900;color:#334155;overflow:hidden;text-overflow:ellipsis}.mapCityMeta{text-align:right;font-size:9px;font-weight:900;color:#64748b}.mapCityBar{grid-column:1/-1;height:4px;background:#eef2f7;border-radius:999px;overflow:hidden}.mapCityBar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#60a5fa,#2563eb)}
+    .mapBottomGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}.mapMiniChart{height:280px;padding:12px 14px}.mapNoSelection{padding:25px;text-align:center;color:#64748b;font-size:12px;font-weight:800}
+    .mapActivityBadge{display:inline-flex;align-items:center;gap:5px;margin-left:7px;padding:3px 7px;border-radius:999px;background:#ecfdf3;color:#15803d;font-size:9px;font-weight:1000;vertical-align:middle}
+
+    @media(max-width:1450px){.mapMainGrid{grid-template-columns:1fr 1fr}.mapBottomGrid{grid-template-columns:1fr 1fr}.mapKpiGrid{grid-template-columns:repeat(2,1fr)}.filtersBI{grid-template-columns:repeat(3,1fr)}.filtersCommercial{grid-template-columns:repeat(3,1fr)}.kpiGrid{grid-template-columns:repeat(3,1fr)}.routeSummary{grid-template-columns:repeat(2,1fr)}.routeHero{grid-column:span 2}.insightsGrid{grid-template-columns:repeat(2,1fr)}.biGrid.three{grid-template-columns:1fr 1fr}}
+    @media(max-width:980px){.mapMainGrid,.mapBottomGrid{grid-template-columns:1fr}.mapKpiGrid{grid-template-columns:repeat(2,1fr)}.mapCanvasWrap{min-height:430px}brazil-component#biBrazilMap{height:405px}.mapStatePanel{min-height:auto}.biGrid,.biGrid.three{grid-template-columns:1fr}.filtersBI,.filtersCommercial{grid-template-columns:1fr}.kpiGrid{grid-template-columns:repeat(2,1fr)}.routeSummary{grid-template-columns:1fr}.routeHero{grid-column:auto}.insightsGrid{grid-template-columns:1fr}.heroBITitle h1{font-size:24px}}
+    @media(max-width:640px){.mapKpiGrid{grid-template-columns:1fr}.mapCanvasWrap{padding:8px;min-height:360px}brazil-component#biBrazilMap{height:340px}.mapLegend{position:relative;left:auto;bottom:auto;width:100%;margin-top:6px}.mapHint{display:none}.kpiGrid{grid-template-columns:1fr}.modeNav{width:100%}.modeBtn{flex:1}}
   </style>
 </head>
 <body>
@@ -38,7 +65,7 @@
   <div class="pageBI">
     <div class="heroBI">
       <div class="heroBITop"><div class="heroBITitle"><h1>B.I. Fretes</h1><p>Operação, histórico diário e inteligência comercial de valores praticados.</p></div><div class="syncStatus" id="syncStatus">🔄 Carregando...</div></div>
-      <div class="modeNav"><button class="modeBtn active" type="button" data-mode="ATUAL">🚛 Operação atual</button><button class="modeBtn" type="button" data-mode="HISTORICO">📅 Histórico diário</button><button class="modeBtn" type="button" data-mode="COMERCIAL">💰 Análise comercial</button></div>
+      <div class="modeNav"><button class="modeBtn active" type="button" data-mode="ATUAL">🚛 Operação atual</button><button class="modeBtn" type="button" data-mode="MAPA">🗺️ Mapa</button><button class="modeBtn" type="button" data-mode="HISTORICO">📅 Histórico diário</button><button class="modeBtn" type="button" data-mode="COMERCIAL">💰 Análise comercial</button></div>
       <input id="fModo" type="hidden" value="ATUAL" />
       <div class="filtersBI">
         <div class="fieldBox"><label for="fDataInicio">Data inicial</label><input id="fDataInicio" type="date" /></div>
@@ -77,6 +104,60 @@
         <div class="chartCard"><div class="chartHead"><h3>Margem Média por Cliente</h3></div><div class="chartBody tall"><canvas id="chartMargemCliente"></canvas></div></div>
         <div class="chartCard"><div class="chartHead"><h3>Evolução Diária de Veículos</h3></div><div class="chartBody tall"><canvas id="chartEvolucaoDiaria"></canvas></div></div>
         <div class="tableCard" style="grid-column:1/-1"><div class="tableHead"><h3>Indicativo Fixo por Filial</h3></div><div class="tableWrap"><table><thead><tr><th>Filial</th><th class="num">Porta</th><th class="num">Trânsito</th><th class="num">Veículos</th><th class="num">Volume (t)</th><th class="num">Frete Médio</th><th class="num">Margem Média R$</th><th class="num">Margem Média %</th></tr></thead><tbody id="tbodyIndicativo"></tbody></table></div></div>
+      </div>
+    </section>
+
+    <section class="modeSection" data-section="MAPA">
+      <div class="mapKpiGrid">
+        <div class="mapKpiCard"><div class="mapKpiIcon">🚛</div><div><div class="mapKpiLabel">Carregamentos</div><div class="mapKpiValue" id="mapKpiFretes">0</div></div></div>
+        <div class="mapKpiCard"><div class="mapKpiIcon">🚚</div><div><div class="mapKpiLabel">Veículos</div><div class="mapKpiValue" id="mapKpiVeiculos">0</div></div></div>
+        <div class="mapKpiCard"><div class="mapKpiIcon">📦</div><div><div class="mapKpiLabel">Volume Operacional</div><div class="mapKpiValue" id="mapKpiVolume">0 t</div></div></div>
+        <div class="mapKpiCard"><div class="mapKpiIcon">🏢</div><div><div class="mapKpiLabel">Filiais Ativas</div><div class="mapKpiValue" id="mapKpiFiliais">0</div></div></div>
+      </div>
+
+      <div class="mapMainGrid">
+        <div class="mapCard">
+          <div class="mapCardHead">
+            <div><h3>🗺️ Mapa de Carregamentos</h3><p>Distribuição da operação por estado. Clique em uma UF para abrir as cidades.</p></div>
+            <select class="mapMetricSelect" id="mapMetric">
+              <option value="VEICULOS">Quantidade de Veículos</option>
+              <option value="FRETES">Quantidade de Fretes</option>
+              <option value="VOLUME">Volume Operacional</option>
+            </select>
+          </div>
+          <div class="mapCanvasWrap">
+            <brazil-component id="biBrazilMap"></brazil-component>
+            <div class="mapHint">Clique no estado para detalhar cidades</div>
+            <div class="mapLegend">
+              <div class="mapLegendTitle" id="mapLegendTitle">Quantidade de Veículos</div>
+              <div class="mapLegendRow"><span class="mapLegendDot" style="background:#dbe7f3"></span>Sem ocorrência</div>
+              <div class="mapLegendRow"><span class="mapLegendDot" style="background:#b9d8fb"></span>Baixa movimentação</div>
+              <div class="mapLegendRow"><span class="mapLegendDot" style="background:#60a5fa"></span>Média movimentação</div>
+              <div class="mapLegendRow"><span class="mapLegendDot" style="background:#1d4ed8"></span>Alta movimentação</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mapCard mapStatePanel">
+          <div class="mapStateIntro">
+            <div class="mapBreadcrumb">Brasil › <span id="mapBreadcrumbState">Estado</span> › Cidades</div>
+            <div class="mapStateTitleRow">
+              <div class="mapStatePin">📍</div>
+              <div><div class="mapStateTitle" id="mapStateTitle">Selecione um estado</div><div class="mapStateSubtitle" id="mapStateSubtitle">Clique no mapa para visualizar onde temos carregamentos.</div></div>
+            </div>
+          </div>
+          <div class="mapDetailTabs">
+            <button class="mapDetailBtn active" id="mapByFilial" type="button" data-map-detail="FILIAL">🏢 Por Filial</button>
+            <button class="mapDetailBtn" id="mapByRegional" type="button" data-map-detail="REGIONAL">🔗 Por Regional</button>
+          </div>
+          <div class="mapStateDetails" id="mapStateDetails"><div class="mapDetailEmpty">Selecione um estado no mapa.</div></div>
+        </div>
+      </div>
+
+      <div class="mapBottomGrid">
+        <div class="mapCard"><div class="mapCardHead"><div><h3>Distribuição por Regional</h3><p id="mapRegionalSubtitle">Estado selecionado</p></div></div><div class="mapMiniChart"><canvas id="mapRegionalChart"></canvas></div></div>
+        <div class="mapCard"><div class="mapCardHead"><div><h3>Origem x Destino</h3><p id="mapRoutesSubtitle">Destinos dos carregamentos do estado</p></div></div><div class="mapMiniChart"><canvas id="mapRoutesChart"></canvas></div></div>
+        <div class="mapCard"><div class="mapCardHead"><div><h3>Principais Produtos</h3><p id="mapProductsSubtitle">Volume por produto no estado</p></div></div><div class="mapMiniChart"><canvas id="mapProductsChart"></canvas></div></div>
       </div>
     </section>
 
@@ -120,7 +201,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=16"></script>
-  <script src="../assets/js/bi.js?v=9"></script>
+  <script src="../assets/js/bi.js?v=10"></script>
   <script>
     requireHomeAuth(); bindLogoutButton();
     (function(){

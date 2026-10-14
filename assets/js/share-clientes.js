@@ -561,43 +561,203 @@
     return html2canvasPromise;
   }
 
+  function isIOSDevice() {
+    const ua = navigator.userAgent || "";
+    return /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function waitForShareImages(root) {
+    const images = [...(root?.querySelectorAll("img") || [])];
+
+    return Promise.all(
+      images.map((img) => {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise((resolve) => {
+          const finish = () => resolve();
+          img.addEventListener("load", finish, { once: true });
+          img.addEventListener("error", finish, { once: true });
+          setTimeout(finish, 2500);
+        });
+      })
+    );
+  }
+
+  function safePrintFilenamePart(value) {
+    return up(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9_-]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 60) || "CLIENTE";
+  }
+
+  function canvasToPngBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Não foi possível finalizar a imagem."));
+        },
+        "image/png",
+        1
+      );
+    });
+  }
+
+  function calculatePrintScale(page) {
+    const width = Math.max(1, page.scrollWidth || page.offsetWidth || 1650);
+    const height = Math.max(1, page.scrollHeight || page.offsetHeight || 1000);
+    const ios = isIOSDevice();
+
+    const maxPixels = ios ? 10_000_000 : 24_000_000;
+    const maxDimension = ios ? 4096 : 8192;
+
+    const byPixels = Math.sqrt(maxPixels / (width * height));
+    const byWidth = maxDimension / width;
+    const byHeight = maxDimension / height;
+
+    return Math.max(0.65, Math.min(2, byPixels, byWidth, byHeight));
+  }
+
+  async function deliverPrintBlob(blob, filename, iosPreviewWindow = null) {
+    const file = new File([blob], filename, { type: "image/png" });
+
+    if (
+      typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [file] })
+    ) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Share Clientes",
+          text: "Imagem gerada pelo Portal Frete"
+        });
+
+        if (iosPreviewWindow && !iosPreviewWindow.closed) {
+          iosPreviewWindow.close();
+        }
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          if (iosPreviewWindow && !iosPreviewWindow.closed) {
+            iosPreviewWindow.close();
+          }
+          return;
+        }
+        console.warn("[SHARE PRINT] compartilhamento nativo indisponível:", error);
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+
+    if (isIOSDevice()) {
+      if (iosPreviewWindow && !iosPreviewWindow.closed) {
+        iosPreviewWindow.location.replace(url);
+      } else {
+        window.location.href = url;
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+      return;
+    }
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+  }
+
   async function doPrint() {
     const page = $("pageShare");
+    const button = $("btnPrint");
     if (!page) return;
 
     const estadoAntesPrint = ocultarFreteEmpresa;
+    const buttonText = button?.innerHTML || "";
+    let iosPreviewWindow = null;
 
     try {
+      if (button) {
+        button.disabled = true;
+        button.textContent = "⏳ Gerando...";
+      }
+
+      /*
+       * No Safari iOS um download disparado somente após uma captura longa
+       * pode perder a ativação do usuário. Abrimos uma aba-reserva no clique
+       * e a reutilizamos apenas se o compartilhamento nativo não estiver
+       * disponível.
+       */
+      if (isIOSDevice()) {
+        iosPreviewWindow = window.open("", "_blank");
+        if (iosPreviewWindow) {
+          iosPreviewWindow.document.write(
+            '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">' +
+            '<title>Gerando imagem...</title>' +
+            '<body style="font-family:system-ui;padding:28px;text-align:center">' +
+            '<h3>Gerando imagem...</h3><p>Aguarde alguns segundos.</p></body>'
+          );
+        }
+      }
+
       const html2canvasLib = await loadHtml2Canvas();
 
       ocultarFreteEmpresa = true;
       toggleFreteEmpresa(true);
-
       document.body.classList.add("printMode");
 
-      await new Promise((r) => setTimeout(r, 120));
+      await waitForShareImages(page);
+      await new Promise((resolve) => requestAnimationFrame(() =>
+        requestAnimationFrame(resolve)
+      ));
+
+      const scale = calculatePrintScale(page);
 
       const canvas = await html2canvasLib(page, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true
+        backgroundColor: "#f3f4f6",
+        scale,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 5000,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        windowWidth: Math.max(1650, page.scrollWidth || 1650),
+        windowHeight: Math.max(page.scrollHeight || 0, document.documentElement.clientHeight)
       });
 
-      const dataUrl = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      const cliente = up($("selCliente")?.value) || "CLIENTE";
+      const blob = await canvasToPngBlob(canvas);
+      const cliente = safePrintFilenamePart($("selCliente")?.value);
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-
       const baseNome = BASE_ATUAL === "fretes2" ? "MT" : "GO";
-      a.download = `share-${baseNome}-${cliente}-${stamp}.png`;
-      a.href = dataUrl;
-      a.click();
+      const filename = `share-${baseNome}-${cliente}-${stamp}.png`;
+
+      await deliverPrintBlob(blob, filename, iosPreviewWindow);
     } catch (error) {
-      alert(`❌ ${friendlySyncError(error)}`);
+      console.error("[SHARE PRINT] falha ao gerar imagem:", error);
+
+      if (iosPreviewWindow && !iosPreviewWindow.closed) {
+        iosPreviewWindow.close();
+      }
+
+      alert(`❌ Não foi possível gerar o print.\n\n${friendlySyncError(error)}`);
     } finally {
       ocultarFreteEmpresa = estadoAntesPrint;
       toggleFreteEmpresa(ocultarFreteEmpresa);
       document.body.classList.remove("printMode");
+
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = buttonText || "🖼️ Gerar Print";
+      }
     }
   }
 

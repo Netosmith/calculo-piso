@@ -92,6 +92,12 @@
       background:linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.10));
     }
 
+    body.shareLight .btnSmall:disabled{
+      opacity:.65;
+      cursor:wait;
+      pointer-events:none;
+    }
+
     .topRow{
       display:grid;
       grid-template-columns: 420px 1fr 420px;
@@ -400,6 +406,6 @@
     requireHomeAuth();
     bindLogoutButton();
   </script>
-  <script src="../assets/js/share-clientes.js?v=8"></script>
+  <script src="../assets/js/share-clientes.js?v=9"></script>
 </body>
 </html>

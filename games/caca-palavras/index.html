@@ -140,10 +140,11 @@
     .cell.just-found{animation:pop .38s ease}
     @keyframes pop{50%{transform:scale(1.15);filter:brightness(1.5)}}
     .hint-line{
-      position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-      max-width:calc(100% - 36px);padding:8px 12px;border-radius:999px;background:rgba(3,18,33,.84);
-      color:#9ab6d1;font-size:10px;font-weight:800;pointer-events:none;white-space:nowrap
+      padding:12px 14px;border:1px solid #294965;border-radius:14px;
+      background:rgba(9,31,52,.9);color:#90a9c2;font-size:10px;
+      line-height:1.45;font-weight:800
     }
+    .hint-line b{color:#d9ecff}
 
     .sidebar{
       min-width:0;min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:12px
@@ -218,7 +219,6 @@
       .cell{font-size:clamp(9px,3.3vw,16px);border-radius:3px}
       .sidebar{grid-template-rows:auto auto auto}
       .words{grid-template-columns:repeat(2,1fr);max-height:none}
-      .hint-line{position:static;transform:none;margin:8px auto 0}
     }
     @media(max-width:420px){
       .topbar{gap:6px}.brand h1{font-size:15px}.brand-badge{display:none}
@@ -274,7 +274,7 @@
         </div>
         <div class="board-stage" id="boardStage">
           <div class="board" id="board" aria-label="Letras do caça-palavras"></div>
-          <div class="hint-line">💡 As palavras podem estar em qualquer direção, inclusive de trás para frente.</div>
+
         </div>
       </section>
 
@@ -287,6 +287,10 @@
 
         <section class="side-help">
           <b>Memória automática:</b> seu progresso fica salvo neste navegador. Pode atualizar ou fechar a página e continuar depois.
+        </section>
+
+        <section class="hint-line">
+          💡 <b>Dica:</b> as palavras podem estar em qualquer direção, inclusive de trás para frente.
         </section>
 
         <section class="word-card">

@@ -23,3 +23,7 @@ Depois da publicação, abra `https://portalfrete.net.br/pages/home.html` com AD
 ## Central e Cine Nova Frota
 
 `/games/` agora abre a central de cards. Guerra de Escritório está em `guerra-de-escritorio.html`, preservando os arquivos JS e as salas existentes; convites antigos com `?sala=` são encaminhados. Cine Nova Frota está em `cine-nova-frota/`, com instruções de ativação em `cine-nova-frota/README.md`. A HOME do Portal permanece sem o card do Games. O Cine exige os mesmos controles de acesso e sua própria configuração de playlist HTTPS/HLS.
+
+## Caça-Palavras
+
+`/games/caca-palavras/` é um jogo solo em tela cheia com 26 palavras ligadas à operação de transporte. O tabuleiro funciona com mouse e toque, aceita seleção horizontal, vertical e diagonal em ambos os sentidos e salva automaticamente no `localStorage` a malha, palavras encontradas e tempo acumulado. O botão **Novo jogo** cria outra malha e apaga somente o progresso do caça-palavras deste navegador.

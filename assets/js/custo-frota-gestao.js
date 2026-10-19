@@ -110,6 +110,23 @@ $('#nfgImport').addEventListener('change',async e=>{
   const summary=await window.NFGImportRows(valid);alert('Importados: '+summary.added+'; repetidos: '+summary.duplicates);
  }catch(err){alert('Falha na importação: '+err.message)}finally{e.target.value=''}
 });
+$('#nfgMigrateLocal')?.addEventListener('click',async()=>{
+ if(!loaded)return alert('Aguarde a conexão com o D1.');
+ let old;try{old=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return alert('Histórico local inválido.')}
+ if(!Array.isArray(old)||!old.length)return alert('Nenhum lançamento antigo salvo neste navegador.');
+ const candidates=old.filter(r=>r&&typeLabels[r.type]&&validDate(r.date)&&plate(r.plate).length===7);
+ if(!candidates.length)return alert('Não há lançamentos locais com placa, data e tipo válidos.');
+ if(!confirm('Migrar '+candidates.length+' lançamentos locais para o D1?\nAtenção: se os mesmos dados já foram importados por Excel, poderão aparecer duplicados. Confira antes de continuar.\nO histórico local NÃO será apagado.'))return;
+ try{
+  const batch=[];
+  for(let i=0;i<candidates.length;i++){
+   const r=candidates[i],fingerprint=await hash('local-v1:'+String(r.id||i)+':'+JSON.stringify(r));
+   batch.push({...r,id:'imp_'+fingerprint,plate:plate(r.plate),source:r.source||{filename:'Histórico local anterior',sheet:'Portal antigo',row:i+1}});
+  }
+  const res=await window.NFGImportRows(batch);
+  alert('Migração concluída. Novos: '+res.added+'; duplicados ignorados: '+res.duplicates+'. Dados antigos preservados neste navegador.');
+ }catch(err){alert('Falha na migração: '+err.message)}
+});
 window.addEventListener('nfg-finance-changed',loadRecords);
 selectTab('painel');render();loadRecords();
 })();

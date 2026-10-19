@@ -60,11 +60,11 @@ function guessCategory(description,supplier){
 function convert(entry,sheet,rowNum,raw,header){
  const mapping=typeRow(entry.template,raw);const parsed=reportRow(mapping,{plate:entry.plate,driver:entry.driver},entry.template);
  parsed.date=date(raw[0],entry.date1904)||date(parsed.date,entry.date1904);
- const base={plate:parsed.plate,driver:parsed.driver,date:parsed.date||(entry.template==='revision'?'0001-01-01':entry.periodDate),
+ const base={plate:parsed.plate,driver:parsed.driver,date:parsed.date||(entry.template==='revision'?'0001-01-01':''),
    source:{filename:entry.file.name,sha256:entry.hash,sheet:sheet.name,row:rowNum,template:entry.template,
     columns:source(sheet,rowNum-1,raw,header,sheet.sheet),periodDateOnly:!parsed.date&&entry.template==='revision',undated:!parsed.date&&entry.template==='revision'}};
  if(base.plate.length!==7)return {reason:'Placa ausente/inválida'};
- if(entry.template!=='revision'&&!/^\d{4}-\d{2}-\d{2}$/.test(base.date))return {reason:'Data inválida'};
+ if(entry.template!=='revision'&&!parsed.date)return {reason:'Linha sem data (possível total/subtotal): não importar'};
  const result=[];
  const push=(suffix,data)=>result.push({...base,...data,id:makeId(entry.hash,entry.sheetIndex,rowNum,suffix)});
  if(entry.template==='expense'){if(!(parsed.value>0))return {reason:'Valor ausente / totalizador'};push('expense',{type:'expense',value:parsed.value,category:guessCategory(parsed.description,parsed.supplier),categoryInferred:true,city:clean(parsed.city),uf:clean(parsed.uf),supplier:clean(parsed.supplier),description:clean(parsed.description),status:clean(parsed.status),paymentMethod:clean(parsed.status)})}

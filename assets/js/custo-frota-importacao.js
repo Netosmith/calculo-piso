@@ -127,6 +127,39 @@ function scanSheet(entry){
    for(const r of out.records)for(const w of r.importWarnings||[])entry.warnings.push('Linha '+(i+1)+': '+w)
   }else if(entry.rejected.length<40)entry.rejected.push({row:i+1,reason:out.reason})}
 }
+
+const previewLimits=new Map();
+const ptMoney=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const formattedDate=d=>d==='0001-01-01'?'Sem data no original':/^\d{4}-\d{2}-\d{2}$/.test(d||'')?d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'Não informado';
+function originalColumns(row){
+ const columns=row?.source?.columns||[];
+ return '<details><summary>Ver '+columns.length+' colunas originais</summary><div class="nfg-tablewrap"><table class="nfg-table"><thead><tr><th>Coluna</th><th>Nome na planilha</th><th>Conteúdo original</th><th>Fórmula</th></tr></thead><tbody>'+
+ columns.map(x=>'<tr><td>'+esc(x.column)+'</td><td>'+esc(x.header)+'</td><td>'+esc(x.value)+'</td><td>'+esc(x.formula||'')+'</td></tr>').join('')+
+ '</tbody></table></div></details>';
+}
+function previewKind(row){
+ return row.type==='freight'?'Frete':row.type==='expense'?'Despesa':row.type==='fuel'?(row.category||'Combustível'):row.type==='commission'?'Vale / comissão':'Revisão';
+}
+function renderSheetDetails(sheet){
+ const warnings=sheet.valid.filter(r=>Array.isArray(r.importWarnings)&&r.importWarnings.length);
+ const count=Math.min(sheet.valid.length,previewLimits.get(sheet.key)||25);
+ const rows=sheet.valid.slice(0,count);
+ const trace=sheet.rejected.length?'<h4 style="margin:15px 0 6px">Linhas ignoradas ('+sheet.rejected.length+')</h4><div class="nfg-tablewrap"><table class="nfg-table"><thead><tr><th>Linha Excel</th><th>Motivo</th></tr></thead><tbody>'+
+ sheet.rejected.map(r=>'<tr><td>'+esc(r.row||'Aba inteira')+'</td><td>'+esc(r.reason)+'</td></tr>').join('')+'</tbody></table></div>':'';
+ return '<section style="margin:22px 0;padding:16px;border:1px solid #d8e4f0;border-radius:12px">'+
+ '<h3 style="margin:0 0 6px">'+esc(sheet.name)+'</h3>'+
+ '<p class="nfg-muted">Arquivo: '+esc(sheet.file.name)+' | Tipo: '+esc(configs[sheet.template]?.name||'Não reconhecido')+
+ ' | '+sheet.valid.length+' registro(s), '+warnings.length+' alerta(s), '+sheet.rejected.length+' linha(s) ignorada(s)</p>'+
+ (warnings.length?'<h4 style="margin:12px 0 6px">Divergências para conferir</h4><div class="nfg-tablewrap"><table class="nfg-table"><thead><tr><th>Linha Excel</th><th>Placa</th><th>Diferença identificada</th></tr></thead><tbody>'+
+ warnings.map(r=>'<tr><td>'+esc(r.source?.row)+'</td><td>'+esc(r.plate)+'</td><td>'+r.importWarnings.map(esc).join(' • ')+'</td></tr>').join('')+'</tbody></table></div>':'')+
+ (rows.length?'<h4 style="margin:16px 0 7px">Lançamentos reconhecidos ('+count+' de '+sheet.valid.length+')</h4><div class="nfg-tablewrap"><table class="nfg-table"><thead><tr><th>Linha</th><th>Data</th><th>Placa</th><th>Motorista</th><th>Tipo</th><th>Valor bruto/lançado</th><th>Líquido / litros</th><th>Dados originais</th></tr></thead><tbody>'+
+ rows.map(r=>'<tr><td>'+esc(r.source?.row)+'</td><td>'+esc(formattedDate(r.date))+'</td><td>'+esc(r.plate)+'</td><td>'+esc(r.driver||'Não informado')+'</td><td>'+esc(previewKind(r))+'</td><td>'+esc(r.type==='maintenance'&&r.isSchedule?'Sem custo':ptMoney(r.type==='freight'?r.gross:r.value))+'</td><td>'+esc(r.type==='freight'?(r.netFreight==null?'A conferir':ptMoney(r.netFreight)):r.type==='fuel'?(Number(r.liters||0).toLocaleString('pt-BR')+' L'):'—')+'</td><td>'+originalColumns(r)+'</td></tr>').join('')+'</tbody></table></div>'+
+ (sheet.valid.length>count?'<button type="button" class="nfg-action secondary" data-nfgi-more="'+esc(sheet.key)+'" style="margin-top:10px">Exibir mais 50 lançamentos desta aba</button>':''):'<p class="nfg-muted">Nenhum registro reconhecido nesta aba.</p>')+
+ trace+'</section>';
+}
+function refreshDetailTables(){
+ const el=document.getElementById('nfgiDetails');if(el)el.innerHTML=scans.map(renderSheetDetails).join('');
+}
 function show(){
  const all=scans.reduce((x,s)=>x+s.valid.length,0),ignored=scans.reduce((x,s)=>x+s.rejected.length,0);
  target.innerHTML='<div class="nfg-card"><h2>Conferência de importação de planilhas</h2><p class="nfg-muted">Importação ONLINE, em lotes. Todas as colunas originais de cada lançamento são preservadas como histórico da planilha. Não serão importadas linhas de totais. Marque as abas que deseja enviar ao D1.</p>'+
@@ -139,12 +172,15 @@ function show(){
  '<p id="nfgiProgress" class="nfg-muted" role="status" aria-live="polite"></p><button type="button" class="nfg-action" id="nfgiSubmit">Importar todas as abas marcadas para o D1</button></div>';
  document.querySelectorAll('[data-nfgi-select]').forEach(x=>x.onchange=()=>{if(x.checked)selected.add(x.dataset.nfgiSelect);else selected.delete(x.dataset.nfgiSelect)});
  document.getElementById('nfgiSubmit').onclick=commit;
+ refreshDetailTables();
  const details=document.getElementById('nfgiDetails');
- details.innerHTML=scans.map(s=>'<h3 style="margin:15px 0 5px">'+esc(s.name)+'</h3>'+
- '<p class="nfg-muted">Cabeçalhos: '+s.header.map(esc).join(' | ')+'</p>'+
- '<p class="nfg-muted">Exemplo de dados: '+(s.valid.slice(0,2).map(r=>esc(JSON.stringify({data:r.date,placa:r.plate,tipo:r.type,valor:r.value??r.gross,origem:r.source.columns.slice(0,8)}))).join('<hr>')||'Sem linhas reconhecidas')+'</p>'+
- (s.warnings.length?'<p class="nfg-muted">Divergências: '+s.warnings.slice(0,12).map(esc).join(' • ')+'</p>':'')+
- (s.rejected.length?'<p class="nfg-muted">Ignoradas: '+s.rejected.slice(0,12).map(x=>esc(x.row+': '+x.reason)).join(' • ')+'</p>':'')).join('');
+ details.addEventListener('click',e=>{
+  const button=e.target.closest('[data-nfgi-more]');if(!button)return;
+  const sheet=scans.find(s=>s.key===button.dataset.nfgiMore);if(!sheet)return;
+  previewLimits.set(sheet.key,Math.min(sheet.valid.length,(previewLimits.get(sheet.key)||25)+50));
+  refreshDetailTables();
+ });
+
 }
 async function commit(){
  if(started)return;
@@ -166,7 +202,7 @@ fileInput.multiple=true;
 fileInput.addEventListener('change',async ev=>{
  const incoming=[...(ev.target.files||[])];if(!incoming.length)return;
  target.textContent='Analisando '+incoming.length+' arquivo(s) Excel...';
- scans=[];selected.clear();started=false;
+ scans=[];selected.clear();previewLimits.clear();started=false;
  try{
   await ensureLib();
   for(const file of incoming){

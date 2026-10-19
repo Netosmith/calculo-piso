@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cálculo Frota | NOVA FROTA</title>
+  <title>B.I. Gestão de Frota | NOVA FROTA</title>
 
   <link rel="stylesheet" href="../assets/css/app.css" />
 
@@ -314,7 +314,13 @@
 <style id="nf-gestao-style">
 .nfg-nav{display:flex;gap:8px;overflow-x:auto;padding:10px 0 17px;position:relative}.nfg-nav button{white-space:nowrap;border:1px solid #254469;border-radius:10px;padding:11px 15px;background:#102844;color:#d9e9fa;font-weight:800}.nfg-nav button.active{background:#146c55;border-color:#42d9a5;color:#fff}.nfg-section[hidden]{display:none!important}.nfg-card{border:1px solid #264464;background:#0c2039;border-radius:16px;padding:18px;margin-bottom:14px}.nfg-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.nfg-grid .nfg-card{margin:0}.nfg-card small{display:block;color:#9aafc8}.nfg-value{font-size:clamp(18px,2vw,29px);font-weight:900;margin-top:9px}.nfg-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.nfg-fields label{font-size:12px;color:#bdd0e6;display:flex;flex-direction:column;gap:6px}.nfg-fields input,.nfg-fields select,.nfg-fields textarea,.nfg-filter{width:100%;height:42px;background:#061427;color:#fff;border:1px solid #335374;border-radius:9px;padding:8px;font:inherit}.nfg-fields textarea{height:70px}.nfg-action{padding:11px 16px;border:1px solid #2fa777;border-radius:9px;background:#167d58;color:#fff;font-weight:800}.nfg-action.secondary{background:#153251;border-color:#335374}.nfg-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:15px}.nfg-toolbar label{font-size:12px;color:#bdd0e6;min-width:155px}.nfg-tablewrap{overflow-x:auto}.nfg-table{width:100%;border-collapse:collapse;min-width:760px;font-size:12px}.nfg-table th,.nfg-table td{padding:11px 9px;border-bottom:1px solid #28415e;text-align:left}.nfg-table th{color:#94b9e3}.nfg-chart{display:flex;align-items:flex-end;gap:12px;height:210px;padding:16px 8px 25px;border-bottom:1px solid #36506e}.nfg-barwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px}.nfg-bar{width:min(100%,54px);background:#34bf91;border-radius:5px 5px 0 0;min-height:2px}.nfg-muted{color:#96adc9;font-size:12px;line-height:1.6}.nfg-card h2{margin:0 0 14px;font-size:17px}.nfg-danger{background:#551f32;border-color:#b64d66}.nfg-status{color:#ffd899;font-size:12px}.nfg-tabs-caption{margin-bottom:12px;color:#a4c5e8;font-size:12px}@media(max-width:900px){.nfg-grid,.nfg-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){.nfg-grid,.nfg-fields{grid-template-columns:1fr}.nfg-nav button{padding:9px}.nfg-card{padding:12px}}
 </style>
-</head>
+<style id="nf-bi-theme">
+:root{--fleet-bg:#f3f7fb;--fleet-panel:#fff;--fleet-panel-2:#fff;--fleet-line:#dce6f1;--fleet-line-soft:#e7edf4;--fleet-text:#142943;--fleet-muted:#647b93;--fleet-blue:#2563eb;--fleet-green:#0c9c71;--fleet-shadow:0 6px 25px rgba(15,43,77,.06)}
+html,body{background:#f3f7fb!important;color:#142943!important}body{background:linear-gradient(160deg,#eef6ff,#f8fafc 40%,#f3f7fb)!important}
+.fleet-topbar{background:#fff!important;border-bottom:1px solid #dfebf4!important;backdrop-filter:none}.fleet-brand img{max-width:145px}.fleet-home,.fleet-logout{background:#edf4fa;color:#193b5a;border-color:#dce6f1}.fleet-shell{width:min(100% - 32px,1850px);padding:24px 0 50px}.fleet-page-head h1{color:#132e4a}.fleet-page-head p{color:#68809a}.fleet-eyebrow{color:#147ab6}.fleet-btn{color:#23435e;background:#fff;border:1px solid #d7e3ef;box-shadow:none}.fleet-btn.primary{background:#087e60;color:#fff}.fleet-kpi{background:#fff;box-shadow:none}.fleet-kpi-label{color:#668098}.fleet-kpi-value{color:#172f4c}.fleet-note{background:#fff9ec}.fleet-card{background:#fff;box-shadow:none}.fleet-card-head{background:#f5f9fe}.fleet-card-title h2{color:#1a3752}
+.nfg-nav{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:18px;border-bottom:1px solid #e1e9f2;padding-bottom:17px}.nfg-nav button{border:1px solid #dae6f0;border-radius:11px;padding:12px 16px;font-weight:750;background:#fff;color:#3f5b75;cursor:pointer;transition:.2s}.nfg-nav button:hover{border-color:#269dcb;box-shadow:0 3px 12px #daeafa}.nfg-nav button.active{background:#0b3156;color:white;border-color:#0b3156}.nfg-section[hidden]{display:none!important}.nfg-card{background:#fff;border:1px solid #e2eaf3;border-radius:16px;padding:20px;box-shadow:0 5px 20px #233e5710;min-width:0}.nfg-card h2{margin:0 0 14px;font-size:16px;color:#153552}.nfg-muted{color:#72879a;font-size:12px;line-height:1.6}.nfg-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:15px}.nfg-kpi{padding:20px;min-width:0}.nfg-kpi small{color:#71879c;font-size:12px;font-weight:700}.nfg-value{font-size:clamp(19px,2vw,29px);font-weight:850;margin-top:12px;letter-spacing:-.035em;white-space:nowrap;color:#14395a}.nfg-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:15px;margin-bottom:15px}.nfg-filters{display:flex;gap:13px;flex-wrap:wrap;align-items:end;margin:0 0 18px}.nfg-filters label{font-size:11px;font-weight:800;color:#637c94;display:flex;flex-direction:column;gap:6px;flex:1;min-width:150px}.nfg-filter,.nfg-fields input,.nfg-fields select,.nfg-fields textarea{height:43px;width:100%;border:1px solid #d6e4ef;background:#fafcff;color:#163650;border-radius:9px;padding:9px 11px;font:inherit}.nfg-fields textarea{height:70px}.nfg-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.nfg-fields label{font-size:12px;color:#496982;display:flex;flex-direction:column;gap:6px}.nfg-action{padding:11px 16px;border:0;border-radius:10px;background:#0a8f69;color:#fff;font-weight:750;cursor:pointer}.nfg-action.secondary{background:#eaf2f9;color:#244768}.nfg-tablewrap{overflow:auto}.nfg-table{width:100%;border-collapse:collapse;min-width:770px;font-size:12px;color:#29435c}.nfg-table th,.nfg-table td{padding:12px 9px;border-bottom:1px solid #e8eff6;text-align:left}.nfg-table th{font-weight:800;color:#6d8398;background:#f7fafe}.nfg-chart{display:flex;align-items:end;gap:11px;min-height:230px;padding:20px 7px 12px;border-bottom:1px solid #e1eaf3}.nfg-barwrap{flex:1;min-width:25px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:200px;gap:6px}.nfg-bar{border-radius:5px 5px 0 0;min-height:2px}.nfg-hbar{display:grid;grid-template-columns:145px 1fr 110px;align-items:center;gap:12px;margin:13px 0;color:#3c5873;font-size:12px}.nfg-track{height:12px;background:#eaf1f7;border-radius:10px;overflow:hidden}.nfg-fill{height:100%;background:linear-gradient(90deg,#0caa80,#3db6d3);border-radius:10px}.nfg-subhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.nfg-section>.nfg-card{margin-bottom:15px}.nfg-legend{font-size:11px;color:#678399;margin-top:10px}.nfg-warning{padding:12px 15px;border:1px solid #f4dfaa;background:#fffae9;color:#86590c;border-radius:11px;font-size:12px;margin-bottom:15px}
+@media(max-width:1100px){.nfg-kpis{grid-template-columns:repeat(3,1fr)}.nfg-fields{grid-template-columns:repeat(2,1fr)}.nfg-layout{grid-template-columns:1fr}}@media(max-width:650px){.nfg-kpis{grid-template-columns:repeat(2,1fr)}.nfg-fields{grid-template-columns:1fr}.nfg-nav{flex-wrap:nowrap;overflow:auto}.nfg-value{font-size:19px}.nfg-hbar{grid-template-columns:90px 1fr 80px}}
+</style></head>
 
 <body>
   <header class="fleet-topbar">
@@ -331,220 +337,19 @@
     </div>
   </header>
 
-  <main class="fleet-shell">
-    <section class="fleet-page-head">
-      <div>
-        <div class="fleet-eyebrow">Gestão de custos</div>
-        <h1>Gestão de Frota Pesada</h1>
-        <p>Simule cada viagem, conheça o custo real por quilômetro e compare o frete contratado com o ponto de equilíbrio do caminhão.</p>
-      </div>
-      <div class="fleet-head-actions">
-        <button class="fleet-btn" id="btnExemplo" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M5.5 15a7.5 7.5 0 0 0 12.8 2.2M18.5 9A7.5 7.5 0 0 0 5.7 6.8"/></svg>
-          Carregar exemplo
-        </button>
-        <button class="fleet-btn danger" id="btnLimpar" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
-          Limpar cálculo
-        </button>
-        <button class="fleet-btn" id="btnImprimir" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-5h18v5a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg>
-          Imprimir resumo
-        </button>
-      </div>
-    </section>
-
-    <div class="fleet-note">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>
-      <span>Os valores iniciais são apenas um exemplo de cavalo + carreta de 4 eixos. Substitua pelos dados reais do veículo e da viagem antes de usar o resultado comercial.</span>
-    </div>
-
-    <section class="fleet-kpis" aria-label="Indicadores da viagem">
-      <article class="fleet-kpi blue"><span class="fleet-kpi-label">KM total</span><strong class="fleet-kpi-value" id="kpiKmTotal">0 km</strong><small>Ida + volta + deslocamentos extras</small></article>
-      <article class="fleet-kpi"><span class="fleet-kpi-label">Custo total</span><strong class="fleet-kpi-value" id="kpiCustoTotal">R$ 0,00</strong><small>Todos os custos da viagem</small></article>
-      <article class="fleet-kpi amber"><span class="fleet-kpi-label">Custo médio / KM</span><strong class="fleet-kpi-value" id="kpiCustoKm">R$ 0,00</strong><small>Custo total ÷ KM percorrido</small></article>
-      <article class="fleet-kpi"><span class="fleet-kpi-label">Receita / KM</span><strong class="fleet-kpi-value" id="kpiReceitaKm">R$ 0,00</strong><small>Frete bruto ÷ KM percorrido</small></article>
-      <article class="fleet-kpi" id="kpiLucroCard"><span class="fleet-kpi-label">Resultado da viagem</span><strong class="fleet-kpi-value" id="kpiLucro">R$ 0,00</strong><small>Frete bruto − custo total</small></article>
-      <article class="fleet-kpi" id="kpiMargemCard"><span class="fleet-kpi-label">Margem líquida</span><strong class="fleet-kpi-value" id="kpiMargem">0,0%</strong><small>Resultado ÷ frete bruto</small></article>
-    </section>
-
-    <div class="nfg-section" data-nfg-panel="calculadora" hidden><form id="fleetCostForm" autocomplete="off">
-      <div class="fleet-workspace">
-        <div class="fleet-form-column">
-          <section class="fleet-card">
-            <div class="fleet-card-head">
-              <div class="fleet-card-title">
-                <span class="fleet-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>
-                <div><h2>Dados da viagem</h2><p>Identificação, quilometragem e receita</p></div>
-              </div>
-            </div>
-            <div class="fleet-card-body">
-              <div class="fleet-form-grid">
-                <div class="fleet-field span-2"><label for="veiculo">Veículo / conjunto</label><input class="fleet-input" id="veiculo" type="text" placeholder="Ex.: 9 eixos — ABC1D23" /></div>
-                <div class="fleet-field"><label for="dataViagem">Data</label><input class="fleet-input" id="dataViagem" type="date" /></div>
-                <div class="fleet-field"><label for="motorista">Motorista</label><input class="fleet-input" id="motorista" type="text" placeholder="Nome do motorista" /></div>
-                <div class="fleet-field"><label for="origem">Origem</label><input class="fleet-input" id="origem" type="text" placeholder="Cidade / UF" /></div>
-                <div class="fleet-field"><label for="destino">Destino</label><input class="fleet-input" id="destino" type="text" placeholder="Cidade / UF" /></div>
-                <div class="fleet-field"><label for="kmIda">KM de ida <span>*</span></label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="kmIda" type="number" min="0" step="1" inputmode="decimal" /><span class="fleet-suffix">km</span></div></div>
-                <div class="fleet-field"><label for="kmVolta">KM de volta</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="kmVolta" type="number" min="0" step="1" inputmode="decimal" /><span class="fleet-suffix">km</span></div></div>
-                <div class="fleet-field"><label for="kmExtra">KM extras</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="kmExtra" type="number" min="0" step="1" inputmode="decimal" /><span class="fleet-suffix">km</span></div></div>
-                <div class="fleet-field"><label for="cargaTon">Carga</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="cargaTon" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">t</span></div></div>
-                <div class="fleet-field"><label for="freteBruto">Frete bruto <span>*</span></label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="freteBruto" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="fleet-card">
-            <div class="fleet-card-head">
-              <div class="fleet-card-title">
-                <span class="fleet-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 21V5a2 2 0 0 1 2-2h7v18M14 7h3l2 3v11M8 7h3M8 11h3M4 21h17"/><path d="M17 12h2"/></svg></span>
-                <div><h2>Custos variáveis da viagem</h2><p>Valores que mudam conforme rota e frete</p></div>
-              </div>
-            </div>
-            <div class="fleet-card-body">
-              <div class="fleet-form-grid">
-                <div class="fleet-field"><label for="precoDiesel">Preço do diesel</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="precoDiesel" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$/L</span></div></div>
-                <div class="fleet-field"><label for="mediaKmLitro">Média de consumo</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="mediaKmLitro" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">km/L</span></div></div>
-                <div class="fleet-field"><label for="arlaPct">ARLA sobre diesel</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="arlaPct" type="number" min="0" max="100" step="0.01" inputmode="decimal" /><span class="fleet-suffix">%</span></div></div>
-                <div class="fleet-field"><label for="comissaoPct">Comissão motorista</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="comissaoPct" type="number" min="0" max="100" step="0.01" inputmode="decimal" /><span class="fleet-suffix">%</span></div></div>
-                <div class="fleet-field"><label for="impostosPct">Impostos sobre frete</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="impostosPct" type="number" min="0" max="100" step="0.01" inputmode="decimal" /><span class="fleet-suffix">%</span></div></div>
-                <div class="fleet-field"><label for="pedagioIda">Pedágio ida</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="pedagioIda" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="pedagioVolta">Pedágio volta</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="pedagioVolta" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="outrasDespesas">Outras despesas</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="outrasDespesas" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="fleet-card">
-            <div class="fleet-card-head">
-              <div class="fleet-card-title">
-                <span class="fleet-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c.6-1 1.6-1.5 3-1.5 1.7 0 3 .8 3 2s-1.2 1.8-3 2-3 1-3 2.3 1.3 2.2 3 2.2c1.4 0 2.5-.5 3.1-1.5"/></svg></span>
-                <div><h2>Estrutura de custo do caminhão</h2><p>Rateio mensal, pneus, manutenção e depreciação</p></div>
-              </div>
-            </div>
-            <div class="fleet-card-body">
-              <div class="fleet-form-grid">
-                <div class="fleet-field"><label for="valorAquisicao">Valor de aquisição</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="valorAquisicao" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="valorResidual">Valor residual</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="valorResidual" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="vidaUtilMeses">Vida útil</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="vidaUtilMeses" type="number" min="1" step="1" inputmode="numeric" /><span class="fleet-suffix">meses</span></div></div>
-                <div class="fleet-field"><label for="kmPlanejadoMes">KM planejado / mês</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="kmPlanejadoMes" type="number" min="1" step="1" inputmode="decimal" /><span class="fleet-suffix">km</span></div></div>
-                <div class="fleet-field"><label for="seguroMensal">Seguro mensal</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="seguroMensal" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="ipvaAnual">IPVA/licenciamento anual</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="ipvaAnual" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="rastreadorMensal">Rastreador mensal</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="rastreadorMensal" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="salariosMensal">Salários e encargos</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="salariosMensal" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div><small class="fleet-help">Use comissão 0% se o motorista já estiver totalmente incluído aqui.</small></div>
-                <div class="fleet-field"><label for="administrativoMensal">Administrativo mensal</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="administrativoMensal" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="capitalMensal">Custo de capital mensal</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="capitalMensal" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="outrosFixosMensal">Outros fixos mensais</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="outrosFixosMensal" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field"><label for="manutencaoKm">Manutenção por KM</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="manutencaoKm" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$/km</span></div></div>
-                <div class="fleet-field span-2"><label for="custoPneus">Custo do jogo de pneus</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="custoPneus" type="number" min="0" step="0.01" inputmode="decimal" /><span class="fleet-suffix">R$</span></div></div>
-                <div class="fleet-field span-2"><label for="vidaPneusKm">Vida útil do jogo</label><div class="fleet-input-wrap"><input class="fleet-input has-suffix" id="vidaPneusKm" type="number" min="1" step="1" inputmode="decimal" /><span class="fleet-suffix">km</span></div></div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <aside class="fleet-results-column" aria-label="Resultado do cálculo">
-          <section class="fleet-card fleet-decision">
-            <div class="fleet-decision-top">
-              <span class="fleet-decision-badge" id="decisionBadge">Aguardando dados</span>
-              <span class="fleet-kpi-label">Análise comercial</span>
-            </div>
-            <h2 id="decisionTitle">Preencha a quilometragem e o frete</h2>
-            <p id="decisionText">O portal comparará o valor contratado com todos os custos operacionais rateados.</p>
-            <div class="fleet-minimum">
-              <span>Frete mínimo para equilíbrio</span>
-              <strong id="freteMinimo">R$ 0,00</strong>
-              <small><b id="freteMinimoKm">R$ 0,00/km</b> • <b id="freteMinimoTon">R$ 0,00/t</b></small>
-            </div>
-          </section>
-
-          <section class="fleet-card">
-            <div class="fleet-card-head">
-              <div class="fleet-card-title"><div><h2>Composição do custo</h2><p>Participação de cada grupo na viagem</p></div></div>
-            </div>
-            <div class="fleet-card-body fleet-breakdown" id="costBreakdown">
-              <div class="fleet-cost-row"><span>Diesel</span><strong id="costDiesel">R$ 0,00</strong><div class="fleet-bar"><i data-bar="diesel"></i></div></div>
-              <div class="fleet-cost-row"><span>ARLA</span><strong id="costArla">R$ 0,00</strong><div class="fleet-bar"><i data-bar="arla"></i></div></div>
-              <div class="fleet-cost-row"><span>Pedágios e extras</span><strong id="costRoad">R$ 0,00</strong><div class="fleet-bar"><i data-bar="road"></i></div></div>
-              <div class="fleet-cost-row"><span>Comissão e impostos</span><strong id="costTaxes">R$ 0,00</strong><div class="fleet-bar"><i data-bar="taxes"></i></div></div>
-              <div class="fleet-cost-row"><span>Pneus e manutenção</span><strong id="costWear">R$ 0,00</strong><div class="fleet-bar"><i data-bar="wear"></i></div></div>
-              <div class="fleet-cost-row"><span>Custos fixos rateados</span><strong id="costFixed">R$ 0,00</strong><div class="fleet-bar"><i data-bar="fixed"></i></div></div>
-              <div class="fleet-total-row"><span>Total da viagem</span><strong id="costTotalSide">R$ 0,00</strong></div>
-            </div>
-          </section>
-
-          <section class="fleet-card">
-            <div class="fleet-card-head"><div class="fleet-card-title"><div><h2>Base operacional</h2><p>Indicadores derivados do caminhão</p></div></div></div>
-            <div class="fleet-card-body fleet-breakdown">
-              <div class="fleet-total-row"><span>Litros de diesel</span><strong id="baseLitros">0,00 L</strong></div>
-              <div class="fleet-total-row"><span>Depreciação mensal</span><strong id="baseDepreciacao">R$ 0,00</strong></div>
-              <div class="fleet-total-row"><span>Custo fixo mensal</span><strong id="baseFixoMensal">R$ 0,00</strong></div>
-              <div class="fleet-total-row"><span>Fixo por KM</span><strong id="baseFixoKm">R$ 0,00</strong></div>
-              <div class="fleet-total-row"><span>Pneus por KM</span><strong id="basePneusKm">R$ 0,00</strong></div>
-              <div class="fleet-total-row"><span>Base operacional / KM</span><strong id="baseOperacionalKm">R$ 0,00</strong></div>
-            </div>
-          </section>
-
-          <section class="fleet-card fleet-actions-card">
-            <button class="fleet-btn primary" id="btnSalvarViagem" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6"/></svg>
-              Salvar no histórico deste navegador
-            </button>
-            <button class="fleet-btn" id="btnExportar" type="button">Exportar CSV</button>
-            <button class="fleet-btn danger" id="btnLimparHistorico" type="button">Limpar histórico</button>
-          </section>
-        </aside>
-      </div>
-    </form>
-
-    <section class="fleet-card fleet-history">
-      <div class="fleet-card-head">
-        <div class="fleet-card-title">
-          <span class="fleet-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M9 5v14"/></svg></span>
-          <div><h2>Histórico de simulações</h2><p>Registros salvos localmente neste navegador</p></div>
-        </div>
-        <span class="fleet-decision-badge" id="historyCount">0 viagens</span>
-      </div>
-      <div class="fleet-table-wrap">
-        <table class="fleet-table">
-          <thead><tr><th>Data</th><th>Veículo</th><th>Rota</th><th class="num">KM</th><th class="num">Frete bruto</th><th class="num">Custo total</th><th class="num">Custo/KM</th><th class="num">Resultado</th><th class="num">Margem</th><th>Ação</th></tr></thead>
-          <tbody id="historyBody"><tr><td class="fleet-table-empty" colspan="10">Nenhuma simulação salva.</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-<section id="nfGestao" aria-label="Gestão financeira da frota">
-<nav class="nfg-nav" aria-label="Módulos da frota">
-<button type="button" data-nfg-tab="painel" class="active">Visão geral</button>
-<button type="button" data-nfg-tab="lancamentos">Lançamentos</button>
-<button type="button" data-nfg-tab="fretes">Fretes e faturamento</button>
-<button type="button" data-nfg-tab="comissoes">Comissões</button>
-<button type="button" data-nfg-tab="combustivel">Combustível / ARLA</button>
-<button type="button" data-nfg-tab="manutencao">Manutenção</button>
-<button type="button" data-nfg-tab="relatorios">Relatórios</button>
-<button type="button" data-nfg-tab="calculadora">Calculadora de viagem</button>
-</nav>
-<div class="nfg-tabs-caption">Gestão financeira preliminar • registros salvos somente neste navegador até a integração com a base central. Faça backups em CSV.</div>
-<div class="nfg-section" data-nfg-panel="painel">
-<div class="nfg-toolbar"><label>Filtrar placa <input class="nfg-filter" id="nfgPlaca" placeholder="Todas as placas" maxlength="8"></label><label>Competência <input class="nfg-filter" id="nfgMes" type="month"></label><button class="nfg-action secondary" type="button" id="nfgLimparFiltros">Todos os períodos</button></div>
-<div class="nfg-grid"><div class="nfg-card"><small>Faturamento bruto</small><div class="nfg-value" id="nfgFat">R$ 0,00</div></div><div class="nfg-card"><small>Descontos sobre fretes</small><div class="nfg-value" id="nfgDesc">R$ 0,00</div></div><div class="nfg-card"><small>Despesas + comissões</small><div class="nfg-value" id="nfgDesp">R$ 0,00</div></div><div class="nfg-card"><small>Resultado operacional estimado</small><div class="nfg-value" id="nfgResultado">R$ 0,00</div></div></div>
-<div class="nfg-card" style="margin-top:14px"><h2>Receita, despesas e resultado por mês</h2><div class="nfg-chart" id="nfgChart"></div><p class="nfg-muted">Resultado = fretes brutos − descontos − gastos − comissões. Não representa lucro contábil e não inclui custos sem lançamento.</p></div>
-<div class="nfg-card"><h2>Últimos lançamentos</h2><div class="nfg-tablewrap" id="nfgRecent"></div></div>
-</div>
-<div class="nfg-section" data-nfg-panel="lancamentos" hidden><div class="nfg-card"><h2>Novo lançamento operacional</h2><form id="nfgExpenseForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" placeholder="ABC1D23" maxlength="8" required></label><label>Categoria<select name="category"><option>Compras</option><option>Multa</option><option>Pedágio</option><option>Diária</option><option>Lavagem</option><option>Alimentação</option><option>Estacionamento</option><option>Documentação</option><option>Impostos</option><option>Seguro</option><option>Outros</option></select></label><label>Valor R$<input name="value" type="number" min="0.01" step="0.01" required></label><label>Motorista<input name="driver"></label><label>Descrição<input name="description"></label><label>Situação<select name="status"><option>Pago</option><option>Pendente</option></select></label><label>Documento / referência<input name="reference"></label><div><button class="nfg-action" type="submit">Salvar despesa</button></div></form></div></div>
-<div class="nfg-section" data-nfg-panel="fretes" hidden><div class="nfg-card"><h2>Lançamento de frete realizado</h2><form id="nfgFreightForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" maxlength="8" required></label><label>Motorista<input name="driver" required></label><label>Cliente<input name="client"></label><label>Origem<input name="origin"></label><label>Destino<input name="destination"></label><label>Frete bruto R$<input name="gross" type="number" min="0.01" step="0.01" required></label><label>Impostos / descontos R$<input name="discount" type="number" min="0" step="0.01" value="0" required></label><label>Outros descontos R$<input name="otherDiscount" type="number" min="0" step="0.01" value="0" required></label><label>Km rodados<input name="km" type="number" min="0" step="1"></label><label>Comissão % sobre bruto<input name="rate" type="number" min="0" max="100" step="0.01" value="0"></label><label>Situação<select name="status"><option>A receber</option><option>Recebido</option></select></label><label>Referência CT-e / contrato<input name="reference"></label><div><button class="nfg-action" type="submit">Salvar frete</button></div></form><p class="nfg-muted">A comissão informada será gerada automaticamente. Não a registre novamente como despesa.</p></div></div>
-<div class="nfg-section" data-nfg-panel="comissoes" hidden><div class="nfg-card"><h2>Comissões por motorista e placa</h2><form id="nfgCommissionForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" maxlength="8" required></label><label>Motorista<input name="driver" required></label><label>Valor da comissão R$<input name="value" type="number" min="0.01" step="0.01" required></label><label>Referência<input name="reference"></label><label>Situação<select name="status"><option>Pendente</option><option>Pago</option></select></label><div><button class="nfg-action" type="submit">Registrar comissão avulsa</button></div></form></div></div>
-<div class="nfg-section" data-nfg-panel="combustivel" hidden><div class="nfg-card"><h2>Abastecimento e consumo</h2><form id="nfgFuelForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" maxlength="8" required></label><label>Produto<select name="category"><option>Diesel</option><option>ARLA 32</option></select></label><label>Litros<input name="liters" type="number" min="0.01" step="0.01" required></label><label>Preço por litro R$<input name="price" type="number" min="0" step="0.001" required></label><label>Hodômetro (KM)<input name="odometer" type="number" min="0" step="1"></label><label>Posto<input name="description"></label><label>Motorista<input name="driver"></label><div><button class="nfg-action" type="submit">Salvar abastecimento</button></div></form><p class="nfg-muted">Combustível lançado aqui entra nas despesas automaticamente. Consumo km/L dependerá de sequência válida de hodômetros.</p></div></div>
-<div class="nfg-section" data-nfg-panel="manutencao" hidden><div class="nfg-card"><h2>Manutenção, pneus e descarte</h2><form id="nfgMaintenanceForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" maxlength="8" required></label><label>Tipo<select name="category"><option>Peças</option><option>Troca de óleo</option><option>Filtros</option><option>Pneus</option><option>Descarte / substituição</option><option>Revisão preventiva</option><option>Reparo corretivo</option><option>Outros</option></select></label><label>Valor R$<input name="value" type="number" min="0.01" step="0.01" required></label><label>Hodômetro (KM)<input name="odometer" type="number" min="0" step="1"></label><label>Descrição<input name="description"></label><label>Fornecedor<input name="supplier"></label><div><button class="nfg-action" type="submit">Registrar manutenção</button></div></form></div></div>
-<div class="nfg-section" data-nfg-panel="relatorios" hidden><div class="nfg-card"><h2>Extrato completo por veículo</h2><p class="nfg-muted">Os filtros de placa e competência na Visão geral também são aplicados aqui. Exportação inclui todos os registros, sem filtros.</p><button id="nfgExport" type="button" class="nfg-action">Exportar CSV (backup)</button><label class="nfg-action secondary" style="display:inline-block;cursor:pointer;margin-left:8px">Importar backup CSV <input type="file" id="nfgImport" accept=".csv,text/csv" hidden></label><div class="nfg-tablewrap" id="nfgAllRows" style="margin-top:16px"></div></div></div>
-</section>
-  </main>
+  <main class="fleet-shell"><section class="fleet-page-head"><div><div class="fleet-eyebrow">CENTRAL DE INTELIGÊNCIA OPERACIONAL</div><h1>B.I. Gestão de Frota</h1><p>Visão financeira e operacional por placa, motorista, período e tipo de despesa.</p></div><div class="fleet-head-actions"><button type="button" class="fleet-btn primary" id="nfgGoNew">+ NOVO LANÇAMENTO</button><button type="button" class="fleet-btn" id="nfgGoReport">↓ EXPORTAR DADOS</button></div></section><nav class="nfg-nav" aria-label="Gestão de frota"><button type="button" data-nfg-tab="painel" class="active">📊 B.I. Geral</button><button type="button" data-nfg-tab="fretes" >🚛 Fretes</button><button type="button" data-nfg-tab="lancamentos" >💳 Despesas</button><button type="button" data-nfg-tab="combustivel" >⛽ Abastecimentos</button><button type="button" data-nfg-tab="manutencao" >🔧 Manutenção</button><button type="button" data-nfg-tab="comissoes" >👤 Comissões</button><button type="button" data-nfg-tab="relatorios" >📁 Lançamentos / Importar</button></nav><div class="nfg-warning">Dados de demonstração não foram preenchidos. Lançamentos são salvos somente neste navegador, sem sincronização entre usuários. Não utilize como fechamento oficial até integrarmos a base segura.</div><section class="nfg-section" data-nfg-panel="painel"><div class="nfg-filters"><label>Placa<input class="nfg-filter" id="nfgPlaca" placeholder="Todas as placas"></label><label>Motorista<input class="nfg-filter" id="nfgMotorista" placeholder="Todos os motoristas"></label><label>Mês de referência<input class="nfg-filter" id="nfgMes" type="month"></label><button type="button" class="nfg-action secondary" id="nfgLimparFiltros">Limpar filtros</button></div><div class="nfg-kpis"><div class="nfg-card nfg-kpi"><small>Faturamento bruto</small><div id="nfgFat" class="nfg-value">R$ 0,00</div></div><div class="nfg-card nfg-kpi"><small>Descontos</small><div id="nfgDesc" class="nfg-value">R$ 0,00</div></div><div class="nfg-card nfg-kpi"><small>Custos e comissões</small><div id="nfgDesp" class="nfg-value">R$ 0,00</div></div><div class="nfg-card nfg-kpi"><small>Resultado operacional</small><div id="nfgResultado" class="nfg-value">R$ 0,00</div></div><div class="nfg-card nfg-kpi"><small>Margem sobre receita</small><div id="nfgMargem" class="nfg-value">0%</div></div></div><div class="nfg-layout"><div class="nfg-card"><h2>Evolução financeira mensal</h2><div class="nfg-chart" id="nfgChart"></div><div class="nfg-legend">🟢 Receita líquida &nbsp; 🟠 Despesas incluindo comissões</div></div><div class="nfg-card"><h2>Despesas por categoria</h2><div id="nfgCategories"></div></div></div><div class="nfg-layout"><div class="nfg-card"><h2>Desempenho por placa</h2><div class="nfg-tablewrap" id="nfgByPlate"></div></div><div class="nfg-card"><h2>Desempenho por motorista</h2><div class="nfg-tablewrap" id="nfgByDriver"></div></div></div><div class="nfg-card"><h2>Últimas movimentações</h2><div class="nfg-tablewrap" id="nfgRecent"></div></div></section>
+<div class="nfg-section" data-nfg-panel="lancamentos" hidden><div class="nfg-card"><h2>Registrar despesa da frota</h2><form id="nfgExpenseForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" type="text" placeholder="SPJ-1D68" maxlength="8" required></label><label>Motorista<input name="driver" type="text" ></label><label>Cidade<input name="city" type="text" ></label><label>UF<input name="uf" type="text" ></label><label>Fornecedor / local<input name="supplier" type="text" ></label><label>Valor R$<input name="value" type="number" step="0.01" min="0.01" required></label><label>Categoria<select name="category"><option>Pneus / borracharia</option><option>Peças</option><option>Lonas / acessórios</option><option>Pátio / estacionamento</option><option>Lavagem / limpeza</option><option>Ajudante / serviço</option><option>Pedágio</option><option>Alimentação</option><option>Multa</option><option>Compra</option><option>Documentação</option><option>Outros</option></select></label><label>Descrição<input name="description" type="text" ></label><label>Pagamento / status<select name="status"><option>Pix Empresa</option><option>Pix Motorista</option><option>Dinheiro</option><option>Cartão</option><option>Boleto</option><option>Pendente</option></select></label><label>Referência<input name="reference" type="text" ></label><div><button class="nfg-action" type="submit">Salvar despesa</button></div></form></div><div class="nfg-card"><h2>Histórico do módulo</h2><div class="nfg-tablewrap" id="nfgModule-lancamentos"></div></div></div>
+<div class="nfg-section" data-nfg-panel="fretes" hidden><div class="nfg-card"><h2>Faturamento por frete realizado</h2><form id="nfgFreightForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" type="text" placeholder="SPJ-1D68" maxlength="8" required></label><label>Motorista<input name="driver" type="text" ></label><label>Cliente<input name="client" type="text" ></label><label>Origem<input name="origin" type="text" ></label><label>Destino<input name="destination" type="text" ></label><label>Valor bruto R$<input name="gross" type="number" step="0.01" min="0.01" required></label><label>Impostos / descontos R$<input name="discount" type="number" step="0.01" min="0" value="0"></label><label>Demais descontos R$<input name="otherDiscount" type="number" step="0.01" min="0" value="0"></label><label>KM rodados<input name="km" type="number" min="0"></label><label>Comissão % sobre bruto<input name="rate" type="number" step="0.01" min="0" max="100" value="0"></label><label>NF / CT-e<input name="reference" type="text" ></label><label>Recebimento<select name="status"><option>A receber</option><option>Recebido</option></select></label><div><button class="nfg-action" type="submit">Registrar frete</button></div></form></div><div class="nfg-card"><h2>Histórico do módulo</h2><div class="nfg-tablewrap" id="nfgModule-fretes"></div></div></div>
+<div class="nfg-section" data-nfg-panel="combustivel" hidden><div class="nfg-card"><h2>Abastecimento diesel e ARLA</h2><form id="nfgFuelForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" type="text" placeholder="SPJ-1D68" maxlength="8" required></label><label>Motorista<input name="driver" type="text" ></label><label>Produto<select name="category"><option>Diesel</option><option>ARLA 32</option></select></label><label>Litros<input name="liters" type="number" step="0.01" min="0.01" required></label><label>Preço / litro R$<input name="price" type="number" step="0.001" min="0" required></label><label>KM hodômetro<input name="odometer" type="number" min="0"></label><label>Posto / fornecedor<input name="supplier" type="text" ></label><label>Cidade<input name="city" type="text" ></label><label>UF<input name="uf" type="text" ></label><label>Pagamento<select name="status"><option>Pix Empresa</option><option>Pix Motorista</option><option>Cartão</option><option>Boleto</option><option>Pendente</option></select></label><div><button class="nfg-action" type="submit">Salvar abastecimento</button></div></form></div><div class="nfg-card"><h2>Histórico do módulo</h2><div class="nfg-tablewrap" id="nfgModule-combustivel"></div></div></div>
+<div class="nfg-section" data-nfg-panel="manutencao" hidden><div class="nfg-card"><h2>Manutenção e desgaste do veículo</h2><form id="nfgMaintenanceForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" type="text" placeholder="SPJ-1D68" maxlength="8" required></label><label>Motorista<input name="driver" type="text" ></label><label>Categoria<select name="category"><option>Revisão preventiva</option><option>Pneus</option><option>Óleo e filtros</option><option>Peças</option><option>Borracharia</option><option>Elétrica</option><option>Freios</option><option>Descarte / substituição</option><option>Outros</option></select></label><label>Valor R$<input name="value" type="number" step="0.01" min="0.01" required></label><label>KM hodômetro<input name="odometer" type="number" min="0"></label><label>Oficina / fornecedor<input name="supplier" type="text" ></label><label>Descrição<input name="description" type="text" ></label><label>Próxima revisão KM<input name="nextOdometer" type="number" min="0"></label><div><button class="nfg-action" type="submit">Salvar manutenção</button></div></form></div><div class="nfg-card"><h2>Histórico do módulo</h2><div class="nfg-tablewrap" id="nfgModule-manutencao"></div></div></div>
+<div class="nfg-section" data-nfg-panel="comissoes" hidden><div class="nfg-card"><h2>Comissões e adiantamentos por motorista e placa</h2><form id="nfgCommissionForm" class="nfg-fields"><label>Data<input name="date" type="date" required></label><label>Placa<input name="plate" type="text" placeholder="SPJ-1D68" maxlength="8" required></label><label>Motorista<input name="driver" type="text" ></label><label>Tipo<select name="category"><option>Comissão avulsa</option><option>Adiantamento / vale</option><option>Ajuste de comissão</option></select></label><label>Valor R$<input name="value" type="number" step="0.01" min="0.01" required></label><label>Referência<input name="reference" type="text" ></label><label>Situação<select name="status"><option>Pendente</option><option>Pago</option></select></label><label>Descrição<input name="description" type="text" ></label><div><button class="nfg-action" type="submit">Salvar lançamento do motorista</button></div></form></div><div class="nfg-card"><h2>Histórico do módulo</h2><div class="nfg-tablewrap" id="nfgModule-comissoes"></div></div></div>
+<div class="nfg-section" data-nfg-panel="relatorios" hidden><div class="nfg-card"><h2>Relatórios, histórico e backups</h2><p class="nfg-muted">Os lançamentos ficam no navegador até a implantação do banco central. Exporte um backup regularmente. Para importar suas planilhas Excel, disponibilizaremos um modelo de importação validado e uma conciliação dos registros.</p><button type="button" class="nfg-action" id="nfgExport">Exportar backup CSV</button><label class="nfg-action secondary" style="display:inline-block;cursor:pointer;margin-left:10px">Importar backup CSV<input type="file" id="nfgImport" accept=".csv" hidden></label><div class="nfg-tablewrap" style="margin-top:20px" id="nfgAllRows"></div></div></div></main>
 
   <div class="fleet-toast" id="fleetToast" role="status" aria-live="polite"></div>
 
   <script src="../assets/js/auth.js?v=16"></script>
-  <script src="../assets/js/custo-frota-pesada.js?v=1"></script>
-  <script src="../assets/js/custo-frota-gestao.js?v=1" defer></script>
+
+  <script src="../assets/js/custo-frota-gestao.js?v=2" defer></script>
   <script>
     requireFeatureAuth("custo-frota", "Cálculo Frota não liberado para este perfil.");
     bindLogoutButton();

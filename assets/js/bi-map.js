@@ -88,12 +88,6 @@
     return "";
   }
 
-  function destinationUf(row) {
-    const direct = upper(row && row.uf);
-    if (STATES[direct]) return direct;
-    return extractUf(row && row.destino);
-  }
-
   function cleanCity(value, uf) {
     let city = upper(value);
     if (!city) return "";
@@ -386,8 +380,9 @@
 
     setText("#mapRegionalSubtitle", uf ? STATES[uf] : "Estado selecionado");
     setText(
-      "#mapRoutesSubtitle",
-      uf ? "Destinos dos carregamentos de " + STATES[uf] : "Destinos dos carregamentos do estado"
+      "#mapBranchesSubtitle",
+      uf ? "Top 10 filiais de " + STATES[uf] + " • Veículos (Porta + Trânsito)"
+        : "Top 10 filiais do estado • Veículos (Porta + Trânsito)"
     );
     setText(
       "#mapProductsSubtitle",
@@ -395,7 +390,7 @@
     );
 
     if (!stateRows.length) {
-      ["mapRegionalChart", "mapRoutesChart", "mapProductsChart"].forEach(function (id) {
+      ["mapRegionalChart", "mapBranchesChart", "mapProductsChart"].forEach(function (id) {
         api.destroyChart(id);
       });
       return;
@@ -407,14 +402,28 @@
       function (row) { return operational(row).vehicles; }
     ).slice(0, 10);
 
-    const destinations = aggregate(
-      stateRows,
-      function (row) {
-        const ufDestino = destinationUf(row);
-        return ufDestino ? (STATES[ufDestino] || ufDestino) : "SEM UF";
-      },
-      function () { return 1; }
-    ).slice(0, 8);
+    // Ranking real de filiais no estado selecionado, a partir dos fretes
+    // já filtrados pela base, regional, cliente, status e busca do B.I.
+    // Não confundir quantidade de registros com quantidade de veículos.
+    const branchesMap = new Map();
+    stateRows.forEach(function (row) {
+      const name = upper(row.filial);
+      if (!name) return; // "SEM FILIAL" não é uma filial no ranking.
+
+      let item = branchesMap.get(name);
+      if (!item) {
+        item = { name: name, vehicles: 0, freights: 0 };
+        branchesMap.set(name, item);
+      }
+      item.vehicles += operational(row).vehicles;
+      item.freights += 1;
+    });
+
+    const branches = Array.from(branchesMap.values()).sort(function (a, b) {
+      return b.vehicles - a.vehicles ||
+        b.freights - a.freights ||
+        a.name.localeCompare(b.name, "pt-BR");
+    }).slice(0, 10);
 
     const products = aggregate(
       stateRows,
@@ -445,36 +454,53 @@
       })
     });
 
-    api.makeChart("mapRoutesChart", {
-      type: "doughnut",
-      data: {
-        labels: destinations.map(function (item) { return item.name; }),
-        datasets: [{
-          data: destinations.map(function (item) { return item.value; }),
-          backgroundColor: [
-            "#2563eb","#16a34a","#f59e0b","#8b5cf6",
-            "#06b6d4","#ef4444","#84cc16","#64748b"
-          ],
-          borderWidth: 2,
-          borderColor: "#ffffff"
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "62%",
-        plugins: {
-          legend: {
-            position: "right",
-            labels: {
-              boxWidth: 10,
-              color: "#475569",
-              font: { size: 10, weight: "700" }
+    if (branches.length) {
+      api.makeChart("mapBranchesChart", {
+        type: "bar",
+        data: {
+          labels: branches.map(function (item) {
+            return item.name.length > 20 ? item.name.slice(0, 19) + "…" : item.name;
+          }),
+          datasets: [{
+            label: "Veículos (Porta + Trânsito)",
+            data: branches.map(function (item) { return item.vehicles; }),
+            backgroundColor: "rgba(37,99,235,.72)",
+            borderColor: "#2563eb",
+            borderWidth: 1,
+            borderRadius: 6,
+            maxBarThickness: 22
+          }]
+        },
+        options: api.chartBaseOptions({
+          indexAxis: "y",
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function (items) {
+                  const item = branches[items[0] && items[0].dataIndex];
+                  return item ? item.name : "";
+                },
+                label: function (context) {
+                  const item = branches[context.dataIndex];
+                  return "Veículos: " + intBR(item ? item.vehicles : 0);
+                },
+                afterLabel: function (context) {
+                  const item = branches[context.dataIndex];
+                  return "Fretes: " + intBR(item ? item.freights : 0);
+                }
+              }
             }
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { precision: 0, color: "#64748b" } },
+            y: { ticks: { color: "#334155", font: { size: 10, weight: "700" } } }
           }
-        }
-      }
-    });
+        })
+      });
+    } else {
+      api.destroyChart("mapBranchesChart");
+    }
 
     api.makeChart("mapProductsChart", {
       type: "bar",

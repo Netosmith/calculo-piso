@@ -105,7 +105,12 @@
       return b.localeCompare(a);
     });
     if (!settings.chosenMonth && months.length) {
-      settings.month = months.find(m => m !== "__undated__") || "__undated__";
+      const ownMonths = [...new Set(base.filter(r =>
+        (!settings.plate || normalizePlate(r.plate) === settings.plate) &&
+        (!settings.driver || String(r.driver || "").trim() === settings.driver)
+      ).map(getMonth))].sort((a, b) => b.localeCompare(a));
+      settings.month = ownMonths.find(m => m !== "__undated__") ||
+        (ownMonths.includes("__undated__") ? "__undated__" : "");
     }
 
     const plates = [...new Set(base.map(r => normalizePlate(r.plate)).filter(Boolean))].sort();

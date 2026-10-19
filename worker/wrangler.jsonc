@@ -17,6 +17,10 @@
     {
       "binding": "CLIENT_LOGOS",
       "bucket_name": "portal-clientes"
+    },
+    {
+      "binding": "FLEET_FILES",
+      "bucket_name": "portal-frota-documentos"
     }
   ],
   "durable_objects": {
@@ -63,6 +67,13 @@
       "new_sqlite_classes": [
         "PingoStore"
       ]
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "FLEET_DB",
+      "database_name": "portal-frota",
+      "database_id": "3cce5e65-1d2f-4232-847a-9a518bfa833d"
     }
   ]
 }

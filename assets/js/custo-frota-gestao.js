@@ -58,7 +58,14 @@ $('#nfGestao').addEventListener('click',async e=>{
  try{await request('/records/'+encodeURIComponent(row.id),{method:'DELETE'});await loadRecords();}catch(err){alert('Não foi possível excluir: '+err.message)}
 });
 const csvCell=x=>'"'+String(x??'').replace(/^[=+@\-\t\r]/,x=>"'"+x).replace(/"/g,'""')+'"';
-function download(){const cols=['id','type','date','plate','driver','city','uf','supplier','nextOdometer','category','description','client','origin','destination','gross','discount','otherDiscount','rate','km','value','liters','price','odometer','status','reference','supplier','receipts','createdAt'];const payload='\uFEFF'+[cols.join(';'),...records.map(r=>cols.map(k=>csvCell(k==='receipts'?JSON.stringify(r.receipts||[]):r[k])).join(';'))].join('\r\n');const url=URL.createObjectURL(new Blob([payload],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='nova-frota-gestao-'+dateNow()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
+function download(){
+ const first=['id','type','date','plate','driver','category','description','gross','netFreight','value','receipts','source'];
+ const cols=[...new Set([...first,...records.flatMap(r=>Object.keys(r))])];
+ const cell=(r,k)=>{const v=r[k];return csvCell(typeof v==='object'&&v!==null?JSON.stringify(v):v)};
+ const payload='\uFEFF'+[cols.join(';'),...records.map(r=>cols.map(k=>cell(r,k)).join(';'))].join('\r\n');
+ const url=URL.createObjectURL(new Blob([payload],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='nova-frota-d1-completo-'+dateNow()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
 $('#nfgExport').addEventListener('click',download);$('#nfgGoNew')?.addEventListener('click',()=>selectTab('lancamentos'));$('#nfgGoReport')?.addEventListener('click',()=>selectTab('relatorios'));
 function parseCSV(content){content=content.replace(/^\uFEFF/,'');const result=[];let field='',cells=[],inQuote=false;for(let i=0;i<content.length;i++){const c=content[i];if(c==='"'){if(inQuote&&content[i+1]==='"'){field+='"';i++}else inQuote=!inQuote}else if(c===';'&&!inQuote){cells.push(field);field=''}else if((c==='\n'||c==='\r')&&!inQuote){if(c==='\r'&&content[i+1]==='\n')i++;cells.push(field);if(cells.some(Boolean))result.push(cells);field='';cells=[]}else field+=c}cells.push(field);if(cells.some(Boolean))result.push(cells);return result}
 
@@ -84,7 +91,7 @@ $('#nfgImport').addEventListener('change',async e=>{
   const valid=[];
   for(let i=0;i<data.length;i++){const r=data[i];if(!validDate(r.date)||plate(r.plate).length!==7||!typeLabels[r.type])continue;
    for(const k of ['value','gross','liters','price','discount','otherDiscount','rate'])if(r[k]!=='')r[k]=Number(r[k])||0;
-   try{r.receipts=r.receipts?JSON.parse(r.receipts):[]}catch{r.receipts=[]}
+   for(const field of ['receipts','source','importWarnings'])if(r[field]){try{r[field]=JSON.parse(r[field])}catch{if(field==='receipts')r[field]=[]}}
    r.id='imp_'+await hash('backup:'+file.name+':'+(i+2)+':'+JSON.stringify(r));
    valid.push(r)}
   if(!valid.length)throw Error('Nenhuma linha válida no backup');

@@ -645,7 +645,8 @@
         <span class="material-symbols-outlined text-sm">print</span>
         IMPRIMIR
       </button>
-      <button id="btnLimpar" class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button>
+      <button id="btnImprimirUmaVia" type="button" class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all flex items-center gap-2" title="Imprimir somente a primeira via do motorista"><span class="material-symbols-outlined text-sm">print</span> IMPRIMIR 1 VIA</button>
+       <button id="btnLimpar" class="px-4 py-2 border border-outline text-primary font-label-caps text-label-caps rounded hover:bg-surface-container-high transition-all">LIMPAR</button>
       <button id="btnNovaOrdem" class="px-4 py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded font-bold flex items-center gap-2 hover:opacity-90 transition-all">
         <span class="material-symbols-outlined text-sm">add</span>
         + NOVA ORDEM
@@ -1136,19 +1137,23 @@
     `;
   }
 
-  function prepararDuasViasParaImpressao(){
+  let modoImpressao = "duas";
+  function prepararViasParaImpressao(){
     sincronizarNomeMotorista();
-
     const folha = document.getElementById("printSheet");
     if(!folha) return;
-
-    folha.innerHTML =
-      montarViaImpressao("1ª VIA • MOTORISTA") +
-      montarViaImpressao("2ª VIA • EMBARCADOR");
+    folha.innerHTML = montarViaImpressao("1ª VIA • MOTORISTA") +
+      (modoImpressao === "duas" ? montarViaImpressao("2ª VIA • EMBARCADOR") : "");
   }
-
+  function prepararDuasViasParaImpressao(){ prepararViasParaImpressao(); }
   function imprimirDuasVias(){
-    prepararDuasViasParaImpressao();
+    modoImpressao = "duas";
+    prepararViasParaImpressao();
+    requestAnimationFrame(() => window.print());
+  }
+  function imprimirUmaVia(){
+    modoImpressao = "uma";
+    prepararViasParaImpressao();
     requestAnimationFrame(() => window.print());
   }
 
@@ -1168,7 +1173,9 @@
   document.getElementById("btnLimpar")?.addEventListener("click", limparOrdem);
   document.getElementById("btnNovaOrdem")?.addEventListener("click", novaOrdem);
   document.getElementById("btnImprimirDuasVias")?.addEventListener("click", imprimirDuasVias);
-  window.addEventListener("beforeprint", prepararDuasViasParaImpressao);
+  document.getElementById("btnImprimirUmaVia")?.addEventListener("click", imprimirUmaVia);
+  window.addEventListener("beforeprint", prepararViasParaImpressao);
+  window.addEventListener("afterprint", () => { modoImpressao = "duas"; prepararViasParaImpressao(); });
 
   window.addEventListener("DOMContentLoaded", function(){
     iniciarSeletorEstado();

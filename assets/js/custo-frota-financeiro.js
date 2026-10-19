@@ -13,7 +13,7 @@ async function refresh(){
  finally{loading=false}
 }
 const store=async item=>{await request('/records/'+encodeURIComponent(item.id),'PUT',item);if(typeof window.NFGReload==='function')await window.NFGReload();await refresh();return true};
-const receivable=r=>Math.max(0,r.netFreight!==undefined&&r.netFreight!==''?val(r.netFreight):val(r.gross)-val(r.discount)-val(r.otherDiscount));
+const receivable=r=>Math.max(0,r.netFreight!=null&&r.netFreight!==''?val(r.netFreight):val(r.gross)-val(r.discount)-val(r.otherDiscount));
 const receipts=r=>(r.receipts||[]).filter(x=>x&&val(x.value)>0);
 const received=r=>receipts(r).reduce((s,x)=>s+val(x.value),0);
 const escAttr=esc;

@@ -353,6 +353,7 @@ html,body{background:#f3f7fb!important;color:#142943!important}body{background:l
 <div class="nfg-card"><h2>Cadastro de motoristas e veículos</h2><p class="nfg-muted">Identifique o motorista e o conjunto. Anexos sensíveis exigem armazenamento privado com acesso autorizado. Nesta etapa, o formulário permite selecionar e conferir os documentos, mas não os envia nem os armazena.</p>
 <form id="nfcForm" autocomplete="off"><div class="nfg-fields">
 <label>Motorista<input name="driver" id="nfcDriver" required maxlength="120" placeholder="Nome completo"></label>
+<label>Telefone do motorista<input name="phone" id="nfcPhone" type="tel" inputmode="tel" maxlength="20" placeholder="(64) 99999-9999"></label>
 <label>Placa cavalo<input name="tractor" id="nfcTractor" required maxlength="8" placeholder="ABC1D23"></label>
 <label>Placa carreta<input name="trailer" id="nfcTrailer" required maxlength="8" placeholder="ABC1D23"></label>
 </div>
@@ -379,7 +380,7 @@ html,body{background:#f3f7fb!important;color:#142943!important}body{background:l
   <script src="../assets/js/custo-frota-gestao.js?v=5" defer></script>
   <script src="../assets/js/custo-frota-importacao.js?v=2" defer></script>
   <script src="../assets/js/custo-frota-financeiro.js?v=1" defer></script>
-  <script src="../assets/js/custo-frota-cadastros.js?v=2" defer></script>
+  <script src="../assets/js/custo-frota-cadastros.js?v=3" defer></script>
   <script>
     requireFeatureAuth("custo-frota", "Cálculo Frota não liberado para este perfil.");
     bindLogoutButton();

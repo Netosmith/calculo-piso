@@ -46,6 +46,17 @@ function reportRow(out,base,kind){
  out.plate=plate(out.plate||base.plate);out.driver=clean(out.driver||base.driver);
  return out;
 }
+function guessCategory(description,supplier){
+ const t=norm((description||'')+' '+(supplier||''));
+ if(/multa/.test(t))return 'Multa';
+ if(/pneu|borracharia|balanceamento|alinhamento/.test(t))return 'Pneus / borracharia';
+ if(/lona|arco|gancho|acessorio|radio/.test(t))return 'Lonas / acessórios';
+ if(/patio|estacionamento|triagem|pernoite/.test(t))return 'Pátio / estacionamento';
+ if(/limpeza|lavagem|varrec/.test(t))return 'Lavagem / limpeza';
+ if(/ajudante/.test(t))return 'Ajudante / serviço';
+ if(/mecanica|filtro|oleo|coxim|lubrific|revisao|peca/.test(t))return 'Peças / manutenção';
+ return 'Despesas gerais';
+}
 function convert(entry,sheet,rowNum,raw,header){
  const mapping=typeRow(entry.template,raw);const parsed=reportRow(mapping,{plate:entry.plate,driver:entry.driver},entry.template);
  parsed.date=date(raw[0],entry.date1904)||date(parsed.date,entry.date1904);
@@ -56,7 +67,7 @@ function convert(entry,sheet,rowNum,raw,header){
  if(entry.template!=='revision'&&!/^\d{4}-\d{2}-\d{2}$/.test(base.date))return {reason:'Data inválida'};
  const result=[];
  const push=(suffix,data)=>result.push({...base,...data,id:makeId(entry.hash,entry.sheetIndex,rowNum,suffix)});
- if(entry.template==='expense'){if(!(parsed.value>0))return {reason:'Valor ausente / totalizador'};push('expense',{type:'expense',value:parsed.value,category:'Despesas gerais',city:clean(parsed.city),uf:clean(parsed.uf),supplier:clean(parsed.supplier),description:clean(parsed.description),status:clean(parsed.status),paymentMethod:clean(parsed.status)})}
+ if(entry.template==='expense'){if(!(parsed.value>0))return {reason:'Valor ausente / totalizador'};push('expense',{type:'expense',value:parsed.value,category:guessCategory(parsed.description,parsed.supplier),categoryInferred:true,city:clean(parsed.city),uf:clean(parsed.uf),supplier:clean(parsed.supplier),description:clean(parsed.description),status:clean(parsed.status),paymentMethod:clean(parsed.status)})}
  else if(entry.template==='advance'){if(!(parsed.value>0))return {reason:'Valor ausente'};push('commission',{type:'commission',value:parsed.value,category:'Adiantamento / vale',description:clean(parsed.category),pix:clean(parsed.pix),status:'Adiantamento (não somar aos custos)'})}
  else if(entry.template==='revision'){if(!(parsed.nextOdometer>0))return {reason:'Próxima revisão ausente'};push('maintenance',{type:'maintenance',value:0,category:'Revisão programada (sem despesa)',odometer:parsed.odometer||0,nextOdometer:parsed.nextOdometer,isSchedule:true,supplier:clean(parsed.supplier),city:clean(parsed.city),uf:clean(parsed.uf),description:clean(parsed.description)})}
  else if(entry.template==='freight'){

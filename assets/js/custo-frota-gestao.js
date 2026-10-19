@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const KEY='nf_frota_gestao_v1',money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),num=v=>Number(v||0),$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const API='https://api.portalfrete.net.br/v1/fleet';
-let records=[],loaded=false,loading=false;
+let records=[],loaded=false,loadingPromise=null,lastLoadError='';
 async function request(path,options={}) {
  const response=await fetch(API+path,{method:options.method||'GET',credentials:'include',cache:'no-store',headers:{Accept:'application/json',...(options.json!==undefined?{'Content-Type':'application/json'}:{})},body:options.json===undefined?undefined:JSON.stringify(options.json)});
  const data=await response.json().catch(()=>({}));
@@ -9,20 +9,35 @@ async function request(path,options={}) {
  return data;
 }
 async function loadRecords(){
- if(loading)return;loading=true;
- try{
-  const all=[];let offset=0;const limit=500;
-  for(let page=0;page<100;page++){
-   const result=await request('/records?limit='+limit+'&offset='+offset);
-   all.push(...(result.records||[]));offset+=result.records.length;
-   if(!result.hasMore)break;
-   if(page===99)throw Error('Banco excedeu 50 mil registros; precisamos de filtros no servidor');
+ if(loadingPromise)return loadingPromise;
+ loadingPromise=(async()=>{
+  try{
+   const all=[];let offset=0;const limit=500;
+   for(let page=0;page<100;page++){
+    const result=await request('/records?limit='+limit+'&offset='+offset);
+    if(!Array.isArray(result.records))throw Error('Resposta inesperada da API: campo records ausente');
+    all.push(...result.records);offset+=result.records.length;
+    if(!result.hasMore)break;
+    if(page===99)throw Error('Mais de 50 mil registros; use consulta paginada no servidor');
+   }
+   records=all;loaded=true;lastLoadError='';
+   render();window.dispatchEvent(new Event('nfg-records-changed'));
+   const warn=document.querySelector('.nfg-warning');
+   if(warn)warn.textContent='DADOS ONLINE: '+records.length+' lançamentos carregados do Cloudflare D1. Dados de origem e divergências permanecem preservados.';
+   const signal=document.getElementById('nfgDbStatus');
+   if(signal){signal.textContent='D1 conectado: '+records.length+' lançamentos';signal.style.color='#047857'}
+   return true;
+  }catch(e){
+   lastLoadError=String(e?.message||e);loaded=false;
+   console.error('[FROTA D1]',e);
+   const warn=document.querySelector('.nfg-warning');
+   if(warn)warn.textContent='Erro de conexão com o D1: '+lastLoadError+'. Os dados NÃO serão gravados no navegador. Clique em Reconectar D1.';
+   const signal=document.getElementById('nfgDbStatus');
+   if(signal){signal.textContent='Falha na conexão: '+lastLoadError;signal.style.color='#b91c1c'}
+   return false;
   }
-  records=all;loaded=true;render();window.dispatchEvent(new Event('nfg-records-changed'));
-  const warn=document.querySelector('.nfg-warning');
-  if(warn)warn.textContent='DADOS ONLINE: '+records.length+' lançamentos carregados do Cloudflare D1. Importações revisadas são gravadas no servidor. Adiantamentos não são despesas; valores financeiros importados precisam de conciliação.';
- }catch(e){console.error(e);const warn=document.querySelector('.nfg-warning');if(warn)warn.textContent='Falha ao consultar D1: '+e.message+'. Nenhum lançamento será salvo somente no navegador.';}
- finally{loading=false}
+ })();
+ try{return await loadingPromise}finally{loadingPromise=null}
 }
 window.NFGFetchRows=()=>records.slice();window.NFGReload=loadRecords;window.NFGRequest=request;
 const plate=x=>String(x||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);
@@ -82,7 +97,7 @@ function parseCSV(content){content=content.replace(/^\uFEFF/,'');const result=[]
 
 const hash=async value=>{const bytes=new TextEncoder().encode(value);const buf=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')};
 window.NFGImportRows=async function(items,onProgress){
- if(!loaded)throw Error('Banco D1 ainda não carregou. Aguarde e tente novamente.');
+ if(!loaded && !(await loadRecords()))throw Error('Não foi possível conectar ao D1: '+(lastLoadError||'verifique sua sessão e tente novamente.'));
  let added=0,duplicates=0;
  for(let i=0;i<items.length;i+=80){
   const batch=items.slice(i,i+80);
@@ -110,8 +125,9 @@ $('#nfgImport').addEventListener('change',async e=>{
   const summary=await window.NFGImportRows(valid);alert('Importados: '+summary.added+'; repetidos: '+summary.duplicates);
  }catch(err){alert('Falha na importação: '+err.message)}finally{e.target.value=''}
 });
+$('#nfgReconnect')?.addEventListener('click',async()=>{const ok=await loadRecords();if(!ok)alert('Falha na conexão com o D1: '+lastLoadError);});
 $('#nfgMigrateLocal')?.addEventListener('click',async()=>{
- if(!loaded)return alert('Aguarde a conexão com o D1.');
+ if(!loaded && !(await loadRecords()))return alert('Falha na conexão: '+lastLoadError);
  let old;try{old=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return alert('Histórico local inválido.')}
  if(!Array.isArray(old)||!old.length)return alert('Nenhum lançamento antigo salvo neste navegador.');
  const candidates=old.filter(r=>r&&typeLabels[r.type]&&validDate(r.date)&&plate(r.plate).length===7);

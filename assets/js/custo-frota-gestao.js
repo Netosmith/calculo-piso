@@ -34,5 +34,22 @@ function download(){const cols=['id','type','date','plate','driver','city','uf',
 $('#nfgExport').addEventListener('click',download);$('#nfgGoNew')?.addEventListener('click',()=>selectTab('lancamentos'));$('#nfgGoReport')?.addEventListener('click',()=>selectTab('relatorios'));
 function parseCSV(content){content=content.replace(/^\uFEFF/,'');const result=[];let field='',cells=[],inQuote=false;for(let i=0;i<content.length;i++){const c=content[i];if(c==='"'){if(inQuote&&content[i+1]==='"'){field+='"';i++}else inQuote=!inQuote}else if(c===';'&&!inQuote){cells.push(field);field=''}else if((c==='\n'||c==='\r')&&!inQuote){if(c==='\r'&&content[i+1]==='\n')i++;cells.push(field);if(cells.some(Boolean))result.push(cells);field='';cells=[]}else field+=c}cells.push(field);if(cells.some(Boolean))result.push(cells);return result}
 $('#nfgImport').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>5e6)throw Error('Arquivo maior que 5 MB');const lines=parseCSV(await file.text()),header=lines.shift();if(!header||!['id','type','date','plate'].every(x=>header.includes(x)))throw Error('Formato de backup incompatível');const data=lines.map(line=>Object.fromEntries(header.map((key,i)=>[key,line[i]??'']))).filter(r=>validDate(r.date)&&plate(r.plate)&&Object.keys(typeLabels).includes(r.type));if(!confirm('Importar '+data.length+' lançamentos válidos, sem substituir os existentes?'))return;const old=records;const existing=new Set(records.map(r=>r.id));records=records.concat(data.filter(r=>r.id&&!existing.has(r.id)));if(!persist())records=old;render();alert('Importação finalizada. Confira os valores no painel.')}catch(err){alert('Falha na importação: '+err.message)}finally{e.target.value=''}});
+window.NFGReceiveImportedRows=function(batch){
+ if(!Array.isArray(batch)||!batch.length)return {added:0,error:'Nenhum registro recebido'};
+ const allowed=new Set(Object.keys(typeLabels));const valid=[];
+ for(const row of batch){if(!row||!allowed.has(row.type)||!validDate(row.date)||!plate(row.plate))continue;
+ const v={...row,plate:plate(row.plate)};
+ const field=v.type==='freight'?'gross':v.type==='fuel'?'liters':'value';
+ if(!(num(v[field])>0))continue;
+ if(v.type==='freight'&&num(v.discount)+num(v.otherDiscount)>num(v.gross))continue;
+ if(v.type==='fuel'&&!(num(v.price)>=0))continue;
+ v.id=(globalThis.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2);
+ v.createdAt=new Date().toISOString();valid.push(v);
+ }
+ if(!valid.length)return {added:0,error:'Nenhuma linha passou nas validações de data, placa, tipo e valor'};
+ const before=records;records=records.concat(valid);
+ if(!persist()){records=before;return {added:0,error:'Armazenamento indisponível'};}
+ render();return {added:valid.length};
+};
 selectTab('painel');render();
 })();

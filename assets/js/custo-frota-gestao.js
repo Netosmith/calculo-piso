@@ -51,5 +51,7 @@ window.NFGReceiveImportedRows=function(batch){
  if(!persist()){records=before;return {added:0,error:'Armazenamento indisponível'};}
  render();return {added:valid.length};
 };
+window.addEventListener('nfg-finance-changed',()=>{try{const latest=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(latest)){records=latest;render();}}catch(e){console.warn(e)}});
+window.addEventListener('storage',e=>{if(e.key===KEY){try{const latest=JSON.parse(e.newValue||'[]');if(Array.isArray(latest)){records=latest;render()}}catch(err){console.warn(err)}}});
 selectTab('painel');render();
 })();

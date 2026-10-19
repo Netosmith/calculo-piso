@@ -31,11 +31,29 @@ export async function fleetController(request,env){
  const authorization=await auth(request,env,method!=='GET');
  if(authorization.error)return authorization.error;
  if(!env.FLEET_DB)return errorResponse('Banco D1 da frota ainda não configurado.',503);
- if(!['records','sets','documents'].includes(section))return errorResponse('Recurso inexistente.',404);
+ if(!['records','sets','documents','import'].includes(section))return errorResponse('Recurso inexistente.',404);
  const db=env.FLEET_DB,actor=String(authorization.session.usuario||'').slice(0,100);
  try{
- if(section==='records'){
-  if(method==='GET'&&!id){const res=await db.prepare('SELECT id,kind,plate,driver,date,data_json,created_at,updated_at FROM fleet_records ORDER BY date DESC,created_at DESC LIMIT 5000').all();return success({records:res.results.map(r=>({...JSON.parse(r.data_json),id:r.id,type:r.kind,plate:r.plate,driver:r.driver,date:r.date}))})}
+ if(section==='import'&&method==='POST'&&!id){
+  const payload=await json(request);
+  if(!Array.isArray(payload.rows)||payload.rows.length<1||payload.rows.length>80)return errorResponse('Envie entre 1 e 80 linhas por lote.',400);
+  if(JSON.stringify(payload).length>950000)return errorResponse('Lote excede 950 KB.',413);
+  const statements=[];
+  for(const row of payload.rows){
+    if(!row||typeof row!=='object'||!TYPES.has(row.type)||!validDate(row.date)||plate(row.plate).length!==7||!/^imp_[a-f0-9]{64}$/.test(String(row.id||'')))return errorResponse('Linha de importação inválida.',400);
+    const moneyFields=['gross','netFreight','value','liters','price','discount','otherDiscount','rate'];
+    if(moneyFields.some(k=>row[k]!==undefined&&(!Number.isFinite(Number(row[k]))||Number(row[k])<0)))return errorResponse('Importação contém valor inválido.',400);
+    const amount=row.type==='freight'?Number(row.gross):row.type==='fuel'?Number(row.value):Number(row.value);
+    if(!Number.isFinite(amount)||amount<0)return errorResponse('Importação contém valor inválido.',400);
+    if(JSON.stringify(row).length>15000)return errorResponse('Linha excede 15 KB.',413);
+    statements.push(db.prepare('INSERT OR IGNORE INTO fleet_records(id,kind,plate,driver,date,data_json,created_by) VALUES(?,?,?,?,?,?,?)').bind(row.id,row.type,plate(row.plate),String(row.driver||'').slice(0,160),row.date,JSON.stringify(row),actor));
+  }
+  const results=await db.batch(statements);
+  const added=results.reduce((n,result)=>n+Number(result.meta?.changes||0),0);
+  return success({added,duplicates:payload.rows.length-added,total:payload.rows.length});
+}
+if(section==='records'){
+  if(method==='GET'&&!id){const limit=Math.min(500,Math.max(1,Number(url.searchParams.get('limit')||300)||300)),offset=Math.max(0,Math.min(1000000,Number(url.searchParams.get('offset')||0)||0));const res=await db.prepare('SELECT id,kind,plate,driver,date,data_json FROM fleet_records ORDER BY date DESC,created_at DESC,id DESC LIMIT ? OFFSET ?').bind(limit,offset).all();return success({records:res.results.map(r=>({...JSON.parse(r.data_json),id:r.id,type:r.kind,plate:r.plate,driver:r.driver,date:r.date})),offset,limit,hasMore:res.results.length===limit})}
   if(method==='POST'&&!id){const data=await json(request);if(!TYPES.has(data.type)||!validDate(data.date)||plate(data.plate).length!==7)return errorResponse('Tipo, placa ou data inválidos.',400);
    if(JSON.stringify(data).length>20000)return errorResponse('Registro muito grande.',413);
    const key=crypto.randomUUID();

@@ -33,7 +33,7 @@ const hash=async b=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',b))]
 function makeId(filehash,sheetIndex,row,type){const n=(BigInt(sheetIndex)<<44n)|(BigInt(row)<<4n)|BigInt(kindSuffix[type]||0);return 'imp_'+filehash.slice(0,48)+n.toString(16).padStart(16,'0')}
 function source(sheet,at,arr,header,bookSheet){
  const sourceColumns=[];let width=Math.max(arr.length,header.length);
- for(let c=0;c<width;c++){const h=clean(header[c])||'Coluna '+(c+1);if(!clean(arr[c]))continue;const ref=window.XLSX.utils.encode_cell({r:at,c});sourceColumns.push({column:window.XLSX.utils.encode_col(c),header:h,value:arr[c],...(bookSheet[ref]?.f?{formula:bookSheet[ref].f}:{})})}
+ for(let c=0;c<width;c++){const h=clean(header[c])||'Coluna '+(c+1);const ref=window.XLSX.utils.encode_cell({r:at,c});sourceColumns.push({column:window.XLSX.utils.encode_col(c),header:h,value:arr[c]??'',...(bookSheet[ref]?.f?{formula:bookSheet[ref].f}:{})})}
  return sourceColumns;
 }
 function typeRow(kind,raw){
@@ -98,7 +98,7 @@ function recognize(book,filename,buffer,sha){
  const monthNames=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
  const periodDate=period&&monthMatch?period[1]+'-'+String(monthNames.indexOf(monthMatch[1])+1).padStart(2,'0')+'-01':'';
  return book.SheetNames.map((name,index)=>{
-  const sh=book.Sheets[name],matrix=window.XLSX.utils.sheet_to_json(sh,{header:1,raw:true,defval:'',blankrows:false});
+  const sh=book.Sheets[name],matrix=window.XLSX.utils.sheet_to_json(sh,{header:1,raw:true,defval:'',blankrows:true});
   let at=-1,template='';
   for(let i=0;i<Math.min(25,matrix.length);i++){const candidate=matchTemplate(matrix[i]||[]);if(candidate){template=candidate;at=i;break}}
   const sheetPlate=plate((name.match(/[A-Z]{3}[- ]?\d[A-Z0-9]{3}/i)||[])[0]);

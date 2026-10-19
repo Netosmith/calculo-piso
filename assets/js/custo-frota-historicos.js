@@ -138,6 +138,16 @@
     count.textContent = "Exibindo " + page.length + " de " + matches.length +
       " lançamento(s) filtrado(s)" + (base.length !== matches.length ?
         " | " + base.length + " no histórico completo" : "");
+    // Somar TODOS os registros do filtro, inclusive os que não aparecem na página atual.
+    // A coluna Valor utiliza total(row): líquido dos fretes, valor pago do abastecimento
+    // e valor do lançamento para despesas, manutenção e comissões.
+    const totalCents = matches.reduce((sum, row) => {
+      if (row.isSchedule) return sum;
+      const amount = total(row);
+      return sum + (Number.isFinite(amount) ? Math.round(amount * 100) : 0);
+    }, 0);
+    const totalEl = widgets.root.querySelector("[data-nfgh-total]");
+    if (totalEl) totalEl.textContent = money(totalCents / 100);
     if (widgets.more) {
       widgets.more.hidden = matches.length <= page.length;
       widgets.more.textContent = "Mostrar mais " + Math.min(PAGE_SIZE, matches.length - page.length) + " registros";

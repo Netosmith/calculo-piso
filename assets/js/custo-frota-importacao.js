@@ -49,9 +49,9 @@ function reportRow(out,base,kind){
 function convert(entry,sheet,rowNum,raw,header){
  const mapping=typeRow(entry.template,raw);const parsed=reportRow(mapping,{plate:entry.plate,driver:entry.driver},entry.template);
  parsed.date=date(raw[0],entry.date1904)||date(parsed.date,entry.date1904);
- const base={plate:parsed.plate,driver:parsed.driver,date:parsed.date||entry.periodDate,
+ const base={plate:parsed.plate,driver:parsed.driver,date:parsed.date||(entry.template==='revision'?'0001-01-01':entry.periodDate),
    source:{filename:entry.file.name,sha256:entry.hash,sheet:sheet.name,row:rowNum,template:entry.template,
-    columns:source(sheet,rowNum-1,raw,header,sheet.sheet),periodDateOnly:!parsed.date&&entry.template==='revision'}};
+    columns:source(sheet,rowNum-1,raw,header,sheet.sheet),periodDateOnly:!parsed.date&&entry.template==='revision',undated:!parsed.date&&entry.template==='revision}};
  if(base.plate.length!==7)return {reason:'Placa ausente/inválida'};
  if(entry.template!=='revision'&&!/^\d{4}-\d{2}-\d{2}$/.test(base.date))return {reason:'Data inválida'};
  const result=[];

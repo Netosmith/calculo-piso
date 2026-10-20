@@ -276,6 +276,10 @@
       feedback(failures.length ? "Cadastro salvo. " + sent + " arquivo(s) enviado(s); falhas: " + failures.join(" | ") : "Cadastro e " + sent + " arquivo(s) gravados online no Cloudflare.", !!failures.length);
       if (!failures.length) {
         reset();
+        searchTerm = "";
+        byId("nfcSearch").value = "";
+        visibleLimit = 24;
+        render();
         flashList("Cadastro salvo no D1 e " + sent + " arquivo(s) enviado(s) ao R2. Seus dados estão disponíveis na lista.", false);
         byId("nfcList").scrollIntoView({ behavior: "smooth", block: "start" });
       }

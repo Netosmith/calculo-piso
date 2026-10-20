@@ -22,6 +22,7 @@
   };
   const inputs = [...form.querySelectorAll("[data-nfc-file]")];
   let records = [], selected = null, docs = [], busy = false, connected = false;
+  let searchTerm = '', visibleLimit = 24;
 
   async function request(path, { method = "GET", json, file, download = false } = {}) {
     const headers = { Accept: download ? "*/*" : "application/json" };
@@ -56,6 +57,8 @@
     form.querySelectorAll("button").forEach(button => button.disabled = value);
     byId("nfcReload").disabled = value;
     byId("nfcMigrate").disabled = value;
+    byId("nfcNew").disabled = value;
+    byId("nfcClose").disabled = value;
   }
   function legacyRows() {
     try {
@@ -69,16 +72,62 @@
     if (size) byId("nfcMigrate").textContent = "Importar " + size + " cadastro(s) antigos do navegador";
   }
 
+  function flashList(message, error = false) {
+    const el = byId("nfcListFeedback");
+    el.textContent = message;
+    el.classList.toggle("error", error);
+    el.hidden = !message;
+  }
+  function showEditor(editing = false) {
+    byId("nfcEditor").hidden = false;
+    byId("nfcEditorTitle").textContent = editing ? "Editar motorista e conjunto" : "Novo cadastro";
+    byId("nfcEditorSubtitle").textContent = editing
+      ? "Atualize a ficha do motorista e gerencie os documentos privados vinculados ao conjunto."
+      : "Preencha a ficha. Documentos e fotos serão enviados ao armazenamento R2 privado.";
+    byId("nfcSave").textContent = editing ? "Salvar alterações e enviar anexos" : "Salvar online e enviar anexos";
+    byId("nfcEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!editing) byId("nfcDriver").focus({ preventScroll: true });
+  }
+  function hideEditor() {
+    byId("nfcEditor").hidden = true;
+  }
+  function initials(name) {
+    const words = String(name || "").trim().split(/\\s+/).filter(Boolean);
+    return words.slice(0, 2).map(word => word[0].toLocaleUpperCase("pt-BR")).join("") || "MF";
+  }
   function render() {
-    byId("nfcList").innerHTML = records.length
-      ? '<table class="nfg-table"><thead><tr><th>Motorista</th><th>Telefone</th><th>Cavalo</th><th>Carreta</th><th>Ações</th></tr></thead><tbody>' +
-        records.map(r => '<tr><td>' + esc(r.driver) + '</td><td>' + esc(r.phone || "") +
-          '</td><td>' + esc(r.tractor) + '</td><td>' + esc(r.trailer) +
-          '</td><td style="white-space:nowrap"><button class="nfg-action secondary" type="button" data-nfc-edit="' + esc(r.id) + '">Editar / documentos</button> ' +
-          '<button class="nfg-action secondary" type="button" data-nfc-download="' + esc(r.id) + '">Baixar ficha</button> ' +
-          '<button class="nfg-action secondary" type="button" data-nfc-delete="' + esc(r.id) + '">Excluir</button></td></tr>').join("") +
-        '</tbody></table>'
-      : '<p class="nfg-muted">Nenhum conjunto cadastrado online.</p>';
+    const query = searchTerm.toLocaleLowerCase("pt-BR").trim();
+    const filtered = records.filter(r => !query ||
+      [r.driver, r.phone, r.tractor, r.trailer].some(v =>
+        String(v || "").toLocaleLowerCase("pt-BR").includes(query.replace(/[^a-z0-9]/g, "")) ||
+        String(v || "").toLocaleLowerCase("pt-BR").includes(query)
+      )
+    );
+    byId("nfcTotal").textContent = String(records.length);
+    byId("nfcVisible").textContent = String(filtered.length);
+    const entries = filtered.slice(0, visibleLimit);
+    byId("nfcList").innerHTML = entries.length ? entries.map(r =>
+      '<article class="nfc-person-card">' +
+        '<div class="nfc-person-top"><div class="nfc-avatar" aria-hidden="true">' + esc(initials(r.driver)) + '</div>' +
+          '<div class="nfc-person-title"><h3>' + esc(r.driver) + '</h3>' +
+            '<div class="nfc-person-phone">☎ ' + esc(r.phone || "Telefone não informado") + '</div>' +
+          '</div></div>' +
+        '<div class="nfc-person-meta"><div><span>PLACA CAVALO</span><strong>' + esc(r.tractor) + '</strong></div>' +
+          '<div><span>PLACA CARRETA</span><strong>' + esc(r.trailer) + '</strong></div></div>' +
+        '<div class="nfc-person-footer">' +
+          '<button class="nfg-action secondary" type="button" data-nfc-edit="' + esc(r.id) + '">Editar / documentos</button>' +
+          '<button class="nfg-action secondary" type="button" data-nfc-download="' + esc(r.id) + '">Baixar ficha</button>' +
+          '<button class="nfg-action secondary" type="button" data-nfc-delete="' + esc(r.id) + '">Excluir</button>' +
+        '</div>' +
+      '</article>'
+    ).join("") : '<div class="nfc-empty"><strong>' +
+      (connected ? (query ? "Nenhum motorista encontrado" : "Nenhum conjunto cadastrado") : "Aguardando conexão online") +
+      '</strong><p>' +
+      (connected ? (query ? "Experimente pesquisar outro nome, placa ou telefone." : "Clique em Novo cadastro para incluir o primeiro motorista.") : "Confira o status da conexão acima e tente atualizar a lista.") +
+      '</p></div>';
+    const more = byId("nfcMore");
+    more.hidden = filtered.length <= visibleLimit;
+    if (!more.hidden) more.textContent = "Exibir mais " + Math.min(24, filtered.length - visibleLimit) + " motoristas";
     migrationAvailable();
   }
   function selectedFiles() {
@@ -139,7 +188,8 @@
     docs = [];
     renderDocs();
     refreshFiles();
-    feedback("Pronto para cadastrar novo conjunto online.");
+    feedback("");
+    hideEditor();
   }
   function select(r) {
     selected = r.id;
@@ -150,8 +200,8 @@
     inputs.forEach(input => { input.value = ""; });
     refreshFiles();
     feedback("Editando conjunto " + r.tractor + ". Você pode substituir seus documentos.");
+    showEditor(true);
     loadDocs(r.id).catch(err => feedback("Falha ao carregar documentos: " + err.message, true));
-    form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function downloadFile(blob, filename) {
     const url = URL.createObjectURL(blob), anchor = document.createElement("a");
@@ -224,12 +274,31 @@
       if (selected) await loadDocs(selected);
       refreshFiles();
       feedback(failures.length ? "Cadastro salvo. " + sent + " arquivo(s) enviado(s); falhas: " + failures.join(" | ") : "Cadastro e " + sent + " arquivo(s) gravados online no Cloudflare.", !!failures.length);
-      if (!failures.length) { form.reset(); selected = null; docs = []; renderDocs(); }
+      if (!failures.length) {
+        reset();
+        flashList("Cadastro salvo no D1 e " + sent + " arquivo(s) enviado(s) ao R2. Seus dados estão disponíveis na lista.", false);
+        byId("nfcList").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } catch (err) { feedback("Não foi possível salvar: " + err.message, true); }
     finally { lock(false); }
   });
 
-  byId("nfcClear").addEventListener("click", reset);
+  byId("nfcClear").addEventListener("click", () => { if (!busy) reset(); });
+  byId("nfcClose").addEventListener("click", () => { if (!busy) reset(); });
+  byId("nfcNew").addEventListener("click", () => {
+    if (busy || !connected) { flashList("Aguarde a conexão com o Cloudflare D1 para cadastrar.", true); return; }
+    reset();
+    showEditor(false);
+  });
+  byId("nfcSearch").addEventListener("input", event => {
+    searchTerm = event.target.value;
+    visibleLimit = 24;
+    render();
+  });
+  byId("nfcMore").addEventListener("click", () => {
+    visibleLimit += 24;
+    render();
+  });
   byId("nfcReload").addEventListener("click", load);
   byId("nfcList").addEventListener("click", async event => {
     if (busy || !connected) return;
@@ -247,7 +316,7 @@
         await request("/sets/" + id, { method: "DELETE" });
         if (selected === id) reset();
         await load();
-        feedback("Cadastro e documentos excluídos online.");
+        flashList("Cadastro e documentos excluídos do armazenamento online.");
       } catch (err) { feedback("Falha na exclusão: " + err.message, true); }
       finally { lock(false); }
     }
@@ -293,9 +362,9 @@
         } });
         imported++;
       }
-      feedback(imported + " cadastro(s) migrado(s) com sucesso. Os dados antigos continuam no navegador como backup.");
+      flashList(imported + " cadastro(s) migrado(s) com sucesso. Os dados antigos continuam no navegador como backup.");
     } catch (err) {
-      feedback(imported + " cadastro(s) importado(s), mas houve erro: " + err.message, true);
+      flashList(imported + " cadastro(s) importado(s), mas houve erro: " + err.message, true);
     } finally { lock(false); await load(); }
   });
 

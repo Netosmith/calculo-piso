@@ -92,7 +92,7 @@
     byId("nfcEditor").hidden = true;
   }
   function initials(name) {
-    const words = String(name || "").trim().split(/\\s+/).filter(Boolean);
+    const words = String(name || "").trim().split(/\s+/).filter(Boolean);
     return words.slice(0, 2).map(word => word[0].toLocaleUpperCase("pt-BR")).join("") || "MF";
   }
   function render() {

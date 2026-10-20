@@ -332,7 +332,8 @@ html,body{background:#f3f7fb!important;color:#142943!important}body{background:l
 
 .nfg-history-footer{margin-top:12px;display:flex;justify-content:center}
 @media(max-width:650px){.nfg-history-toolbar label{max-width:none;flex-basis:100%}.nfg-history-toolbar .nfg-action{width:100%}.nfg-history-summary{width:100%;align-items:flex-start;margin-left:0}}
-</style></head>
+</style><link rel="stylesheet" href="../assets/css/custo-frota-cadastros.css?v=1" />
+</head>
 
 <body>
   <header class="fleet-topbar">
@@ -397,30 +398,92 @@ html,body{background:#f3f7fb!important;color:#142943!important}body{background:l
 <div class="nfg-tablewrap" style="margin-top:20px"><table class="nfg-table"><thead><tr><th>Data</th><th>Placa</th><th>Motorista</th><th>Cliente / trajeto</th><th>Valor líquido</th><th>Recebido</th><th>Saldo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="nffBody"></tbody></table></div><div class="nfg-history-footer"><button type="button" class="nfg-action secondary" id="nffMoreFreights" hidden>Mostrar mais 50 fretes</button></div>
 </div><div class="nfg-card"><h2>Histórico de recebimentos</h2><div class="nfg-tablewrap"><table class="nfg-table"><thead><tr><th>Data do recebimento</th><th>Placa</th><th>Motorista</th><th>Valor</th><th>Referência</th><th>Ação</th></tr></thead><tbody id="nffReceipts"></tbody></table></div><div class="nfg-history-footer"><button type="button" class="nfg-action secondary" id="nffMoreReceipts" hidden>Mostrar mais 50 recebimentos</button></div></div></div>
 <div class="nfg-section" data-nfg-panel="cadastros" hidden>
-<div class="nfg-card"><h2>Cadastro de motoristas e veículos</h2><p class="nfg-muted">Cadastros salvos no banco D1 e documentos no R2 privado. Acesso restrito aos perfis autorizados. Selecione os arquivos ao criar ou editar o conjunto.</p>
-<form id="nfcForm" autocomplete="off"><div class="nfg-fields">
-<label>Motorista<input name="driver" id="nfcDriver" required maxlength="120" placeholder="Nome completo"></label>
-<label>Telefone do motorista<input name="phone" id="nfcPhone" type="tel" inputmode="tel" maxlength="20" placeholder="(64) 99999-9999"></label>
-<label>Placa cavalo<input name="tractor" id="nfcTractor" required maxlength="8" placeholder="ABC1D23"></label>
-<label>Placa carreta<input name="trailer" id="nfcTrailer" required maxlength="8" placeholder="ABC1D23"></label>
+  <section class="nfc-overview nfg-card" aria-labelledby="nfcPageTitle">
+    <div class="nfc-head">
+      <div>
+        <div class="nfc-eyebrow">GESTÃO DE MOTORISTAS E CONJUNTOS</div>
+        <h2 id="nfcPageTitle">Motoristas cadastrados</h2>
+        <p class="nfg-muted">Consulte veículos e documentos centralizados no Cloudflare, sem precisar abrir o formulário.</p>
+      </div>
+      <button type="button" class="nfg-action nfc-new-button" id="nfcNew">＋ Novo cadastro</button>
+    </div>
+    <div class="nfc-stats">
+      <div class="nfc-stat"><span>Conjuntos cadastrados</span><strong id="nfcTotal">0</strong></div>
+      <div class="nfc-stat"><span>Resultados da busca</span><strong id="nfcVisible">0</strong></div>
+      <div class="nfc-stat nfc-cloud"><span>Armazenamento</span><strong>☁ D1 + R2 privado</strong></div>
+    </div>
+    <div class="nfc-toolbar">
+      <label class="nfc-search-label" for="nfcSearch">Buscar motorista, placa ou telefone
+        <input type="search" id="nfcSearch" autocomplete="off" placeholder="Digite nome, placa cavalo, carreta ou telefone">
+      </label>
+      <button type="button" class="nfg-action secondary" id="nfcReload">↻ Atualizar lista</button>
+      <button type="button" class="nfg-action secondary" id="nfcMigrate" hidden>Importar cadastros antigos deste navegador</button>
+    </div>
+    <p id="nfcOnlineStatus" class="nfc-online-status nfg-muted" role="status" aria-live="polite">Verificando conexão...</p>
+    <div id="nfcList" class="nfc-card-grid" aria-live="polite"></div>
+    <div class="nfc-list-footer">
+      <button type="button" class="nfg-action secondary" id="nfcMore" hidden>Exibir mais motoristas</button>
+    </div>
+    <div id="nfcListFeedback" class="nfc-list-feedback" role="status" aria-live="polite" hidden></div>
+  </section>
+
+  <section id="nfcEditor" class="nfc-editor nfg-card" hidden aria-labelledby="nfcEditorTitle">
+    <div class="nfc-editor-header">
+      <div>
+        <div class="nfc-eyebrow">FICHA DO CONJUNTO</div>
+        <h2 id="nfcEditorTitle">Novo cadastro</h2>
+        <p id="nfcEditorSubtitle" class="nfg-muted">Preencha os dados e selecione os documentos que deseja armazenar de forma privada.</p>
+      </div>
+      <button type="button" class="nfg-action secondary" id="nfcClose">✕ Fechar</button>
+    </div>
+    <form id="nfcForm" autocomplete="off">
+      <div class="nfc-form-section">
+        <div class="nfc-section-title"><span class="nfc-section-icon">01</span><div><h3>Dados do motorista</h3><p>Informações de identificação e contato.</p></div></div>
+        <div class="nfg-fields nfc-two-columns">
+          <label>Motorista<input name="driver" id="nfcDriver" required maxlength="120" placeholder="Nome completo do motorista"></label>
+          <label>Telefone do motorista<input name="phone" id="nfcPhone" type="tel" inputmode="tel" maxlength="20" placeholder="(64) 99999-9999"></label>
+        </div>
+      </div>
+      <div class="nfc-form-section">
+        <div class="nfc-section-title"><span class="nfc-section-icon">02</span><div><h3>Conjunto / veículo</h3><p>Placas vinculadas ao motorista.</p></div></div>
+        <div class="nfg-fields nfc-two-columns">
+          <label>Placa cavalo<input name="tractor" id="nfcTractor" required maxlength="8" placeholder="ABC1D23"></label>
+          <label>Placa carreta<input name="trailer" id="nfcTrailer" required maxlength="8" placeholder="ABC1D23"></label>
+        </div>
+      </div>
+      <div class="nfc-form-section">
+        <div class="nfc-section-title"><span class="nfc-section-icon">03</span><div><h3>Documentos</h3><p>Arquivos disponíveis apenas para usuários autorizados.</p></div></div>
+        <div class="nfg-fields nfc-file-grid">
+          <label>CNH<input type="file" data-nfc-file="cnh" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          <label>Documento cavalo<input type="file" data-nfc-file="cavalo" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          <label>Documento carreta<input type="file" data-nfc-file="carreta" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          <label>ANTT<input type="file" data-nfc-file="antt" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          <label>Comprovante de endereço<input type="file" data-nfc-file="endereco" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+        </div>
+      </div>
+      <div class="nfc-form-section">
+        <div class="nfc-section-title"><span class="nfc-section-icon">04</span><div><h3>Fotos</h3><p>Registros fotográficos do veículo e do motorista.</p></div></div>
+        <div class="nfg-fields nfc-file-grid">
+          <label>Foto do caminhão<input type="file" data-nfc-file="fotoCaminhao" accept=".jpg,.jpeg,.png,.webp"></label>
+          <label>Motorista em frente ao caminhão<input type="file" data-nfc-file="fotoMotorista" accept=".jpg,.jpeg,.png,.webp"></label>
+          <label>Motorista segurando a CNH<input type="file" data-nfc-file="fotoMotoristaCNH" accept=".jpg,.jpeg,.png,.webp"></label>
+          <label>Foto individual do motorista<input type="file" data-nfc-file="fotoMotoristaIndividual" accept=".jpg,.jpeg,.png,.webp"></label>
+        </div>
+      </div>
+      <p id="nfcFilesStatus" class="nfg-muted" style="margin:14px 0"></p>
+      <div id="nfcStoredDocuments" class="nfc-documents" hidden>
+        <h3>Documentos armazenados no R2</h3>
+        <div id="nfcDocumentsList" class="nfg-tablewrap"></div>
+      </div>
+      <div id="nfcFeedback" class="nfc-form-feedback nfg-muted" role="status" aria-live="polite"></div>
+      <div class="nfc-form-actions">
+        <button class="nfg-action" type="submit" id="nfcSave">Salvar online e enviar anexos</button>
+        <button class="nfg-action secondary" type="button" id="nfcClear">Cancelar e voltar à lista</button>
+      </div>
+    </form>
+  </section>
 </div>
-<h2 style="margin-top:24px">Documentos e fotos</h2><div class="nfg-fields">
-<label>CNH<input type="file" data-nfc-file="cnh" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
-<label>Documento cavalo<input type="file" data-nfc-file="cavalo" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
-<label>Documento carreta<input type="file" data-nfc-file="carreta" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
-<label>ANTT<input type="file" data-nfc-file="antt" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
-<label>Comprovante de endereço<input type="file" data-nfc-file="endereco" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
-<label>Foto do caminhão<input type="file" data-nfc-file="fotoCaminhao" accept=".jpg,.jpeg,.png,.webp" ></label>
-<label>Foto do motorista na frente do caminhão<input type="file" data-nfc-file="fotoMotorista" accept=".jpg,.jpeg,.png,.webp"></label>
-<label>Foto do motorista segurando a CNH<input type="file" data-nfc-file="fotoMotoristaCNH" accept=".jpg,.jpeg,.png,.webp"></label>
-<label>Foto do motorista<input type="file" data-nfc-file="fotoMotoristaIndividual" accept=".jpg,.jpeg,.png,.webp"></label>
-</div><div id="nfcFilesStatus" class="nfg-muted" style="margin:14px 0"></div>
-<div id="nfcStoredDocuments" class="nfg-card" hidden style="background:#f6faff"><h2>Documentos armazenados no R2</h2><div id="nfcDocumentsList" class="nfg-tablewrap"></div></div>
-<div id="nfcFeedback" class="nfg-muted" style="margin:12px 0" role="status" aria-live="polite"></div>
-<button class="nfg-action" type="submit">Salvar online e enviar anexos</button>
-<button class="nfg-action secondary" type="button" id="nfcClear">Novo cadastro</button>
-</form></div>
-<div class="nfg-card"><h2>Motoristas e conjuntos cadastrados</h2><p class="nfg-muted">Dados e anexos consultados diretamente no Cloudflare. Documentos são privados e só podem ser baixados com sessão válida.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px"><button type="button" class="nfg-action secondary" id="nfcReload">Atualizar cadastros online</button><button type="button" class="nfg-action secondary" id="nfcMigrate" hidden>Importar cadastros antigos deste navegador</button><span id="nfcOnlineStatus" class="nfg-muted">Verificando conexão...</span></div><div class="nfg-tablewrap" id="nfcList"></div></div></div><div class="nfg-section" data-nfg-panel="relatorios" hidden><div class="nfg-card"><h2>Relatórios, histórico e backups</h2><p class="nfg-muted">Importação online para D1: selecione um ou vários arquivos Excel. O sistema identifica todas as abas de despesas, fretes, abastecimentos, vales e revisão e preserva cada coluna original. Exporte um backup CSV regularmente.</p><button type="button" class="nfg-action" id="nfgExport">Exportar backup CSV</button><label class="nfg-action secondary" style="display:inline-block;cursor:pointer;margin-left:10px">Importar backup CSV<input type="file" id="nfgImport" accept=".csv,text/csv" hidden></label><label class="nfg-action secondary" style="display:inline-block;cursor:pointer;margin-left:10px">Importar arquivos Excel / todas as abas<input type="file" id="nfgExcelInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" hidden></label><button type="button" class="nfg-action secondary" id="nfgReconnect" style="margin-left:10px">Reconectar D1</button> <span class="nfg-muted" id="nfgDbStatus" role="status">Verificando conexão...</span> <button type="button" id="nfgMigrateLocal" class="nfg-action secondary" style="margin-left:10px">Migrar lançamentos antigos deste navegador</button><div id="nfgExcelPreview" style="margin-top:16px" aria-live="polite"></div><h2 style="margin-top:24px">Histórico geral dos lançamentos</h2><div class="nfg-history-toolbar" data-nfgh-key="all">
+<div class="nfg-section" data-nfg-panel="relatorios" hidden><div class="nfg-card"><h2>Relatórios, histórico e backups</h2><p class="nfg-muted">Importação online para D1: selecione um ou vários arquivos Excel. O sistema identifica todas as abas de despesas, fretes, abastecimentos, vales e revisão e preserva cada coluna original. Exporte um backup CSV regularmente.</p><button type="button" class="nfg-action" id="nfgExport">Exportar backup CSV</button><label class="nfg-action secondary" style="display:inline-block;cursor:pointer;margin-left:10px">Importar backup CSV<input type="file" id="nfgImport" accept=".csv,text/csv" hidden></label><label class="nfg-action secondary" style="display:inline-block;cursor:pointer;margin-left:10px">Importar arquivos Excel / todas as abas<input type="file" id="nfgExcelInput" accept=".xlsx,.xls,.xlsm,.xlsb,.csv,.ods" hidden></label><button type="button" class="nfg-action secondary" id="nfgReconnect" style="margin-left:10px">Reconectar D1</button> <span class="nfg-muted" id="nfgDbStatus" role="status">Verificando conexão...</span> <button type="button" id="nfgMigrateLocal" class="nfg-action secondary" style="margin-left:10px">Migrar lançamentos antigos deste navegador</button><div id="nfgExcelPreview" style="margin-top:16px" aria-live="polite"></div><h2 style="margin-top:24px">Histórico geral dos lançamentos</h2><div class="nfg-history-toolbar" data-nfgh-key="all">
   <label>Mês<select data-nfgh-month aria-label="Filtrar histórico por mês"><option value="">Todos os meses</option></select></label>
   <label>Placa<select data-nfgh-plate aria-label="Filtrar histórico por placa"><option value="">Todas as placas</option></select></label>
   <label>Motorista<select data-nfgh-driver aria-label="Filtrar histórico por motorista"><option value="">Todos os motoristas</option></select></label>
@@ -436,7 +499,7 @@ html,body{background:#f3f7fb!important;color:#142943!important}body{background:l
   <script src="../assets/js/custo-frota-gestao.js?v=9" defer></script>
   <script src="../assets/js/custo-frota-importacao.js?v=5" defer></script>
   <script src="../assets/js/custo-frota-financeiro.js?v=4" defer></script>
-  <script src="../assets/js/custo-frota-cadastros.js?v=4" defer></script>
+  <script src="../assets/js/custo-frota-cadastros.js?v=5" defer></script>
   <script src="../assets/js/custo-frota-historicos.js?v=3" defer></script>
   <script src="../assets/js/custo-frota-editor.js?v=2" defer></script>
   <script>

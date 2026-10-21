@@ -5,7 +5,7 @@
   const BASE = "https://api.portalfrete.net.br";
   const MAX_STORE = 10;
   const isHome = /\/home\.html$/i.test(location.pathname);
-  const state = {messages: [], busy: false, sessionKey: "", ready: false, configured: false, open: false, error: ""};
+  const state = {messages: [], busy: false, sessionKey: "", ready: false, configured: false, open: false, error: "", choosingState: false};
   const $ = id => document.getElementById(id);
 
   function el(tag, className, text) {
@@ -45,6 +45,10 @@
     if (!feed) return;
     feed.replaceChildren();
     intro.hidden = state.messages.length > 0;
+    const quickActions = $("nfaiQuickActions");
+    const freightStates = $("nfaiFreightStates");
+    if (quickActions) quickActions.hidden = state.choosingState;
+    if (freightStates) freightStates.hidden = !state.choosingState;
     for (const item of state.messages) chatBubble(item.role, item.content, feed);
     if (state.busy) chatBubble("system", "Consultando o assistente...", feed);
     else if (state.error) chatBubble("system", state.error, feed);
@@ -159,12 +163,30 @@
       <div class="nfai-body" id="nfaiScroll">
         <div id="nfaiIntro">
           <div class="nfai-intro"><strong>Olá! Como posso ajudar? 👋</strong>
-            <p>Pesquise fretes liberados, peça sugestões comerciais ou tire dúvidas sobre os módulos do Portal Frete.</p></div>
-          <div class="nfai-quick">
-            <button type="button" data-nfai-ask="Quais fretes liberados temos em Mato Grosso?">🚛 Buscar fretes disponíveis</button>
-            <button type="button" data-nfai-ask="Que oportunidades comerciais podemos identificar com os fretes disponíveis no portal?">📈 Ideias de oportunidades comerciais</button>
+            <p>Encontre fretes disponíveis por estado ou esclareça dúvidas sobre os módulos do Portal Frete.</p></div>
+          <div class="nfai-quick" id="nfaiQuickActions">
+            <button type="button" id="nfaiChooseFreights">🚛 Buscar fretes disponíveis</button>
             <button type="button" data-nfai-ask="Como faço para cadastrar e divulgar um frete no Portal Frete?">📚 Ajuda com o Portal Frete</button>
-            <button type="button" data-nfai-ask="Como consultar os custos por placa na Gestão de Frota?">⛽ Custos de frota</button>
+          </div>
+          <div class="nfai-state-flow" id="nfaiFreightStates" hidden>
+            <div class="nfai-state-heading">
+              <span class="nfai-state-icon" aria-hidden="true">🚛</span>
+              <div><strong>Qual estado?</strong><p>Escolha o estado de origem para consultar os fretes liberados.</p></div>
+            </div>
+            <div class="nfai-states" role="group" aria-label="Escolha o estado de origem">
+              <button type="button" data-nfai-uf="GO">GO <span>Goiás</span></button>
+              <button type="button" data-nfai-uf="MT">MT <span>Mato Grosso</span></button>
+              <button type="button" data-nfai-uf="MG">MG <span>Minas Gerais</span></button>
+              <button type="button" data-nfai-uf="SP">SP <span>São Paulo</span></button>
+            </div>
+            <button type="button" class="nfai-flow-back" id="nfaiFlowBack">← Voltar às opções</button>
+          </div>
+          <div class="nfai-coming" aria-label="Nova Frota IA em construção">
+            <div class="nfai-coming-symbol" aria-hidden="true">🚧</div>
+            <div class="nfai-coming-copy">
+              <strong>EM CONSTRUÇÃO</strong>
+              <span>Logo estará disponível</span>
+            </div>
           </div>
         </div>
         <div id="nfaiFeed" aria-live="polite" aria-relevant="additions text"></div>
@@ -180,12 +202,33 @@
     $("nfaiClose").addEventListener("click", () => toggle(false));
     $("nfaiClear").addEventListener("click", () => {
       if (state.busy) return;
-      state.messages = []; state.error = ""; save(); render(); $("nfaiQuestion").focus();
+      state.messages = []; state.error = ""; state.choosingState = false; save(); render(); $("nfaiQuestion").focus();
     });
     $("nfaiForm").addEventListener("submit", event => {event.preventDefault(); send($("nfaiQuestion").value);});
     $("nfaiQuestion").addEventListener("keydown", event => {
       if (event.key === "Enter" && !event.shiftKey) {event.preventDefault(); $("nfaiForm").requestSubmit();}
     });
+    $("nfaiChooseFreights").addEventListener("click", () => {
+      if (state.busy) return;
+      state.error = "";
+      state.choosingState = true;
+      render();
+      $("nfaiFreightStates").querySelector("[data-nfai-uf]")?.focus();
+    });
+    $("nfaiFlowBack").addEventListener("click", () => {
+      state.choosingState = false;
+      render();
+      $("nfaiChooseFreights").focus();
+    });
+    const ufNames = {GO: "Goiás", MT: "Mato Grosso", MG: "Minas Gerais", SP: "São Paulo"};
+    panel.querySelectorAll("[data-nfai-uf]").forEach(button => button.addEventListener("click", () => {
+      if (state.busy) return;
+      const uf = button.dataset.nfaiUf;
+      if (!Object.hasOwn(ufNames, uf)) return;
+      state.choosingState = false;
+      render();
+      send("Quais fretes liberados temos com origem no estado de " + ufNames[uf] + " (" + uf + ")? Consulte os registros atuais e mostre origem, destino, produto e valor quando existirem.");
+    }));
     panel.querySelectorAll("[data-nfai-ask]").forEach(button => button.addEventListener("click", () => send(button.dataset.nfaiAsk)));
     document.addEventListener("keydown", event => { if (event.key === "Escape" && state.open) toggle(false); });
     document.querySelectorAll("[data-logout]").forEach(button => button.addEventListener("click", () => {

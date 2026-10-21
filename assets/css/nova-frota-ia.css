@@ -1,0 +1,49 @@
+
+/* NOVA FROTA IA • widget transversal do Portal Frete */
+.nfai-launch{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}
+.nfai-topbtn{height:43px;padding:0 14px;border:1px solid rgba(55,213,198,.64);background:linear-gradient(120deg,rgba(13,82,105,.72),rgba(8,42,79,.88));border-radius:13px;display:flex;gap:8px;align-items:center;white-space:nowrap;color:#eafdf7;font-size:12px;font-weight:800;letter-spacing:.025em;box-shadow:0 0 15px rgba(30,210,178,.1);transition:.18s ease}
+.nfai-topbtn:hover,.nfai-topbtn:focus-visible{border-color:#54f9db;box-shadow:0 0 23px rgba(29,221,183,.27);transform:translateY(-1px)}
+.nfai-star{color:#77ffe1;font-size:18px;line-height:1}
+.nfai-fab{position:fixed;right:24px;bottom:24px;z-index:99970;min-height:55px;padding:10px 16px;background:linear-gradient(135deg,#12395b,#075f63);border:1px solid #4dd7bc;border-radius:999px;box-shadow:0 12px 35px rgba(1,23,46,.35),0 0 18px rgba(10,221,182,.22);color:#f8fffd;display:flex;align-items:center;gap:9px;font:800 12px Inter,system-ui,sans-serif}
+.nfai-fab:hover{filter:brightness(1.14)}
+.nfai-fab .nfai-star{font-size:24px}
+.nfai-backdrop{position:fixed;inset:0;z-index:99980;background:rgba(3,14,29,.42);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s,visibility .22s}
+.nfai-panel{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);z-index:99990;background:#f8fbff;box-shadow:-18px 0 70px rgba(2,15,32,.35);transform:translateX(103%);visibility:hidden;transition:transform .24s ease,visibility .24s;display:flex;flex-direction:column;color:#153451}
+.nfai-open .nfai-backdrop{opacity:1;visibility:visible;pointer-events:auto}
+.nfai-open .nfai-panel{transform:translateX(0);visibility:visible}
+.nfai-head{background:linear-gradient(126deg,#071a33,#123b5b 65%,#095c5c);padding:22px 18px 17px;display:flex;align-items:center;gap:12px;color:white}
+.nfai-brandicon{width:45px;height:45px;flex:none;border-radius:14px;border:1px solid rgba(118,238,219,.4);background:rgba(47,195,168,.2);display:grid;place-items:center;font-size:24px}
+.nfai-name{font-weight:850;font-size:16px;letter-spacing:.01em;line-height:1.2}
+.nfai-subtitle{font-size:11px;opacity:.8;margin-top:5px}
+.nfai-head-spacer{flex:1}
+.nfai-iconbtn{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:white;border-radius:10px;min-width:36px;height:36px;cursor:pointer;font-size:17px}
+.nfai-iconbtn:hover{background:rgba(255,255,255,.2)}
+.nfai-status{padding:10px 17px;border-bottom:1px solid #ddeaf5;font-size:11px;color:#49748b;background:#eef8fb;line-height:1.45}
+.nfai-status[data-state="ready"]{color:#007956;background:#e9f8f1}
+.nfai-status[data-state="error"]{color:#a44327;background:#fff6e7}
+.nfai-body{padding:18px 16px 10px;overflow:auto;flex:1;overscroll-behavior:contain;scroll-behavior:smooth}
+.nfai-intro{border:1px solid #d6e6f2;border-radius:16px;background:white;padding:17px;margin-bottom:14px;box-shadow:0 4px 18px rgba(17,54,92,.04)}
+.nfai-intro strong{display:block;color:#113b5d;font-size:15px;margin-bottom:8px}
+.nfai-intro p{font-size:12px;color:#6b7d90;line-height:1.55;margin:0}
+.nfai-quick{display:grid;gap:8px;margin:12px 0 20px}
+.nfai-quick button{background:white;text-align:left;border:1px solid #d8e6f1;border-radius:11px;padding:11px 13px;color:#214b6c;display:flex;gap:10px;align-items:center;font:700 12px Inter,system-ui,sans-serif;cursor:pointer}
+.nfai-quick button:hover{border-color:#76c6ba;background:#f1fffa}
+.nfai-message{max-width:93%;display:flex;flex-direction:column;gap:5px;margin:12px 0}
+.nfai-message[data-role="user"]{margin-left:auto;align-items:flex-end}
+.nfai-message[data-role="assistant"]{align-items:flex-start}
+.nfai-message small{font-size:10px;color:#8096a9}
+.nfai-bubble{white-space:pre-wrap;overflow-wrap:anywhere;font:400 13px/1.58 Inter,system-ui,sans-serif;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #dde9f3;box-shadow:0 3px 12px rgba(15,52,91,.035)}
+.nfai-message[data-role="user"] .nfai-bubble{background:#0a755d;color:white;border-color:#0a755d;border-radius:14px 14px 4px 14px}
+.nfai-message[data-role="assistant"] .nfai-bubble{border-radius:14px 14px 14px 4px;color:#244762}
+.nfai-message[data-role="system"] .nfai-bubble{background:#fff8eb;color:#865517;border-color:#f3dfbc}
+.nfai-composer{padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));background:white;border-top:1px solid #dde7f1}
+.nfai-form{display:flex;gap:9px;align-items:flex-end;border:1px solid #c9dfed;border-radius:13px;background:#f8fbff;padding:7px 7px 7px 12px}
+.nfai-form:focus-within{outline:2px solid #8fddd1;outline-offset:1px}
+.nfai-form textarea{width:100%;resize:none;border:none;outline:none;min-height:38px;max-height:104px;padding:9px 0;background:transparent;color:#1d445f;font:400 13px/1.4 Inter,system-ui,sans-serif}
+.nfai-send{height:40px;width:42px;min-width:42px;border:0;border-radius:10px;background:#098463;color:white;font-size:19px;font-weight:bold;cursor:pointer}
+.nfai-send:disabled{opacity:.5;cursor:not-allowed}
+.nfai-note{font-size:10px;line-height:1.45;text-align:center;color:#8496a7;margin:9px 0 0}
+body.nfai-open{overflow:hidden}
+@media(max-width:800px){.nfai-topbtn{width:43px;justify-content:center;padding:0}.nfai-topbtn .nfai-label{display:none}}
+@media(max-width:600px){.nfai-panel{width:100vw}.nfai-fab{right:14px;bottom:16px;padding:12px 14px}.nfai-head{padding-top:17px}}
+@media(prefers-reduced-motion:reduce){.nfai-panel,.nfai-backdrop,.nfai-topbtn{transition:none!important}.nfai-body{scroll-behavior:auto}}

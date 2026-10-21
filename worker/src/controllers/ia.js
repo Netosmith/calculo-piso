@@ -183,6 +183,7 @@ export async function iaController(request, env) {
     return success({
       configured: Boolean(env.OPENAI_API_KEY),
       model: MODEL,
+      usuario: session.usuario,
       availableFreights: canRunGatewayAction(session, "home-map", "read"),
       mode: "consulta",
       message: env.OPENAI_API_KEY ? "Assistente disponível." : "Configure OPENAI_API_KEY nos segredos do Worker."

@@ -47,3 +47,22 @@ body.nfai-open{overflow:hidden}
 @media(max-width:800px){.nfai-topbtn{width:43px;justify-content:center;padding:0}.nfai-topbtn .nfai-label{display:none}}
 @media(max-width:600px){.nfai-panel{width:100vw}.nfai-fab{right:14px;bottom:16px;padding:12px 14px}.nfai-head{padding-top:17px}}
 @media(prefers-reduced-motion:reduce){.nfai-panel,.nfai-backdrop,.nfai-topbtn{transition:none!important}.nfai-body{scroll-behavior:auto}}
+
+/* Fluxo guiado da busca de fretes e aviso de lançamento */
+.nfai-panel [hidden]{display:none!important}
+.nfai-state-flow{background:#fff;border:1px solid #cfe3ee;border-radius:14px;padding:15px 14px;margin:0 0 16px;box-shadow:0 4px 18px rgba(17,54,92,.04)}
+.nfai-state-heading{display:flex;align-items:flex-start;gap:10px;margin-bottom:13px}
+.nfai-state-icon{width:39px;height:39px;display:flex;align-items:center;justify-content:center;flex:none;border-radius:11px;background:#eaf5fd;font-size:19px}
+.nfai-state-heading strong{display:block;color:#103755;font-size:14px;margin:0 0 4px}
+.nfai-state-heading p{color:#687f92;font-size:12px;line-height:1.5;margin:0}
+.nfai-states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.nfai-states button{cursor:pointer;text-align:left;background:#f8fbff;color:#174561;border:1px solid #d7e6f0;border-radius:11px;padding:12px 13px;font:800 13px Inter,system-ui,sans-serif;transition:background .16s,border-color .16s}
+.nfai-states button span{display:block;color:#758ba0;font-size:10px;font-weight:600;margin-top:5px}
+.nfai-states button:hover,.nfai-states button:focus-visible{background:#eafaf4;border-color:#32b794;outline:none}
+.nfai-flow-back{background:transparent;border:none;cursor:pointer;font:700 11px Inter,system-ui,sans-serif;color:#24638a;margin-top:15px;padding:6px 0}
+.nfai-flow-back:hover{text-decoration:underline}
+.nfai-coming{border:1px dashed #d3ad60;border-radius:14px;padding:17px 14px;background:linear-gradient(145deg,#fffaf1,#fff);display:flex;align-items:center;justify-content:center;gap:15px;margin:18px 0 10px;box-shadow:0 4px 18px rgba(110,86,38,.04)}
+.nfai-coming-symbol{width:48px;height:48px;flex:none;border-radius:13px;background:#fff0cf;display:grid;place-items:center;font-size:25px}
+.nfai-coming-copy{display:flex;flex-direction:column;gap:4px}
+.nfai-coming-copy strong{font:850 13px Inter,system-ui,sans-serif;letter-spacing:.065em;color:#806120}
+.nfai-coming-copy span{font:500 12px Inter,system-ui,sans-serif;color:#8e784b}

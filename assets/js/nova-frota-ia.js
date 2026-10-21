@@ -82,7 +82,7 @@
       const identity = String(result.usuario || "usuario").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 70);
       state.sessionKey = "nf_ia_chat_v1_" + identity;
       restore();
-      status(state.configured ? "● IA conectada • Consulta segura, conforme seu perfil." :
+      status(state.configured ? "● Chave detectada no Worker. Testando resposta da OpenAI..." :
         "IA preparada. Falta configurar a chave OpenAI no Cloudflare.", state.configured ? "ready" : "error");
     } catch (error) {
       state.ready = false;
@@ -112,6 +112,12 @@
         status("● IA conectada • " + result.remainingToday + " perguntas disponíveis hoje.", "ready");
     } catch (error) {
       if (error.status === 401) state.ready = false;
+      // Perguntas que falharam não devem ficar como mensagens soltas no contexto da IA.
+      if (state.messages.at(-1)?.role === "user" && state.messages.at(-1)?.content === text) {
+        state.messages.pop();
+        save();
+      }
+      if (!$("nfaiQuestion").value) $("nfaiQuestion").value = text;
       state.error = error.message;
       status(error.message, "error");
     } finally {

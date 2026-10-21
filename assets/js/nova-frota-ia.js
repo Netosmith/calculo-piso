@@ -5,7 +5,7 @@
   const BASE = "https://api.portalfrete.net.br";
   const MAX_STORE = 10;
   const isHome = /\/home\.html$/i.test(location.pathname);
-  const state = {messages: [], busy: false, sessionKey: "", ready: false, configured: false, open: false};
+  const state = {messages: [], busy: false, sessionKey: "", ready: false, configured: false, open: false, error: ""};
   const $ = id => document.getElementById(id);
 
   function el(tag, className, text) {
@@ -47,8 +47,9 @@
     intro.hidden = state.messages.length > 0;
     for (const item of state.messages) chatBubble(item.role, item.content, feed);
     if (state.busy) chatBubble("system", "Consultando o assistente...", feed);
+    else if (state.error) chatBubble("system", state.error, feed);
     feed.parentNode.scrollTop = feed.parentNode.scrollHeight;
-    $("nfaiSend").disabled = state.busy || !state.ready;
+    $("nfaiSend").disabled = state.busy || !state.ready || !state.configured;
   }
   function toggle(open) {
     state.open = Boolean(open);
@@ -77,6 +78,7 @@
       const result = await api("/v1/ia/status");
       state.configured = Boolean(result.configured);
       state.ready = true;
+      state.error = "";
       const identity = String(result.usuario || "usuario").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 70);
       state.sessionKey = "nf_ia_chat_v1_" + identity;
       restore();
@@ -93,6 +95,8 @@
     const text = String(question || "").trim().slice(0, 1800);
     if (!text || state.busy) return;
     if (!state.ready) {status("A sessão da IA não está conectada. Atualize o portal.", "error");return;}
+    if (!state.configured) {status("O chat está preparado, mas a chave OpenAI ainda não foi configurada no Cloudflare.", "error");return;}
+    state.error = "";
     state.messages.push({role: "user", content: text});
     state.messages = state.messages.slice(-MAX_STORE);
     save();
@@ -108,8 +112,7 @@
         status("● IA conectada • " + result.remainingToday + " perguntas disponíveis hoje.", "ready");
     } catch (error) {
       if (error.status === 401) state.ready = false;
-      const feed = $("nfaiFeed");
-      if (feed) chatBubble("system", error.message, feed);
+      state.error = error.message;
       status(error.message, "error");
     } finally {
       state.busy = false; render();
@@ -171,7 +174,7 @@
     $("nfaiClose").addEventListener("click", () => toggle(false));
     $("nfaiClear").addEventListener("click", () => {
       if (state.busy) return;
-      state.messages = []; save(); render(); $("nfaiQuestion").focus();
+      state.messages = []; state.error = ""; save(); render(); $("nfaiQuestion").focus();
     });
     $("nfaiForm").addEventListener("submit", event => {event.preventDefault(); send($("nfaiQuestion").value);});
     $("nfaiQuestion").addEventListener("keydown", event => {

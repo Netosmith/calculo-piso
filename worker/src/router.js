@@ -1,4 +1,5 @@
 import { fleetController } from "./controllers/fleet.js";
+import { iaController } from "./controllers/ia.js";
 import {gamesController} from "../../games/server/api.js";
 import { healthController } from "./controllers/health.js";
 import { gatewayTestController } from "./controllers/gateway.js";
@@ -17,6 +18,8 @@ import { pingoController } from "./controllers/pingochic.js";
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/v1/ia/chat" || path === "/v1/ia/status") return iaController(request, env);
 
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);
 

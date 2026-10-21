@@ -134,6 +134,45 @@ function outputText(output) {
     .join("\n").trim().slice(0, 5000);
 }
 
+// Retornos da API não contêm a chave. Expor apenas mensagens padronizadas.
+function apiFailure(response, providerError = {}) {
+  const code = String(providerError.code || providerError.type || "").toLowerCase();
+  const type = String(providerError.type || "").toLowerCase();
+  const reason = code || type;
+  const failure = (message, status, kind) => Object.assign(new Error(message), {
+    publicStatus: status, publicCode: kind
+  });
+  if (response.status === 429) {
+    if (reason === "credit_balance_exhausted" ||
+        reason === "insufficient_quota" || type === "insufficient_quota") {
+      return failure("Créditos da OpenAI API insuficientes. Verifique o saldo e o faturamento do projeto.", 429, "billing");
+    }
+    if (reason === "project_spend_limit_exceeded" || reason === "organization_spend_limit_exceeded") {
+      return failure("Limite de gastos da OpenAI API atingido. Confira o orçamento do projeto ou organização.", 429, "billing");
+    }
+    if (reason === "organization_usage_limit_exceeded") {
+      return failure("Limite de uso autorizado da organização atingido na OpenAI API.", 429, "quota");
+    }
+    if (reason === "rate_limit_exceeded" || reason === "rate_limit_error" || type === "rate_limit_error") {
+      return failure("Limite temporário de requisições ou tokens da OpenAI. Tente novamente após alguns instantes.", 429, "rate_limit");
+    }
+    return failure("Erro 429 da OpenAI: verifique saldo, limites de gastos e limites de requisições da API.", 429, "quota_unknown");
+  }
+  if (response.status === 401) {
+    return failure("A chave OPENAI_API_KEY foi rejeitada pela OpenAI. Confira o segredo configurado no Worker.", 503, "key_invalid");
+  }
+  if (response.status === 403) {
+    return failure("O projeto ou a chave não possui a permissão necessária para utilizar a API Responses.", 503, "permission_denied");
+  }
+  if (reason === "model_not_found" || response.status === 404) {
+    return failure("O modelo de IA configurado não está disponível para este projeto da OpenAI.", 503, "model_unavailable");
+  }
+  if (response.status === 400 || response.status === 422) {
+    return failure("A OpenAI rejeitou os parâmetros da integração. Verifique o modelo e o formato da solicitação.", 502, "invalid_request");
+  }
+  return failure("A OpenAI não conseguiu processar a pergunta agora. Tente novamente.", 502, "provider_error");
+}
+
 async function callOpenAI(env, input, tools, deadlineMs = 18000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), deadlineMs);
@@ -155,22 +194,34 @@ async function callOpenAI(env, input, tools, deadlineMs = 18000) {
       signal: controller.signal
     });
     if (!response.ok) {
-      console.error("[NOVA IA] API OpenAI", { status: response.status });
-      throw new Error(response.status === 429 ? "A IA atingiu o limite temporário do provedor." :
-        response.status === 401 ? "A chave da OpenAI não foi aceita. Verifique o segredo OPENAI_API_KEY." :
-        "O provedor de IA está indisponível no momento.");
+      // Erros 429 podem ser financeiros (sem crédito) ou de velocidade (rate limit).
+      // Nunca registrar mensagens completas do provedor: apenas metadados não secretos.
+      const body = await response.json().catch(() => ({}));
+      const info = body?.error || {};
+      const failure = apiFailure(response, info);
+      console.error("[NOVA IA] OpenAI", {
+        status: response.status,
+        code: typeof info.code === "string" ? info.code.slice(0, 64) : null,
+        type: typeof info.type === "string" ? info.type.slice(0, 64) : null,
+        requestId: response.headers.get("x-request-id") || null
+      });
+      throw failure;
     }
     return await response.json();
   } finally { clearTimeout(timeout); }
 }
+// Conferir antes de chamar o provedor; cobrar da cota local somente se houver resposta útil.
 async function quota(env, session) {
   if (!env.SESSIONS) return { allowed: false };
   const today = new Date().toISOString().slice(0, 10);
   const key = "ia:usage:" + today + ":" + encodeURIComponent(session.usuario);
   const count = Number(await env.SESSIONS.get(key) || "0");
-  if (count >= MAX_DAILY) return { allowed: false };
-  await env.SESSIONS.put(key, String(count + 1), { expirationTtl: 2 * 24 * 60 * 60 });
-  return { allowed: true, remaining: MAX_DAILY - count - 1 };
+  return { allowed: count < MAX_DAILY, remaining: Math.max(0, MAX_DAILY - count), key, count };
+}
+async function markQuotaSuccess(env, usage) {
+  if (!usage?.key || !env.SESSIONS) return 0;
+  await env.SESSIONS.put(usage.key, String(usage.count + 1), { expirationTtl: 2 * 24 * 60 * 60 });
+  return Math.max(0, MAX_DAILY - usage.count - 1);
 }
 
 export async function iaController(request, env) {
@@ -223,13 +274,12 @@ export async function iaController(request, env) {
     }
     const answer = outputText(result.output);
     if (!answer) return errorResponse("A IA não conseguiu concluir a resposta. Tente reformular sua pergunta.", 502);
-    return success({ answer, model: MODEL, remainingToday: limit.remaining });
+    const remainingToday = await markQuotaSuccess(env, limit);
+    return success({ answer, model: MODEL, remainingToday });
   } catch (error) {
-    const text = String(error?.message || "");
-    if (text.includes("chave da OpenAI")) return errorResponse(text, 503);
-    if (text.includes("limite temporário")) return errorResponse(text, 429);
+    if (error?.publicStatus) return errorResponse(error.message, error.publicStatus);
     if (error?.name === "AbortError") return errorResponse("A consulta demorou demais. Tente novamente.", 504);
-    console.error("[NOVA IA] Erro controlado", { message: text });
+    console.error("[NOVA IA] Erro inesperado", { name: error?.name || "Error" });
     return errorResponse("Não foi possível conversar com a IA agora. Tente novamente.", 502);
   }
 }

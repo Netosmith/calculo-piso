@@ -167,7 +167,7 @@ function sanitizeHomeMapFreight(row, source) {
   };
 }
 
-async function requestGlobalHomeMapFreights(env, session) {
+export async function requestGlobalHomeMapFreights(env, session) {
   const sources = [
     { module: "fretes", source: "FRETES", estado: "GO" },
     { module: "fretes2", source: "FRETES2", estado: "MT" }

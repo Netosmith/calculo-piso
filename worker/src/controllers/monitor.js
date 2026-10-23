@@ -76,10 +76,11 @@ export async function monitorController(request,env){
   if(auth.error)return auth.error;
 
   if(path==="/v1/monitor/trips" && method==="GET"){
-    const listed=await env.SESSIONS.list({prefix:PREFIX+"trip:",limit:500});
-    const trips=(await Promise.all(listed.keys.map(x=>env.SESSIONS.get(x.name,"json"))))
+    // Índice pequeno para o piloto: evita a operação KV.list em toda consulta.
+    const ids=(await env.SESSIONS.get(PREFIX+"index","json")) || [];
+    const trips=(await Promise.all(ids.slice(0,200).map(x=>getTrip(env,x))))
       .filter(Boolean).map(publicTrip).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
-    return success({trips,complete:listed.list_complete});
+    return success({trips,complete:true});
   }
   if(path==="/v1/monitor/trips" && method==="POST"){
     const body=await readBody(request);
@@ -90,6 +91,9 @@ export async function monitorController(request,env){
       destination:clean(body?.destination,100),active:true,createdAt:now,updatedAt:now,
       createdBy:clean(auth.session.usuario,100),lastPosition:null};
     await saveTrip(env,trip);
+    const currentIndex=(await env.SESSIONS.get(PREFIX+"index","json")) || [];
+    const nextIndex=[tripId,...currentIndex.filter(x=>validId(x)&&x!==tripId)].slice(0,200);
+    await env.SESSIONS.put(PREFIX+"index",JSON.stringify(nextIndex),{expirationTtl:TTL});
     await env.SESSIONS.put(linkKey(access),tripId,{expirationTtl:LINK_TTL});
     return success({trip:publicTrip(trip),token:access,linkExpiresHours:24},201);
   }

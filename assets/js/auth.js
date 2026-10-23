@@ -1171,6 +1171,12 @@ function injectPortalNavStyles(){
       .nf-global-nav-standalone-brand img{width:105px}
       .nf-global-nav-settings,.nf-global-nav-logout{width:42px;height:42px;flex-basis:42px}
     }
+    /* Barra superior e gavetas nunca entram nas vias impressas. */
+    @media print{
+      .nf-global-nav-standalone,
+      .nf-global-nav-drawer,
+      .nf-global-nav-backdrop{display:none!important}
+    }
   `;
 
   document.head.appendChild(style);

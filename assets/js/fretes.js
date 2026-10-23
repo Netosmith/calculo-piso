@@ -1273,7 +1273,7 @@ function formatDateTimeBR(value) {
   }
 
   function applyFilters() {
-    window.NFFilialMovimentacao?.render(STATE.rows);
+    window.NFFilialMovimentacao?.render(STATE.rows, DIRECTORY);
     render(getFilteredRows());
     renderPreview(getFilteredRows()[0] || STATE.rows[0]);
   }
@@ -3144,7 +3144,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     // Os cadastros usam os dados locais de contingência e são atualizados em paralelo.
     const fretesPromise = atualizar();
     void carregarCadastrosFretes({ background: true })
-      .then(() => fillModalSelectors())
+      .then(() => { fillModalSelectors(); window.NFFilialMovimentacao?.render(STATE.rows, DIRECTORY); })
       .catch((error) => console.error("[fretes] falha ao atualizar cadastros em segundo plano:", error));
 
     await fretesPromise;

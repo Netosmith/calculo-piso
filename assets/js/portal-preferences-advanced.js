@@ -184,7 +184,16 @@
       table.dataset.nfTableId=id;
       table.classList.add("nf-pref-managed");
       tableRegistry.set(id,{table,headers});
-      if(table.parentElement && table.parentElement !== document.body) table.parentElement.classList.add("nf-pref-scroll-host");
+      // Nunca transformar a seção inteira do módulo em área rolável.
+      const host=table.parentElement;
+      if(host && host!==document.body && host.tagName==="DIV" &&
+         (host.classList.contains("tableWrap") ||
+          host.classList.contains("table-wrapper") ||
+          host.classList.contains("table-container") ||
+          host.classList.contains("overflow-auto") ||
+          host.children.length<=2)){
+        host.classList.add("nf-pref-scroll-host");
+      }
       injectTableButton(table,id);
     }
     for(const [id,item] of tableRegistry){

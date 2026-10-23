@@ -270,12 +270,14 @@
   function init(){
     state=load();
     apply();
-    if(home){
-      // O ícone existente da Home abre um painel, não uma página inexistente.
-      const trigger=$("#nfPrefsOpen") || $('[data-nf-preferences-open]');
-      if(trigger)trigger.addEventListener("click",openDrawer);
-      initStatePicker();
-    }
+    // Delegação captura também a engrenagem dos menus montados após o login
+    // e evita listeners duplicados quando a barra superior é reconstruída.
+    document.addEventListener("click", event=>{
+      const target=event.target instanceof Element ? event.target : event.target?.parentElement;
+      const trigger=target?.closest('#nfPrefsOpen, [data-nf-preferences-open]');
+      if(trigger && !trigger.disabled)openDrawer(event);
+    });
+    if(home)initStatePicker();
     window.addEventListener("keydown",event=>{
       if(event.key==="Escape" && !$("#nfPrefDrawer")?.hidden)closeDrawer();
     });

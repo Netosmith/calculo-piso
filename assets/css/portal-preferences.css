@@ -324,8 +324,14 @@ html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer):after{
   scroll-behavior:auto!important;
 }
 
-/* Cabeçalhos fixos apenas em tabelas reconhecidas e visíveis. */
+/* Cabeçalhos fixos apenas em tabelas reconhecidas e visíveis.
+   A rolagem vertical acontece dentro do contêiner da tabela. */
 @media screen {
+  html[data-nf-sticky="on"] .nf-pref-scroll-host{
+    max-height:min(76vh,900px);
+    overflow:auto;
+    overscroll-behavior:contain;
+  }
   html[data-nf-sticky="on"] table.nf-pref-managed thead th{
     position:sticky!important;
     top:0;

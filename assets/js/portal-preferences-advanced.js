@@ -100,14 +100,19 @@
     const nav=$("#nfGlobalNav");if(!nav)return;
     const links=$$("a.nf-global-nav-item[data-nav-key]",nav);
     if(!links.length)return;
+    // A barra global agrupa alguns cards (Fretes GO/MT e dois cálculos de piso).
+    // O favorito só reordena links já liberados pelo sistema de permissões.
+    const favoriteKeys=[...new Set(state.favorites.map(k=>
+      k==="fretes2"?"fretes":k==="piso2"?"piso":k
+    ))];
     links.forEach((el,i)=>{
       if(!navIndices.has(el))navIndices.set(el,i);
       if(!el.dataset.nfOriginalSecondary)el.dataset.nfOriginalSecondary=el.dataset.secondary||"0";
-      const favorite=state.favorites.includes(el.dataset.navKey);
+      const favorite=favoriteKeys.includes(el.dataset.navKey);
       el.classList.toggle("nf-adv-favorite",favorite);
       el.dataset.secondary=favorite?"0":el.dataset.nfOriginalSecondary;
     });
-    const rank=new Map(state.favorites.map((k,i)=>[k,i]));
+    const rank=new Map(favoriteKeys.map((k,i)=>[k,i]));
     const sorted=links.slice().sort((a,b)=>{
       const ra=a.dataset.navKey==="home"?-1:(rank.has(a.dataset.navKey)?rank.get(a.dataset.navKey):1000+navIndices.get(a));
       const rb=b.dataset.navKey==="home"?-1:(rank.has(b.dataset.navKey)?rank.get(b.dataset.navKey):1000+navIndices.get(b));

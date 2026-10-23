@@ -211,6 +211,120 @@ html:not([data-nf-home="1"])[data-nf-theme="escuro"] body .pageFretes .nfPreview
 html:not([data-nf-home="1"])[data-nf-theme="escuro"] body .pageFretes .nfPreviewHead h3{color:#edf5ff}
 html:not([data-nf-home="1"])[data-nf-theme="escuro"] body .pageFretes .nfReadyMsg{background:#173653;color:#edf5ff}
 
+
+/* Tokens globais que os módulos já utilizam: centraliza a troca de tema. */
+html[data-nf-theme="escuro"]:not([data-nf-home="1"]){
+  --bg:#0b1c32;
+  --bg2:#102840;
+  --card:#142c46;
+  --panel:#142c46;
+  --panel2:#183651;
+  --soft:#17344d;
+  --line:#385773;
+  --line2:#33516e;
+  --border:#385773;
+  --stroke:#385773;
+  --text:#ecf5ff;
+  --muted:#afc1d3;
+  --cf-bg:#0b1c32;
+  --cf-card:#162d47;
+  --cf-text:#edf5fe;
+  --cf-muted:#adc0d6;
+  --cf-line:#375370;
+  --fleet-bg:#071b30;
+  --fleet-panel:#142d48;
+  --fleet-panel-2:#1a3a58;
+  --fleet-text:#eff8ff;
+  --fleet-muted:#b0c5dd;
+  --fleet-line:#365677;
+  --adm-navy:#081a32;
+  --adm-navy-2:#0e2e4d;
+}
+html[data-nf-theme="claro"]:not([data-nf-home="1"]){
+  --bg:#eef3fa;
+  --bg2:#f7fbff;
+  --card:#fff;
+  --panel:#fff;
+  --panel2:#f5f9fe;
+  --soft:#f3f7fb;
+  --line:#d8e3ef;
+  --line2:#e0eaf3;
+  --border:#d8e3ef;
+  --stroke:#d8e3ef;
+  --text:#143354;
+  --muted:#59738f;
+  --cf-bg:#eef3fa;
+  --cf-card:#fff;
+  --cf-text:#143354;
+  --cf-muted:#607993;
+  --cf-line:#d8e3ef;
+  --fleet-bg:#eef3fa;
+  --fleet-panel:#fff;
+  --fleet-panel-2:#f1f6fb;
+  --fleet-text:#153657;
+  --fleet-muted:#637e9b;
+  --fleet-line:#d5e1ec;
+  --fleet-line-soft:#e1eaf4;
+  --adm-navy:#eef3fa;
+  --adm-navy-2:#dae7f4;
+}
+/* Alguns módulos usam backgrounds fixos em vez das variáveis. */
+html[data-nf-theme="escuro"]:not([data-nf-home="1"]) body :is(
+  .heroBI,.panelCard,.chartCard,.tableCard,.kpiCard,.insightCard,
+  .pageHead,.tabsCard,.toolbar,.statCard,
+  .light-card,.soft-card,.table-card,.filters,
+  .kpi,.filtersCard,.filterCard,.cfCard,
+  .pat-top,.kpiGrid .kpiCard,
+  .nfg-card,.nfg-kpi,.nfg-tablewrap,.nfg-section
+){
+  background:#172e47;
+  border-color:#3d5976;
+  color:#edf6ff;
+}
+html[data-nf-theme="escuro"]:not([data-nf-home="1"]) body :is(.pageHead,.titlebar,.kpi strong,.kpiCard .kpiValue,.kpiValue,.titleArea h1,.pat-top h1){
+  color:#eaf5ff;
+}
+html[data-nf-theme="escuro"]:not([data-nf-home="1"]) body :is(
+  .portal-header,.userBox,.pageBI .modeNav
+){background:#132b44;color:#edf6ff;border-color:#3d5877}
+html[data-nf-theme="escuro"]:not([data-nf-home="1"]) body :is(
+  input[type="text"],input[type="search"],input[type="number"],input[type="date"],
+  input[type="datetime-local"],input[type="email"],select,textarea
+):not(.nf-pref-drawer input):not(.nf-pref-drawer select){
+  background:#1c3a57;
+  color:#edf6ff;
+  border-color:#50708e;
+}
+/* O modo claro também atende aos módulos que têm base escura nativa. */
+html[data-nf-theme="claro"]:not([data-nf-home="1"]) body :is(
+  .fleet-shell,.app,.pageBI,.cfPage
+){color:#143354}
+html[data-nf-theme="claro"]:not([data-nf-home="1"]) body :is(
+  .nfg-card,.nfg-kpi,.nfg-tablewrap,.nfg-section,.cfCard,
+  .hero,.panelCard,.chartCard,.tableCard,.kpiCard,.insightCard
+){
+  background:#fff;
+  border-color:#d7e3ed;
+  color:#143354;
+}
+html[data-nf-theme="claro"]:not([data-nf-home="1"]) body .fleet-page-head,
+html[data-nf-theme="claro"]:not([data-nf-home="1"]) body .fleet-page-head h1{
+  color:#143354;
+}
+html[data-nf-theme="claro"]:not([data-nf-home="1"]) body .ps-company{
+  background:#fff;color:#142e50;
+}
+html[data-nf-theme="claro"]:not([data-nf-home="1"]) body .nf-pref-drawer{
+  background:#f6f9fd;color:#102e50;
+}
+/* A impressão oficial nunca deve adotar backgrounds escuros. */
+@media print{
+  html[data-nf-theme] body{color-scheme:light!important}
+  html[data-nf-theme] #printSheet,
+  html[data-nf-theme] .print-copy-static,
+  html[data-nf-theme] .ps-company{background:#fff!important;color:#111827!important}
+}
+
 /* Central de personalização: seletor isolado do CSS legado. */
 .nf-pref-backdrop{
   position:fixed;inset:0;z-index:11000;

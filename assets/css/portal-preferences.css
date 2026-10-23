@@ -262,3 +262,142 @@ body.nf-pref-open{overflow:hidden!important}
   .nf-pref-section{padding:13px}
   .nf-pref-header{padding:16px}
 }
+
+/* Central v2: funcionalidades avançadas. Nenhuma regra afeta perfis/permissões. */
+
+/* Fundo exclusivo da Home, mantendo os cartões e o conteúdo. */
+html[data-nf-home="1"][data-nf-background="original"] .nf-bg-image{
+  opacity:var(--nf-adv-opacity,1)!important;
+}
+html[data-nf-home="1"][data-nf-background="gradiente"] .nf-bg-image,
+html[data-nf-home="1"][data-nf-background="solido"] .nf-bg-image{
+  display:none!important;
+}
+html[data-nf-home="1"][data-nf-background="gradiente"] .nf-dashboard{
+  background:linear-gradient(125deg,#071a35 0%,#0e3970 52%,#06162b 100%)!important;
+}
+html[data-nf-home="1"][data-nf-background="solido"] .nf-dashboard{
+  background:#102e52!important;
+}
+html[data-nf-home="1"][data-nf-theme="claro"][data-nf-background="gradiente"] .nf-dashboard{
+  background:linear-gradient(125deg,#f1f7fe,#dae9f7,#e8f3fe)!important;
+}
+html[data-nf-home="1"][data-nf-theme="claro"][data-nf-background="solido"] .nf-dashboard{
+  background:#e9f2fa!important;
+}
+
+/* Cards: a estrela identifica favoritos sem alterar o link ou seu acesso. */
+html[data-nf-home="1"] .nf-tools > .nf-tool.nf-adv-favorite:before{
+  content:"★";position:absolute;right:14px;top:12px;color:#d7a62d;
+  font-size:18px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1));
+}
+.nf-global-nav-item.nf-adv-favorite:before{
+  content:"★";position:absolute;right:5px;top:5px;color:#ffd56b;
+  font-size:9px;line-height:1;z-index:2;
+}
+
+/* Letras. Intervenção conservadora apenas nos textos de visualização. */
+html[data-nf-font="grande"] body .nf-tool h2{font-size:19px!important}
+html[data-nf-font="grande"] body .nf-tool p{font-size:14px!important}
+html[data-nf-font="grande"] body .nf-stat-label{font-size:13px!important}
+html[data-nf-font="grande"] body .nf-stat-detail{font-size:14px!important}
+html[data-nf-font="grande"] body :is(
+  .pageFretes .tableWrap td,.pageFretes .tableWrap th,
+  .pageBI .tableWrap td,.pageBI .tableWrap th,
+  .nf-pref-managed td,.nf-pref-managed th
+){font-size:13px!important}
+html[data-nf-font="pequena"] body .nf-tool h2{font-size:15px!important}
+html[data-nf-font="pequena"] body .nf-tool p{font-size:11px!important}
+html[data-nf-font="pequena"] body .nf-stat-label{font-size:11px!important}
+html[data-nf-font="pequena"] body .nf-stat-detail{font-size:10px!important}
+html[data-nf-font="pequena"] body :is(
+  .pageFretes .tableWrap td,.pageFretes .tableWrap th,
+  .pageBI .tableWrap td,.pageBI .tableWrap th,
+  .nf-pref-managed td,.nf-pref-managed th
+){font-size:10px!important}
+html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer),
+html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer):before,
+html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer):after{
+  animation-duration:.01ms!important;
+  animation-iteration-count:1!important;
+  transition-duration:.01ms!important;
+  scroll-behavior:auto!important;
+}
+
+/* Cabeçalhos fixos apenas em tabelas reconhecidas e visíveis. */
+@media screen {
+  html[data-nf-sticky="on"] table.nf-pref-managed thead th{
+    position:sticky!important;
+    top:0;
+    z-index:4;
+    background-clip:padding-box;
+  }
+}
+.nf-adv-table-columns{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:29px;padding:4px 12px;margin:4px 5px 8px;
+  border:1px solid #c4d5e7;border-radius:9px;
+  background:#eef5fd;color:#16447b;
+  font:800 11px Inter,Arial,sans-serif;cursor:pointer;
+}
+.nf-adv-table-columns:hover{background:#dcecff;border-color:#87b2df}
+@media print{
+  .nf-adv-table-columns{display:none!important}
+  html[data-nf-sticky="on"] table.nf-pref-managed thead th{position:static!important}
+}
+
+/* Blocos adicionados à gaveta de configurações. */
+.nf-adv-main{display:block}
+.nf-adv-section{background:#fff}
+.nf-adv-select{
+  width:min(190px,52%);min-height:34px;padding:5px 8px;
+  border:1px solid #ccdceb;border-radius:9px;
+  background:#f8fbff;color:#173b65;font:700 11px Inter,Arial,sans-serif;
+}
+.nf-adv-range-row{
+  display:flex;align-items:center;gap:9px;padding:10px 0 0;
+  font:700 11px Inter,Arial,sans-serif;color:#365777;
+}
+.nf-adv-range{min-width:30px;width:100%;accent-color:#1568c4}
+.nf-adv-percentage{white-space:nowrap;font-variant-numeric:tabular-nums;color:#1766bd}
+.nf-adv-card-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:430px;overflow:auto}
+.nf-adv-card-row{
+  display:flex;align-items:center;gap:7px;
+  min-height:39px;padding:5px 7px;border:1px solid #dce7f0;border-radius:9px;
+  background:#f9fbfe;color:#183a60;
+}
+.nf-adv-card-row[draggable="true"]{cursor:grab}
+.nf-adv-card-row:active{cursor:grabbing}
+.nf-adv-grip{font-size:20px;color:#7a91ac;user-select:none}
+.nf-adv-card-label{flex:1;min-width:0;font-size:11px;font-weight:750;line-height:1.2}
+.nf-adv-card-actions{display:flex;gap:4px}
+.nf-adv-icon{
+  cursor:pointer;min-width:26px;height:27px;padding:0 5px;
+  border:1px solid #d1dfeb;border-radius:7px;background:#fff;
+  color:#195584;font-size:14px;font-weight:900;
+}
+.nf-adv-icon[aria-pressed="true"]{color:#bb8508;background:#fff7db}
+.nf-adv-icon:disabled{opacity:.33;cursor:default}
+.nf-adv-columns{margin-top:12px;padding:11px;background:#f7faff;border:1px solid #e1eaf5;border-radius:11px}
+.nf-adv-columns h4{margin:0 0 7px;color:#284a71;font-size:12px}
+.nf-adv-column-list{max-height:290px;overflow:auto}
+.nf-adv-column-caption{font-size:10px;color:#607d9c;font-weight:700}
+.nf-adv-column-item{
+  display:flex;align-items:center;gap:9px;padding:7px 2px;
+  border-bottom:1px solid #e4edf6;color:#274866;
+  font-size:11px;font-weight:650;cursor:pointer;
+}
+.nf-adv-column-item input{width:15px;height:15px;accent-color:#0d73c8}
+.nf-adv-transfer{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nf-adv-transfer-btn{
+  cursor:pointer;min-height:37px;padding:5px 8px;
+  border:1px solid #c5d8ea;border-radius:9px;background:#ecf5ff;color:#16539a;
+  font:800 11px Inter,Arial,sans-serif;
+}
+.nf-adv-transfer-btn:hover{background:#dfeeff}
+.nf-adv-status{font-size:11px;color:#127c58;line-height:1.45;min-height:14px}
+.nf-adv-status.is-error{color:#b83d42}
+.nf-adv-icon:focus-visible,.nf-adv-transfer-btn:focus-visible,
+.nf-adv-select:focus-visible,.nf-adv-table-columns:focus-visible{
+  outline:2px solid #2d81d1;outline-offset:2px;
+}

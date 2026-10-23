@@ -2,6 +2,7 @@ package br.com.novafrota.rastreamento;
 
 import org.json.JSONObject;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -59,7 +60,12 @@ final class ApiClient {
         InputStream stream = conn.getResponseCode() >= 400 ? conn.getErrorStream() : conn.getInputStream();
         if (stream == null) { conn.disconnect(); throw new IllegalStateException("Resposta vazia"); }
         byte[] bytes;
-        try (InputStream in = stream) { bytes = in.readAllBytes(); }
+        try (InputStream in = stream; ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] part = new byte[4096];
+            int count;
+            while ((count = in.read(part)) != -1) buffer.write(part, 0, count);
+            bytes = buffer.toByteArray();
+        }
         conn.disconnect();
         return new JSONObject(new String(bytes, StandardCharsets.UTF_8));
     }

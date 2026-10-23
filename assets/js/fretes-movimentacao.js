@@ -3,7 +3,7 @@
   "use strict";
 
   const style = `
-    .fretes-top .title{flex:0 1 40%;min-width:270px}
+    .fretes-top .title{flex:0 0 auto;min-width:0;max-width:330px}
     .nfMov{flex:1 1 52%;min-width:300px;max-width:100%;display:flex;flex-direction:column;gap:5px;overflow:hidden}
     .nfMovHead{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#12365f;font-size:10px;font-weight:900;letter-spacing:.04em}
     .nfMovHead small{color:#60758f;font-size:9px;font-weight:700;letter-spacing:0}

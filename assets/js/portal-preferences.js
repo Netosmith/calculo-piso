@@ -270,7 +270,9 @@
   }
   function ensureTopbarSettings(){
     if(home || document.querySelector("#nfPrefsOpen, [data-nf-preferences-open]"))return;
-    const actions=document.querySelector(".topbar .topbar-inner .actions, .topbar .actions");
+    const bar=document.querySelector(".topbar, .nf-topbar, header.page-header");
+    if(!bar)return;
+    const actions=bar.querySelector(".actions, .topRight, .topActions, .account, .header-actions, .user-actions") || bar.querySelector(".topbar-inner") || bar;
     if(!actions)return;
     const trigger=document.createElement("button");
     trigger.type="button";

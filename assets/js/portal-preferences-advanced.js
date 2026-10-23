@@ -204,11 +204,12 @@
           host.children.length<=2)){
         host.classList.add("nf-pref-scroll-host");
       }
-      injectTableButton(table,id);
+      if(!selectedTable)selectedTable=id;
     }
     for(const [id,item] of tableRegistry){
       if(!item.table.isConnected)tableRegistry.delete(id);
     }
+    if(selectedTable && !tableRegistry.has(selectedTable))selectedTable=tableRegistry.keys().next().value||null;
     syncColumnStyles();
   }
   function scheduleScan(){
@@ -332,7 +333,7 @@
     const content=$("#nfAdvColumnList",box);if(!content)return;
     content.replaceChildren();
     const item=tableRegistry.get(selectedTable);
-    if(!item){content.appendChild(note("Abra a opção ⚙ Colunas acima de uma tabela do módulo para escolher suas colunas."));return;}
+    if(!item){content.appendChild(note("Nenhuma tabela compatível foi encontrada nesta página."));return;}
     content.appendChild(el("p","nf-adv-column-caption","Tabela: "+(item.headers[0]||"Registros")));
     item.headers.forEach((title,i)=>{
       const rowEl=el("label","nf-adv-column-item");
@@ -476,6 +477,16 @@
     });
     observer.observe(document.body,{childList:true,subtree:true});
     startNavObserver();
+    window.addEventListener("nf:preferences-open",()=>{
+      if(home)return;
+      scanTables();
+      const visible=[...tableRegistry.entries()].filter(([,item])=>{
+        const rect=item.table.getBoundingClientRect();
+        return rect.width>0 && rect.height>0 && rect.bottom>0 && rect.top<innerHeight;
+      });
+      if(visible.length)selectedTable=visible[0][0];
+      renderColumns();
+    });
     window.addEventListener("portal:session",()=>{
       const current=storageKey();
       if(current!==owner){state=load();}

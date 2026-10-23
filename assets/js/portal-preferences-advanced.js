@@ -37,10 +37,10 @@
   };
   function normalize(raw){
     const p = raw && typeof raw==="object" && !Array.isArray(raw) ? raw : {};
-    const columns = {};
+    const columns = Object.create(null);
     if(p.columns && typeof p.columns==="object" && !Array.isArray(p.columns)){
       for(const [id,values] of Object.entries(p.columns).slice(0,80)){
-        if(!/^[a-z0-9:._-]{1,120}$/i.test(id) || !Array.isArray(values))continue;
+        if(!/^[a-z0-9:._-]{1,120}$/i.test(id) || ["__proto__","constructor","prototype"].includes(id) || !Array.isArray(values))continue;
         const indexes = [...new Set(values.filter(v=>Number.isInteger(v)&&v>=0&&v<40))].slice(0,30);
         if(indexes.length)columns[id]=indexes;
       }
@@ -184,6 +184,7 @@
       table.dataset.nfTableId=id;
       table.classList.add("nf-pref-managed");
       tableRegistry.set(id,{table,headers});
+      if(table.parentElement && table.parentElement !== document.body) table.parentElement.classList.add("nf-pref-scroll-host");
       injectTableButton(table,id);
     }
     for(const [id,item] of tableRegistry){
@@ -339,7 +340,7 @@
   function renderPanel(){
     const base=$("#nfAdvMain");if(!base)return;
     const bg=$("#nfAdvBackground");if(bg)bg.value=state.background;
-    const opacity=$("#nfAdvOpacity");if(opacity)opacity.value=String(state.imageOpacity);
+    const opacity=$("#nfAdvOpacity");if(opacity){opacity.value=String(state.imageOpacity);opacity.disabled=state.background!=="original";}
     const percent=$("#nfAdvOpacityValue");if(percent)percent.textContent=state.imageOpacity+"%";
     const font=$("#nfAdvFont");if(font)font.value=state.fontSize;
     const motion=$("#nfAdvMotion");if(motion)motion.setAttribute("aria-checked",String(state.reduceMotion));
@@ -394,9 +395,11 @@
     const container=el("div","nf-adv-main");container.id="nfAdvMain";
     if(home){
       const background=section("Plano de fundo da Home","nfAdvBackgroundSection");
-      background.append(row("Estilo do fundo",selectFor("background",[
+      const bgSelect=selectFor("background",[
         ["original","Imagem atual de caminhões"],["gradiente","Degradê azul"],["solido","Cor sólida"]
-      ]),"A imagem escolhida não afeta as páginas internas."));
+      ]);
+      bgSelect.id="nfAdvBackground";
+      background.append(row("Estilo do fundo",bgSelect,"A imagem escolhida não afeta as páginas internas."));
       const opacity=el("input","nf-adv-range");opacity.type="range";opacity.min="0";opacity.max="100";
       opacity.value=String(state.imageOpacity);opacity.id="nfAdvOpacity";
       const percentage=el("span","nf-adv-percentage",state.imageOpacity+"%");percentage.id="nfAdvOpacityValue";
@@ -419,9 +422,11 @@
     const colList=el("div","nf-adv-column-list");colList.id="nfAdvColumnList";cols.appendChild(colList);
     table.appendChild(cols);container.appendChild(table);
     const comfort=section("Conforto visual","nfAdvComfort");
-    comfort.append(row("Tamanho das letras",selectFor("fontSize",[
+    const fontSelect=selectFor("fontSize",[
       ["pequena","Pequena"],["normal","Normal"],["grande","Grande"]
-    ]),"Ajuste de textos, sem alterar regras ou valores."));
+    ]);
+    fontSelect.id="nfAdvFont";
+    comfort.append(row("Tamanho das letras",fontSelect,"Ajuste de textos, sem alterar regras ou valores."));
     comfort.append(row("Reduzir animações",switchButton("nfAdvMotion","Reduzir animações","reduceMotion"),
       "Evita movimentos e efeitos de transição desnecessários."));
     container.appendChild(comfort);

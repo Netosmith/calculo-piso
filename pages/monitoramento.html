@@ -39,7 +39,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.ghost{background:#e7f0fa;color:#1
 <script>
 (() => {"use strict";
 const $=s=>document.querySelector(s),API="https://api.portalfrete.net.br";
-let trips=[],selected=null,map=null,marker=null;
+let trips=[],selected=null,map=null,markers=new Map(),viewportInitialized=false;
 const status=(m,bad=false)=>{const e=$("#feedback");e.textContent=m;e.className=bad?"error":"muted"};
 const request=async(path,method="GET",body)=>{
  const r=await fetch(API+path,{method,credentials:"include",cache:"no-store",headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
@@ -50,8 +50,33 @@ function showTrip(t){selected=t.id;renderList();const p=t.lastPosition;const det
 const h=document.createElement("strong");h.textContent=t.plate+" • "+t.driver;detail.append(h);
 const info=document.createElement("p");info.textContent=(t.origin||"Origem não informada")+" → "+(t.destination||"Destino não informado");detail.append(info);
 const loc=document.createElement("p");loc.textContent=p?"Última posição: "+new Date(p.at).toLocaleString("pt-BR")+" • Precisão: "+Math.round(p.accuracy)+" m":"O motorista ainda não enviou localização.";detail.append(loc);
-if(p&&map){if(marker)marker.remove();marker=L.marker([p.lat,p.lng]).addTo(map).bindPopup(t.plate);map.setView([p.lat,p.lng],11);}
+if(p&&map&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))){map.setView([Number(p.lat),Number(p.lng)],12);const pin=markers.get(t.id);if(pin)pin.openPopup();}
 if(t.active){const b=document.createElement("button");b.className="danger";b.textContent="Encerrar monitoramento";b.onclick=async()=>{if(!confirm("Encerrar esta viagem? O link deixará de aceitar posições."))return;try{await request("/v1/monitor/trips/"+t.id+"/stop","POST");await refresh();status("Viagem encerrada.")}catch(e){status(e.message,true)}};detail.append(b);}
+}
+function syncMarkers(){
+ if(!map)return;
+ const valid=trips.filter(t=>t.active&&t.lastPosition&&Number.isFinite(Number(t.lastPosition.lat))&&Number.isFinite(Number(t.lastPosition.lng)));
+ const ids=new Set(valid.map(t=>t.id));
+ for(const [id,pin] of markers){if(!ids.has(id)){pin.remove();markers.delete(id);}}
+ for(const t of valid){
+  const lat=Number(t.lastPosition.lat),lng=Number(t.lastPosition.lng);
+  let pin=markers.get(t.id);
+  if(!pin){
+   pin=L.marker([lat,lng]).addTo(map);
+   pin.on("click",()=>{const trip=trips.find(x=>x.id===t.id);if(trip)showTrip(trip);});
+   markers.set(t.id,pin);
+  }else pin.setLatLng([lat,lng]);
+  const popup=document.createElement("div");
+  const title=document.createElement("strong");title.textContent=t.plate+" • "+t.driver;
+  const route=document.createElement("div");route.textContent=(t.origin||"—")+" → "+(t.destination||"—");
+  const time=document.createElement("small");time.textContent="GPS: "+new Date(t.lastPosition.at).toLocaleString("pt-BR");
+  popup.append(title,route,time);pin.bindPopup(popup);
+ }
+ if(valid.length&&!viewportInitialized){
+  const bounds=L.latLngBounds(valid.map(t=>[Number(t.lastPosition.lat),Number(t.lastPosition.lng)]));
+  map.fitBounds(bounds.pad(.25),{maxZoom:12});
+  viewportInitialized=true;
+ }
 }
 function renderList(){const box=$("#tripList");box.replaceChildren();if(!trips.length){box.textContent="Nenhuma viagem cadastrada.";return;}
 for(const t of trips){const el=document.createElement("div");el.className="trip"+(selected===t.id?" active":"");el.tabIndex=0;el.role="button";
@@ -61,7 +86,7 @@ el.append(strong,small,tag);el.onclick=()=>showTrip(t);el.onkeydown=e=>{if(e.key
 }
 async function refresh(){try{const data=await request("/v1/monitor/trips");trips=data.trips||[];const live=trips.filter(t=>t.active&&t.lastPosition);const stale=live.filter(t=>Date.now()-Date.parse(t.lastPosition.at)>900000);
 $("#kActive").textContent=trips.filter(t=>t.active).length;$("#kLive").textContent=live.length;$("#kStale").textContent=stale.length;
-renderList();const current=trips.find(t=>t.id===selected);if(current)showTrip(current);status("Atualizado às "+new Date().toLocaleTimeString("pt-BR"));}catch(e){status(e.message,true)}}
+renderList();syncMarkers();const current=trips.find(t=>t.id===selected);if(current)showTrip(current);status("Atualizado às "+new Date().toLocaleTimeString("pt-BR"));}catch(e){status(e.message,true)}}
 $("#refresh").onclick=refresh;
 $("#newTrip").onsubmit=async e=>{e.preventDefault();const form=e.currentTarget;const body=Object.fromEntries(new FormData(form));const btn=form.querySelector("button");btn.disabled=true;
 try{const data=await request("/v1/monitor/trips","POST",body);const link=new URL("./monitorar-motorista.html",location.href);link.hash=data.token;$("#driverLink").value=link.href;$("#linkBox").hidden=false;form.reset();await refresh();showTrip(data.trip);status("Viagem criada. Envie o link ao motorista.");}catch(err){status(err.message,true)}finally{btn.disabled=false}};

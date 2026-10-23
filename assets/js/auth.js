@@ -1078,6 +1078,7 @@ function injectPortalNavStyles(){
       max-height:42px;
       object-fit:contain;
     }
+    .nf-global-nav-settings,
     .nf-global-nav-logout{
       position:relative;
       flex:0 0 46px;
@@ -1093,6 +1094,8 @@ function injectPortalNavStyles(){
       cursor:pointer;
       transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
     }
+    .nf-global-nav-settings:hover,
+    .nf-global-nav-settings:focus-visible,
     .nf-global-nav-logout:hover,
     .nf-global-nav-logout:focus-visible{
       color:#fff;
@@ -1166,7 +1169,7 @@ function injectPortalNavStyles(){
       .nf-global-nav-standalone{height:58px;padding:0 8px;gap:6px}
       .nf-global-nav-standalone-brand{flex-basis:108px;min-width:108px;height:48px}
       .nf-global-nav-standalone-brand img{width:105px}
-      .nf-global-nav-logout{width:42px;height:42px;flex-basis:42px}
+      .nf-global-nav-settings,.nf-global-nav-logout{width:42px;height:42px;flex-basis:42px}
     }
   `;
 
@@ -1464,6 +1467,17 @@ function createPortalGlobalShell(nav, more){
   brand.title = "Home";
   brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
 
+  // Preferências visuais aparecem na mesma barra fixa, ao lado de Sair.
+  // O painel é montado pelo módulo de personalização, sem duplicar interfaces.
+  const settings = document.createElement("button");
+  settings.type = "button";
+  settings.className = "nf-global-nav-settings";
+  settings.title = "Configurações do Portal";
+  settings.setAttribute("aria-label", "Configurações do Portal");
+  settings.setAttribute("aria-haspopup", "dialog");
+  settings.dataset.nfPreferencesOpen = "1";
+  settings.innerHTML = '<svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z"/><path d="M19.4 13.8 21 12l-1.6-1.8.2-2.2-2.3-1.1-1.1-2.2-2.2.2L12 3l-2 1.9-2.2-.2-1.1 2.2L4.4 8l.2 2.2L3 12l1.6 1.8-.2 2.2 2.3 1.1 1.1 2.2 2.2-.2L12 21l2-1.9 2.2.2 1.1-2.2 2.3-1.1-.2-2.2Z"/></svg>';
+
   const logout = document.createElement("button");
   logout.type = "button";
   logout.className = "nf-global-nav-logout";
@@ -1479,6 +1493,7 @@ function createPortalGlobalShell(nav, more){
   shell.appendChild(brand);
   shell.appendChild(nav);
   shell.appendChild(more);
+  shell.appendChild(settings);
   shell.appendChild(logout);
   return shell;
 }

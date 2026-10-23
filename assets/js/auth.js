@@ -1048,6 +1048,10 @@ function injectPortalNavStyles(){
     .nf-global-nav-item.nf-nav-overflow-hidden{display:none!important}
 
     /* Barra autônoma para páginas antigas que não tinham cabeçalho padrão. */
+    /* Na Ordem de Carregamento, body é flex na horizontal por padrão.
+       O menu compartilhado deve ficar acima do formulário, nunca ao lado. */
+    body.nf-global-order-shell{flex-direction:column!important}
+    body.nf-global-order-shell > main{width:100%;min-width:0}
     .nf-global-nav-standalone{
       position:sticky;
       top:0;
@@ -1507,6 +1511,10 @@ function createPortalGlobalShell(nav, more){
 function renderPortalGlobalNav(){
   if(!document.body || !isAuthedHome()) return;
 
+  // A Ordem usa body.flex e precisa empilhar cabeçalho e formulário.
+  if(portalNavCurrentFile()==="ordem.html"){
+    document.body.classList.add("nf-global-order-shell");
+  }
   injectPortalNavStyles();
 
   document.getElementById("nfGlobalNav")?.remove();

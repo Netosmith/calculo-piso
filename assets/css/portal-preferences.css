@@ -59,6 +59,19 @@ html[data-nf-layout="amplo"] body .container.pageFretes,
 html[data-nf-layout="amplo"] body .container.nfWide{
   max-width:100%;
 }
+html[data-nf-layout="amplo"]:not([data-nf-home="1"]) body :is(
+  .pageBI,.cfPage,.fleet-shell,.app,.page,.pagePatrimonio
+){
+  width:calc(100% - 24px);
+  max-width:1920px;
+  margin-left:auto;
+  margin-right:auto;
+}
+@media(max-width:680px){
+  html[data-nf-layout="amplo"]:not([data-nf-home="1"]) body :is(
+    .pageBI,.cfPage,.fleet-shell,.app,.page,.pagePatrimonio
+  ){width:100%;padding-left:10px;padding-right:10px}
+}
 
 /* Densidade de tabelas: somente células de tabelas usuais, jamais elementos
    das artes JPG da divulgação ou os dados impressos da ordem. */

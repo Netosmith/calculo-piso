@@ -47,6 +47,17 @@ export async function monitorController(request,env){
   const path=url.pathname.endsWith("/") ? url.pathname.slice(0,-1) : url.pathname;
   const method=request.method;
 
+  // Diagnóstico de disponibilidade sem exposição de dados de viagens.
+  if(path==="/v1/monitor/health" && method==="GET"){
+    try {
+      await env.SESSIONS.get(PREFIX+"health-probe");
+      return success({storage:"available"});
+    } catch(error) {
+      console.error("[MONITOR] KV indisponível",String(error?.message||error));
+      return errorResponse("Armazenamento temporariamente indisponível.",503,{stage:"kv-read"});
+    }
+  }
+
   // Link do motorista autoriza somente leitura da própria viagem e envio de posição.
   if(path==="/v1/monitor/driver"){
     if(method!=="POST")return errorResponse("Método não permitido.",405);

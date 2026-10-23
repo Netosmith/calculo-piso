@@ -51,7 +51,8 @@ export async function monitorController(request,env){
   if(path==="/v1/monitor/health" && method==="GET"){
     try {
       await env.SESSIONS.get(PREFIX+"health-probe");
-      return success({storage:"available"});
+      const db=env.FLEET_DB ? await env.FLEET_DB.prepare("SELECT 1 AS ok").first() : null;
+      return success({storage:"available",database:db?.ok===1?"available":"unavailable"});
     } catch(error) {
       console.error("[MONITOR] KV indisponível",String(error?.message||error));
       return errorResponse("Armazenamento temporariamente indisponível.",503,{stage:"kv-read"});

@@ -139,6 +139,17 @@ html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-detail,
 html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-detail strong{
   color:#183657;
 }
+/* Contraste dos números do card Veículos Totais no tema claro. */
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-resumo,
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-totais,
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-totais strong,
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-uf,
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status,
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status b{
+  color:#173a61!important;
+}
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status.porta i{background:#20b774}
+html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status.transito i{background:#438cf5}
 html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-update{color:#617a96}
 html[data-nf-home="1"][data-nf-theme="claro"] .homeFreightMapPanel{
   background:linear-gradient(160deg,#fff,#eef5fc);

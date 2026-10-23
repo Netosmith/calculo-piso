@@ -74,7 +74,8 @@
       : state.theme;
   }
   function apply(){
-    const activeTheme = theme();
+    // Tema é exclusivo da Home: os módulos internos usam seus estilos próprios.
+    const activeTheme = home ? theme() : null;
     if(activeTheme) root.dataset.nfTheme = activeTheme;
     else delete root.dataset.nfTheme;
     root.dataset.nfLayout = state.layout;
@@ -119,10 +120,10 @@
     const hint=$("#nfPrefThemeHint");
     if(hint){
       hint.textContent = state.theme === null
-        ? "Tema original do Portal Frete. Selecione uma opção para personalizar."
+        ? "Personalize somente a Home. Outras páginas mantêm sua aparência original."
         : state.theme === "automatico"
-          ? "Acompanha a aparência clara/escura do sistema."
-          : "Tema escolhido aplicado às páginas compatíveis.";
+          ? "A Home acompanha o tema do computador. Outras páginas não mudam."
+          : "Tema aplicado apenas à Home. Outras páginas mantêm sua aparência original.";
     }
   }
   function icon(name){
@@ -155,7 +156,7 @@
       </header>
       <div class="nf-pref-scroll">
         <section class="nf-pref-section" aria-labelledby="nfPrefThemeTitle">
-          <h3 id="nfPrefThemeTitle">Aparência</h3>
+          <h3 id="nfPrefThemeTitle">Aparência da Home</h3>
           <div class="nf-pref-themes" role="group" aria-label="Tema visual">
             <button class="nf-pref-theme" type="button" data-nf-theme-choice="escuro" aria-pressed="false">
               ${icon("moon")}<span>Escuro</span></button>

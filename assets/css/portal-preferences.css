@@ -269,6 +269,9 @@ body.nf-pref-open{overflow:hidden!important}
 html[data-nf-home="1"][data-nf-background="original"] .nf-bg-image{
   opacity:var(--nf-adv-opacity,1)!important;
 }
+html[data-nf-home="1"][data-nf-background="original"][data-nf-theme="claro"] .nf-bg-image{
+  opacity:var(--nf-adv-opacity-light,.09)!important;
+}
 html[data-nf-home="1"][data-nf-background="gradiente"] .nf-bg-image,
 html[data-nf-home="1"][data-nf-background="solido"] .nf-bg-image{
   display:none!important;

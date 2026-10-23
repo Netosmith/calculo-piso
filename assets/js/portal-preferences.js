@@ -33,8 +33,11 @@
 
   function username(){
     try{
-      const value = typeof window.getUser === "function" ? window.getUser() : "";
-      return String(value || "").trim().toUpperCase().slice(0,128);
+      // A Ordem de Carregamento não importa auth.js. Reaproveitar apenas
+      // o identificador visual já guardado pelo login do Portal Frete.
+      const resolved = typeof window.getUser === "function" ? window.getUser() : "";
+      const value = resolved || localStorage.getItem("nf_auth_user") || "";
+      return String(value).trim().toUpperCase().slice(0,128);
     }catch(_){ return ""; }
   }
   function key(){

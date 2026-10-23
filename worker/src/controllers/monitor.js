@@ -83,15 +83,26 @@ export async function monitorController(request,env){
     return success({receivedAt:t.updatedAt});
   }
 
-  const auth=await manager(request,env);
+  let auth;
+  try { auth=await manager(request,env); }
+  catch(error){
+    console.error("[MONITOR] sessão",String(error?.message||error));
+    return errorResponse("Falha ao validar sessão do monitoramento.",503,{stage:"session"});
+  }
   if(auth.error)return auth.error;
 
   if(path==="/v1/monitor/trips" && method==="GET"){
     // Índice pequeno para o piloto: evita a operação KV.list em toda consulta.
-    const ids=(await env.SESSIONS.get(PREFIX+"index","json")) || [];
-    const trips=(await Promise.all(ids.slice(0,200).map(x=>getTrip(env,x))))
-      .filter(Boolean).map(publicTrip).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
-    return success({trips,complete:true});
+    try {
+      const ids=(await env.SESSIONS.get(PREFIX+"index","json")) || [];
+      if(!Array.isArray(ids))return errorResponse("Índice de viagens inválido.",503,{stage:"index-format"});
+      const trips=(await Promise.all(ids.slice(0,200).map(x=>getTrip(env,x))))
+        .filter(Boolean).map(publicTrip).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+      return success({trips,complete:true});
+    } catch(error) {
+      console.error("[MONITOR] leitura",String(error?.message||error));
+      return errorResponse("Falha na leitura das viagens monitoradas.",503,{stage:"trips-read"});
+    }
   }
   if(path==="/v1/monitor/trips" && method==="POST"){
     const body=await readBody(request);

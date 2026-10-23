@@ -103,6 +103,8 @@
     state = {...BASE};
     if(owner){try{localStorage.removeItem(owner);}catch(_){}}
     apply();
+    // Limpa também as preferências avançadas desta mesma conta.
+    window.NovaFrotaAdvanced?.reset();
   }
   function syncControls(){
     $$("[data-nf-theme-choice]").forEach(el=>{
@@ -214,6 +216,7 @@
       if(name==="layout" || name==="density")update({[name]:control.dataset.nfValue});
     });
     syncControls();
+    window.NovaFrotaAdvanced?.mount(drawer);
   }
   function openDrawer(event){
     if(event)event.preventDefault();

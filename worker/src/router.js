@@ -1,4 +1,5 @@
 import { fleetController } from "./controllers/fleet.js";
+import { monitorController } from "./controllers/monitor.js";
 import { iaController } from "./controllers/ia.js";
 import {gamesController} from "../../games/server/api.js";
 import { healthController } from "./controllers/health.js";
@@ -22,6 +23,7 @@ export async function routeRequest(request, env, ctx) {
   if (path === "/v1/ia/chat" || path === "/v1/ia/status") return iaController(request, env);
 
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);
+  if (path.startsWith("/v1/monitor/")) return monitorController(request, env);
 
   if (path === "/v1/pingo" || path.startsWith("/v1/pingo/")) return pingoController(request, env);
 

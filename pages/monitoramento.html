@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monitoramento Nova Frota</title>
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#edf3fa;color:#183657;font:14px Inter,Arial,sans-serif}
+main{max-width:1540px;margin:88px auto 25px;padding:0 18px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+h1{font-size:25px;margin:0;color:#0a3568}.muted{color:#637d99}.panel{background:white;border:1px solid #d5e1ee;border-radius:15px;box-shadow:0 8px 24px #142e4b12;padding:18px}
+.layout{display:grid;grid-template-columns:350px minmax(0,1fr);gap:16px}.stack{display:grid;gap:16px}h2{margin:0 0 12px;font-size:16px}
+label{display:grid;gap:4px;color:#315371;font-weight:700;font-size:12px}input{width:100%;padding:11px;border:1px solid #c9d8e8;border-radius:9px;font:inherit}
+form{display:grid;gap:10px}button{border:0;border-radius:9px;padding:11px 14px;cursor:pointer;font-weight:800;background:#0967b2;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}.ghost{background:#e7f0fa;color:#145080}.danger{background:#b91c3c}.trip{border:1px solid #d7e3ef;border-radius:11px;padding:12px;margin-top:8px;cursor:pointer;background:#fafcff}
+.trip.active{border-color:#2794e5;background:#edf8ff}.trip strong{display:block;margin-bottom:4px}.trip small{display:block;color:#63809e}
+.status{display:inline-block;border-radius:20px;padding:4px 8px;background:#e5f6e9;color:#147a49;font-weight:800;font-size:11px;margin-top:8px}.status.off{background:#f3e9e9;color:#a44848}
+#map{height:min(70vh,700px);min-height:420px;border-radius:12px;overflow:hidden;background:#dfeaf4}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{background:#eff6ff;border:1px solid #d0e6fa;padding:12px;border-radius:10px;line-height:1.5}.error{color:#b3263e}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.kpi{background:#f5f9fd;border-radius:10px;padding:11px}.kpi strong{font-size:22px;display:block}
+@media(max-width:850px){main{margin-top:75px}.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}#map{height:420px}}
+</style></head><body>
+<main>
+<div class="head"><div><h1>📍 MONITORAMENTO NOVA FROTA</h1><div class="muted">Acompanhamento de viagens por localização compartilhada pelo motorista</div></div>
+<div class="tools"><button id="refresh" class="ghost">↻ Atualizar</button><a href="./home.html">← Voltar à Home</a></div></div>
+<div class="kpis"><div class="kpi"><small>Viagens ativas</small><strong id="kActive">0</strong></div><div class="kpi"><small>Com posição</small><strong id="kLive">0</strong></div><div class="kpi"><small>Sem atualização há 15 min</small><strong id="kStale">0</strong></div></div>
+<div class="layout"><div class="stack"><section class="panel"><h2>Nova viagem monitorada</h2>
+<form id="newTrip"><label>Placa do caminhão<input name="plate" maxlength="7" required placeholder="ABC1D23" autocomplete="off"></label>
+<label>Motorista<input name="driver" maxlength="100" required placeholder="Nome do motorista"></label>
+<label>Origem<input name="origin" maxlength="100" placeholder="Rio Verde-GO"></label>
+<label>Destino<input name="destination" maxlength="100" placeholder="Santos-SP"></label>
+<button type="submit">+ Criar link de rastreamento</button></form>
+<div id="linkBox" class="note" hidden style="margin-top:12px"><strong>Link do motorista criado</strong><p>Envie este link ao motorista. Válido por 24 horas para iniciar o compartilhamento.</p><input id="driverLink" readonly><div class="tools" style="margin-top:8px"><button type="button" id="copyLink">Copiar link</button><button type="button" class="ghost" id="shareLink">Compartilhar</button></div></div>
+</section><section class="panel"><h2>Viagens recentes</h2><div id="tripList" class="muted">Carregando...</div></section></div>
+<section class="panel"><h2>Mapa de acompanhamento</h2><div id="map"></div><div id="details" class="note" style="margin-top:12px">Selecione uma viagem para visualizar os detalhes.</div><p class="muted" style="font-size:12px">O navegador do motorista precisa permanecer aberto para atualizações contínuas. A posição pode ficar desatualizada se o celular bloquear ou perder sinal.</p></section></div>
+<p id="feedback" role="status" class="muted"></p></main>
+<script src="../assets/js/api.js?v=5"></script><script src="../assets/js/auth.js?v=20"></script>
+<script src="../assets/js/portal-preferences.js?v=7" defer></script>
+<script src="../assets/js/portal-preferences-advanced.js?v=6" defer></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(() => {"use strict";
+const $=s=>document.querySelector(s),API="https://api.portalfrete.net.br";
+let trips=[],selected=null,map=null,marker=null;
+const status=(m,bad=false)=>{const e=$("#feedback");e.textContent=m;e.className=bad?"error":"muted"};
+const request=async(path,method="GET",body)=>{
+ const r=await fetch(API+path,{method,credentials:"include",cache:"no-store",headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+ const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Falha na API");return d;
+};
+function ensureMap(){if(map||!window.L)return;map=L.map("map").setView([-15.7,-50.4],4);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(map);}
+function showTrip(t){selected=t.id;renderList();const p=t.lastPosition;const detail=$("#details");detail.replaceChildren();
+const h=document.createElement("strong");h.textContent=t.plate+" • "+t.driver;detail.append(h);
+const info=document.createElement("p");info.textContent=(t.origin||"Origem não informada")+" → "+(t.destination||"Destino não informado");detail.append(info);
+const loc=document.createElement("p");loc.textContent=p?"Última posição: "+new Date(p.at).toLocaleString("pt-BR")+" • Precisão: "+Math.round(p.accuracy)+" m":"O motorista ainda não enviou localização.";detail.append(loc);
+if(p&&map){if(marker)marker.remove();marker=L.marker([p.lat,p.lng]).addTo(map).bindPopup(t.plate);map.setView([p.lat,p.lng],11);}
+if(t.active){const b=document.createElement("button");b.className="danger";b.textContent="Encerrar monitoramento";b.onclick=async()=>{if(!confirm("Encerrar esta viagem? O link deixará de aceitar posições."))return;try{await request("/v1/monitor/trips/"+t.id+"/stop","POST");await refresh();status("Viagem encerrada.")}catch(e){status(e.message,true)}};detail.append(b);}
+}
+function renderList(){const box=$("#tripList");box.replaceChildren();if(!trips.length){box.textContent="Nenhuma viagem cadastrada.";return;}
+for(const t of trips){const el=document.createElement("div");el.className="trip"+(selected===t.id?" active":"");el.tabIndex=0;el.role="button";
+const strong=document.createElement("strong");strong.textContent=t.plate+" • "+t.driver;const small=document.createElement("small");small.textContent=(t.origin||"—")+" → "+(t.destination||"—");
+const tag=document.createElement("span");tag.className="status"+(t.active?"":" off");tag.textContent=t.active?"Em monitoramento":"Encerrada";
+el.append(strong,small,tag);el.onclick=()=>showTrip(t);el.onkeydown=e=>{if(e.key==="Enter")showTrip(t)};box.append(el);}
+}
+async function refresh(){try{const data=await request("/v1/monitor/trips");trips=data.trips||[];const live=trips.filter(t=>t.active&&t.lastPosition);const stale=live.filter(t=>Date.now()-Date.parse(t.lastPosition.at)>900000);
+$("#kActive").textContent=trips.filter(t=>t.active).length;$("#kLive").textContent=live.length;$("#kStale").textContent=stale.length;
+renderList();const current=trips.find(t=>t.id===selected);if(current)showTrip(current);status("Atualizado às "+new Date().toLocaleTimeString("pt-BR"));}catch(e){status(e.message,true)}}
+$("#refresh").onclick=refresh;
+$("#newTrip").onsubmit=async e=>{e.preventDefault();const form=e.currentTarget;const body=Object.fromEntries(new FormData(form));const btn=form.querySelector("button");btn.disabled=true;
+try{const data=await request("/v1/monitor/trips","POST",body);const link=new URL("./monitorar-motorista.html",location.href);link.hash=data.token;$("#driverLink").value=link.href;$("#linkBox").hidden=false;form.reset();await refresh();showTrip(data.trip);status("Viagem criada. Envie o link ao motorista.");}catch(err){status(err.message,true)}finally{btn.disabled=false}};
+$("#copyLink").onclick=async()=>{await navigator.clipboard.writeText($("#driverLink").value);status("Link copiado.")};
+$("#shareLink").onclick=async()=>{const url=$("#driverLink").value;if(navigator.share){try{await navigator.share({title:"Rastreamento Nova Frota",url})}catch{}}else{await navigator.clipboard.writeText(url);status("Link copiado.")}};
+(async()=>{try{await window.portalAuthReady;if(typeof requireFeatureAuth!=="function"||!requireFeatureAuth("monitoramento"))return;ensureMap();await refresh();setInterval(refresh,30000);}catch(e){status(e.message,true)}})();
+})();
+</script></body></html>

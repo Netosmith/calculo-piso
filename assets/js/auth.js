@@ -13,11 +13,11 @@ const STATE_FEATURES = {
 
   OPERACIONAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "fretes-mercado", "bi", "controle", "estadias", "embarques", "chamados"],
+    "fretes-mercado", "bi", "controle", "estadias", "embarques", "chamados", "monitoramento"],
 
   COMERCIAL: [
     "piso", "piso2", "fretes", "share", "divulgacao",
-    "bi", "custo-frota", "fretes-mercado", "controle", "fretes2", "estadias", "relatorio", "embarques", "chamados"],
+    "bi", "custo-frota", "fretes-mercado", "controle", "fretes2", "estadias", "relatorio", "embarques", "chamados", "monitoramento"],
 
   ADMINISTRADOR: [
     "piso", "piso2", "fretes", "share", "divulgacao", "bi",
@@ -599,6 +599,14 @@ const PORTAL_NAV_ITEMS = [
     },
     paths:["fretes.html","fretes2.html"],
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
+  },
+  {
+    key:"monitoramento",
+    label:"Monitoramento",
+    feature:"monitoramento",
+    href:"./monitoramento.html",
+    paths:["monitoramento.html"],
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-7 9 7v10H3z"/><circle cx="12" cy="12" r="3"/><path d="M12 15v3"/></svg>'
   },
   {
     key:"controle",

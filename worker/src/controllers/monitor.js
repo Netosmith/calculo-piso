@@ -44,7 +44,7 @@ function publicTrip(t){
 export async function monitorController(request,env){
   if(!env.SESSIONS)return errorResponse("Armazenamento indisponível.",503);
   const url=new URL(request.url);
-  const path=url.pathname.replace(/\\/+$/,"");
+  const path=url.pathname.endsWith("/") ? url.pathname.slice(0,-1) : url.pathname;
   const method=request.method;
 
   // Link do motorista autoriza somente leitura da própria viagem e envio de posição.
@@ -93,9 +93,9 @@ export async function monitorController(request,env){
     await env.SESSIONS.put(linkKey(access),tripId,{expirationTtl:LINK_TTL});
     return success({trip:publicTrip(trip),token:access,linkExpiresHours:24},201);
   }
-  const stop=path.match(/^\\/v1\\/monitor\\/trips\\/([a-f0-9-]{36})\\/stop$/);
-  if(stop && method==="POST"){
-    const trip=await getTrip(env,stop[1]);
+  const stopParts=path.split("/").filter(Boolean);
+  if(stopParts.length===5 && stopParts[0]==="v1" && stopParts[1]==="monitor" && stopParts[2]==="trips" && stopParts[4]==="stop" && method==="POST"){
+    const trip=await getTrip(env,stopParts[3]);
     if(!trip)return errorResponse("Viagem não encontrada.",404);
     trip.active=false;trip.updatedAt=new Date().toISOString();
     await saveTrip(env,trip);

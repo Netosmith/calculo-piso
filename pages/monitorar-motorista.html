@@ -1,0 +1,23 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compartilhar localização | Nova Frota</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#eaf2fa;font:15px Inter,Arial,sans-serif;color:#183657;padding:18px}
+main{max-width:480px;width:100%;background:white;border:1px solid #d4e1ee;border-radius:20px;padding:24px;box-shadow:0 12px 35px #12345618}
+h1{font-size:24px;margin:6px 0 8px}p{line-height:1.5;color:#56718d}button{border:0;border-radius:11px;padding:14px 18px;font:700 15px inherit;background:#0875ba;color:white;cursor:pointer;width:100%;margin-top:10px}
+button:disabled{opacity:.5}.stop{background:#b42342}.box{background:#f0f6fd;border-radius:12px;padding:14px;margin:15px 0}.label{font-size:12px;text-transform:uppercase;font-weight:800;color:#587797}.value{font-size:20px;font-weight:800;margin-top:4px}.ok{color:#087c46}.err{color:#b42342}.muted{font-size:12px;color:#67809a}
+</style></head><body><main><div style="color:#0b72ba;font-weight:900">🚛 NOVA FROTA</div><h1>Compartilhar localização</h1><p>Você está compartilhando sua localização somente durante esta viagem. O operacional poderá acompanhar a última posição recebida.</p>
+<div class="box"><div class="label">Viagem</div><div class="value" id="trip">Validando link...</div><p id="route"></p></div>
+<button id="start" disabled>📍 Iniciar compartilhamento</button><button id="stop" class="stop" hidden>Parar compartilhamento</button>
+<p id="status" role="status">Aguardando validação.</p><p class="muted">Mantenha esta página aberta e o celular com sinal. O rastreamento pode ser interrompido pelo navegador quando a tela for bloqueada. A localização será enviada apenas após sua autorização.</p></main>
+<script>
+(()=>{"use strict";const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);let watch=null,last=0,trip=null;
+const msg=(text,bad=false)=>{$("#status").textContent=text;$("#status").className=bad?"err":"ok"};
+const req=async(path,body)=>{const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Falha de comunicação");return d};
+async function validate(){try{if(!/^[a-f0-9]{64}$/.test(token))throw Error("Link inválido.");const d=await req("/v1/monitor/driver",{token});trip=d.trip;$("#trip").textContent=trip.plate+" • "+trip.driver;$("#route").textContent=(trip.origin||"—")+" → "+(trip.destination||"—");$("#start").disabled=!trip.active;msg(trip.active?"Viagem pronta. Toque em iniciar para autorizar o GPS.":"Esta viagem já foi encerrada.");}catch(e){msg(e.message,true);$("#trip").textContent="Link indisponível"}}
+$("#start").onclick=()=>{if(!navigator.geolocation){msg("GPS não disponível neste navegador.",true);return}if(watch!==null)return;$("#start").disabled=true;
+watch=navigator.geolocation.watchPosition(async pos=>{if(Date.now()-last<15000)return;last=Date.now();try{const d=await req("/v1/monitor/position",{token,latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy});msg("Localização enviada às "+new Date(d.receivedAt).toLocaleTimeString("pt-BR"));$("#stop").hidden=false;}catch(e){msg(e.message,true);if(/encerrada|expirado|inválido/i.test(e.message))stop();}},err=>{msg("Não foi possível acessar a localização: "+err.message,true);stop()},{enableHighAccuracy:true,maximumAge:10000,timeout:20000});
+$("#stop").hidden=false;msg("GPS iniciado. Aguardando primeira posição...")};
+function stop(){if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;$("#start").disabled=!trip?.active;$("#stop").hidden=true}
+$("#stop").onclick=()=>{stop();msg("Compartilhamento interrompido neste aparelho.")};
+window.addEventListener("pagehide",stop);validate();
+})();
+</script></body></html>

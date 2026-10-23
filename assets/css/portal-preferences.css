@@ -297,6 +297,7 @@ html[data-nf-home="1"] .nf-tools > .nf-tool.nf-adv-favorite:before{
 }
 
 /* Letras. Intervenção conservadora apenas nos textos de visualização. */
+@media screen {
 html[data-nf-font="grande"] body .nf-tool h2{font-size:19px!important}
 html[data-nf-font="grande"] body .nf-tool p{font-size:14px!important}
 html[data-nf-font="grande"] body .nf-stat-label{font-size:13px!important}
@@ -315,6 +316,7 @@ html[data-nf-font="pequena"] body :is(
   .pageBI .tableWrap td,.pageBI .tableWrap th,
   .nf-pref-managed td,.nf-pref-managed th
 ){font-size:10px!important}
+}
 html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer),
 html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer):before,
 html[data-nf-motion="reduzido"] body :not(.nf-pref-drawer):after{

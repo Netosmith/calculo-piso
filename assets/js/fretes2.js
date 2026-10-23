@@ -1335,7 +1335,7 @@ function formatDateTimeBR(value) {
   }
 
   function applyFilters() {
-    window.NFFilialMovimentacao?.render(STATE.rows);
+    window.NFFilialMovimentacao?.render(STATE.rows, DIRECTORY);
     render(getFilteredRows());
     renderPreview(getFilteredRows()[0] || STATE.rows[0]);
   }
@@ -3228,6 +3228,8 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       directoryPromise,
       fretesPromise
     ]);
+
+    window.NFFilialMovimentacao?.render(STATE.rows, DIRECTORY);
 
     if (!directoryOk) {
       setStatus("⚠️ Fretes carregados, mas os cadastros atuais não responderam. Clique em Novo Frete para tentar novamente.");

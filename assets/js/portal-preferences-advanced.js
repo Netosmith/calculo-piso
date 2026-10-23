@@ -204,6 +204,8 @@
     if(home){
       root.dataset.nfBackground=state.background;
       root.style.setProperty("--nf-adv-opacity",String(state.imageOpacity/100));
+      // O tema claro mantém a imagem bem discreta, como na Home original.
+      root.style.setProperty("--nf-adv-opacity-light",String((state.imageOpacity/100)*0.09));
       applyHomeCards();
     }
     root.dataset.nfFont=state.fontSize;

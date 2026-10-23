@@ -268,29 +268,9 @@
     const observer=new MutationObserver(sync);
     observer.observe(title,{childList:true,characterData:true,subtree:true});
   }
-  function ensureTopbarSettings(){
-    if(home || document.querySelector("#nfPrefsOpen, [data-nf-preferences-open]"))return;
-    const bar=document.querySelector(".topbar, .nf-topbar, header.page-header");
-    if(!bar)return;
-    const actions=bar.querySelector(".actions, .topRight, .topActions, .account, .header-actions, .user-actions") || bar.querySelector(".topbar-inner") || bar;
-    if(!actions)return;
-    const trigger=document.createElement("button");
-    trigger.type="button";
-    trigger.id="nfPrefsOpen";
-    trigger.className="icon-btn nf-pref-top-trigger";
-    trigger.title="Configurações e colunas desta página";
-    trigger.setAttribute("aria-label","Configurações e colunas desta página");
-    trigger.setAttribute("aria-haspopup","dialog");
-    trigger.textContent="⚙";
-    const logout=actions.querySelector("[data-logout]");
-    actions.insertBefore(trigger,logout||null);
-  }
   function init(){
     state=load();
     apply();
-    ensureTopbarSettings();
-    const topbarObserver=new MutationObserver(ensureTopbarSettings);
-    topbarObserver.observe(document.body,{childList:true,subtree:true});
     // Delegação captura também a engrenagem dos menus montados após o login
     // e evita listeners duplicados quando a barra superior é reconstruída.
     document.addEventListener("click", event=>{

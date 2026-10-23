@@ -35,6 +35,6 @@
 <script>(function(){function formatMoneyField(el){if(!el)return;const digits=String(el.value||"").replace(/\D/g,"");if(!digits){el.value="";return}const value=Number(digits)/100;el.value=value.toLocaleString("pt-BR",{style:"currency",currency:"BRL",minimumFractionDigits:2,maximumFractionDigits:2});requestAnimationFrame(function(){try{el.setSelectionRange(el.value.length,el.value.length)}catch(e){}})}function bindMoneyMask(id){const el=document.getElementById(id);if(!el)return;el.addEventListener("focus",()=>{if(el.value&&!/^R\$/.test(el.value))formatMoneyField(el)});el.addEventListener("input",()=>formatMoneyField(el));el.addEventListener("blur",()=>formatMoneyField(el))}window.addEventListener("DOMContentLoaded",function(){bindMoneyMask("mFreteEmpresa");bindMoneyMask("mFreteMotorista")})})();</script>
 <script>if(requireFeatureAuth("embarques","Controle de Embarques não liberado para este perfil.")===true){bindLogoutButton();}</script>
   <script src="../assets/js/nova-frota-ia.js?v=3" defer></script>
-  <script src="../assets/js/portal-preferences.js?v=6" defer></script>
+  <script src="../assets/js/portal-preferences.js?v=7" defer></script>
   <script src="../assets/js/portal-preferences-advanced.js?v=6" defer></script>
 </body></html>

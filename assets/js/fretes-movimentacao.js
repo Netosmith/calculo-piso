@@ -17,7 +17,7 @@
     .nfMovName{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;font-weight:900;margin-bottom:4px}
     .nfMovNums{display:flex;justify-content:space-between;gap:8px;font-size:10px;font-weight:800}
     .nfMovNums b{font-size:17px;line-height:1;font-variant-numeric:tabular-nums}
-    .nfMovPorta{color:#b97805}.nfMovTransito{color:#1767bb}
+    .nfMovPorta{color:#1767bb}.nfMovTransito{color:#b97805}
     .nfMovEmpty{font-size:10px;color:#60758f;padding:16px 5px}
     @media(max-width:950px){.fretes-top .title{flex:1 1 100%}.nfMov{flex:1 1 100%;min-width:0}}
   `;
@@ -54,20 +54,15 @@
     return Number.isFinite(number) && number > 0 ? number : 0;
   }
 
-  function render(rows, directory) {
+  function render(rows) {
     const panel = ensurePanel();
     if (!panel) return;
     const track = panel.querySelector("#nfMovTrack");
     const position = track.scrollLeft;
     const groups = new Map();
-    Object.values(directory?.filiaisPorRegional || {}).forEach((filiais) => {
-      (Array.isArray(filiais) ? filiais : []).forEach((nome) => {
-        const filial = String(nome || "").trim().toLocaleUpperCase("pt-BR");
-        if (filial && !groups.has(filial)) groups.set(filial, {porta:0,transito:0});
-      });
-    });
     (Array.isArray(rows) ? rows : []).forEach((row) => {
-      const filial = String(row?.filial || "").trim().toLocaleUpperCase("pt-BR") || "SEM FILIAL";
+      const filial = String(row?.filial || "").trim().toLocaleUpperCase("pt-BR");
+      if (!filial) return;
       if (!groups.has(filial)) groups.set(filial, {porta:0,transito:0});
       const item = groups.get(filial);
       item.porta += numeric(row?.porta);

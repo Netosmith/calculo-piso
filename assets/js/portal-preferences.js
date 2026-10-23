@@ -226,6 +226,7 @@
     $("#nfPrefDrawer").hidden=false;
     document.body.classList.add("nf-pref-open");
     $("#nfPrefDrawer [data-nf-close]")?.focus();
+    window.dispatchEvent(new Event("nf:preferences-open"));
   }
   function closeDrawer(){
     const drawer=$("#nfPrefDrawer"),mask=$("#nfPrefBackdrop");
@@ -267,9 +268,27 @@
     const observer=new MutationObserver(sync);
     observer.observe(title,{childList:true,characterData:true,subtree:true});
   }
+  function ensureTopbarSettings(){
+    if(home || document.querySelector("#nfPrefsOpen, [data-nf-preferences-open]"))return;
+    const actions=document.querySelector(".topbar .topbar-inner .actions, .topbar .actions");
+    if(!actions)return;
+    const trigger=document.createElement("button");
+    trigger.type="button";
+    trigger.id="nfPrefsOpen";
+    trigger.className="icon-btn nf-pref-top-trigger";
+    trigger.title="Configurações e colunas desta página";
+    trigger.setAttribute("aria-label","Configurações e colunas desta página");
+    trigger.setAttribute("aria-haspopup","dialog");
+    trigger.textContent="⚙";
+    const logout=actions.querySelector("[data-logout]");
+    actions.insertBefore(trigger,logout||null);
+  }
   function init(){
     state=load();
     apply();
+    ensureTopbarSettings();
+    const topbarObserver=new MutationObserver(ensureTopbarSettings);
+    topbarObserver.observe(document.body,{childList:true,subtree:true});
     // Delegação captura também a engrenagem dos menus montados após o login
     // e evita listeners duplicados quando a barra superior é reconstruída.
     document.addEventListener("click", event=>{

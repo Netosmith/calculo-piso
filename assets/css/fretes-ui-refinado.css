@@ -1,0 +1,255 @@
+/* NOVA FROTA | Fretes + Fretes2
+   Refinamento visual compartilhado. Não altera a lógica de cálculo ou divulgação.
+   Intencionalmente restrito à .pageFretes: não afeta outros módulos nem a arte JPG. */
+
+.pageFretes{
+  --nf-ui-ink:#0a2854;
+  --nf-ui-border:#dae4ef;
+  --nf-ui-shadow:0 3px 14px rgba(11,43,89,.065);
+  --nf-ui-shadow-hover:0 7px 17px rgba(11,43,89,.15);
+  gap:9px;
+}
+
+.pageFretes .fretes-top,
+.pageFretes .fretes-toolbar,
+.pageFretes .card.tableFull,
+.pageFretes .nfPreviewPanel{
+  border:1px solid var(--nf-ui-border);
+  border-radius:16px;
+  box-shadow:var(--nf-ui-shadow);
+}
+
+.pageFretes .fretes-top{
+  padding:12px 15px;
+  background:linear-gradient(180deg,#fff,#fcfdff);
+}
+.pageFretes .fretes-top .title h1{
+  color:#102d58;
+  font-size:16px;
+  letter-spacing:.005em;
+}
+.pageFretes .fretes-top .title .sub{
+  color:#61758e;
+  font-size:10.5px;
+  line-height:1.5;
+}
+
+.pageFretes .fretes-toolbar{
+  padding:9px 12px;
+  gap:8px;
+  background:#fff;
+}
+.pageFretes .ft-row{gap:9px}
+.pageFretes .ft-label{color:#1c365b}
+.pageFretes .ft-mini{gap:5px;color:#213b5c}
+.pageFretes .ft-mini input,
+.pageFretes .ft-select,
+.pageFretes .ft-search{
+  height:34px;
+  border:1px solid #d5e0ef;
+  border-radius:10px;
+  background:#fff;
+  box-shadow:inset 0 1px 2px rgba(18,48,90,.035);
+  color:#173456;
+  transition:border-color .16s ease,box-shadow .16s ease;
+}
+.pageFretes .ft-mini input{width:58px;padding:4px 7px}
+.pageFretes .ft-select{padding:4px 10px}
+.pageFretes .ft-search{padding:4px 12px}
+.pageFretes .ft-mini input:focus,
+.pageFretes .ft-select:focus-visible,
+.pageFretes .ft-search:focus-visible{
+  outline:none;
+  border-color:#4187df;
+  box-shadow:0 0 0 3px rgba(35,110,212,.12);
+}
+.pageFretes .ft-actions{gap:7px}
+
+/* Botões de ação existentes, sem trocar IDs nem eventos. */
+.pageFretes .btnTiny{
+  min-height:34px;
+  height:34px;
+  padding:0 13px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:1px solid #153d80;
+  border-radius:10px;
+  background:linear-gradient(180deg,#143a78 0%,#0b2652 100%);
+  color:#fff;
+  font-size:10.5px;
+  font-weight:850;
+  letter-spacing:.012em;
+  box-shadow:0 2px 5px rgba(11,41,84,.10),inset 0 1px 0 rgba(255,255,255,.14);
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+.pageFretes .btnTiny:hover:not(:disabled){
+  filter:brightness(1.06);
+  transform:translateY(-1px);
+  box-shadow:var(--nf-ui-shadow-hover);
+}
+.pageFretes .btnTiny:active:not(:disabled){
+  transform:translateY(0);
+  box-shadow:0 1px 4px rgba(11,41,84,.14);
+}
+.pageFretes .btnTiny:focus-visible,
+.pageFretes .nfPreviewButtons button:focus-visible,
+.pageFretes .nfModelBtn:focus-visible{
+  outline:2px solid #64b5ff;
+  outline-offset:2px;
+}
+.pageFretes .btnTiny:disabled,
+.pageFretes .nfPreviewButtons button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+  transform:none;
+}
+.pageFretes .btnTiny.blue{
+  background:linear-gradient(180deg,#1463d5,#0b419c);
+  border-color:#1355b5;
+}
+.pageFretes .btnTiny.green{
+  background:linear-gradient(180deg,#12b46e,#087e4a);
+  border-color:#07935a;
+}
+.pageFretes .btnTiny.gold{
+  background:linear-gradient(180deg,#cba027,#a6770c);
+  border-color:#b18518;
+}
+.pageFretes .btnTiny.ghost{
+  background:linear-gradient(180deg,#fff,#f3f7fc);
+  border-color:#d4dfed;
+  color:#19395f;
+  box-shadow:0 2px 5px rgba(11,41,84,.045);
+}
+/* Destaque correto para os botões já presentes. */
+.pageFretes #btnOrdem{
+  background:linear-gradient(180deg,#14396d,#0b2149);
+  border-color:#112f62;
+}
+.pageFretes #btnReloadFromSheets{
+  background:linear-gradient(180deg,#1a79ee,#1554c5);
+  border-color:#2169d5;
+}
+.pageFretes #btnNew{
+  background:linear-gradient(180deg,#12ba73,#088953);
+  border-color:#078452;
+}
+.pageFretes #btnSaveWeights{min-width:59px}
+
+/* Tabela e separadores das filiais. */
+.pageFretes .card.tableFull{
+  border-radius:16px;
+  overflow:hidden;
+}
+.pageFretes .tableWrap{
+  border:1px solid #e0e7f0;
+  border-radius:13px;
+  background:#fff;
+}
+.pageFretes .tableWrap thead th{
+  background:linear-gradient(180deg,#0c3265,#081d42);
+  border-bottom:1px solid #1a426f;
+  color:#fff;
+  padding:8px 9px;
+  font-weight:800;
+  letter-spacing:.012em;
+}
+.pageFretes .tableWrap tbody tr:not(.groupRow){
+  background:#fff;
+  transition:background-color .12s ease;
+}
+.pageFretes .tableWrap tbody tr:not(.groupRow):nth-child(even){
+  background:#f5f8fc;
+}
+.pageFretes .tableWrap tbody tr:not(.groupRow):hover{
+  background:#ecf4ff;
+}
+.pageFretes .tableWrap tbody tr:not(.groupRow) td{
+  border-bottom:1px solid #e8eef5;
+  padding:5px 9px;
+}
+.pageFretes .tableWrap tbody tr.groupRow td{
+  background:linear-gradient(180deg,#eaf1f8 0%,#dce8f3 100%) !important;
+  color:#102f60 !important;
+  border-top:1px solid #c9daea;
+  border-bottom:1px solid #c9daea;
+  box-shadow:inset 4px 0 0 #2381df;
+  padding:8px 11px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.045em;
+  top:36px;
+}
+.pageFretes .pillSN{
+  border-width:1px;
+  box-shadow:0 1px 3px rgba(14,44,86,.06);
+}
+.pageFretes .pillSN.s{
+  background:#e0f8ea;
+  border-color:#a3e8c0;
+  color:#147342;
+}
+.pageFretes .pillSN.n{
+  background:#ffe8e9;
+  border-color:#ffbdc2;
+  color:#b52332;
+}
+
+/* Prévia: apenas os controles e a caixa; preserva o design das artes. */
+.pageFretes .nfPreviewPanel{
+  padding:13px;
+  background:#fff;
+}
+.pageFretes .nfPreviewHead h3{color:#102d58}
+.pageFretes .nfModelSelector{
+  border-color:#d8e4f0;
+  border-radius:10px;
+  background:#f5f8fc;
+}
+.pageFretes .nfModelBtn{
+  border-radius:7px;
+  transition:background .16s ease,box-shadow .16s ease,color .16s ease;
+}
+.pageFretes .nfModelBtn:hover:not(.active){background:#e6effa;color:#0d4288}
+.pageFretes .nfModelBtn.active{
+  background:linear-gradient(180deg,#164685,#0d2b65);
+  border-color:#17427d;
+  box-shadow:0 2px 5px rgba(8,45,101,.18);
+}
+.pageFretes .nfPreviewButtons{gap:9px}
+.pageFretes .nfPreviewButtons button{
+  height:36px;
+  border-radius:10px;
+  border:1px solid transparent;
+  box-shadow:0 2px 7px rgba(12,42,85,.12);
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+.pageFretes .nfPreviewButtons button:hover:not(:disabled){
+  filter:brightness(1.06);
+  transform:translateY(-1px);
+  box-shadow:var(--nf-ui-shadow-hover);
+}
+.pageFretes .nfPreviewButtons .green,
+.pageFretes .nfPreviewButtons .wa{
+  background:linear-gradient(180deg,#16b86b,#07884d);
+  border-color:#078c51;
+}
+.pageFretes .nfPreviewButtons .blue{
+  background:linear-gradient(180deg,#216de4,#144cc1);
+  border-color:#1c58c9;
+}
+
+@media(max-width:900px){
+  .pageFretes .fretes-top{padding:10px 12px}
+  .pageFretes .fretes-toolbar{padding:9px}
+  .pageFretes .ft-actions.top-actions{gap:7px}
+}
+@media(prefers-reduced-motion:reduce){
+  .pageFretes .btnTiny,
+  .pageFretes .nfPreviewButtons button,
+  .pageFretes .nfModelBtn{transition:none}
+  .pageFretes .btnTiny:hover,
+  .pageFretes .nfPreviewButtons button:hover{transform:none}
+}

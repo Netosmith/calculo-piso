@@ -43,7 +43,7 @@ let trips=[],selected=null,map=null,marker=null;
 const status=(m,bad=false)=>{const e=$("#feedback");e.textContent=m;e.className=bad?"error":"muted"};
 const request=async(path,method="GET",body)=>{
  const r=await fetch(API+path,{method,credentials:"include",cache:"no-store",headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
- const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Falha na API");return d;
+ const d=await r.json();if(!r.ok||!d.ok)throw Error((d.error||"Falha na API")+(d.details?.stage?" ["+d.details.stage+"]":""));return d;
 };
 function ensureMap(){if(map||!window.L)return;map=L.map("map").setView([-15.7,-50.4],4);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(map);}
 function showTrip(t){selected=t.id;renderList();const p=t.lastPosition;const detail=$("#details");detail.replaceChildren();

@@ -1335,6 +1335,7 @@ function formatDateTimeBR(value) {
   }
 
   function applyFilters() {
+    window.NFFilialMovimentacao?.render(STATE.rows);
     render(getFilteredRows());
     renderPreview(getFilteredRows()[0] || STATE.rows[0]);
   }

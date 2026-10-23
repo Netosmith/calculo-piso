@@ -2314,7 +2314,6 @@ function formatDateTimeBR(value) {
         <td>${escapeHtml(row.origem)}</td>
         <td>${escapeHtml(row.coleta)}</td>
         <td>${escapeHtml(row.destino)}</td>
-        <td>${escapeHtml(row.uf)}</td>
         <td>${escapeHtml(row.descarga)}</td>
         <td>${escapeHtml(row.produto)}</td>
         <td class="freteCol">${escapeHtml(formatMoneyBR(row.valorMotorista))}</td>
@@ -2360,7 +2359,6 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         <th>ORIGEM</th>
         <th>LOCAL DE CARREGAMENTO</th>
         <th>DESTINO</th>
-        <th>UF</th>
         <th>DESCARGA</th>
         <th>PRODUTO</th>
         <th>FRETE</th>
@@ -2368,7 +2366,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       </tr>
     </thead>
     <tbody>
-      ${linhas || `<tr><td colspan="10" style="text-align:center;padding:18px;font-weight:700;">NENHUM FRETE LIBERADO ENCONTRADO</td></tr>`}
+      ${linhas || `<tr><td colspan="9" style="text-align:center;padding:18px;font-weight:700;">NENHUM FRETE LIBERADO ENCONTRADO</td></tr>`}
     </tbody>
   </table>
   <div class="foot">

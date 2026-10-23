@@ -1530,7 +1530,7 @@ function renderPortalGlobalNav(){
 
 async function initPortalGlobalNav(){
   const file = portalNavCurrentFile();
-  if(["login.html","index.html","home.html","ordem.html"].includes(file)) return;
+  if(["login.html","index.html","home.html"].includes(file)) return;
 
   try{
     if(window.portalAuthReady) await window.portalAuthReady;

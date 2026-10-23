@@ -30,6 +30,7 @@
   const tableRegistry = new Map();
   let observer = null;
   let navObserver = null;
+  let observedNav = null;
   const VALID_KEY = /^[a-z0-9_-]{1,48}$/i;
   const cleanKeys = (list,limit=40) => {
     if(!Array.isArray(list))return [];
@@ -118,7 +119,9 @@
   }
   function startNavObserver(){
     const nav=$("#nfGlobalNav");
-    if(!nav || navObserver)return;
+    if(!nav || nav === observedNav)return;
+    if(navObserver)navObserver.disconnect();
+    observedNav=nav;
     navObserver=new MutationObserver(()=>applyNavigation());
     navObserver.observe(nav,{childList:true});
     applyNavigation();
@@ -167,7 +170,9 @@
       const hidden=state.columns[id]||[];
       for(const i of hidden) {
         if(i>=item.headers.length)continue;
-        rules.push("table[data-nf-table-id=\""+id+"\"] tr > :nth-child("+(i+1)+"){display:none!important}");
+        // Preserva linhas de agrupamento com colspan (ex.: filial/regional)
+        // e aplica ocultação só a linhas com estrutura regular.
+        rules.push("table[data-nf-table-id=\""+id+"\"] thead tr > :nth-child("+(i+1)+"),table[data-nf-table-id=\""+id+"\"] tbody tr:not(.groupRow):not(.group-row):not(.group-header) > :nth-child("+(i+1)+"){display:none!important}");
       }
     }
     style.textContent="@media screen {"+rules.join("\n")+"}";
@@ -261,14 +266,6 @@
     labels.appendChild(el("strong","",label));
     if(description)labels.appendChild(el("small","",description));
     wrap.append(labels,control);return wrap;
-  }
-  function toggle(label,key,description){
-    const sw=button("","", "nf-pref-switch");
-    // Reatribuir o handler: botão sem aparência de ação, mas acessível.
-    sw.setAttribute("role","switch");sw.setAttribute("aria-label",label);
-    sw.setAttribute("aria-checked",String(!!state[key]));
-    sw.addEventListener("click",()=>update({[key]:!state[key]}));
-    return row(label,sw,description);
   }
   function moveCard(feature,delta){
     const current=homeCards().map(card=>card.dataset.feature);
@@ -469,7 +466,7 @@
     if(!home){scanTables();}
     // A navegação comum é criada depois da validação da sessão.
     observer=new MutationObserver(()=>{
-      if(!navObserver)startNavObserver();
+      startNavObserver();
       if(!home)scheduleScan();
     });
     observer.observe(document.body,{childList:true,subtree:true});

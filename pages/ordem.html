@@ -598,6 +598,113 @@
     }
   }
 
+  /* Seletor de estado e cadastro editável apenas nesta ordem */
+  .state-selector-wrap{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    min-width:0;
+    flex-wrap:wrap;
+  }
+  .state-selector-label{
+    color:#0a2b58;
+    font-family:"Inter",sans-serif;
+    font-size:13px;
+    font-weight:850;
+    letter-spacing:.01em;
+    white-space:nowrap;
+  }
+  .state-selector{
+    flex:1 1 180px;
+    width:auto;
+    min-width:180px;
+    border:1px solid #9ab2d0;
+    border-radius:9px;
+    box-shadow:0 2px 7px rgba(10,38,78,.07);
+    color:#073a78;
+    text-align:left;
+  }
+  .state-selector:focus-visible{
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,.16);
+  }
+  .company-field-label{
+    display:block;
+    margin-top:3px;
+    font-size:9px;
+    line-height:1.2;
+    font-weight:800;
+    color:#5e7087;
+    text-transform:uppercase;
+    letter-spacing:.035em;
+  }
+  .company-edit-input{
+    display:block;
+    width:100%;
+    min-width:0;
+    min-height:25px;
+    padding:3px 5px;
+    border:1px solid transparent;
+    border-bottom:1px dashed #b9c9da;
+    border-radius:5px;
+    background:transparent;
+    box-sizing:border-box;
+    font-family:"Inter",sans-serif;
+    font-size:11px;
+    font-weight:750;
+    color:#0b315e;
+    outline:none;
+    transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease;
+  }
+  .company-edit-input:hover{
+    background:#f4f8fd;
+    border-bottom-color:#5e90ce;
+  }
+  .company-edit-input:focus{
+    background:#f4f8ff;
+    border:1px solid #468cdd;
+    box-shadow:0 0 0 3px rgba(35,111,208,.11);
+  }
+  .company-edit-input::placeholder{color:#9baab9;font-weight:500}
+  .company-docs{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-start;
+    align-items:center;
+    gap:2px 11px;
+    text-transform:none;
+  }
+  .company-doc-field{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    min-width:0;
+    color:#1d3658;
+    font-family:"JetBrains Mono",monospace;
+    font-size:10px;
+    font-weight:750;
+  }
+  .company-doc-field span{flex:none}
+  .company-doc-field .company-edit-input{
+    width:175px;
+    max-width:100%;
+    font-family:"JetBrains Mono",monospace;
+    font-size:10px;
+  }
+  .company-doc-field:last-child .company-edit-input{width:137px}
+  .company-email{font-size:11px;font-weight:700}
+  .company-edit-hint{
+    margin:2px 0 0;
+    color:#70839a;
+    font-size:9px;
+    line-height:1.3;
+  }
+  @media(max-width:900px){
+    .state-selector-wrap{width:100%;gap:6px;justify-content:flex-start}
+    .state-selector-label{width:100%}
+    .state-selector{width:100%;min-width:0}
+  }
 </style>
 
 </head><body class="bg-surface-bright text-on-surface font-body-md min-h-screen flex">
@@ -612,6 +719,7 @@
   </div>
 
   <div class="state-selector-wrap">
+    <label for="seletorEstado" class="state-selector-label">Selecione o estado:</label>
     <select id="seletorEstado" class="state-selector" aria-label="Selecionar estado">
       <option value="">SELECIONE O ESTADO</option>
       <option value="GO">GOIÁS</option>
@@ -664,14 +772,29 @@
 </div>
 <div class="p-6 flex flex-col justify-center text-center md:text-left space-y-1">
   <h3 id="empresaNome" class="font-headline-sm text-headline-sm text-primary uppercase">Nova Frota Transportes</h3>
-  <p id="empresaEndereco" class="company-info-line">SELECIONE UM ESTADO</p>
+  <label class="company-field-label" for="empresaEndereco">Endereço</label>
+  <input id="empresaEndereco" class="company-info-line company-edit-input" type="text"
+    placeholder="Selecione um estado" aria-label="Endereço da empresa" aria-describedby="empresaCamposDica"
+    autocomplete="off" spellcheck="false" maxlength="220" />
 
   <div class="company-docs">
-    <span>CNPJ: <strong id="empresaCnpj">--</strong></span>
-    <span>IE: <strong id="empresaIe">--</strong></span>
+    <label class="company-doc-field" for="empresaCnpj"><span>CNPJ:</span>
+      <input id="empresaCnpj" class="company-edit-input" type="text"
+        placeholder="Informe o CNPJ" aria-label="CNPJ da empresa" aria-describedby="empresaCamposDica"
+        autocomplete="off" maxlength="22" />
+    </label>
+    <label class="company-doc-field" for="empresaIe"><span>IE:</span>
+      <input id="empresaIe" class="company-edit-input" type="text"
+        placeholder="Informe a IE" aria-label="Inscrição estadual da empresa" aria-describedby="empresaCamposDica"
+        autocomplete="off" maxlength="30" />
+    </label>
   </div>
 
-  <p id="empresaEmail" class="company-email">--</p>
+  <label class="company-field-label" for="empresaEmail">E-mail</label>
+  <input id="empresaEmail" class="company-email company-edit-input" type="email"
+    placeholder="Informe o e-mail" aria-label="E-mail da empresa" aria-describedby="empresaCamposDica"
+    autocomplete="off" spellcheck="false" maxlength="150" />
+  <p id="empresaCamposDica" class="company-edit-hint no-print">✎ Os dados podem ser editados nesta ordem. Ao recarregar, voltam aos valores originais.</p>
 
   <div class="mt-2 flex items-center gap-2">
     <span class="font-label-caps text-label-caps text-on-surface-variant">FILIAL:</span>
@@ -922,32 +1045,32 @@
 
   const STORAGE_KEY_ESTADO_ORDEM = "nf_ordem_estado";
 
+  // A preferência de estado continua salva. Os dados cadastrais editados não:
+  // qualquer edição vale somente para a ordem aberta e nunca altera os padrões.
+  function valorEmpresaPadrao(valor){
+    const texto = String(valor ?? "").trim();
+    return !texto || texto.toUpperCase() === "PREENCHER" ? "" : texto;
+  }
+
   function preencherDadosEmpresa(uf){
     const dados = EMPRESAS_POR_ESTADO[uf];
-
     const nomeEl = document.getElementById("empresaNome");
-    const enderecoEl = document.getElementById("empresaEndereco");
-    const cnpjEl = document.getElementById("empresaCnpj");
-    const ieEl = document.getElementById("empresaIe");
-    const emailEl = document.getElementById("empresaEmail");
     const filialEl = document.getElementById("empresaFilial");
+    if(nomeEl) nomeEl.textContent = dados?.nome || "NOVA FROTA TRANSPORTES";
+    if(filialEl) filialEl.textContent = dados?.filial || "SELECIONE UM ESTADO";
 
-    if(!dados){
-      if(nomeEl) nomeEl.textContent = "NOVA FROTA TRANSPORTES";
-      if(enderecoEl) enderecoEl.textContent = "SELECIONE UM ESTADO";
-      if(cnpjEl) cnpjEl.textContent = "--";
-      if(ieEl) ieEl.textContent = "--";
-      if(emailEl) emailEl.textContent = "--";
-      if(filialEl) filialEl.textContent = "SELECIONE UM ESTADO";
-      return;
+    const campos = [
+      ["endereco", "empresaEndereco", "Informe o endereço"],
+      ["cnpj", "empresaCnpj", "Informe o CNPJ"],
+      ["ie", "empresaIe", "Informe a IE"],
+      ["email", "empresaEmail", "Informe o e-mail"]
+    ];
+    for(const [chave, id, dica] of campos){
+      const campo = document.getElementById(id);
+      if(!campo) continue;
+      campo.value = dados ? valorEmpresaPadrao(dados[chave]) : "";
+      campo.placeholder = dados ? dica : "Selecione um estado";
     }
-
-    if(nomeEl) nomeEl.textContent = dados.nome;
-    if(enderecoEl) enderecoEl.textContent = dados.endereco;
-    if(cnpjEl) cnpjEl.textContent = dados.cnpj;
-    if(ieEl) ieEl.textContent = dados.ie;
-    if(emailEl) emailEl.textContent = dados.email;
-    if(filialEl) filialEl.textContent = dados.filial;
 
     if(typeof prepararDuasViasParaImpressao === "function"){
       prepararDuasViasParaImpressao();
@@ -981,7 +1104,7 @@
   }
 
   function limparOrdem(){
-    document.querySelectorAll("input, textarea").forEach((campo) => {
+    document.querySelectorAll("input:not(.company-edit-input), textarea").forEach((campo) => {
       campo.value = "";
     });
 
@@ -989,7 +1112,10 @@
       if(select.id !== "seletorEstado") select.selectedIndex = 0;
     });
 
+    // Limpar e Nova Ordem restauram os dados cadastrais do estado escolhido.
+    preencherDadosEmpresa(document.getElementById("seletorEstado")?.value || "");
     sincronizarNomeMotorista();
+    prepararDuasViasParaImpressao();
   }
 
   function novaOrdem(){

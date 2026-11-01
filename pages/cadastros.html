@@ -193,6 +193,8 @@
       <button class="maintenanceToggle" id="btnMaintenanceToggle" type="button">Ativar manutenção</button>
     </section>
 
+    <section id="superAdminEntry" hidden style="margin-top:14px;padding:15px;background:#eef5ff;border:1px solid #93c5fd;border-radius:14px"><a href="./super-admin.html" style="font-weight:900;color:#1d4ed8;text-decoration:none">🛡️ Super Admin | Gerenciar transportadoras, módulos e usuários</a></section>
+
     <section class="tabsCard">
       <nav class="tabs" id="tabs">
         <button class="tabBtn active" data-tab="usuarios" type="button">👤 Usuários</button>
@@ -280,6 +282,16 @@
 
   <script src="../assets/js/auth.js?v=21"></script>
   <script src="../assets/js/cadastros.js?v=7"></script>
+  <script>
+  (async function(){
+    try {
+      const response = await fetch("https://api.portalfrete.net.br/v1/super-admin/me",{credentials:"include",cache:"no-store"});
+      if (!response.ok) return;
+      const data=await response.json();
+      if (data && data.superAdmin === true) document.getElementById("superAdminEntry").hidden=false;
+    } catch (_) { /* Fail closed: no global link. */ }
+  })();
+  </script>
   <script>
     requireHomeAuth();
     bindLogoutButton();

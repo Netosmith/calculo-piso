@@ -1,3 +1,4 @@
+import { LEGACY_NOVA_FROTA } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
 
@@ -13,7 +14,7 @@ export async function superAdminController(request, env) {
   if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario});
   if (path === "/v1/super-admin/transportadoras") {
     // Sem persistência provisionada: não inventar empresas nem conceder acesso cruzado.
-    return success({transportadoras:[]});
+    return success({transportadoras:[{id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:[]}]});
   }
   return errorResponse("Recurso administrativo não implementado.",404);
 }

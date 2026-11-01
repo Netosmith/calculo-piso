@@ -20,7 +20,7 @@ test('catalog returns Nova Frota without dedicated DB',async()=>{
 test('catalog lists tenants and enabled modules from dedicated DB',async()=>{
  const db={prepare(sql){
    if(sql.includes('FROM portal_tenants'))return {all:async()=>({results:[{id:'empresa-b',name:'Empresa B',status:'inactive'}]})};
-   if(sql.includes('FROM portal_tenant_modules'))return {bind(id){assert.equal(id,'empresa-b');return {all:async()=>({results:[{module_key:'piso'}]})}}};
+   if(sql.includes('FROM portal_tenant_modules'))return {bind(id){assert.equal(id,'empresa-b');return {all:async()=>({results:[{module_key:'piso',enabled:1},{module_key:'fretes',enabled:0},{module_key:'unknown',enabled:1}]})}}};
    throw new Error('Unexpected query');
  }};
  const response=await superAdminController(await authorizedRequest(),{...envBase,TENANTS_DB:db});
@@ -33,4 +33,19 @@ test('catalog lists tenants and enabled modules from dedicated DB',async()=>{
 test('catalog does not silently mask D1 failures',async()=>{
  const response=await superAdminController(await authorizedRequest(),{...envBase,TENANTS_DB:{prepare(){throw Error('offline')}}});
  assert.equal(response.status,503);
+});
+
+test('module catalog endpoint requires global authorization',async()=>{
+ const token=await createSessionToken(envBase,{usuario:'OUTRO',transportadoraId:'nova-frota',expiresAt:new Date(Date.now()+60000).toISOString()});
+ const response=await superAdminController(new Request('https://example.test/v1/super-admin/modules',{headers:{Cookie:'__Host-portal_session='+token}}),envBase);
+ assert.equal(response.status,403);
+});
+test('module catalog endpoint exposes canonical modules',async()=>{
+ const request=await authorizedRequest();
+ const response=await superAdminController(new Request('https://example.test/v1/super-admin/modules',{headers:request.headers}),envBase);
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.ok(data.modules.includes('piso'));
+ assert.ok(data.modules.includes('monitoramento'));
+ assert.equal(new Set(data.modules).size,data.modules.length);
 });

@@ -1,3 +1,4 @@
+import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-modules.js";
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
@@ -16,6 +17,7 @@ export async function superAdminController(request, env) {
   if (!isOwner) return errorResponse("Acesso exclusivo do Super Admin.",403);
   const path = new URL(request.url).pathname;
   if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario});
+  if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.
     const legacy = {id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:[]};
@@ -27,13 +29,13 @@ export async function superAdminController(request, env) {
       const companies = Array.isArray(result?.results) ? result.results : [];
       const transportadoras = await Promise.all(companies.map(async company => {
         const modules = await env.TENANTS_DB.prepare(
-          "SELECT module_key FROM portal_tenant_modules WHERE tenant_id=? AND enabled=1"
+          "SELECT module_key, enabled FROM portal_tenant_modules WHERE tenant_id=?"
         ).bind(company.id).all();
         return {
           id:company.id,
           name:company.name,
           active:company.status==="active",
-          modules:(modules?.results || []).map(row=>row.module_key)
+          modules:enabledModulesForTenant(modules?.results)
         };
       }));
       if (!transportadoras.some(company=>company.id===legacy.id)) transportadoras.unshift(legacy);

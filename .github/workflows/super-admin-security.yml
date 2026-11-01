@@ -1,0 +1,27 @@
+name: Super Admin Security Tests
+on:
+  push:
+    branches:
+      - feature/super-admin-panel-foundation
+  pull_request:
+    paths:
+      - 'worker/**'
+      - '.github/workflows/super-admin-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker-security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Security regression tests
+        run: npm test

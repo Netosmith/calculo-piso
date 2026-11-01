@@ -17,8 +17,31 @@ export async function superAdminController(request, env) {
   const path = new URL(request.url).pathname;
   if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario});
   if (path === "/v1/super-admin/transportadoras") {
-    // Sem persistência provisionada: não inventar empresas nem conceder acesso cruzado.
-    return success({transportadoras:[{id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:[]}]});
+    // Até o provisionamento do catálogo, preservar a leitura da empresa legada.
+    const legacy = {id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:[]};
+    if (!env.TENANTS_DB) return success({transportadoras:[legacy],catalogo:"legado"});
+    try {
+      const result = await env.TENANTS_DB.prepare(
+        "SELECT id, name, status FROM portal_tenants ORDER BY name"
+      ).all();
+      const companies = Array.isArray(result?.results) ? result.results : [];
+      const transportadoras = await Promise.all(companies.map(async company => {
+        const modules = await env.TENANTS_DB.prepare(
+          "SELECT module_key FROM portal_tenant_modules WHERE tenant_id=? AND enabled=1"
+        ).bind(company.id).all();
+        return {
+          id:company.id,
+          name:company.name,
+          active:company.status==="active",
+          modules:(modules?.results || []).map(row=>row.module_key)
+        };
+      }));
+      if (!transportadoras.some(company=>company.id===legacy.id)) transportadoras.unshift(legacy);
+      return success({transportadoras,catalogo:"d1"});
+    } catch (error) {
+      console.error("[SUPER ADMIN] Catálogo indisponível",String(error?.message || error));
+      return errorResponse("Catálogo de transportadoras indisponível.",503);
+    }
   }
   return errorResponse("Recurso administrativo não implementado.",404);
 }

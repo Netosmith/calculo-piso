@@ -19,6 +19,9 @@ export const LEGACY_NOVA_FROTA = Object.freeze({
  */
 export function tenantIdForLegacySession(session) {
   if (!session || !session.usuario) return null;
-  if (session.transportadoraId) return String(session.transportadoraId);
+  if ("transportadoraId" in session) {
+    const id = String(session.transportadoraId || "").trim();
+    return id || null;
+  }
   return LEGACY_NOVA_FROTA.id;
 }

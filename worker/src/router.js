@@ -1,3 +1,4 @@
+import { superAdminController } from "./controllers/super-admin.js";
 import { fleetController } from "./controllers/fleet.js";
 import { monitorController } from "./controllers/monitor.js";
 import { iaController } from "./controllers/ia.js";
@@ -19,6 +20,8 @@ import { pingoController } from "./controllers/pingochic.js";
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
+
+  if (path.startsWith("/v1/super-admin/")) return superAdminController(request, env);
 
   if (path === "/v1/ia/chat" || path === "/v1/ia/status") return iaController(request, env);
 

@@ -1,3 +1,4 @@
+import { LEGACY_NOVA_FROTA } from "../config/transportadoras.js";
 import { callAppsScript } from "../services/appscript.js";
 import {
   clearSessionCookie,
@@ -26,6 +27,7 @@ function publicSession(session) {
     perfil: session.perfil,
     estados: session.estados,
     estado: session.estado || "",
+    transportadoraId: session.transportadoraId || LEGACY_NOVA_FROTA.id,
     expiresAt: session.expiresAt
   };
 }
@@ -90,6 +92,7 @@ export async function loginController(request, env) {
     usuario: normalizeUpper(result.usuario || usuario),
     nome: String(result.nome || result.usuario || usuario).trim(),
     perfil: normalizeUpper(result.perfil || "OPERACIONAL"),
+    transportadoraId: LEGACY_NOVA_FROTA.id,
     estados,
     estado: "",
     createdAt: new Date(now).toISOString(),

@@ -1,4 +1,4 @@
-import { tenantIdForLegacySession } from "../config/transportadoras.js";
+import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { callAppsScript } from "../services/appscript.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
@@ -548,6 +548,12 @@ export async function portalGatewayController(request, env, ctx) {
 
   if (!session) {
     return errorResponse("Sessão inválida ou expirada.", 401);
+  }
+
+  // A integração atual do Apps Script contém exclusivamente dados legados da Nova Frota.
+  // Negar tenants adicionais até que haja roteamento e autorização por empresa.
+  if (tenantIdForLegacySession(session) !== LEGACY_NOVA_FROTA.id) {
+    return errorResponse("Integração desta transportadora ainda não provisionada.", 403);
   }
 
   const maintenance = await getMaintenanceState(env);

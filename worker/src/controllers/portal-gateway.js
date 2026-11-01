@@ -1,3 +1,4 @@
+import { tenantIdForLegacySession } from "../config/transportadoras.js";
 import { callAppsScript } from "../services/appscript.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
@@ -10,7 +11,7 @@ const FREIGHT_READ_CACHE_TTL_SECONDS = 6 * 60 * 60;
 
 function freightReadCacheKey(session, moduleName) {
   const estado = String(session?.estado || "GLOBAL").trim().toUpperCase() || "GLOBAL";
-  return `${FREIGHT_READ_CACHE_PREFIX}${moduleName}:${estado}`;
+  return `${FREIGHT_READ_CACHE_PREFIX}${tenantIdForLegacySession(session)}:${moduleName}:${estado}`;
 }
 
 async function readFreightReadCache(env, session, moduleName) {
@@ -57,7 +58,7 @@ const HOME_METRICS_STALE_MS = 12 * 60 * 60 * 1000;
 
 function homeMetricsCacheKey(session) {
   const estado = String(session?.estado || "GLOBAL").trim().toUpperCase() || "GLOBAL";
-  return `${HOME_METRICS_CACHE_PREFIX}${estado}`;
+  return `${HOME_METRICS_CACHE_PREFIX}${tenantIdForLegacySession(session)}:${estado}`;
 }
 
 async function readHomeMetricsCache(env, session) {

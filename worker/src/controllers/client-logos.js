@@ -95,12 +95,14 @@ export async function clientLogoController(request, env, encodedClientName) {
     return errorResponse(error.message, 400);
   }
 
-  // Logos legadas são preservadas nas chaves originais da Nova Frota.
-  // Bloqueia tenants não provisionados e gravações cruzadas.
-  const session = await getSession(env, readSessionId(request));
-  if (!session) return errorResponse("Sessão inválida ou expirada.", 401);
-  if (tenantIdForLegacySession(session) !== LEGACY_NOVA_FROTA.id) {
-    return errorResponse("Armazenamento de logos não provisionado para esta transportadora.", 403);
+  // GET/HEAD permanecem públicos para compatibilidade com imagens existentes.
+  // Escritas exigem sessão e transportadora Nova Frota.
+  if (request.method === "PUT" || request.method === "DELETE") {
+    const session = await getSession(env, readSessionId(request));
+    if (!session) return errorResponse("Sessão inválida ou expirada.", 401);
+    if (tenantIdForLegacySession(session) !== LEGACY_NOVA_FROTA.id) {
+      return errorResponse("Armazenamento não provisionado para esta transportadora.", 403);
+    }
   }
 
   const key = clientLogoKey(clientName);

@@ -1,4 +1,4 @@
-import { LEGACY_NOVA_FROTA } from "../config/transportadoras.js";
+import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { callAppsScript } from "../services/appscript.js";
 import {
   clearSessionCookie,
@@ -27,7 +27,7 @@ function publicSession(session) {
     perfil: session.perfil,
     estados: session.estados,
     estado: session.estado || "",
-    transportadoraId: session.transportadoraId || LEGACY_NOVA_FROTA.id,
+    transportadoraId: tenantIdForLegacySession(session),
     expiresAt: session.expiresAt
   };
 }

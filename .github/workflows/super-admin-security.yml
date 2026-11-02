@@ -25,3 +25,25 @@ jobs:
           node-version: '22'
       - name: Security regression tests
         run: npm test
+
+      - name: Validate tenant SQL migration in isolated SQLite
+        working-directory: .
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          db=sqlite3.connect(":memory:")
+          db.execute("PRAGMA foreign_keys=ON")
+          db.executescript(Path("worker/migrations/0001_tenants.sql").read_text())
+          db.execute("INSERT INTO portal_tenants(id,name) VALUES (?,?)",("nova-frota","Nova Frota"))
+          for role in ("ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"):
+              db.execute("INSERT INTO portal_tenant_users(tenant_id,user_id,role) VALUES (?,?,?)",("nova-frota",role.lower(),role))
+          assert db.execute("SELECT COUNT(*) FROM portal_tenant_users").fetchone()[0]==7
+          try:
+              db.execute("INSERT INTO portal_tenant_users(tenant_id,user_id,role) VALUES (?,?,?)",("other","bad","PISO"))
+          except sqlite3.IntegrityError:
+              pass
+          else:
+              raise AssertionError("Tenant foreign key was not enforced")
+          print("Tenant schema and seven legacy roles validated.")
+          PY

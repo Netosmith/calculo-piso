@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {writeTenantCatalog} from "../src/services/super-admin-tenant-write.js";
+import {superAdminController} from "../src/controllers/super-admin.js";
 
 const base="https://api.portalfrete.net.br/v1/super-admin/transportadoras";
 function database(){
@@ -116,4 +117,28 @@ test("rejects malformed requests and missing D1 binding",async()=>{
  assert.equal((await call(db,"","POST",{id:"BAD_ID",name:"Valid Name"})).status,400);
  assert.equal((await call(db,"","POST",{id:"tenant-b",name:"x"})).status,400);
  assert.equal(count(db,"portal_tenants"),0);
+});
+
+test("audit history is tenant-scoped and requires owner session",async()=>{
+ const db=database();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ await call(db,"","POST",{id:"tenant-b",name:"Tenant B"});
+ await call(db,"/tenant-a","PATCH",{status:"active"});
+ const urlA=base+"/tenant-a/auditoria";
+ const req=new Request(urlA,{headers:{Cookie:"__Host-portal_session=test-legacy"}});
+ const owner={usuario:"OWNER",transportadoraId:"nova-frota",perfil:"ADMINISTRADOR"};
+ const adminEnv={SUPER_ADMIN_USER:"OWNER",TENANTS_DB:db,
+  SESSIONS:{async get(){return owner;}}};
+ const response=await superAdminController(req,adminEnv);
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.eventos.length,2);
+ assert.ok(body.eventos.every(event=>["tenant.create","tenant.update"].includes(event.acao)));
+ const otherTenant=await superAdminController(
+  new Request(base+"/tenant-b/auditoria",{headers:{Cookie:"__Host-portal_session=test-legacy"}}),adminEnv);
+ assert.equal((await otherTenant.json()).eventos.length,1);
+ const denied=await superAdminController(req,{
+  ...adminEnv,SUPER_ADMIN_USER:"ANOTHER"
+ });
+ assert.equal(denied.status,403);
 });

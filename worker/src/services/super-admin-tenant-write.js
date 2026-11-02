@@ -1,4 +1,5 @@
 import {errorResponse,success} from "../utils/response.js";
+import {writeTenantMembership} from "./super-admin-membership-write.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
@@ -56,6 +57,11 @@ export async function writeTenantCatalog(request,env,actor) {
       ];
       await db.batch(statements);
       return success({transportadora:{id,name:name.trim(),active:false,modules:[]}},201);
+    }
+    const membership=action.match(/^\/([a-z0-9-]+)\/usuarios(?:\/([A-Za-z0-9._-]+))?$/);
+    if(membership) {
+      if(!validId(membership[1]))return errorResponse("Transportadora invalida.",400);
+      return writeTenantMembership(request,env,actor,membership[1],membership[2]||null);
     }
     const parts=action.match(/^\/([a-z0-9-]+)(\/modules)?$/);
     if(!parts || !validId(parts[1])) return errorResponse("Rota de alteracao invalida.",404);

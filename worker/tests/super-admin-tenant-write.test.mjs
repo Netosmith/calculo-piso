@@ -142,3 +142,70 @@ test("audit history is tenant-scoped and requires owner session",async()=>{
  });
  assert.equal(denied.status,403);
 });
+
+test("membership creation is disabled by default independently of tenant writes",async()=>{
+ const db=database();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ const result=await call(db,"/tenant-a/usuarios","POST",{usuario:"MOTORISTA1",perfil:"OPERACIONAL"});
+ assert.equal(result.status,405);
+ assert.equal(count(db,"portal_tenant_users"),0);
+});
+
+test("owner can stage an inactive tenant membership without credentials",async()=>{
+ const db=database();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ const res=await call(db,"/tenant-a/usuarios","POST",{usuario:" usuario.novo ",perfil:"COMERCIAL"},{SUPER_ADMIN_MEMBERSHIP_WRITES:"enabled"});
+ assert.equal(res.status,201);
+ const body=await res.json();
+ assert.deepEqual(body.usuario,{id:"USUARIO.NOVO",perfil:"COMERCIAL",ativo:false});
+ assert.equal(Object.hasOwn(body.usuario,"senha"),false);
+ const record=db.sql.prepare("SELECT user_id,role,active FROM portal_tenant_users").get();
+ assert.deepEqual({...record},{user_id:"USUARIO.NOVO",role:"COMERCIAL",active:0});
+ const audit=db.sql.prepare("SELECT action,detail_json FROM portal_tenant_audit WHERE action='membership.create'").get();
+ assert.equal(JSON.parse(audit.detail_json).usuario,"USUARIO.NOVO");
+});
+
+test("membership role/status edits are strictly tenant scoped and audited",async()=>{
+ const db=database();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ await call(db,"","POST",{id:"tenant-b",name:"Tenant B"});
+ const opts={SUPER_ADMIN_MEMBERSHIP_WRITES:"enabled"};
+ for(const tenant of ["tenant-a","tenant-b"])
+  assert.equal((await call(db,"/"+tenant+"/usuarios","POST",{usuario:"USUARIO1",perfil:"PISO"},opts)).status,201);
+ const changed=await call(db,"/tenant-a/usuarios/USUARIO1","PATCH",{perfil:"GOADM",ativo:true},opts);
+ assert.equal(changed.status,200);
+ const rows=db.sql.prepare("SELECT tenant_id,role,active FROM portal_tenant_users WHERE user_id='USUARIO1' ORDER BY tenant_id").all();
+ assert.deepEqual(rows.map(row=>({...row})),[
+  {tenant_id:"tenant-a",role:"GOADM",active:1},
+  {tenant_id:"tenant-b",role:"PISO",active:0}
+ ]);
+ assert.equal(count(db,"portal_tenant_audit"),5);
+});
+
+test("membership routes refuse Nova Frota, unknown tenant, and invalid data",async()=>{
+ const db=database();
+ const opts={SUPER_ADMIN_MEMBERSHIP_WRITES:"enabled"};
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ assert.equal((await call(db,"/nova-frota/usuarios","POST",{usuario:"USER1",perfil:"PISO"},opts)).status,400);
+ assert.equal((await call(db,"/tenant-b/usuarios","POST",{usuario:"USER1",perfil:"PISO"},opts)).status,404);
+ for(const payload of [
+   {usuario:"abc",perfil:"SUPER_ADMIN"},{usuario:"abc",perfil:"PISO",Senha:"plain"},
+   {usuario:"a",perfil:"PISO"}, {usuario:"bad user",perfil:"PISO"}
+ ]) {
+  assert.equal((await call(db,"/tenant-a/usuarios","POST",payload,opts)).status,400);
+ }
+ assert.equal(count(db,"portal_tenant_users"),0);
+ assert.equal(count(db,"portal_tenant_audit"),1);
+});
+
+test("duplicate memberships and invalid mutations never modify the catalog",async()=>{
+ const db=database(),opts={SUPER_ADMIN_MEMBERSHIP_WRITES:"enabled"};
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ assert.equal((await call(db,"/tenant-a/usuarios","POST",{usuario:"USER1",perfil:"MT"},opts)).status,201);
+ assert.equal((await call(db,"/tenant-a/usuarios","POST",{usuario:"USER1",perfil:"PR"},opts)).status,409);
+ for(const body of [{ativo:"SIM"},{perfil:"SUPER_ADMIN"},{}, {perfil:"PR",Senha:"secret"}]) {
+  assert.equal((await call(db,"/tenant-a/usuarios/USER1","PATCH",body,opts)).status,400);
+ }
+ assert.equal((await call(db,"/tenant-a/usuarios/NONEXIST","PATCH",{ativo:false},opts)).status,404);
+ assert.equal(count(db,"portal_tenant_audit"),2);
+});

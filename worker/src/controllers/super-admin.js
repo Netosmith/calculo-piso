@@ -68,6 +68,29 @@ export async function superAdminController(request, env) {
       return errorResponse("Catálogo de transportadoras indisponível.",503);
     }
   }
+  if (path.startsWith("/v1/super-admin/transportadoras/") && path.endsWith("/auditoria")) {
+    const parts=path.split("/");
+    if(parts.length!==6)return errorResponse("Rota invalida.",404);
+    const tenantId=parts[4];
+    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantId) || tenantId.length>64)
+      return errorResponse("Transportadora invalida.",400);
+    if(!env.TENANTS_DB)return errorResponse("Historico ainda nao provisionado.",503);
+    try {
+      const found=await env.TENANTS_DB.prepare(
+        "SELECT id FROM portal_tenants WHERE id=?").bind(tenantId).first();
+      if(!found)return errorResponse("Transportadora nao encontrada no catalogo.",404);
+      const result=await env.TENANTS_DB.prepare(
+        "SELECT id,actor_id,action,detail_json,created_at FROM portal_tenant_audit WHERE tenant_id=? ORDER BY created_at DESC,id DESC LIMIT 50"
+      ).bind(tenantId).all();
+      return success({tenantId,eventos:(result?.results||[]).map(row=>({
+        id:row.id,ator:row.actor_id,acao:row.action,quando:row.created_at,
+        detalhes:JSON.parse(row.detail_json||"{}")
+      }))});
+    } catch(error) {
+      console.error("[SUPER ADMIN] Audit read failed",{type:error?.name||"Error"});
+      return errorResponse("Historico de auditoria indisponivel.",503);
+    }
+  }
   if (path.startsWith("/v1/super-admin/transportadoras/") && path.endsWith("/usuarios")) {
     const parts = path.split("/");
     if (parts.length !== 6) return errorResponse("Rota inválida.",404);

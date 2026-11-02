@@ -62,3 +62,15 @@ test("missing legacy cookie or token is denied",()=>withJwks(async()=>{
  assert.equal((await superAdminController(req(token(),false),env())).status,401);
  assert.equal((await superAdminController(req(null),env())).status,403);
 }));
+
+test("Cloudflare JSON secret format for OIDC provider works",()=>withJwks(async()=>{
+ const config=env();
+ config.SUPER_ADMIN_OIDC=JSON.stringify(config.SUPER_ADMIN_OIDC);
+ const response=await superAdminController(req(token()),config);
+ assert.equal(response.status,200);
+}));
+test("malformed OIDC secret fails closed",async()=>{
+ const config=env();
+ config.SUPER_ADMIN_OIDC="{bad-json";
+ assert.equal((await superAdminController(req(token()),config)).status,403);
+});

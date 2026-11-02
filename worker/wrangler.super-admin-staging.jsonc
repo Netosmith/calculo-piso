@@ -8,6 +8,7 @@
     "SUPER_ADMIN_STAGING_WRITES": "enabled",
     "SUPER_ADMIN_TENANT_WRITES": "enabled",
     "SUPER_ADMIN_MEMBERSHIP_WRITES": "enabled",
+    "SUPER_ADMIN_CREDENTIAL_WRITES": "enabled",
     "SUPER_ADMIN_BRAND_WRITES": "enabled"
   },
   "observability": { "enabled": true },

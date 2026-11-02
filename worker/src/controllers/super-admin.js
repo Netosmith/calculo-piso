@@ -47,12 +47,12 @@ export async function superAdminController(request, env) {
     if(!canManageTenants(trustedSession,env))
       return errorResponse("Sessao sem permissao de administracao global.",403);
     if(path==="/v1/super-admin/authorize" && request.method==="POST")
-      return success({elevated:true,tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled")});
+      return success({elevated:true,tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled")});
     return writeTenantCatalog(request,env,verified.subject);
   }
   if (path === "/v1/super-admin/me") {
     const ready=await catalogReady(env);
-    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),userWrite:false}});
+    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT),userWrite:false}});
   }
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {

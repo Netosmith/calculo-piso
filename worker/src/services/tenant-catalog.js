@@ -15,6 +15,11 @@ function audit(db, actor, tenantId, action, details) {
   return db.prepare("INSERT INTO portal_tenant_audit(id,actor_id,tenant_id,action,detail_json) VALUES(?,?,?,?,?)")
     .bind(crypto.randomUUID(),actorId(actor),tenantId,action,JSON.stringify(details));
 }
+async function tenantExists(db, tenantId) {
+  if (typeof tenantId !== "string" || !/^[a-z][a-z0-9-]{2,49}$/.test(tenantId)) return false;
+  const row = await db.prepare("SELECT id FROM portal_tenants WHERE id=?").bind(tenantId).first();
+  return Boolean(row?.id === tenantId);
+}
 async function transact(db, statements) {
   if (typeof db.batch !== "function") throw new Error("Transações D1 indisponíveis");
   return db.batch(statements);
@@ -34,6 +39,7 @@ export async function changeTenantStatus(env, actor, tenantId, input) {
   if (!checked.ok) return checked;
   if (tenantId==="nova-frota") return {ok:false,error:"A transportadora legada exige processo de desativação específico."};
   const db=requireDb(env),status=checked.value.status;
+  if (!await tenantExists(db,tenantId)) return {ok:false,error:"Transportadora não encontrada."};
   await transact(db,[
     db.prepare("UPDATE portal_tenants SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(status,tenantId),
     audit(db,actor,tenantId,"tenant.status",{status})
@@ -45,6 +51,7 @@ export async function changeTenantModule(env, actor, tenantId, input) {
   if (!checked.ok) return checked;
   if (tenantId==="nova-frota") return {ok:false,error:"Os módulos legados não podem ser alterados nesta fase."};
   const db=requireDb(env),{module,enabled}=checked.value;
+  if (!await tenantExists(db,tenantId)) return {ok:false,error:"Transportadora não encontrada."};
   await transact(db,[
     db.prepare("INSERT INTO portal_tenant_modules(tenant_id,module_key,enabled) VALUES(?,?,?) ON CONFLICT(tenant_id,module_key) DO UPDATE SET enabled=excluded.enabled,updated_at=CURRENT_TIMESTAMP")
       .bind(tenantId,module,enabled?1:0),

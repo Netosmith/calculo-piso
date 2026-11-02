@@ -21,7 +21,10 @@ export async function superAdminController(request, env) {
   if (!isOwner) return errorResponse("Acesso exclusivo do Super Admin.",403);
   const path = new URL(request.url).pathname;
   if (request.method !== "GET") {
-    const oidc=env.SUPER_ADMIN_OIDC;
+    let oidc=env.SUPER_ADMIN_OIDC;
+    if(typeof oidc==="string") {
+      try {oidc=JSON.parse(oidc);} catch {oidc=null;}
+    }
     const bearer=request.headers.get("Authorization")||"";
     if (!oidc || bearer.length>16007 || !/^Bearer [A-Za-z0-9._-]+$/.test(bearer))
       return errorResponse("Prova de identidade OIDC obrigatoria.",403);

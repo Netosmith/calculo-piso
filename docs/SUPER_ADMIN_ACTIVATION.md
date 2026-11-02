@@ -7,17 +7,27 @@ Usar um Worker de homologacao com nome, dominio, segredos e D1 dedicados. Nao co
 
 O Worker exige APPS_SCRIPT_URL e PORTAL_KEY conforme a configuracao atual de validacao. Nao apontar homologacao para a base legada real sem autorizacao e regras de acesso.
 
+## Banco D1 de homologacao criado em 2026-11-02
+
+- Nome: `portal-super-admin-tenants-staging`.
+- ID: `9103c28a-c224-4781-9d3f-fd735b546cd9`.
+- Configuracao dedicada: `worker/wrangler.super-admin-staging.jsonc`; **nao** alterar o Worker principal `worker/wrangler.jsonc` para este D1.
+- O provisionamento do banco foi confirmado por captura de tela; a aplicacao do SQL ainda precisa ser confirmada.
+- Para evitar repeticao da criacao, **pular o comando `d1 create`** abaixo e ir diretamente para aplicar a migracao ao banco dedicado.
+- Se usar o Console D1 do painel, executar as instrucoes idempotentes em `worker/migrations/super-admin/0001_tenants.sql` no banco com este nome e conferir as quatro tabelas. O Console nao registra a migracao automaticamente na tabela de controle do Wrangler; antes de usar o fluxo `d1 migrations apply`, conferir o estado de migracoes com o Wrangler.
+- O procedimento de homologacao ainda exige segredos, sessao de usuario autorizada e verificacao do provedor OIDC; nenhum deles foi configurado por esse commit.
+
 ## 2. Criar D1 isolado
 No diretorio worker, com Wrangler autenticado na conta correta:
 
-    npx wrangler d1 create portal-super-admin-tenants
+    npx wrangler d1 create portal-super-admin-tenants-staging
 
-O comando retorna o UUID do banco. Adicionar ao **Worker de homologacao**, preservando todas as demais bindings, a entrada abaixo no array d1_databases do respectivo wrangler.jsonc:
+O comando retorna o UUID do banco. **O banco desta homologacao ja existe: nao executar novamente.** Adicionar ao **Worker de homologacao**, preservando todas as demais bindings, a entrada abaixo no array d1_databases do respectivo wrangler.jsonc:
 
     {
       "binding": "TENANTS_DB",
-      "database_name": "portal-super-admin-tenants",
-      "database_id": "UUID_RETORNADO_PELO_CLOUDFLARE",
+      "database_name": "portal-super-admin-tenants-staging",
+      "database_id": "9103c28a-c224-4781-9d3f-fd735b546cd9",
       "migrations_dir": "migrations/super-admin"
     }
 

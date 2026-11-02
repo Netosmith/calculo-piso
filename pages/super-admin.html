@@ -99,9 +99,10 @@ $('back').onclick=()=>location.assign('home.html');
  // Endpoint exclusivo ainda não implementado. Falha fechada: sem autorização global, não exibir o painel.
  const auth=await request('/v1/super-admin/me');
  if(auth?.superAdmin!==true)throw new Error('Sua sessão não possui autorização de Super Admin.');
+ const capabilities=auth.capabilities||{};
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result?.transportadoras)?result.transportadoras:[];
- $('app').hidden=false;notice('Acesso global autorizado. Operações de escrita permanecem bloqueadas até a integração segura.');
+ $('app').hidden=false;notice('Acesso autorizado | Banco de transportadoras: '+(capabilities.tenantCatalog?'configurado':'pendente')+' | Usuários legados: '+(capabilities.legacyUserRead?'leitura habilitada':'leitura desativada')+' | Edição: bloqueada.');
  if(companies.length){selected=companies[0];render();loadUsers();}else{render();}
  }catch(error){$('app').hidden=true;notice(error.message||'Não foi possível verificar sua autorização.');}
 })();

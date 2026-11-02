@@ -34,7 +34,7 @@ jobs:
           from pathlib import Path
           db=sqlite3.connect(":memory:")
           db.execute("PRAGMA foreign_keys=ON")
-          db.executescript(Path("worker/migrations/0001_tenants.sql").read_text())
+          db.executescript(Path("worker/migrations/super-admin/0001_tenants.sql").read_text())
           db.execute("INSERT INTO portal_tenants(id,name) VALUES (?,?)",("nova-frota","Nova Frota"))
           for role in ("ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"):
               db.execute("INSERT INTO portal_tenant_users(tenant_id,user_id,role) VALUES (?,?,?)",("nova-frota",role.lower(),role))

@@ -16,3 +16,6 @@
 
 ## Segurança de dados
 Não sincronizar credenciais nem permitir reset de senha por edição direta de planilhas. Não expor listagem global em endpoint público ou no HTML estático. O painel demonstrativo hospedado no Pages não acessa a API real.
+
+## Descoberta do cadastro legado
+A interface de cadastros define os campos Usuario, Nome, Perfil, Estados e Ativo. A consulta passa pelo gateway e pelo Apps Script. A estrutura de perfis do banco central precisa contemplar os perfis adicionais GOADM, MT e PR antes da sincronizacao.

@@ -31,6 +31,8 @@ jobs:
         run: npx wrangler deploy --dry-run --outdir .worker-dry-run
       - name: Validate isolated Super Admin staging configuration
         run: npx wrangler deploy --config wrangler.super-admin-staging.jsonc --dry-run --outdir .worker-staging-dry-run
+      - name: Validate isolated tenant login Worker configuration
+        run: npx wrangler deploy --config wrangler.tenant-staging.jsonc --dry-run --outdir .worker-tenant-dry-run
 
       - name: Validate tenant SQL migration in isolated SQLite
         working-directory: .
@@ -41,6 +43,7 @@ jobs:
           db=sqlite3.connect(":memory:")
           db.execute("PRAGMA foreign_keys=ON")
           db.executescript(Path("worker/migrations/super-admin/0001_tenants.sql").read_text())
+          db.executescript(Path("worker/migrations/super-admin/0002_tenant_portal.sql").read_text())
           db.execute("INSERT INTO portal_tenants(id,name) VALUES (?,?)",("nova-frota","Nova Frota"))
           for role in ("ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"):
               db.execute("INSERT INTO portal_tenant_users(tenant_id,user_id,role) VALUES (?,?,?)",("nova-frota",role.lower(),role))
@@ -51,5 +54,6 @@ jobs:
               pass
           else:
               raise AssertionError("Tenant foreign key was not enforced")
-          print("Tenant schema and seven legacy roles validated.")
+          assert db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('portal_tenant_credentials','portal_tenant_sessions','portal_tenant_login_attempts','portal_tenant_freights')").fetchone()[0] == 4
+          print("Tenant schema, access tables and seven legacy roles validated.")
           PY

@@ -1,6 +1,6 @@
 # Plano de implantação do banco multi-transportadoras
 
-A migração `worker/migrations/0001_tenants.sql` é **somente preparatória**. Não foi aplicada ao banco D1 de produção.
+A migração `worker/migrations/super-admin/0001_tenants.sql` é **somente preparatória**. Não foi aplicada ao banco D1 de produção.
 
 ## Política de dados
 - Nunca executar `DROP`, `DELETE` ou renomear tabelas legadas para iniciar a arquitetura multi-tenant.

@@ -8,6 +8,14 @@ import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transport
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
 
+async function catalogReady(env) {
+  if(!env.TENANTS_DB)return false;
+  try {
+    await env.TENANTS_DB.prepare("SELECT id FROM portal_tenants LIMIT 1").first();
+    return true;
+  } catch {return false;}
+}
+
 // Bootstrap restrito: conta existente autenticada pelo Apps Script.
 // O papel global NÃO pode ser atribuído via cadastro comum.
 export async function superAdminController(request, env) {
@@ -42,7 +50,10 @@ export async function superAdminController(request, env) {
       return success({elevated:true,tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled")});
     return writeTenantCatalog(request,env,verified.subject);
   }
-  if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:Boolean(env.TENANTS_DB),legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),userWrite:false}});
+  if (path === "/v1/super-admin/me") {
+    const ready=await catalogReady(env);
+    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),userWrite:false}});
+  }
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.

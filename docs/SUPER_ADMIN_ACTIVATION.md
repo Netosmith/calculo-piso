@@ -48,7 +48,7 @@ Foi preparado o workflow `.github/workflows/super-admin-staging-deploy.yml` para
 
 1. Criar token API Cloudflare com privilegios minimos de publicacao de Worker, da conta correta; gravar no GitHub Actions Secret `CLOUDFLARE_SUPER_ADMIN_STAGING_TOKEN`. Nunca colar token no chat ou codigo.
 2. Manter `CLOUDFLARE_ACCOUNT_ID` nos GitHub Actions Secrets, apontando para a conta correta.
-3. Executar manualmente o workflow na branch `feature/super-admin-panel-foundation` com texto exato `DEPLOY_STAGING`. Sem gatilho automatico por push.
+3. O workflow foi preparado na branch `feature/super-admin-panel-foundation`, mas o GitHub normalmente so disponibiliza `workflow_dispatch` depois que o arquivo existe na branch padrao. Nao tentar executa-lo antes de registrar apenas o workflow na branch padrao com revisao. Alternativamente, um operador autorizado pode implantar localmente via `npx wrangler deploy --config wrangler.super-admin-staging.jsonc` na pasta `worker`, apos `npm ci`, `npm test` e dry-run, garantindo conta correta. Nenhum push faz deploy automatico.
 4. Conferir testes, compilacao e deploy verdes; acessar `/health` no dominio workers.dev do Worker isolado.
 
 **Importante:** o cookie de login do dominio `api.portalfrete.net.br` usa `__Host-` e `SameSite=Strict` e nao sera enviado automaticamente ao Worker `workers.dev`. A integracao de identidade/dominio de homologacao ainda e necessaria. NAO copiar o `PORTAL_KEY` de producao para contornar isso. As rotas administrativas continuam fechadas ate haver sessao de proprietario e MFA validos.

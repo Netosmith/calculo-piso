@@ -1,6 +1,8 @@
 // Staging-only entrypoint: deliberately excludes the legacy freights, games,
 // fleet, Apps Script login and other production routes.
 import {superAdminController} from "./controllers/super-admin.js";
+import {verifiedStagingOwner} from "./services/staging-access.js";
+import {stagingPage} from "./staging-page.js";
 import {errorResponse,success} from "./utils/response.js";
 
 function withHeaders(response,origin=null) {
@@ -18,7 +20,7 @@ function withHeaders(response,origin=null) {
 }
 
 export default {
-  async fetch(request,env){
+  async fetch(request,env,ctx){
     const url=new URL(request.url),path=url.pathname.replace(/\/+$/,"")||"/";
     const origin=request.headers.get("Origin");
     // By default only same-origin browser requests are allowed. An explicitly
@@ -53,12 +55,28 @@ export default {
       }
     }
 
-    if(path.startsWith("/v1/super-admin/")){
-      // Super Admin authorization still requires a signed owner session.
-      // Do not wire staging to production sessions or Apps Script automatically.
-      if(!env.PORTAL_KEY||!env.SUPER_ADMIN_USER)
-        return withHeaders(errorResponse("Autenticacao de homologacao ainda nao configurada.",503),cors);
-      try{return withHeaders(await superAdminController(request,env),cors);}
+    if(path==="/super-admin" || path==="/" || path.startsWith("/v1/super-admin/")){
+      // Cloudflare Access authenticates this exact Worker. We also verify the
+      // runtime-provided AUD and exact owner email, never request headers.
+      const owner=await verifiedStagingOwner(env,ctx);
+      if(!owner)return withHeaders(errorResponse("Cloudflare Access do proprietario obrigatorio.",403),cors);
+      if(path==="/super-admin" || path==="/"){
+        if(request.method!=="GET")return withHeaders(errorResponse("Metodo nao permitido.",405),cors);
+        const html=stagingPage
+          .replace("const API_BASE = 'https://api.portalfrete.net.br';","const API_BASE = '';")
+          .replace("location.assign('home.html')","location.assign('https://portalfrete.net.br/pages/home.html')");
+        const response=new Response(html,{headers:{
+          "Content-Type":"text/html; charset=utf-8",
+          "Content-Security-Policy":"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'",
+          "X-Robots-Tag":"noindex, nofollow",
+          "X-Frame-Options":"DENY"
+        }});
+        return withHeaders(response,cors);
+      }
+      // Staging reads do not use the Nova Frota cookie or Apps Script secret.
+      // Writes retain the separate signed OIDC/MFA gate inside the controller.
+      const adminEnv={...env,SUPER_ADMIN_USER:"ACCESS_OWNER",SUPER_ADMIN_LEGACY_USERS_READ:"disabled"};
+      try{return withHeaders(await superAdminController(request,adminEnv,owner),cors);}
       catch{return withHeaders(errorResponse("Falha na API administrativa de homologacao.",500),cors);}
     }
     return withHeaders(errorResponse("Rota indisponivel no ambiente de homologacao.",404),cors);

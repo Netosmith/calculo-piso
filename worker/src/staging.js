@@ -6,6 +6,7 @@ import {errorResponse,success} from "./utils/response.js";
 function withHeaders(response,origin=null) {
   const headers=new Headers(response.headers);
   headers.set("Cache-Control","no-store");
+  headers.set("X-Portal-Environment","super-admin-staging");
   headers.set("X-Content-Type-Options","nosniff");
   headers.set("Referrer-Policy","no-referrer");
   if(origin){

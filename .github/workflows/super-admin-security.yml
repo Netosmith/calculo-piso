@@ -29,6 +29,8 @@ jobs:
         run: npm test
       - name: Bundle Worker without deploying
         run: npx wrangler deploy --dry-run --outdir .worker-dry-run
+      - name: Validate isolated Super Admin staging configuration
+        run: npx wrangler deploy --config wrangler.super-admin-staging.jsonc --dry-run --outdir .worker-staging-dry-run
 
       - name: Validate tenant SQL migration in isolated SQLite
         working-directory: .

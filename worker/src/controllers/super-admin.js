@@ -1,3 +1,4 @@
+import { canManageTenants } from "../config/super-admin-identity.js";
 import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-modules.js";
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
@@ -6,7 +7,6 @@ import { errorResponse, success } from "../utils/response.js";
 // Bootstrap restrito: conta existente autenticada pelo Apps Script.
 // O papel global NÃO pode ser atribuído via cadastro comum.
 export async function superAdminController(request, env) {
-  if (request.method !== "GET") return errorResponse("Método não permitido.",405);
   const session = await getSession(env, readSessionId(request));
   if (!session) return errorResponse("Sessão inválida ou expirada.",401);
   // Identidade do proprietário configurada exclusivamente como segredo no Worker.
@@ -16,6 +16,11 @@ export async function superAdminController(request, env) {
     && tenantIdForLegacySession(session) === LEGACY_NOVA_FROTA.id;
   if (!isOwner) return errorResponse("Acesso exclusivo do Super Admin.",403);
   const path = new URL(request.url).pathname;
+  if (request.method !== "GET") {
+    if (!canManageTenants(session, env)) return errorResponse("Identidade global verificada com MFA obrigatória para alterações.",403);
+    // Sem endpoints de escrita expostos até existir provedor confiável e revisão de auditoria.
+    return errorResponse("Operações administrativas de escrita ainda não habilitadas.",405);
+  }
   if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario});
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {

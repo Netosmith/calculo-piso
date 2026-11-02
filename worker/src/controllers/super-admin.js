@@ -1,3 +1,5 @@
+import { callAppsScript } from "../services/appscript.js";
+import { projectLegacyUsers } from "../services/legacy-user-projection.js";
 import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
 import { canManageTenants } from "../config/super-admin-identity.js";
 import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-modules.js";
@@ -63,6 +65,36 @@ export async function superAdminController(request, env) {
     const tenantId = parts[4];
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantId) || tenantId.length > 64) {
       return errorResponse("Transportadora inválida.",400);
+    }
+    // Opt-in para homologacao. Nunca consulta usuarios de outras transportadoras
+    // no Apps Script legado, nem confunde lista vazia com cadastro completo.
+    if (tenantId === LEGACY_NOVA_FROTA.id && env.SUPER_ADMIN_LEGACY_USERS_READ === "enabled") {
+      try {
+        const result = await callAppsScript(env, {
+          action:"portal_gateway", method:"POST",
+          params:{
+            module:"cadastros",action:"read",
+            payload:{resource:"usuarios",operation:"list"},
+            auth:{
+              usuario:session.usuario,nome:session.nome,perfil:session.perfil,
+              estado:session.estado,estados:session.estados
+            }
+          }
+        });
+        if (!result?.ok) return errorResponse("Consulta legada recusada.",502);
+        const payload = result.data;
+        const rows = Array.isArray(payload) ? payload :
+          Array.isArray(payload?.data) ? payload.data :
+          Array.isArray(payload?.rows) ? payload.rows : null;
+        if (!rows) return errorResponse("Formato do cadastro legado nao reconhecido.",502);
+        return success({
+          tenantId,usuarios:projectLegacyUsers(rows),origem:"apps-script-legado",
+          completo:true
+        });
+      } catch (error) {
+        console.error("[SUPER ADMIN] Falha na leitura legada",String(error?.message || error));
+        return errorResponse("Nao foi possivel consultar os usuarios legados.",502);
+      }
     }
     // O cadastro de autenticação legado continua no Apps Script. O catálogo D1
     // armazena apenas vínculos, não nomes, senhas ou último acesso.

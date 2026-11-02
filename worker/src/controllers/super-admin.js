@@ -57,5 +57,37 @@ export async function superAdminController(request, env) {
       return errorResponse("Catálogo de transportadoras indisponível.",503);
     }
   }
+  if (path.startsWith("/v1/super-admin/transportadoras/") && path.endsWith("/usuarios")) {
+    const parts = path.split("/");
+    if (parts.length !== 6) return errorResponse("Rota inválida.",404);
+    const tenantId = parts[4];
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantId) || tenantId.length > 64) {
+      return errorResponse("Transportadora inválida.",400);
+    }
+    // O cadastro de autenticação legado continua no Apps Script. O catálogo D1
+    // armazena apenas vínculos, não nomes, senhas ou último acesso.
+    if (!env.TENANTS_DB) return errorResponse("Catálogo de usuários ainda não provisionado.",503);
+    try {
+      const company = await env.TENANTS_DB.prepare(
+        "SELECT id FROM portal_tenants WHERE id=?"
+      ).bind(tenantId).first();
+      if (!company && tenantId !== LEGACY_NOVA_FROTA.id) return errorResponse("Transportadora não encontrada.",404);
+      const result = await env.TENANTS_DB.prepare(
+        "SELECT user_id, role, active, created_at FROM portal_tenant_users WHERE tenant_id=? ORDER BY user_id LIMIT 500"
+      ).bind(tenantId).all();
+      return success({
+        tenantId,
+        usuarios:(result?.results || []).map(u=>({
+          id:u.user_id,perfil:u.role,ativo:u.active===1,dataVinculo:u.created_at
+        })),
+        origem:"vinculos-d1",
+        completo:false,
+        aviso:"Lista de vínculos do catálogo. Usuários legados ainda não foram sincronizados; resultado vazio não significa ausência de usuários."
+      });
+    } catch (error) {
+      console.error("[SUPER ADMIN] Consulta de usuários indisponível",String(error?.message || error));
+      return errorResponse("Consulta de usuários indisponível.",503);
+    }
+  }
   return errorResponse("Recurso administrativo não implementado.",404);
 }

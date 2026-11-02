@@ -77,3 +77,24 @@ test("rejects malformed upstream data rather than returning unfiltered records",
     assert.equal(JSON.stringify(await response.json()).includes("private"),false);
   } finally {globalThis.fetch=old;}
 });
+
+test("rejects invalid tenant path without upstream calls", async () => {
+  let calls=0;const old=globalThis.fetch;globalThis.fetch=async()=>{calls++;throw Error("unexpected");};
+  try {
+    const response=await superAdminController(req(endpoint.replace("/nova-frota/","/NOVA_FROTA/")),envFor(owner));
+    assert.equal(response.status,400);
+    assert.equal(calls,0);
+  } finally {globalThis.fetch=old;}
+});
+
+test("rejects upstream records with unknown profile and never exposes sensitive data", async () => {
+  const old=globalThis.fetch;
+  globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,data:[{
+    Usuario:"alice",Perfil:"UNKNOWN",Ativo:"SIM",Senha:"do-not-leak"
+  }]}));
+  try {
+    const response=await superAdminController(req(),envFor(owner));
+    assert.equal(response.status,502);
+    assert.equal(JSON.stringify(await response.json()).includes("do-not-leak"),false);
+  } finally {globalThis.fetch=old;}
+});

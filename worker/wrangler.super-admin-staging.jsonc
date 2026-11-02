@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "portalfrete-super-admin-staging",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "TENANTS_DB",
+      "database_name": "portal-super-admin-tenants-staging",
+      "database_id": "9103c28a-c224-4781-9d3f-fd735b546cd9",
+      "migrations_dir": "migrations/super-admin"
+    }
+  ]
+}

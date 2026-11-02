@@ -1,4 +1,5 @@
 import { callAppsScript } from "../services/appscript.js";
+import { writeTenantCatalog } from "../services/super-admin-tenant-write.js";
 import { projectLegacyUsers } from "../services/legacy-user-projection.js";
 import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
 import { canManageTenants } from "../config/super-admin-identity.js";
@@ -20,17 +21,23 @@ export async function superAdminController(request, env) {
   if (!isOwner) return errorResponse("Acesso exclusivo do Super Admin.",403);
   const path = new URL(request.url).pathname;
   if (request.method !== "GET") {
-    if (!canManageTenants(session, env)) return errorResponse("Identidade global verificada com MFA obrigatória para alterações.",403);
-    // A prova OIDC é validada em cada solicitação; claims da sessão não bastam.
-    const oidc = env.SUPER_ADMIN_OIDC;
-    const bearer = request.headers.get("Authorization") || "";
-    if (!oidc || !/^Bearer [A-Za-z0-9._-]+$/.test(bearer)) return errorResponse("Prova OIDC obrigatória.",403);
-    const verified = await verifySuperAdminIdentity(bearer.slice(7), oidc);
-    if (!verified.ok || verified.subject !== String(env.SUPER_ADMIN_SUBJECT || "")) return errorResponse("Identidade OIDC não verificada.",403);
-    // Sem endpoints de escrita expostos até existir provedor confiável e revisão de auditoria.
-    return errorResponse("Operações administrativas de escrita ainda não habilitadas.",405);
+    const oidc=env.SUPER_ADMIN_OIDC;
+    const bearer=request.headers.get("Authorization")||"";
+    if (!oidc || bearer.length>16007 || !/^Bearer [A-Za-z0-9._-]+$/.test(bearer))
+      return errorResponse("Prova de identidade OIDC obrigatoria.",403);
+    const verified=await verifySuperAdminIdentity(bearer.slice(7),oidc);
+    if(!verified.ok || !verified.subject ||
+       verified.subject!==String(env.SUPER_ADMIN_SUBJECT||""))
+      return errorResponse("Identidade global ou MFA nao verificada.",403);
+    // Claims de privilegio sao montadas no servidor somente depois da
+    // validacao criptografica do JWT, nunca aceitas do cliente.
+    const trustedSession={...session,authSubject:verified.subject,
+      authAssurance:"mfa",authProviderVerified:true};
+    if(!canManageTenants(trustedSession,env))
+      return errorResponse("Sessao sem permissao de administracao global.",403);
+    return writeTenantCatalog(request,env,verified.subject);
   }
-  if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:Boolean(env.TENANTS_DB),legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:false,userWrite:false}});
+  if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:Boolean(env.TENANTS_DB),legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),userWrite:false}});
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.

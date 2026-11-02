@@ -19,3 +19,6 @@ Não sincronizar credenciais nem permitir reset de senha por edição direta de 
 
 ## Descoberta do cadastro legado
 A interface de cadastros define os campos Usuario, Nome, Perfil, Estados e Ativo. A consulta passa pelo gateway e pelo Apps Script. A estrutura de perfis do banco central precisa contemplar os perfis adicionais GOADM, MT e PR antes da sincronizacao.
+
+## Consulta legada opcional
+A rota de usuarios da transportadora nova-frota aceita leitura do Apps Script somente quando SUPER_ADMIN_LEGACY_USERS_READ=enabled. O valor nao esta configurado em producao. A resposta passa pela projecao de campos permitidos. Validar em homologacao o formato real retornado antes de ativar. A tela estatica de preview permanece ficticia.

@@ -68,5 +68,5 @@ test('Super Admin keeps writes disabled even with verified MFA claims',async()=>
  const strongEnv={...env,SUPER_ADMIN_SUBJECT:'trusted-identity'};
  const token=await createSessionToken(strongEnv,{usuario:'LUZIANO',transportadoraId:'nova-frota',authSubject:'trusted-identity',authAssurance:'mfa',authProviderVerified:true,expiresAt:new Date(Date.now()+60000).toISOString()});
  const write=new Request('https://example.test/v1/super-admin/transportadoras',{method:'POST',headers:{Cookie:'__Host-portal_session='+token}});
- assert.equal((await superAdminController(write,strongEnv)).status,405);
+ assert.equal((await superAdminController(write,strongEnv)).status,403);
 });

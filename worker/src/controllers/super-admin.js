@@ -1,3 +1,4 @@
+import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
 import { canManageTenants } from "../config/super-admin-identity.js";
 import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-modules.js";
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
@@ -18,6 +19,12 @@ export async function superAdminController(request, env) {
   const path = new URL(request.url).pathname;
   if (request.method !== "GET") {
     if (!canManageTenants(session, env)) return errorResponse("Identidade global verificada com MFA obrigatória para alterações.",403);
+    // A prova OIDC é validada em cada solicitação; claims da sessão não bastam.
+    const oidc = env.SUPER_ADMIN_OIDC;
+    const bearer = request.headers.get("Authorization") || "";
+    if (!oidc || !/^Bearer [A-Za-z0-9._-]+$/.test(bearer)) return errorResponse("Prova OIDC obrigatória.",403);
+    const verified = await verifySuperAdminIdentity(bearer.slice(7), oidc);
+    if (!verified.ok || verified.subject !== String(env.SUPER_ADMIN_SUBJECT || "")) return errorResponse("Identidade OIDC não verificada.",403);
     // Sem endpoints de escrita expostos até existir provedor confiável e revisão de auditoria.
     return errorResponse("Operações administrativas de escrita ainda não habilitadas.",405);
   }

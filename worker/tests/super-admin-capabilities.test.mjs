@@ -14,11 +14,11 @@ test("capabilities are derived from backend configuration and writes remain disa
  assert.equal(response.status,200);
  const body=await response.json();
  assert.deepEqual(body.capabilities,{
-   tenantCatalog:false,legacyUserRead:false,tenantWrite:false,membershipWrite:false,userWrite:false
+   tenantCatalog:false,legacyUserRead:false,tenantWrite:false,membershipWrite:false,brandWrite:false,userWrite:false
  });
  const ready=await superAdminController(request,env({TENANTS_DB:{prepare(){return {first:async()=>null};}},SUPER_ADMIN_LEGACY_USERS_READ:"enabled"}));
  assert.deepEqual((await ready.json()).capabilities,{
-   tenantCatalog:true,legacyUserRead:true,tenantWrite:false,membershipWrite:false,userWrite:false
+   tenantCatalog:true,legacyUserRead:true,tenantWrite:false,membershipWrite:false,brandWrite:false,userWrite:false
  });
 });
 test("capabilities never exposed to a non-owner",async()=>{

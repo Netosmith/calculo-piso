@@ -1,0 +1,29 @@
+name: Super Admin Preview (isolated)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/super-admin-panel-foundation
+    paths:
+      - 'pages/super-admin-preview.html'
+      - '.github/workflows/super-admin-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate preview file
+        run: |
+          test -s pages/super-admin-preview.html
+          grep -q 'PRÉVIA DEMONSTRATIVA' pages/super-admin-preview.html
+          ! grep -q 'api.portalfrete.net.br' pages/super-admin-preview.html
+      - name: Package offline HTML preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: super-admin-preview
+          path: pages/super-admin-preview.html
+          retention-days: 14

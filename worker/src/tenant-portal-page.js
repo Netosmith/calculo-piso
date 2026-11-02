@@ -24,7 +24,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 8px;text-align:left
 th{color:#9ebbd5}.hide{display:none!important}footer{text-align:center;color:#7896b0;font-size:12px;padding:28px}
 @media(max-width:770px){.cols{grid-template-columns:1fr}header{padding:14px}main{margin:18px auto}.card{padding:16px}table{display:block;overflow-x:auto}}
 </style></head><body>
-<header><div><strong>PORTAL FRETE</strong><small id="topBrand">Ambiente das transportadoras</small></div><button id="logout" class="ghost hide">Sair</button></header>
+<header><div class="row"><img id="tenantLogo" class="hide" alt="Logo da transportadora" style="max-width:100px;max-height:60px;object-fit:contain;border-radius:7px;background:white;padding:5px"><div><strong>PORTAL FRETE</strong><small id="topBrand">Ambiente das transportadoras</small></div></div><button id="logout" class="ghost hide">Sair</button></header>
 <main>
 <div id="notice" role="status"></div>
 <section id="login" class="card login">
@@ -59,7 +59,7 @@ th{color:#9ebbd5}.hide{display:none!important}footer{text-align:center;color:#78
 'use strict';
 const $=id=>document.getElementById(id);
 const EDIT_ROLES=new Set(['ADMINISTRADOR','COMERCIAL','OPERACIONAL','GOADM']);
-let profile=null;
+let profile=null,logoUrl=null;
 function notice(message){$('notice').textContent=String(message||'');}
 async function api(path,options={}){
  const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...options,
@@ -73,13 +73,25 @@ async function post(path,data,method='POST'){
 }
 function text(el,value){el.textContent=String(value??'');}
 function formatPrice(value){return Number(value).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function showLogin(){profile=null;$('portal').classList.add('hide');$('login').classList.remove('hide');$('logout').classList.add('hide');}
+function showLogin(){if(logoUrl){URL.revokeObjectURL(logoUrl);logoUrl=null;}$('tenantLogo').classList.add('hide');$('tenantLogo').removeAttribute('src');profile=null;$('portal').classList.add('hide');$('login').classList.remove('hide');$('logout').classList.add('hide');}
 function showPortal(){
  $('login').classList.add('hide');$('portal').classList.remove('hide');$('logout').classList.remove('hide');
  text($('companyTitle'),profile.tenant.name);
  text($('topBrand'),profile.tenant.name);
  text($('userCaption'),'Usuário '+profile.usuario+' | Perfil '+profile.perfil);
- renderModules();
+ renderModules();loadTenantLogo();
+}
+async function loadTenantLogo(){
+ const image=$('tenantLogo');
+ if(logoUrl){URL.revokeObjectURL(logoUrl);logoUrl=null;}
+ image.classList.add('hide');image.removeAttribute('src');
+ try{
+  const result=await fetch('/api/logo',{credentials:'same-origin',cache:'no-store'});
+  if(!result.ok)return;
+  const blob=await result.blob();
+  if(!['image/png','image/jpeg','image/webp'].includes(blob.type))return;
+  logoUrl=URL.createObjectURL(blob);image.src=logoUrl;image.classList.remove('hide');
+ }catch{}
 }
 function renderModules(){
  const root=$('modules');root.replaceChildren();

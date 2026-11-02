@@ -56,3 +56,17 @@ test('Super Admin denies unauthenticated requests', async () => {
   const response = await superAdminController(new Request('https://example.test/v1/super-admin/me'), env);
   assert.equal(response.status, 401);
 });
+
+test('Super Admin blocks writes without verified MFA identity', async () => {
+ const response=await superAdminController(await requestFor({usuario:'LUZIANO',transportadoraId:'nova-frota'},'/v1/super-admin/transportadoras'),env);
+ assert.equal(response.status,200);
+ const token=await createSessionToken(env,{usuario:'LUZIANO',transportadoraId:'nova-frota',expiresAt:new Date(Date.now()+60000).toISOString()});
+ const write=new Request('https://example.test/v1/super-admin/transportadoras',{method:'POST',headers:{Cookie:'__Host-portal_session='+token}});
+ assert.equal((await superAdminController(write,env)).status,403);
+});
+test('Super Admin keeps writes disabled even with verified MFA claims',async()=>{
+ const strongEnv={...env,SUPER_ADMIN_SUBJECT:'trusted-identity'};
+ const token=await createSessionToken(strongEnv,{usuario:'LUZIANO',transportadoraId:'nova-frota',authSubject:'trusted-identity',authAssurance:'mfa',authProviderVerified:true,expiresAt:new Date(Date.now()+60000).toISOString()});
+ const write=new Request('https://example.test/v1/super-admin/transportadoras',{method:'POST',headers:{Cookie:'__Host-portal_session='+token}});
+ assert.equal((await superAdminController(write,strongEnv)).status,405);
+});

@@ -209,6 +209,8 @@ test("disabled freights module and read-only role never bypass server authorizat
  env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_users SET role='PISO' WHERE tenant_id='tenant-a'").run();
  assert.equal((await tenantPortal.fetch(req("/api/fretes","POST",{
   origem:"A",destino:"B",produto:"Soja",valorTon:50},token),env)).status,403);
+ assert.equal((await tenantPortal.fetch(req("/api/fretes","GET",null,token),env)).status,403);
+ assert.equal((await tenantPortal.fetch(req("/api/bi","GET",null,token),env)).status,403);
 });
 test("BI queries aggregate only the logged-in tenant and require its BI module",async()=>{
  const env=setup();await seedPassword(env);

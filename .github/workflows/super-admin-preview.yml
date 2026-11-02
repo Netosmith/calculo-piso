@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 jobs:
   preview:
@@ -21,9 +23,22 @@ jobs:
           test -s pages/super-admin-preview.html
           grep -q 'PRÉVIA DEMONSTRATIVA' pages/super-admin-preview.html
           ! grep -q 'api.portalfrete.net.br' pages/super-admin-preview.html
+      - name: Prepare standalone preview site
+        run: |
+          mkdir -p preview-site
+          cp pages/super-admin-preview.html preview-site/index.html
+          echo '<meta name="robots" content="noindex,nofollow">' > preview-site/robots-note.html
       - name: Package offline HTML preview
         uses: actions/upload-artifact@v4
         with:
           name: super-admin-preview
           path: pages/super-admin-preview.html
           retention-days: 14
+      - name: Upload GitHub Pages preview artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: preview-site
+      - name: Deploy isolated GitHub Pages preview
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true

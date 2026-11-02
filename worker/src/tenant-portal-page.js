@@ -1,5 +1,5 @@
 // Static same-origin tenant portal: no external scripts, fonts or production APIs.
-export const tenantPortalPage = \`<!doctype html>
+export const tenantPortalPage = `<!doctype html>
 <html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Portal Frete | Acesso da Transportadora</title>
@@ -169,4 +169,4 @@ async function initialize(){
 const tenantHint=new URLSearchParams(location.search).get('tenant');
 if(tenantHint)$('tenant').value=tenantHint;
 initialize();
-</script></body></html>\`;
+</script></body></html>`;

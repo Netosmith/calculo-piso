@@ -19,7 +19,7 @@
 <div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Logos e artes</button><button data-tab="settings">Configurações</button></div>
 <div id="modules" class="tab"><p>Defina os cards que a transportadora poderá visualizar e utilizar.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
 <div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Em novas empresas, estes vínculos não criam senha nem liberam login ou acesso aos fretes. A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo vínculo</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
-<div id="brand" class="tab" hidden><h2>Identidade visual</h2><p>Logo principal, logo para documentos e biblioteca de artes.</p><label>Selecionar imagem (PNG, JPG ou WebP)<br><input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label><p class="muted">O envio será habilitado após integração autenticada com o R2.</p></div>
+<div id="brand" class="tab" hidden><h2>Identidade visual</h2><p>Logo privada da transportadora (PNG, JPG ou WebP, até 2 MB).</p><img id="tenantLogo" alt="Logo da transportadora" hidden style="max-width:220px;max-height:130px;object-fit:contain;background:#fff;padding:12px;border-radius:10px"><p id="logoStatus" class="muted">Selecione uma transportadora.</p><div class="row"><label>Selecionar imagem<br><input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label><button id="uploadLogo" type="button" disabled>Salvar logo</button></div><p class="muted">Gravação autenticada com MFA em biblioteca R2 separada. Não modifica logos de clientes nem arquivos da Nova Frota.</p></div>
 <div id="settings" class="tab" hidden><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
 </section></div></div>
 </main>
@@ -28,9 +28,10 @@
 const API_BASE = 'https://api.portalfrete.net.br';
 const MODULES=[['piso','Piso ANTT'],['fretes','Fretes'],['fretes2','Fretes MT'],['bi','BI'],['divulgacao','Divulgação'],['controle','Controle de Embarque'],['share','Share Clientes'],['ordem','Ordem de Carregamento'],['cadastros','Cadastros'],['estadias','Estadias'],['custo-frota','Custo de Frota'],['administrativo','Administrativo'],['monitoramento','Monitoramento']];
 const $=id=>document.getElementById(id);
-let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,membershipReady=false,mfaMembershipActive=false,mfaToken="",mfaActive=false;
+let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,membershipReady=false,brandReady=false,mfaMembershipActive=false,mfaBrandActive=false,mfaToken="",mfaActive=false,logoObjectUrl=null,logoRequest=0;
 const canEdit=()=>Boolean(writeReady&&mfaActive&&selected&&selected.id!=="nova-frota");
 const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&mfaMembershipActive);
+const canEditBrand=()=>Boolean(canEdit()&&brandReady&&mfaBrandActive);
 const ROLES=["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"];
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
@@ -114,13 +115,51 @@ async function loadAudit(){
   root.append(table);
  }catch(error){if(serial===auditRequest&&selected?.id===tenant){root.className='empty';root.textContent=error.message;}}
 }
+async function loadBrand(){
+ const tenant=selected?.id,serial=++logoRequest,image=$('tenantLogo');
+ image.hidden=true;image.removeAttribute('src');
+ if(logoObjectUrl){URL.revokeObjectURL(logoObjectUrl);logoObjectUrl=null;}
+ $('brandFile').value='';
+ if(!tenant){$('logoStatus').textContent='Selecione uma transportadora.';return;}
+ if(tenant==='nova-frota'){$('logoStatus').textContent='A identidade da Nova Frota permanece no sistema legado.';return;}
+ $('logoStatus').textContent='Consultando logo privada...';
+ try {
+  const response=await fetch(API_BASE+'/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/logo',{credentials:'include',cache:'no-store'});
+  if(serial!==logoRequest||selected?.id!==tenant)return;
+  if(response.status===404){$('logoStatus').textContent='Nenhuma logo cadastrada.';return;}
+  if(!response.ok)throw new Error('Logo indisponível neste ambiente (HTTP '+response.status+').');
+  const file=await response.blob();
+  if(serial!==logoRequest||selected?.id!==tenant)return;
+  if(!['image/png','image/jpeg','image/webp'].includes(file.type))throw new Error('Formato de imagem não reconhecido.');
+  logoObjectUrl=URL.createObjectURL(file);image.src=logoObjectUrl;image.hidden=false;
+  $('logoStatus').textContent='Logo da transportadora carregada.';
+ }catch(error){
+  if(serial===logoRequest&&selected?.id===tenant)$('logoStatus').textContent=error.message;
+ }
+}
+$('uploadLogo').onclick=async()=>{
+ if(!canEditBrand() || !selected?.id)return;
+ const file=$('brandFile').files?.[0];
+ if(!file){notice('Selecione uma imagem antes de salvar.');return;}
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>2097152){
+  notice('A logo deve ser PNG, JPG ou WebP com até 2 MB.');return;
+ }
+ const tenant=selected.id;
+ if(!confirm('Substituir a logo da transportadora '+selected.name+'?'))return;
+ $('uploadLogo').disabled=true;
+ try{
+  await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/logo','PUT',file,file.type);
+  await loadBrand();await loadAudit();notice('Logo salva com auditoria, sem alterar os arquivos da Nova Frota.');
+ }catch(error){writeError(error);}
+ finally{render();}
+};
 function renderCompanies(){
  const root=$('companies');root.replaceChildren();
  if(!companies.length){root.className='empty';root.textContent='Nenhuma transportadora cadastrada.';return}
  root.className='';
  for(const company of companies){
  const button=document.createElement('button');button.className='company'+(selected?.id===company.id?' selected':'');
- button.textContent=company.name;button.onclick=()=>{selected=company;render();loadUsers();loadAudit();};root.append(button);
+ button.textContent=company.name;button.onclick=()=>{selected=company;render();loadUsers();loadAudit();loadBrand();};root.append(button);
  }
 }
 function render(){
@@ -131,14 +170,16 @@ function render(){
  $('toggleCompany').disabled=!canEdit();
  $('saveModules').disabled=!canEdit();
  $('addMembership').disabled=!canEditMembership();
+ $('brandFile').disabled=!canEditBrand();
+ $('uploadLogo').disabled=!canEditBrand();
  renderModules();renderUsers();
 }
-async function writeRequest(path,method,data){
+async function writeRequest(path,method,data,contentType='application/json'){
  if(!mfaToken||!mfaActive)throw new Error('Valide primeiro a identidade com MFA.');
- try{return await request(path,{method,headers:{'Authorization':'Bearer '+mfaToken,'Content-Type':'application/json'},body:JSON.stringify(data)});}
+ try{return await request(path,{method,headers:{'Authorization':'Bearer '+mfaToken,'Content-Type':contentType},body:contentType==='application/json'?JSON.stringify(data):data});}
  catch(error){
   if(error.status===401||error.status===403){
-   mfaToken='';mfaActive=false;mfaMembershipActive=false;$('forgetIdentity').disabled=true;render();
+   mfaToken='';mfaActive=false;mfaMembershipActive=false;mfaBrandActive=false;$('forgetIdentity').disabled=true;render();
    error.message+=' Faça uma nova validação MFA antes de tentar novamente.';
   }
   throw error;
@@ -158,13 +199,13 @@ $('verifyIdentity').onclick=async()=>{
  try{
   const proof=await request('/v1/super-admin/authorize',{method:'POST',headers:{Authorization:'Bearer '+candidate},body:'{}'});
   if(!proof?.elevated||!proof?.tenantWrite)throw new Error('Escrita administrativa não configurada neste ambiente.');
-  mfaToken=candidate;mfaActive=true;mfaMembershipActive=Boolean(proof.membershipWrite);$('mfaProof').value='';$('forgetIdentity').disabled=false;
+  mfaToken=candidate;mfaActive=true;mfaMembershipActive=Boolean(proof.membershipWrite);mfaBrandActive=Boolean(proof.brandWrite);$('mfaProof').value='';$('forgetIdentity').disabled=false;
   notice('MFA confirmada no servidor. Alterações em novas transportadoras habilitadas. A Nova Frota legada permanece protegida.');
- }catch(error){mfaToken='';mfaActive=false;mfaMembershipActive=false;writeError(error);}
+ }catch(error){mfaToken='';mfaActive=false;mfaMembershipActive=false;mfaBrandActive=false;writeError(error);}
  finally{$('verifyIdentity').disabled=false;render();}
 };
 $('forgetIdentity').onclick=()=>{
- mfaToken='';mfaActive=false;mfaMembershipActive=false;$('mfaProof').value='';$('forgetIdentity').disabled=true;
+ mfaToken='';mfaActive=false;mfaMembershipActive=false;mfaBrandActive=false;$('mfaProof').value='';$('forgetIdentity').disabled=true;
  notice('Autorização de edição encerrada nesta aba.');render();
 };
 $('newCompany').onclick=async()=>{
@@ -243,11 +284,11 @@ $('back').onclick=()=>location.assign('home.html');
  const auth=await request('/v1/super-admin/me');
  if(auth?.superAdmin!==true)throw new Error('Sua sessão não possui autorização de Super Admin.');
  const capabilities=auth.capabilities||{};
- writeReady=Boolean(capabilities.tenantWrite);membershipReady=Boolean(capabilities.membershipWrite);$('adminAuth').hidden=!writeReady;
+ writeReady=Boolean(capabilities.tenantWrite);membershipReady=Boolean(capabilities.membershipWrite);brandReady=Boolean(capabilities.brandWrite);$('adminAuth').hidden=!writeReady;
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result?.transportadoras)?result.transportadoras:[];
  $('app').hidden=false;notice('Acesso autorizado | Banco de transportadoras: '+(capabilities.tenantCatalog?'configurado':'pendente')+' | Usuários legados: '+(capabilities.legacyUserRead?'leitura habilitada':'leitura desativada')+' | Edição: '+(writeReady?'requer validação MFA':'não configurada')+'.');
- if(companies.length){selected=companies[0];render();loadUsers();loadAudit();}else{render();}
+ if(companies.length){selected=companies[0];render();loadUsers();loadAudit();loadBrand();}else{render();}
  }catch(error){$('app').hidden=true;notice(error.message||'Não foi possível verificar sua autorização.');}
 })();
 </script>

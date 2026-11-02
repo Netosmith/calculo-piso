@@ -1,6 +1,7 @@
 import {errorResponse,success} from "../utils/response.js";
 import {writeTenantMembership} from "./super-admin-membership-write.js";
 import {writeTenantLogo} from "./super-admin-brand.js";
+import {setTenantCredentials} from "./super-admin-tenant-credentials.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
@@ -64,6 +65,11 @@ export async function writeTenantCatalog(request,env,actor) {
       if(!validId(brand[1]))return errorResponse("Transportadora invalida.",400);
       if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
       return writeTenantLogo(request,env,actor,brand[1]);
+    }
+    const credentials=action.match(/^\/([a-z0-9-]+)\/usuarios\/([A-Za-z0-9._-]+)\/credenciais$/);
+    if(credentials){
+      if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
+      return setTenantCredentials(request,env,actor,credentials[1],credentials[2]);
     }
     const membership=action.match(/^\/([a-z0-9-]+)\/usuarios(?:\/([A-Za-z0-9._-]+))?$/);
     if(membership) {

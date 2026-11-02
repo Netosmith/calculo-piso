@@ -32,3 +32,10 @@ jobs:
           name: super-admin-preview
           path: pages/super-admin-preview.html
           retention-days: 14
+      - name: Deploy preview to isolated Cloudflare Pages project
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy preview-site --project-name=portal-frete-super-admin-preview --branch=preview

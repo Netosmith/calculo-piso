@@ -18,7 +18,7 @@
 <section class="panel"><div class="row"><div><h2 id="companyName">Selecione uma transportadora</h2><span id="companyStatus" class="status">Sem seleção</span></div><button id="toggleCompany" disabled>Ativar / desativar</button></div>
 <div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Logos e artes</button><button data-tab="settings">Configurações</button></div>
 <div id="modules" class="tab"><p>Defina os cards que a transportadora poderá visualizar e utilizar.</p><div id="moduleGrid" class="grid"></div><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
-<div id="users" class="tab" hidden><h2>Usuários da transportadora</h2><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
+<div id="users" class="tab" hidden><h2>Usuários da transportadora</h2><div class="row"><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
 <div id="brand" class="tab" hidden><h2>Identidade visual</h2><p>Logo principal, logo para documentos e biblioteca de artes.</p><label>Selecionar imagem (PNG, JPG ou WebP)<br><input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label><p class="muted">O envio será habilitado após integração autenticada com o R2.</p></div>
 <div id="settings" class="tab" hidden><h2>Configurações</h2><p>Status, integrações e histórico de auditoria da transportadora.</p><div class="empty">Configurações aguardando integração com o cadastro central.</div></div>
 </section></div></div>
@@ -28,7 +28,7 @@
 const API_BASE = 'https://api.portalfrete.net.br';
 const MODULES=[['piso','Piso ANTT'],['fretes','Fretes'],['fretes2','Fretes MT'],['bi','BI'],['divulgacao','Divulgação'],['controle','Controle de Embarque'],['share','Share Clientes'],['ordem','Ordem de Carregamento'],['cadastros','Cadastros'],['estadias','Estadias'],['custo-frota','Custo de Frota'],['administrativo','Administrativo'],['monitoramento','Monitoramento']];
 const $=id=>document.getElementById(id);
-let companies=[],selected=null;
+let companies=[],selected=null,users=[],usersRequest=0;
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
  const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',headers:{'Accept':'application/json',...(options.headers||{})},...options});
@@ -44,20 +44,51 @@ function renderModules(){
  const text=document.createElement('span');text.textContent=label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
  }
 }
+function renderUsers(){
+ const root=$('userList');root.replaceChildren();
+ if(!selected){root.className='empty';root.textContent='Selecione uma transportadora.';return;}
+ const term=String($('userSearch').value||'').trim().toLocaleUpperCase('pt-BR');
+ const filtered=users.filter(u=>[u.usuario,u.id,u.nome,u.perfil,u.estados].some(v=>String(v||'').toLocaleUpperCase('pt-BR').includes(term)));
+ if(!filtered.length){root.className='empty';root.textContent=users.length?'Nenhum usuário corresponde à busca.':'Nenhum vínculo encontrado nesta origem. Isso não comprova ausência de usuários no cadastro legado.';return;}
+ root.className='';const table=document.createElement('table');table.style.cssText='width:100%;border-collapse:collapse;text-align:left';
+ const head=document.createElement('thead'),tr=document.createElement('tr');
+ for(const label of ['Usuário','Nome','Perfil','Estados','Situação']){const th=document.createElement('th');th.textContent=label;th.style.padding='10px 8px';tr.append(th);}
+ head.append(tr);table.append(head);const body=document.createElement('tbody');
+ for(const u of filtered){const row=document.createElement('tr');for(const value of [u.usuario||u.id||'',u.nome||'Não informado',u.perfil||'',u.estados||'Não informado',u.ativo===true?'Ativo':u.ativo===false?'Inativo':'Não informado']){const td=document.createElement('td');td.textContent=String(value);td.style.cssText='padding:10px 8px;border-top:1px solid #355571';row.append(td);}body.append(row);}
+ table.append(body);root.append(table);
+}
+async function loadUsers(){
+ const tenant=selected?.id,serial=++usersRequest;users=[];renderUsers();
+ if(!tenant)return;
+ $('userSource').textContent='Consultando cadastro autorizado...';
+ try{
+ const data=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/usuarios');
+ if(serial!==usersRequest||selected?.id!==tenant)return;
+ users=Array.isArray(data.usuarios)?data.usuarios:[];
+ $('userSource').textContent=(data.origem==='apps-script-legado'?'Origem: cadastro legado': 'Origem: vínculos do catálogo')+(data.completo===false?' | Lista parcial, não representa todos os usuários':'')+'. Consulta somente leitura.';
+ renderUsers();
+ }catch(error){
+ if(serial!==usersRequest||selected?.id!==tenant)return;
+ $('userList').className='empty';$('userList').textContent=error.message;
+ $('userSource').textContent='Consulta indisponível. Nenhum dado fictício foi exibido.';
+ }
+}
 function renderCompanies(){
  const root=$('companies');root.replaceChildren();
  if(!companies.length){root.className='empty';root.textContent='Nenhuma transportadora cadastrada.';return}
  root.className='';
  for(const company of companies){
  const button=document.createElement('button');button.className='company'+(selected?.id===company.id?' selected':'');
- button.textContent=company.name;button.onclick=()=>{selected=company;render();};root.append(button);
+ button.textContent=company.name;button.onclick=()=>{selected=company;render();loadUsers();};root.append(button);
  }
 }
 function render(){
  renderCompanies();$('companyName').textContent=selected?.name||'Selecione uma transportadora';
  $('companyStatus').textContent=selected?(selected.active?'Ativa':'Inativa'):'Sem seleção';
- renderModules();$('userList').textContent=selected?'Gerenciamento de usuários aguardando API autenticada.':'Selecione uma transportadora para carregar os usuários.';
+ renderModules();renderUsers();
 }
+$('userSearch').addEventListener('input',renderUsers);
+$('refreshUsers').addEventListener('click',loadUsers);
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));
  document.querySelectorAll('.tab').forEach(panel=>panel.hidden=panel.id!==button.dataset.tab);

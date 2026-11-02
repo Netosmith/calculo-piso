@@ -1,6 +1,7 @@
 import {errorResponse,success} from "../utils/response.js";
 
 const WRITER_ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GOADM"]);
+const READER_ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GOADM","MT","PR"]);
 const STATUSES=new Set(["aberto","finalizado"]);
 const FIELDS=new Set(["origem","destino","produto","valorTon"]);
 function clean(value,max=100){
@@ -26,6 +27,7 @@ function formatFreight(row){
 
 export async function tenantFreights(request,db,principal,modules){
  const pathname=new URL(request.url).pathname;
+ if(!READER_ROLES.has(principal.role))return errorResponse("Perfil sem acesso ao modulo de fretes.",403);
  if(!allowedModule(modules,"fretes")&&!allowedModule(modules,"fretes2"))
   return errorResponse("Modulo de fretes indisponivel para sua transportadora.",403);
  if(request.method==="GET"&&pathname==="/api/fretes"){
@@ -79,6 +81,7 @@ export async function tenantFreights(request,db,principal,modules){
  return errorResponse("Rota de frete inexistente.",404);
 }
 export async function tenantBi(db,principal,modules){
+ if(!READER_ROLES.has(principal.role))return errorResponse("Perfil sem acesso ao BI.",403);
  if(!allowedModule(modules,"bi"))return errorResponse("Modulo BI indisponivel.",403);
  const row=await db.prepare(`SELECT COUNT(*) AS total,
    SUM(CASE WHEN status='aberto' THEN 1 ELSE 0 END) AS abertos,

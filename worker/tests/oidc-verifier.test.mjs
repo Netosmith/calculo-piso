@@ -8,7 +8,7 @@ async function fixture(){
  const pair=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
  const jwk={...await crypto.subtle.exportKey('jwk',pair.publicKey),kid:'test-key',alg:'RS256',use:'sig'};
  const options={issuer:'https://id.example',audience:'portal',subject:'owner',jwk};
- const claims={iss:options.issuer,aud:options.audience,sub:options.subject,exp:Math.floor(Date.now()/1000)+300};
+ const claims={iss:options.issuer,aud:options.audience,sub:options.subject,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+300};
  async function sign(payload=claims){
    const data=b64({alg:'RS256',typ:'JWT',kid:'test-key'})+'.'+b64(payload);
    const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',pair.privateKey,new TextEncoder().encode(data));

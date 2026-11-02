@@ -102,11 +102,11 @@ function renderModules(){
  const active=profile.modules||[];
  if(!active.length){root.textContent='Nenhum módulo foi habilitado para esta transportadora.';return;}
  for(const key of active){
-  const supported=key==='fretes'||key==='fretes2'||key==='bi';
+  const supported=(key==='fretes'||key==='fretes2'||key==='bi') && profile.perfil!=='PISO';
   const button=document.createElement('button');button.className='module';button.disabled=!supported;
   const bold=document.createElement('b');text(bold,labels[key]||key);
   const description=document.createElement('span');description.className='muted';
-  text(description,supported?'Abrir módulo':'Em preparação nesta transportadora');
+  text(description,supported?'Abrir módulo':(profile.perfil==='PISO' && ['fretes','fretes2','bi'].includes(key)?'Sem acesso neste perfil':'Em preparação nesta transportadora'));
   button.append(bold,description);
   if(supported)button.onclick=()=>openModule(key);
   root.append(button);

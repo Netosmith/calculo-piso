@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   preview:
@@ -34,11 +32,3 @@ jobs:
           name: super-admin-preview
           path: pages/super-admin-preview.html
           retention-days: 14
-      - name: Upload GitHub Pages preview artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: preview-site
-      - name: Deploy isolated GitHub Pages preview
-        id: deployment
-        uses: actions/deploy-pages@v4
-        continue-on-error: true

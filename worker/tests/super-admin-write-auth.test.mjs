@@ -42,7 +42,7 @@ async function withJwks(callback){
 test("OIDC signature, immutable subject and MFA authorize privileged session",()=>withJwks(async()=>{
  const response=await superAdminController(req(token()),env());
  assert.equal(response.status,200);
- assert.deepEqual(await response.json(),{ok:true,elevated:true,tenantWrite:true,membershipWrite:false});
+ assert.deepEqual(await response.json(),{ok:true,elevated:true,tenantWrite:true,membershipWrite:false,brandWrite:false});
 }));
 test("password-only token does not authorize writes",()=>withJwks(async()=>{
  assert.equal((await superAdminController(req(token({amr:["pwd"]})),env())).status,403);

@@ -1,5 +1,7 @@
 # Revisao tecnica do Super Admin - 2026-11-02
 
+> **Registro historico da auditoria inicial.** O estado mais recente, incluindo testes concluídos e APIs CRUD protegidas, está em [SUPER_ADMIN_ACTIVATION.md](SUPER_ADMIN_ACTIVATION.md). As referencias abaixo a operacoes de escrita ainda nao implementadas ou testes nao confirmados descrevem o inicio da revisao, nao o estado atual.
+
 ## Confirmado no codigo da branch
 - API de Super Admin roteada em worker/src/router.js e protegida por sessao e identificador SUPER_ADMIN_USER.
 - Leitura de usuarios legados so ocorre para tenant nova-frota com SUPER_ADMIN_LEGACY_USERS_READ=enabled.

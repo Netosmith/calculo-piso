@@ -34,7 +34,7 @@ function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
  const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',...options,headers:{'Accept':'application/json',...(options.headers||{})}});
  const result=await response.json().catch(()=>null);
- if(!response.ok)throw new Error(result?.error||'Falha na solicitação (HTTP '+response.status+').');
+ if(!response.ok){const error=new Error(result?.error||'Falha na solicitação (HTTP '+response.status+').');error.status=response.status;throw error;}
  return result;
 }
 function renderModules(){
@@ -118,7 +118,14 @@ function render(){
 }
 async function writeRequest(path,method,data){
  if(!mfaToken||!mfaActive)throw new Error('Valide primeiro a identidade com MFA.');
- return request(path,{method,headers:{'Authorization':'Bearer '+mfaToken,'Content-Type':'application/json'},body:JSON.stringify(data)});
+ try{return await request(path,{method,headers:{'Authorization':'Bearer '+mfaToken,'Content-Type':'application/json'},body:JSON.stringify(data)});}
+ catch(error){
+  if(error.status===401||error.status===403){
+   mfaToken='';mfaActive=false;$('forgetIdentity').disabled=true;render();
+   error.message+=' Faça uma nova validação MFA antes de tentar novamente.';
+  }
+  throw error;
+ }
 }
 async function refreshCompanies(preferred){
  const result=await request('/v1/super-admin/transportadoras');

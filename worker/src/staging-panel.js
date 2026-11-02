@@ -16,7 +16,7 @@ export function stagingPanelHtml(){
   html=required(html,"$('newCompany').disabled=!(writeReady&&mfaActive);","$('newCompany').disabled=!writeReady;");
   html=required(html,"$('adminAuth').hidden=!writeReady;","$('adminAuth').hidden=true;");
   html=required(html,"writeReady?'requer validação MFA':'não configurada'","writeReady?'liberada pelo Cloudflare Access':'não configurada'");
-  html=required(html,"const ROLES=[", "let credentialReady=false;\\nconst ROLES=[");
+  html=required(html,"const ROLES=[", "let credentialReady=false;\nconst ROLES=[");
   html=required(html,
    "brandReady=Boolean(capabilities.brandWrite);",
    "brandReady=Boolean(capabilities.brandWrite);credentialReady=Boolean(capabilities.credentialWrite);");
@@ -59,6 +59,6 @@ export function stagingPanelHtml(){
     };
   }
 `;
-  html=required(html,"async function editMembership(user,field){",method+"\\nasync function editMembership(user,field){");
+  html=required(html,"async function editMembership(user,field){",method+"\nasync function editMembership(user,field){");
   return html;
 }

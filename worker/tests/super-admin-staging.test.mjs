@@ -16,6 +16,7 @@ test("health probes the dedicated D1 schema and R2 binding only",async()=>{
  assert.equal(response.status,200);
  assert.deepEqual(await response.json(),{ok:true,environment:"staging",database:"ready",storage:"bound"});
  assert.equal(response.headers.get("Cache-Control"),"no-store");
+ assert.equal(response.headers.get("X-Portal-Environment"),"super-admin-staging");
 });
 test("health fails safely if D1, R2 or migrated table is missing",async()=>{
  assert.equal((await staging.fetch(req("/health"),{TENANTS_DB:env.TENANTS_DB})).status,503);

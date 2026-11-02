@@ -85,6 +85,7 @@ export default {
           body.capabilities.tenantWrite=Boolean(ready&&tenantWrite);
           body.capabilities.membershipWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled");
           body.capabilities.brandWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.TENANT_BRANDS);
+          body.capabilities.credentialWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_CREDENTIAL_WRITES==="enabled");
           return withHeaders(success(body),cors);
         }
         if(request.method!=="GET"){

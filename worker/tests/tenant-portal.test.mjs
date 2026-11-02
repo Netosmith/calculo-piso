@@ -53,7 +53,11 @@ function setup(){
    "INSERT INTO portal_tenant_modules (tenant_id,module_key,enabled) VALUES (?,?,1)"
   ).run(id,module);
  }
- return {TENANTS_DB:db};
+ return {TENANTS_DB:db,TENANT_BRANDS:{
+  objects:new Map(),
+  async get(key){const data=this.objects.get(key);return data?{body:new Response(data).body}:null;},
+  async put(key,data){this.objects.set(key,new Uint8Array(data));}
+ }};
 }
 const password="TesteSeguro!2418";
 function req(path,method="GET",data,token,origin=BASE){
@@ -224,4 +228,30 @@ test("logout destroys server session; Nova Frota production endpoints do not exi
  assert.equal((await tenantPortal.fetch(req("/api/me","GET",null,token),env)).status,401);
  for(const path of ["/v1/login","/v1/portal-gateway","/v1/fretes","/v1/super-admin/me"])
   assert.equal((await tenantPortal.fetch(req(path),env)).status,404);
+});
+
+test("health requires dedicated D1 schema and private logo binding",async()=>{
+ const env=setup();
+ assert.equal((await tenantPortal.fetch(req("/health"),env)).status,200);
+ assert.equal((await tenantPortal.fetch(req("/health"),{TENANTS_DB:env.TENANTS_DB})).status,503);
+ const result=await tenantPortal.fetch(req("/health"),env);
+ assert.equal((await result.json()).environment,"tenant-staging");
+});
+test("each authenticated tenant sees only its own private R2 logo",async()=>{
+ const env=setup();await seedPassword(env,"tenant-a");await seedPassword(env,"tenant-b");
+ const a=cookie(await login(env,"tenant-a")),b=cookie(await login(env,"tenant-b"));
+ const imageA=new Uint8Array([137,80,78,71,13,10,26,10,1]);
+ const imageB=new Uint8Array([137,80,78,71,13,10,26,10,2]);
+ env.TENANT_BRANDS.objects.set("tenant/tenant-a/logo/abc.png",imageA);
+ env.TENANT_BRANDS.objects.set("tenant/tenant-b/logo/def.png",imageB);
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenants SET logo_key=? WHERE id=?")
+  .run("tenant/tenant-a/logo/abc.png","tenant-a");
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenants SET logo_key=? WHERE id=?")
+  .run("tenant/tenant-b/logo/def.png","tenant-b");
+ const ra=await tenantPortal.fetch(req("/api/logo","GET",null,a),env);
+ const rb=await tenantPortal.fetch(req("/api/logo","GET",null,b),env);
+ assert.equal(ra.status,200);assert.equal(rb.status,200);
+ assert.deepEqual(new Uint8Array(await ra.arrayBuffer()),imageA);
+ assert.deepEqual(new Uint8Array(await rb.arrayBuffer()),imageB);
+ assert.equal((await tenantPortal.fetch(req("/api/logo"),env)).status,401);
 });

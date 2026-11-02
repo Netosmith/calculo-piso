@@ -20,7 +20,7 @@
 <div id="modules" class="tab"><p>Defina os cards que a transportadora poderá visualizar e utilizar.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
 <div id="users" class="tab" hidden><h2>Usuários da transportadora</h2><div class="row"><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
 <div id="brand" class="tab" hidden><h2>Identidade visual</h2><p>Logo principal, logo para documentos e biblioteca de artes.</p><label>Selecionar imagem (PNG, JPG ou WebP)<br><input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label><p class="muted">O envio será habilitado após integração autenticada com o R2.</p></div>
-<div id="settings" class="tab" hidden><h2>Configurações</h2><p>Status, integrações e histórico de auditoria da transportadora.</p><div class="empty">Configurações aguardando integração com o cadastro central.</div></div>
+<div id="settings" class="tab" hidden><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
 </section></div></div>
 </main>
 <script>
@@ -28,7 +28,7 @@
 const API_BASE = 'https://api.portalfrete.net.br';
 const MODULES=[['piso','Piso ANTT'],['fretes','Fretes'],['fretes2','Fretes MT'],['bi','BI'],['divulgacao','Divulgação'],['controle','Controle de Embarque'],['share','Share Clientes'],['ordem','Ordem de Carregamento'],['cadastros','Cadastros'],['estadias','Estadias'],['custo-frota','Custo de Frota'],['administrativo','Administrativo'],['monitoramento','Monitoramento']];
 const $=id=>document.getElementById(id);
-let companies=[],selected=null,users=[],usersRequest=0,writeReady=false,mfaToken="",mfaActive=false;
+let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,mfaToken="",mfaActive=false;
 const canEdit=()=>Boolean(writeReady&&mfaActive&&selected&&selected.id!=="nova-frota");
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
@@ -75,13 +75,36 @@ async function loadUsers(){
  $('userSource').textContent='Consulta indisponível. Nenhum dado fictício foi exibido.';
  }
 }
+async function loadAudit(){
+ const tenant=selected?.id,serial=++auditRequest,root=$('auditList');
+ root.className='empty';root.textContent=tenant?'Consultando histórico...':'Selecione uma transportadora.';
+ if(!tenant)return;
+ try{
+  const data=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/auditoria');
+  if(serial!==auditRequest||selected?.id!==tenant)return;
+  const events=Array.isArray(data.eventos)?data.eventos:[];
+  root.replaceChildren();
+  if(!events.length){root.textContent='Nenhuma alteração registrada para esta transportadora.';return;}
+  root.className='';
+  const table=document.createElement('table');table.style.cssText='width:100%;border-collapse:collapse;text-align:left';
+  const head=document.createElement('tr');for(const label of ['Data','Ação','Responsável','Resumo']){const cell=document.createElement('th');cell.textContent=label;cell.style.padding='8px';head.append(cell);}table.append(head);
+  for(const event of events){
+   const row=document.createElement('tr');
+   const detail=event.detalhes||{};
+   const values=[event.quando||'',event.acao||'',event.ator||'',Array.isArray(detail.modules)?detail.modules.join(', '):detail.name||detail.status||''];
+   for(const value of values){const cell=document.createElement('td');cell.textContent=String(value);cell.style.cssText='padding:8px;border-top:1px solid #355571';row.append(cell);}
+   table.append(row);
+  }
+  root.append(table);
+ }catch(error){if(serial===auditRequest&&selected?.id===tenant){root.className='empty';root.textContent=error.message;}}
+}
 function renderCompanies(){
  const root=$('companies');root.replaceChildren();
  if(!companies.length){root.className='empty';root.textContent='Nenhuma transportadora cadastrada.';return}
  root.className='';
  for(const company of companies){
  const button=document.createElement('button');button.className='company'+(selected?.id===company.id?' selected':'');
- button.textContent=company.name;button.onclick=()=>{selected=company;render();loadUsers();};root.append(button);
+ button.textContent=company.name;button.onclick=()=>{selected=company;render();loadUsers();loadAudit();};root.append(button);
  }
 }
 function render(){
@@ -101,7 +124,7 @@ async function refreshCompanies(preferred){
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result.transportadoras)?result.transportadoras:[];
  selected=companies.find(company=>company.id===(preferred||selected?.id))||companies[0]||null;
- render();loadUsers();
+ render();loadUsers();loadAudit();
 }
 function writeError(error){notice(error.message||'Falha ao gravar alteração.');}
 $('verifyIdentity').onclick=async()=>{
@@ -150,6 +173,7 @@ $('saveModules').onclick=async()=>{
 };
 $('userSearch').addEventListener('input',renderUsers);
 $('refreshUsers').addEventListener('click',loadUsers);
+$('refreshAudit').addEventListener('click',loadAudit);
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));
  document.querySelectorAll('.tab').forEach(panel=>panel.hidden=panel.id!==button.dataset.tab);
@@ -165,7 +189,7 @@ $('back').onclick=()=>location.assign('home.html');
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result?.transportadoras)?result.transportadoras:[];
  $('app').hidden=false;notice('Acesso autorizado | Banco de transportadoras: '+(capabilities.tenantCatalog?'configurado':'pendente')+' | Usuários legados: '+(capabilities.legacyUserRead?'leitura habilitada':'leitura desativada')+' | Edição: '+(writeReady?'requer validação MFA':'não configurada')+'.');
- if(companies.length){selected=companies[0];render();loadUsers();}else{render();}
+ if(companies.length){selected=companies[0];render();loadUsers();loadAudit();}else{render();}
  }catch(error){$('app').hidden=true;notice(error.message||'Não foi possível verificar sua autorização.');}
 })();
 </script>

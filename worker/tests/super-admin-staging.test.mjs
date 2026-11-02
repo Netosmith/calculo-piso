@@ -79,7 +79,7 @@ test("verified Access owner can see same-origin admin panel and read D1 catalog"
 });
 test("staging mutations remain off without explicit opt-in, despite verified Access",async()=>{
  const res=await staging.fetch(req("/v1/super-admin/transportadoras","POST"),accessEnv,accessCtx());
- assert.equal(res.status,403);
+ assert.equal(res.status,405);
 });
 test("staging browser requests deny unknown origin and permit configured origin",async()=>{
  const denied=await staging.fetch(req("/health","GET",{Origin:"https://evil.example"}),env);

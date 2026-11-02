@@ -36,11 +36,22 @@ O comando retorna o UUID do banco. **O banco desta homologacao ja existe: nao ex
 **Status: esta etapa ja foi concluida pelo Console D1, sem comando Wrangler remoto.** Para testes de migracao local, e permitido usar Wrangler --local contra um banco de desenvolvimento local isolado. Nunca aplicar a migracao em FLEET_DB ou em bancos de clientes existentes. Nao realizar deploy do Worker de producao nesta etapa.
 
 ## 2.1. Criar biblioteca R2 dedicada para logos das novas empresas
-No mesmo ambiente de homologacao:
+O bucket portal-super-admin-brands-staging ja foi criado no Cloudflare, confirmado por captura de tela em 2026-11-02. Classe Standard, acesso publico Disabled, 0 B inicialmente. NAO criar novamente.
 
-    npx wrangler r2 bucket create portal-super-admin-brands-staging
+A binding R2 TENANT_BRANDS ja foi preparada no arquivo worker/wrangler.super-admin-staging.jsonc para esse bucket, sem reutilizar CLIENT_LOGOS ou FLEET_FILES. O painel aceita apenas PNG, JPG ou WebP com ate 2 MB e armazena chave aleatoria privada por transportadora. A logo existente so e substituida apos auditoria e atualizacao bem-sucedidas no D1.
 
-No wrangler do Worker de homologacao, adicionar uma binding R2 **TENANT_BRANDS** para esse bucket, sem reutilizar CLIENT_LOGOS ou FLEET_FILES. O painel aceita apenas PNG, JPG ou WebP com ate 2 MB e armazena chave aleatoria privada por transportadora. A logo existente so e substituida apos auditoria e atualizacao bem-sucedidas no D1.
+## 2.2. Publicacao isolada do Worker de homologacao
+
+A configuracao `worker/wrangler.super-admin-staging.jsonc` usa apenas `src/staging.js`. Essa entrada expoe somente `GET /health` e `/v1/super-admin/*`. Ela NAO publica login, fretes, frota, jogos nem Apps Script. A verificacao `/health` consulta apenas a disponibilidade do D1 e da binding R2, sem retornar dados privados.
+
+Foi preparado o workflow `.github/workflows/super-admin-staging-deploy.yml` para publicar SOMENTE `portalfrete-super-admin-staging`. Ele exige:
+
+1. Criar token API Cloudflare com privilegios minimos de publicacao de Worker, da conta correta; gravar no GitHub Actions Secret `CLOUDFLARE_SUPER_ADMIN_STAGING_TOKEN`. Nunca colar token no chat ou codigo.
+2. Manter `CLOUDFLARE_ACCOUNT_ID` nos GitHub Actions Secrets, apontando para a conta correta.
+3. Executar manualmente o workflow na branch `feature/super-admin-panel-foundation` com texto exato `DEPLOY_STAGING`. Sem gatilho automatico por push.
+4. Conferir testes, compilacao e deploy verdes; acessar `/health` no dominio workers.dev do Worker isolado.
+
+**Importante:** o cookie de login do dominio `api.portalfrete.net.br` usa `__Host-` e `SameSite=Strict` e nao sera enviado automaticamente ao Worker `workers.dev`. A integracao de identidade/dominio de homologacao ainda e necessaria. NAO copiar o `PORTAL_KEY` de producao para contornar isso. As rotas administrativas continuam fechadas ate haver sessao de proprietario e MFA validos.
 
 ## 3. Configurar proprietario e provedor OIDC com MFA
 Em homologacao, configurar segredos do Worker por ambiente:

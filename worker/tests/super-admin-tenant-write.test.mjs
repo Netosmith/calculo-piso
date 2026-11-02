@@ -9,7 +9,7 @@ const base="https://api.portalfrete.net.br/v1/super-admin/transportadoras";
 function database(){
  const sql=new DatabaseSync(":memory:");
  sql.exec("PRAGMA foreign_keys=ON");
- sql.exec(readFileSync(new URL("../migrations/0001_tenants.sql",import.meta.url),"utf8"));
+ sql.exec(readFileSync(new URL("../migrations/super-admin/0001_tenants.sql",import.meta.url),"utf8"));
  return {
   sql,
   prepare(query){

@@ -11,6 +11,11 @@ test("Super Admin inline browser JavaScript parses",()=>{
  assert.doesNotThrow(()=>new Script(match[1],{filename:"super-admin.html"}));
  assert.match(html,/id="verifyIdentity"/);
  assert.match(html,/id="saveModules"/);
+ assert.match(html,/id="addMembership"/);
+ assert.match(html,/id="uploadLogo"/);
+ assert.match(html,/id="tenantLogo"/);
+ assert.match(html,/canEditMembership/);
+ assert.match(html,/canEditBrand/);
 });
 
 test("trusted origin can preflight authorization header for OIDC",()=>{

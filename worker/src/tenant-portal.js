@@ -45,7 +45,7 @@ export default {
   const url=new URL(request.url);
   const path=url.pathname.replace(/\/+$/,"")||"/";
   if(request.method==="GET"&&path==="/health"){
-   if(!db)return err("D1 nao associado.",503);
+   if(!db||!env.TENANT_BRANDS)return err("D1 ou R2 nao associado.",503);
    try{
     await db.prepare("SELECT token_hash FROM portal_tenant_sessions LIMIT 1").first();
     await db.prepare("SELECT id FROM portal_tenant_freights LIMIT 1").first();
@@ -90,6 +90,18 @@ export default {
    const enabled=await db.prepare(`SELECT module_key FROM portal_tenant_modules
      WHERE tenant_id=? AND enabled=1 ORDER BY module_key`).bind(principal.tenant_id).all();
    const modules=(enabled.results||[]).map(r=>r.module_key);
+   if(path==="/api/logo" && request.method==="GET"){
+    if(!env.TENANT_BRANDS)return err("Armazenamento da empresa indisponivel.",503);
+    const brand=await db.prepare("SELECT logo_key FROM portal_tenants WHERE id=?")
+      .bind(principal.tenant_id).first();
+    const key=brand?.logo_key;
+    const mime=typeof key==="string"?
+      key.endsWith(".png")?"image/png":key.endsWith(".jpg")?"image/jpeg":key.endsWith(".webp")?"image/webp":null:null;
+    if(!mime)return err("Logo da empresa nao cadastrada.",404);
+    const image=await env.TENANT_BRANDS.get(key);
+    if(!image)return err("Logo da empresa nao encontrada.",404);
+    return secure(new Response(image.body,{headers:{"Content-Type":mime}}));
+   }
    if(path==="/api/me"&&request.method==="GET")
     return secure(success({
      tenant:{id:principal.tenant_id,name:principal.tenant_name},

@@ -108,7 +108,7 @@ async function loadAudit(){
   for(const event of events){
    const row=document.createElement('tr');
    const detail=event.detalhes||{};
-   const values=[event.quando||'',event.acao||'',event.ator||'',Array.isArray(detail.modules)?detail.modules.join(', '):detail.name||detail.status||''];
+   const values=[event.quando||'',event.acao||'',event.ator||'',Array.isArray(detail.modules)?detail.modules.join(', '):detail.usuario?(detail.usuario+' · '+(detail.perfil||'')+' · '+(detail.ativo===true?'Ativo':detail.ativo===false?'Inativo':'')):detail.tipo||detail.name||detail.status||''];
    for(const value of values){const cell=document.createElement('td');cell.textContent=String(value);cell.style.cssText='padding:8px;border-top:1px solid #355571';row.append(cell);}
    table.append(row);
   }
@@ -189,7 +189,7 @@ async function refreshCompanies(preferred){
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result.transportadoras)?result.transportadoras:[];
  selected=companies.find(company=>company.id===(preferred||selected?.id))||companies[0]||null;
- render();loadUsers();loadAudit();
+ render();loadUsers();loadAudit();loadBrand();
 }
 function writeError(error){notice(error.message||'Falha ao gravar alteração.');}
 $('verifyIdentity').onclick=async()=>{

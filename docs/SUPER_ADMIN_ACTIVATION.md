@@ -12,9 +12,9 @@ O Worker exige APPS_SCRIPT_URL e PORTAL_KEY conforme a configuracao atual de val
 - Nome: `portal-super-admin-tenants-staging`.
 - ID: `9103c28a-c224-4781-9d3f-fd735b546cd9`.
 - Configuracao dedicada: `worker/wrangler.super-admin-staging.jsonc`; **nao** alterar o Worker principal `worker/wrangler.jsonc` para este D1.
-- O provisionamento do banco foi confirmado por captura de tela; a aplicacao do SQL ainda precisa ser confirmada.
-- Para evitar repeticao da criacao, **pular o comando `d1 create`** abaixo e ir diretamente para aplicar a migracao ao banco dedicado.
-- Se usar o Console D1 do painel, executar as instrucoes idempotentes em `worker/migrations/super-admin/0001_tenants.sql` no banco com este nome e conferir as quatro tabelas. O Console nao registra a migracao automaticamente na tabela de controle do Wrangler; antes de usar o fluxo `d1 migrations apply`, conferir o estado de migracoes com o Wrangler.
+- O provisionamento do banco e a execucao do SQL foram confirmados em captura do Console D1 em 2026-11-02. As quatro tabelas portal_tenants, portal_tenant_modules, portal_tenant_users e portal_tenant_audit foram listadas na consulta sqlite_master.
+- **O banco ja existe e o esquema SQL ja foi aplicado manualmente no Console D1. NAO executar novamente o comando d1 create nem d1 migrations apply --remote nesta etapa.**
+- O Console D1 nao registra a migracao na tabela de controle do Wrangler. Antes de habilitar um processo automatizado de migracoes, fazer reconciliacao de baseline e verificar schema e indices no banco especifico; nao reexecutar automaticamente a migracao existente.
 - O procedimento de homologacao ainda exige segredos, sessao de usuario autorizada e verificacao do provedor OIDC; nenhum deles foi configurado por esse commit.
 
 ## 2. Criar D1 isolado
@@ -33,15 +33,7 @@ O comando retorna o UUID do banco. **O banco desta homologacao ja existe: nao ex
 
 **Nao reutilizar FLEET_DB.** A migracao fica isolada em worker/migrations/super-admin/0001_tenants.sql, e nao na pasta raiz de migracoes.
 
-Executar primeiro em D1 local:
-
-    npx wrangler d1 migrations apply TENANTS_DB --local
-
-Depois de conferir banco e conta de homologacao, aplicar apenas ao D1 dedicado:
-
-    npx wrangler d1 migrations apply TENANTS_DB --remote
-
-Nao aplicar a migracao em FLEET_DB ou em bancos de clientes existentes. Nao realizar deploy do Worker de producao nesta etapa.
+**Status: esta etapa ja foi concluida pelo Console D1, sem comando Wrangler remoto.** Para testes de migracao local, e permitido usar Wrangler --local contra um banco de desenvolvimento local isolado. Nunca aplicar a migracao em FLEET_DB ou em bancos de clientes existentes. Nao realizar deploy do Worker de producao nesta etapa.
 
 ## 2.1. Criar biblioteca R2 dedicada para logos das novas empresas
 No mesmo ambiente de homologacao:

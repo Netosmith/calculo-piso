@@ -92,7 +92,7 @@ export async function superAdminController(request, env) {
           completo:true
         });
       } catch (error) {
-        console.error("[SUPER ADMIN] Falha na leitura legada",String(error?.message || error));
+        console.error("[SUPER ADMIN] Falha na leitura legada", { type: error?.name || "Error" });
         return errorResponse("Nao foi possivel consultar os usuarios legados.",502);
       }
     }

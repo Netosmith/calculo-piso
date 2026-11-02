@@ -19,8 +19,11 @@ async function catalogReady(env) {
 
 // Bootstrap restrito: conta existente autenticada pelo Apps Script.
 // O papel global NÃO pode ser atribuído via cadastro comum.
-export async function superAdminController(request, env) {
-  const session = await getSession(env, readSessionId(request));
+// The optional identity is reserved for the staging entrypoint after
+// Cloudflare Access has authenticated and matched the exact owner email/AUD.
+// Normal production routing never passes it; browser headers cannot set it.
+export async function superAdminController(request, env, verifiedStagingSession = null) {
+  const session = verifiedStagingSession || await getSession(env, readSessionId(request));
   if (!session) return errorResponse("Sessão inválida ou expirada.",401);
   // Identidade do proprietário configurada exclusivamente como segredo no Worker.
   // Sem configuração, o painel permanece fechado (fail closed).

@@ -30,7 +30,7 @@ export async function superAdminController(request, env) {
     // Sem endpoints de escrita expostos até existir provedor confiável e revisão de auditoria.
     return errorResponse("Operações administrativas de escrita ainda não habilitadas.",405);
   }
-  if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario});
+  if (path === "/v1/super-admin/me") return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:Boolean(env.TENANTS_DB),legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:false,userWrite:false}});
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.

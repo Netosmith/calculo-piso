@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { createTenant,changeTenantStatus,changeTenantModule } from '../src/services/tenant-catalog.js';
 globalThis.crypto ??= webcrypto;
-function mockDb(){
+function mockDb(exists=true){
  const batches=[];
  const db={
-  prepare(sql){return {bind(...params){return {sql,params}}}},
+  prepare(sql){return {bind(...params){return {sql,params,async first(){return exists?{id:params[0]}:null}}}}},
   async batch(statements){batches.push(statements);return statements.map(()=>({success:true}))}
  };
  return {db,batches};
@@ -45,4 +45,17 @@ test('module update and audit share a batch',async()=>{
  assert.equal(batches[0].length,2);
  assert.match(batches[0][0].sql,/portal_tenant_modules/);
  assert.match(batches[0][1].sql,/portal_tenant_audit/);
+});
+
+test('missing tenant rejects status change without audit',async()=>{
+ const {db,batches}=mockDb(false);
+ const result=await changeTenantStatus({TENANTS_DB:db},'OWNER','empresa-ausente',{active:true});
+ assert.equal(result.ok,false);
+ assert.equal(batches.length,0);
+});
+test('missing tenant rejects module change without audit',async()=>{
+ const {db,batches}=mockDb(false);
+ const result=await changeTenantModule({TENANTS_DB:db},'OWNER','empresa-ausente',{module:'bi',enabled:true});
+ assert.equal(result.ok,false);
+ assert.equal(batches.length,0);
 });

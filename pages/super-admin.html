@@ -28,20 +28,22 @@
 const API_BASE = 'https://api.portalfrete.net.br';
 const MODULES=[['piso','Piso ANTT'],['fretes','Fretes'],['fretes2','Fretes MT'],['bi','BI'],['divulgacao','Divulgação'],['controle','Controle de Embarque'],['share','Share Clientes'],['ordem','Ordem de Carregamento'],['cadastros','Cadastros'],['estadias','Estadias'],['custo-frota','Custo de Frota'],['administrativo','Administrativo'],['monitoramento','Monitoramento']];
 const $=id=>document.getElementById(id);
-let companies=[],selected=null,users=[],usersRequest=0;
+let companies=[],selected=null,users=[],usersRequest=0,writeReady=false,mfaToken="",mfaActive=false;
+const canEdit=()=>Boolean(writeReady&&mfaActive&&selected&&selected.id!=="nova-frota");
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
- const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',headers:{'Accept':'application/json',...(options.headers||{})},...options});
- if(!response.ok)throw new Error(response.status===403?'Acesso negado. Apenas o Super Admin pode acessar esta área.':response.status===401?'Faça login para acessar esta área.':response.status===503?'Cadastro de usuários ainda não disponível neste ambiente.':'Serviço administrativo indisponível (HTTP '+response.status+).');
- return response.json();
+ const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',...options,headers:{'Accept':'application/json',...(options.headers||{})}});
+ const result=await response.json().catch(()=>null);
+ if(!response.ok)throw new Error(result?.error||'Falha na solicitação (HTTP '+response.status+').');
+ return result;
 }
 function renderModules(){
  const root=$('moduleGrid');root.replaceChildren();
  for(const [id,label] of MODULES){
  const tile=document.createElement('div');tile.className='tile';
  const wrapper=document.createElement('label');const check=document.createElement('input');check.type='checkbox';
- check.checked=Boolean(selected?.modules?.includes(id));check.disabled=true;
- const text=document.createElement('span');text.textContent=label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
+ check.checked=Boolean(selected?.modules?.includes(id));check.disabled=!canEdit();
+ check.dataset.module=id;const text=document.createElement('span');text.textContent=label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
  }
 }
 function renderUsers(){
@@ -85,8 +87,67 @@ function renderCompanies(){
 function render(){
  renderCompanies();$('companyName').textContent=selected?.name||'Selecione uma transportadora';
  $('companyStatus').textContent=selected?(selected.active?'Ativa':'Inativa'):'Sem seleção';
+ $('newCompany').disabled=!(writeReady&&mfaActive);
+ $('renameCompany').disabled=!canEdit();
+ $('toggleCompany').disabled=!canEdit();
+ $('saveModules').disabled=!canEdit();
  renderModules();renderUsers();
 }
+async function writeRequest(path,method,data){
+ if(!mfaToken||!mfaActive)throw new Error('Valide primeiro a identidade com MFA.');
+ return request(path,{method,headers:{'Authorization':'Bearer '+mfaToken,'Content-Type':'application/json'},body:JSON.stringify(data)});
+}
+async function refreshCompanies(preferred){
+ const result=await request('/v1/super-admin/transportadoras');
+ companies=Array.isArray(result.transportadoras)?result.transportadoras:[];
+ selected=companies.find(company=>company.id===(preferred||selected?.id))||companies[0]||null;
+ render();loadUsers();
+}
+function writeError(error){notice(error.message||'Falha ao gravar alteração.');}
+$('verifyIdentity').onclick=async()=>{
+ const candidate=$('mfaProof').value.trim();
+ if(!candidate){notice('Informe o token emitido pelo provedor de identidade.');return;}
+ $('verifyIdentity').disabled=true;
+ try{
+  const proof=await request('/v1/super-admin/authorize',{method:'POST',headers:{Authorization:'Bearer '+candidate},body:'{}'});
+  if(!proof?.elevated||!proof?.tenantWrite)throw new Error('Escrita administrativa não configurada neste ambiente.');
+  mfaToken=candidate;mfaActive=true;$('mfaProof').value='';$('forgetIdentity').disabled=false;
+  notice('MFA confirmada no servidor. Alterações em novas transportadoras habilitadas. A Nova Frota legada permanece protegida.');
+ }catch(error){mfaToken='';mfaActive=false;writeError(error);}
+ finally{$('verifyIdentity').disabled=false;render();}
+};
+$('forgetIdentity').onclick=()=>{
+ mfaToken='';mfaActive=false;$('mfaProof').value='';$('forgetIdentity').disabled=true;
+ notice('Autorização de edição encerrada nesta aba.');render();
+};
+$('newCompany').onclick=async()=>{
+ const name=prompt('Nome da nova transportadora:');if(name===null)return;
+ const suggested=name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ const id=prompt('Identificador único (letras minúsculas, números e hífen):',suggested);
+ if(id===null)return;
+ try{const result=await writeRequest('/v1/super-admin/transportadoras','POST',{id:id.trim(),name:name.trim()});await refreshCompanies(result.transportadora.id);notice('Transportadora criada como inativa. Configure seus módulos e usuários antes de ativá-la.');}
+ catch(error){writeError(error);}
+};
+$('renameCompany').onclick=async()=>{
+ if(!canEdit())return;
+ const name=prompt('Novo nome da transportadora:',selected.name);if(name===null)return;
+ try{const id=selected.id;await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id),'PATCH',{name:name.trim()});await refreshCompanies(id);notice('Nome atualizado e registrado na auditoria.');}
+ catch(error){writeError(error);}
+};
+$('toggleCompany').onclick=async()=>{
+ if(!canEdit())return;
+ const id=selected.id,active=!selected.active;
+ if(!confirm((active?'Ativar':'Desativar')+' a transportadora '+selected.name+'?'))return;
+ try{await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id),'PATCH',{status:active?'active':'inactive'});await refreshCompanies(id);notice('Situação atualizada e registrada na auditoria.');}
+ catch(error){writeError(error);}
+};
+$('saveModules').onclick=async()=>{
+ if(!canEdit())return;
+ const id=selected.id;
+ const modules=[...$('moduleGrid').querySelectorAll('input[type=checkbox]')].filter(input=>input.checked).map((input,index)=>input.dataset.module);
+ try{await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/modules','PUT',{modules});await refreshCompanies(id);notice('Módulos atualizados e registrados na auditoria.');}
+ catch(error){writeError(error);}
+};
 $('userSearch').addEventListener('input',renderUsers);
 $('refreshUsers').addEventListener('click',loadUsers);
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
@@ -100,9 +161,10 @@ $('back').onclick=()=>location.assign('home.html');
  const auth=await request('/v1/super-admin/me');
  if(auth?.superAdmin!==true)throw new Error('Sua sessão não possui autorização de Super Admin.');
  const capabilities=auth.capabilities||{};
+ writeReady=Boolean(capabilities.tenantWrite);$('adminAuth').hidden=!writeReady;
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result?.transportadoras)?result.transportadoras:[];
- $('app').hidden=false;notice('Acesso autorizado | Banco de transportadoras: '+(capabilities.tenantCatalog?'configurado':'pendente')+' | Usuários legados: '+(capabilities.legacyUserRead?'leitura habilitada':'leitura desativada')+' | Edição: bloqueada.');
+ $('app').hidden=false;notice('Acesso autorizado | Banco de transportadoras: '+(capabilities.tenantCatalog?'configurado':'pendente')+' | Usuários legados: '+(capabilities.legacyUserRead?'leitura habilitada':'leitura desativada')+' | Edição: '+(writeReady?'requer validação MFA':'não configurada')+'.');
  if(companies.length){selected=companies[0];render();loadUsers();}else{render();}
  }catch(error){$('app').hidden=true;notice(error.message||'Não foi possível verificar sua autorização.');}
 })();

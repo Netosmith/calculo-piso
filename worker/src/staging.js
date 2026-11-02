@@ -85,7 +85,14 @@ export default {
           body.capabilities.tenantWrite=Boolean(ready&&tenantWrite);
           body.capabilities.membershipWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled");
           body.capabilities.brandWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.TENANT_BRANDS);
-          body.capabilities.credentialWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_CREDENTIAL_WRITES==="enabled");
+          let credentialTableReady=false;
+          if(ready && env.SUPER_ADMIN_CREDENTIAL_WRITES==="enabled"){
+            try{
+              await env.TENANTS_DB.prepare("SELECT tenant_id FROM portal_tenant_credentials LIMIT 1").first();
+              credentialTableReady=true;
+            }catch{}
+          }
+          body.capabilities.credentialWrite=Boolean(ready&&tenantWrite&&credentialTableReady);
           return withHeaders(success(body),cors);
         }
         if(request.method!=="GET"){

@@ -32,7 +32,7 @@ let companies=[],selected=null,users=[],usersRequest=0;
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
  const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',headers:{'Accept':'application/json',...(options.headers||{})},...options});
- if(!response.ok)throw new Error(response.status===403?'Acesso negado. Apenas o Super Admin pode acessar esta área.':response.status===401?'Faça login para acessar esta área.':'Serviço administrativo indisponível (HTTP '+response.status+').');
+ if(!response.ok)throw new Error(response.status===403?'Acesso negado. Apenas o Super Admin pode acessar esta área.':response.status===401?'Faça login para acessar esta área.':response.status===503?'Cadastro de usuários ainda não disponível neste ambiente.':'Serviço administrativo indisponível (HTTP '+response.status+).');
  return response.json();
 }
 function renderModules(){
@@ -102,7 +102,7 @@ $('back').onclick=()=>location.assign('home.html');
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result?.transportadoras)?result.transportadoras:[];
  $('app').hidden=false;notice('Acesso global autorizado. Operações de escrita permanecem bloqueadas até a integração segura.');
- render();
+ if(companies.length){selected=companies[0];render();loadUsers();}else{render();}
  }catch(error){$('app').hidden=true;notice(error.message||'Não foi possível verificar sua autorização.');}
 })();
 </script>

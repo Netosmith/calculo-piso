@@ -85,7 +85,8 @@ export async function superAdminController(request, env) {
         const payload = result.data;
         const rows = Array.isArray(payload) ? payload :
           Array.isArray(payload?.data) ? payload.data :
-          Array.isArray(payload?.rows) ? payload.rows : null;
+          Array.isArray(payload?.rows) ? payload.rows :
+          Array.isArray(payload?.data?.rows) ? payload.data.rows : null;
         if (!rows) return errorResponse("Formato do cadastro legado nao reconhecido.",502);
         return success({
           tenantId,usuarios:projectLegacyUsers(rows),origem:"apps-script-legado",

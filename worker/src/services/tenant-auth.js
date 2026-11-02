@@ -62,6 +62,9 @@ export async function passwordMatches(password,record){
   return record?equalBytes(hash,b64ToBytes(record.password_hash)):false;
  }catch{return false;}
 }
+export function hasTenantSessionCookie(req){
+  return (req.headers.get("Cookie")||"").split(";").some(part=>part.trim().startsWith(COOKIE+"="));
+}
 function sessionToken(req){
  const all=req.headers.get("Cookie")||"";
  for(const item of all.split(";")){

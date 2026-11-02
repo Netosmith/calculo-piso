@@ -10,6 +10,8 @@ import {
   sessionTtlSeconds
 } from "../services/session.js";
 import { readJson } from "../utils/validation.js";
+import {hasTenantSessionCookie,clearTenantSessionCookie,revokeTenantSession} from "../services/tenant-auth.js";
+import {tenantLoginController,tenantSessionController,tenantLogoutController,tenantPortalEnabled} from "./tenant-unified.js";
 import { errorResponse, success } from "../utils/response.js";
 
 function normalizeUpper(value) {
@@ -41,6 +43,13 @@ export async function loginController(request, env) {
     return errorResponse(error.message, 400);
   }
 
+  const requestedTenant=typeof body.transportadoraId==="string"?body.transportadoraId.trim():"nova-frota";
+  if(requestedTenant!=="nova-frota"){
+    if(typeof body.usuario!=="string" || typeof body.senha!=="string")
+      return errorResponse("Empresa, usuario ou senha invalidos.",401);
+    return tenantLoginController(request,env,{...body,transportadoraId:requestedTenant});
+  }
+  // Only the pre-existing Nova Frota code path authenticates with Apps Script.
   const usuario = normalizeUpper(body.usuario);
   const senha = String(body.senha || "").trim();
 
@@ -112,7 +121,7 @@ export async function loginController(request, env) {
   }
 
   try {
-    return success(
+    const response=success(
       {
         session: publicSession(session),
         requiresStateSelection: estados.length > 1
@@ -120,6 +129,8 @@ export async function loginController(request, env) {
       200,
       { "Set-Cookie": sessionCookie(sessionToken) }
     );
+    response.headers.append("Set-Cookie",clearTenantSessionCookie());
+    return response;
   } catch (error) {
     console.error("[LOGIN] Falha ao montar resposta", {
       message: String(error?.message || error)
@@ -131,6 +142,9 @@ export async function loginController(request, env) {
 }
 
 export async function sessionController(request, env) {
+  // A tenant session cookie takes precedence over a stale legacy session:
+  // never fall back to Nova Frota if tenant identity fails validation.
+  if(hasTenantSessionCookie(request))return tenantSessionController(request,env);
   const sessionId = readSessionId(request);
   const session = await getSession(env, sessionId);
 
@@ -142,6 +156,7 @@ export async function sessionController(request, env) {
 }
 
 export async function selectStateController(request, env) {
+  if(hasTenantSessionCookie(request))return errorResponse("Selecao de estado nao se aplica a esta transportadora.",403);
   const sessionId = readSessionId(request);
   const session = await getSession(env, sessionId);
 
@@ -182,12 +197,11 @@ export async function selectStateController(request, env) {
 }
 
 export async function logoutController(request, env) {
+  if(hasTenantSessionCookie(request))return tenantLogoutController(request,env);
   const sessionId = readSessionId(request);
   await deleteSession(env, sessionId);
 
-  return success(
-    { loggedOut: true },
-    200,
-    { "Set-Cookie": clearSessionCookie() }
-  );
+  const response=success({loggedOut:true},200,{"Set-Cookie":clearSessionCookie()});
+  response.headers.append("Set-Cookie",clearTenantSessionCookie());
+  return response;
 }

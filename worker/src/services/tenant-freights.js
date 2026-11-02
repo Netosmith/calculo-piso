@@ -26,7 +26,7 @@ function formatFreight(row){
 }
 
 export async function tenantFreights(request,db,principal,modules){
- const pathname=new URL(request.url).pathname;
+ const pathname=new URL(request.url).pathname.replace(/^\/v1\/tenant/,'/api');
  if(!READER_ROLES.has(principal.role))return errorResponse("Perfil sem acesso ao modulo de fretes.",403);
  if(!allowedModule(modules,"fretes")&&!allowedModule(modules,"fretes2"))
   return errorResponse("Modulo de fretes indisponivel para sua transportadora.",403);

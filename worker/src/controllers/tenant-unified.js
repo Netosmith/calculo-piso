@@ -1,0 +1,143 @@
+// Unified Portal Frete tenant routes, hosted by the EXISTING portalfrete-api Worker.
+// Nova Frota legacy cookies and Apps Script resources are never consulted here.
+import {ALLOWED_ORIGINS} from "../config.js";
+import {errorResponse,success} from "../utils/response.js";
+import {validTenantId,normalizeTenantUser,authenticateTenant,hasTenantSessionCookie,
+  tenantSession,tenantSessionCookie,clearTenantSessionCookie,revokeTenantSession}
+ from "../services/tenant-auth.js";
+import {clearSessionCookie} from "../services/session.js";
+import {tenantFreights,tenantBi} from "../services/tenant-freights.js";
+import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
+
+export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
+
+function tenantJsonError(message,status){return errorResponse(message,status);}
+function sameSiteWrite(request){
+ const origin=request.headers.get("Origin")||"";
+ const fetchSite=request.headers.get("Sec-Fetch-Site");
+ return ALLOWED_ORIGINS.has(origin) && (!fetchSite || ["same-site","same-origin"].includes(fetchSite));
+}
+async function enabledModules(db,tenantId){
+ const result=await db.prepare(
+  "SELECT module_key FROM portal_tenant_modules WHERE tenant_id=? AND enabled=1 ORDER BY module_key"
+ ).bind(tenantId).all();
+ return (result?.results||[]).map(row=>row.module_key);
+}
+export async function publicTenantsController(request,env){
+ if(request.method!=="GET")return tenantJsonError("Metodo nao permitido.",405);
+ const tenants=[{id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome}];
+ if(!tenantPortalEnabled(env))return success({transportadoras:tenants});
+ try{
+  const rows=await env.TENANTS_DB.prepare("SELECT id,name FROM portal_tenants WHERE status='active' ORDER BY name LIMIT 100").all();
+  for(const row of rows.results||[]){
+   if(validTenantId(row.id))tenants.push({id:row.id,name:row.name});
+  }
+  return success({transportadoras:tenants});
+ }catch{
+  // A falha da area multiempresa nao interrompe o login da Nova Frota.
+  return success({transportadoras:tenants});
+ }
+}
+export async function tenantLoginController(request,env,body){
+ if(!tenantPortalEnabled(env))return tenantJsonError("Acesso de novas transportadoras ainda indisponivel.",503);
+ const tenantId=body.transportadoraId;
+ const usuario=normalizeTenantUser(body.usuario);
+ const senha=body.senha;
+ if(!validTenantId(tenantId)||!usuario||typeof senha!=="string" ||
+    senha.length>128 || !senha.length)return tenantJsonError("Empresa, usuario ou senha invalidos.",401);
+ try{
+  const result=await authenticateTenant(env.TENANTS_DB,tenantId,usuario,senha);
+  if(!result.ok){
+   const response=tenantJsonError(result.status===429?"Muitas tentativas. Aguarde antes de tentar novamente.":"Empresa, usuario ou senha invalidos.",result.status);
+   if(result.status===429)response.headers.set("Retry-After","900");
+   return response;
+  }
+  const tenant=await env.TENANTS_DB.prepare("SELECT name FROM portal_tenants WHERE id=?").bind(tenantId).first();
+  const member=await env.TENANTS_DB.prepare("SELECT role FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")
+    .bind(tenantId,usuario).first();
+  const modules=await enabledModules(env.TENANTS_DB,tenantId);
+  const session=tenantPublicSession({
+   tenant_id:tenantId,tenant_name:tenant?.name||tenantId,user_id:usuario,role:member?.role||"OPERACIONAL"
+  },modules);
+  const response=success({session,requiresStateSelection:false});
+  response.headers.append("Set-Cookie",tenantSessionCookie(result.session.token));
+  response.headers.append("Set-Cookie",clearSessionCookie());
+  return response;
+ }catch(error){
+  console.error("[TENANT LOGIN] Database unavailable",{type:error?.name||"Error"});
+  return tenantJsonError("Acesso de transportadoras temporariamente indisponivel.",503);
+ }
+}
+export function tenantPublicSession(principal,modules=[]){
+ return {
+  usuario:principal.user_id,
+  nome:principal.user_id,
+  perfil:principal.role,
+  estados:["GERAL"],
+  estado:"GERAL",
+  transportadoraId:principal.tenant_id,
+  transportadoraNome:principal.tenant_name,
+  modules,
+  tenantMode:true
+ };
+}
+export async function currentTenantPrincipal(request,env){
+ if(!tenantPortalEnabled(env))return null;
+ return tenantSession(env.TENANTS_DB,request);
+}
+export async function tenantSessionController(request,env){
+ const principal=await currentTenantPrincipal(request,env);
+ if(!principal)return tenantJsonError("Sessao da transportadora invalida ou expirada.",401);
+ return success({session:tenantPublicSession(principal,await enabledModules(env.TENANTS_DB,principal.tenant_id))});
+}
+export async function tenantLogoutController(request,env){
+ if(env.TENANTS_DB){
+  try{await revokeTenantSession(env.TENANTS_DB,request);}
+  catch(error){console.warn("[TENANT LOGOUT] Revocation unavailable",{type:error?.name||"Error"});}
+ }
+ const response=success({loggedOut:true});
+ response.headers.append("Set-Cookie",clearTenantSessionCookie());
+ response.headers.append("Set-Cookie",clearSessionCookie());
+ return response;
+}
+export async function tenantApiController(request,env){
+ if(!tenantPortalEnabled(env))return tenantJsonError("Portal de transportadoras indisponivel.",503);
+ const path=new URL(request.url).pathname;
+ if(request.method!=="GET"){
+  if(!["POST","PATCH"].includes(request.method))return tenantJsonError("Metodo nao permitido.",405);
+  if(!sameSiteWrite(request))return tenantJsonError("Origem nao autorizada.",403);
+  const type=(request.headers.get("Content-Type")||"").split(";")[0].trim().toLowerCase();
+  if(type!=="application/json")return tenantJsonError("Formato de dados nao permitido.",415);
+ }
+ try{
+  const principal=await tenantSession(env.TENANTS_DB,request);
+  if(!principal)return tenantJsonError("Sessao invalida ou transportadora inativa.",401);
+  const modules=await enabledModules(env.TENANTS_DB,principal.tenant_id);
+  if(path==="/v1/tenant/me"&&request.method==="GET")
+   return success({session:tenantPublicSession(principal,modules)});
+  if(path==="/v1/tenant/logo"&&request.method==="GET"){
+   if(!env.TENANT_BRANDS)return tenantJsonError("Armazenamento de logos indisponivel.",503);
+   const row=await env.TENANTS_DB.prepare("SELECT logo_key FROM portal_tenants WHERE id=?")
+    .bind(principal.tenant_id).first();
+   const key=row?.logo_key;
+   const mime=typeof key==="string"?(key.endsWith(".png")?"image/png":key.endsWith(".jpg")?"image/jpeg":
+     key.endsWith(".webp")?"image/webp":null):null;
+   if(!mime||!key.startsWith("tenant/"+principal.tenant_id+"/logo/"))
+    return tenantJsonError("Logo nao cadastrada.",404);
+   const object=await env.TENANT_BRANDS.get(key);
+   if(!object)return tenantJsonError("Logo nao encontrada.",404);
+   return new Response(object.body,{headers:{
+    "Content-Type":mime,"Cache-Control":"private, no-store",
+    "X-Content-Type-Options":"nosniff","Cross-Origin-Resource-Policy":"same-site"
+   }});
+  }
+  if(path==="/v1/tenant/bi"&&request.method==="GET")
+   return tenantBi(env.TENANTS_DB,principal,modules);
+  if(path==="/v1/tenant/fretes"||path.startsWith("/v1/tenant/fretes/"))
+   return tenantFreights(request,env.TENANTS_DB,principal,modules);
+  return tenantJsonError("Recurso indisponivel.",404);
+ }catch(error){
+  console.error("[TENANT PORTAL] Request failure",{type:error?.name||"Error"});
+  return tenantJsonError("Operacao temporariamente indisponivel.",503);
+ }
+}

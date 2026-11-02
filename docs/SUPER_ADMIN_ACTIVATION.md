@@ -53,6 +53,24 @@ Foi preparado o workflow `.github/workflows/super-admin-staging-deploy.yml` para
 
 **Importante:** o cookie de login do dominio `api.portalfrete.net.br` usa `__Host-` e `SameSite=Strict` e nao sera enviado automaticamente ao Worker `workers.dev`. A integracao de identidade/dominio de homologacao ainda e necessaria. NAO copiar o `PORTAL_KEY` de producao para contornar isso. As rotas administrativas continuam fechadas ate haver sessao de proprietario e MFA validos.
 
+## 2.3. Login independente com Cloudflare Access (homologacao)
+
+CONFIRMADO: `GET /health` respondeu `{"ok":true,"environment":"staging","database":"ready","storage":"bound"}` no Worker separado. Esse teste valida D1/R2, nao login.
+
+A entrada `worker/src/staging.js` agora serve `/super-admin` (painel real, mesma origem da API) somente depois que Cloudflare Access autentica o visitante. Usa `ctx.access` do runtime, nao confia em cabecalhos de email ou cookies da Nova Frota. O proprio Worker confere email exato e AUD da aplicacao Access.
+
+**Configuracao no painel Cloudflare, exclusivamente no portalfrete-super-admin-staging:**
+
+1. Abrir a aba Access do Worker, escolher proteger **este Worker** e selecionar **All traffic / Todo o trafego**, incluindo `workers.dev` principal, e nao apenas previews.
+2. Em Authentication policy, permitir apenas a conta autorizada (ou regra de email unico no Zero Trust). Evitar a regra ampla Everyone, dominio inteiro ou bypass.
+3. Em Zero Trust > Access > Applications, abrir a aplicacao do Worker e identificar o **Application Audience (AUD) Tag**, sem divulgar tokens JWT.
+4. Em Settings > Variables and Secrets do Worker isolado, criar dois Secrets: `SUPER_ADMIN_ACCESS_EMAIL` (email exato da conta que faz login no Access) e `SUPER_ADMIN_ACCESS_AUD` (AUD tag da aplicacao Access). Nao inserir estes segredos no repo nem reutilizar variaveis da producao.
+5. Abrir `https://portalfrete-super-admin-staging.luziano-transportes.workers.dev/super-admin`, concluir login Access. O painel deve abrir somente para o email e AUD autorizados. Visitantes nao autorizados recebem 403.
+
+**Nao configurar `PORTAL_KEY`, `APPS_SCRIPT_URL` nem KV de sessao de producao neste Worker.** A identidade do proprietario no staging e um principal interno ACCESS_OWNER criado SOMENTE apos `ctx.access` validado. A Nova Frota nao e modificada. A leitura e autenticada com Access; operacoes de escrita ainda exigem, separadamente, OIDC RS256 com MFA valida e flags opt-in. Cloudflare Access sozinho nao concede permissoes de escrita.
+
+Se a politica Access for removida, `ctx.access` sera ausente e a API/HTML retornara 403 mesmo que alguem envie manualmente cabecalhos de email. O health pode permanecer publico se o Access externo nao estiver habilitado, mas nao revela dados de tenant.
+
 ## 3. Configurar proprietario e provedor OIDC com MFA
 Em homologacao, configurar segredos do Worker por ambiente:
 

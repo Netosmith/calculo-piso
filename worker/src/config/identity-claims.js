@@ -11,6 +11,11 @@ export function inspectIdentityClaims(claims, options = {}) {
   const aud=Array.isArray(claims.aud)?claims.aud:[claims.aud];
   if (!aud.includes(audience)) return {ok:false,reason:"audience-mismatch"};
   const now=Math.floor(Date.now()/1000);
+  const maxLifetime=Number.isSafeInteger(options.maxLifetimeSeconds) ? options.maxLifetimeSeconds : 300;
+  if(maxLifetime<30 || maxLifetime>900) return {ok:false,reason:"lifetime-config-invalid"};
+  if(!Number.isSafeInteger(claims.iat) || claims.iat>now+30 || claims.iat<now-maxLifetime ||
+     !Number.isSafeInteger(claims.exp) || claims.exp-claims.iat>maxLifetime)
+    return {ok:false,reason:"token-lifetime-invalid"};
   if (!Number.isSafeInteger(claims.exp) || claims.exp<=now ||
       (claims.nbf!==undefined && (!Number.isSafeInteger(claims.nbf)||claims.nbf>now)))
     return {ok:false,reason:"token-time-invalid"};

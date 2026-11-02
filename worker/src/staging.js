@@ -2,7 +2,8 @@
 // fleet, Apps Script login and other production routes.
 import {superAdminController} from "./controllers/super-admin.js";
 import {verifiedStagingOwner} from "./services/staging-access.js";
-import {stagingPage} from "./staging-page.js";
+import {stagingPanelHtml} from "./staging-panel.js";
+import {writeTenantCatalog} from "./services/super-admin-tenant-write.js";
 import {errorResponse,success} from "./utils/response.js";
 
 function withHeaders(response,origin=null) {
@@ -62,9 +63,7 @@ export default {
       if(!owner)return withHeaders(errorResponse("Cloudflare Access do proprietario obrigatorio.",403),cors);
       if(path==="/super-admin" || path==="/"){
         if(request.method!=="GET")return withHeaders(errorResponse("Metodo nao permitido.",405),cors);
-        const html=stagingPage
-          .replace("const API_BASE = 'https://api.portalfrete.net.br';","const API_BASE = '';")
-          .replace("location.assign('home.html')","location.assign('https://portalfrete.net.br/pages/home.html')");
+        const html=stagingPanelHtml();
         const response=new Response(html,{headers:{
           "Content-Type":"text/html; charset=utf-8",
           "Content-Security-Policy":"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'",
@@ -73,11 +72,37 @@ export default {
         }});
         return withHeaders(response,cors);
       }
-      // Staging reads do not use the Nova Frota cookie or Apps Script secret.
-      // Writes retain the separate signed OIDC/MFA gate inside the controller.
+      // Only this dedicated staging entrypoint may accept Access-verified writes.
+      // Production controllers still enforce their independent OIDC+MFA gate.
       const adminEnv={...env,SUPER_ADMIN_USER:"ACCESS_OWNER",SUPER_ADMIN_LEGACY_USERS_READ:"disabled"};
-      try{return withHeaders(await superAdminController(request,adminEnv,owner),cors);}
-      catch{return withHeaders(errorResponse("Falha na API administrativa de homologacao.",500),cors);}
+      const stageWrite=env.SUPER_ADMIN_STAGING_WRITES==="enabled";
+      const tenantWrite=stageWrite && env.SUPER_ADMIN_TENANT_WRITES==="enabled" && Boolean(env.TENANTS_DB);
+      try{
+        if(path==="/v1/super-admin/me" && request.method==="GET"){
+          const response=await superAdminController(request,adminEnv,owner);
+          if(!response.ok)return withHeaders(response,cors);
+          const body=await response.json(),ready=Boolean(body.capabilities?.tenantCatalog);
+          body.capabilities.tenantWrite=Boolean(ready&&tenantWrite);
+          body.capabilities.membershipWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled");
+          body.capabilities.brandWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.TENANT_BRANDS);
+          return withHeaders(success(body),cors);
+        }
+        if(request.method!=="GET"){
+          if(!stageWrite)return withHeaders(errorResponse("Edicao indisponivel neste ambiente.",405),cors);
+          if(!["POST","PATCH","PUT"].includes(request.method))
+            return withHeaders(errorResponse("Metodo nao permitido.",405),cors);
+          // Cookies alone must never permit cross-site requests or HTML forms.
+          if(origin!==url.origin || (request.headers.get("Sec-Fetch-Site") && request.headers.get("Sec-Fetch-Site")!=="same-origin"))
+            return withHeaders(errorResponse("Origem da alteracao nao autorizada.",403),cors);
+          const mime=(request.headers.get("Content-Type")||"").split(";")[0].trim().toLowerCase();
+          const logo=path.endsWith("/logo") && request.method==="PUT";
+          if((!logo && mime!=="application/json") ||
+             (logo && !["image/png","image/jpeg","image/webp"].includes(mime)))
+            return withHeaders(errorResponse("Tipo de conteudo nao permitido.",415),cors);
+          return withHeaders(await writeTenantCatalog(request,adminEnv,"cloudflare-access-owner"),cors);
+        }
+        return withHeaders(await superAdminController(request,adminEnv,owner),cors);
+      }catch{return withHeaders(errorResponse("Falha na API administrativa de homologacao.",500),cors);}
     }
     return withHeaders(errorResponse("Rota indisponivel no ambiente de homologacao.",404),cors);
   }

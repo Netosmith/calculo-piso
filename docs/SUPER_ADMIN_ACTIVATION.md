@@ -1,3 +1,16 @@
+## Simplificacao em homologacao: Cloudflare Access sem segundo autenticador
+
+O proprietario autorizou o funcionamento imediato do Super Admin no Worker de homologacao.
+O entrypoint worker/src/staging.js aceita escrita SOMENTE depois de confirmar via
+Cloudflare Access o email exato e AUD da aplicacao; exige Origin do proprio Worker,
+rejeita Content-Types de formulario e registra auditoria no D1 isolado.
+A UI de homologacao nao exige colar token OIDC, e as flags de escrita estao
+restritas a worker/wrangler.super-admin-staging.jsonc.
+O controller usado pela API de producao continua exigindo token OIDC e MFA para escrita.
+Este comportamento simplificado NAO deve ser copiado para o Worker portalfrete-api.
+Nova Frota permanece imutavel pelas rotas deste catalogo.
+Vinculos D1 ainda nao representam contas com senha ou acesso operacional.
+
 # Ativacao segura do Super Admin - checklist operacional
 
 **Estado:** Backend de gestao de transportadoras e modulos implementado e testado na branch feature/super-admin-panel-foundation. Nao publicado em producao. O cadastro de usuarios legados permanece somente leitura. O painel agora suporta vinculos D1 de novas transportadoras (sem criar login ou senha) e upload de logo por empresa em R2 isolado, ambos desativados por padrao. A pagina de preview publica utiliza dados ficticios.

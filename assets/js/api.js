@@ -125,12 +125,24 @@ function normalizeGatewayEnvelope(result) {
 }
 
 window.PortalAPI = {
-  login(usuario, senha) {
+  login(usuario, senha, transportadoraId = "nova-frota") {
     return portalApiRequest("/v1/login", {
       method: "POST",
-      body: { usuario, senha },
+      body: { usuario, senha, transportadoraId },
       retries: 1
     });
+  },
+  transportadorasPublicas(){
+    return portalApiRequest("/v1/transportadoras/public");
+  },
+  tenantRequest(path,options={}){
+    if(typeof path!=="string" || !/^\/(?:me|bi|fretes(?:\/[a-f0-9-]{36})?)$/.test(path)){
+      return Promise.reject(new Error("Rota da transportadora inválida."));
+    }
+    return portalApiRequest("/v1/tenant"+path,options);
+  },
+  tenantLogoUrl(){
+    return PORTAL_API_BASE+"/v1/tenant/logo";
   },
   session() {
     return portalApiRequest("/v1/session");

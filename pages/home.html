@@ -804,6 +804,7 @@
   <main class="nf-dashboard">
     <img class="nf-bg-image" src="../assets/img/FUNDO.jpg" alt="" aria-hidden="true" />
     <div class="nf-container">
+      <div id="tenantWorkspace" hidden></div>
       <div class="nf-home-layout">
         <div class="nf-home-main">
       <section class="nf-welcome" aria-labelledby="homeWelcome">
@@ -972,7 +973,7 @@
           <p>Abra e acompanhe solicitações de suporte do Portal.</p>
           <span class="nf-tool-arrow">→</span>
         </a>
-        <a class="nf-tool purple" id="superAdminHomeCard" href="./super-admin.html" hidden style="display:none" aria-label="Painel Super Admin">
+        <a class="nf-tool purple" id="superAdminHomeCard" href="https://portalfrete-super-admin-staging.luziano-transportes.workers.dev/super-admin" hidden style="display:none" aria-label="Painel Super Admin">
           <span class="nf-tool-icon">🛡️</span><h2>Super Admin</h2><p>Transportadoras, módulos e visão global.</p><span class="nf-tool-arrow">→</span>
         </a>
         <a class="nf-tool green" data-feature="cadastros" href="./cadastros.html">
@@ -1049,8 +1050,9 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=20"></script>
+  <script src="../assets/js/auth.js?v=21"></script>
   <script src="../assets/js/home-solicitacoes.js?v=2"></script>
+  <script src="../assets/js/tenant-workspace.js?v=1" defer></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>
   <script src="../assets/js/home-map.js?v=3"></script>
   <script>
@@ -1263,6 +1265,7 @@
           throw new Error("Sessão inválida ou expirada.");
         }
 
+        if(session?.tenantMode===true)return null;
         if (aplicarOfuscacaoPisoHome(session)) {
           return null;
         }
@@ -1362,6 +1365,7 @@
           ? await window.portalAuthReady
           : null;
 
+        if(session?.tenantMode===true)return;
         if (aplicarOfuscacaoPisoHome(session)) {
           return;
         }
@@ -1421,7 +1425,7 @@
     async function carregarResumoChamadosHome(){
       try{
         const session = window.portalAuthReady ? await window.portalAuthReady : null;
-        if(!session || !window.PortalAPI) return;
+        if(!session || session.tenantMode===true || !window.PortalAPI) return;
 
         const resultado = await window.PortalAPI.call("chamados","read",{resource:"resumo"});
         const resumo = resultado?.data || {};
@@ -1447,10 +1451,13 @@
     if(!card)return;
     try {
       if(window.portalAuthReady)await window.portalAuthReady;
-      const response=await fetch("https://api.portalfrete.net.br/v1/super-admin/me",{credentials:"include",cache:"no-store"});
-      if(!response.ok)return;
-      const result=await response.json();
-      if(result?.superAdmin===true){card.hidden=false;card.style.removeProperty("display");}
+      const session=window.portalAuthReady?await window.portalAuthReady:null;
+      if(session?.tenantMode===true)return;
+      if(session?.perfil==="ADMINISTRADOR"){
+        // The destination is itself protected by the owner's Cloudflare Access policy.
+        card.hidden=false;
+        card.style.removeProperty("display");
+      }
     }catch(_){ /* Nunca exibir sem autorização do servidor. */ }
   })();
   </script>

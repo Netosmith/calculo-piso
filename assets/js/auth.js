@@ -141,6 +141,7 @@ function isAuthed(key){
 }
 
 function clearAuthCache(){
+  window.__PORTAL_TENANT_SESSION = null;
   [
     KEY_HOME,
     KEY_USER,
@@ -158,6 +159,8 @@ function logoutAll(){
 }
 
 function mirrorServerSession(session){
+  // This value comes ONLY from a verified API session, never localStorage.
+  window.__PORTAL_TENANT_SESSION = session?.tenantMode===true ? session : null;
   if(!session){
     clearAuthCache();
     return false;
@@ -281,6 +284,7 @@ function showPortalMaintenanceScreen(maintenance = {}){
 }
 
 async function applyPortalMaintenanceGate(session, apiInstance){
+  if(session?.tenantMode===true)return false;
   if(normalizeUpper(session?.perfil || getProfile()) === "ADMINISTRADOR"){
     hidePortalMaintenanceScreen();
     return false;
@@ -416,6 +420,12 @@ function canAccessFeature(featureKey){
   const currentPath = String(window.location.pathname || "").toLowerCase();
   if(feature === "fretes" && currentPath.endsWith("/fretes2.html")){
     feature = "fretes2";
+  }
+
+  const tenantSession=window.__PORTAL_TENANT_SESSION;
+  if(tenantSession){
+    // Unavailable legacy screens must not open for other transportadoras.
+    return feature==="home";
   }
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.

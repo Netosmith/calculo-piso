@@ -1,5 +1,6 @@
 import { callAppsScript } from "../services/appscript.js";
 import { writeTenantCatalog } from "../services/super-admin-tenant-write.js";
+import { readTenantLogo } from "../services/super-admin-brand.js";
 import { projectLegacyUsers } from "../services/legacy-user-projection.js";
 import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
 import { canManageTenants } from "../config/super-admin-identity.js";
@@ -47,12 +48,12 @@ export async function superAdminController(request, env) {
     if(!canManageTenants(trustedSession,env))
       return errorResponse("Sessao sem permissao de administracao global.",403);
     if(path==="/v1/super-admin/authorize" && request.method==="POST")
-      return success({elevated:true,tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled")});
+      return success({elevated:true,tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"),brandWrite:Boolean(env.TENANTS_DB&&env.TENANT_BRANDS&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_BRAND_WRITES==="enabled")});
     return writeTenantCatalog(request,env,verified.subject);
   }
   if (path === "/v1/super-admin/me") {
     const ready=await catalogReady(env);
-    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT),userWrite:false}});
+    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT),userWrite:false}});
   }
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
@@ -81,6 +82,11 @@ export async function superAdminController(request, env) {
       console.error("[SUPER ADMIN] Catálogo indisponível",String(error?.message || error));
       return errorResponse("Catálogo de transportadoras indisponível.",503);
     }
+  }
+  if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/logo")){
+    const parts=path.split("/");
+    if(parts.length!==6)return errorResponse("Rota invalida.",404);
+    return readTenantLogo(env,parts[4]);
   }
   if (path.startsWith("/v1/super-admin/transportadoras/") && path.endsWith("/auditoria")) {
     const parts=path.split("/");

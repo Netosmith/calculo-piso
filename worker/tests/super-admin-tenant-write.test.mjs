@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {writeTenantCatalog} from "../src/services/super-admin-tenant-write.js";
 import {superAdminController} from "../src/controllers/super-admin.js";
+import {readTenantLogo} from "../src/services/super-admin-brand.js";
 
 const base="https://api.portalfrete.net.br/v1/super-admin/transportadoras";
 function database(){
@@ -208,4 +209,71 @@ test("duplicate memberships and invalid mutations never modify the catalog",asyn
  }
  assert.equal((await call(db,"/tenant-a/usuarios/NONEXIST","PATCH",{ativo:false},opts)).status,404);
  assert.equal(count(db,"portal_tenant_audit"),2);
+});
+
+function memoryBucket(){
+ const objects=new Map();
+ return {
+  objects,
+  async put(key,bytes,options){objects.set(key,{bytes:new Uint8Array(bytes),mime:options?.httpMetadata?.contentType});},
+  async get(key){
+   const object=objects.get(key);
+   return object?{body:new Response(object.bytes).body,httpMetadata:{contentType:object.mime}}:null;
+  },
+  async delete(key){objects.delete(key);}
+ };
+}
+const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1]);
+function brandRequest(tenant,bytes,mime="image/png"){
+ return new Request(base+"/"+tenant+"/logo",{method:"PUT",headers:{"Content-Type":mime},body:bytes});
+}
+test("brand upload is independently disabled without R2 opt-in",async()=>{
+ const db=database(),bucket=memoryBucket();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ const r=await writeTenantCatalog(brandRequest("tenant-a",png),{
+  ...env(db),TENANT_BRANDS:bucket
+ },"owner");
+ assert.equal(r.status,405);
+ assert.equal(bucket.objects.size,0);
+});
+test("stores private tenant logos and audit without modifying another tenant",async()=>{
+ const db=database(),bucket=memoryBucket();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ await call(db,"","POST",{id:"tenant-b",name:"Tenant B"});
+ const config={...env(db),TENANT_BRANDS:bucket,SUPER_ADMIN_BRAND_WRITES:"enabled"};
+ const write=await writeTenantCatalog(brandRequest("tenant-a",png),config,"owner");
+ assert.equal(write.status,200);
+ const saved=db.sql.prepare("SELECT logo_key FROM portal_tenants WHERE id=?").get("tenant-a");
+ assert.match(saved.logo_key,/^tenant\/tenant-a\/logo\/[0-9a-f-]+\.png$/);
+ assert.equal(db.sql.prepare("SELECT logo_key FROM portal_tenants WHERE id='tenant-b'").get().logo_key,null);
+ assert.equal(bucket.objects.size,1);
+ const read=await readTenantLogo(config,"tenant-a");
+ assert.equal(read.status,200);
+ assert.equal(read.headers.get("Content-Type"),"image/png");
+ assert.equal(read.headers.get("Cache-Control"),"private, no-store");
+ assert.deepEqual(new Uint8Array(await read.arrayBuffer()),png);
+ assert.equal((await readTenantLogo(config,"tenant-b")).status,404);
+ assert.equal(db.sql.prepare("SELECT COUNT(*) AS n FROM portal_tenant_audit WHERE action='brand.logo.update'").get().n,1);
+});
+test("brand uploads reject mismatched MIME, unsafe legacy tenant and oversized data",async()=>{
+ const db=database(),bucket=memoryBucket();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ const config={...env(db),TENANT_BRANDS:bucket,SUPER_ADMIN_BRAND_WRITES:"enabled"};
+ assert.equal((await writeTenantCatalog(brandRequest("tenant-a",png,"image/jpeg"),config,"owner")).status,415);
+ assert.equal((await writeTenantCatalog(brandRequest("tenant-a",png,"image/svg+xml"),config,"owner")).status,415);
+ assert.equal((await writeTenantCatalog(brandRequest("nova-frota",png),config,"owner")).status,400);
+ assert.equal((await writeTenantCatalog(brandRequest("tenant-a",new Uint8Array(2097153)),config,"owner")).status,413);
+ assert.equal(bucket.objects.size,0);
+});
+test("brand replacement cleans up the previous private object",async()=>{
+ const db=database(),bucket=memoryBucket();
+ await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
+ const config={...env(db),TENANT_BRANDS:bucket,SUPER_ADMIN_BRAND_WRITES:"enabled"};
+ assert.equal((await writeTenantCatalog(brandRequest("tenant-a",png),config,"owner")).status,200);
+ const old=db.sql.prepare("SELECT logo_key FROM portal_tenants WHERE id='tenant-a'").get().logo_key;
+ assert.equal((await writeTenantCatalog(brandRequest("tenant-a",png),config,"owner")).status,200);
+ const newer=db.sql.prepare("SELECT logo_key FROM portal_tenants WHERE id='tenant-a'").get().logo_key;
+ assert.notEqual(old,newer);
+ assert.equal(bucket.objects.has(old),false);
+ assert.equal(bucket.objects.has(newer),true);
 });

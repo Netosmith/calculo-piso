@@ -98,3 +98,17 @@ test("rejects upstream records with unknown profile and never exposes sensitive 
     assert.equal(JSON.stringify(await response.json()).includes("do-not-leak"),false);
   } finally {globalThis.fetch=old;}
 });
+
+test("accepts nested data.rows response from Apps Script without exposing credentials", async () => {
+  const old=globalThis.fetch;
+  globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,data:{data:{rows:[{
+    Usuario:"ana",Nome:"Ana",Perfil:"PR",Estados:"PR",Ativo:"NÃO",Senha:"secret"
+  }]}}}));
+  try {
+    const response=await superAdminController(req(),envFor(owner));
+    assert.equal(response.status,200);
+    const body=await response.json();
+    assert.deepEqual(body.usuarios,[{usuario:"ANA",nome:"Ana",perfil:"PR",estados:"PR",ativo:false}]);
+    assert.equal(JSON.stringify(body).includes("secret"),false);
+  } finally {globalThis.fetch=old;}
+});

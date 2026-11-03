@@ -682,6 +682,7 @@
   }
 
   async function saveTemplate(templateId) {
+    await Promise.resolve(window.portalTenantArtThemeReady);
     const preview = getPreview(templateId);
     if (!preview) return;
 
@@ -1030,6 +1031,7 @@
   }
 
   async function saveManualMultiTemplate(section) {
+    await Promise.resolve(window.portalTenantArtThemeReady);
     const count = Number(section?.dataset.multiCount || 0);
     const preview = section?.querySelector(".multiArt");
     if (!preview || ![2,3,4].includes(count)) return;

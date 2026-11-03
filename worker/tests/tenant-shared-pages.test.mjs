@@ -28,8 +28,8 @@ test("tenant-specific URL aliases keep ONE common original HTML per module",()=>
 
 test("tenant loader validates signed session before fetching shared HTML or using any asset",()=>{
  const loader=read("assets/js/tenant-page.js");
- assert.ok(loader.indexOf('fetch("https://api.portalfrete.net.br/v1/session"')<
-  loader.indexOf('fetch("/pages/"+page'));
+ assert.ok(loader.indexOf('get("https://api.portalfrete.net.br/v1/session"')<
+  loader.indexOf('get("/pages/"+page'));
  assert.ok(loader.includes("session.transportadoraId!==tenant"));
  assert.ok(loader.includes("session?.tenantMode!==true"));
  assert.ok(loader.includes('window.__PORTAL_TENANT_EXPECTED=tenant'));
@@ -63,6 +63,22 @@ test("tenant gateway selects private Sheets integration instead of public browse
  assert.ok(gateway.includes('APPS_SCRIPT_URL:config.scriptUrl'));
  assert.ok(gateway.includes('PORTAL_KEY:config.gatewayKey'));
  assert.ok(gateway.includes('module==="home" && action==="read"'));
+});
+
+test("shared tenant loader uses mobile-safe DOM replacement and replays module startup",()=>{
+ const loader=read("assets/js/tenant-page.js");
+ assert.equal(loader.includes("document.open()"),false);
+ assert.equal(loader.includes("document.write("),false);
+ assert.ok(loader.includes("new DOMParser().parseFromString(html"));
+ assert.ok(loader.includes("document.documentElement.innerHTML="));
+ assert.ok(loader.includes("document.createElement(\"script\")"));
+ assert.ok(loader.includes("cloned.async=false"));
+ assert.ok(loader.includes("document.dispatchEvent(new Event(\"DOMContentLoaded\""));
+ assert.ok(loader.includes("session.transportadoraId!==tenant"));
+ for(const page of pages){
+  const alias=read("pages/transportadora-teste/"+page+".html");
+  assert.ok(alias.includes('/assets/js/tenant-page.js?v=2'));
+ }
 });
 
 test("shared page loader and tenant link/brand scripts compile in browser JavaScript",()=>{

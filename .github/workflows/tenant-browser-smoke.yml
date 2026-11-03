@@ -1,0 +1,31 @@
+name: Tenant Shared Pages Browser Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/tenant-page.js'
+      - 'assets/js/tenant-route.js'
+      - 'pages/transportadora-teste/**'
+      - 'assets/js/auth.js'
+      - '.github/scripts/tenant-browser-smoke.mjs'
+      - '.github/workflows/tenant-browser-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chrome-shared-module:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install minimal browser automation dependency
+        run: |
+          mkdir -p /tmp/portal-browser
+          npm install --prefix /tmp/portal-browser --no-audit --no-fund playwright-core@1.57.0
+      - name: Open Fretes shared HTML with mocked signed tenant session
+        run: node .github/scripts/tenant-browser-smoke.mjs

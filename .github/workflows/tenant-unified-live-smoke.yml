@@ -7,9 +7,14 @@ on:
       - 'worker/**'
       - 'pages/login.html'
       - 'pages/home.html'
+      - 'pages/transportadora-teste/**'
       - 'assets/js/auth.js'
       - 'assets/js/api.js'
+      - 'assets/js/tenant-login.js'
+      - 'assets/js/tenant-page.js'
+      - 'assets/js/tenant-route.js'
       - 'assets/js/tenant-workspace.js'
+      - 'assets/js/home-map.js'
       - '.github/workflows/tenant-unified-live-smoke.yml'
   workflow_dispatch:
 
@@ -19,47 +24,65 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
-      - name: Confirm unified tenant API and existing website after deployment
+      - name: Verify private tenant login, shared HTML aliases and fail-closed API
         shell: bash
         run: |
           set -euo pipefail
           api="https://api.portalfrete.net.br"
           website="https://portalfrete.net.br"
-          for attempt in $(seq 1 15); do
-            code=$(curl -sSL --max-time 20 -o /tmp/portal-tenants.json -w "%{http_code}" "$api/v1/transportadoras/public" || true)
-            if [ "$code" = "200" ] && python3 - <<'PY'
-          import json
-          r=json.load(open('/tmp/portal-tenants.json'))
-          assert r.get('ok') is True
-          assert any(t['id']=='nova-frota' for t in r.get('transportadoras', []))
-          PY
-            then break; fi
-            if [ "$attempt" -eq 15 ]; then
-              echo "Public tenant selector unavailable after deployment"; exit 1
+          # Pages and Worker publish separately. Retry for the new static alias,
+          # not a now-removed public company selector.
+          for attempt in $(seq 1 20); do
+            api_code=$(curl -sSL --max-time 20 -o /tmp/public-tenants.json -w "%{http_code}" "$api/v1/transportadoras/public" || true)
+            page_code=$(curl -sSL --max-time 20 -o /tmp/tenant-home.html -w "%{http_code}" "$website/pages/transportadora-teste/home.html" || true)
+            if [ "$api_code" = "200" ] && [ "$page_code" = "200" ] &&
+               grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              echo "Private tenant Home alias or API not published"; exit 1
             fi
             sleep 6
           done
           python3 - <<'PY'
           import json
-          d=json.load(open('/tmp/portal-tenants.json'))
-          print('Tenant selector: status OK,',len(d['transportadoras']),'tenant option(s)')
+          data=json.load(open('/tmp/public-tenants.json'))
+          assert data.get('ok') is True
+          ids=[item.get('id') for item in data.get('transportadoras',[])]
+          assert 'nova-frota' in ids
+          assert 'teste-01' not in ids, 'Never enumerate private companies'
+          print('Public API healthy; private company directory not exposed')
           PY
-          for route in /v1/tenant/me /v1/tenant/fretes /v1/tenant/bi; do
+          for route in /v1/tenant/me /v1/tenant/fretes /v1/tenant/bi /v1/tenant/integracao; do
             code=$(curl -sSL --max-time 20 -o /tmp/no-cookie.json -w "%{http_code}" "$api$route")
-            test "$code" = "401" || { echo "$route must deny unauthenticated requests, got $code"; exit 1; }
+            test "$code" = "401" || { echo "$route denied without cookie: expected 401, got $code"; exit 1; }
           done
-          code=$(curl -sSL --max-time 20 -o /tmp/tenant-login.json -w "%{http_code}" \
+          code=$(curl -sSL --max-time 20 -o /tmp/tenant-invalid-login.json -w "%{http_code}" \
             -H "Origin: $website" -H 'Content-Type: application/json' \
             --data '{"transportadoraId":"teste-01","usuario":"__INVALID_SMOKE__","senha":"not-a-valid-password"}' \
             "$api/v1/login")
           test "$code" = "401" || { echo "Invalid tenant login must return 401, got $code"; exit 1; }
-          for path in /pages/login.html /pages/home.html /assets/js/tenant-workspace.js; do
-            curl -fsSL --max-time 25 "$website$path" -o "/tmp/$(basename "$path")"
-          done
-          grep -q 'id="tenantId"' /tmp/login.html
-          grep -q 'tenantWorkspace' /tmp/home.html
-          grep -q 'tenant-workspace.js' /tmp/home.html
-          grep -q 'tenantRequest' /tmp/tenant-workspace.js
-          echo "LIVE SMOKE PASSED: unified login, transportadoras, tenant auth, Home, Fretes/BI guards."
+          curl -fsSL --max-time 25 "$website/pages/login.html" -o /tmp/legacy-login.html
+          curl -fsSL --max-time 25 "$website/pages/home.html" -o /tmp/shared-home.html
+          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/login.html" -o /tmp/private-login.html
+          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/fretes.html" -o /tmp/tenant-fretes.html
+          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/bi.html" -o /tmp/tenant-bi.html
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-login.js?v=2" -o /tmp/tenant-login.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=1" -o /tmp/tenant-page.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=1" -o /tmp/tenant-route.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-20261103" -o /tmp/tenant-workspace.js
+          grep -Fq 'PortalAPI.login(usuario, senha, "nova-frota")' /tmp/legacy-login.html
+          ! grep -Fq 'id="tenantId"' /tmp/legacy-login.html
+          grep -Fq 'tenantWorkspace' /tmp/shared-home.html
+          grep -Fq 'data-tenant-id="teste-01"' /tmp/private-login.html
+          grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html
+          grep -Fq 'data-shared-page="fretes.html"' /tmp/tenant-fretes.html
+          grep -Fq 'data-shared-page="bi.html"' /tmp/tenant-bi.html
+          grep -Fq 'location.replace("./home.html")' /tmp/tenant-login.js
+          grep -Fq 'session.transportadoraId!==tenant' /tmp/tenant-page.js
+          grep -Fq 'window.portalTenantHref' /tmp/tenant-route.js
+          grep -Fq 'window.PortalAPI.call("home","read",{})' /tmp/tenant-workspace.js
+          ! grep -Fq 'tenantRequest("/fretes")' /tmp/tenant-workspace.js
+          echo "LIVE SMOKE PASSED: signed tenant API; private pages; shared HTML; Sheets gateway routing; no public tenant directory."

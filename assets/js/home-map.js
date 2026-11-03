@@ -118,7 +118,9 @@
         "valorMotorista", "vlrMotorista", "freteMotorista",
         "valor_motorista", "Valor Motorista"
       ]),
-      status: upper(firstValue(row, ["status", "Status"], "LIBERADO"))
+      status: upper(firstValue(row, ["status", "Status"], "LIBERADO")),
+      porta: num(firstValue(row,["porta","Porta"])),
+      transito: num(firstValue(row,["transito","Trânsito","Transito","trânsito"]))
     };
   }
 
@@ -458,6 +460,13 @@
           normalizeRow(row, upper(row?.source) || "FRETES")
         );
         STATE.rows = availableRows(merged);
+      }
+      if(session.tenantMode===true){
+        window.dispatchEvent(new CustomEvent("portal:tenant-freights-summary",{
+          detail:{tenantId:session.transportadoraId,rows:STATE.rows.map(row=>({
+            id:row.id,source:row.source,porta:row.porta,transito:row.transito
+          }))}
+        }));
       }
       render();
     } catch (error) {

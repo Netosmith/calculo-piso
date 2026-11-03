@@ -174,6 +174,13 @@
   if(link)fixLink(link);
  },true);
 
+ function readableText(hex){
+  const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255);
+  const linear=rgb.map(v=>v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4));
+  const luminance=.2126*linear[0]+.7152*linear[1]+.0722*linear[2];
+  return (1.05/(luminance+.05))>=((luminance+.05)/.05)
+    ?"#ffffff":"#071b31";
+ }
  function safeHex(value,fallback){
   return typeof value==="string"&&/^#[0-9a-f]{6}$/i.test(value)?value:fallback;
  }
@@ -201,16 +208,17 @@
       value.watermark/100:0.08;
     css+=selectors.map(selector=>"body.pf-tenant-site "+selector).join(",")+
       "{--pf-art-primary:"+primary+";--pf-art-accent:"+accent+
-      ";--pf-art-surface:"+surface+";--pf-art-watermark-opacity:"+watermark+";}";
+      ";--pf-art-surface:"+surface+";--pf-art-on-primary:"+readableText(primary)+
+      ";--pf-art-on-accent:"+readableText(accent)+
+      ";--pf-art-watermark-opacity:"+watermark+";}";
    }
+   // Modelo 3 now uses its dedicated shared stylesheet in all pages.
+   // Do NOT override its gradient with a flat accent background.
    css+=[
-    'body.pf-tenant-site .multiArt .multiArtTitle strong,body.pf-tenant-site #nfM4Canvas .nfM4Title strong,',
-    'body.pf-tenant-site [data-template-preview="3"] .m3Headline strong,body.pf-tenant-site #nfM3Canvas .nfM3Headline strong{color:var(--pf-art-accent)!important}',
-    'body.pf-tenant-site .multiArt .multiArtPrice,body.pf-tenant-site #nfM4Canvas .nfM4Price,',
-    'body.pf-tenant-site [data-template-preview="3"] .m3PriceCard,body.pf-tenant-site #nfM3Canvas .nfM3PriceCard{background:var(--pf-art-accent)!important;color:#fff!important}',
-    'body.pf-tenant-site .multiArt .multiArtNum,body.pf-tenant-site #nfM4Canvas .nfM4Num{background:var(--pf-art-primary)!important;color:#fff!important}',
-    'body.pf-tenant-site .multiArt .multiArtFooter,body.pf-tenant-site #nfM4Canvas .nfM4Footer,',
-    'body.pf-tenant-site #nfM3Canvas .nfM3Footer,body.pf-tenant-site [data-template-preview="3"] .m3Footer{background:var(--pf-art-primary)!important}',
+    'body.pf-tenant-site .multiArt .multiArtTitle strong,body.pf-tenant-site #nfM4Canvas .nfM4Title strong{color:var(--pf-art-accent)!important}',
+    'body.pf-tenant-site .multiArt .multiArtPrice,body.pf-tenant-site #nfM4Canvas .nfM4Price{background:var(--pf-art-accent)!important;color:var(--pf-art-on-accent,#fff)!important}',
+    'body.pf-tenant-site .multiArt .multiArtNum,body.pf-tenant-site #nfM4Canvas .nfM4Num{background:var(--pf-art-primary)!important;color:var(--pf-art-on-primary,#fff)!important}',
+    'body.pf-tenant-site .multiArt .multiArtFooter,body.pf-tenant-site #nfM4Canvas .nfM4Footer{background:var(--pf-art-primary)!important}',
     'body.pf-tenant-site .multiArt .multiArtTitle,body.pf-tenant-site #nfM4Canvas .nfM4Title{color:var(--pf-art-primary)!important}',
     'body.pf-tenant-site .multiArt .multiArtBody,body.pf-tenant-site #nfM4Canvas .nfM4Body{background:var(--pf-art-surface)!important}',
     'body.pf-tenant-site .multiArt .multiArtContactsIntro,body.pf-tenant-site #nfM4Canvas .nfM4ContactsIntro{background:var(--pf-art-primary)!important}',
@@ -240,7 +248,9 @@
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);
   void loadBrand();
-  void loadArtThemes();
+  if(/\/(?:divulgacao|fretes|fretes2)\.html$/.test(location.pathname)){
+   window.portalTenantArtThemeReady=loadArtThemes();
+  }
   if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(mutations=>{
     for(const change of mutations){

@@ -682,6 +682,7 @@
   }
 
   async function saveTemplate(templateId) {
+    await Promise.resolve(window.portalTenantArtThemeReady);
     const preview = getPreview(templateId);
     if (!preview) return;
 
@@ -964,7 +965,7 @@
           <div class="multiPreviewShell">
             <div class="multiArt count-${count}">
               <section class="multiArtHero">
-                <img class="multiArtHeroImg" src="../assets/img/hero.jpg" alt="" crossorigin="anonymous">
+                <img class="multiArtHeroImg" src="../assets/img/divulgacao/hero-default.webp?v=1" alt="" crossorigin="anonymous">
                 <div class="multiArtHeroWash"></div>
                 <img class="multiArtLogo" src="../assets/img/logo-novafrota.png" alt="Nova Frota" crossorigin="anonymous">
                 <div class="multiArtTitle">FRETES <strong>DISPONÍVEIS</strong></div>
@@ -1030,6 +1031,7 @@
   }
 
   async function saveManualMultiTemplate(section) {
+    await Promise.resolve(window.portalTenantArtThemeReady);
     const count = Number(section?.dataset.multiCount || 0);
     const preview = section?.querySelector(".multiArt");
     if (!preview || ![2,3,4].includes(count)) return;

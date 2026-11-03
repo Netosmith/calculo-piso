@@ -73,7 +73,7 @@
   bootStyle.textContent='html[data-pf-tenant-boot="1"] body{visibility:hidden!important}';
   parsed.head.insertBefore(bootStyle,base.nextSibling);
   const route=parsed.createElement("script");
-  route.src="/assets/js/tenant-route.js?v=2";
+  route.src="/assets/js/tenant-route.js?v=3";
   parsed.head.insertBefore(route,base.nextSibling);
   // The HTML & assets remain shared; the cache key is only for this tenant
   // shell so updates do not mix with a previous app session.
@@ -81,7 +81,7 @@
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-fix"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-brand-v3"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down

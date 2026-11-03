@@ -381,14 +381,14 @@ async function verifyPortalSession(options = {}){
     const session = await refreshPortalSession();
 
     if(options.requireState && !session?.estado){
-      window.location.href = "../pages/login.html";
+      redirectToLogin();
       return null;
     }
 
     return session;
   }catch(error){
     if(options.redirect !== false){
-      window.location.href = "../pages/login.html";
+      redirectToLogin();
     }
     return null;
   }
@@ -498,7 +498,14 @@ function applyEstadiasAccessUI(){
 // GUARDAS DE COMPATIBILIDADE
 // =====================================================
 function redirectToLogin(){
-  window.location.href = "../pages/login.html";
+  // UI navigation hint only. The API still authenticates and authorizes by
+  // the signed server session; changing this path never selects data access.
+  let target="../pages/login.html";
+  try{
+    const path=sessionStorage.getItem("pf:tenant-login-path")||"";
+    if(/^\/pages\/[a-z0-9-]{3,64}\/login\.html$/.test(path))target=path;
+  }catch(_){}
+  window.location.href=target;
 }
 
 function requireHomeAuth(){

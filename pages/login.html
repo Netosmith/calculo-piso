@@ -45,11 +45,7 @@
         </div>
       </div>
 
-      <label class="label" for="tenantId">Transportadora</label>
-      <select class="input" id="tenantId" aria-label="Transportadora">
-        <option value="nova-frota">Nova Frota Logística e Transportes</option>
-      </select>
-      <div class="small" style="margin:5px 0 12px;text-align:left">Cada empresa utiliza seus próprios usuários e módulos.</div>
+      <div class="small" style="margin:0 0 16px;text-align:left">Nova Frota Logística e Transportes</div>
 
       <label class="label" for="user">Usuário</label>
       <input class="input" id="user" placeholder="Ex.: João" autocomplete="username" />
@@ -77,11 +73,10 @@
   </div>
 
   <script src="../assets/js/api.js?v=8"></script>
-  <script src="../assets/js/auth.js?v=21"></script>
+  <script src="../assets/js/auth.js?v=23"></script>
   <script>
     const btn = document.getElementById("btnLogin");
     const err = document.getElementById("err");
-    const tenantEl = document.getElementById("tenantId");
     const userEl = document.getElementById("user");
     const passEl = document.getElementById("pass");
     const modal = document.getElementById("stateModal");
@@ -196,6 +191,7 @@
         const result = await PortalAPI.session();
         const session = result.session;
 
+        if(session?.tenantMode===true) return;
         mirrorSessionForLegacyPages(session);
 
         if(await blockIfMaintenance(session)) return;
@@ -226,7 +222,7 @@
       btn.textContent = "Validando...";
 
       try{
-        const result = await PortalAPI.login(usuario, senha, tenantEl.value || "nova-frota");
+        const result = await PortalAPI.login(usuario, senha, "nova-frota");
         const session = result.session;
 
         mirrorSessionForLegacyPages(session);
@@ -297,24 +293,7 @@
       }
     });
 
-    async function loadTransportadoras(){
-      try{
-        const data=await PortalAPI.transportadorasPublicas();
-        const wanted=new URLSearchParams(location.search).get("tenant");
-        const entries=Array.isArray(data?.transportadoras)?data.transportadoras:[];
-        for(const entry of entries){
-          if(entry?.id==="nova-frota" || !/^[a-z][a-z0-9-]{2,47}$/.test(entry?.id||""))continue;
-          const option=document.createElement("option");
-          option.value=entry.id;
-          option.textContent=entry.name;
-          tenantEl.appendChild(option);
-        }
-        if(wanted && [...tenantEl.options].some(option=>option.value===wanted))tenantEl.value=wanted;
-      }catch(error){
-        console.warn("[LOGIN] Catálogo de transportadoras indisponível; a Nova Frota permanece acessível.");
-      }
-    }
-    loadTransportadoras();
+    sessionStorage.removeItem("pf:tenant-login-path");
     restoreExistingSession();
   </script>
 </body>

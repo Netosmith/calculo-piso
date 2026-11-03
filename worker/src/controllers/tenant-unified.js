@@ -25,18 +25,10 @@ async function enabledModules(db,tenantId){
 }
 export async function publicTenantsController(request,env){
  if(request.method!=="GET")return tenantJsonError("Metodo nao permitido.",405);
- const tenants=[{id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome}];
- if(!tenantPortalEnabled(env))return success({transportadoras:tenants});
- try{
-  const rows=await env.TENANTS_DB.prepare("SELECT id,name FROM portal_tenants WHERE status='active' ORDER BY name LIMIT 100").all();
-  for(const row of rows.results||[]){
-   if(validTenantId(row.id))tenants.push({id:row.id,name:row.name});
-  }
-  return success({transportadoras:tenants});
- }catch{
-  // A falha da area multiempresa nao interrompe o login da Nova Frota.
-  return success({transportadoras:tenants});
- }
+ // Do not expose the customer catalog to anonymous visitors.
+ // Known tenant URLs authenticate using their explicit tenant id; neither
+ // this endpoint nor the login form enumerates tenant names or identifiers.
+ return success({transportadoras:[{id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome}]});
 }
 export async function tenantLoginController(request,env,body){
  if(!tenantPortalEnabled(env))return tenantJsonError("Acesso de novas transportadoras ainda indisponivel.",503);

@@ -3,6 +3,54 @@
 (function(){
  "use strict";
  let currentTenant="";
+ let lastFreightSummary=null;
+ const displayBase=source=>source==="FRETES"?"GERAL":
+   source==="FRETES2"?"MT INTERNO":
+   source.startsWith("FRETES-")?source.slice(7):source;
+ function renderUnifiedFreightSummary(){
+  if(!lastFreightSummary||lastFreightSummary.tenantId!==currentTenant)return;
+  const seen=new Set(),rows=[];
+  for(const row of lastFreightSummary.rows||[]){
+   if(!row||typeof row!=="object")continue;
+   const id=String(row.id||"").trim();
+   if(id&&seen.has(id))continue;
+   if(id)seen.add(id);
+   rows.push(row);
+  }
+  const byBase=new Map();
+  for(const row of rows){
+   const label=displayBase(String(row.source||"").toUpperCase());
+   const acc=byBase.get(label)||{fretes:0,porta:0,transito:0};
+   acc.fretes++;
+   acc.porta+=Number(row.porta)||0;
+   acc.transito+=Number(row.transito)||0;
+   byBase.set(label,acc);
+  }
+  set("homeFretesAtivos",rows.length);
+  const detail=$("homeFretesDetalhe");
+  if(detail)detail.textContent=[...byBase].map(([base,acc])=>base+": "+acc.fretes).join(" • ")||"Nenhum frete disponível";
+  const totalPorta=[...byBase.values()].reduce((n,x)=>n+x.porta,0);
+  const totalTransito=[...byBase.values()].reduce((n,x)=>n+x.transito,0);
+  const vehicle=document.querySelector(".nf-veiculos-resumo");
+  if(vehicle){
+   vehicle.replaceChildren();
+   const total=document.createElement("strong");
+   total.textContent="TOTAL: "+(totalPorta+totalTransito)+" | Porta: "+totalPorta+" | Trânsito: "+totalTransito;
+   total.style.cssText="display:block;font-size:12px;margin-bottom:7px;color:#f1f7ff";
+   vehicle.append(total);
+   const lines=document.createElement("div");
+   lines.style.cssText="max-height:80px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;font-size:10px";
+   for(const [base,acc] of byBase){
+    const item=document.createElement("div");
+    item.textContent=base+": "+(acc.porta+acc.transito)+" ("+acc.porta+"P / "+acc.transito+"T)";
+    lines.append(item);
+   }
+   vehicle.append(lines);
+  }
+  set("homeFretesAtualizacao","Consolidado das bases habilitadas");
+  set("homeVeiculosAtualizacao","Porta e trânsito por base operacional");
+ }
+
  const $=id=>document.getElementById(id);
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=String(value);};
  const BASE_UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
@@ -75,10 +123,12 @@
     if(typeof data[key]==="number"&&Number.isFinite(data[key]))set(id,data[key]);
    });
    updates.forEach(id=>set(id,"Atualizado pela planilha da transportadora"));
+   renderUnifiedFreightSummary();
    document.querySelector(".nf-footer-status")?.replaceChildren("Dados exclusivos");
   }catch(error){
    if(currentTenant!==session.transportadoraId)return;
    updates.forEach(id=>set(id,"Integração da planilha indisponível"));
+   renderUnifiedFreightSummary();
    document.querySelector(".nf-footer-status")?.replaceChildren("Planilha não disponível");
   }
  }
@@ -87,6 +137,7 @@
   if(window.__PORTAL_TENANT_EXPECTED &&
      session.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return;
   currentTenant=session.transportadoraId;
+  lastFreightSummary=null;
   document.body?.classList.add("pf-tenant-mode");
   const root=$("tenantWorkspace");
   if(root){root.replaceChildren();root.hidden=true;}
@@ -102,6 +153,11 @@
   cards();
   void dashboard(session);
  }
+ window.addEventListener("portal:tenant-freights-summary",event=>{
+  if(event.detail?.tenantId!==currentTenant)return;
+  lastFreightSummary=event.detail;
+  renderUnifiedFreightSummary();
+ });
  window.addEventListener("portal:session",event=>render(event.detail));
  if(window.portalAuthReady)Promise.resolve(window.portalAuthReady).then(render).catch(()=>{});
 })();

@@ -80,6 +80,9 @@ export function hasFeature(session, moduleName) {
   if (ADMIN_PROFILES.has(profile)) return true;
 
   const features = PROFILE_FEATURES[profile] || [];
+  if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/.test(moduleName)){
+    return ["OPERACIONAL","COMERCIAL"].includes(profile);
+  }
   return moduleName === "home" || features.includes(moduleName);
 }
 
@@ -149,7 +152,7 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
       return FRETES2_DELETE_PROFILES.has(profile);
     }
 
-    if (moduleName === "fretes") {
+    if (moduleName === "fretes" || /^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/.test(moduleName)) {
       return FREIGHT_DELETE_PROFILES.has(profile);
     }
 

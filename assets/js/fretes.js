@@ -2511,12 +2511,20 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     }
   }
 
-  function openNewModal() {
+  async function openNewModal() {
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+      await carregarCadastrosFretes();
+      fillModalSelectors();
+    }
     clearModalFields();
     modalShow(true);
   }
 
-  function openEditModal(row) {
+  async function openEditModal(row) {
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+      await carregarCadastrosFretes();
+      fillModalSelectors();
+    }
     clearModalFields();
     fillModalFromRow(row);
     modalShow(true);

@@ -209,7 +209,7 @@ async function ensurePortalApi(){
     }
 
     const script = document.createElement("script");
-    script.src = "../assets/js/api.js?v=8";
+    script.src = "../assets/js/api.js?v=9";
     script.dataset.portalApi = "1";
     script.onload = resolve;
     script.onerror = () => reject(new Error("Falha ao carregar a API do Portal."));

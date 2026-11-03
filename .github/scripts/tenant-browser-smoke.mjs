@@ -58,6 +58,12 @@ try{
     ok:true,clientes:[{id:"global:CLIENTE MODELO",cliente:"CLIENTE MODELO",ativo:"SIM",ordem:1}]
    })});return;
   }
+  if(url.pathname==="/v1/tenant/artes"){
+   const model={primary:"#bb1122",accent:"#181818",surface:"#eeeeee",watermark:8};
+   await route.fulfill({status:200,headers,body:JSON.stringify({ok:true,
+    artes:{version:1,models:{modelo3:model,modelo4a:model,modelo4b:model,modelo4c:model}}
+   })});return;
+  }
   if(url.pathname==="/v1/tenant/logo"){
    await route.fulfill({status:404,headers,body:JSON.stringify({ok:false,error:"No logo"})});return;
   }
@@ -234,6 +240,47 @@ try{
  assert.equal(order.noTailwindPlay,true);
  assert.equal(order.company,"NOVA FROTA ADMIN");
  console.log("ORDEM SELF HOSTED CSS AND BRANDING OK",JSON.stringify(order));
+
+ await page.goto(origin+"/pages/transportadora-teste/divulgacao.html",{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>Boolean(document.querySelector(".templatePreview3")) &&
+  Boolean(document.getElementById("pfTenantArtTheme")) &&
+  document.querySelector(".m3HeroImg")?.complete &&
+  document.querySelector(".m3HeroImg")?.naturalWidth>0,null,{timeout:20000});
+ await page.evaluate(async()=>{await window.portalTenantArtThemeReady;});
+ const art=await page.evaluate(()=>{
+  const root=document.querySelector(".templatePreview3");
+  const pick=selector=>{
+   const element=document.querySelector(selector);
+   return element?{bg:getComputedStyle(element).backgroundColor,
+    text:getComputedStyle(element).color}:null;
+  };
+  return {
+   theme:getComputedStyle(root).getPropertyValue("--pf-art-primary").trim(),
+   logoFreeHero:document.querySelector(".m3HeroImg")?.currentSrc,
+   heroWidth:document.querySelector(".m3HeroImg")?.naturalWidth,
+   origin:pick(".m3RouteLabel"),
+   value:pick(".m3PriceCard"),
+   valueTitle:pick(".m3PriceLabel"),
+   footer:pick(".m3Footer"),
+   whatsapp:pick(".m3WhatsappIcon"),
+   headline:pick(".m3Headline>span"),
+   headlineAccent:pick(".m3Headline>strong"),
+   surface:pick(".m3Content"),
+   multi:pick(".multiArt.count-2 .multiArtPrice")
+  };
+ });
+ assert.equal(art.theme,"#bb1122");
+ assert.ok(art.logoFreeHero?.endsWith("/assets/img/divulgacao/hero-global.jpg"));
+ assert.equal(art.heroWidth,1264);
+ for(const selector of ["origin","valueTitle","footer","headline"])
+  assert.equal(art[selector]?.bg==="rgb(187, 17, 34)"||art[selector]?.text==="rgb(187, 17, 34)",true,
+   "Model 3 primary color not applied to "+selector);
+ for(const selector of ["value","whatsapp","headlineAccent","multi"])
+  assert.equal(art[selector]?.bg==="rgb(24, 24, 24)"||art[selector]?.text==="rgb(24, 24, 24)",true,
+   "Model 3/4 accent color not applied to "+selector);
+ assert.equal(art.surface?.bg,"rgb(238, 238, 238)");
+ console.log("GLOBAL ART HERO AND COMPLETE TENANT MODEL 3/4 PALETTE OK",JSON.stringify(art));
+
 
 
  if(messages.length)console.log("Non-fatal browser diagnostics:",messages.slice(0,6));

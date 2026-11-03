@@ -29,7 +29,13 @@ export async function routeRequest(request, env, ctx) {
 
   // Never route a tenant browser context into Nova Frota legacy APIs,
   // even if another signed cookie remains present.
+  // Client brand images are intentionally common to all transportadoras.
+  // Tenant cookies may GET/HEAD a public client logo, but NEVER write it or
+  // access any other legacy Nova Frota API endpoint.
+  const sharedLogoRead=path.startsWith("/v1/client-logos/") &&
+    ["GET","HEAD"].includes(request.method);
   if(hasTenantSessionCookie(request) &&
+     !sharedLogoRead &&
      !["/v1/login","/v1/session","/v1/logout","/health"].includes(path))
     return errorResponse("Recurso exclusivo da operacao legada.",403);
 

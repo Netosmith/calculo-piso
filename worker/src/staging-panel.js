@@ -107,7 +107,7 @@ $('integrationSave').onclick=async()=>{
   finally{$('integrationSave').disabled=!canEdit();}
 };
 `;
-  html=required(html,"async function refreshCompanies(",integrationJs+"\\nasync function refreshCompanies(");
+  html=required(html,"async function refreshCompanies(",integrationJs+"\nasync function refreshCompanies(");
   html=required(html,"render();loadUsers();loadAudit();loadBrand();",
     "render();loadUsers();loadAudit();loadBrand();loadIntegration();");
   html=required(html,"renderModules();renderUsers();","renderModules();renderUsers();$('integrationSave').disabled=!canEdit();");

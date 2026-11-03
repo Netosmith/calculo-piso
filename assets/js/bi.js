@@ -314,6 +314,7 @@
       filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
       cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
       origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
+      ufOrigem: upper(firstValue(r, ["ufOrigem","origemUf","estadoOrigem","ufCarregamento"])),
       coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
       contato: upper(firstValue(r, ["contato", "Contato"])),
       destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
@@ -2141,6 +2142,12 @@
       await window.portalAuthReady;
     }
     configureTenantBases();
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+      try{
+        const catalog=await window.PortalAPI.tenantRequest("/regionais/ufs");
+        window.PORTAL_REGION_UFS=catalog?.regionais||{};
+      }catch(_){window.PORTAL_REGION_UFS={};}
+    }
 
     await loadData(true, true);
     startAutoRefresh();

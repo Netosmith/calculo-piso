@@ -111,10 +111,24 @@ try{
  console.log("FRETES EMPTY SHEETS AND NAME-ONLY HEADER OK");
 
  await page.goto(origin+"/pages/transportadora-teste/home.html",{waitUntil:"domcontentloaded"});
- await page.waitForFunction(()=>
-  document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
-  document.querySelector(".nf-brand .pf-company-name")?.textContent==="NOVA FROTA ADMIN" &&
-  document.getElementById("homeSub")?.textContent?.includes("NOVA FROTA ADMIN"),null,{timeout:20000});
+ try{
+  await page.waitForFunction(()=>
+   document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
+   document.querySelector(".nf-brand .pf-company-name")?.textContent==="NOVA FROTA ADMIN" &&
+   document.getElementById("homeSub")?.textContent?.includes("NOVA FROTA ADMIN"),null,{timeout:20000});
+ }catch(error){
+  const debug=await page.evaluate(()=>({
+   url:location.href,title:document.title,
+   waiting:document.documentElement.getAttribute("data-pf-tenant-boot"),
+   markup:document.body?.textContent?.slice(0,400),
+   header:document.querySelector(".nf-brand")?.outerHTML?.slice(0,500),
+   homeSub:document.getElementById("homeSub")?.textContent,
+   session:window.__PORTAL_TENANT_SESSION?.transportadoraId,
+   scripts:document.querySelectorAll("script[src]").length
+  }));
+  console.error("TENANT HOME DIAGNOSTIC",JSON.stringify({debug,messages:messages.slice(-15)}));
+  throw error;
+ }
  const homeState=await page.evaluate(()=>({
   path:location.pathname,loading:document.documentElement.hasAttribute("data-pf-tenant-boot"),
   brand:document.querySelector(".nf-brand .pf-company-name")?.textContent,

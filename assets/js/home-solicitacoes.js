@@ -29,6 +29,8 @@
   }
 
   async function portalCall(action, params = {}){
+    const session=window.portalAuthReady?await window.portalAuthReady:null;
+    if(!session||session.tenantMode===true)throw new Error("Solicitações ainda não integradas para esta transportadora.");
     const api = typeof ensurePortalApi === "function"
       ? await ensurePortalApi()
       : window.PortalAPI;
@@ -110,6 +112,7 @@
   }
 
   function openModal(){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
     const modal = $("#homeSolicModal");
     if(!modal) return;
 
@@ -126,6 +129,8 @@
 
   async function refreshKpi(){
     try{
+      const session=window.portalAuthReady?await window.portalAuthReady:null;
+      if(!session||session.tenantMode===true)return;
       const api = typeof ensurePortalApi === "function"
         ? await ensurePortalApi()
         : window.PortalAPI;

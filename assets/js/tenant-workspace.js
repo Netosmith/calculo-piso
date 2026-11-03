@@ -6,15 +6,13 @@
  const $=id=>document.getElementById(id);
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=String(value);};
  const BASE_UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
- function baseKey(uf){return uf==="GO"?"fretes":uf==="MT"?"fretes2":"fretes-"+uf.toLowerCase();}
+ function baseKey(uf){return "fretes-"+uf.toLowerCase();}
  function renderBaseCards(){
   const grid=document.querySelector(".nf-tools");
   if(!grid || !window.__PORTAL_TENANT_SESSION?.tenantMode)return;
   for(const uf of BASE_UFS){
    const key=baseKey(uf);
-   const existing=uf==="GO"
-     ? grid.querySelector('a[data-feature="fretes"]')
-     : uf==="MT" ? grid.querySelector('a[data-feature="fretes2"]') : null;
+   const existing=null;
    const card=existing || document.createElement("a");
    if(!existing){
     card.className="nf-tool green pf-base-card";

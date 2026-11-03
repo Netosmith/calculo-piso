@@ -1883,6 +1883,8 @@ function formatDateTimeBR(value) {
   }
 
   async function canvasFromPreview(row) {
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
+      await window.portalTenantArtThemeReady;
     renderPreview(row);
 
     const card = document.getElementById("nfArtCard");
@@ -1925,7 +1927,7 @@ function formatDateTimeBR(value) {
 
         try {
           return await html2canvasLib(source, {
-            backgroundColor: "#f4f8fb",
+            backgroundColor: getComputedStyle(source).backgroundColor,
             scale: 1,
             width: 1080,
             height: 1350,
@@ -1968,7 +1970,7 @@ function formatDateTimeBR(value) {
 
         try {
           return await html2canvasLib(source, {
-            backgroundColor: "#f5f9fc",
+            backgroundColor: getComputedStyle(source).backgroundColor,
             scale: 1,
             width: 1080,
             height: 1440,

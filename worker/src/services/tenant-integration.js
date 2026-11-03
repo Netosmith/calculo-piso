@@ -38,6 +38,7 @@ export async function readTenantIntegration(env,id){
 function summary(config){
  return {configured:Boolean(config),enabled:config?.enabled===true,
   spreadsheetId:config?.spreadsheetId||null,estado:config?.estado||null,
+  scriptUrlConfigured:Boolean(config?.scriptUrl),
   gatewayKeyConfigured:Boolean(config?.gatewayKey)};
 }
 // This read is only invoked AFTER the Super Admin owner identity gate.

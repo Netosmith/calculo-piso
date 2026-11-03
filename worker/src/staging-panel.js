@@ -51,11 +51,23 @@ export function stagingPanelHtml(){
     '<p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p>'+
     '</section><h2>Histórico de auditoria</h2>');
   const integrationJs=`
+const SELECTED_KEY='pf:super-admin:selected-company';
+function selectedFromThisBrowser(){
+ try{const id=sessionStorage.getItem(SELECTED_KEY)||'';return /^[a-z][a-z0-9-]{2,48}$/.test(id)?id:'';}
+ catch{return '';}
+}
+function rememberSelectedCompany(id){
+ if(!id)return;
+ try{sessionStorage.setItem(SELECTED_KEY,id);}catch{}
+}
 let integrationRequest=0;
 async function loadIntegration(){
   const id=selected?.id,serial=++integrationRequest;
   const status=$('integrationStatus');
   $('integrationUrl').value='';$('integrationKey').value='';
+  $('integrationSheetId').value='';$('integrationUf').value='GO';$('integrationEnabled').checked=false;
+  $('integrationUrl').placeholder='https://script.google.com/macros/s/.../exec';
+  $('integrationKey').placeholder='No mínimo 24 caracteres';
   if(!id||id==='nova-frota'){
     status.textContent='A Nova Frota continua utilizando a integração original.';
     $('integrationSave').disabled=true;return;
@@ -69,10 +81,19 @@ async function loadIntegration(){
     $('integrationSheetId').value=config.spreadsheetId||'';
     $('integrationUf').value=config.estado||'GO';
     $('integrationEnabled').checked=config.enabled===true;
+    const configuredUrl=config.scriptUrlConfigured===true;
+    $('integrationUrl').placeholder=configuredUrl?
+      'URL armazenada com segurança. Deixe em branco para manter.':
+      'https://script.google.com/macros/s/.../exec';
+    $('integrationKey').placeholder=config.gatewayKeyConfigured?
+      'Chave salva com segurança. Deixe em branco para manter.':
+      'No mínimo 24 caracteres';
     status.textContent=config.configured?
-      'Integração privada '+(config.enabled?'ATIVA':'DESATIVADA')+
-      '. Chave armazenada: '+(config.gatewayKeyConfigured?'sim':'não')+'.':
-      'Ainda não há planilha vinculada a esta transportadora.';
+      'Integração salva para '+selected.name+' ('+id+') · '+
+      (config.enabled?'ATIVA':'DESATIVADA')+
+      ' · Apps Script: '+(configuredUrl?'configurado':'pendente')+
+      ' · Chave: '+(config.gatewayKeyConfigured?'configurada':'pendente')+'.':
+      'Nenhuma integração salva para '+selected.name+' ('+id+').';
   }catch(error){
     if(serial===integrationRequest&&selected?.id===id)status.textContent=error.message;
   }
@@ -101,16 +122,35 @@ $('integrationSave').onclick=async()=>{
     await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/integracao','PUT',data);
     $('integrationKey').value='';$('integrationKey').type='password';
     $('integrationUrl').value='';
+    const persisted=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/integracao');
+    if(!persisted?.integracao?.configured ||
+       persisted.integracao.spreadsheetId!==data.spreadsheetId ||
+       persisted.integracao.enabled!==data.enabled ||
+       (data.scriptUrl&&!persisted.integracao.scriptUrlConfigured) ||
+       (data.gatewayKey&&!persisted.integracao.gatewayKeyConfigured))
+      throw new Error('A gravação não pôde ser confirmada. Verifique a integração antes de continuar.');
     await loadIntegration();await loadAudit();
-    notice('Integração gravada no armazenamento privado. A planilha da Nova Frota não foi alterada.');
+    rememberSelectedCompany(id);
+    notice('Integração de '+selected.name+' salva e confirmada no servidor. Recarregar a página não apagará os dados.');
   }catch(error){writeError(error);}
   finally{$('integrationSave').disabled=!canEdit();}
 };
 `;
   html=required(html,"async function refreshCompanies(",integrationJs+"\nasync function refreshCompanies(");
-  html=required(html,"render();loadUsers();loadAudit();loadBrand();",
-    "render();loadUsers();loadAudit();loadBrand();loadIntegration();");
   html=required(html,"renderModules();renderUsers();","renderModules();renderUsers();$('integrationSave').disabled=!canEdit();");
+  // Preserve only the selected tenant identifier, never script URLs or keys.
+  html=required(html,
+    "button.textContent=company.name;button.onclick=()=>{selected=company;render();loadUsers();loadAudit();loadBrand();};root.append(button);",
+    "button.textContent=company.name;button.onclick=()=>{selected=company;rememberSelectedCompany(company.id);render();loadUsers();loadAudit();loadBrand();loadIntegration();};root.append(button);");
+  html=required(html,
+    "selected=companies.find(company=>company.id===(preferred||selected?.id))||companies[0]||null;",
+    "selected=companies.find(company=>company.id===(preferred||selected?.id||selectedFromThisBrowser()))||companies[0]||null;if(selected)rememberSelectedCompany(selected.id);");
+  html=required(html,
+    "if(companies.length){selected=companies[0];render();loadUsers();loadAudit();loadBrand();}else{render();}",
+    "if(companies.length){selected=companies.find(company=>company.id===selectedFromThisBrowser())||companies[0];rememberSelectedCompany(selected.id);render();loadUsers();loadAudit();loadBrand();loadIntegration();}else{render();}");
+  html=required(html,
+    "render();loadUsers();loadAudit();loadBrand();\n}",
+    "render();loadUsers();loadAudit();loadBrand();loadIntegration();\n}");
   // Password never enters a prompt, URL, localStorage or logs.
   const method=`async function setTenantPassword(user){
     if(!credentialReady||!canEditMembership()||!user?.id||!selected?.id)return;

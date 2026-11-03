@@ -10,6 +10,7 @@ import {tenantFreights,tenantBi} from "../services/tenant-freights.js";
 import {readTenantIntegration,callTenantAppScript} from "../services/tenant-integration.js";
 import {readTenantArtThemes} from "../services/tenant-art-themes.js";
 import {sharedClientNamesController} from "../services/shared-client-catalog.js";
+import {regionalUfController} from "../services/tenant-regional-ufs.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
@@ -129,6 +130,8 @@ export async function tenantApiController(request,env){
     "X-Content-Type-Options":"nosniff","Cross-Origin-Resource-Policy":"same-site"
    }});
   }
+  if(path==="/v1/tenant/regionais/ufs"&&["GET","POST"].includes(request.method))
+    return regionalUfController(request,env,principal,modules);
   if(path==="/v1/tenant/catalogo/clientes"&&request.method==="GET"){
     // Names and client brand images are an explicitly shared reference catalog.
     // Operational customer details remain private to each tenant's Sheets.

@@ -3,8 +3,10 @@
 const COOKIE="__Host-tenant_session";
 const SESSION_SECONDS=6*60*60;
 // Cloudflare WebCrypto refuses PBKDF2 calls with more than 100,000 iterations.
-// Keep two domain-separated PBKDF2 passes to retain stronger password stretching.
+// Single PBKDF2 pass is the Cloudflare runtime-supported credential format.
+// Older two-pass hashes remain verifiable for backwards compatibility.
 const ITERATIONS=100000;
+const HASH_V3="pbkdf2-sha256-100k:";
 const HASH_V2="pbkdf2-sha256-2x100k:";
 const MAX_ATTEMPTS=8;
 const WINDOW_SECONDS=15*60;
@@ -69,10 +71,24 @@ export function validTenantPassword(value){
 }
 export async function makePasswordRecord(password){
  if(!validTenantPassword(password))throw new TypeError("invalid password");
- const salt=randomBytes(16);
- return {password_salt:bytesToB64(salt),
-  password_hash:HASH_V2+bytesToB64(await deriveV2(password,salt,ITERATIONS)),
-  iterations:ITERATIONS,version:crypto.randomUUID()};
+ let cryptoStage="salt";
+ try{
+  const salt=randomBytes(16);
+  cryptoStage="derive";
+  const hash=await derive(password,salt,ITERATIONS);
+  cryptoStage="format";
+  return {password_salt:bytesToB64(salt),
+   password_hash:HASH_V3+bytesToB64(hash),
+   iterations:ITERATIONS,version:crypto.randomUUID()};
+ }catch(error){
+  // The owner sees only a bounded stage/code, never password or crypto buffers.
+  const failure=new Error("tenant-password-crypto-failed");
+  failure.cryptoStage=cryptoStage;
+  failure.cryptoType=["NotSupportedError","OperationError","QuotaExceededError",
+   "InvalidAccessError","TypeError","RangeError"].includes(error?.name)?
+   error.name:"Error";
+  throw failure;
+ }
 }
 export async function passwordMatches(password,record){
  try{
@@ -80,10 +96,12 @@ export async function passwordMatches(password,record){
   const salt=record?b64ToBytes(record.password_salt):fakeSalt;
   const iterations=record?Number(record.iterations):ITERATIONS;
   const encoded=record?.password_hash;
-  const isV2=!record||typeof encoded==="string"&&encoded.startsWith(HASH_V2);
+  const isV3=!record||typeof encoded==="string"&&encoded.startsWith(HASH_V3);
+  const isV2=typeof encoded==="string"&&encoded.startsWith(HASH_V2);
   const hash=isV2?await deriveV2(password,salt,iterations):
    await derive(password,salt,iterations);
-  const expected=isV2?encoded?.slice(HASH_V2.length):encoded;
+  const expected=isV3?encoded?.slice(HASH_V3.length):
+   isV2?encoded.slice(HASH_V2.length):encoded;
   return record?equalBytes(hash,b64ToBytes(expected)):false;
  }catch{return false;}
 }

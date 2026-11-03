@@ -722,14 +722,14 @@ function init(){
    );
 
    alert("Não foi possível validar o acesso ao Cálculo de Piso.");
-   window.location.href="../pages/home.html";
+   window.location.href=window.portalTenantHref?.("home.html") || "../pages/home.html";
    return;
   }
  }catch(e){
   console.error("[PISO] Erro ao validar acesso:",e);
 
   alert("Erro ao validar o acesso ao Cálculo de Piso.");
-  window.location.href="../pages/home.html";
+  window.location.href=window.portalTenantHref?.("home.html") || "../pages/home.html";
   return;
  }
 
@@ -804,7 +804,7 @@ function init(){
    console.error("[PISO] Erro ao encerrar sessão:",e);
   }
 
-  window.location.href="../pages/login.html";
+  window.location.href=window.portalTenantHref?.("login.html") || "../pages/login.html";
  };
 
  $("btnAdmin").onclick=()=>{

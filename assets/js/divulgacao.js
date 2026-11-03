@@ -704,7 +704,7 @@
 
       try {
         canvas = await html2canvas(preview, {
-          backgroundColor: "#f5f9fc",
+          backgroundColor: getComputedStyle(preview).backgroundColor,
           scale: 1,
           width: 1080,
           height: 1440,
@@ -1055,7 +1055,7 @@
 
     try {
       const canvas = await window.html2canvas(preview, {
-        backgroundColor: "#f4f8fb",
+        backgroundColor: getComputedStyle(preview).backgroundColor,
         scale: 1,
         width: 1080,
         height: 1350,

@@ -1,7 +1,7 @@
 import { callAppsScript } from "../services/appscript.js";
 import { writeTenantCatalog } from "../services/super-admin-tenant-write.js";
 import { readTenantLogo } from "../services/super-admin-brand.js";
-import {adminReadTenantIntegration} from "../services/tenant-integration.js";
+import {adminReadTenantIntegration,adminTestTenantIntegration} from "../services/tenant-integration.js";
 import { projectLegacyUsers } from "../services/legacy-user-projection.js";
 import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
 import { canManageTenants } from "../config/super-admin-identity.js";
@@ -86,6 +86,12 @@ export async function superAdminController(request, env, verifiedStagingSession 
       console.error("[SUPER ADMIN] Catálogo indisponível",String(error?.message || error));
       return errorResponse("Catálogo de transportadoras indisponível.",503);
     }
+  }
+  // Cloudflare Access / owner session gate is evaluated above this route.
+  if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/integracao/testar")){
+    const parts=path.split("/");
+    if(parts.length!==7||parts[5]!=="integracao")return errorResponse("Rota invalida.",404);
+    return adminTestTenantIntegration(env,parts[4]);
   }
   if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/integracao")){
     const parts=path.split("/");

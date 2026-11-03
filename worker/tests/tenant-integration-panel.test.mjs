@@ -6,13 +6,17 @@ import {stagingPanelHtml} from "../src/staging-panel.js";
 test("owner panel includes private tenant integration settings and valid inline script",()=>{
  const html=stagingPanelHtml();
  for(const id of ["integrationPanel","integrationSheetId","integrationUrl",
-  "integrationKey","integrationUf","integrationGenerate","integrationEnabled","integrationSave"]){
+  "integrationKey","integrationUf","integrationGenerate","integrationEnabled","integrationSave","integrationTest"]){
   assert.ok(html.includes('id="'+id+'"'),id);
  }
  const match=html.match(/<script>([\s\S]*?)<\/script>/);
  assert.ok(match,"inline owner script");
  assert.doesNotThrow(()=>new Script(match[1]));
  assert.ok(match[1].includes("async function loadIntegration"));
+ assert.ok(match[1].includes("integrationTest').onclick"));
+ assert.ok(match[1].includes("integracao/testar"));
+ assert.ok(match[1].includes("Nenhum dado foi alterado"));
+
  assert.ok(match[1].includes("sessionStorage.getItem(SELECTED_KEY)"));
  assert.ok(match[1].includes("rememberSelectedCompany(company.id)"));
  assert.ok(match[1].includes("selectedFromThisBrowser())||companies[0]"));

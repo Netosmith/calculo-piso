@@ -95,6 +95,42 @@ export async function adminWriteTenantIntegration(request,env,actor,id){
   return errorResponse("Nao foi possivel salvar a integracao.",503);
  }
 }
+/**
+ * Owner-only, read-only connectivity check. This does not require the
+ * integration to be enabled and never reads freight/user rows.
+ * Apps Script gateway_ping authenticates the configured key and reports
+ * its bound tenant / spreadsheet identity. Nothing sensitive is reflected.
+ */
+export async function adminTestTenantIntegration(env,id){
+ if(!validTenant(id))return errorResponse("Transportadora invalida.",400);
+ if(!env.TENANTS_DB||!env.TENANT_BRANDS)return errorResponse("Infraestrutura da integracao indisponivel.",503);
+ try{
+  const tenant=await env.TENANTS_DB.prepare("SELECT id FROM portal_tenants WHERE id=?").bind(id).first();
+  if(!tenant)return errorResponse("Transportadora nao encontrada.",404);
+  const config=await readTenantIntegration(env,id);
+  if(!config)return errorResponse("Configure e salve primeiro a integracao da transportadora.",409);
+  // A GET on the owner UI triggers only the hardcoded gateway_ping command.
+  // Never accept a module, action, spreadsheetId or script URL from the browser.
+  const reply=await callAppsScript({
+   ...env,APPS_SCRIPT_URL:config.scriptUrl,PORTAL_KEY:config.gatewayKey
+  },{action:"gateway_ping",method:"GET",params:{}});
+  if(!reply?.ok || !reply?.data || reply.data.gateway!=="authorized"){
+   return errorResponse("Apps Script nao confirmou a autorizacao do gateway.",502);
+  }
+  const tenantMatch=reply.data.transportadoraId===id;
+  const spreadsheetMatch=reply.data.spreadsheetId===config.spreadsheetId;
+  if(!tenantMatch||!spreadsheetMatch)
+   return errorResponse("Apps Script conectado a outra empresa ou planilha. Integracao continua sem validacao.",409,{
+    tenantMatch,spreadsheetMatch
+   });
+  return success({tenantId:id,conectado:true,gatewayAutorizado:true,
+   empresaCorreta:true,planilhaCorreta:true,integracaoAtiva:config.enabled});
+ }catch(error){
+  // Do not log script URLs, keys, raw remote bodies, or tenant records.
+  console.error("[TENANT INTEGRATION] read-only ping failed",{type:error?.name||"Error"});
+  return errorResponse("Nao foi possivel validar a conexao com o Apps Script. Confira a implantacao e a chave.",502);
+ }
+}
 export async function callTenantAppScript(env,principal,modules,payload){
  const module=String(payload?.module||"").trim().toLowerCase();
  const action=String(payload?.action||"").trim().toLowerCase();

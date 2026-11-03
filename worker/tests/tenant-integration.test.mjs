@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {validScriptUrl,readTenantIntegration,adminReadTenantIntegration,
- adminWriteTenantIntegration,callTenantAppScript} from "../src/services/tenant-integration.js";
+ adminWriteTenantIntegration,adminTestTenantIntegration,callTenantAppScript} from "../src/services/tenant-integration.js";
 
 const url="https://script.google.com/macros/s/"+"A".repeat(75)+"/exec";
 const sheet="1"+"S".repeat(43);
@@ -92,4 +92,54 @@ test("enabled tenant gateway posts ONLY to its own Apps Script endpoint with own
   assert.equal(observed[0].payload.params.auth.estado,"GO");
   assert.equal(JSON.stringify(data).includes(gatewayKey),false);
  }finally{globalThis.fetch=previous;}
+});
+
+test("owner read-only test checks gateway, tenant, spreadsheet without enabling or exposing secrets",async()=>{
+ const env=environment();
+ await adminWriteTenantIntegration(request(config),env,"OWNER","teste-01");
+ let observed=[];
+ const previous=globalThis.fetch;
+ globalThis.fetch=async(urlAsked,options)=>{
+  const payload=JSON.parse(options.body);
+  observed.push({url:urlAsked,action:payload.action,method:payload.method,gatewayKey:payload.gatewayKey});
+  return new Response(JSON.stringify({ok:true,data:{
+   service:"Portal Frete Apps Script",gateway:"authorized",transportadoraId:"teste-01",
+   spreadsheetId:sheet,method:"GET",timestamp:"2026-11-03T12:00:00.000Z"
+  }}),{status:200});
+ };
+ try{
+  const res=await adminTestTenantIntegration(env,"teste-01");
+  assert.equal(res.status,200);
+  const data=await res.json();
+  assert.equal(data.conectado,true);
+  assert.equal(data.empresaCorreta,true);
+  assert.equal(data.planilhaCorreta,true);
+  assert.equal(data.integracaoAtiva,false);
+  assert.deepEqual(observed,[{url,action:"gateway_ping",method:"GET",gatewayKey}]);
+  assert.equal(JSON.stringify(data).includes(gatewayKey),false);
+  assert.equal(JSON.stringify(data).includes(url),false);
+  assert.equal(env.events.length,1);
+ }finally{globalThis.fetch=previous;}
+});
+test("owner diagnostic refuses a mismatched Google Sheets identity",async()=>{
+ const env=environment();
+ await adminWriteTenantIntegration(request(config),env,"OWNER","teste-01");
+ const previous=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,data:{
+  gateway:"authorized",transportadoraId:"outra-empresa",spreadsheetId:"outro-documento"
+ }}),{status:200});
+ try{
+  const res=await adminTestTenantIntegration(env,"teste-01");
+  assert.equal(res.status,409);
+  const data=await res.json();
+  assert.deepEqual(data.details,{tenantMatch:false,spreadsheetMatch:false});
+  assert.equal(JSON.stringify(data).includes("outro-documento"),false);
+  assert.equal(JSON.stringify(data).includes("outra-empresa"),false);
+ }finally{globalThis.fetch=previous;}
+});
+test("owner diagnostic does not contact Apps Script without valid stored config",async()=>{
+ const env=environment();
+ assert.equal((await adminTestTenantIntegration(env,"teste-01")).status,409);
+ assert.equal((await adminTestTenantIntegration(env,"nova-frota")).status,400);
+ assert.equal((await adminTestTenantIntegration(env,"outra-empresa")).status,404);
 });

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import {validScriptUrl,readTenantIntegration,adminReadTenantIntegration,
  adminWriteTenantIntegration,callTenantAppScript} from "../src/services/tenant-integration.js";
 
-const url="https://script.google.com/macros/s/AKfycbxuYh826JZ4TmzBkDbxe71ocFGxBMudtGwHo3AgYhGFN3sgMlswoM23wXQOYcn_jmfEqQ/exec";
-const sheet="1gptH88QZM2vneqGPFYKKjPWlwy5sBb2w4fUIBmLt53g";
+const url="https://script.google.com/macros/s/"+"A".repeat(75)+"/exec";
+const sheet="1"+"S".repeat(43);
 const gatewayKey="separate-test-tenant-portal-key-00000001";
 function environment(){
  const objects=new Map(),events=[];

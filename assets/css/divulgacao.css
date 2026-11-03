@@ -1164,3 +1164,84 @@
   .multiPreviewShell{width:337.5px;height:421.875px}
   .multiArt{transform:scale(.3125)}
 }
+
+
+/* ================================================================
+   MODELO 3 | Marca única por transportadora
+   A paleta é gravada no Super Admin e aplicada via variáveis CSS.
+   Os quatro layouts compartilham o mesmo hero, sem logo embutida.
+   Valores padrão preservam a identidade original da Nova Frota.
+   ================================================================ */
+.templatePreview3{
+  --pf-art-primary:#063a75;
+  --pf-art-accent:#08a968;
+  --pf-art-surface:#f5f9fc;
+  --pf-art-contrast:#fff;
+  background:var(--pf-art-surface);
+  color:var(--pf-art-primary);
+}
+.templatePreview3 .m3Hero{background:var(--pf-art-surface)}
+.templatePreview3 .m3Headline>span,
+.templatePreview3 .m3Headline>small,
+.templatePreview3 .m3RouteCity,
+.templatePreview3 .m3MetaText strong,
+.templatePreview3 .m3ContactsIntro strong,
+.templatePreview3 .m3ContactLine{color:var(--pf-art-primary)}
+.templatePreview3 .m3Headline>strong{color:var(--pf-art-accent)}
+.templatePreview3 .m3Headline>small::after,
+.templatePreview3 .m3FooterQuote>span{background:var(--pf-art-accent)}
+.templatePreview3 .m3Content{background:var(--pf-art-surface)}
+.templatePreview3 .m3RouteLabel{
+  background:var(--pf-art-primary);color:var(--pf-art-contrast)
+}
+.templatePreview3 .m3Pin{
+  background:var(--pf-art-contrast);color:var(--pf-art-primary)
+}
+.templatePreview3 .m3Arrow{
+  background:var(--pf-art-primary);
+  border-color:var(--pf-art-surface);
+  color:var(--pf-art-contrast);
+  box-shadow:0 6px 16px rgba(0,0,0,.16)
+}
+.templatePreview3 .m3MetaIcon{
+  background:var(--pf-art-primary);color:var(--pf-art-contrast)
+}
+.templatePreview3 .m3PriceCard{
+  background:var(--pf-art-accent);
+  color:var(--pf-art-contrast)
+}
+.templatePreview3 .m3PriceLabel{
+  background:var(--pf-art-primary);color:var(--pf-art-contrast)
+}
+.templatePreview3 .m3PriceValue{color:var(--pf-art-contrast)}
+.templatePreview3 .m3WhatsappIcon{
+  background:var(--pf-art-accent);color:var(--pf-art-contrast);
+  box-shadow:0 5px 12px rgba(0,0,0,.12)
+}
+.templatePreview3 .m3ContactLine:not(:empty)::before{
+  color:var(--pf-art-accent);border-color:var(--pf-art-accent)
+}
+.templatePreview3 .m3Footer{
+  background:var(--pf-art-primary);
+  color:var(--pf-art-contrast)
+}
+.templatePreview3 .m3Footer::after{
+  background:linear-gradient(90deg,var(--pf-art-accent) 0 34%,var(--pf-art-primary) 34% 65%,var(--pf-art-accent) 65%);
+  opacity:.65
+}
+/* Modelos 4 também recebem o mesmo conjunto de variáveis de marca. */
+.multiArt{
+  --pf-art-primary:#073e7d;
+  --pf-art-accent:#08a968;
+  --pf-art-surface:#f4f8fb;
+  --pf-art-contrast:#fff;
+  background:var(--pf-art-surface);
+}
+.multiArt .multiArtTitle{color:var(--pf-art-primary)}
+.multiArt .multiArtTitle strong{color:var(--pf-art-accent)}
+.multiArt .multiArtBody{background:var(--pf-art-surface)}
+.multiArt .multiArtNum{background:var(--pf-art-primary);color:var(--pf-art-contrast)}
+.multiArt .multiArtPrice{background:var(--pf-art-accent);color:var(--pf-art-contrast)}
+.multiArt .multiArtContactsIntro{background:var(--pf-art-primary);color:var(--pf-art-contrast)}
+.multiArt .multiArtWa{background:var(--pf-art-accent);color:var(--pf-art-contrast)}
+.multiArt .multiArtFooter{background:var(--pf-art-primary);color:var(--pf-art-contrast)}

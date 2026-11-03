@@ -203,21 +203,14 @@
       "{--pf-art-primary:"+primary+";--pf-art-accent:"+accent+
       ";--pf-art-surface:"+surface+";--pf-art-watermark-opacity:"+watermark+";}";
    }
-   css+=[
-    'body.pf-tenant-site .multiArt .multiArtTitle strong,body.pf-tenant-site #nfM4Canvas .nfM4Title strong,',
-    'body.pf-tenant-site [data-template-preview="3"] .m3Headline strong,body.pf-tenant-site #nfM3Canvas .nfM3Headline strong{color:var(--pf-art-accent)!important}',
-    'body.pf-tenant-site .multiArt .multiArtPrice,body.pf-tenant-site #nfM4Canvas .nfM4Price,',
-    'body.pf-tenant-site [data-template-preview="3"] .m3PriceCard,body.pf-tenant-site #nfM3Canvas .nfM3PriceCard{background:var(--pf-art-accent)!important;color:#fff!important}',
-    'body.pf-tenant-site .multiArt .multiArtNum,body.pf-tenant-site #nfM4Canvas .nfM4Num{background:var(--pf-art-primary)!important;color:#fff!important}',
-    'body.pf-tenant-site .multiArt .multiArtFooter,body.pf-tenant-site #nfM4Canvas .nfM4Footer,',
-    'body.pf-tenant-site #nfM3Canvas .nfM3Footer,body.pf-tenant-site [data-template-preview="3"] .m3Footer{background:var(--pf-art-primary)!important}',
-    'body.pf-tenant-site .multiArt .multiArtTitle,body.pf-tenant-site #nfM4Canvas .nfM4Title{color:var(--pf-art-primary)!important}',
-    'body.pf-tenant-site .multiArt .multiArtBody,body.pf-tenant-site #nfM4Canvas .nfM4Body{background:var(--pf-art-surface)!important}',
-    'body.pf-tenant-site .multiArt .multiArtContactsIntro,body.pf-tenant-site #nfM4Canvas .nfM4ContactsIntro{background:var(--pf-art-primary)!important}',
-    'body.pf-tenant-site .pf-art-watermark{position:absolute!important;top:44px!important;right:18px!important;',
-    'bottom:auto!important;left:auto!important;width:160px!important;max-height:125px!important;object-fit:contain!important;',
-    'opacity:var(--pf-art-watermark-opacity,.08)!important;pointer-events:none!important;z-index:2!important}'
-   ].join("");
+   // O CSS compartilhado é a única fonte para todos os componentes visuais.
+   // Aqui injetamos SOMENTE as variáveis de paleta e o posicionamento da marca d'água.
+   // Nunca sobrepor apenas partes da arte com cores fixas (!important), pois
+   // isso separava a prévia da configuração individual salva no Super Admin.
+   css+=
+    'body.pf-tenant-site .pf-art-watermark{position:absolute!important;top:44px!important;right:18px!important;'+
+    'bottom:auto!important;left:auto!important;width:160px!important;max-height:125px!important;object-fit:contain!important;'+
+    'opacity:var(--pf-art-watermark-opacity,.08)!important;pointer-events:none!important;z-index:2!important;}';
    const current=document.getElementById("pfTenantArtTheme");
    const style=current||document.createElement("style");
    style.id="pfTenantArtTheme";style.textContent=css;
@@ -240,7 +233,7 @@
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);
   void loadBrand();
-  void loadArtThemes();
+  window.portalTenantArtThemeReady=loadArtThemes();
   if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(mutations=>{
     for(const change of mutations){

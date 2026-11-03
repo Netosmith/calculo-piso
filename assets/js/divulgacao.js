@@ -685,6 +685,9 @@
     const preview = getPreview(templateId);
     if (!preview) return;
 
+    // A paleta do Super Admin deve estar aplicada ANTES de exportar o JPG.
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
+      await window.portalTenantArtThemeReady;
     const bgImg = getBgImgEl(preview);
     await waitForImage(bgImg);
 
@@ -701,7 +704,7 @@
 
       try {
         canvas = await html2canvas(preview, {
-          backgroundColor: "#f5f9fc",
+          backgroundColor: getComputedStyle(preview).backgroundColor,
           scale: 1,
           width: 1080,
           height: 1440,
@@ -964,7 +967,7 @@
           <div class="multiPreviewShell">
             <div class="multiArt count-${count}">
               <section class="multiArtHero">
-                <img class="multiArtHeroImg" src="../assets/img/hero.jpg" alt="" crossorigin="anonymous">
+                <img class="multiArtHeroImg" src="../assets/img/divulgacao/hero-global.jpg" alt="" crossorigin="anonymous">
                 <div class="multiArtHeroWash"></div>
                 <img class="multiArtLogo" src="../assets/img/logo-novafrota.png" alt="Nova Frota" crossorigin="anonymous">
                 <div class="multiArtTitle">FRETES <strong>DISPONÍVEIS</strong></div>
@@ -1034,6 +1037,8 @@
     const preview = section?.querySelector(".multiArt");
     if (!preview || ![2,3,4].includes(count)) return;
 
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
+      await window.portalTenantArtThemeReady;
     const images = Array.from(preview.querySelectorAll("img"));
     await Promise.all(images.map(waitForImage));
     renderManualMulti(section);
@@ -1050,7 +1055,7 @@
 
     try {
       const canvas = await window.html2canvas(preview, {
-        backgroundColor: "#f4f8fb",
+        backgroundColor: getComputedStyle(preview).backgroundColor,
         scale: 1,
         width: 1080,
         height: 1350,

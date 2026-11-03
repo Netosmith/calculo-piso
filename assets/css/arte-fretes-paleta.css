@@ -1,0 +1,71 @@
+/* Portal Frete | Paleta visual única para artes de Fretes/Fretes MT
+ * As mesmas variáveis são usadas pelos modelos de Divulgação.
+ * Herança do Super Admin exclusivamente para empresas autenticadas;
+ * valores padrão mantêm azul e verde da Nova Frota.
+ */
+.nfM3Canvas{
+ --pf-art-primary:#063a75;
+ --pf-art-accent:#08a968;
+ --pf-art-surface:#f5f9fc;
+ --pf-art-contrast:#fff;
+ color:var(--pf-art-primary);
+ background:var(--pf-art-surface);
+}
+.nfM3Canvas .nfM3Hero{background:var(--pf-art-surface)}
+.nfM3Canvas .nfM3Headline span,
+.nfM3Canvas .nfM3Headline small,
+.nfM3Canvas .nfM3RouteCity,
+.nfM3Canvas .nfM3MetaText strong,
+.nfM3Canvas .nfM3ContactsIntro strong,
+.nfM3Canvas .nfM3Contact{color:var(--pf-art-primary)}
+.nfM3Canvas .nfM3Headline strong{color:var(--pf-art-accent)}
+.nfM3Canvas .nfM3Headline small::after,
+.nfM3Canvas .nfM3FooterQuote>span{background:var(--pf-art-accent)}
+.nfM3Canvas .nfM3Content{background:var(--pf-art-surface)}
+.nfM3Canvas .nfM3RouteLabel{
+ background:var(--pf-art-primary);color:var(--pf-art-contrast)
+}
+.nfM3Canvas .nfM3RouteLabel .pin{
+ color:var(--pf-art-primary);background:var(--pf-art-contrast)
+}
+.nfM3Canvas .nfM3Arrow{
+ background:var(--pf-art-primary);color:var(--pf-art-contrast);
+ border-color:var(--pf-art-surface);box-shadow:0 6px 16px #0002
+}
+.nfM3Canvas .nfM3MetaIcon{
+ background:var(--pf-art-primary);color:var(--pf-art-contrast)
+}
+.nfM3Canvas .nfM3PriceCard{
+ background:var(--pf-art-accent);color:var(--pf-art-contrast)
+}
+.nfM3Canvas .nfM3PriceLabel{
+ background:var(--pf-art-primary);color:var(--pf-art-contrast)
+}
+.nfM3Canvas .nfM3PriceValue{color:var(--pf-art-contrast)}
+.nfM3Canvas .nfM3WhatsappIcon{
+ background:var(--pf-art-accent);color:var(--pf-art-contrast);
+ box-shadow:0 5px 12px #0002
+}
+.nfM3Canvas .nfM3Contact:not(:empty)::before{
+ color:var(--pf-art-accent);border-color:var(--pf-art-accent)
+}
+.nfM3Canvas .nfM3Footer{background:var(--pf-art-primary);color:var(--pf-art-contrast)}
+.nfM3Canvas .nfM3Footer::after{
+ background:linear-gradient(90deg,var(--pf-art-accent) 0 34%,var(--pf-art-primary) 34% 65%,var(--pf-art-accent) 65%);
+ opacity:.65
+}
+.nfM4Canvas{
+ --pf-art-primary:#073e7d;
+ --pf-art-accent:#08a968;
+ --pf-art-surface:#f4f8fb;
+ --pf-art-contrast:#fff;
+ background:var(--pf-art-surface)
+}
+.nfM4Canvas .nfM4Title{color:var(--pf-art-primary)}
+.nfM4Canvas .nfM4Title strong{color:var(--pf-art-accent)}
+.nfM4Canvas .nfM4Body{background:var(--pf-art-surface)}
+.nfM4Canvas .nfM4Num{background:var(--pf-art-primary);color:var(--pf-art-contrast)}
+.nfM4Canvas .nfM4Price{background:var(--pf-art-accent);color:var(--pf-art-contrast)}
+.nfM4Canvas .nfM4ContactsIntro{background:var(--pf-art-primary);color:var(--pf-art-contrast)}
+.nfM4Canvas .nfM4Wa{background:var(--pf-art-accent);color:var(--pf-art-contrast)}
+.nfM4Canvas .nfM4Footer{background:var(--pf-art-primary);color:var(--pf-art-contrast)}

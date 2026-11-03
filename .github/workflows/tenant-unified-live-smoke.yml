@@ -70,16 +70,16 @@ jobs:
           curl -fsSL --max-time 25 "$website/pages/transportadora-teste/fretes.html" -o /tmp/tenant-fretes.html
           curl -fsSL --max-time 25 "$website/pages/transportadora-teste/bi.html" -o /tmp/tenant-bi.html
           curl -fsSL --max-time 25 "$website/assets/js/tenant-login.js?v=2" -o /tmp/tenant-login.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=5" -o /tmp/tenant-page.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=5" -o /tmp/tenant-route.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-art-palette-v5" -o /tmp/tenant-workspace.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=6" -o /tmp/tenant-page.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=6" -o /tmp/tenant-route.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-global-hero-v6" -o /tmp/tenant-workspace.js
           grep -Fq 'PortalAPI.login(usuario, senha, "nova-frota")' /tmp/legacy-login.html
           ! grep -Fq 'id="tenantId"' /tmp/legacy-login.html
           grep -Fq 'tenantWorkspace' /tmp/shared-home.html
           grep -Fq 'data-tenant-id="teste-01"' /tmp/private-login.html
           grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html
           grep -Fq 'data-shared-page="fretes.html"' /tmp/tenant-fretes.html
-          grep -Fq 'tenant-page.js?v=5' /tmp/tenant-fretes.html
+          grep -Fq 'tenant-page.js?v=6' /tmp/tenant-fretes.html
           grep -Fq 'data-shared-page="bi.html"' /tmp/tenant-bi.html
           grep -Fq 'location.replace("./home.html")' /tmp/tenant-login.js
           grep -Fq 'session.transportadoraId!==tenant' /tmp/tenant-page.js
@@ -98,4 +98,15 @@ jobs:
           grep -Fq 'data-shared-page="ordem.html"' /tmp/tenant-ordem.html
           grep -Fq '.flex{' /tmp/ordem.css
           grep -Fq 'ordem-tailwind.generated.css?v=1' /tmp/tenant-page.js
+          curl -fsSL --max-time 40 "$website/assets/img/divulgacao/hero-global.jpg" -o /tmp/global-hero.jpg
+          echo "8a58f1602f56f0c4836418c28611aad768254b3c075d93ad462b537436249349  /tmp/global-hero.jpg" | sha256sum -c -
+          curl -fsSL --max-time 25 "$website/pages/divulgacao.html" -o /tmp/divulgacao.html
+          curl -fsSL --max-time 25 "$website/pages/fretes.html" -o /tmp/fretes.html
+          curl -fsSL --max-time 25 "$website/pages/fretes2.html" -o /tmp/fretes2.html
+          curl -fsSL --max-time 25 "$website/assets/js/divulgacao.js?v=13" -o /tmp/divulgacao.js
+          curl -fsSL --max-time 25 "$website/assets/css/divulgacao.css?v=13" -o /tmp/divulgacao.css
+          for path in /tmp/divulgacao.html /tmp/fretes.html /tmp/fretes2.html /tmp/divulgacao.js; do
+            grep -Fq 'assets/img/divulgacao/hero-global.jpg' "$path"
+          done
+          grep -Fq 'MODELO 3 | Marca única' /tmp/divulgacao.css
           echo "LIVE SMOKE PASSED: signed tenant API; private pages; shared CSS; Sheets gateway routing; no public tenant directory."

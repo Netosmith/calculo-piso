@@ -769,6 +769,21 @@ const PORTAL_NAV_ITEMS = [
   }
 ];
 
+// Freight base links live in the overflow menu only for independent tenants.
+// Nova Frota keeps the original global navigation unchanged.
+if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+  for(const uf of ["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"]){
+    const key="fretes-"+uf.toLowerCase();
+    PORTAL_NAV_ITEMS.push({
+      key,label:"Fretes "+uf,feature:key,
+      href:"./fretes-"+uf+".html",
+      paths:["fretes-"+uf.toLowerCase()+".html"],
+      secondary:true,
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
+    });
+  }
+}
+
 function injectPortalNavStyles(){
   if(document.getElementById("nfGlobalNavStyle")) return;
 

@@ -16,10 +16,13 @@ export function stagingPanelHtml(){
   html=required(html,"$('newCompany').disabled=!(writeReady&&mfaActive);","$('newCompany').disabled=!writeReady;");
   html=required(html,"$('adminAuth').hidden=!writeReady;","$('adminAuth').hidden=true;");
   html=required(html,"writeReady?'requer validação MFA':'não configurada'","writeReady?'liberada pelo Cloudflare Access':'não configurada'");
-  html=required(html,"const ROLES=[", "let credentialReady=false;\nconst ROLES=[");
+  html=required(html,"const ROLES=[", "let credentialReady=false,credentialProblem=\'\';\nconst ROLES=[");
   html=required(html,
    "brandReady=Boolean(capabilities.brandWrite);",
-   "brandReady=Boolean(capabilities.brandWrite);credentialReady=Boolean(capabilities.credentialWrite);");
+   "brandReady=Boolean(capabilities.brandWrite);credentialReady=Boolean(capabilities.credentialWrite);credentialProblem=Array.isArray(capabilities.credentialMissing)&&capabilities.credentialMissing.length?\'Definir senha indisponível: estrutura D1 incompleta (\'+capabilities.credentialMissing.join(\', \')+\').\':\'\';");
+  html=required(html,
+   "if(companies.length){selected=companies[0];render();",
+   "if(credentialProblem)notice(credentialProblem);if(companies.length){selected=companies[0];render();");
   html=required(html,
    "actions.append(role,status);row.append(actions);",
    "actions.append(role,status);if(credentialReady){const passwordButton=document.createElement('button');passwordButton.type='button';passwordButton.textContent='Definir senha';passwordButton.onclick=()=>setTenantPassword(u);actions.append(passwordButton);}row.append(actions);");

@@ -424,8 +424,18 @@ function canAccessFeature(featureKey){
 
   const tenantSession=window.__PORTAL_TENANT_SESSION;
   if(tenantSession){
-    // Unavailable legacy screens must not open for other transportadoras.
-    return feature==="home";
+    // The original Home can show tenant-authorized cards, but a tenant never
+    // gains entry to legacy module pages merely by seeing those cards.
+    const onHome=currentPath.endsWith("/home.html");
+    const mapped={piso2:"piso","custo-filial":"custo-frota",
+      "fretes-mercado":"fretes",chamados:"chamados",
+      embarques:"embarques",relatorio:"relatorio"};
+    const moduleKey=mapped[feature]||feature;
+    if(feature==="home")return true;
+    if(!onHome)return false;
+    const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
+    if(String(tenantSession.perfil||"").toUpperCase()==="PISO")return moduleKey==="piso"&&modules.includes("piso");
+    return modules.includes(moduleKey);
   }
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.

@@ -10,8 +10,19 @@ const names={piso:"Piso ANTT",fretes:"Fretes",fretes2:"Fretes MT",bi:"BI",divulg
 const enabled=new Set(["fretes","fretes2","bi"]);
 const style=document.createElement("style");
 style.textContent=[
- "body.pf-tenant-mode .nf-home-layout,body.pf-tenant-mode .nf-solic-wrap,body.pf-tenant-mode .nf-support-link{display:none!important}",
- "body.pf-tenant-mode #tenantWorkspace{display:block!important;min-height:65vh;position:relative;z-index:1}",
+ "body.pf-tenant-mode .nf-solic-wrap,body.pf-tenant-mode .nf-support-link{display:none!important}",
+ "body.pf-tenant-mode #tenantWorkspace:not([hidden]){display:block;margin:22px 0 30px;position:relative;z-index:1}",
+ "body.pf-tenant-mode #tenantWorkspace[hidden]{display:none!important}",
+ "body.pf-tenant-mode .nf-tools .nf-tool.pf-pending{opacity:.52;cursor:not-allowed}",
+ "body.pf-tenant-mode .nf-tools .nf-tool.pf-pending .nf-tool-arrow{display:none}",
+ "body.pf-tenant-mode .nf-brand-name{color:inherit;font-size:16px;font-weight:850;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-box{background:#fff;color:#17345a;border:1px solid #d5e3f2;box-shadow:0 8px 22px rgba(22,62,107,.09)}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-stat{background:#eef4fb;border-color:#d2e1ef;color:#17345a}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-stat strong{color:#17345a}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-box label,html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-note{color:#45627e}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-box input{background:#fff;color:#17345a;border-color:#b8cfe2}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-table th{color:#45627e}",
+ "html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-table th,html[data-nf-home='1'][data-nf-theme='claro'] body.pf-tenant-mode .pf-table td{border-bottom-color:#e2ebf4}",
  ".pf-title{display:flex;align-items:center;gap:17px;flex-wrap:wrap;margin-bottom:24px}",
  ".pf-title h1{font-size:30px;color:#eef7ff;margin:0}.pf-title p{color:#acc5df;margin:6px 0 0}",
  ".pf-logo{width:88px;height:65px;border-radius:12px;object-fit:contain;background:#fff;padding:6px}",
@@ -47,10 +58,7 @@ const call=(path,options={})=>window.PortalAPI.tenantRequest(path,options);
 
 function markup(){
  return [
- '<section class="pf-title"><img class="pf-logo" id="pfLogo" alt="Logo da empresa" hidden>',
- '<div><h1 id="pfCompany">Transportadora</h1><p id="pfIdentity"></p></div></section>',
  '<div class="pf-status" id="pfStatus" role="status"></div>',
- '<section class="pf-box"><h2>Meus módulos</h2><div class="pf-grid" id="pfModules"></div></section>',
  '<section class="pf-box" id="pfFreights" hidden>',
  '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2>Fretes da transportadora</h2>',
  '<button type="button" class="pf-btn" id="pfReload">Atualizar</button></div>',
@@ -69,31 +77,49 @@ function markup(){
  '<div class="pf-stats" id="pfStats"></div></section>'
  ].join("");
 }
-function displayModules(){
- const root=$("pfModules");root.replaceChildren();
- const modules=Array.isArray(session.modules)?session.modules:[];
- if(!modules.length){root.textContent="Nenhum módulo habilitado pelo Super Admin.";return;}
- for(const key of modules){
-  const usable=enabled.has(key)&&session.perfil!=="PISO";
-  const button=document.createElement("button");button.className="pf-module";button.type="button";button.disabled=!usable;
-  const strong=document.createElement("b");strong.textContent=names[key]||key;
-  const caption=document.createElement("small");
-  caption.textContent=usable?"Abrir módulo":session.perfil==="PISO"&&enabled.has(key)?
-   "Restrito a este perfil":"Em integração para novas transportadoras";
-  button.append(strong,caption);
-  if(usable)button.onclick=()=>openModule(key);
-  root.append(button);
- }
+const supported=new Set(["fretes","fretes2","bi"]);
+function canOpen(key){
+ const modules=Array.isArray(session?.modules)?session.modules:[];
+ return supported.has(key) && session?.perfil!=="PISO" && modules.includes(key);
+}
+function configureHomeCards(){
+ const modules=Array.isArray(session?.modules)?session.modules:[];
+ document.querySelectorAll(".nf-tools a.nf-tool[data-feature]").forEach(card=>{
+  const key=card.dataset.feature;
+  if(!modules.includes(key) && !(key==="piso2"&&modules.includes("piso")))return;
+  const active=canOpen(key);
+  card.classList.toggle("pf-pending",!active);
+  card.setAttribute("aria-disabled",String(!active));
+  card.title=active?"Abrir módulo com dados desta transportadora":
+   "Integração de dados desta transportadora ainda não disponível";
+ });
 }
 async function getLogo(){
  if(logoUrl){URL.revokeObjectURL(logoUrl);logoUrl=null;}
- const logo=$("pfLogo");logo.hidden=true;logo.removeAttribute("src");
+ const logo=document.querySelector(".nf-brand > img");
+ if(!logo)return;
+ const company=session?.transportadoraNome||"Portal Frete";
+ let label=document.getElementById("pfBrandName");
+ if(!label){
+  label=document.createElement("strong");
+  label.id="pfBrandName";
+  label.className="nf-brand-name";
+  document.querySelector(".nf-brand")?.append(label);
+ }
+ logo.style.display="none";
+ label.hidden=false;
+ label.textContent=company;
+ document.title="Home | "+company;
  try{
   const response=await fetch(window.PortalAPI.tenantLogoUrl(),{credentials:"include",cache:"no-store"});
   if(!response.ok)return;
   const blob=await response.blob();
   if(!["image/png","image/jpeg","image/webp"].includes(blob.type))return;
-  logoUrl=URL.createObjectURL(blob);logo.src=logoUrl;logo.hidden=false;
+  logoUrl=URL.createObjectURL(blob);
+  logo.src=logoUrl;
+  logo.alt=company;
+  logo.style.removeProperty("display");
+  label.hidden=true;
  }catch{}
 }
 async function getFreights(){
@@ -134,10 +160,65 @@ async function getBi(){
  }catch(error){msg(error.message);}
 }
 async function openModule(key){
+ if(!canOpen(key))return;
+ const root=$("tenantWorkspace");
+ root.hidden=false;
  $("pfFreights").hidden=true;$("pfBi").hidden=true;msg("");
  if(key==="fretes"||key==="fretes2"){
   $("pfFreights").hidden=false;$("pfForm").hidden=!writeAllowed();await getFreights();
  }else if(key==="bi"){$("pfBi").hidden=false;await getBi();}
+ root.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function bindHomeCards(){
+ document.querySelector(".nf-tools")?.addEventListener("click",event=>{
+  if(!session)return;
+  const card=event.target.closest("a.nf-tool[data-feature]");
+  if(!card)return;
+  event.preventDefault();event.stopPropagation();
+  const key=card.dataset.feature;
+  if(canOpen(key)){void openModule(key);return;}
+  // A card can be enabled by Super Admin but still lack a tenant-safe backend.
+  const root=$("tenantWorkspace");root.hidden=false;
+  $("pfFreights").hidden=true;$("pfBi").hidden=true;
+  msg("Este módulo ainda está sendo integrado para "+(session.transportadoraNome||"esta transportadora")+". Os dados de outras empresas não serão exibidos.");
+  root.scrollIntoView({behavior:"smooth",block:"start"});
+ },true);
+}
+function setHomeValue(id,value){
+ const element=$(id);if(element)element.textContent=String(value);
+}
+function sourceUf(origin){
+ const codes=String(origin||"").toUpperCase().match(/\b(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/g);
+ return codes?.[codes.length-1]||"";
+}
+async function updateTenantHome(){
+ // Only tenant-scoped endpoints may populate the shared Nova Frota layout.
+ for(const id of ["homeVeiculosGO","homeVeiculosMT","homeVeiculosGOPorta",
+  "homeVeiculosGOTransito","homeVeiculosMTPorta","homeVeiculosMTTransito",
+  "homeSolicStat","homeSolicOpen","homeFiliais"])setHomeValue(id,"—");
+ for(const id of ["homeVeiculosAtualizacao","homeSolicAtualizacao","homeFiliaisAtualizacao"])
+  setHomeValue(id,"Dados ainda não integrados");
+ setHomeValue("homeFretesAtualizacao","Carregando dados da transportadora...");
+ try{
+  if(!canOpen("fretes")&&!canOpen("fretes2")){
+   setHomeValue("homeFretesAtivos","—");
+   setHomeValue("homeFretesGO","—");setHomeValue("homeFretesMT","—");
+   setHomeValue("homeFretesAtualizacao","Sem acesso ao módulo de fretes");
+   return;
+  }
+  const data=await call("/fretes");
+  const fretes=Array.isArray(data.fretes)?data.fretes:[];
+  const active=fretes.filter(row=>row.status==="aberto");
+  setHomeValue("homeFretesAtivos",active.length);
+  setHomeValue("homeFretesGO",active.filter(row=>sourceUf(row.origem)==="GO").length);
+  setHomeValue("homeFretesMT",active.filter(row=>sourceUf(row.origem)==="MT").length);
+  setHomeValue("homeFretesAtualizacao","Atualizado agora · dados exclusivos");
+  document.querySelector(".nf-footer-status")?.replaceChildren("Dados atualizados agora");
+ }catch(error){
+  for(const id of ["homeFretesAtivos","homeFretesGO","homeFretesMT"])setHomeValue(id,"—");
+  setHomeValue("homeFretesAtualizacao","Falha ao consultar fretes próprios");
+  document.querySelector(".nf-footer-status")?.replaceChildren("Não foi possível carregar os dados");
+ }
 }
 function setup(){
  $("pfReload").onclick=getFreights;
@@ -153,19 +234,23 @@ function setup(){
  };
 }
 function render(nextSession){
- if(nextSession?.tenantMode!==true || !nextSession.transportadoraId)return;
- session=nextSession;document.body.classList.add("pf-tenant-mode");
+ if(nextSession?.tenantMode!==true||!nextSession.transportadoraId)return;
+ session=nextSession;
+ document.body.classList.add("pf-tenant-mode");
  const root=$("tenantWorkspace");if(!root)return;
- root.hidden=false;
- if(!initialized){root.innerHTML=markup();setup();initialized=true;}
- text("pfCompany",session.transportadoraNome||session.transportadoraId);
- text("pfIdentity","Usuário "+session.usuario+" · Perfil "+session.perfil+" · Portal Frete");
- const legacyLogo=document.querySelector(".nf-brand > img");if(legacyLogo)legacyLogo.hidden=true;
- if(!$("pfBrand")){
-  const brand=document.createElement("strong");brand.id="pfBrand";brand.textContent="PORTAL FRETE";
-  document.querySelector(".nf-brand")?.append(brand);
- }
- displayModules();getLogo();
+ if(!initialized){root.innerHTML=markup();setup();bindHomeCards();initialized=true;}
+ const short=String(session.usuario||"Usuário").split(".")[0];
+ setHomeValue("homeUserName",short.slice(0,1)+short.slice(1).toLowerCase());
+ setHomeValue("homeSub","Visão geral da operação | "+session.transportadoraNome+
+  " | Acesso: "+session.usuario+" • "+session.perfil);
+ const footer=document.querySelector(".nf-footer span:last-child");
+ if(footer)footer.textContent="Portal Frete | "+session.transportadoraNome;
+ // Never reveal legacy Nova Frota KPI values or operational requests.
+ const solicit=document.getElementById("homeSolicCard");if(solicit)solicit.disabled=true;
+ const support=document.querySelector(".nf-support-link");if(support)support.hidden=true;
+ configureHomeCards();
+ void updateTenantHome();
+ void getLogo();
 }
 window.addEventListener("portal:session",event=>render(event.detail));
 if(window.portalAuthReady)Promise.resolve(window.portalAuthReady).then(render).catch(()=>{});

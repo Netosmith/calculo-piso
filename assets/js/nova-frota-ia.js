@@ -237,6 +237,14 @@
     window.NovaFrotaIA = {open: () => toggle(true), close: () => toggle(false)};
     connect();
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, {once: true});
-  else mount();
+  async function mountAfterSession(){
+    // This legacy assistant is not tenant-scoped. Never mount or call its
+    // endpoints from a different company's authenticated workspace.
+    const session=window.portalAuthReady?await window.portalAuthReady:null;
+    if(!session||session.tenantMode===true)return;
+    mount();
+  }
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded",()=>{void mountAfterSession();},{once:true});
+  }else void mountAfterSession();
 })();

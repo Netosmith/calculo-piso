@@ -42,7 +42,11 @@
   }
   function key(){
     const user = username();
-    return user ? "nf:ui-preferences:v1:" + encodeURIComponent(user) : "";
+    // Preferences belong to each tenant/user, never to a username globally.
+    const tenant = window.__PORTAL_TENANT_SESSION?.tenantMode===true
+      ? String(window.__PORTAL_TENANT_SESSION.transportadoraId||"") : "";
+    return user ? "nf:ui-preferences:v1:" +
+      (tenant ? encodeURIComponent(tenant)+":" : "")+encodeURIComponent(user) : "";
   }
   function clean(raw){
     const p = raw && typeof raw === "object" ? raw : {};
@@ -57,9 +61,15 @@
   function load(){
     const k = key();
     owner = k;
-    if(!k) return {...BASE};
-    try{ return clean(JSON.parse(localStorage.getItem(k) || "null")); }
-    catch(_){ return {...BASE}; }
+    const tenant = window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+    // Keep legacy Nova Frota choices unchanged. Other companies open the
+    // same light Home by default, matching the established reference layout.
+    const defaults=tenant?{...BASE,theme:"claro"}:{...BASE};
+    if(!k)return defaults;
+    try{
+      const raw=localStorage.getItem(k);
+      return raw?clean(JSON.parse(raw)):defaults;
+    }catch(_){return defaults;}
   }
   function persist(){
     if(!owner) return;

@@ -252,7 +252,7 @@
 
             <div class="homeFreightInfo">
               <span class="homeFreightInfoIcon money">R$</span>
-              <div><small>Frete motorista</small><b class="homeFreightPrice">${moneyBR(row.valorMotorista)}</b></div>
+              <div><small>${row.source === "TENANT" ? "Frete por tonelada" : "Frete motorista"}</small><b class="homeFreightPrice">${moneyBR(row.valorMotorista)}</b></div>
             </div>
 
             <div class="homeFreightInfo">
@@ -417,12 +417,25 @@
       }
       if (!window.PortalAPI) throw new Error("API segura do Portal indisponível.");
 
-      const result = await window.PortalAPI.call("home-map", "read");
-      const merged = extractRows(result).map((row) =>
-        normalizeRow(row, upper(row?.source) || "FRETES")
-      );
-
-      STATE.rows = availableRows(merged);
+      if(session.tenantMode===true){
+        const modules=Array.isArray(session.modules)?session.modules:[];
+        if(!modules.includes("fretes")&&!modules.includes("fretes2")){
+          STATE.rows=[];render();return;
+        }
+        // Reuse the same map and freight cards with data from the tenant D1.
+        // Never call the Nova Frota Apps Script gateway with a tenant session.
+        const result=await window.PortalAPI.tenantRequest("/fretes");
+        const rows=Array.isArray(result.fretes)?result.fretes:[];
+        STATE.rows=rows.filter(row=>row.status==="aberto").map(row=>normalizeRow({
+          ...row,source:"TENANT",valorMotorista:row.valorTon,status:"LIBERADO"
+        },"TENANT"));
+      }else{
+        const result = await window.PortalAPI.call("home-map", "read");
+        const merged = extractRows(result).map((row) =>
+          normalizeRow(row, upper(row?.source) || "FRETES")
+        );
+        STATE.rows = availableRows(merged);
+      }
       render();
     } catch (error) {
       console.error("[HOME MAP] erro ao carregar:", error);

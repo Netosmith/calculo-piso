@@ -804,7 +804,6 @@
   <main class="nf-dashboard">
     <img class="nf-bg-image" src="../assets/img/FUNDO.jpg" alt="" aria-hidden="true" />
     <div class="nf-container">
-      <div id="tenantWorkspace" hidden></div>
       <div class="nf-home-layout">
         <div class="nf-home-main">
       <section class="nf-welcome" aria-labelledby="homeWelcome">
@@ -1028,6 +1027,7 @@
           </section>
         </aside>
       </div>
+      <div id="tenantWorkspace" hidden></div>
 
       <footer class="nf-footer"><span class="nf-footer-status">Dados atualizados agora</span><span class="nf-footer-sep"></span><span>Sistema Operacional Nova Frota</span></footer>
     </div>
@@ -1050,11 +1050,11 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=21"></script>
-  <script src="../assets/js/home-solicitacoes.js?v=2"></script>
-  <script src="../assets/js/tenant-workspace.js?v=1" defer></script>
+  <script src="../assets/js/auth.js?v=22"></script>
+  <script src="../assets/js/home-solicitacoes.js?v=3"></script>
+  <script src="../assets/js/tenant-workspace.js?v=2" defer></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>
-  <script src="../assets/js/home-map.js?v=3"></script>
+  <script src="../assets/js/home-map.js?v=4"></script>
   <script>
     requireHomeAuth();
     bindLogoutButton();
@@ -1378,6 +1378,7 @@
       const solicitOpen = document.getElementById("homeSolicOpen");
       if (solicitOpen) {
         const syncSolicitacoes = () => {
+          if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
           definirNumero("homeSolicStat", solicitOpen.textContent);
           definirAtualizacao("homeSolicAtualizacao");
         };
@@ -1389,6 +1390,7 @@
       const filialSelect = document.getElementById("hsFilial");
       if (filialSelect) {
         const contarFiliais = () => {
+          if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
           const total = [...filialSelect.options].filter((opcao) => opcao.value && !/selecione/i.test(opcao.textContent)).length;
           if (total) {
             definirNumero("homeFiliais",total);
@@ -1461,8 +1463,8 @@
     }catch(_){ /* Nunca exibir sem autorização do servidor. */ }
   })();
   </script>
-  <script src="../assets/js/nova-frota-ia.js?v=3" defer></script>
-  <script src="../assets/js/portal-preferences.js?v=7" defer></script>
-  <script src="../assets/js/portal-preferences-advanced.js?v=6" defer></script>
+  <script src="../assets/js/nova-frota-ia.js?v=4" defer></script>
+  <script src="../assets/js/portal-preferences.js?v=8" defer></script>
+  <script src="../assets/js/portal-preferences-advanced.js?v=7" defer></script>
 </body>
 </html>

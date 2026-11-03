@@ -7,6 +7,7 @@ import {validTenantId,normalizeTenantUser,authenticateTenant,hasTenantSessionCoo
  from "../services/tenant-auth.js";
 import {clearSessionCookie} from "../services/session.js";
 import {tenantFreights,tenantBi} from "../services/tenant-freights.js";
+import {readTenantIntegration,callTenantAppScript} from "../services/tenant-integration.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
@@ -122,6 +123,20 @@ export async function tenantApiController(request,env){
     "Content-Type":mime,"Cache-Control":"private, no-store",
     "X-Content-Type-Options":"nosniff","Cross-Origin-Resource-Policy":"same-site"
    }});
+  }
+  if(path==="/v1/tenant/integracao"&&request.method==="GET"){
+    const config=await readTenantIntegration(env,principal.tenant_id);
+    return success({integracao:{configured:Boolean(config),enabled:config?.enabled===true}});
+  }
+  if(path==="/v1/tenant/gateway"&&request.method==="POST"){
+    const raw=await request.text();
+    if(raw.length>150000)return tenantJsonError("Requisicao excede o limite.",413);
+    let payload;
+    try{payload=JSON.parse(raw);}catch{return tenantJsonError("Dados invalidos.",400);}
+    if(!payload||typeof payload!=="object"||Array.isArray(payload)||
+      Object.keys(payload).some(k=>!["module","action","params"].includes(k)))
+      return tenantJsonError("Campos nao permitidos.",400);
+    return callTenantAppScript(env,principal,modules,payload);
   }
   if(path==="/v1/tenant/bi"&&request.method==="GET")
    return tenantBi(env.TENANTS_DB,principal,modules);

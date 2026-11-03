@@ -93,4 +93,9 @@ jobs:
           grep -Fq 'data-shared-page="controle.html"' /tmp/tenant-controle.html
           grep -Fq '.grid{' /tmp/controle.css
           grep -Fq 'controle-tailwind.generated.css?v=1' /tmp/tenant-page.js
+          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/ordem.html" -o /tmp/tenant-ordem.html
+          curl -fsSL --max-time 25 "$website/assets/css/ordem-tailwind.generated.css?v=1" -o /tmp/ordem.css
+          grep -Fq 'data-shared-page="ordem.html"' /tmp/tenant-ordem.html
+          grep -Fq '.flex{' /tmp/ordem.css
+          grep -Fq 'ordem-tailwind.generated.css?v=1' /tmp/tenant-page.js
           echo "LIVE SMOKE PASSED: signed tenant API; private pages; shared CSS; Sheets gateway routing; no public tenant directory."

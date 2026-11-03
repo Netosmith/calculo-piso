@@ -81,7 +81,7 @@
   if(page==="controle.html"){
    parsed.querySelectorAll('script[src*="cdn.tailwindcss.com"]').forEach(node=>node.remove());
    parsed.querySelectorAll("script:not([src])").forEach(node=>{
-    if(/\\btailwind\\.config\\s*=/.test(node.textContent||""))node.remove();
+    if(/\btailwind\.config\s*=/.test(node.textContent||""))node.remove();
    });
    const css=parsed.createElement("link");
    css.id="pfTenantControleCss";

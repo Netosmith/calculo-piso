@@ -9,7 +9,11 @@ const SLUG=/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const SHEET_ID=/^[A-Za-z0-9_-]{20,160}$/;
 const UF=/^(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$/;
 const KEY=/^[A-Za-z0-9_\-!@#$%^&*+=]{24,256}$/;
-const integrationObjectKey=id=>"tenant/"+id+"/private/apps-script-v1.json";
+const BASE_UFS=new Set(["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"]);
+export const validFreightBase=base=>BASE_UFS.has(String(base||"").toUpperCase());
+const integrationObjectKey=(id,base="")=>base
+ ? "tenant/"+id+"/private/base-"+base.toLowerCase()+"-apps-script-v1.json"
+ : "tenant/"+id+"/private/apps-script-v1.json";
 function validTenant(id){return typeof id==="string" && id!=="nova-frota" &&
  id.length<=48 && SLUG.test(id);}
 export function validScriptUrl(value){
@@ -28,9 +32,9 @@ function safeConfig(value){
  return {scriptUrl:value.scriptUrl,spreadsheetId:value.spreadsheetId,
   gatewayKey:value.gatewayKey,estado:value.estado,enabled:value.enabled===true};
 }
-export async function readTenantIntegration(env,id){
- if(!validTenant(id)||!env.TENANT_BRANDS)return null;
- const object=await env.TENANT_BRANDS.get(integrationObjectKey(id));
+export async function readTenantIntegration(env,id,base=""){
+ if(!validTenant(id)||!env.TENANT_BRANDS||(base&&!validFreightBase(base)))return null;
+ const object=await env.TENANT_BRANDS.get(integrationObjectKey(id,base));
  if(!object)return null;
  const data=await object.json();
  return safeConfig(data);
@@ -42,19 +46,19 @@ function summary(config){
   gatewayKeyConfigured:Boolean(config?.gatewayKey)};
 }
 // This read is only invoked AFTER the Super Admin owner identity gate.
-export async function adminReadTenantIntegration(env,id){
+export async function adminReadTenantIntegration(env,id,base=""){
  if(!validTenant(id))return errorResponse("Transportadora invalida.",400);
  if(!env.TENANTS_DB||!env.TENANT_BRANDS)return errorResponse("Armazenamento indisponivel.",503);
  try{
   const tenant=await env.TENANTS_DB.prepare("SELECT id FROM portal_tenants WHERE id=?").bind(id).first();
   if(!tenant)return errorResponse("Transportadora nao encontrada.",404);
-  return success({tenantId:id,integracao:summary(await readTenantIntegration(env,id))});
+  return success({tenantId:id,base:base||"geral",integracao:summary(await readTenantIntegration(env,id,base))});
  }catch{
   return errorResponse("Nao foi possivel consultar a integracao.",503);
  }
 }
 // Access-owner-only: caller must check same-origin, Content-Type and write opt-in.
-export async function adminWriteTenantIntegration(request,env,actor,id){
+export async function adminWriteTenantIntegration(request,env,actor,id,base=""){
  if(!validTenant(id))return errorResponse("Transportadora invalida.",400);
  if(!env.TENANTS_DB||!env.TENANT_BRANDS)return errorResponse("Armazenamento indisponivel.",503);
  let payload;
@@ -68,7 +72,7 @@ export async function adminWriteTenantIntegration(request,env,actor,id){
  try{
   const tenant=await env.TENANTS_DB.prepare("SELECT id FROM portal_tenants WHERE id=?").bind(id).first();
   if(!tenant)return errorResponse("Transportadora nao encontrada.",404);
-  const previous=await readTenantIntegration(env,id);
+  const previous=await readTenantIntegration(env,id,base);
   const candidate={
    scriptUrl:payload.scriptUrl??previous?.scriptUrl,
    spreadsheetId:payload.spreadsheetId??previous?.spreadsheetId,
@@ -78,18 +82,20 @@ export async function adminWriteTenantIntegration(request,env,actor,id){
   };
   const config=safeConfig(candidate);
   if(!config)return errorResponse("Informe URL do Apps Script, ID da planilha, UF e chave exclusiva (minimo 24 caracteres).",400);
+  if(base&&(!validFreightBase(base)||config.estado!==base))
+    return errorResponse("UF da integracao diferente da base operacional.",400);
   // Fail closed: new integrations start DISABLED, unless the owner explicitly
   // confirms enablement; the Apps Script must be validated against the copy.
   if(!previous&&config.enabled)return errorResponse("Salve primeiro a integracao desativada e valide a planilha antes de ativar.",409);
-  await env.TENANT_BRANDS.put(integrationObjectKey(id),JSON.stringify(config),{
+  await env.TENANT_BRANDS.put(integrationObjectKey(id,base),JSON.stringify(config),{
    httpMetadata:{contentType:"application/json"}
   });
   await env.TENANTS_DB.prepare(
    "INSERT INTO portal_tenant_audit(id,actor_id,tenant_id,action,detail_json) VALUES(?,?,?,?,?)"
-  ).bind(crypto.randomUUID(),actor,id,"integration.update",JSON.stringify({
+  ).bind(crypto.randomUUID(),actor,id,base?"base.integration.update":"integration.update",JSON.stringify({base:base||"geral",
    provider:"apps-script",enabled:config.enabled,estado:config.estado
   })).run();
-  return success({tenantId:id,integracao:summary(config)});
+  return success({tenantId:id,base:base||"geral",integracao:summary(config)});
  }catch(error){
   console.error("[TENANT INTEGRATION] write failed",{type:error?.name||"Error"});
   return errorResponse("Nao foi possivel salvar a integracao.",503);
@@ -101,13 +107,13 @@ export async function adminWriteTenantIntegration(request,env,actor,id){
  * Apps Script gateway_ping authenticates the configured key and reports
  * its bound tenant / spreadsheet identity. Nothing sensitive is reflected.
  */
-export async function adminTestTenantIntegration(env,id){
+export async function adminTestTenantIntegration(env,id,base=""){
  if(!validTenant(id))return errorResponse("Transportadora invalida.",400);
  if(!env.TENANTS_DB||!env.TENANT_BRANDS)return errorResponse("Infraestrutura da integracao indisponivel.",503);
  try{
   const tenant=await env.TENANTS_DB.prepare("SELECT id FROM portal_tenants WHERE id=?").bind(id).first();
   if(!tenant)return errorResponse("Transportadora nao encontrada.",404);
-  const config=await readTenantIntegration(env,id);
+  const config=await readTenantIntegration(env,id,base);
   if(!config)return errorResponse("Configure e salve primeiro a integracao da transportadora.",409);
   // A GET on the owner UI triggers only the hardcoded gateway_ping command.
   // Never accept a module, action, spreadsheetId or script URL from the browser.
@@ -123,7 +129,7 @@ export async function adminTestTenantIntegration(env,id){
    return errorResponse("Apps Script conectado a outra empresa ou planilha. Integracao continua sem validacao.",409,{
     tenantMatch,spreadsheetMatch
    });
-  return success({tenantId:id,conectado:true,gatewayAutorizado:true,
+  return success({tenantId:id,base:base||"geral",conectado:true,gatewayAutorizado:true,
    empresaCorreta:true,planilhaCorreta:true,integracaoAtiva:config.enabled});
  }catch(error){
   // Do not log script URLs, keys, raw remote bodies, or tenant records.
@@ -143,7 +149,8 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const permissionModule=role==="PISO"&&module==="piso"?"piso2":module;
  if(!allowed||!canRunGatewayAction(permissionSession,permissionModule,action,payload?.params))
   return errorResponse("Acao nao permitida para este perfil ou transportadora.",403);
- const config=await readTenantIntegration(env,principal.tenant_id);
+ const base=module.match(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/)?.[1].toUpperCase()||"";
+ const config=await readTenantIntegration(env,principal.tenant_id,base);
  if(!config||!config.enabled)return errorResponse("Planilha desta transportadora ainda nao vinculada.",503);
  const requestPayload=payload.params&&typeof payload.params==="object"&&!Array.isArray(payload.params)?payload.params:{};
  const result=await callAppsScript({
@@ -151,7 +158,9 @@ export async function callTenantAppScript(env,principal,modules,payload){
  },{
   action:"portal_gateway",method:"POST",
   params:{
-   module,action,payload:requestPayload,
+   // Each dedicated base has its own validated Apps Script + Sheets.
+   // The established fretes protocol runs inside that base's isolated script.
+   module:base?"fretes":module,action,payload:requestPayload,
    auth:{usuario:principal.user_id,nome:principal.user_id,
     perfil:role,estado:config.estado,estados:[config.estado]}
   }

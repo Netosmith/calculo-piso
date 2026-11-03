@@ -70,16 +70,16 @@ jobs:
           curl -fsSL --max-time 25 "$website/pages/transportadora-teste/fretes.html" -o /tmp/tenant-fretes.html
           curl -fsSL --max-time 25 "$website/pages/transportadora-teste/bi.html" -o /tmp/tenant-bi.html
           curl -fsSL --max-time 25 "$website/assets/js/tenant-login.js?v=2" -o /tmp/tenant-login.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=5" -o /tmp/tenant-page.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=5" -o /tmp/tenant-route.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-art-palette-v5" -o /tmp/tenant-workspace.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=6" -o /tmp/tenant-page.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=6" -o /tmp/tenant-route.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-global-hero-v6" -o /tmp/tenant-workspace.js
           grep -Fq 'PortalAPI.login(usuario, senha, "nova-frota")' /tmp/legacy-login.html
           ! grep -Fq 'id="tenantId"' /tmp/legacy-login.html
           grep -Fq 'tenantWorkspace' /tmp/shared-home.html
           grep -Fq 'data-tenant-id="teste-01"' /tmp/private-login.html
           grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html
           grep -Fq 'data-shared-page="fretes.html"' /tmp/tenant-fretes.html
-          grep -Fq 'tenant-page.js?v=5' /tmp/tenant-fretes.html
+          grep -Fq 'tenant-page.js?v=6' /tmp/tenant-fretes.html
           grep -Fq 'data-shared-page="bi.html"' /tmp/tenant-bi.html
           grep -Fq 'location.replace("./home.html")' /tmp/tenant-login.js
           grep -Fq 'session.transportadoraId!==tenant' /tmp/tenant-page.js
@@ -98,4 +98,9 @@ jobs:
           grep -Fq 'data-shared-page="ordem.html"' /tmp/tenant-ordem.html
           grep -Fq '.flex{' /tmp/ordem.css
           grep -Fq 'ordem-tailwind.generated.css?v=1' /tmp/tenant-page.js
+          curl -fsSL --max-time 25 "$website/assets/img/divulgacao/hero-default.webp?v=1" -o /tmp/global-hero.webp
+          curl -fsSL --max-time 25 "$website/assets/css/divulgacao-modelo3-theme.css?v=1" -o /tmp/modelo3-theme.css
+          test "$(wc -c </tmp/global-hero.webp)" -gt 20000
+          head -c 4 /tmp/global-hero.webp | grep -q RIFF
+          grep -Fq -- '--pf-m3-primary' /tmp/modelo3-theme.css
           echo "LIVE SMOKE PASSED: signed tenant API; private pages; shared CSS; Sheets gateway routing; no public tenant directory."

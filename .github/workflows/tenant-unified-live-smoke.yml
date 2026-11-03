@@ -1,0 +1,65 @@
+name: Portal Frete Unified Tenants Live Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - 'pages/login.html'
+      - 'pages/home.html'
+      - 'assets/js/auth.js'
+      - 'assets/js/api.js'
+      - 'assets/js/tenant-workspace.js'
+      - '.github/workflows/tenant-unified-live-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Confirm unified tenant API and existing website after deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.portalfrete.net.br"
+          website="https://portalfrete.net.br"
+          for attempt in $(seq 1 15); do
+            code=$(curl -sSL --max-time 20 -o /tmp/portal-tenants.json -w "%{http_code}" "$api/v1/transportadoras/public" || true)
+            if [ "$code" = "200" ] && python3 - <<'PY'
+          import json
+          r=json.load(open('/tmp/portal-tenants.json'))
+          assert r.get('ok') is True
+          assert any(t['id']=='nova-frota' for t in r.get('transportadoras', []))
+          PY
+            then break; fi
+            if [ "$attempt" -eq 15 ]; then
+              echo "Public tenant selector unavailable after deployment"; exit 1
+            fi
+            sleep 6
+          done
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/portal-tenants.json'))
+          print('Tenant selector: status OK,',len(d['transportadoras']),'tenant option(s)')
+          PY
+          for route in /v1/tenant/me /v1/tenant/fretes /v1/tenant/bi; do
+            code=$(curl -sSL --max-time 20 -o /tmp/no-cookie.json -w "%{http_code}" "$api$route")
+            test "$code" = "401" || { echo "$route must deny unauthenticated requests, got $code"; exit 1; }
+          done
+          code=$(curl -sSL --max-time 20 -o /tmp/tenant-login.json -w "%{http_code}" \
+            -H "Origin: $website" -H 'Content-Type: application/json' \
+            --data '{"transportadoraId":"teste-01","usuario":"__INVALID_SMOKE__","senha":"not-a-valid-password"}' \
+            "$api/v1/login")
+          test "$code" = "401" || { echo "Invalid tenant login must return 401, got $code"; exit 1; }
+          for path in /pages/login.html /pages/home.html /assets/js/tenant-workspace.js; do
+            curl -fsSL --max-time 25 "$website$path" -o "/tmp/$(basename "$path")"
+          done
+          grep -q 'id="tenantId"' /tmp/login.html
+          grep -q 'tenantWorkspace' /tmp/home.html
+          grep -q 'tenant-workspace.js' /tmp/home.html
+          grep -q 'tenantRequest' /tmp/tenant-workspace.js
+          echo "LIVE SMOKE PASSED: unified login, transportadoras, tenant auth, Home, Fretes/BI guards."

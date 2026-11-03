@@ -91,7 +91,7 @@ export default {
             credentialSchema=await credentialSchemaStatus(env.TENANTS_DB);
           }
           body.capabilities.credentialWrite=Boolean(ready&&tenantWrite&&credentialSchema.ok);
-          body.capabilities.credentialMissing=credentialSchema.missing;
+          if(credentialSchema.missing.length)body.capabilities.credentialMissing=credentialSchema.missing;
           return withHeaders(success(body),cors);
         }
         if(request.method!=="GET"){

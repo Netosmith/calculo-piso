@@ -98,4 +98,15 @@ jobs:
           grep -Fq 'data-shared-page="ordem.html"' /tmp/tenant-ordem.html
           grep -Fq '.flex{' /tmp/ordem.css
           grep -Fq 'ordem-tailwind.generated.css?v=1' /tmp/tenant-page.js
+          curl -fsSL --max-time 40 "$website/assets/img/divulgacao/hero-global.jpg" -o /tmp/global-hero.jpg
+          echo "8a58f1602f56f0c4836418c28611aad768254b3c075d93ad462b537436249349  /tmp/global-hero.jpg" | sha256sum -c -
+          curl -fsSL --max-time 25 "$website/pages/divulgacao.html" -o /tmp/divulgacao.html
+          curl -fsSL --max-time 25 "$website/pages/fretes.html" -o /tmp/fretes.html
+          curl -fsSL --max-time 25 "$website/pages/fretes2.html" -o /tmp/fretes2.html
+          curl -fsSL --max-time 25 "$website/assets/js/divulgacao.js?v=13" -o /tmp/divulgacao.js
+          curl -fsSL --max-time 25 "$website/assets/css/divulgacao.css?v=13" -o /tmp/divulgacao.css
+          for path in /tmp/divulgacao.html /tmp/fretes.html /tmp/fretes2.html /tmp/divulgacao.js; do
+            grep -Fq 'assets/img/divulgacao/hero-global.jpg' "$path"
+          done
+          grep -Fq 'MODELO 3 | Marca única' /tmp/divulgacao.css
           echo "LIVE SMOKE PASSED: signed tenant API; private pages; shared CSS; Sheets gateway routing; no public tenant directory."

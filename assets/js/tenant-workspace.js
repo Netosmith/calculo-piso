@@ -5,7 +5,40 @@
  let currentTenant="";
  const $=id=>document.getElementById(id);
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=String(value);};
+ const BASE_UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+ function baseKey(uf){return uf==="GO"?"fretes":uf==="MT"?"fretes2":"fretes-"+uf.toLowerCase();}
+ function renderBaseCards(){
+  const grid=document.querySelector(".nf-tools");
+  if(!grid || !window.__PORTAL_TENANT_SESSION?.tenantMode)return;
+  for(const uf of BASE_UFS){
+   const key=baseKey(uf);
+   const existing=uf==="GO"
+     ? grid.querySelector('a[data-feature="fretes"]')
+     : uf==="MT" ? grid.querySelector('a[data-feature="fretes2"]') : null;
+   const card=existing || document.createElement("a");
+   if(!existing){
+    card.className="nf-tool green pf-base-card";
+    card.dataset.feature=key;
+    const icon=document.createElement("span");
+    icon.className="nf-tool-icon";icon.textContent="🚛";
+    const title=document.createElement("h2");
+    title.textContent="Fretes "+uf;
+    const detail=document.createElement("p");
+    detail.textContent="Base operacional "+uf+" da transportadora.";
+    const arrow=document.createElement("span");
+    arrow.className="nf-tool-arrow";arrow.textContent="→";
+    card.append(icon,title,detail,arrow);
+    grid.append(card);
+   }else{
+    const title=card.querySelector("h2");
+    if(title)title.textContent="Fretes "+uf;
+   }
+   card.href=window.portalTenantHref?.("fretes-"+uf+".html") || "./fretes-"+uf+".html";
+   card.dataset.feature=key;
+  }
+ }
  function cards(){
+  renderBaseCards();
   document.querySelectorAll(".nf-tools a.nf-tool[data-feature]").forEach(card=>{
    const allowed=typeof window.canAccessFeature==="function"&&
     window.canAccessFeature(card.dataset.feature);

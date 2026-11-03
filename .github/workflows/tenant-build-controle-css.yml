@@ -7,6 +7,8 @@ on:
     paths:
       - assets/css/controle-tailwind.config.cjs
       - pages/controle.html
+      - pages/ordem.html
+      - assets/css/ordem-tailwind.config.cjs
       - .github/workflows/tenant-build-controle-css.yml
 
 permissions:
@@ -28,21 +30,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm install --prefix /tmp/pf-controle-css --no-audit --no-fund --no-save --no-package-lock tailwindcss@3.4.17 @tailwindcss/forms@0.5.10
+          npm install --prefix /tmp/pf-controle-css --no-audit --no-fund --no-save --no-package-lock tailwindcss@3.4.17 @tailwindcss/forms@0.5.10 @tailwindcss/container-queries@0.1.1
           printf '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' >/tmp/pf-controle-input.css
           /tmp/pf-controle-css/node_modules/.bin/tailwindcss \
             -c ./assets/css/controle-tailwind.config.cjs \
             -i /tmp/pf-controle-input.css \
             -o ./assets/css/controle-tailwind.generated.css --minify
+          /tmp/pf-controle-css/node_modules/.bin/tailwindcss \
+            -c ./assets/css/ordem-tailwind.config.cjs \
+            -i /tmp/pf-controle-input.css \
+            -o ./assets/css/ordem-tailwind.generated.css --minify
           test -s assets/css/controle-tailwind.generated.css
+          test -s assets/css/ordem-tailwind.generated.css
           grep -q '.grid' assets/css/controle-tailwind.generated.css
           grep -q '.rounded-xl' assets/css/controle-tailwind.generated.css
-          wc -c assets/css/controle-tailwind.generated.css
+          wc -c assets/css/controle-tailwind.generated.css assets/css/ordem-tailwind.generated.css
       - name: Commit generated CSS to same PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/css/controle-tailwind.generated.css
+          git add assets/css/controle-tailwind.generated.css assets/css/ordem-tailwind.generated.css
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "build(controle): add self-hosted compiled Tailwind CSS for tenant pages"
+          git commit -m "build(tenant): add self-hosted compiled Tailwind CSS for Controle and Ordem"
           git push origin HEAD:fix/tenant-header-controle-shared-assets-20261103

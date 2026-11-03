@@ -136,7 +136,7 @@ window.PortalAPI = {
     return portalApiRequest("/v1/transportadoras/public");
   },
   tenantRequest(path,options={}){
-    if(typeof path!=="string" || !/^\/(?:me|bi|integracao|catalogo\/clientes|fretes(?:\/[a-f0-9-]{36})?)$/.test(path)){
+    if(typeof path!=="string" || !/^\/(?:me|bi|integracao|catalogo\/clientes|regionais\/ufs|fretes(?:\/[a-f0-9-]{36})?)$/.test(path)){
       return Promise.reject(new Error("Rota da transportadora inválida."));
     }
     return portalApiRequest("/v1/tenant"+path,options);

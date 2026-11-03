@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   deploy-staging:
-    if: ${{ github.ref_name == 'feature/super-admin-panel-foundation' && inputs.confirmation == 'DEPLOY_STAGING' }}
+    if: ${{ (github.ref_name == 'main' || github.ref_name == 'feature/super-admin-panel-foundation') && inputs.confirmation == 'DEPLOY_STAGING' }}
     runs-on: ubuntu-latest
     defaults:
       run:

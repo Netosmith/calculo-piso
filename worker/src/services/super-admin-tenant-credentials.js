@@ -63,14 +63,16 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
     aviso:"Senha atualizada. Sessoes anteriores encerradas; senha nao retornada."});
  }catch(error){
   // Do not log SQL strings, requests, passwords, salts or hashes.
+  const cryptoCode=stage==="hash" && typeof error?.cryptoStage==="string"?
+   error.cryptoStage+"/"+(error.cryptoType||"Error"):null;
   console.error("[SUPER ADMIN] Credential setup failed",{
-   stage,type:error?.name||"Error",
+   stage,type:error?.name||"Error",cryptoCode,
    category:/no such table|no such column|foreign key mismatch/i.test(String(error?.message||""))?
     "schema":/FOREIGN KEY constraint failed/i.test(String(error?.message||""))?
     "reference":"other"
   });
   return errorResponse(stage==="hash"?
-   "Falha no processamento seguro da senha.":
+   "Falha no processamento seguro da senha"+(cryptoCode?" ("+cryptoCode+")":"")+".":
    stage==="gravacao-d1"?
    "Falha ao gravar credenciais no D1. Verifique os logs do Super Admin.":
    "Nao foi possivel configurar a senha.",503);

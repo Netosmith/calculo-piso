@@ -72,7 +72,7 @@ jobs:
           curl -fsSL --max-time 25 "$website/assets/js/tenant-login.js?v=2" -o /tmp/tenant-login.js
           curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=8" -o /tmp/tenant-page.js
           curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=6" -o /tmp/tenant-route.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-piso-art-fix-v7" -o /tmp/tenant-workspace.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-print-ordem-v8" -o /tmp/tenant-workspace.js
           grep -Fq 'PortalAPI.login(usuario, senha, "nova-frota")' /tmp/legacy-login.html
           ! grep -Fq 'id="tenantId"' /tmp/legacy-login.html
           grep -Fq 'tenantWorkspace' /tmp/shared-home.html

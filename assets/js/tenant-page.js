@@ -11,6 +11,7 @@
  const script=document.currentScript;
  const tenant=String(script?.dataset.tenantId||"");
  const page=String(script?.dataset.sharedPage||"");
+ const freightBase=String(script?.dataset.freightBase||"").toUpperCase();
  const match=location.pathname.match(/^\/pages\/([a-z][a-z0-9-]{2,63})\/([a-z][a-z0-9-]*\.html)$/);
  const slug=match?.[1]||"";
  const file=match?.[2]||"";
@@ -162,7 +163,11 @@
   document.documentElement.removeAttribute("data-pf-tenant-boot");
  }
  async function load(){
-  if(!tenant||!slug||page!==file||!allowed.has(page)){refuse();return;}
+  if(!tenant||!slug||!allowed.has(page)){refuse();return;}
+  const baseAlias=/^fretes-(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA)\.html$/.exec(file);
+  if(baseAlias){
+   if(freightBase!==baseAlias[1]||page!==(freightBase==="MT"?"fretes2.html":"fretes.html")){refuse();return;}
+  }else if(page!==file){refuse();return;}
   try{
    stage="sessão";
    const sessionResponse=await get("https://api.portalfrete.net.br/v1/session",{
@@ -182,6 +187,12 @@
    // Do not reject valid shared pages because their doctype is not byte zero.
    if(!/<html(?:\s|>)/i.test(html)||!/<head(?:\s|>)/i.test(html))
     throw new Error("Conteúdo da página compartilhada inválido.");
+   if(baseAlias){
+    const key=freightBase==="GO"?"fretes":freightBase==="MT"?"fretes2":"fretes-"+freightBase.toLowerCase();
+    if(!Array.isArray(session.modules)||!session.modules.includes(key)){refuse();return;}
+    window.PORTAL_BASE_MODULE=key;
+    window.PORTAL_BASE_UF=freightBase;
+   }
    window.__PORTAL_TENANT_EXPECTED=tenant;
    window.__PORTAL_TENANT_ROUTE_PREFIX="/pages/"+slug+"/";
    window.__PORTAL_TENANT_SESSION=session;

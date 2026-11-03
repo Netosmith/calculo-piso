@@ -47,7 +47,11 @@
    try{sessionStorage.setItem("pf:tenant-login-path",login);}catch(_){}
    const header='<head><base href="/pages/">'+
     '<script src="/assets/js/tenant-route.js?v=1"></script>';
-   const shared=html.replace(/<head(?:\s[^>]*)?>/i,header);
+   // Version the shared tenant assets independently from Nova Frota's
+   // normal cache while keeping identical source HTML and CSS/JS files.
+   const refreshed=html.replace(/(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+/g,
+    "$1tenant-20261103");
+   const shared=refreshed.replace(/<head(?:\s[^>]*)?>/i,header);
    document.open();
    document.write(shared);
    document.close();

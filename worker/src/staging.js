@@ -5,6 +5,7 @@ import {verifiedStagingOwner} from "./services/staging-access.js";
 import {stagingPanelHtml} from "./staging-panel.js";
 import {writeTenantCatalog} from "./services/super-admin-tenant-write.js";
 import {credentialSchemaStatus} from "./services/super-admin-tenant-credentials.js";
+import {makePasswordRecord,passwordMatches} from "./services/tenant-auth.js";
 import {errorResponse,success} from "./utils/response.js";
 
 function withHeaders(response,origin=null) {
@@ -79,6 +80,22 @@ export default {
       const stageWrite=env.SUPER_ADMIN_STAGING_WRITES==="enabled";
       const tenantWrite=stageWrite && env.SUPER_ADMIN_TENANT_WRITES==="enabled" && Boolean(env.TENANTS_DB);
       try{
+        if(path==="/v1/super-admin/crypto-diagnostico" && request.method==="GET"){
+          // Owner-only, read-only edge probe with a fixed synthetic phrase.
+          // Never return real credentials, secrets or derived hash material.
+          const version="pbkdf2-sha256-100k-v3";
+          try{
+            const sample="PortalFrete-EdgeDiagnostic-2026";
+            const record=await makePasswordRecord(sample);
+            const verified=await passwordMatches(sample,record);
+            return withHeaders(success({version,hashReady:true,verifyReady:verified}),cors);
+          }catch(error){
+            const stage=typeof error?.cryptoStage==="string"?error.cryptoStage:"verify";
+            const type=typeof error?.cryptoType==="string"?error.cryptoType:"Error";
+            return withHeaders(errorResponse("Diagnostico criptografico falhou.",503,
+              {version,stage,type}),cors);
+          }
+        }
         if(path==="/v1/super-admin/me" && request.method==="GET"){
           const response=await superAdminController(request,adminEnv,owner);
           if(!response.ok)return withHeaders(response,cors);

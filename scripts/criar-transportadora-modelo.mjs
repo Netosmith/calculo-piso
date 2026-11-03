@@ -31,9 +31,24 @@ if(!valid(slug)||!valid(id)||slug==="transportadora-teste"||
  const entries=modules.map(name=>{
   const source=readFileSync(resolve(from,name+".html"),"utf8");
   if(!source.includes('data-tenant-id="teste-01"'))throw Error("Modelo inválido: "+name);
-  const result=source.replace('data-tenant-id="teste-01"','data-tenant-id="'+id+'"')
+  let result=source.replace('data-tenant-id="teste-01"','data-tenant-id="'+id+'"')
    .replaceAll("TRANSPORTADORA TESTE","ACESSO EMPRESARIAL")
    .replaceAll("Transportadora Teste","Acesso empresarial");
+  // The GNOVA order shell may eventually contain real fiscal records.
+  // Never copy those records to a new transportadora.
+  if(name==="ordem"){
+   result=result.replace("Cadastro manual exclusivo da GNOVA no GitHub.",
+     "Cadastro manual exclusivo desta transportadora no GitHub.");
+   result=result.replace(/(const EMPRESAS_POR_ESTADO = \{)[\s\S]*?(\n      \};\n      window\.PORTAL_ORDEM_CONFIG)/,
+     (_match,start,end)=>start+
+     ["GO: \"GOIÁS\"","MG: \"MINAS GERAIS\"","SP: \"SÃO PAULO\"",
+      "MT: \"MATO GROSSO\"","PR: \"PARANÁ\"","SC: \"SANTA CATARINA\"",
+      "TO: \"TOCANTINS\"","PA: \"PARÁ\"","MA: \"MARANHÃO\"",
+      "BA: \"BAHIA\""].map(entry=>{
+       const [uf,filial]=entry.split(": ");
+       return '\n        '+uf+': { filial:'+filial+', cnpj:"", ie:"", endereco:"", email:"" }';
+     }).join(",") +end);
+  }
   return {name,target:resolve(to,name+".html"),content:result};
  });
  if(existsSync(to)||entries.some(x=>existsSync(x.target))){

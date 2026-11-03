@@ -754,7 +754,7 @@
 <!-- HEADER SECTOR (Ref: Image Section 1) -->
 <div class="grid grid-cols-1 md:grid-cols-2 border-b border-outline">
 <div class="p-6 flex items-center justify-center md:border-r border-outline bg-surface-container-low">
-<img class="w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgQxERrd_f6nqKVQsXrtUGmy9nLCFOMg14En51CLtzur1s6mIvp-bz1XDpVlDcHrSlXwcT3xIkWc8oUBch_mhp00Rk8Liw7tLVkicran5UCP4rQdvvVuhCBPsw3NLPH1X-Rw3iMTw_uNCAWhmHbwlr4Ww5qfH5Vti45FPU64Vebte60n0-DRFW5w30a1iLkyJ8r-3t_FXgok5OZZLO-D4sJBeXA-jEd7-qpiKTst7gkNyt4LhUVQJT3jTadIWmz3y_k_TuvuDcTFmI" alt="Nova Frota Transportes e Logística Logo">
+<img id="ordemLogoPrincipal" class="w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgQxERrd_f6nqKVQsXrtUGmy9nLCFOMg14En51CLtzur1s6mIvp-bz1XDpVlDcHrSlXwcT3xIkWc8oUBch_mhp00Rk8Liw7tLVkicran5UCP4rQdvvVuhCBPsw3NLPH1X-Rw3iMTw_uNCAWhmHbwlr4Ww5qfH5Vti45FPU64Vebte60n0-DRFW5w30a1iLkyJ8r-3t_FXgok5OZZLO-D4sJBeXA-jEd7-qpiKTst7gkNyt4LhUVQJT3jTadIWmz3y_k_TuvuDcTFmI" alt="Nova Frota Transportes e Logística Logo">
 </div>
 <div class="p-6 flex flex-col justify-center text-center md:text-left space-y-1">
   <h3 id="empresaNome" class="font-headline-sm text-headline-sm text-primary uppercase">Nova Frota Transportes</h3>
@@ -946,7 +946,8 @@
 <div class="cut-line"><span>✂ LINHA DE CORTE</span></div>
 
 <script>
-  const EMPRESAS_POR_ESTADO = {
+  // Nova Frota keeps its original manual company records unchanged.
+  const EMPRESAS_NOVA_FROTA_POR_ESTADO = {
     GO: {
       nome: "NOVA FROTA TRANSPORTES",
       filial: "GOIÁS",
@@ -1029,7 +1030,60 @@
     }
   };
 
-  const STORAGE_KEY_ESTADO_ORDEM = "nf_ordem_estado";
+  // New transportadoras configure their own records in their GitHub
+  // pages/<slug>/ordem.html shell; no legacy Nova Frota tax data is inherited.
+  const tenantOrdem=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+  const ordemEmpresaNome=tenantOrdem
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"TRANSPORTADORA")
+    : "NOVA FROTA TRANSPORTES";
+  const estadosOrdem={GO:"GOIÁS",MG:"MINAS GERAIS",SP:"SÃO PAULO",
+    MT:"MATO GROSSO",PR:"PARANÁ",SC:"SANTA CATARINA",TO:"TOCANTINS",
+    PA:"PARÁ",MA:"MARANHÃO",BA:"BAHIA"};
+  const configuracaoOrdem=tenantOrdem && window.PORTAL_ORDEM_CONFIG?.EMPRESAS_POR_ESTADO
+    ? window.PORTAL_ORDEM_CONFIG.EMPRESAS_POR_ESTADO : {};
+  const EMPRESAS_POR_ESTADO=tenantOrdem
+    ? Object.fromEntries(Object.entries(estadosOrdem).map(([uf,filial])=>[
+        uf,{nome:ordemEmpresaNome,filial,cnpj:"",ie:"",endereco:"",email:"",
+          ...(configuracaoOrdem[uf]||{}),nome:ordemEmpresaNome}
+      ]))
+    : EMPRESAS_NOVA_FROTA_POR_ESTADO;
+
+  let ordemLogoSrc=tenantOrdem?"":new URL("../assets/img/logo-novafrota.png",document.baseURI).href;
+  async function carregarIdentidadeDaOrdem(){
+    if(!tenantOrdem)return;
+    const el=document.getElementById("ordemLogoPrincipal");
+    try{
+      const response=await fetch("https://api.portalfrete.net.br/v1/tenant/logo",{
+        credentials:"include",cache:"no-store"
+      });
+      if(!response.ok)throw new Error("Logo não cadastrada");
+      const blob=await response.blob();
+      if(!["image/png","image/jpeg","image/webp"].includes(blob.type))
+        throw new Error("Formato inválido");
+      ordemLogoSrc=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(reader.result);
+        reader.onerror=()=>reject(new Error("Falha ao ler imagem"));
+        reader.readAsDataURL(blob);
+      });
+      if(el){el.src=ordemLogoSrc;el.alt=ordemEmpresaNome;el.hidden=false;}
+    }catch(error){
+      // Never show the Nova Frota mark in a different transportadora's order.
+      console.warn("[ORDEM] Logo individual não disponível:",error.message);
+      ordemLogoSrc="";
+      if(el){
+        const title=document.createElement("strong");
+        title.textContent=ordemEmpresaNome;
+        title.style.cssText="font-size:24px;font-weight:900;color:#09244a;text-align:center";
+        el.replaceWith(title);
+      }
+    }
+    prepararViasParaImpressao();
+  }
+
+  const STORAGE_KEY_ESTADO_ORDEM = tenantOrdem
+    ? "pf_ordem_estado_"+String(window.__PORTAL_TENANT_SESSION.transportadoraId||"tenant")
+    : "nf_ordem_estado";
 
   // A preferência de estado continua salva. Os dados cadastrais editados não:
   // qualquer edição vale somente para a ordem aberta e nunca altera os padrões.
@@ -1042,7 +1096,7 @@
     const dados = EMPRESAS_POR_ESTADO[uf];
     const nomeEl = document.getElementById("empresaNome");
     const filialEl = document.getElementById("empresaFilial");
-    if(nomeEl) nomeEl.textContent = dados?.nome || "NOVA FROTA TRANSPORTES";
+    if(nomeEl) nomeEl.textContent = dados?.nome || ordemEmpresaNome;
     if(filialEl) filialEl.textContent = dados?.filial || "SELECIONE UM ESTADO";
 
     const campos = [
@@ -1168,7 +1222,7 @@
 
         <div class="ps-company">
           <div class="ps-logo">
-            <img src="../assets/img/logo-novafrota.png" alt="Nova Frota">
+            ${ordemLogoSrc ? `<img src="${escaparImpressao(ordemLogoSrc)}" alt="${escaparImpressao(ordemEmpresaNome)}">` : `<strong>${escaparImpressao(ordemEmpresaNome)}</strong>`}
           </div>
 
           <div class="ps-company-info">
@@ -1292,6 +1346,7 @@
   window.addEventListener("DOMContentLoaded", function(){
     iniciarSeletorEstado();
     iniciarSincronizacaoMotorista();
+    void carregarIdentidadeDaOrdem();
 
     setTimeout(prepararDuasViasParaImpressao, 120);
   });

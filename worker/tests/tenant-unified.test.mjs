@@ -5,7 +5,7 @@ import {DatabaseSync} from "node:sqlite";
 import {Script} from "node:vm";
 import {routeRequest} from "../src/router.js";
 import {loginController,sessionController,logoutController} from "../src/controllers/session.js";
-import {setTenantCredentials} from "../src/services/super-admin-tenant-credentials.js";
+import {setTenantCredentials,credentialSchemaStatus} from "../src/services/super-admin-tenant-credentials.js";
 import {createSessionToken} from "../src/services/session.js";
 
 const API="https://api.portalfrete.net.br",origin="https://portalfrete.net.br";
@@ -71,6 +71,28 @@ async function login(env,id="teste-01",pass=password){
   transportadoraId:id,usuario:"usuario.teste",senha:pass
  }),env);
 }
+test("credential readiness checks all D1 tables and required columns",async()=>{
+ const env=environment();
+ assert.deepEqual(await credentialSchemaStatus(env.TENANTS_DB),{ok:true,missing:[]});
+ env.TENANTS_DB.sql.exec("DROP TABLE portal_tenant_sessions");
+ assert.deepEqual(await credentialSchemaStatus(env.TENANTS_DB),{ok:false,missing:["sessoes"]});
+ const response=await setTenantCredentials(request("/setup","PUT",{senha:password}),env,"OWNER","teste-01","USUARIO.TESTE");
+ assert.equal(response.status,503);
+ assert.match((await response.json()).error,/estrutura D1|Estrutura D1/);
+ assert.equal(env.TENANTS_DB.sql.prepare("SELECT COUNT(*) AS n FROM portal_tenant_credentials").get().n,0);
+});
+test("credential reset remains atomic and invalidates existing tenant sessions",async()=>{
+ const env=environment();
+ await provision(env);
+ const session=cookie(await login(env));
+ assert.ok(session);
+ const reset=await setTenantCredentials(request("/setup","PUT",{senha:"NovaSenhaForte#456"}),env,"OWNER","teste-01","USUARIO.TESTE");
+ assert.equal(reset.status,200);
+ assert.equal((await sessionController(request("/v1/session","GET",null,session),env)).status,401);
+ assert.equal((await login(env,"teste-01",password)).status,401);
+ assert.equal((await login(env,"teste-01","NovaSenhaForte#456")).status,200);
+});
+
 test("public transportadora selector ignores inactive tenant and fails safe if D1 unavailable",async()=>{
  const env=environment();
  const response=await routeRequest(request("/v1/transportadoras/public"),env);

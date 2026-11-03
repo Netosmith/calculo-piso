@@ -3,6 +3,7 @@
 // Never return the execution URL or gateway key to ordinary tenant sessions.
 import {errorResponse,success} from "../utils/response.js";
 import {callAppsScript} from "./appscript.js";
+import {canRunGatewayAction} from "./permissions.js";
 
 const SLUG=/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const SHEET_ID=/^[A-Za-z0-9_-]{20,160}$/;
@@ -98,7 +99,6 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const action=String(payload?.action||"").trim().toLowerCase();
  const allowed=modules.includes(module);
  const role=String(principal.role||"").toUpperCase();
- const {canRunGatewayAction}=await import("./permissions.js");
  const permissionSession={perfil:role};
  if(!allowed||!canRunGatewayAction(permissionSession,module,action,payload?.params))
   return errorResponse("Acao nao permitida para este perfil ou transportadora.",403);

@@ -1,6 +1,7 @@
 /* fretes2.js | NOVA FROTA | Fretes MT | Cadência operacional */
 (function () {
   "use strict";
+  const freightModule=window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.PORTAL_BASE_MODULE ? window.PORTAL_BASE_MODULE : "fretes2";
   const tenantBrand=window.__PORTAL_TENANT_SESSION?.tenantMode===true
     ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
     : "NOVA FROTA";
@@ -310,7 +311,7 @@
       throw new Error("API segura do Portal indisponível.");
     }
 
-    if (typeof canAccessFeature === "function" && !canAccessFeature("fretes2")) {
+    if (typeof canAccessFeature === "function" && !canAccessFeature(freightModule)) {
       const error = new Error("Seu perfil não possui permissão para consultar os fretes.");
       error.status = 403;
       throw error;
@@ -586,7 +587,7 @@ function formatDateTimeBR(value) {
     }
 
     const result = await window.PortalAPI.call(
-      "fretes2",
+      freightModule,
       route.action,
       route.params
     );

@@ -99,9 +99,13 @@
   function applySharedClientsUI(){
     const shared=sharedClientsView();
     for(const id of ["btnNovo","btnNovoAtalho"]){
-      const button=$("#"+id);if(button)button.hidden=shared;
+      const button=$("#"+id);if(button){
+        button.hidden=shared;button.style.display=shared?"none":"";
+      }
     }
-    const saveButton=$("#btnSalvar");if(saveButton)saveButton.hidden=shared;
+    const saveButton=$("#btnSalvar");if(saveButton){
+      saveButton.hidden=shared;saveButton.style.display=shared?"none":"";
+    }
   }
   function isAtivo(row){return upper(row.Ativo??row.ativo)==="SIM";}
   function rowsFrom(data){
@@ -359,10 +363,10 @@
     const logoActions=$("#clientLogoPanel")?.querySelector(".clientLogoActions");
     if(sharedClientsView()){
       fields.querySelectorAll("input,select").forEach(input=>input.disabled=true);
-      if(logoActions)logoActions.hidden=true;
+      if(logoActions){logoActions.hidden=true;logoActions.style.display="none";}
       $("#btnSalvar")?.setAttribute("hidden","");
     }else{
-      if(logoActions)logoActions.hidden=false;
+      if(logoActions){logoActions.hidden=false;logoActions.style.removeProperty("display");}
       $("#btnSalvar")?.removeAttribute("hidden");
     }
     setTimeout(()=>fields.querySelector("input,select:not(:disabled)")?.focus(),40);

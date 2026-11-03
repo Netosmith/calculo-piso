@@ -131,7 +131,9 @@
    const htmlResponse=await get("/pages/"+page,{credentials:"same-origin"});
    if(!htmlResponse.ok)throw new Error("Página compartilhada retornou HTTP "+htmlResponse.status);
    const html=await htmlResponse.text();
-   if(!/^\s*<!doctype html>/i.test(html)||!/<head(?:\s|>)/i.test(html))
+   // Several original modules start with an HTML comment before <!doctype>.
+   // Do not reject valid shared pages because their doctype is not byte zero.
+   if(!/<html(?:\s|>)/i.test(html)||!/<head(?:\s|>)/i.test(html))
     throw new Error("Conteúdo da página compartilhada inválido.");
    window.__PORTAL_TENANT_EXPECTED=tenant;
    window.__PORTAL_TENANT_ROUTE_PREFIX="/pages/"+slug+"/";

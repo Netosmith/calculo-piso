@@ -12,7 +12,7 @@
  const tenant=String(script?.dataset.tenantId||"");
  const page=String(script?.dataset.sharedPage||"");
  const freightBase=String(script?.dataset.freightBase||"").toUpperCase();
- const match=location.pathname.match(/^\/pages\/([a-z][a-z0-9-]{2,63})\/([a-z][a-z0-9-]*\.html)$/);
+ const match=location.pathname.match(/^\/pages\/([a-z][a-z0-9-]{2,63})\/([a-zA-Z][a-zA-Z0-9-]*\.html)$/);
  const slug=match?.[1]||"";
  const file=match?.[2]||"";
  const login="/pages/"+slug+"/login.html";

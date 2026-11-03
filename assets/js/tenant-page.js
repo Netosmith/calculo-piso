@@ -75,6 +75,20 @@
   const route=parsed.createElement("script");
   route.src="/assets/js/tenant-route.js?v=3";
   parsed.head.insertBefore(route,base.nextSibling);
+  // Controle uses Tailwind utilities. The Play CDN may fail when injected
+  // after DOMContentLoaded on tenant pages; use precompiled same-origin CSS.
+  // The legacy Nova Frota HTML still uses its original loading mechanism.
+  if(page==="controle.html"){
+   parsed.querySelectorAll('script[src*="cdn.tailwindcss.com"]').forEach(node=>node.remove());
+   parsed.querySelectorAll("script:not([src])").forEach(node=>{
+    if(/\\btailwind\\.config\\s*=/.test(node.textContent||""))node.remove();
+   });
+   const css=parsed.createElement("link");
+   css.id="pfTenantControleCss";
+   css.rel="stylesheet";
+   css.href="/assets/css/controle-tailwind.generated.css?v=1";
+   parsed.head.append(css);
+  }
   // The HTML & assets remain shared; the cache key is only for this tenant
   // shell so updates do not mix with a previous app session.
   parsed.querySelectorAll('script[src],link[rel="stylesheet"][href]').forEach(node=>{
@@ -90,6 +104,12 @@
   document.documentElement.setAttribute("data-pf-tenant-boot","1");
   document.documentElement.innerHTML=parsed.documentElement.innerHTML;
   document.documentElement.lang=parsed.documentElement.lang||"pt-BR";
+  const controlStylesheet=document.querySelector("#pfTenantControleCss");
+  const cssReady=!controlStylesheet ? Promise.resolve() : new Promise((resolve,reject)=>{
+   if(controlStylesheet.sheet){resolve();return;}
+   controlStylesheet.addEventListener("load",resolve,{once:true});
+   controlStylesheet.addEventListener("error",()=>reject(new Error("CSS local do Controle indisponível.")),{once:true});
+  });
   const scripts=Array.from(document.querySelectorAll("script"));
   for(const original of scripts){
    const cloned=document.createElement("script");
@@ -117,6 +137,7 @@
     console.warn("[TENANT PAGE] optional library unavailable",error?.name);
    }
   }
+  await cssReady;
   // The shell's real DOMContentLoaded already fired before the async fetch.
   // Replay it once for the existing shared module's setup listeners.
   document.dispatchEvent(new Event("DOMContentLoaded",{bubbles:true}));

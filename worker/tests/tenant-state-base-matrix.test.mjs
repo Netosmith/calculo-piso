@@ -1,0 +1,84 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {resolve,dirname} from "node:path";
+import {fileURLToPath} from "node:url";
+import {Script} from "node:vm";
+import {readTenantIntegration} from "../src/services/tenant-integration.js";
+
+const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
+const read=path=>readFileSync(resolve(root,path),"utf8");
+const UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+
+test("each optional freight base has a private route and module grant",()=>{
+ const reg=read("worker/src/config/tenant-modules.js");
+ const panel=read("worker/src/staging-page.js");
+ const loader=read("assets/js/tenant-page.js");
+ const generator=read("scripts/criar-transportadora-modelo.mjs");
+ for(const uf of UFS){
+  const shell=read("pages/transportadora-teste/fretes-"+uf+".html");
+  assert.ok(shell.includes('data-tenant-id="teste-01"'),uf);
+  assert.ok(shell.includes('data-freight-base="'+uf+'"'),uf);
+  assert.ok(shell.includes('data-shared-page="'+(uf==="MT"?"fretes2":"fretes")+'.html"'),uf);
+  assert.ok(reg.includes('"fretes-'+uf.toLowerCase()+'"'),uf);
+  assert.ok(panel.includes("['fretes-"+uf.toLowerCase()+"'"),uf);
+  assert.ok(generator.includes('"fretes-'+uf+'"'),uf);
+ }
+ assert.match(loader,/const baseAlias=/);
+ assert.match(loader,/session\.modules\.includes\(key\)/);
+ assert.match(loader,/PORTAL_BASE_MODULE=key/);
+});
+
+test("dedicated bases never fall back to the mixed legacy Sheets integration",async()=>{
+ const seen=[];
+ const env={TENANT_BRANDS:{get:async key=>{
+  seen.push(key);
+  if(key==="tenant/teste-01/private/apps-script-v1.json")
+   return {json:async()=>({scriptUrl:"https://script.google.com/macros/s/"+"a".repeat(40)+"/exec",
+    spreadsheetId:"a".repeat(30),gatewayKey:"k".repeat(30),estado:"GO",enabled:true})};
+  return null;
+ }}};
+ const result=await readTenantIntegration(env,"teste-01","SP");
+ assert.equal(result,null);
+ assert.deepEqual(seen,["tenant/teste-01/private/base-sp-apps-script-v1.json"]);
+});
+
+test("Home and BI group by geographic origin independently of accounting source",()=>{
+ const home=read("assets/js/home-map.js");
+ const bi=read("assets/js/bi.js");
+ const map=read("assets/js/bi-map.js");
+ const cadastro=read("assets/js/cadastros.js");
+ assert.match(home,/STATE\.regionalUfs/);
+ assert.match(home,/const explicit = extractUf\(row\.ufOrigem\)/);
+ assert.match(home,/window\.__PORTAL_TENANT_SESSION\?\.tenantMode===true/);
+ assert.match(bi,/TENANT_BASES=\["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"\]/);
+ assert.match(bi,/picker\.multiple=true/);
+ assert.match(bi,/TODAS AS BASES/);
+ assert.match(bi,/\.\.\.TENANT_BASES\.filter/);
+ assert.match(map,/PORTAL_REGION_UFS/);
+ assert.match(cadastro,/Estado da regional \(UF\)/);
+ assert.match(cadastro,/tenantRequest\("\/regionais\/ufs"/);
+});
+
+test("super-admin has private base integration controls and legacy module stays separate",()=>{
+ const owner=read("worker/src/staging-panel.js");
+ const server=read("worker/src/services/tenant-integration.js");
+ const router=read("worker/src/controllers/super-admin.js");
+ const save=read("worker/src/services/super-admin-tenant-write.js");
+ assert.match(owner,/id="integrationBase"/);
+ assert.match(owner,/baseIntegrationPath/);
+ assert.match(server,/private\/base-/);
+ assert.match(server,/readTenantIntegration\(env,principal\.tenant_id,base\)/);
+ assert.match(server,/module:base\?"fretes":module/);
+ assert.match(router,/const baseRoute=/);
+ assert.match(save,/const baseIntegration=/);
+});
+
+test("new frontend scripts compile in Chromium-compatible JavaScript",()=>{
+ for(const file of ["assets/js/home-map.js","assets/js/bi.js",
+  "assets/js/bi-map.js","assets/js/tenant-workspace.js",
+  "assets/js/tenant-page.js","assets/js/fretes.js","assets/js/fretes2.js",
+  "assets/js/cadastros.js"]){
+  assert.doesNotThrow(()=>new Script(read(file),{filename:file}),file);
+ }
+});

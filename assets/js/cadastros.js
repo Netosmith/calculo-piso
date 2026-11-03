@@ -81,7 +81,7 @@
     cfg.fields.find(field=>field.key==="base").options=BASES_OPERACIONAIS;
     cfg.fields.splice(2,0,{
       key:"uf",label:"Estado da regional (UF)",type:"select",
-      options:REGIONAL_UFS,required:true,
+      options:["",...REGIONAL_UFS],required:true,
       hint:"UF territorial da regional; não altera a base responsável pelo frete."
     });
   }

@@ -266,7 +266,9 @@ try{
    headline:pick(".m3Headline>span"),
    headlineAccent:pick(".m3Headline>strong"),
    surface:pick(".m3Content"),
-   multi:pick(".multiArt.count-2 .multiArtPrice")
+   multi:pick(".multiArt.count-2 .multiArtPrice"),
+   model4Configured:document.getElementById("pfTenantArtTheme")?.textContent
+    .includes("body.pf-tenant-site .multiArt.count-2{--pf-art-primary:#bb1122;--pf-art-accent:#181818")
   };
  });
  assert.equal(art.theme,"#bb1122");
@@ -275,10 +277,15 @@ try{
  for(const selector of ["origin","valueTitle","footer","headline"])
   assert.equal(art[selector]?.bg==="rgb(187, 17, 34)"||art[selector]?.text==="rgb(187, 17, 34)",true,
    "Model 3 primary color not applied to "+selector);
- for(const selector of ["value","whatsapp","headlineAccent","multi"])
+ for(const selector of ["value","whatsapp","headlineAccent"])
   assert.equal(art[selector]?.bg==="rgb(24, 24, 24)"||art[selector]?.text==="rgb(24, 24, 24)",true,
    "Model 3/4 accent color not applied to "+selector);
  assert.equal(art.surface?.bg,"rgb(238, 238, 238)");
+ assert.equal(art.model4Configured,true,"Model 4 palette must be ready even if the user has not opened its editor yet");
+ if(art.multi){
+  assert.equal(art.multi.bg==="rgb(24, 24, 24)"||
+   art.multi.text==="rgb(24, 24, 24)",true,"Model 4 accent color");
+ }
  console.log("GLOBAL ART HERO AND COMPLETE TENANT MODEL 3/4 PALETTE OK",JSON.stringify(art));
 
 

@@ -4,6 +4,7 @@
   "main": "src/index.js",
   "compatibility_date": "2026-08-01",
   "workers_dev": true,
+  "vars": {"TENANT_PORTAL_ENABLED": "enabled"},
   "observability": {
     "enabled": true
   },
@@ -21,6 +22,10 @@
     {
       "binding": "FLEET_FILES",
       "bucket_name": "portal-frota-documentos"
+    },
+    {
+      "binding": "TENANT_BRANDS",
+      "bucket_name": "portal-super-admin-brands-staging"
     }
   ],
   "durable_objects": {
@@ -74,6 +79,11 @@
       "binding": "FLEET_DB",
       "database_name": "portal-frota",
       "database_id": "3cce5e65-1d2f-4232-847a-9a518bfa833d"
+    },
+    {
+      "binding": "TENANTS_DB",
+      "database_name": "portal-super-admin-tenants-staging",
+      "database_id": "9103c28a-c224-4781-9d3f-fd735b546cd9"
     }
   ]
 }

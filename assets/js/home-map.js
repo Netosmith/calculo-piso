@@ -435,7 +435,7 @@
         }catch(_){STATE.regionalUfs={};}
         const modules=Array.isArray(session.modules)?session.modules:[];
         // Accounting bases are independent from the geographical origin UF.
-        const baseKeys=["fretes","fretes2","fretes-sp","fretes-ms",
+        const baseKeys=["fretes","fretes2","fretes-go","fretes-mt","fretes-sp","fretes-ms",
           "fretes-ba","fretes-pr","fretes-sc","fretes-ro","fretes-to","fretes-ma"];
         const allowed=baseKeys.filter(key=>modules.includes(key));
         if(!allowed.length){STATE.rows=[];render();return;}

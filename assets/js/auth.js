@@ -181,6 +181,14 @@ function mirrorServerSession(session){
   return true;
 }
 
+// The scoped static page loader has already verified this signed API session.
+// Mirror it before legacy module scripts perform their synchronous auth guards.
+if(window.__PORTAL_TENANT_EXPECTED &&
+   window.__PORTAL_TENANT_SESSION?.tenantMode===true &&
+   window.__PORTAL_TENANT_SESSION.transportadoraId===window.__PORTAL_TENANT_EXPECTED){
+  mirrorServerSession(window.__PORTAL_TENANT_SESSION);
+}
+
 function getAuthContext(){
   return {
     usuario: getUser(),
@@ -315,6 +323,11 @@ async function refreshPortalSession(){
   try{
     const api = await ensurePortalApi();
     const result = await api.session();
+    const expected=window.__PORTAL_TENANT_EXPECTED;
+    if(expected && (result?.session?.tenantMode!==true ||
+       result.session.transportadoraId!==expected)){
+      throw new Error("A sessão não pertence a esta transportadora.");
+    }
     mirrorServerSession(result.session);
     await applyPortalMaintenanceGate(result.session, api);
     return result.session;
@@ -424,18 +437,22 @@ function canAccessFeature(featureKey){
 
   const tenantSession=window.__PORTAL_TENANT_SESSION;
   if(tenantSession){
-    // The original Home can show tenant-authorized cards, but a tenant never
-    // gains entry to legacy module pages merely by seeing those cards.
-    const onHome=currentPath.endsWith("/home.html");
-    const mapped={piso2:"piso","custo-filial":"custo-frota",
-      "fretes-mercado":"fretes",chamados:"chamados",
-      embarques:"embarques",relatorio:"relatorio"};
-    const moduleKey=mapped[feature]||feature;
+    // Pages are reused at /pages/<company-slug>/<module>.html.
+    // The signed API session and backend role permissions remain authoritative.
+    if(!/^\/pages\/[a-z][a-z0-9-]{2,63}\/[a-z0-9-]+\.html$/.test(currentPath))return false;
+    if(window.__PORTAL_TENANT_EXPECTED &&
+       tenantSession.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return false;
+    if(feature==="super-admin")return false;
     if(feature==="home")return true;
-    if(!onHome)return false;
+    const mapped={piso2:"piso"};
+    const moduleKey=mapped[feature]||feature;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
-    if(String(tenantSession.perfil||"").toUpperCase()==="PISO")return moduleKey==="piso"&&modules.includes("piso");
-    return modules.includes(moduleKey);
+    if(!modules.includes(moduleKey))return false;
+    const role=String(tenantSession.perfil||"").toUpperCase();
+    if(role==="ADMINISTRADOR")return true;
+    if(role==="PISO")return feature==="piso2" && modules.includes("piso");
+    return featuresForProfile(role).includes(feature) ||
+      featuresForProfile(role).includes(moduleKey);
   }
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.
@@ -532,7 +549,7 @@ function requireFeatureAuth(featureKey, deniedMessage){
 
   if(!canAccessFeature(featureKey)){
     alert(deniedMessage || "Esta funcionalidade não está liberada para este perfil.");
-    window.location.href = "../pages/home.html";
+    window.location.href = window.portalTenantHref?.("home.html") || "../pages/home.html";
     return false;
   }
 
@@ -1243,7 +1260,11 @@ function portalNavAllowed(item){
 }
 
 function portalNavHref(item){
-  return typeof item.href === "function" ? item.href() : item.href;
+  const href=typeof item.href === "function" ? item.href() : item.href;
+  if(typeof href==="string" && /^\.\/[a-z0-9-]+\.html$/.test(href)){
+    return window.portalTenantHref?.(href.slice(2)) || href;
+  }
+  return href;
 }
 
 function portalNavIsActive(item){
@@ -1516,7 +1537,7 @@ function createPortalGlobalShell(nav, more){
 
   const brand = document.createElement("a");
   brand.className = "nf-global-nav-standalone-brand";
-  brand.href = "./home.html";
+  brand.href = window.portalTenantHref?.("home.html") || "./home.html";
   brand.title = "Home";
   brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
 

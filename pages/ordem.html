@@ -1034,7 +1034,7 @@
   // pages/<slug>/ordem.html shell; no legacy Nova Frota tax data is inherited.
   const tenantOrdem=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
   const ordemEmpresaNome=tenantOrdem
-    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"TRANSPORTADORA")
+    ? String(window.PORTAL_ORDEM_CONFIG?.NOME_TRANSPORTADORA || window.__PORTAL_TENANT_SESSION.transportadoraNome || "TRANSPORTADORA")
     : "NOVA FROTA TRANSPORTES";
   const estadosOrdem={GO:"GOIÁS",MG:"MINAS GERAIS",SP:"SÃO PAULO",
     MT:"MATO GROSSO",PR:"PARANÁ",SC:"SANTA CATARINA",TO:"TOCANTINS",

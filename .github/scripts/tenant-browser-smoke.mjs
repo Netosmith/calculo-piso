@@ -53,6 +53,11 @@ try{
     modules:["fretes","fretes2","bi","cadastros","divulgacao","controle"]
    }})});return;
   }
+  if(url.pathname==="/v1/tenant/catalogo/clientes"){
+   await route.fulfill({status:200,headers,body:JSON.stringify({
+    ok:true,clientes:[{id:"global:CLIENTE MODELO",cliente:"CLIENTE MODELO",ativo:"SIM",ordem:1}]
+   })});return;
+  }
   if(url.pathname==="/v1/tenant/logo"){
    await route.fulfill({status:404,headers,body:JSON.stringify({ok:false,error:"No logo"})});return;
   }
@@ -104,8 +109,10 @@ try{
   headerLogoVisible:[...document.querySelectorAll(".topbar .brand img")].some(img=>
    img.getClientRects().length>0 && getComputedStyle(img).visibility!=="hidden")
  }));
- for(const key of ["regionais","filiais","clientes","contatos"])
+ for(const key of ["regionais","filiais","contatos"])
   assert.deepEqual(freightForm[key],[],"Empty tenant Sheets must not inherit "+key);
+ assert.deepEqual(freightForm.clientes,["CLIENTE MODELO"],
+  "The only client option should come from the approved shared catalog");
  assert.equal(freightForm.headerName,"NOVA FROTA ADMIN");
  assert.equal(freightForm.headerLogoVisible,false);
  console.log("FRETES EMPTY SHEETS AND NAME-ONLY HEADER OK");
@@ -144,6 +151,41 @@ try{
  assert.equal(homeState.logoVisible,false);
  assert.equal(homeState.sessionCompany,"NOVA FROTA ADMIN");
  console.log("HOME TENANT NO-GHOST AND NAME-ONLY HEADER OK",JSON.stringify(homeState));
+ const colors=await page.evaluate(()=>{
+  const label=document.querySelector(".nf-brand .pf-company-name");
+  document.documentElement.dataset.nfTheme="claro";
+  const light=getComputedStyle(label).color;
+  document.documentElement.dataset.nfTheme="escuro";
+  const dark=getComputedStyle(label).color;
+  return {light,dark};
+ });
+ assert.equal(colors.light,"rgb(16, 45, 84)");
+ assert.equal(colors.dark,"rgb(255, 255, 255)");
+ console.log("HOME HEADER THEME COLORS OK",JSON.stringify(colors));
+
+ await page.goto(origin+"/pages/transportadora-teste/controle.html",{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>
+  !!document.getElementById("gridFiliais") &&
+  document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
+  !!document.getElementById("pfTenantControleCss"),null,{timeout:24000});
+ const control=await page.evaluate(()=>({
+  url:location.pathname,
+  cssLoaded:!!document.getElementById("pfTenantControleCss")?.sheet,
+  grid:getComputedStyle(document.querySelector("#view-dashboard .grid")).display,
+  controlMenu:!!document.getElementById("nfGlobalShell"),
+  company:document.querySelector(".nf-global-nav-standalone-brand .pf-company-name")?.textContent,
+  companyColor:document.querySelector(".nf-global-nav-standalone-brand .pf-company-name")?
+    getComputedStyle(document.querySelector(".nf-global-nav-standalone-brand .pf-company-name")).color:null,
+  noTailwindPlay:!document.querySelector('script[src*="cdn.tailwindcss.com"]')
+ }));
+ assert.equal(control.url,"/pages/transportadora-teste/controle.html");
+ assert.equal(control.cssLoaded,true,"Local Tailwind CSS must load");
+ assert.equal(control.grid,"grid");
+ assert.equal(control.company,"NOVA FROTA ADMIN");
+ assert.equal(control.companyColor,"rgb(255, 255, 255)");
+ assert.equal(control.noTailwindPlay,true);
+ console.log("CONTROLE SELF HOSTED CSS AND TITLE OK",JSON.stringify(control));
+
 
  if(messages.length)console.log("Non-fatal browser diagnostics:",messages.slice(0,6));
 }finally{

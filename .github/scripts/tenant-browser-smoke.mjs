@@ -95,6 +95,42 @@ try{
  assert.equal(state.badText,false);
  assert.equal(state.home,"/pages/transportadora-teste/home.html");
  console.log("CHROME TENANT PAGE SMOKE OK",JSON.stringify(state));
+ const freightForm=await page.evaluate(()=>({
+  regionais:[...document.querySelectorAll("#mRegional option")].map(x=>x.value).filter(Boolean),
+  filiais:[...document.querySelectorAll("#mFilial option")].map(x=>x.value).filter(Boolean),
+  clientes:[...document.querySelectorAll("#mCliente option")].map(x=>x.value).filter(Boolean),
+  contatos:[...document.querySelectorAll("#mContato option")].map(x=>x.value).filter(Boolean),
+  headerName:document.querySelector(".nf-brand .pf-company-name")?.textContent,
+  headerLogoVisible:[...document.querySelectorAll(".nf-brand img")].some(img=>
+   img.getClientRects().length>0 && getComputedStyle(img).visibility!=="hidden")
+ }));
+ for(const key of ["regionais","filiais","clientes","contatos"])
+  assert.deepEqual(freightForm[key],[],"Empty tenant Sheets must not inherit "+key);
+ assert.equal(freightForm.headerName,"NOVA FROTA ADMIN");
+ assert.equal(freightForm.headerLogoVisible,false);
+ console.log("FRETES EMPTY SHEETS AND NAME-ONLY HEADER OK");
+
+ await page.goto(origin+"/pages/transportadora-teste/home.html",{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>
+  document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
+  document.querySelector(".nf-brand .pf-company-name")?.textContent==="NOVA FROTA ADMIN" &&
+  document.getElementById("homeSub")?.textContent?.includes("NOVA FROTA ADMIN"),null,{timeout:20000});
+ const homeState=await page.evaluate(()=>({
+  path:location.pathname,loading:document.documentElement.hasAttribute("data-pf-tenant-boot"),
+  brand:document.querySelector(".nf-brand .pf-company-name")?.textContent,
+  logoVisible:[...document.querySelectorAll(".nf-brand img")].some(img=>
+   img.getClientRects().length>0 && getComputedStyle(img).visibility!=="hidden"),
+  sessionCompany:window.__PORTAL_TENANT_SESSION?.transportadoraNome,
+  cards:[...document.querySelectorAll(".nf-tools a.nf-tool[data-feature]")]
+    .filter(x=>getComputedStyle(x).display!=="none").map(x=>x.dataset.feature)
+ }));
+ assert.equal(homeState.path,"/pages/transportadora-teste/home.html");
+ assert.equal(homeState.loading,false);
+ assert.equal(homeState.brand,"NOVA FROTA ADMIN");
+ assert.equal(homeState.logoVisible,false);
+ assert.equal(homeState.sessionCompany,"NOVA FROTA ADMIN");
+ console.log("HOME TENANT NO-GHOST AND NAME-ONLY HEADER OK",JSON.stringify(homeState));
+
  if(messages.length)console.log("Non-fatal browser diagnostics:",messages.slice(0,6));
 }finally{
  if(browser)await browser.close();

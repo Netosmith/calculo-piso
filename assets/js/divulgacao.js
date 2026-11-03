@@ -3,6 +3,9 @@
   "use strict";
 
   const isTenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+  const companyName=isTenant
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
+    : "NOVA FROTA";
 
   const PRODUCT_BG_MAP = {
     "1": {
@@ -824,7 +827,7 @@
       setMultiBind(section, "valor", read("valor"), i);
     }
 
-    const filial = multiInput(section, "filial")?.value?.trim() || "NOVA FROTA";
+    const filial = multiInput(section, "filial")?.value?.trim() || companyName;
     setMultiBind(section, "filial", filial);
 
     for (let i = 1; i <= 4; i += 1) {
@@ -975,7 +978,7 @@
                     <div class="multiArtWa">☎</div>
                     <div>
                       <strong>FALE COM NOSSA EQUIPE</strong>
-                      <span data-multi-bind="filial">NOVA FROTA</span>
+                      <span data-multi-bind="filial">${companyName}</span>
                     </div>
                   </div>
                   <div class="multiArtContactsGrid">

@@ -1539,7 +1539,16 @@ function createPortalGlobalShell(nav, more){
   brand.className = "nf-global-nav-standalone-brand";
   brand.href = window.portalTenantHref?.("home.html") || "./home.html";
   brand.title = "Home";
-  brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
+  const company=window.__PORTAL_TENANT_SESSION?.tenantMode===true
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete") : "";
+  if(company){
+    const name=document.createElement("strong");
+    name.className="pf-company-name";
+    name.textContent=company;
+    brand.appendChild(name);
+  }else{
+    brand.innerHTML = '<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA">';
+  }
 
   // Preferências visuais aparecem na mesma barra fixa, ao lado de Sair.
   // O painel é montado pelo módulo de personalização, sem duplicar interfaces.

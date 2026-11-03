@@ -46,7 +46,7 @@
    window.__PORTAL_TENANT_SESSION=session;
    try{sessionStorage.setItem("pf:tenant-login-path",login);}catch(_){}
    const header='<head><base href="/pages/">'+
-    '<script src="/assets/js/tenant-route.js?v=1" defer></script>';
+    '<script src="/assets/js/tenant-route.js?v=1"></script>';
    const shared=html.replace(/<head(?:\s[^>]*)?>/i,header);
    document.open();
    document.write(shared);

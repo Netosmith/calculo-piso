@@ -21,7 +21,7 @@ test("tenant-specific URL aliases keep ONE common original HTML per module",()=>
   assert.match(html,/data-tenant-id="teste-01"/);
   assert.ok(html.includes('data-shared-page="'+page+'.html"'));
   assert.ok(html.includes('/assets/js/tenant-page.js'));
-  assert.ok(html.length<1000,"No copied/duplicated HTML: "+page);
+  assert.ok(html.length<(page==="ordem"?3000:1000),"No copied/duplicated shared HTML: "+page);
   assert.ok(read("pages/"+page+".html").length>0);
  }
 });

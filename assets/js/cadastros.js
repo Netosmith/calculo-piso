@@ -407,9 +407,9 @@
     STATE.loadToken++;STATE.loading=false;
     STATE.saving=true;saveButton.disabled=true;saveButton.textContent="Salvando...";
     setModalMessage("Salvando cadastro...","info");setStatus("💾 Salvando...");
-    const modal=$("#cadModal");
-    modal?.classList.remove("show");
-    modal?.setAttribute("aria-hidden","true");
+    // Keep the form mounted and visible while uploading the selected logo.
+    // cadastros.html observes modal closing and clears the file input/draft.
+    // Closing here used to erase the chosen logo before PUT /v1/client-logos.
     let cadastroSaved=false;
     let updated=false;
     try{

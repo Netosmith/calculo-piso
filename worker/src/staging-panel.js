@@ -47,7 +47,7 @@ export function stagingPanelHtml(){
     '<p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p>'+
     '<label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>MG</option><option>SP</option><option>PR</option><option>SC</option><option>MS</option><option>BA</option><option>TO</option><option>PA</option><option>MA</option></select></label>'+
     '<label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label>'+
-    '<p><button type="button" id="integrationSave">Salvar integração privada</button></p>'+
+    '<p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p>'+
     '<p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p>'+
     '</section><h2>Histórico de auditoria</h2>');
   const integrationJs=`
@@ -70,9 +70,10 @@ async function loadIntegration(){
   $('integrationKey').placeholder='No mínimo 24 caracteres';
   if(!id||id==='nova-frota'){
     status.textContent='A Nova Frota continua utilizando a integração original.';
-    $('integrationSave').disabled=true;return;
+    $('integrationSave').disabled=true;$('integrationTest').disabled=true;return;
   }
   $('integrationSave').disabled=!canEdit();
+  $('integrationTest').disabled=!canEdit();
   status.textContent='Consultando integração da transportadora...';
   try{
     const res=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/integracao');
@@ -98,6 +99,30 @@ async function loadIntegration(){
     if(serial===integrationRequest&&selected?.id===id)status.textContent=error.message;
   }
 }
+$('integrationTest').onclick=async()=>{
+  if(!canEdit()||!selected?.id)return;
+  const id=selected.id,button=$('integrationTest'),status=$('integrationStatus');
+  button.disabled=true;
+  status.textContent='Testando chave e vinculo do Apps Script sem alterar dados...';
+  try{
+    const result=await request('/v1/super-admin/transportadoras/'+
+      encodeURIComponent(id)+'/integracao/testar');
+    if(selected?.id!==id)return;
+    if(result.conectado!==true||result.empresaCorreta!==true||
+      result.planilhaCorreta!==true)throw new Error('Conexao nao confirmada.');
+    status.textContent='Conexao validada: empresa correta, planilha correta e chave autorizada. Nenhum dado foi alterado.';
+    notice('Teste somente de leitura aprovado. Antes de ativar, revise os registros herdados e compartilhamentos da planilha.');
+  }catch(error){
+    if(selected?.id===id){
+      const detail=error?.details;
+      status.textContent='Teste nao aprovado: '+(error?.message||'Verifique a configuracao.')+
+        (detail && detail.tenantMatch===false?' Empresa divergente.':'')+
+        (detail && detail.spreadsheetMatch===false?' Planilha divergente.':'');
+    }
+  }finally{
+    button.disabled=!canEdit();
+  }
+};
 $('integrationGenerate').onclick=()=>{
   const bytes=crypto.getRandomValues(new Uint8Array(32));
   $('integrationKey').type='text';

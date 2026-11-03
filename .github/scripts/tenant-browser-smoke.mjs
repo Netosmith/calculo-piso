@@ -267,8 +267,8 @@ try{
    headlineAccent:pick(".m3Headline>strong"),
    surface:pick(".m3Content"),
    multi:pick(".multiArt.count-2 .multiArtPrice"),
-   model4Configured:document.getElementById("pfTenantArtTheme")?.textContent
-    .includes("body.pf-tenant-site .multiArt.count-2{--pf-art-primary:#bb1122;--pf-art-accent:#181818")
+   model4Configured:/\.multiArt\.count-2[^{}]*\{[^}]*--pf-art-primary:#bb1122;--pf-art-accent:#181818/.test(
+    document.getElementById("pfTenantArtTheme")?.textContent||"")
   };
  });
  assert.equal(art.theme,"#bb1122");

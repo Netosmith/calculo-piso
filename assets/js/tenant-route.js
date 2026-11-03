@@ -34,6 +34,48 @@
   if(file==="login.html")return ownLogin;
   return modules.has(String(file))?prefix+file:null;
  };
+ const companyName=String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
+ const brandedImages=new Set();
+ let tenantLogoUrl=null;
+ function brandImage(img){
+  if(!img||brandedImages.has(img))return;
+  const src=String(img.getAttribute("src")||"").toLowerCase();
+  if(!src.includes("logo-novafrota"))return;
+  brandedImages.add(img);
+  img.alt=companyName;
+  let label=document.createElement("strong");
+  label.textContent=companyName;
+  label.className="pf-company-name";
+  label.style.cssText="display:inline-block;font-weight:900;font-size:14px;max-width:270px;color:inherit";
+  img.insertAdjacentElement("afterend",label);
+  img.hidden=true;img.style.display="none";
+  if(tenantLogoUrl){
+   img.src=tenantLogoUrl;img.hidden=false;img.style.removeProperty("display");
+   label.hidden=true;
+  }
+ }
+ function brandSubtree(root){
+  if(root?.matches?.("img"))brandImage(root);
+  root?.querySelectorAll?.("img")?.forEach(brandImage);
+ }
+ async function loadBrand(){
+  try{
+   const r=await fetch("https://api.portalfrete.net.br/v1/tenant/logo",{
+    credentials:"include",cache:"no-store"
+   });
+   if(!r.ok)return;
+   const file=await r.blob();
+   if(!["image/png","image/jpeg","image/webp"].includes(file.type))return;
+   tenantLogoUrl=URL.createObjectURL(file);
+   for(const img of brandedImages){
+    if(!img.isConnected)continue;
+    img.src=tenantLogoUrl;img.hidden=false;
+    img.style.removeProperty("display");
+    if(img.nextElementSibling?.classList.contains("pf-company-name"))
+     img.nextElementSibling.hidden=true;
+   }
+  }catch(_){}
+ }
  function fixLink(link){
   if(!link||!link.getAttribute)return;
   const value=link.getAttribute("href");
@@ -43,6 +85,7 @@
  function fixSubtree(root){
   if(root?.matches?.("a[href]"))fixLink(root);
   root?.querySelectorAll?.("a[href]")?.forEach(fixLink);
+  brandSubtree(root);
  }
  // Capture before app-specific click handlers; preserve modifier keys, targets
  // and event listeners, changing the URL only if it is one of our shared pages.
@@ -52,6 +95,7 @@
  },true);
  function ready(){
   fixSubtree(document);
+  void loadBrand();
   if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(mutations=>{
     for(const change of mutations){

@@ -685,6 +685,9 @@
     const preview = getPreview(templateId);
     if (!preview) return;
 
+    // A paleta do Super Admin deve estar aplicada ANTES de exportar o JPG.
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
+      await window.portalTenantArtThemeReady;
     const bgImg = getBgImgEl(preview);
     await waitForImage(bgImg);
 
@@ -1034,6 +1037,8 @@
     const preview = section?.querySelector(".multiArt");
     if (!preview || ![2,3,4].includes(count)) return;
 
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
+      await window.portalTenantArtThemeReady;
     const images = Array.from(preview.querySelectorAll("img"));
     await Promise.all(images.map(waitForImage));
     renderManualMulti(section);

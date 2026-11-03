@@ -31,6 +31,7 @@
   return prefix+match[1]+url.search+url.hash;
  }
  window.portalTenantHref=function(file){
+  if(file==="login.html")return ownLogin;
   return modules.has(String(file))?prefix+file:null;
  };
  function fixLink(link){

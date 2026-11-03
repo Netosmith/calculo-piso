@@ -13,6 +13,7 @@
     // Preencha cnpj, ie, endereco e email por estado quando os dados
     // oficiais forem fornecidos. Nenhum dado fiscal da Nova Frota é copiado.
     (function(){
+      const NOME_TRANSPORTADORA = "GNOVA TRANSPORTES";
       const EMPRESAS_POR_ESTADO = {
         GO: { filial:"GOIÁS", cnpj:"", ie:"", endereco:"", email:"" },
         MG: { filial:"MINAS GERAIS", cnpj:"", ie:"", endereco:"", email:"" },
@@ -25,7 +26,7 @@
         MA: { filial:"MARANHÃO", cnpj:"", ie:"", endereco:"", email:"" },
         BA: { filial:"BAHIA", cnpj:"", ie:"", endereco:"", email:"" }
       };
-      window.PORTAL_ORDEM_CONFIG={ EMPRESAS_POR_ESTADO };
+      window.PORTAL_ORDEM_CONFIG={ NOME_TRANSPORTADORA, EMPRESAS_POR_ESTADO };
     })();
   </script>
   <script src="/assets/js/tenant-page.js?v=8" data-tenant-id="teste-01" data-shared-page="ordem.html"></script>

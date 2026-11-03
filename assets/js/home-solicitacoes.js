@@ -203,7 +203,9 @@
     });
   }
 
-  window.addEventListener("DOMContentLoaded", () => {
+  window.addEventListener("DOMContentLoaded", async () => {
+    const session=window.portalAuthReady?await window.portalAuthReady:null;
+    if(!session||session.tenantMode===true)return;
     ensureLoading();
     fillFiliais();
     bind();

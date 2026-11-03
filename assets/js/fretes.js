@@ -1,6 +1,7 @@
 /* fretes.js | NOVA FROTA | Gateway seguro Cloudflare */
 (function () {
   "use strict";
+  const freightModule=window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.PORTAL_BASE_MODULE ? window.PORTAL_BASE_MODULE : "fretes";
   const tenantBrand=window.__PORTAL_TENANT_SESSION?.tenantMode===true
     ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
     : "NOVA FROTA";
@@ -297,7 +298,7 @@
       throw new Error("API segura do Portal indisponível.");
     }
 
-    if (typeof canAccessFeature === "function" && !canAccessFeature("fretes")) {
+    if (typeof canAccessFeature === "function" && !canAccessFeature(freightModule)) {
       const error = new Error("Seu perfil não possui permissão para consultar os fretes.");
       error.status = 403;
       throw error;
@@ -581,7 +582,7 @@ function formatDateTimeBR(value) {
     }
 
     const result = await window.PortalAPI.call(
-      "fretes",
+      freightModule,
       route.action,
       route.params
     );

@@ -448,6 +448,10 @@ function canAccessFeature(featureKey){
     // Piso 1 and Piso 2 are independently granted by the Super Admin.
     // Never map piso2 to piso: that exposed both calculators with one checkbox.
     if(!modules.includes(feature))return false;
+    if(/^fretes-(sp|ms|ba|pr|sc|ro|to|ma)$/.test(feature)){
+      const role=String(tenantSession.perfil||"").toUpperCase();
+      return ["ADMINISTRADOR","COMERCIAL","OPERACIONAL"].includes(role);
+    }
     const role=String(tenantSession.perfil||"").toUpperCase();
     if(role==="ADMINISTRADOR")return true;
     if(role==="PISO")return feature==="piso" || feature==="piso2";

@@ -159,6 +159,17 @@
     throw new Error("Não foi possível validar a sessão do aplicativo.");
    }
   }
+  if(window.PORTAL_BASE_UF){
+   const uf=window.PORTAL_BASE_UF;
+   const title=document.querySelector("h1");
+   if(title&&/^fretes/i.test(title.textContent||""))title.textContent="Fretes | BASE "+uf;
+   document.title="Fretes "+uf+" | "+String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
+   const origin=document.getElementById("mOrigem");
+   if(origin){
+    origin.placeholder="Cidade-UF (ex.: CATANDUVA-SP)";
+    origin.title="Informe o estado da origem para classificação correta no mapa e no BI.";
+   }
+  }
   await Promise.resolve();
   document.documentElement.removeAttribute("data-pf-tenant-boot");
  }

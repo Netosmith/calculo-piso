@@ -100,8 +100,8 @@ try{
   filiais:[...document.querySelectorAll("#mFilial option")].map(x=>x.value).filter(Boolean),
   clientes:[...document.querySelectorAll("#mCliente option")].map(x=>x.value).filter(Boolean),
   contatos:[...document.querySelectorAll("#mContato option")].map(x=>x.value).filter(Boolean),
-  headerName:document.querySelector(".nf-brand .pf-company-name")?.textContent,
-  headerLogoVisible:[...document.querySelectorAll(".nf-brand img")].some(img=>
+  headerName:document.querySelector(".topbar .brand .pf-company-name")?.textContent,
+  headerLogoVisible:[...document.querySelectorAll(".topbar .brand img")].some(img=>
    img.getClientRects().length>0 && getComputedStyle(img).visibility!=="hidden")
  }));
  for(const key of ["regionais","filiais","clientes","contatos"])

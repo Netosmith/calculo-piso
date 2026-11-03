@@ -61,8 +61,16 @@
  }
  async function renderShared(html){
   const parsed=new DOMParser().parseFromString(html,"text/html");
-  if(!parsed.head||!parsed.body||!parsed.querySelector("title"))
+  if(!parsed.head||!parsed.body||!parsed.documentElement)
    throw new Error("Documento compartilhado inválido.");
+  // Some older valid modules (notably Ordem) omit <title>.
+  // Supply a company-scoped browser title instead of rejecting the page.
+  if(!parsed.querySelector("title")){
+   const title=parsed.createElement("title");
+   const name=String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
+   title.textContent=page.replace(/\.html$/,"").replace(/-/g," ")+" | "+name;
+   parsed.head.append(title);
+  }
   const base=parsed.createElement("base");
   base.href="/pages/";
   parsed.head.prepend(base);

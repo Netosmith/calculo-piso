@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "portalfrete-super-admin-staging",
+  "main": "src/staging.js",
+  "compatibility_date": "2026-08-01",
+  "workers_dev": true,
+  "vars": {
+    "SUPER_ADMIN_STAGING_WRITES": "enabled",
+    "SUPER_ADMIN_TENANT_WRITES": "enabled",
+    "SUPER_ADMIN_MEMBERSHIP_WRITES": "enabled",
+    "SUPER_ADMIN_CREDENTIAL_WRITES": "enabled",
+    "SUPER_ADMIN_BRAND_WRITES": "enabled"
+  },
+  "observability": { "enabled": true },
+  "r2_buckets": [
+    {
+      "binding": "TENANT_BRANDS",
+      "bucket_name": "portal-super-admin-brands-staging"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "TENANTS_DB",
+      "database_name": "portal-super-admin-tenants-staging",
+      "database_id": "9103c28a-c224-4781-9d3f-fd735b546cd9",
+      "migrations_dir": "migrations/super-admin"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { superAdminController } from "./controllers/super-admin.js";
 import { fleetController } from "./controllers/fleet.js";
 import { monitorController } from "./controllers/monitor.js";
 import { iaController } from "./controllers/ia.js";
@@ -15,10 +16,24 @@ import {
 } from "./controllers/session.js";
 import { notFound, methodNotAllowed } from "./utils/response.js";
 import { pingoController } from "./controllers/pingochic.js";
+import {publicTenantsController,tenantApiController} from "./controllers/tenant-unified.js";
+import {hasTenantSessionCookie} from "./services/tenant-auth.js";
+import {errorResponse} from "./utils/response.js";
 
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
+
+  if(path==="/v1/transportadoras/public")return publicTenantsController(request,env);
+  if(path.startsWith("/v1/tenant/"))return tenantApiController(request,env);
+
+  // Never route a tenant browser context into Nova Frota legacy APIs,
+  // even if another signed cookie remains present.
+  if(hasTenantSessionCookie(request) &&
+     !["/v1/login","/v1/session","/v1/logout","/health"].includes(path))
+    return errorResponse("Recurso exclusivo da operacao legada.",403);
+
+  if (path.startsWith("/v1/super-admin/")) return superAdminController(request, env);
 
   if (path === "/v1/ia/chat" || path === "/v1/ia/status") return iaController(request, env);
 

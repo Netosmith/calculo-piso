@@ -1,0 +1,212 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {DatabaseSync} from "node:sqlite";
+import {Script} from "node:vm";
+import {routeRequest} from "../src/router.js";
+import {loginController,sessionController,logoutController} from "../src/controllers/session.js";
+import {setTenantCredentials} from "../src/services/super-admin-tenant-credentials.js";
+import {createSessionToken} from "../src/services/session.js";
+
+const API="https://api.portalfrete.net.br",origin="https://portalfrete.net.br";
+function db(){
+ const sql=new DatabaseSync(":memory:");
+ sql.exec("PRAGMA foreign_keys=ON");
+ for(const file of ["0001_tenants.sql","0002_tenant_portal.sql"])
+  sql.exec(readFileSync(new URL("../migrations/super-admin/"+file,import.meta.url),"utf8"));
+ return {
+  sql,
+  prepare(query){
+   const stmt=sql.prepare(query);
+   return {
+    first:async()=>stmt.get(),all:async()=>({results:stmt.all()}),run:async()=>stmt.run(),
+    bind(...args){return{
+      first:async()=>stmt.get(...args),all:async()=>({results:stmt.all(...args)}),
+      run:async()=>stmt.run(...args),statement:stmt,args
+    };}
+   };
+  },
+  async batch(items){
+   sql.exec("BEGIN");
+   try{const out=items.map(item=>item.statement.run(...item.args));sql.exec("COMMIT");return out;}
+   catch(error){sql.exec("ROLLBACK");throw error;}
+  }
+ };
+}
+function environment(){
+ const database=db();
+ for(const id of ["teste-01","outra-empresa","inativa"]){
+  database.sql.prepare("INSERT INTO portal_tenants(id,name,status) VALUES(?,?,?)")
+   .run(id,id,"inativa"===id?"inactive":"active");
+  database.sql.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES(?,?,?,1)")
+   .run(id,"USUARIO.TESTE","COMERCIAL");
+  for(const module of ["fretes","bi"])
+   database.sql.prepare("INSERT INTO portal_tenant_modules(tenant_id,module_key,enabled) VALUES(?,?,1)")
+    .run(id,module);
+ }
+ return {TENANTS_DB:database,TENANT_PORTAL_ENABLED:"enabled",
+   SUPER_ADMIN_CREDENTIAL_WRITES:"enabled",TENANT_BRANDS:{
+    objects:new Map(),
+    async get(key){const bytes=this.objects.get(key);return bytes?{body:new Response(bytes).body}:null;}
+   }};
+}
+const password="SenhaTeste#123456";
+function request(path,method="GET",body,token,extras={}){
+ const headers={...((method!=="GET")?{Origin:origin,"Content-Type":"application/json"}:{}),...extras};
+ if(token)headers.Cookie=token.startsWith("__Host-")?token:"__Host-tenant_session="+token;
+ return new Request(API+path,{method,headers,
+  body:method==="GET"?undefined:JSON.stringify(body||{})});
+}
+function cookie(response){
+ const setCookie=response.headers.get("Set-Cookie")||"";
+ const match=/__Host-tenant_session=([A-Za-z0-9_-]{43})/.exec(setCookie);
+ return match?.[1]||"";
+}
+async function provision(env,id="teste-01",passwordValue=password){
+ const response=await setTenantCredentials(request("/setup","PUT",{senha:passwordValue}),env,"OWNER",id,"USUARIO.TESTE");
+ assert.equal(response.status,200);
+}
+async function login(env,id="teste-01",pass=password){
+ return loginController(request("/v1/login","POST",{
+  transportadoraId:id,usuario:"usuario.teste",senha:pass
+ }),env);
+}
+test("public transportadora selector ignores inactive tenant and fails safe if D1 unavailable",async()=>{
+ const env=environment();
+ const response=await routeRequest(request("/v1/transportadoras/public"),env);
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.deepEqual(data.transportadoras.map(x=>x.id),["nova-frota","outra-empresa","teste-01"]);
+ assert.equal((await routeRequest(request("/v1/transportadoras/public"),{})).status,200);
+ const fallback=await (await routeRequest(request("/v1/transportadoras/public"),{})).json();
+ assert.deepEqual(fallback.transportadoras.map(x=>x.id),["nova-frota"]);
+});
+test("one login form authenticates a tenant with password and creates a separate secure cookie",async()=>{
+ const env=environment();await provision(env);
+ assert.equal((await login(env,"inativa")).status,401);
+ assert.equal((await login(env,"teste-01","wrong")).status,401);
+ const response=await login(env);
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.requiresStateSelection,false);
+ assert.equal(body.session.transportadoraId,"teste-01");
+ assert.equal(body.session.transportadoraNome,"teste-01");
+ assert.deepEqual(body.session.modules,["bi","fretes"]);
+ assert.equal(body.session.estado,"GERAL");
+ assert.equal(body.session.tenantMode,true);
+ const headers=response.headers.get("Set-Cookie")||"";
+ assert.match(headers,/__Host-tenant_session=/);
+ assert.match(headers,/HttpOnly/);
+ assert.match(headers,/SameSite=Strict/);
+ assert.match(headers,/__Host-portal_session=/);
+ const token=cookie(response);
+ const session=await sessionController(request("/v1/session","GET",null,token),env);
+ assert.equal(session.status,200);
+ assert.equal((await session.json()).session.transportadoraId,"teste-01");
+});
+test("tenant freights and BI are isolated by authenticated tenant on the existing API Worker",async()=>{
+ const env=environment();await provision(env,"teste-01");await provision(env,"outra-empresa");
+ const a=cookie(await login(env,"teste-01"));
+ const b=cookie(await login(env,"outra-empresa"));
+ const created=await routeRequest(request("/v1/tenant/fretes","POST",{
+  origem:"Rio Verde - GO",destino:"Santos - SP",produto:"Soja",valorTon:250
+ },a),env);
+ assert.equal(created.status,201);
+ const id=(await created.json()).frete.id;
+ const dataA=await (await routeRequest(request("/v1/tenant/fretes","GET",null,a),env)).json();
+ const dataB=await (await routeRequest(request("/v1/tenant/fretes","GET",null,b),env)).json();
+ assert.equal(dataA.fretes.length,1);
+ assert.equal(dataB.fretes.length,0);
+ assert.equal((await routeRequest(request("/v1/tenant/fretes/"+id,"PATCH",{status:"finalizado"},b),env)).status,404);
+ assert.equal((await routeRequest(request("/v1/tenant/fretes/"+id,"PATCH",{status:"finalizado"},a),env)).status,200);
+ const biA=await (await routeRequest(request("/v1/tenant/bi","GET",null,a),env)).json();
+ const biB=await (await routeRequest(request("/v1/tenant/bi","GET",null,b),env)).json();
+ assert.deepEqual([biA.total,biA.finalizados],[1,1]);
+ assert.deepEqual([biB.total,biB.finalizados],[0,0]);
+});
+test("inactive user or tenant revokes read access immediately on unified portal",async()=>{
+ const env=environment();await provision(env);
+ const token=cookie(await login(env));
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_users SET active=0 WHERE tenant_id='teste-01'").run();
+ assert.equal((await sessionController(request("/v1/session","GET",null,token),env)).status,401);
+ assert.equal((await routeRequest(request("/v1/tenant/fretes","GET",null,token),env)).status,401);
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_users SET active=1 WHERE tenant_id='teste-01'").run();
+ assert.equal((await sessionController(request("/v1/session","GET",null,token),env)).status,200);
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenants SET status='inactive' WHERE id='teste-01'").run();
+ assert.equal((await sessionController(request("/v1/session","GET",null,token),env)).status,401);
+});
+test("a tenant cookie denies ALL legacy routes even with a simultaneously signed Nova Frota cookie",async()=>{
+ const env=environment();env.PORTAL_KEY="test-portal-signing-key";await provision(env);
+ const validTenant=cookie(await login(env));
+ const legacy=await createSessionToken(env,{
+  usuario:"LEGACYADMIN",perfil:"ADMINISTRADOR",transportadoraId:"nova-frota",estados:["GO"],estado:"GO",
+  expiresAt:new Date(Date.now()+3600000).toISOString()
+ });
+ const mixed="__Host-portal_session="+legacy+"; __Host-tenant_session="+validTenant;
+ for(const path of ["/v1/gateway","/v1/fleet/vehicles","/v1/monitor/state",
+  "/v1/super-admin/me","/v1/client-logos/foo"]){
+  const res=await routeRequest(request(path,"GET",null,mixed),env);
+  assert.equal(res.status,403,path);
+ }
+ const malformed="__Host-portal_session="+legacy+"; __Host-tenant_session=forged";
+ assert.equal((await sessionController(request("/v1/session","GET",null,malformed),env)).status,401);
+});
+test("disabled module, restricted role, and CSRF attempts fail without touching another tenant",async()=>{
+ const env=environment();await provision(env);
+ const token=cookie(await login(env));
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_modules SET enabled=0 WHERE tenant_id='teste-01' AND module_key='fretes'").run();
+ assert.equal((await routeRequest(request("/v1/tenant/fretes","GET",null,token),env)).status,403);
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_modules SET enabled=1 WHERE tenant_id='teste-01' AND module_key='fretes'").run();
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_users SET role='PISO' WHERE tenant_id='teste-01'").run();
+ assert.equal((await routeRequest(request("/v1/tenant/fretes","GET",null,token),env)).status,403);
+ assert.equal((await routeRequest(request("/v1/tenant/bi","GET",null,token),env)).status,403);
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenant_users SET role='COMERCIAL' WHERE tenant_id='teste-01'").run();
+ for(const originValue of [undefined,"https://outside.example"]){
+  const headers=originValue===undefined?{Origin:""}:{Origin:originValue};
+  const result=await routeRequest(request("/v1/tenant/fretes","POST",{
+   origem:"A",destino:"B",produto:"Soja",valorTon:100
+  },token,headers),env);
+  assert.equal(result.status,403);
+ }
+ assert.equal(env.TENANTS_DB.sql.prepare("SELECT COUNT(*) AS n FROM portal_tenant_freights").get().n,0);
+});
+test("tenant logo endpoint reads only the authenticated tenant's R2 object",async()=>{
+ const env=environment();await provision(env);
+ const token=cookie(await login(env)),bytes=new Uint8Array([137,80,78,71,13,10,26,10,0]);
+ const logoKey="tenant/teste-01/logo/abc.png";
+ env.TENANTS_DB.sql.prepare("UPDATE portal_tenants SET logo_key=? WHERE id=?").run(logoKey,"teste-01");
+ env.TENANT_BRANDS.objects.set(logoKey,bytes);
+ env.TENANT_BRANDS.objects.set("tenant/outra-empresa/logo/def.png",new Uint8Array([42]));
+ const res=await routeRequest(request("/v1/tenant/logo","GET",null,token),env);
+ assert.equal(res.status,200);
+ assert.equal(res.headers.get("Content-Type"),"image/png");
+ assert.deepEqual(new Uint8Array(await res.arrayBuffer()),bytes);
+ assert.equal((await routeRequest(request("/v1/tenant/logo"),env)).status,401);
+});
+test("one logout revokes D1 tenant session and clears both login cookies",async()=>{
+ const env=environment();await provision(env);
+ const token=cookie(await login(env));
+ const logout=await logoutController(request("/v1/logout","POST",{},token),env);
+ assert.equal(logout.status,200);
+ assert.match(logout.headers.get("Set-Cookie"),/Max-Age=0/);
+ assert.equal((await sessionController(request("/v1/session","GET",null,token),env)).status,401);
+});
+test("unified frontend assets keep same login/Home, hide legacy modules, and parse",()=>{
+ const root=new URL("../../",import.meta.url);
+ const api=readFileSync(new URL("assets/js/api.js",root),"utf8");
+ const auth=readFileSync(new URL("assets/js/auth.js",root),"utf8");
+ const login=readFileSync(new URL("pages/login.html",root),"utf8");
+ const home=readFileSync(new URL("pages/home.html",root),"utf8");
+ const workspace=readFileSync(new URL("assets/js/tenant-workspace.js",root),"utf8");
+ assert.doesNotThrow(()=>new Script(api));
+ assert.doesNotThrow(()=>new Script(auth));
+ assert.doesNotThrow(()=>new Script(workspace));
+ assert.match(login,/id="tenantId"/);
+ assert.match(login,/loadTransportadoras/);
+ assert.match(login,/session\?\.tenantMode===true/);
+ assert.match(home,/tenantWorkspace/);
+ assert.match(home,/tenant-workspace\.js/);
+ assert.match(home,/portalfrete-super-admin-staging/);
+ assert.match(workspace,/window\.PortalAPI\.tenantRequest/);
+ assert.match(auth,/window\.__PORTAL_TENANT_SESSION/);
+});

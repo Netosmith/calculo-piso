@@ -1,0 +1,44 @@
+name: Super Admin Preview (isolated)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/super-admin-panel-foundation
+    paths:
+      - 'pages/super-admin-preview.html'
+      - '.github/workflows/super-admin-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_PREVIEW_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate preview file
+        run: |
+          test -s pages/super-admin-preview.html
+          grep -q 'PRÉVIA DEMONSTRATIVA' pages/super-admin-preview.html
+          ! grep -q 'api.portalfrete.net.br' pages/super-admin-preview.html
+      - name: Prepare standalone preview site
+        run: |
+          mkdir -p preview-site
+          cp pages/super-admin-preview.html preview-site/index.html
+          printf 'User-agent: *\nDisallow: /\n' > preview-site/robots.txt
+      - name: Package offline HTML preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: super-admin-preview
+          path: pages/super-admin-preview.html
+          retention-days: 14
+      - name: Deploy preview to isolated Cloudflare Pages project
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_PAGES_PREVIEW_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy preview-site --project-name=portal-frete-super-admin-preview --branch=main

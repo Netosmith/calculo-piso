@@ -1,3 +1,4 @@
+import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
 
@@ -92,6 +93,16 @@ export async function clientLogoController(request, env, encodedClientName) {
     clientName = decodeClientName(encodedClientName);
   } catch (error) {
     return errorResponse(error.message, 400);
+  }
+
+  // GET/HEAD permanecem públicos para compatibilidade com imagens existentes.
+  // Escritas exigem sessão e transportadora Nova Frota.
+  if (request.method === "PUT" || request.method === "DELETE") {
+    const session = await getSession(env, readSessionId(request));
+    if (!session) return errorResponse("Sessão inválida ou expirada.", 401);
+    if (tenantIdForLegacySession(session) !== LEGACY_NOVA_FROTA.id) {
+      return errorResponse("Armazenamento não provisionado para esta transportadora.", 403);
+    }
   }
 
   const key = clientLogoKey(clientName);

@@ -1,3 +1,4 @@
+import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
 
@@ -16,6 +17,7 @@ async function hashToken(value){
 async function manager(req,env){
   const session=await getSession(env,readSessionId(req));
   if(!session)return {error:errorResponse("Sessão inválida.",401)};
+  if(tenantIdForLegacySession(session)!==LEGACY_NOVA_FROTA.id)return {error:errorResponse("Monitoramento não provisionado para esta transportadora.",403)};
   if(!PROFILES.has(clean(session.perfil).toUpperCase()))
     return {error:errorResponse("Sem permissão para Monitoramento.",403)};
   return {session};

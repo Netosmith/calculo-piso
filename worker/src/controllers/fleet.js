@@ -1,3 +1,4 @@
+import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
 
@@ -9,6 +10,7 @@ const profile=x=>String(x||'').toUpperCase().trim();
 async function auth(request,env,write){
  const session=await getSession(env,readSessionId(request));
  if(!session)return {error:errorResponse('Sessão expirada ou inválida.',401)};
+ if (tenantIdForLegacySession(session) !== LEGACY_NOVA_FROTA.id) return {error:errorResponse('Frota não provisionada para esta transportadora.',403)};
  const p=profile(session.perfil);
  if(!['ADMINISTRADOR','COMERCIAL'].includes(p))return {error:errorResponse('Perfil sem autorização para Gestão de Frota.',403)};
  if(write&&p!=='ADMINISTRADOR'&&p!=='COMERCIAL')return {error:errorResponse('Sem permissão de escrita.',403)};

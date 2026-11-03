@@ -73,7 +73,7 @@
   bootStyle.textContent='html[data-pf-tenant-boot="1"] body{visibility:hidden!important}';
   parsed.head.insertBefore(bootStyle,base.nextSibling);
   const route=parsed.createElement("script");
-  route.src="/assets/js/tenant-route.js?v=3";
+  route.src="/assets/js/tenant-route.js?v=4";
   parsed.head.insertBefore(route,base.nextSibling);
   // Controle uses Tailwind utilities. The Play CDN may fail when injected
   // after DOMContentLoaded on tenant pages; use precompiled same-origin CSS.
@@ -95,7 +95,7 @@
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-brand-v3"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-controle-v4"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down

@@ -1896,6 +1896,7 @@ function formatDateTimeBR(value) {
 
     try {
       setStatus("🖼️ Gerando imagem...");
+      await Promise.resolve(window.portalTenantArtThemeReady);
       const html2canvasLib = await loadHtml2CanvasNF();
 
       if (modelo === 4) {

@@ -42,7 +42,7 @@
  let tenantLogoUrl=null;
  const artLogoSelector="img.nfM3Logo,img.nfM4Logo,img.m3Logo,img.multiArtLogo";
  function labelHeader(img){
-  const container=img.closest(".nf-brand,.nf-global-nav-standalone-brand");
+  const container=img.closest(".nf-brand,.nf-global-nav-standalone-brand,.topbar .brand");
   if(!container)return;
   if(container.querySelector(".pf-company-name"))return;
   const text=document.createElement("strong");

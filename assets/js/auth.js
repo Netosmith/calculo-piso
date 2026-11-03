@@ -444,15 +444,14 @@ function canAccessFeature(featureKey){
        tenantSession.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return false;
     if(feature==="super-admin")return false;
     if(feature==="home")return true;
-    const mapped={piso2:"piso"};
-    const moduleKey=mapped[feature]||feature;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
-    if(!modules.includes(moduleKey))return false;
+    // Piso 1 and Piso 2 are independently granted by the Super Admin.
+    // Never map piso2 to piso: that exposed both calculators with one checkbox.
+    if(!modules.includes(feature))return false;
     const role=String(tenantSession.perfil||"").toUpperCase();
     if(role==="ADMINISTRADOR")return true;
-    if(role==="PISO")return feature==="piso2" && modules.includes("piso");
-    return featuresForProfile(role).includes(feature) ||
-      featuresForProfile(role).includes(moduleKey);
+    if(role==="PISO")return feature==="piso" || feature==="piso2";
+    return featuresForProfile(role).includes(feature);
   }
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.

@@ -44,7 +44,7 @@ test("read-only shared branding leaves legacy APIs isolated and owners in contro
 });
 test("tenant Controle uses local generated CSS, not Tailwind Play CDN",()=>{
  const loader=read("assets/js/tenant-page.js");
- assert.ok(loader.includes('if(page==="controle.html")'));
+ assert.ok(loader.includes('page==="controle.html"||page==="ordem.html"'));
  assert.ok(loader.includes('controle-tailwind.generated.css?v=1'));
  assert.ok(loader.includes('script[src*="cdn.tailwindcss.com"]'));
  const css=read("assets/css/controle-tailwind.generated.css");

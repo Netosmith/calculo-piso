@@ -8,6 +8,7 @@
   const STATE = {
     rows: [],
     regionalUfs: {},
+    failedBases: 0,
     selectedUf: "",
     timer: null,
     bound: false,
@@ -412,6 +413,7 @@
   async function load(force = false) {
     if (STATE.loading) return;
     STATE.loading = true;
+    STATE.failedBases=0;
     setLoading(true);
 
     try {
@@ -444,6 +446,7 @@
         // Read only enabled bases from this tenant's authenticated gateway.
         const responses=await Promise.allSettled(allowed.map(key=>
           window.PortalAPI.call(key,"read",{})));
+        STATE.failedBases=responses.filter(reply=>reply.status==="rejected").length;
         const rows=[];
         responses.forEach((reply,index)=>{
           if(reply.status!=="fulfilled")return;
@@ -469,6 +472,10 @@
         }));
       }
       render();
+      if(session.tenantMode===true&&STATE.failedBases){
+        const subtitle=$("#homeMapSubtitle");
+        if(subtitle)subtitle.textContent+=" • ⚠️ "+STATE.failedBases+" base(s) não carregada(s)";
+      }
     } catch (error) {
       console.error("[HOME MAP] erro ao carregar:", error);
       showError(error && error.message ? error.message : "Não foi possível carregar os fretes.");

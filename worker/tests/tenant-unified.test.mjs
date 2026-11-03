@@ -291,7 +291,7 @@ test("dedicated tenant login uses shared scripts, fixed company and no public se
  assert.doesNotMatch(page,/<select|transportadorasPublicas/);
  assert.match(page,/\.\.\/\.\.\/assets\/js\/tenant-login\.js/);
  assert.match(script,/PortalAPI\.login\(usuario,senha,tenantId\)/);
- assert.match(script,/session\.transportadoraId!==tenantId/);
+ assert.ok(script.includes("session?.transportadoraId!==tenantId"));
  assert.match(auth,/pf:tenant-login-path/);
  assert.match(script,/location\.replace\("\.\.\/home\.html"\)/);
 });
@@ -305,8 +305,8 @@ test("unified frontend assets keep same login/Home, hide legacy modules, and par
  assert.doesNotThrow(()=>new Script(api));
  assert.doesNotThrow(()=>new Script(auth));
  assert.doesNotThrow(()=>new Script(workspace));
- assert.match(login,/id="tenantId"/);
- assert.match(login,/loadTransportadoras/);
+ assert.doesNotMatch(login,/id="tenantId"|loadTransportadoras|transportadorasPublicas/);
+ assert.match(login,/PortalAPI\.login\(usuario, senha, "nova-frota"\)/);
  assert.match(login,/session\?\.tenantMode===true/);
  assert.match(home,/tenantWorkspace/);
  assert.match(home,/tenant-workspace\.js/);

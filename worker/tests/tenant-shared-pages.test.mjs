@@ -28,8 +28,8 @@ test("tenant-specific URL aliases keep ONE common original HTML per module",()=>
 
 test("tenant loader validates signed session before fetching shared HTML or using any asset",()=>{
  const loader=read("assets/js/tenant-page.js");
- assert.ok(loader.indexOf('fetch("https://api.portalfrete.net.br/v1/session"')<
-  loader.indexOf('fetch("/pages/"+page'));
+ assert.ok(loader.indexOf('get("https://api.portalfrete.net.br/v1/session"')<
+  loader.indexOf('get("/pages/"+page'));
  assert.ok(loader.includes("session.transportadoraId!==tenant"));
  assert.ok(loader.includes("session?.tenantMode!==true"));
  assert.ok(loader.includes('window.__PORTAL_TENANT_EXPECTED=tenant'));

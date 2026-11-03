@@ -422,13 +422,20 @@
         if(!modules.includes("fretes")&&!modules.includes("fretes2")){
           STATE.rows=[];render();return;
         }
-        // Reuse the same map and freight cards with data from the tenant D1.
-        // Never call the Nova Frota Apps Script gateway with a tenant session.
-        const result=await window.PortalAPI.tenantRequest("/fretes");
-        const rows=Array.isArray(result.fretes)?result.fretes:[];
-        STATE.rows=rows.filter(row=>row.status==="aberto").map(row=>normalizeRow({
-          ...row,source:"TENANT",valorMotorista:row.valorTon,status:"LIBERADO"
-        },"TENANT"));
+        // Read exclusively from this company's private Google Sheet.
+        const allowed=["fretes","fretes2"].filter(key=>modules.includes(key));
+        const responses=await Promise.allSettled(allowed.map(key=>
+          window.PortalAPI.call(key,"read",{})));
+        const rows=[];
+        responses.forEach((reply,index)=>{
+          if(reply.status!=="fulfilled")return;
+          const source=allowed[index]==="fretes2"?"FRETES2":"FRETES";
+          extractRows(reply.value).forEach(item=>rows.push(normalizeRow(item,source)));
+        });
+        if(!responses.some(r=>r.status==="fulfilled")){
+          throw new Error("Não foi possível ler os fretes da planilha da transportadora.");
+        }
+        STATE.rows=availableRows(rows);
       }else{
         const result = await window.PortalAPI.call("home-map", "read");
         const merged = extractRows(result).map((row) =>

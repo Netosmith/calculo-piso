@@ -2882,11 +2882,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
   }
 
   function abrirOrdemOff() {
-    window.location.href = "./ordem.html";
+    window.location.href = window.portalTenantHref?.("ordem.html") || "./ordem.html";
   }
 
   function abrirShareClientes() {
-    window.location.href = "./share-clientes.html";
+    window.location.href = window.portalTenantHref?.("share-clientes.html") || "./share-clientes.html";
   }
 
   function bindButtons() {

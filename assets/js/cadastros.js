@@ -533,10 +533,10 @@
     }catch(error){
       console.error("[cadastros] sessão:",error);
     }
-    if(!session){window.location.href="./login.html";return;}
+    if(!session){window.location.href=window.portalTenantHref?.("login.html") || "./login.html";return;}
     const perfil=upper(session.perfil||localStorage.getItem("nf_auth_profile"));
     if(perfil!=="ADMINISTRADOR"){
-      alert("Acesso permitido somente ao administrador.");window.location.href="./home.html";return;
+      alert("Acesso permitido somente ao administrador.");window.location.href=window.portalTenantHref?.("home.html") || "./home.html";return;
     }
     await loadMaintenanceStatus();
     await loadCurrent();

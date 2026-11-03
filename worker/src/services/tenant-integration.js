@@ -134,10 +134,14 @@ export async function adminTestTenantIntegration(env,id){
 export async function callTenantAppScript(env,principal,modules,payload){
  const module=String(payload?.module||"").trim().toLowerCase();
  const action=String(payload?.action||"").trim().toLowerCase();
- const allowed=modules.includes(module);
  const role=String(principal.role||"").toUpperCase();
+ // The Home KPI request is read-only and belongs to every non-PISO tenant
+ // with at least one enabled module. Never allow a tenant-wide D1 fallback.
+ const allowed=modules.includes(module) ||
+  (module==="home" && action==="read" && role!=="PISO" && modules.length>0);
  const permissionSession={perfil:role};
- if(!allowed||!canRunGatewayAction(permissionSession,module,action,payload?.params))
+ const permissionModule=role==="PISO"&&module==="piso"?"piso2":module;
+ if(!allowed||!canRunGatewayAction(permissionSession,permissionModule,action,payload?.params))
   return errorResponse("Acao nao permitida para este perfil ou transportadora.",403);
  const config=await readTenantIntegration(env,principal.tenant_id);
  if(!config||!config.enabled)return errorResponse("Planilha desta transportadora ainda nao vinculada.",503);

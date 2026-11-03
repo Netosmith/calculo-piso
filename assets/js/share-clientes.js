@@ -131,7 +131,8 @@
   }
 
   function getPaginaFretes(base) {
-    return base === "fretes2" ? "./fretes2.html" : "./fretes.html";
+    const file=base==="fretes2"?"fretes2.html":"fretes.html";
+    return window.portalTenantHref?.(file) || "./"+file;
   }
 
   function nowPerformance() {

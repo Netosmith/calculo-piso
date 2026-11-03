@@ -434,12 +434,12 @@ function imprimirTela() {
 }
 
 function irHome() {
-  window.location.href = "./home.html";
+  window.location.href = window.portalTenantHref?.("home.html") || "./home.html";
 }
 
 async function sairSistema() {
   await logoutPortal();
-  window.location.href = "./login.html";
+  window.location.href = window.portalTenantHref?.("login.html") || "./login.html";
 }
 
 function bindEvents() {
@@ -458,7 +458,7 @@ async function iniciarFretesMercado() {
 
   if (!canAccessFeature("fretes-mercado")) {
     alert("Fretes Mercado não está liberado para este perfil.");
-    window.location.href = "./home.html";
+    window.location.href = window.portalTenantHref?.("home.html") || "./home.html";
     return;
   }
 

@@ -266,11 +266,11 @@ test("tenant and Nova Frota share the same Home DOM and tenant map never reads l
  for(const js of [tenant,map,solic,prefs,advanced,ia])assert.doesNotThrow(()=>new Script(js));
  assert.ok(home.indexOf('<div id="tenantWorkspace" hidden>')>home.indexOf('<div class="nf-home-layout">'));
  assert.equal(tenant.includes("pf-tenant-mode .nf-home-layout"),false);
- assert.ok(tenant.includes('document.querySelector(".nf-tools")'));
- assert.ok(tenant.includes("updateTenantHome"));
- assert.ok(tenant.includes("window.PortalAPI.tenantRequest"));
+ assert.ok(tenant.includes('document.querySelectorAll(".nf-tools a.nf-tool[data-feature]")'));
+ assert.ok(tenant.includes('window.PortalAPI.call("home","read",{})'));
+ assert.equal(tenant.includes('window.PortalAPI.tenantRequest'),false);
  assert.ok(map.includes("session.tenantMode===true"));
- assert.ok(map.includes('window.PortalAPI.tenantRequest("/fretes")'));
+ assert.ok(map.includes('window.PortalAPI.call(key,"read",{})'));
  assert.ok(solic.includes("session.tenantMode===true"));
  assert.ok(prefs.includes("transportadoraId"));
  assert.ok(advanced.includes("transportadoraId"));
@@ -293,7 +293,7 @@ test("dedicated tenant login uses shared scripts, fixed company and no public se
  assert.match(script,/PortalAPI\.login\(usuario,senha,tenantId\)/);
  assert.ok(script.includes("session?.transportadoraId!==tenantId"));
  assert.match(auth,/pf:tenant-login-path/);
- assert.match(script,/location\.replace\("\.\.\/home\.html"\)/);
+ assert.match(script,/location\.replace\("\.\/home\.html"\)/);
 });
 test("unified frontend assets keep same login/Home, hide legacy modules, and parse",()=>{
  const root=new URL("../../",import.meta.url);
@@ -311,6 +311,6 @@ test("unified frontend assets keep same login/Home, hide legacy modules, and par
  assert.match(home,/tenantWorkspace/);
  assert.match(home,/tenant-workspace\.js/);
  assert.match(home,/portalfrete-super-admin-staging/);
- assert.match(workspace,/window\.PortalAPI\.tenantRequest/);
+ assert.match(workspace,/window\.PortalAPI\.call\("home","read",\{\}\)/);
  assert.match(auth,/window\.__PORTAL_TENANT_SESSION/);
 });

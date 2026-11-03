@@ -1,0 +1,73 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {Script} from "node:vm";
+import {fileURLToPath} from "node:url";
+import {resolve,dirname} from "node:path";
+
+const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
+const read=path=>readFileSync(resolve(root,path),"utf8");
+const pages=[
+ "home","fretes","fretes2","bi","divulgacao","share-clientes",
+ "controle","administrativo","cadastros","estadias","fretes-mercado",
+ "embarques","chamados","patrimonio-br","relatorio","custo-filial",
+ "custo-frota-pesada","monitoramento","calculo-piso","calculo-antt",
+ "calculo-antt2","ordem"
+];
+
+test("tenant-specific URL aliases keep ONE common original HTML per module",()=>{
+ for(const page of pages){
+  const html=read("pages/transportadora-teste/"+page+".html");
+  assert.match(html,/data-tenant-id="teste-01"/);
+  assert.ok(html.includes('data-shared-page="'+page+'.html"'));
+  assert.ok(html.includes('/assets/js/tenant-page.js'));
+  assert.ok(html.length<1000,"No copied/duplicated HTML: "+page);
+  assert.ok(read("pages/"+page+".html").length>0);
+ }
+});
+
+test("tenant loader validates signed session before fetching shared HTML or using any asset",()=>{
+ const loader=read("assets/js/tenant-page.js");
+ assert.ok(loader.indexOf('fetch("https://api.portalfrete.net.br/v1/session"')<
+  loader.indexOf('fetch("/pages/"+page'));
+ assert.ok(loader.includes("session.transportadoraId!==tenant"));
+ assert.ok(loader.includes("session?.tenantMode!==true"));
+ assert.ok(loader.includes('window.__PORTAL_TENANT_EXPECTED=tenant'));
+ assert.ok(!loader.includes("PORTAL_GATEWAY_KEY"));
+ assert.ok(!loader.includes("PORTAL_SPREADSHEET_ID"));
+});
+
+test("tenant login stays in its own folder after successful and existing-session logins",()=>{
+ const login=read("assets/js/tenant-login.js");
+ assert.equal((login.match(/location\.replace\("\.\/home\.html"\)/g)||[]).length,2);
+ assert.equal(login.includes('location.replace("../home.html")'),false);
+});
+
+test("tenant auth denies legacy module pages and preserves tenant-specific links",()=>{
+ const auth=read("assets/js/auth.js");
+ assert.ok(auth.includes('if(!/^\\/pages\\/'));
+ assert.ok(auth.includes('window.__PORTAL_TENANT_EXPECTED'));
+ assert.ok(auth.includes('window.portalTenantHref?.("home.html")'));
+ const home=read("assets/js/tenant-workspace.js");
+ assert.ok(home.includes('window.PortalAPI.call("home","read",{})'));
+ assert.equal(home.includes('tenantRequest("/fretes")'),false);
+ const map=read("assets/js/home-map.js");
+ assert.ok(map.includes('window.PortalAPI.call(key,"read",{})'));
+ assert.equal(map.includes('tenantRequest("/fretes")'),false);
+});
+
+test("tenant gateway selects private Sheets integration instead of public browser asset URLs",()=>{
+ const api=read("assets/js/api.js");
+ const gateway=read("worker/src/services/tenant-integration.js");
+ assert.ok(api.includes('"/v1/tenant/gateway"'));
+ assert.ok(gateway.includes('APPS_SCRIPT_URL:config.scriptUrl'));
+ assert.ok(gateway.includes('PORTAL_KEY:config.gatewayKey'));
+ assert.ok(gateway.includes('module==="home" && action==="read"'));
+});
+
+test("shared page loader and tenant link/brand scripts compile in browser JavaScript",()=>{
+ for(const path of ["assets/js/tenant-page.js","assets/js/tenant-route.js",
+  "assets/js/tenant-login.js","assets/js/tenant-workspace.js"]){
+  assert.doesNotThrow(()=>new Script(read(path),{filename:path}),path);
+ }
+});

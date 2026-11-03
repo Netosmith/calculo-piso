@@ -163,7 +163,21 @@ window.PortalAPI = {
     });
   },
   async call(module, action, params = {}) {
-    const isTenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+    // URL does not grant access. Signed Worker session chooses the tenant
+    // and resolves its Apps Script URL/key from private R2.
+    const scoped=window.__PORTAL_TENANT_EXPECTED;
+    let session=window.__PORTAL_TENANT_SESSION;
+    if(scoped){
+      if(session?.tenantMode!==true||session.transportadoraId!==scoped){
+        const response=await portalApiRequest("/v1/session");
+        session=response.session;
+        if(session?.tenantMode!==true||session.transportadoraId!==scoped){
+          throw new Error("Sessão de transportadora inválida.");
+        }
+        window.__PORTAL_TENANT_SESSION=session;
+      }
+    }
+    const isTenant=session?.tenantMode===true;
     const result = await portalApiRequest(isTenant?"/v1/tenant/gateway":"/v1/gateway", {
       method: "POST",
       body: { module, action, params }

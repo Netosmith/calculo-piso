@@ -682,8 +682,8 @@ function formatDateTimeBR(value) {
     if (
       STATE.directoryReady &&
       (window.__PORTAL_TENANT_SESSION?.tenantMode===true ||
-       DIRECTORY.regionais.length > 0) &&
-      Object.keys(DIRECTORY.filiaisPorRegional || {}).length > 0
+       (DIRECTORY.regionais.length > 0 &&
+        Object.keys(DIRECTORY.filiaisPorRegional || {}).length > 0))
     ) {
       return true;
     }

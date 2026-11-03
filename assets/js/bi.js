@@ -1897,6 +1897,7 @@
       }
     });
 
+    STATE.partialBaseCount=errors.length;
     if (!rows.length && errors.length === results.length) {
       throw errors[0];
     }
@@ -1995,7 +1996,11 @@
           mode === "HISTORICO" ? "Histórico diário" :
           "Análise comercial";
 
-        setStatus(`✅ ${label} carregada às ${agora}`, true);
+        const partial=window.__PORTAL_TENANT_SESSION?.tenantMode===true &&
+          ["ATUAL","MAPA"].includes(mode) && STATE.partialBaseCount>0;
+        setStatus(partial
+          ? `⚠️ ${label} parcial às ${agora}: ${STATE.partialBaseCount} base(s) indisponível(is)`
+          : `✅ ${label} carregada às ${agora}`, !partial);
       }
     } catch (error) {
       if (requestId !== STATE.loadSequence) return;

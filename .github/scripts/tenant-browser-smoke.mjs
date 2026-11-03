@@ -101,11 +101,24 @@ try{
  assert.equal(state.home,"/pages/transportadora-teste/home.html");
  console.log("CHROME TENANT PAGE SMOKE OK",JSON.stringify(state));
  await page.locator("#btnNew").click();
- await page.waitForFunction(()=>{
-  const values=[...document.querySelectorAll("#mCliente option")]
-    .map(x=>x.value).filter(Boolean);
-  return values.includes("CLIENTE MODELO");
- },null,{timeout:15000});
+ try{
+  await page.waitForFunction(()=>{
+   const values=[...document.querySelectorAll("#mCliente option")]
+     .map(x=>x.value).filter(Boolean);
+   return values.includes("CLIENTE MODELO");
+  },null,{timeout:10000});
+ }catch(error){
+  const debug=await page.evaluate(()=>({
+   clienteOptions:[...document.querySelectorAll("#mCliente option")].map(x=>x.value),
+   sync:document.querySelector("#syncStatus")?.textContent,
+   tenant:window.__PORTAL_TENANT_SESSION?.transportadoraId,
+   portalApi:typeof window.PortalAPI?.tenantRequest,
+   popup:document.querySelector("#nfModal")?.className,
+   isModalOpen:document.querySelector("#mRegional")?.offsetParent!==null
+  }));
+  console.error("SHARED CLIENT CATALOG DIAGNOSTIC",JSON.stringify({debug,messages:messages.slice(-20)}));
+  throw error;
+ }
  const freightForm=await page.evaluate(()=>({
   regionais:[...document.querySelectorAll("#mRegional option")].map(x=>x.value).filter(Boolean),
   filiais:[...document.querySelectorAll("#mFilial option")].map(x=>x.value).filter(Boolean),

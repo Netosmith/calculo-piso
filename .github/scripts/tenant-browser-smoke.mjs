@@ -58,6 +58,16 @@ try{
     ok:true,clientes:[{id:"global:CLIENTE MODELO",cliente:"CLIENTE MODELO",ativo:"SIM",ordem:1}]
    })});return;
   }
+  if(url.pathname==="/v1/tenant/artes"){
+   await route.fulfill({status:200,headers,body:JSON.stringify({
+    ok:true,artes:{version:1,models:{
+     modelo3:{primary:"#b91c1c",accent:"#171717",surface:"#f4f4f4",watermark:8},
+     modelo4a:{primary:"#b91c1c",accent:"#171717",surface:"#f4f4f4",watermark:8},
+     modelo4b:{primary:"#b91c1c",accent:"#171717",surface:"#f4f4f4",watermark:8},
+     modelo4c:{primary:"#b91c1c",accent:"#171717",surface:"#f4f4f4",watermark:8}
+    }}
+   })});return;
+  }
   if(url.pathname==="/v1/tenant/logo"){
    await route.fulfill({status:404,headers,body:JSON.stringify({ok:false,error:"No logo"})});return;
   }
@@ -100,6 +110,31 @@ try{
  assert.equal(state.badText,false);
  assert.equal(state.home,"/pages/transportadora-teste/home.html");
  console.log("CHROME TENANT PAGE SMOKE OK",JSON.stringify(state));
+ await page.waitForFunction(()=>Boolean(window.portalTenantArtThemeReady),null,{timeout:10000});
+ await page.evaluate(()=>window.portalTenantArtThemeReady);
+ const art=await page.evaluate(()=>{
+  const canvas=document.getElementById("nfM3Canvas");
+  const route=canvas?.querySelector(".nfM3RouteLabel");
+  const footer=canvas?.querySelector(".nfM3Footer");
+  const price=canvas?.querySelector(".nfM3PriceCard");
+  const img=canvas?.querySelector(".nfM3HeroImg");
+  return {
+   hero:img?.getAttribute("src"),loaded:img?.naturalWidth||0,
+   route:getComputedStyle(route).backgroundColor,
+   footer:getComputedStyle(footer).backgroundColor,
+   gradient:getComputedStyle(price).backgroundImage,
+   theme:!!document.getElementById("pfTenantArtTheme")
+  };
+ });
+ assert.ok(art.hero?.includes("divulgacao/hero-default.webp?v=1"));
+ assert.ok(art.loaded>0,"One unbranded global hero must load");
+ assert.equal(art.route,"rgb(23, 23, 23)");
+ assert.equal(art.footer,"rgb(185, 28, 28)");
+ assert.ok(art.gradient.includes("rgb(185, 28, 28)"));
+ assert.ok(art.gradient.includes("rgb(23, 23, 23)"));
+ assert.equal(art.theme,true);
+ console.log("TENANT MODEL3 HERO AND PALETTE OK",JSON.stringify(art));
+
  await page.locator("#btnNew").click();
  try{
   await page.waitForFunction(()=>{

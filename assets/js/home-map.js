@@ -427,17 +427,18 @@
 
       if(session.tenantMode===true){
         const modules=Array.isArray(session.modules)?session.modules:[];
-        if(!modules.includes("fretes")&&!modules.includes("fretes2")){
-          STATE.rows=[];render();return;
-        }
-        // Read exclusively from this company's private Google Sheet.
-        const allowed=["fretes","fretes2"].filter(key=>modules.includes(key));
+        // Accounting bases are independent from the geographical origin UF.
+        const baseKeys=["fretes","fretes2","fretes-sp","fretes-ms",
+          "fretes-ba","fretes-pr","fretes-sc","fretes-ro","fretes-to","fretes-ma"];
+        const allowed=baseKeys.filter(key=>modules.includes(key));
+        if(!allowed.length){STATE.rows=[];render();return;}
+        // Read only enabled bases from this tenant's authenticated gateway.
         const responses=await Promise.allSettled(allowed.map(key=>
           window.PortalAPI.call(key,"read",{})));
         const rows=[];
         responses.forEach((reply,index)=>{
           if(reply.status!=="fulfilled")return;
-          const source=allowed[index]==="fretes2"?"FRETES2":"FRETES";
+          const source=allowed[index]==="fretes2"?"FRETES2":allowed[index]==="fretes"?"FRETES":allowed[index].toUpperCase();
           extractRows(reply.value).forEach(item=>rows.push(normalizeRow(item,source)));
         });
         if(!responses.some(r=>r.status==="fulfilled")){

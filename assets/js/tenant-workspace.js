@@ -10,6 +10,10 @@
  function renderBaseCards(){
   const grid=document.querySelector(".nf-tools");
   if(!grid || !window.__PORTAL_TENANT_SESSION?.tenantMode)return;
+  const general=grid.querySelector('a[data-feature="fretes"] h2');
+  const internal=grid.querySelector('a[data-feature="fretes2"] h2');
+  if(general)general.textContent="Fretes Geral (multiestado)";
+  if(internal)internal.textContent="Fretes MT (interno)";
   for(const uf of BASE_UFS){
    const key=baseKey(uf);
    const existing=null;

@@ -136,6 +136,7 @@
   if(root?.matches?.("img"))brandImage(root);
   root?.querySelectorAll?.("img")?.forEach(brandImage);
   brandArtworkText(root);
+  if(tenantLogoUrl)addArtWatermarks();
  }
  async function loadBrand(){
   // Fetch only for artwork; the header always stays name-only.
@@ -152,6 +153,7 @@
     img.src=tenantLogoUrl;img.alt=companyName;
     img.hidden=false;img.style.removeProperty("display");
    }
+   addArtWatermarks();
   }catch(_){}
  }
  function fixLink(link){
@@ -171,12 +173,74 @@
   const link=event.target?.closest?.("a[href]");
   if(link)fixLink(link);
  },true);
+
+ function safeHex(value,fallback){
+  return typeof value==="string"&&/^#[0-9a-f]{6}$/i.test(value)?value:fallback;
+ }
+ async function loadArtThemes(){
+  // Read-only visual profile, derived exclusively from the signed tenant cookie.
+  try{
+   const response=await fetch("https://api.portalfrete.net.br/v1/tenant/artes",{
+    credentials:"include",cache:"no-store",headers:{"Accept":"application/json"}
+   });
+   if(!response.ok)return;
+   const data=await response.json(),models=data?.artes?.models||{};
+   const layouts=[
+    ["modelo3",['[data-template-preview="3"]','#nfM3Canvas']],
+    ["modelo4a",[".multiArt.count-2","#nfM4Canvas.count-2"]],
+    ["modelo4b",[".multiArt.count-3","#nfM4Canvas.count-3"]],
+    ["modelo4c",[".multiArt.count-4","#nfM4Canvas.count-4"]]
+   ];
+   let css="";
+   for(const [model,selectors] of layouts){
+    const value=models[model]||{};
+    const primary=safeHex(value.primary,"#113c70");
+    const accent=safeHex(value.accent,"#08a968");
+    const surface=safeHex(value.surface,"#f4f8fb");
+    const watermark=Number.isInteger(value.watermark)&&value.watermark>=0&&value.watermark<=14?
+      value.watermark/100:0.08;
+    css+=selectors.map(selector=>"body.pf-tenant-site "+selector).join(",")+
+      "{--pf-art-primary:"+primary+";--pf-art-accent:"+accent+
+      ";--pf-art-surface:"+surface+";--pf-art-watermark-opacity:"+watermark+";}";
+   }
+   css+=[
+    'body.pf-tenant-site .multiArt .multiArtTitle strong,body.pf-tenant-site #nfM4Canvas .nfM4Title strong,',
+    'body.pf-tenant-site [data-template-preview="3"] .m3Headline strong,body.pf-tenant-site #nfM3Canvas .nfM3Headline strong{color:var(--pf-art-accent)!important}',
+    'body.pf-tenant-site .multiArt .multiArtPrice,body.pf-tenant-site #nfM4Canvas .nfM4Price,',
+    'body.pf-tenant-site [data-template-preview="3"] .m3PriceCard,body.pf-tenant-site #nfM3Canvas .nfM3PriceCard{background:var(--pf-art-accent)!important;color:#fff!important}',
+    'body.pf-tenant-site .multiArt .multiArtNum,body.pf-tenant-site #nfM4Canvas .nfM4Num{background:var(--pf-art-primary)!important;color:#fff!important}',
+    'body.pf-tenant-site .multiArt .multiArtFooter,body.pf-tenant-site #nfM4Canvas .nfM4Footer,',
+    'body.pf-tenant-site #nfM3Canvas .nfM3Footer,body.pf-tenant-site [data-template-preview="3"] .m3Footer{background:var(--pf-art-primary)!important}',
+    'body.pf-tenant-site .multiArt .multiArtTitle,body.pf-tenant-site #nfM4Canvas .nfM4Title{color:var(--pf-art-primary)!important}',
+    'body.pf-tenant-site .multiArt .multiArtBody,body.pf-tenant-site #nfM4Canvas .nfM4Body{background:var(--pf-art-surface)!important}',
+    'body.pf-tenant-site .multiArt .multiArtContactsIntro,body.pf-tenant-site #nfM4Canvas .nfM4ContactsIntro{background:var(--pf-art-primary)!important}',
+    'body.pf-tenant-site .pf-art-watermark{position:absolute!important;top:44px!important;right:18px!important;',
+    'bottom:auto!important;left:auto!important;width:160px!important;max-height:125px!important;object-fit:contain!important;',
+    'opacity:var(--pf-art-watermark-opacity,.08)!important;pointer-events:none!important;z-index:2!important}'
+   ].join("");
+   const current=document.getElementById("pfTenantArtTheme");
+   const style=current||document.createElement("style");
+   style.id="pfTenantArtTheme";style.textContent=css;
+   if(!current)document.head.append(style);
+  }catch(_){/* Visual defaults remain safe when no custom palette exists. */}
+ }
+ function addArtWatermarks(){
+  if(!tenantLogoUrl)return;
+  document.querySelectorAll('[data-template-preview="3"] .m3Hero,.multiArt .multiArtHero,'+
+   '#nfM3Canvas .nfM3Hero,#nfM4Canvas .nfM4Hero').forEach(hero=>{
+   let mark=hero.querySelector(".pf-art-watermark");
+   if(!mark){mark=document.createElement("img");mark.className="pf-art-watermark";
+    mark.alt="";mark.setAttribute("aria-hidden","true");hero.append(mark);}
+   mark.src=tenantLogoUrl;
+  });
+ }
  function ready(){
   ensureHeaderTheme();
   if(/nova frota/i.test(document.title))
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);
   void loadBrand();
+  void loadArtThemes();
   if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(mutations=>{
     for(const change of mutations){

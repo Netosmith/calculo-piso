@@ -1,6 +1,7 @@
 import {errorResponse,success} from "../utils/response.js";
 import {writeTenantMembership} from "./super-admin-membership-write.js";
 import {writeTenantLogo} from "./super-admin-brand.js";
+import {writeTenantArtThemes} from "./tenant-art-themes.js";
 import {setTenantCredentials} from "./super-admin-tenant-credentials.js";
 import {adminWriteTenantIntegration} from "./tenant-integration.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
@@ -61,7 +62,12 @@ export async function writeTenantCatalog(request,env,actor) {
       await db.batch(statements);
       return success({transportadora:{id,name:name.trim(),active:false,modules:[]}},201);
     }
-    const brand=action.match(/^\/([a-z0-9-]+)\/logo$/);
+    const arts=action.match(/^\/([a-z0-9-]+)\/artes$/);
+  if(arts){
+    if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
+    return writeTenantArtThemes(request,env,actor,arts[1]);
+  }
+  const brand=action.match(/^\/([a-z0-9-]+)\/logo$/);
     if(brand) {
       if(!validId(brand[1]))return errorResponse("Transportadora invalida.",400);
       if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);

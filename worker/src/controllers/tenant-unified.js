@@ -8,6 +8,7 @@ import {validTenantId,normalizeTenantUser,authenticateTenant,hasTenantSessionCoo
 import {clearSessionCookie} from "../services/session.js";
 import {tenantFreights,tenantBi} from "../services/tenant-freights.js";
 import {readTenantIntegration,callTenantAppScript} from "../services/tenant-integration.js";
+import {readTenantArtThemes} from "../services/tenant-art-themes.js";
 import {sharedClientNamesController} from "../services/shared-client-catalog.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
@@ -109,6 +110,9 @@ export async function tenantApiController(request,env){
   const modules=await enabledModules(env.TENANTS_DB,principal.tenant_id);
   if(path==="/v1/tenant/me"&&request.method==="GET")
    return success({session:tenantPublicSession(principal,modules)});
+  if(path==="/v1/tenant/artes"&&request.method==="GET"){
+    return readTenantArtThemes(env,principal.tenant_id);
+  }
   if(path==="/v1/tenant/logo"&&request.method==="GET"){
    if(!env.TENANT_BRANDS)return tenantJsonError("Armazenamento de logos indisponivel.",503);
    const row=await env.TENANTS_DB.prepare("SELECT logo_key FROM portal_tenants WHERE id=?")

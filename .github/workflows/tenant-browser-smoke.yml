@@ -8,6 +8,9 @@ on:
       - 'pages/transportadora-teste/**'
       - 'assets/js/auth.js'
       - '.github/scripts/tenant-browser-smoke.mjs'
+      - '.github/scripts/super-admin-gallery-browser-smoke.mjs'
+      - 'worker/src/staging-panel.js'
+      - 'worker/src/services/tenant-art-themes.js'
       - '.github/workflows/tenant-browser-smoke.yml'
   workflow_dispatch:
 
@@ -29,3 +32,5 @@ jobs:
           npm install --prefix /tmp/portal-browser --no-audit --no-fund playwright-core@1.57.0
       - name: Open Fretes shared HTML with mocked signed tenant session
         run: node .github/scripts/tenant-browser-smoke.mjs
+      - name: Open private Super Admin visual gallery and save all model palettes
+        run: node .github/scripts/super-admin-gallery-browser-smoke.mjs

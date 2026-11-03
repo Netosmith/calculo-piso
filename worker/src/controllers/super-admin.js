@@ -1,6 +1,7 @@
 import { callAppsScript } from "../services/appscript.js";
 import { writeTenantCatalog } from "../services/super-admin-tenant-write.js";
 import { readTenantLogo } from "../services/super-admin-brand.js";
+import {readTenantArtThemes} from "../services/tenant-art-themes.js";
 import {adminReadTenantIntegration,adminTestTenantIntegration} from "../services/tenant-integration.js";
 import { projectLegacyUsers } from "../services/legacy-user-projection.js";
 import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
@@ -98,7 +99,12 @@ export async function superAdminController(request, env, verifiedStagingSession 
     if(parts.length!==6)return errorResponse("Rota invalida.",404);
     return adminReadTenantIntegration(env,parts[4]);
   }
-  if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/logo")){
+  if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/artes")){
+  const parts=path.split("/");
+  if(parts.length!==6)return errorResponse("Rota invalida.",404);
+  return readTenantArtThemes(env,parts[4]);
+ }
+ if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/logo")){
     const parts=path.split("/");
     if(parts.length!==6)return errorResponse("Rota invalida.",404);
     return readTenantLogo(env,parts[4]);

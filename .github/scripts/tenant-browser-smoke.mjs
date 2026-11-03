@@ -206,9 +206,21 @@ try{
  console.log("CONTROLE SELF HOSTED CSS AND TITLE OK",JSON.stringify(control));
 
  await page.goto(origin+"/pages/transportadora-teste/ordem.html",{waitUntil:"domcontentloaded"});
- await page.waitForFunction(()=>
-  document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
-  !!document.querySelector("#pfTenantOrdemCss"),null,{timeout:24000});
+ try{
+  await page.waitForFunction(()=>
+   document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
+   !!document.querySelector("#pfTenantOrdemCss"),null,{timeout:12000});
+ }catch(error){
+  const debug=await page.evaluate(()=>({
+   href:location.href,boot:document.documentElement.getAttribute("data-pf-tenant-boot"),
+   title:document.title,body:document.body?.textContent?.slice(0,500),
+   stylesheet:!!document.querySelector("#pfTenantOrdemCss"),
+   scripts:[...document.querySelectorAll("script[src]")].slice(0,12).map(x=>x.src),
+   tenant:window.__PORTAL_TENANT_SESSION?.transportadoraId
+  }));
+  console.error("ORDEM TENANT DIAGNOSTIC",JSON.stringify({debug,messages:messages.slice(-18)}));
+  throw error;
+ }
  const order=await page.evaluate(()=>({
   path:location.pathname,
   localStyles:!!document.querySelector("#pfTenantOrdemCss")?.sheet,

@@ -1315,9 +1315,13 @@
       const welcome = document.getElementById("homeWelcome");
       const sub = document.getElementById("homeSub");
 
-      if (userName) userName.textContent = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+      // A Home original não pode sobrescrever a identificação verificada
+      // e já exibida pelo módulo da nova transportadora.
+      if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true){
+        if (userName) userName.textContent = nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+        if (sub) sub.textContent = `Visão geral da operação | Acesso: ${String(user).toUpperCase()}${uf ? ` • ${uf}` : ""}`;
+      }
       if (welcome) welcome.firstChild.textContent = saudacaoAtual() + ", ";
-      if (sub) sub.textContent = `Visão geral da operação | Acesso: ${String(user).toUpperCase()}${uf ? ` • ${uf}` : ""}`;
 
       const solicitante = document.getElementById("hsSolicitante");
       if (solicitante) solicitante.value = String(user).toUpperCase();

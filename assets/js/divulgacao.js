@@ -2,6 +2,11 @@
 (function () {
   "use strict";
 
+  const isTenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+  const companyName=isTenant
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
+    : "NOVA FROTA";
+
   const PRODUCT_BG_MAP = {
     "1": {
       SOJA: "../assets/img/SOJATESTE.png",
@@ -503,7 +508,7 @@
       .map(contatoTextoCadastro)
       .filter(Boolean);
 
-    const contingencia = (FILIAIS_CONTATOS[key] || [])
+    const contingencia = (isTenant ? [] : (FILIAIS_CONTATOS[key] || []))
       .map((value) => String(value || "").trim())
       .filter((value) => value && !/^[-\s]+$/.test(value));
 
@@ -539,6 +544,22 @@
     }
 
     const key = normalizeKey(filialValue);
+    // As novas transportadoras não podem usar contatos de contingência da Nova Frota.
+    if(isTenant){
+      const select=document.querySelector('[data-template="'+templateId+'"][data-field="filial"]');
+      void carregarContatosCadastro().then(rows=>{
+        if(!select || normalizeKey(select.value)!==key)return;
+        const contatos=rows.filter(row=>
+          normalizeKey(row?.Filial ?? row?.filial)===key)
+          .map(contatoTextoCadastro).filter(Boolean).slice(0,4);
+        ["contato1","contato2","contato3","contato4"].forEach((campo,index)=>{
+          const input=document.querySelector('[data-template="'+templateId+'"][data-field="'+campo+'"]');
+          if(input)input.value=contatos[index]||"";
+          updatePreview(templateId,campo,contatos[index]||"");
+        });
+      });
+      return;
+    }
     const lista = FILIAIS_CONTATOS[key] || ["", "", "", ""];
 
     ["contato1", "contato2", "contato3", "contato4"].forEach((campo, index) => {
@@ -806,7 +827,7 @@
       setMultiBind(section, "valor", read("valor"), i);
     }
 
-    const filial = multiInput(section, "filial")?.value?.trim() || "NOVA FROTA";
+    const filial = multiInput(section, "filial")?.value?.trim() || companyName;
     setMultiBind(section, "filial", filial);
 
     for (let i = 1; i <= 4; i += 1) {
@@ -957,7 +978,7 @@
                     <div class="multiArtWa">☎</div>
                     <div>
                       <strong>FALE COM NOSSA EQUIPE</strong>
-                      <span data-multi-bind="filial">NOVA FROTA</span>
+                      <span data-multi-bind="filial">${companyName}</span>
                     </div>
                   </div>
                   <div class="multiArtContactsGrid">
@@ -1050,8 +1071,37 @@
     document.querySelectorAll(".multiTemplateCard[data-multi-count]").forEach(buildManualMultiTemplate);
   }
 
+  async function carregarFiliaisTenant(){
+    if(!isTenant)return;
+    const selects=[...document.querySelectorAll('select[data-field="filial"]')];
+    // Do not render hardcoded Nova Frota options even while Sheets is loading.
+    for(const select of selects){
+      const option=document.createElement("option");
+      option.value="";option.textContent="Selecione uma filial cadastrada";
+      select.replaceChildren(option);
+    }
+    try{
+      const response=await window.PortalAPI.call("fretes","read",{resource:"directory"});
+      const data=response?.data||{};
+      const names=[...new Set(Object.values(data.filiaisPorRegional||{})
+        .flatMap(list=>Array.isArray(list)?list:[]).map(v=>String(v||"").trim())
+        .filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+      for(const select of selects){
+        if(!select.isConnected)continue;
+        const choices=names.map(name=>{
+          const option=document.createElement("option");
+          option.value=name;option.textContent=name;
+          return option;
+        });
+        select.replaceChildren(select.options[0]||new Option("Selecione uma filial cadastrada",""),...choices);
+      }
+    }catch(error){
+      console.warn("[DIVULGACAO] Não foi possível consultar filiais próprias.",error?.status||"indisponível");
+    }
+  }
   function bindActions() {
     initManualMultiTemplates();
+    if(isTenant)void carregarFiliaisTenant();
 
     document.querySelectorAll("[data-template][data-field]").forEach((el) => {
       const eventName = el.tagName === "SELECT" ? "change" : "input";

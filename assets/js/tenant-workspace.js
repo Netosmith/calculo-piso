@@ -2,7 +2,7 @@
 // Do not replace the real modules with simplified D1 widgets.
 (function(){
  "use strict";
- let currentTenant="",logoUrl=null;
+ let currentTenant="";
  const $=id=>document.getElementById(id);
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=String(value);};
  function cards(){
@@ -15,32 +15,6 @@
    card.classList.remove("pf-pending");
    if(allowed)card.title="Abrir módulo desta transportadora";
   });
- }
- async function logo(session){
-  if(logoUrl){URL.revokeObjectURL(logoUrl);logoUrl=null;}
-  const img=document.querySelector(".nf-brand > img");
-  const brand=document.querySelector(".nf-brand");
-  if(!img||!brand)return;
-  let label=$("pfBrandName");
-  if(!label){
-   label=document.createElement("strong");
-   label.id="pfBrandName";label.className="nf-brand-name";
-   brand.appendChild(label);
-  }
-  img.hidden=true;img.style.display="none";
-  label.hidden=false;
-  label.textContent=session.transportadoraNome||"Portal Frete";
-  try{
-   const response=await fetch(window.PortalAPI.tenantLogoUrl(),{
-    credentials:"include",cache:"no-store"
-   });
-   if(!response.ok)return;
-   const file=await response.blob();
-   if(!["image/png","image/jpeg","image/webp"].includes(file.type))return;
-   logoUrl=URL.createObjectURL(file);
-   img.src=logoUrl;img.alt=label.textContent;img.hidden=false;
-   img.style.removeProperty("display");label.hidden=true;
-  }catch(_){}
  }
  async function dashboard(session){
   const values=["homeFretesAtivos","homeFretesGO","homeFretesMT",
@@ -77,7 +51,6 @@
   if(session?.tenantMode!==true||!session.transportadoraId)return;
   if(window.__PORTAL_TENANT_EXPECTED &&
      session.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return;
-  const changed=currentTenant!==session.transportadoraId;
   currentTenant=session.transportadoraId;
   document.body?.classList.add("pf-tenant-mode");
   const root=$("tenantWorkspace");
@@ -92,7 +65,6 @@
   const solicit=$("homeSolicCard");if(solicit)solicit.disabled=true;
   document.querySelector(".nf-support-link")?.setAttribute("hidden","");
   cards();
-  if(changed)void logo(session);
   void dashboard(session);
  }
  window.addEventListener("portal:session",event=>render(event.detail));

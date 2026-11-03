@@ -1,171 +1,17 @@
 /* fretes.js | NOVA FROTA | Gateway seguro Cloudflare */
 (function () {
   "use strict";
+  const tenantBrand=window.__PORTAL_TENANT_SESSION?.tenantMode===true
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
+    : "NOVA FROTA";
 
-  let DIRECTORY = {
-    regionais: ["GOIAS", "MINAS", "SAO PAULO"],
-    filiaisPorRegional: {
-      GOIAS: [
-        "ITUMBIARA", "RIO VERDE", "RIO VERDE FERT", "MONTIVIDIU", "ANAPOLIS",
-        "MINEIROS", "JATAI", "CHAP CEU", "VIANOPOLIS", "URUAÇU", "INDIARA",
-        "BOM JESUS", "CRISTALINA", "FORMOSA", "CATALÃO"
-      ],
-      MINAS: ["UBERLANDIA"],
-      "SAO PAULO": ["SOROCABA"],
-    },
-    clientes: [
-      "CARGILL", "TERRA ROXA", "COMIGO", "CONCREBEL", "VITERRA", "GD AGRONEGOCIOS", "COFCO", "NOVA AGRI",
-      "JBS SEARA", "BRF", "MOSAIC", "AMAGGI", "INGREDION", "LDC", "BRADO",
-      "C VALE", "OLAM BRASIL", "SODRU", "BOM JESUS", "OLFAR", "SOYBRASIL", "LAVORO",
-      "AGRIBRASIL", "BOM FUTURO", "CHS", "CIBRAFERTIL", "CJ TRADE",
-      "FERT TOCANTINS", "GAVILON", "GRUPO SCHEFFER", "INPASA",
-      "AGRICOLA ALVORADA", "ABJ AGROPECUARIA", "ADM", "FIAGRIL", "FS",
-      "ALPHAGRAIN", "FERTIMIG", "FERTIPAR", "GIRASSOL", "GRUPO ATTO",
-      "ADUBRAS", "CARAMURU", "YUKAER AGRO", "DUAL", "AGRONELLI", "BELAGRO",
-      "COOPERNORT", "SIPAL", "H A PIMENTA", "SAFRAS", "SINAGRO", "CAMPO REAL",
-      "AGROSOYA", "COPAGRI", "VMC", "GENERAL MILLS", "CUTRALE", "AGREX",
-      "YARA", "HEDGE", "ALZ", "MARUBENI", "MDNORTE", "FS TRADING", "SJC",
-      "CJ SELECTA", "COOXUPE", "BTG PACTUAL", "FENIX", "FERTIGRAN",
-      "RIFERTIL", "SEMENTES SAO FRANCISCO", "SEMPRE SEMENTES", "GOIASA",
-      "SAO MARTINHO", "AGRO CLUB", "MILHAO ALIMENTOS", "TRATO", "BREJEIRO",
-      "GEN", "ARAGUAIA", "NUTRIEN", "KOWALSKI LDC", "BIORGANICA",
-      "RICARDO MARTINS", "SERGIO GALVAO", "AGROMEN", "PROSOLLO", "USINA DECAL",
-      "COOPERVASS", "SOAMI", "RAFIRA", "CONCEITO AGRICOLA", "AGROBOM",
-      "MOINHO VITORIA", "MMJV GRAOS", "BOA SAFRA", "NOVA GALIA", "CEREAL",
-      "SOMAI ALIMENTOS", "SITARI", "ALENCAR", "AGROMERCANTIL", "OURO SAFRA",
-      "FUTURO", "GRAN MILHO", "HERINGER", "CEREAL OURO", "EUROCHEM", "GRANOL",
-      "AGROAMAZONIA", "AGROMAVE", "CERTANO", "SEEDCORP", "BAUMINAS",
-      "JALLES MACHADO", "ALIMENTOS N1", "ROAN ALIMENTOS", "CERRADINHO",
-      "FAZENDAO AGRO", "IACO", "JATAI CEREAIS", "USINA SERRANOPOLIS",
-      "FAST FRETE", "RIO DOCE", "INTEGRA", "RENATO CARVALHO", "COMIVA",
-      "COMERX", "SCALON E CERHI", "3 TENTOS", "BIOMA", "AGROLESTE",
-      "EDSON CROCHIQUIA", "COPAIBA", "ATVOS", "JRCA"
-    ],
-    contatosPorFilial: {
-      MINEIROS: [{ nome: "KIEWERSON", fone: "5564999794586" }],
-      ARAGUARI: [{ nome: "GUILHERME", fone: "5564992177636" }],
-      ANAPOLIS: [{ nome: "DANILO", fone: "5562993155713" }],
-      "BOM JESUS": [{ nome: "MATEUS", fone: "5564993070738" }],
-      MONTIVIDIU: [{ nome: "MARCELO", fone: "5564996532847" }],
-      "RIO VERDE": [{ nome: "RODRIGO", fone: "5564996031200" }],
-      INDIARA: [{ nome: "RAFAEL", fone: "5564999108790" }],
-      ITUMBIARA: [{ nome: "JHONATAN", fone: "5564992251214" }],
-      JATAI: [{ nome: "RONE", fone: "5564996264511" }],
-      "CHAP CEU": [{ nome: "RICARDO", fone: "5564999913512" }],
-      CRISTALINA: [{ nome: "EVERALDO", fone: "5561996924906" }],
-      "RIO VERDE FERT": [{ nome: "NARCISO", fone: "5564999365343" }],
-      VIANOPOLIS: [{ nome: "FERNANDO", fone: "5562999307778" }],
-      FORMOSA: [{ nome: "FABIOLA", fone: "5562996017658" }],
-      CATAlÃO: [{ nome: "EVERALDO JR", fone: "556492373735" }],
-      "CATALÃO": [{ nome: "EVERALDO JR", fone: "556492373735" }],
-      "URUAÇU": [{ nome: "GUILHERME", fone: "5562996978707" }],
-      SOROCABA: [{ nome: "DIOGO", fone: "5515992784842" }],
-    },
-  };
-
-  const FILIAIS_CONTATOS_ARTE = {
-    RIOVERDE: [
-      "RICARDO (64) 99991-3512",
-      "EVERALDO (64) 99237-3735",
-      "UANDER (64) 98114-4642",
-      "NIVAIR (64) 99284-4955"
-    ],
-    FERTILIZANTE: [
-      "NARCISO (64) 99936-5343",
-      "NIVAIR (64) 99284-4955",
-      "",
-      ""
-    ],
-    BOMJESUS: [
-      "MATEUS (64) 99307-0738",
-      "EDUARDO (64) 99208-5655",
-      "",
-      ""
-    ],
-    MONTIVIDIU: [
-      "MARCELO (64) 99653-2847",
-      "",
-      ""
-    ],
-    MINEIROS: [
-      "KIEWERSON (64) 99979-4586",
-      "VINICIUS (64) 99939-9946",
-      "",
-      ""
-    ],
-    INDIARA: [
-      "RAFAEL P (64) 99910-8790",
-      "RAFAEL (64) 99937-0131",
-      "",
-      ""
-    ],
-    FORMOSA: [
-      "FABIOLA (62) 99601-7658",
-      "JOAMAR (61) 99628-1922",
-      "",
-      ""
-    ],
-    CRISTALINA: [
-      "EVERALDO (61) 99692-4906",
-      "JESSICA (61) 99242-7127",
-      "",
-      ""
-    ],
-    CATALAO: [
-      "EVERALDO JR (64) 99237-3735",
-      "",
-      "",
-      ""
-    ],
-    ANAPOLIS: [
-      "DANILO (62) 99315-5713",
-      "EDVALDO (64) 98461-4152",
-      "DANIEL (62) 99315-1675",
-      "--------------------"
-    ],
-    URUACU: [
-      "GUILHERME (62) 99697-8707",
-      "---------------------",
-      "",
-      ""
-    ],
-    SAOPAULO: [
-      "DIOGO (15) 99278-4842",
-      "",
-      "",
-      ""
-    ],
-    ITUMBIARA: [
-      "JEFERSON (64) 99263-5363",
-      "NATAL (64) 99322-6440",
-      "GUILHERME (64) 99217-7636",
-      "MAYKON (64) 99254-4094"
-    ],
-    VIANOPOLIS: [
-      "FERNANDO (62) 99930-7778",
-      "",
-      "",
-      ""
-    ],
-    CHAPEU: [
-      "RICARDO (64) 99991-3512",
-      "JONAS (64) 99607-2391",
-      "",
-      ""
-    ],
-    ARAGUARI: [
-      "GUILHERME (64) 99217-7636",
-      "ADRIELLY (34) 99156-6198",
-      "",
-      ""
-    ],
-    JATAI: [
-      "TRIPA (64) 99982-9980",
-      "HUDSON (64) 99906-2674",
-      "RONE (64) 99626-4511",
-       "---------------------"
-    ]
-  };
+  // A lista de regionais, filiais, clientes e contatos vem SOMENTE do Sheets.
+  // Sem cadastro no banco, o formulário deve ficar vazio, nunca usar defaults.
+  function emptyDirectory(){
+    return {regionais:[],filiaisPorRegional:{},clientes:[],contatosPorFilial:{}};
+  }
+  let DIRECTORY = emptyDirectory();
+  const FILIAIS_CONTATOS_ARTE = Object.freeze({});
 
   let CONTACT_PHONE = {};
 
@@ -804,14 +650,16 @@ function formatDateTimeBR(value) {
         Object.keys(novosCadastros.filiaisPorRegional).length ||
         Object.keys(novosCadastros.contatosPorFilial).length;
 
-      if (possuiDados) {
-        DIRECTORY = novosCadastros;
-      } else {
-        console.warn("[fretes] cadastros da planilha vazios; mantendo dados de contingência do arquivo.");
+      // Uma planilha nova e vazia é um estado válido.
+      DIRECTORY = novosCadastros;
+      if(!possuiDados && !options.background){
+        setStatus("ℹ️ Nenhuma regional, filial, cliente ou contato cadastrado nesta planilha.");
       }
     } catch (e) {
-      console.error("[fretes] erro ao carregar cadastros:", e);
-      console.warn("[fretes] usando cadastros de contingência existentes no arquivo.");
+      // Falha fechada: não manter listas antigas, nem de outra transportadora.
+      DIRECTORY = emptyDirectory();
+      console.error("[fretes] erro ao carregar os cadastros da planilha:", e);
+      if(!options.background)setStatus("⚠️ Não foi possível consultar os cadastros da planilha.");
     }
 
     rebuildContactPhoneMap();
@@ -1701,7 +1549,7 @@ function formatDateTimeBR(value) {
     contactsEl.innerHTML = "";
 
     if (n < 2) {
-      if (filialEl) filialEl.textContent = "NOVA FROTA";
+      if (filialEl) filialEl.textContent = tenantBrand;
       return;
     }
 
@@ -1749,7 +1597,7 @@ function formatDateTimeBR(value) {
 
     const filiais = [...new Set(valid.map((r) => upper(r.filial || "")).filter(Boolean))];
     if (filialEl) {
-      filialEl.textContent = filiais.length === 1 ? filiais[0] : "NOVA FROTA";
+      filialEl.textContent = filiais.length === 1 ? filiais[0] : tenantBrand;
     }
 
     model4ContactsNF(valid).forEach((contact) => {
@@ -1866,7 +1714,7 @@ function buildMessage(row) {
   if (!rows.length) return "";
 
   return [
-    "🇸🇱🇸🇱🇸🇱 NOVA FROTA 🇸🇱🇸🇱🇸🇱",
+    "🚛 "+tenantBrand,
     "✅ FRETES LIBERADOS",
     "",
     rows.map(buildFreteBloco).join("\n🟰🟰🟰🟰🟰🟰🟰🟰🟰\n")
@@ -3141,7 +2989,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     await waitForPortalReady();
 
     // A tabela é a informação principal da tela e deve começar primeiro.
-    // Os cadastros usam os dados locais de contingência e são atualizados em paralelo.
+    // Os cadastros começam vazios e são consultados na planilha em paralelo.
     const fretesPromise = atualizar();
     void carregarCadastrosFretes({ background: true })
       .then(() => { fillModalSelectors(); window.NFFilialMovimentacao?.render(STATE.rows, DIRECTORY); })

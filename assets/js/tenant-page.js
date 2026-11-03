@@ -26,6 +26,7 @@
  let stage="inicio";
  function refuse(){location.replace(login);}
  function showFailure(){
+  document.documentElement.removeAttribute("data-pf-tenant-boot");
   const body=document.body||document.documentElement;
   body.replaceChildren();
   const main=document.createElement("main");
@@ -65,8 +66,14 @@
   const base=parsed.createElement("base");
   base.href="/pages/";
   parsed.head.prepend(base);
+  // Hide legacy Home defaults until signed session + tenant customization
+  // finish. This also prevents flashes of Nova Frota logos, names and cards.
+  const bootStyle=parsed.createElement("style");
+  bootStyle.id="pfTenantBootStyle";
+  bootStyle.textContent='html[data-pf-tenant-boot="1"] body{visibility:hidden!important}';
+  parsed.head.insertBefore(bootStyle,base.nextSibling);
   const route=parsed.createElement("script");
-  route.src="/assets/js/tenant-route.js?v=2";
+  route.src="/assets/js/tenant-route.js?v=3";
   parsed.head.insertBefore(route,base.nextSibling);
   // The HTML & assets remain shared; the cache key is only for this tenant
   // shell so updates do not mix with a previous app session.
@@ -74,12 +81,13 @@
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-fix"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-brand-v3"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down
   // the browsing context. HTML-inserted scripts are inert, so explicitly
   // re-create them in document order.
+  document.documentElement.setAttribute("data-pf-tenant-boot","1");
   document.documentElement.innerHTML=parsed.documentElement.innerHTML;
   document.documentElement.lang=parsed.documentElement.lang||"pt-BR";
   const scripts=Array.from(document.querySelectorAll("script"));
@@ -113,6 +121,14 @@
   // Replay it once for the existing shared module's setup listeners.
   document.dispatchEvent(new Event("DOMContentLoaded",{bubbles:true}));
   window.dispatchEvent(new Event("load"));
+  // Render tenant branding and permissions before showing the Home.
+  if(window.portalAuthReady){
+   try{await window.portalAuthReady;}catch(error){
+    throw new Error("Não foi possível validar a sessão do aplicativo.");
+   }
+  }
+  await Promise.resolve();
+  document.documentElement.removeAttribute("data-pf-tenant-boot");
  }
  async function load(){
   if(!tenant||!slug||page!==file||!allowed.has(page)){refuse();return;}

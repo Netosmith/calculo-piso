@@ -77,7 +77,7 @@ test("shared tenant loader uses mobile-safe DOM replacement and replays module s
  assert.ok(loader.includes("session.transportadoraId!==tenant"));
  for(const page of pages){
   const alias=read("pages/transportadora-teste/"+page+".html");
-  assert.ok(alias.includes('/assets/js/tenant-page.js?v=2'));
+  assert.ok(alias.includes('/assets/js/tenant-page.js?v=3'));
  }
 });
 
@@ -86,4 +86,36 @@ test("shared page loader and tenant link/brand scripts compile in browser JavaSc
   "assets/js/tenant-login.js","assets/js/tenant-workspace.js"]){
   assert.doesNotThrow(()=>new Script(read(path),{filename:path}),path);
  }
+});
+
+test("tenant Home stays hidden until authenticated company rendering completes",()=>{
+ const loader=read("assets/js/tenant-page.js");
+ const brand=read("assets/js/tenant-route.js");
+ const workspace=read("assets/js/tenant-workspace.js");
+ assert.ok(loader.includes('document.documentElement.setAttribute("data-pf-tenant-boot","1")'));
+ assert.ok(loader.includes('body{visibility:hidden!important}'));
+ assert.ok(loader.includes('document.documentElement.removeAttribute("data-pf-tenant-boot")'));
+ assert.ok(loader.includes("await window.portalAuthReady"));
+ assert.ok(brand.includes("const companyName=String(window.__PORTAL_TENANT_SESSION?.transportadoraNome"));
+ assert.ok(brand.includes("img.hidden=true;img.style.display=\"none\";"));
+ assert.ok(brand.includes('img.nfM3Logo,img.nfM4Logo,img.m3Logo,img.multiArtLogo'));
+ assert.ok(workspace.includes('set("homeSub","Visão geral da operação | "+session.transportadoraNome'));
+ assert.equal(workspace.includes("tenantLogoUrl"),false);
+});
+test("Fretes and Fretes MT never prefill transportadora directories from GitHub",()=>{
+ const go=read("assets/js/fretes.js");
+ const mt=read("assets/js/fretes2.js");
+ assert.ok(go.includes("let DIRECTORY = emptyDirectory()"));
+ assert.ok(go.includes("DIRECTORY = novosCadastros"));
+ assert.ok(go.includes("DIRECTORY = emptyDirectory()"));
+ for(const js of [go,mt]){
+  assert.ok(js.includes("FILIAIS_CONTATOS_ARTE = Object.freeze({})"));
+  assert.equal(js.includes("5564999794586"),false);
+  assert.equal(js.includes('MINEIROS: [{ nome:'),false);
+ }
+ assert.equal(go.includes('regionais: ["GOIAS"'),false);
+ assert.ok(mt.includes("window.__PORTAL_TENANT_SESSION?.tenantMode===true"));
+ const div=read("assets/js/divulgacao.js");
+ assert.ok(div.includes("if(isTenant)void carregarFiliaisTenant()"));
+ assert.ok(div.includes("isTenant ? [] : (FILIAIS_CONTATOS[key] || [])"));
 });

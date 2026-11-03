@@ -1,6 +1,9 @@
 /* fretes2.js | NOVA FROTA | Fretes MT | Cadência operacional */
 (function () {
   "use strict";
+  const tenantBrand=window.__PORTAL_TENANT_SESSION?.tenantMode===true
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
+    : "NOVA FROTA";
 
   function emptyDirectory() {
     return {
@@ -16,109 +19,8 @@
   // GOIAS / MINAS / SAO PAULO por falha ou atraso de carregamento.
   let DIRECTORY = emptyDirectory();
 
-  const FILIAIS_CONTATOS_ARTE = {
-    RIOVERDE: [
-      "RODRIGO (64) 99603-1200",
-      "GUSTAVO (64) 99207-8772",
-      "UANDER (64) 98114-4642",
-      "RODRIGO (64) 99603-1200"
-    ],
-    FERTILIZANTE: [
-      "NARCISO (64) 99936-5343",
-      "NIVAIR (64) 99284-4955",
-      "",
-      ""
-    ],
-    BOMJESUS: [
-      "MATEUS (64) 99307-0738",
-      "EDUARDO (64) 99208-5655",
-      "",
-      ""
-    ],
-    MONTIVIDIU: [
-      "MARCELO (64) 99653-2847",
-      "",
-      ""
-    ],
-    MINEIROS: [
-      "KIEWERSON (64) 99979-4586",
-      "VINICIUS (64) 99939-9946",
-      "",
-      ""
-    ],
-    INDIARA: [
-      "RAFAEL P (64) 99910-8790",
-      "RAFAEL (64) 99937-0131",
-      "",
-      ""
-    ],
-    FORMOSA: [
-      "FABIOLA (62) 99601-7658",
-      "JOAMAR (61) 99628-1922",
-      "",
-      ""
-    ],
-    CRISTALINA: [
-      "EVERALDO (61) 99692-4906",
-      "RAFAELA (61) 99319-6153",
-      "",
-      ""
-    ],
-    CATALAO: [
-      "EVERALDO JR (64) 99237-3735",
-      "",
-      "",
-      ""
-    ],
-    ANAPOLIS: [
-      "DANILO (62) 99315-5713",
-      "EDVALDO (64) 98461-4152",
-      "DANIEL (62) 99315-1675",
-      "--------------------"
-    ],
-    URUACU: [
-      "GUILHERME (62) 99697-8707",
-      "GABRIEL (61) 99846-3585",
-      "",
-      ""
-    ],
-    SAOPAULO: [
-      "DIOGO (15) 99278-4842",
-      "",
-      "",
-      ""
-    ],
-    ITUMBIARA: [
-      "JEFERSON (64) 99263-5363",
-      "NATAL (64) 99322-6440",
-      "JHONATAN (64) 99225-1214",
-      "MAYKON (64) 99254-4094"
-    ],
-    VIANOPOLIS: [
-      "FHELLIPE (62) 99930-7778",
-      "",
-      "",
-      ""
-    ],
-    CHAPEU: [
-      "RICARDO (64) 99991-3512",
-      "JONAS (64) 99607-2391",
-      "",
-      ""
-    ],
-    ARAGUARI: [
-      "GUILHERME (64) 99217-7636",
-      "ADRIELLY (34) 99156-6198",
-      "",
-      ""
-    ],
-    JATAI: [
-      "TRIPA (64) 99982-9980",
-      "HUDSON (64) 99906-2674",
-      "PAULO (64) 99228-4439",
-      "RONE (64) 99626-4511"
-    ]
-  };
+  // Contatos das artes também devem vir exclusivamente do cadastro do Sheets.
+  const FILIAIS_CONTATOS_ARTE = Object.freeze({});
 
   let CONTACT_PHONE = {};
 
@@ -749,8 +651,9 @@ function formatDateTimeBR(value) {
       const possuiDados =
         novosCadastros.regionais.length > 0 &&
         Object.keys(novosCadastros.filiaisPorRegional).length > 0;
-
-      if (!possuiDados) {
+      // Empresas novas podem possuir planilha válida, porém sem cadastros.
+      // Esse estado não deve bloquear a abertura do formulário vazio.
+      if(!possuiDados && window.__PORTAL_TENANT_SESSION?.tenantMode!==true){
         throw new Error("O cadastro atual de regionais/filiais veio vazio.");
       }
 
@@ -781,8 +684,9 @@ function formatDateTimeBR(value) {
   async function ensureDirectoryReady(options = {}) {
     if (
       STATE.directoryReady &&
-      DIRECTORY.regionais.length > 0 &&
-      Object.keys(DIRECTORY.filiaisPorRegional || {}).length > 0
+      (window.__PORTAL_TENANT_SESSION?.tenantMode===true ||
+       (DIRECTORY.regionais.length > 0 &&
+        Object.keys(DIRECTORY.filiaisPorRegional || {}).length > 0))
     ) {
       return true;
     }
@@ -1750,7 +1654,7 @@ function formatDateTimeBR(value) {
     contactsEl.innerHTML = "";
 
     if (n < 2) {
-      if (filialEl) filialEl.textContent = "NOVA FROTA";
+      if (filialEl) filialEl.textContent = tenantBrand;
       return;
     }
 
@@ -1798,7 +1702,7 @@ function formatDateTimeBR(value) {
 
     const filiais = [...new Set(valid.map((r) => upper(r.filial || "")).filter(Boolean))];
     if (filialEl) {
-      filialEl.textContent = filiais.length === 1 ? filiais[0] : "NOVA FROTA";
+      filialEl.textContent = filiais.length === 1 ? filiais[0] : tenantBrand;
     }
 
     model4ContactsNF(valid).forEach((contact) => {
@@ -1916,7 +1820,7 @@ function formatDateTimeBR(value) {
     if (!rows.length) return "";
 
     return [
-      "🇸🇱🇸🇱🇸🇱 NOVA FROTA 🇸🇱🇸🇱🇸🇱",
+      "🚛 "+tenantBrand,
       "✅ FRETES LIBERADOS",
       "",
       rows.map(buildFreteBloco).join("\n🟰🟰🟰🟰🟰🟰🟰🟰🟰\n")

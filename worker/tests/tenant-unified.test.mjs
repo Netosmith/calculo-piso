@@ -72,14 +72,32 @@ async function login(env,id="teste-01",pass=password){
   transportadoraId:id,usuario:"usuario.teste",senha:pass
  }),env);
 }
-test("tenant hashes obey Cloudflare 100k PBKDF2 cap with two independently salted rounds",async()=>{
+test("new password records use one Cloudflare-compatible 100k PBKDF2 call",async()=>{
  const record=await makePasswordRecord("SenhaTeste#123456");
  assert.equal(record.iterations,100000);
- assert.match(record.password_hash,/^pbkdf2-sha256-2x100k:[A-Za-z0-9_-]+$/);
+ assert.match(record.password_hash,/^pbkdf2-sha256-100k:[A-Za-z0-9_-]+$/);
  assert.equal(await passwordMatches("SenhaTeste#123456",record),true);
  assert.equal(await passwordMatches("senha-errada-123",record),false);
  assert.equal(await passwordMatches("SenhaTeste#123456",null),false);
  assert.notEqual((await makePasswordRecord("SenhaTeste#123456")).password_hash,record.password_hash);
+});
+test("old two-pass records remain verifiable after the Cloudflare crypto format update",async()=>{
+ const phrase="SenhaHistorica#123456";
+ const salt=new Uint8Array(16);crypto.getRandomValues(salt);
+ const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(phrase),{name:"PBKDF2"},false,["deriveBits"]);
+ const first=new Uint8Array(await crypto.subtle.deriveBits({
+  name:"PBKDF2",salt,iterations:100000,hash:"SHA-256"
+ },key,256));
+ const domain=new TextEncoder().encode("portal-frete/tenant-password/v2/round-2");
+ const salt2=new Uint8Array(salt.length+domain.length);salt2.set(salt);salt2.set(domain,salt.length);
+ const secondKey=await crypto.subtle.importKey("raw",first,{name:"PBKDF2"},false,["deriveBits"]);
+ const derived=new Uint8Array(await crypto.subtle.deriveBits({
+  name:"PBKDF2",salt:salt2,iterations:100000,hash:"SHA-256"
+ },secondKey,256));
+ const b64=bytes=>Buffer.from(bytes).toString("base64url");
+ const record={password_salt:b64(salt),password_hash:"pbkdf2-sha256-2x100k:"+b64(derived),iterations:100000};
+ assert.equal(await passwordMatches(phrase,record),true);
+ assert.equal(await passwordMatches("SenhaErrada#123",record),false);
 });
 test("tenant password verifier supports prior unversioned 100k hashes and safely rejects unsupported cost",async()=>{
  const salt=new Uint8Array(16);crypto.getRandomValues(salt);

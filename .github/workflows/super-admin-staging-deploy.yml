@@ -1,6 +1,12 @@
-name: Super Admin Staging Worker (manual only)
+name: Super Admin Staging Worker
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/src/services/tenant-auth.js'
+      - 'worker/src/services/super-admin-tenant-credentials.js'
+      - 'worker/src/staging.js'
   workflow_dispatch:
     inputs:
       confirmation:
@@ -13,7 +19,7 @@ permissions:
 
 jobs:
   deploy-staging:
-    if: ${{ (github.ref_name == 'main' || github.ref_name == 'feature/super-admin-panel-foundation') && inputs.confirmation == 'DEPLOY_STAGING' }}
+    if: ${{ (github.event_name == 'push' && github.ref_name == 'main') || (github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'feature/super-admin-panel-foundation') && inputs.confirmation == 'DEPLOY_STAGING') }}
     runs-on: ubuntu-latest
     defaults:
       run:

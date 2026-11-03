@@ -7,6 +7,7 @@
 
   const STATE = {
     rows: [],
+    regionalUfs: {},
     selectedUf: "",
     timer: null,
     bound: false,
@@ -143,9 +144,11 @@
     // A transportadora's base is an accounting allocation, NOT the freight's
     // origin state. Region names can be used only when they match a state.
     if(window.__PORTAL_TENANT_SESSION?.tenantMode===true) {
-      const regional=upper(row.regional).normalize("NFD").replace(/[\\u0300-\\u036f]/g,"");
+      const registered=STATE.regionalUfs[upper(row.regional).replace(/\s+/g," ").normalize("NFC")];
+      if(registered && STATES[upper(registered.uf)])return upper(registered.uf);
+      const regional=upper(row.regional).normalize("NFD").replace(/[\u0300-\u036f]/g,"");
       const match=Object.entries(STATES).find(([uf,nome])=>
-        uf===regional || upper(nome).normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")===regional);
+        uf===regional || upper(nome).normalize("NFD").replace(/[\u0300-\u036f]/g,"")===regional);
       return match?.[0] || "";
     }
     if (row.source === "FRETES") return "GO";
@@ -426,6 +429,10 @@
       if (!window.PortalAPI) throw new Error("API segura do Portal indisponível.");
 
       if(session.tenantMode===true){
+        try{
+          const catalog=await window.PortalAPI.tenantRequest("/regionais/ufs");
+          STATE.regionalUfs=catalog?.regionais||{};
+        }catch(_){STATE.regionalUfs={};}
         const modules=Array.isArray(session.modules)?session.modules:[];
         // Accounting bases are independent from the geographical origin UF.
         const baseKeys=["fretes","fretes2","fretes-sp","fretes-ms",

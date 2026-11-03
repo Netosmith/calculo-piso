@@ -87,6 +87,16 @@ export async function adminWriteTenantIntegration(request,env,actor,id,base=""){
   // Fail closed: new integrations start DISABLED, unless the owner explicitly
   // confirms enablement; the Apps Script must be validated against the copy.
   if(!previous&&config.enabled)return errorResponse("Salve primeiro a integracao desativada e valide a planilha antes de ativar.",409);
+  // A dedicated base must prove both tenant and spreadsheet identity at activation.
+  // Never rely on a UI checkbox or a copied sheet ID alone.
+  if(base&&config.enabled){
+   const ping=await callAppsScript({
+    ...env,APPS_SCRIPT_URL:config.scriptUrl,PORTAL_KEY:config.gatewayKey
+   },{action:"gateway_ping",method:"GET",params:{}});
+   if(!ping?.ok||ping.data?.gateway!=="authorized"||
+      ping.data?.transportadoraId!==id||ping.data?.spreadsheetId!==config.spreadsheetId)
+     return errorResponse("Base nao validada: Apps Script ou planilha pertence a outro vinculo.",409);
+  }
   await env.TENANT_BRANDS.put(integrationObjectKey(id,base),JSON.stringify(config),{
    httpMetadata:{contentType:"application/json"}
   });

@@ -233,7 +233,7 @@
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);
   void loadBrand();
-  void loadArtThemes();
+  window.portalTenantArtThemeReady=loadArtThemes();
   if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(mutations=>{
     for(const change of mutations){

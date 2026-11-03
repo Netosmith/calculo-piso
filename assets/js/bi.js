@@ -2132,6 +2132,7 @@
     if (window.portalAuthReady) {
       await window.portalAuthReady;
     }
+    configureTenantBases();
 
     await loadData(true, true);
     startAutoRefresh();

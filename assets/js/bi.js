@@ -471,10 +471,10 @@
 
   const TENANT_BASES=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
   function tenantModuleForUf(uf){
-    return uf==="GO"?"fretes":uf==="MT"?"fretes2":"fretes-"+uf.toLowerCase();
+    return "fretes-"+uf.toLowerCase();
   }
   function sourceForUf(uf){
-    return uf==="GO"?"FRETES":uf==="MT"?"FRETES2":"FRETES-"+uf;
+    return "FRETES-"+uf;
   }
   function selectedBaseSources(){
     const picker=$("#fOrigemDados");
@@ -493,10 +493,12 @@
     const picker=$("#fOrigemDados"),session=window.__PORTAL_TENANT_SESSION;
     if(!picker||session?.tenantMode!==true)return;
     const permitted=new Set(session.modules||[]);
-    const opts=TENANT_BASES.filter(uf=>permitted.has(tenantModuleForUf(uf))).map(uf=>{
+    const opts=[...([{module:"fretes",source:"FRETES",label:"BASE Geral (legada)"},{module:"fretes2",source:"FRETES2",label:"BASE MT (interna)"}]
+      .filter(entry=>permitted.has(entry.module)).map(entry=>new Option(entry.label,entry.source))),
+      ...TENANT_BASES.filter(uf=>permitted.has(tenantModuleForUf(uf))).map(uf=>{
       const option=new Option("BASE "+uf,sourceForUf(uf));
       return option;
-    });
+    })];
     picker.replaceChildren(...opts);
     picker.multiple=true;
     picker.size=Math.min(5,Math.max(2,opts.length));
@@ -514,6 +516,8 @@
   }
 
   function selectedBaseCode() {
+    const selected=selectedBaseSources();
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && selected.size!==1)return "";
     const origemDados = upper($("#fOrigemDados")?.value);
     if (origemDados === "FRETES") return "GO";
     if (origemDados === "FRETES2") return "MT";
@@ -523,6 +527,8 @@
 
   function origemDadosForBase(base) {
     const value = upper(base);
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && selectedBaseSources().size===1)
+      return [...selectedBaseSources()][0];
     if (value === "GO") return "FRETES";
     if (value === "MT") return "FRETES2";
     if (window.__PORTAL_TENANT_SESSION?.tenantMode===true && TENANT_BASES.includes(value)) return "FRETES-"+value;
@@ -1869,8 +1875,10 @@
   async function loadCurrentRows() {
     const tenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
     const allowed=tenant
-      ? TENANT_BASES.filter(uf=>(window.__PORTAL_TENANT_SESSION.modules||[]).includes(tenantModuleForUf(uf)))
-        .map(uf=>({module:tenantModuleForUf(uf),source:sourceForUf(uf)}))
+      ? [...([{module:"fretes",source:"FRETES"},{module:"fretes2",source:"FRETES2"}]
+          .filter(entry=>(window.__PORTAL_TENANT_SESSION.modules||[]).includes(entry.module))),
+         ...TENANT_BASES.filter(uf=>(window.__PORTAL_TENANT_SESSION.modules||[]).includes(tenantModuleForUf(uf)))
+          .map(uf=>({module:tenantModuleForUf(uf),source:sourceForUf(uf)}))]
       : [{module:"fretes",source:"FRETES"},{module:"fretes2",source:"FRETES2"}];
     if(!allowed.length)return [];
     const results = await Promise.allSettled(allowed.map(entry=>portalCall(entry.module,"read")));

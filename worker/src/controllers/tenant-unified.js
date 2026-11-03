@@ -135,7 +135,7 @@ export async function tenantApiController(request,env){
   if(path==="/v1/tenant/catalogo/clientes"&&request.method==="GET"){
     // Names and client brand images are an explicitly shared reference catalog.
     // Operational customer details remain private to each tenant's Sheets.
-    if(!modules.some(key=>["cadastros","fretes","fretes2","controle",
+    if(!modules.some(key=>key.startsWith("fretes-")||["cadastros","fretes","fretes2","controle",
       "share","divulgacao","bi"].includes(key)))
       return tenantJsonError("Catálogo não liberado para este perfil.",403);
     return sharedClientNamesController(env);

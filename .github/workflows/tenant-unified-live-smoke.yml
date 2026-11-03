@@ -70,16 +70,16 @@ jobs:
           curl -fsSL --max-time 25 "$website/pages/transportadora-teste/fretes.html" -o /tmp/tenant-fretes.html
           curl -fsSL --max-time 25 "$website/pages/transportadora-teste/bi.html" -o /tmp/tenant-bi.html
           curl -fsSL --max-time 25 "$website/assets/js/tenant-login.js?v=2" -o /tmp/tenant-login.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=8" -o /tmp/tenant-page.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=10" -o /tmp/tenant-page.js
           curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=6" -o /tmp/tenant-route.js
-          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-print-ordem-v8" -o /tmp/tenant-workspace.js
+          curl -fsSL --max-time 25 "$website/assets/js/tenant-workspace.js?v=tenant-state-bases-v10" -o /tmp/tenant-workspace.js
           grep -Fq 'PortalAPI.login(usuario, senha, "nova-frota")' /tmp/legacy-login.html
           ! grep -Fq 'id="tenantId"' /tmp/legacy-login.html
           grep -Fq 'tenantWorkspace' /tmp/shared-home.html
           grep -Fq 'data-tenant-id="teste-01"' /tmp/private-login.html
           grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html
           grep -Fq 'data-shared-page="fretes.html"' /tmp/tenant-fretes.html
-          grep -Fq 'tenant-page.js?v=8' /tmp/tenant-fretes.html
+          grep -Fq 'tenant-page.js?v=10' /tmp/tenant-fretes.html
           grep -Fq 'data-shared-page="bi.html"' /tmp/tenant-bi.html
           grep -Fq 'location.replace("./home.html")' /tmp/tenant-login.js
           grep -Fq 'session.transportadoraId!==tenant' /tmp/tenant-page.js

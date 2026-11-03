@@ -2255,6 +2255,7 @@ body{ margin:0; font-family:Arial,sans-serif; color:#222; background:#fff; }
 .page{ width:100%; padding:8px 10px; }
 .head{ text-align:center; margin-bottom:10px; border:1px solid #cfd8dc; padding:12px 10px; }
 .head img{ max-width:420px; max-height:75px; object-fit:contain; display:block; margin:0 auto 6px; }
+.brand-print-name{display:block;font-size:24px;font-weight:900;color:#071c3c;padding:12px 0;}
 .bar{ height:24px; background:#3B7D23; border:1px solid #2f661b; border-bottom:none; }
 table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:10px; }
 thead th{ background:#F6D96B; color:#1f2937; border:1px solid #666; padding:4px 3px; text-align:center; font-weight:900; }
@@ -2302,32 +2303,70 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
     return getFilteredRows().filter((row) => normalizeFreteStatus(row.status) === "LIBERADO");
   }
 
-  function openDivulgacaoFrete() {
-    const rows = getDivulgacaoRows();
+  async function logoImpressaoDaTransportadora() {
+    const sessao = window.__PORTAL_TENANT_SESSION;
+    const nome = sessao?.tenantMode === true
+      ? String(sessao.transportadoraNome || "TRANSPORTADORA").trim()
+      : "NOVA FROTA";
+    if (sessao?.tenantMode !== true) {
+      return {nome, src:new URL("../assets/img/logo-novafrota.png", document.baseURI).href};
+    }
+    try {
+      const resposta=await fetch("https://api.portalfrete.net.br/v1/tenant/logo", {
+        credentials:"include", cache:"no-store"
+      });
+      if (!resposta.ok) throw new Error("Logo ainda não cadastrada.");
+      const blob=await resposta.blob();
+      if (!["image/png","image/jpeg","image/webp"].includes(blob.type)) throw new Error("Logo inválida.");
+      const src=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(reader.result);
+        reader.onerror=()=>reject(new Error("Erro ao carregar logo."));
+        reader.readAsDataURL(blob);
+      });
+      return {nome,src};
+    } catch (error) {
+      console.warn("[DIVULGACAO] Logo individual indisponível:",error.message);
+      return {nome,src:""};
+    }
+  }
 
+  async function openDivulgacaoFrete() {
+    const rows=getDivulgacaoRows();
     if (!rows.length) {
       alert("Não há fretes LIBERADO para divulgar com os filtros atuais.");
       return;
     }
-
-    const html = buildDivulgacaoHtml(rows);
-    const win = window.open("", "_blank");
-
+    // Open immediately on the click to avoid browser popup blockers.
+    const win=window.open("","_blank");
     if (!win) {
       alert("O navegador bloqueou a nova janela. Libere pop-up para continuar.");
       return;
     }
-
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-
-    win.onload = () => {
-      setTimeout(() => {
+    try {
+      const brand=await logoImpressaoDaTransportadora();
+      if (win.closed) return;
+      const html=buildDivulgacaoHtml(rows)
+        .replace('<img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />',
+          brand.src
+            ? '<img src="'+brand.src+'" alt="'+escapeHtml(brand.nome)+'" />'
+            : '<strong class="brand-print-name">'+escapeHtml(brand.nome)+'</strong>');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.onload=async ()=>{
+        try {await Promise.all(Array.from(win.document.images).map(img=>
+          img.complete?Promise.resolve():new Promise(resolve=>{
+            img.onload=resolve;img.onerror=resolve;
+          })));}catch(_){}
         win.focus();
         win.print();
-      }, 400);
-    };
+      };
+    } catch(error) {
+      console.error("[DIVULGACAO] Erro ao preparar impressão",error);
+      if (!win.closed) win.close();
+      alert("Não foi possível preparar a divulgação para impressão.");
+    }
   }
 
   function modalShow(show) {

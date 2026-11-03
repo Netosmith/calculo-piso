@@ -43,11 +43,12 @@ export function stagingPanelHtml(){
     '<h2>Planilha individual da transportadora</h2>'+
     '<p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p>'+
     '<p class="muted" id="integrationStatus">Selecione uma empresa.</p>'+
+    '<label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option></select></label>'+
     '<label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label>'+
     '<label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label>'+
     '<label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label>'+
     '<p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p>'+
-    '<label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>MG</option><option>SP</option><option>PR</option><option>SC</option><option>MS</option><option>BA</option><option>TO</option><option>PA</option><option>MA</option></select></label>'+
+    '<label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>MG</option><option>SP</option><option>PR</option><option>SC</option><option>MS</option><option>BA</option><option>RO</option><option>TO</option><option>PA</option><option>MA</option></select></label>'+
     '<label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label>'+
     '<p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p>'+
     '<p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p>'+
@@ -63,11 +64,21 @@ function rememberSelectedCompany(id){
  try{sessionStorage.setItem(SELECTED_KEY,id);}catch{}
 }
 let integrationRequest=0;
+function baseIntegrationPath(id){
+ const uf=$('integrationBase')?.value||'';
+ return '/v1/super-admin/transportadoras/'+encodeURIComponent(id)+
+   (uf?'/bases/'+encodeURIComponent(uf)+'/integracao':'/integracao');
+}
+$('integrationBase').addEventListener('change',()=>{
+ const base=$('integrationBase').value;
+ if(base)$('integrationUf').value=base;
+ void loadIntegration();
+});
 async function loadIntegration(){
   const id=selected?.id,serial=++integrationRequest;
   const status=$('integrationStatus');
   $('integrationUrl').value='';$('integrationKey').value='';
-  $('integrationSheetId').value='';$('integrationUf').value='GO';$('integrationEnabled').checked=false;
+  $('integrationSheetId').value='';$('integrationUf').value=$('integrationBase').value||'GO';$('integrationEnabled').checked=false;
   $('integrationUrl').placeholder='https://script.google.com/macros/s/.../exec';
   $('integrationKey').placeholder='No mínimo 24 caracteres';
   if(!id||id==='nova-frota'){
@@ -78,7 +89,8 @@ async function loadIntegration(){
   $('integrationTest').disabled=!canEdit();
   status.textContent='Consultando integração da transportadora...';
   try{
-    const res=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/integracao');
+    const basePath=baseIntegrationPath(id);
+    const res=await request(basePath);
     if(serial!==integrationRequest||selected?.id!==id)return;
     const config=res.integracao||{};
     $('integrationSheetId').value=config.spreadsheetId||'';
@@ -108,7 +120,7 @@ $('integrationTest').onclick=async()=>{
   status.textContent='Testando chave e vinculo do Apps Script sem alterar dados...';
   try{
     const result=await request('/v1/super-admin/transportadoras/'+
-      encodeURIComponent(id)+'/integracao/testar');
+      encodeURIComponent(id)+($('integrationBase').value?'/bases/'+encodeURIComponent($('integrationBase').value):'')+'/integracao/testar');
     if(selected?.id!==id)return;
     if(result.conectado!==true||result.empresaCorreta!==true||
       result.planilhaCorreta!==true)throw new Error('Conexao nao confirmada.');
@@ -146,10 +158,10 @@ $('integrationSave').onclick=async()=>{
   if($('integrationKey').value.trim())data.gatewayKey=$('integrationKey').value.trim();
   $('integrationSave').disabled=true;
   try{
-    await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/integracao','PUT',data);
+    await writeRequest(baseIntegrationPath(id),'PUT',data);
     $('integrationKey').value='';$('integrationKey').type='password';
     $('integrationUrl').value='';
-    const persisted=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/integracao');
+    const persisted=await request(baseIntegrationPath(id));
     if(!persisted?.integracao?.configured ||
        persisted.integracao.spreadsheetId!==data.spreadsheetId ||
        persisted.integracao.enabled!==data.enabled ||

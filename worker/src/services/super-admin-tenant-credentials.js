@@ -1,6 +1,22 @@
 import {errorResponse,success} from "../utils/response.js";
 import {makePasswordRecord,normalizeTenantUser,validTenantId,validTenantPassword} from "./tenant-auth.js";
 
+// Read-only checks validate the actual D1 schema, not only table existence.
+// No passwords, credential rows or authentication material are returned.
+export async function credentialSchemaStatus(db){
+ if(!db)return {ok:false,missing:["conexao"]};
+ const checks=[
+  ["credenciais","SELECT tenant_id,user_id,password_salt,password_hash,iterations,version,updated_at FROM portal_tenant_credentials LIMIT 1"],
+  ["sessoes","SELECT token_hash,tenant_id,user_id,credential_version,expires_at FROM portal_tenant_sessions LIMIT 1"],
+  ["auditoria","SELECT id,actor_id,tenant_id,action,detail_json FROM portal_tenant_audit LIMIT 1"]
+ ];
+ const missing=[];
+ for(const [label,sql] of checks){
+  try{await db.prepare(sql).first();}catch{missing.push(label);}
+ }
+ return {ok:missing.length===0,missing};
+}
+
 // Explicit staging opt-in, owner Access gate and isolated D1 only.
 // Never writes or reads passwords from the legacy Nova Frota Apps Script.
 export async function setTenantCredentials(request,env,actor,tenantId,userId){
@@ -9,6 +25,7 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
  if(!validTenantId(tenantId) || !userId || normalizeTenantUser(userId)!==userId)
   return errorResponse("Transportadora ou usuario invalido.",400);
  if(!env.TENANTS_DB)return errorResponse("Banco de credenciais indisponivel.",503);
+ let stage="validacao";
  try{
   const raw=await request.text();
   if(raw.length>1024)return errorResponse("Solicitacao excede limite.",413);
@@ -23,7 +40,13 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
     JOIN portal_tenants t ON t.id=u.tenant_id
     WHERE u.tenant_id=? AND u.user_id=? LIMIT 1`).bind(tenantId,userId).first();
   if(!member)return errorResponse("Vinculo nao encontrado.",404);
+  stage="verificacao-d1";
+  const schema=await credentialSchemaStatus(db);
+  if(!schema.ok)return errorResponse(
+    "Estrutura D1 de credenciais incompleta ("+schema.missing.join(", ")+"). Verifique a migracao 0002.",503);
+  stage="hash";
   const record=await makePasswordRecord(payload.senha);
+  stage="gravacao-d1";
   await db.batch([
    db.prepare(`INSERT INTO portal_tenant_credentials
     (tenant_id,user_id,password_salt,password_hash,iterations,version)
@@ -39,7 +62,17 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
   return success({tenantId,userId,senhaConfigurada:true,
     aviso:"Senha atualizada. Sessoes anteriores encerradas; senha nao retornada."});
  }catch(error){
-  console.error("[SUPER ADMIN] Credential setup failed",{type:error?.name||"Error"});
-  return errorResponse("Nao foi possivel configurar a senha.",503);
+  // Do not log SQL strings, requests, passwords, salts or hashes.
+  console.error("[SUPER ADMIN] Credential setup failed",{
+   stage,type:error?.name||"Error",
+   category:/no such table|no such column|foreign key mismatch/i.test(String(error?.message||""))?
+    "schema":/FOREIGN KEY constraint failed/i.test(String(error?.message||""))?
+    "reference":"other"
+  });
+  return errorResponse(stage==="hash"?
+   "Falha no processamento seguro da senha.":
+   stage==="gravacao-d1"?
+   "Falha ao gravar credenciais no D1. Verifique os logs do Super Admin.":
+   "Nao foi possivel configurar a senha.",503);
  }
 }

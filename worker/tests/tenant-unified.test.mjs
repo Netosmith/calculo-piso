@@ -7,6 +7,7 @@ import {routeRequest} from "../src/router.js";
 import {loginController,sessionController,logoutController} from "../src/controllers/session.js";
 import {setTenantCredentials,credentialSchemaStatus} from "../src/services/super-admin-tenant-credentials.js";
 import {createSessionToken} from "../src/services/session.js";
+import {makePasswordRecord,passwordMatches} from "../src/services/tenant-auth.js";
 
 const API="https://api.portalfrete.net.br",origin="https://portalfrete.net.br";
 function db(){
@@ -71,6 +72,27 @@ async function login(env,id="teste-01",pass=password){
   transportadoraId:id,usuario:"usuario.teste",senha:pass
  }),env);
 }
+test("tenant hashes obey Cloudflare 100k PBKDF2 cap with two independently salted rounds",async()=>{
+ const record=await makePasswordRecord("SenhaTeste#123456");
+ assert.equal(record.iterations,100000);
+ assert.match(record.password_hash,/^pbkdf2-sha256-2x100k:[A-Za-z0-9_-]+$/);
+ assert.equal(await passwordMatches("SenhaTeste#123456",record),true);
+ assert.equal(await passwordMatches("senha-errada-123",record),false);
+ assert.equal(await passwordMatches("SenhaTeste#123456",null),false);
+ assert.notEqual((await makePasswordRecord("SenhaTeste#123456")).password_hash,record.password_hash);
+});
+test("tenant password verifier supports prior unversioned 100k hashes and safely rejects unsupported cost",async()=>{
+ const salt=new Uint8Array(16);crypto.getRandomValues(salt);
+ const value="SenhaLegada#123456";
+ const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(value),{name:"PBKDF2"},false,["deriveBits"]);
+ const hash=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:100000,hash:"SHA-256"},key,256));
+ const b64=bytes=>Buffer.from(bytes).toString("base64url");
+ const row={password_salt:b64(salt),password_hash:b64(hash),iterations:100000};
+ assert.equal(await passwordMatches(value,row),true);
+ assert.equal(await passwordMatches("SenhaErrada#123",row),false);
+ assert.equal(await passwordMatches(value,{...row,iterations:210000}),false);
+});
+
 test("credential readiness checks all D1 tables and required columns",async()=>{
  const env=environment();
  assert.deepEqual(await credentialSchemaStatus(env.TENANTS_DB),{ok:true,missing:[]});

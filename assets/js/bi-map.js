@@ -79,8 +79,19 @@
   }
 
   function loadingUf(row) {
-    const explicit = extractUf(row && row.origem) || extractUf(row && row.coleta);
+    const explicit = extractUf(row && row.ufOrigem) ||
+      extractUf(row && row.origem) || extractUf(row && row.coleta);
     if (explicit) return explicit;
+
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+      const regional=upper(row && row.regional).replace(/\s+/g," ").normalize("NFC");
+      const registered=window.PORTAL_REGION_UFS?.[regional];
+      if(registered && STATES[upper(registered.uf)])return upper(registered.uf);
+      const plain=regional.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      const named=Object.entries(STATES).find(([uf,name])=>
+        uf===plain || upper(name).normalize("NFD").replace(/[\u0300-\u036f]/g,"")===plain);
+      return named?.[0]||"";
+    }
 
     const source = upper(row && row.origemDados);
     if (source === "FRETES") return "GO";

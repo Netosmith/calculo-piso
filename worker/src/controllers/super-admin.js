@@ -89,6 +89,13 @@ export async function superAdminController(request, env, verifiedStagingSession 
     }
   }
   // Cloudflare Access / owner session gate is evaluated above this route.
+  // Each freight base has its own private Apps Script and spreadsheet.
+  const baseRoute=path.match(/^\/v1\/super-admin\/transportadoras\/([a-z0-9-]+)\/bases\/(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA)\/integracao(\/testar)?$/);
+  if(baseRoute){
+    return baseRoute[3]
+      ? adminTestTenantIntegration(env,baseRoute[1],baseRoute[2])
+      : adminReadTenantIntegration(env,baseRoute[1],baseRoute[2]);
+  }
   if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/integracao/testar")){
     const parts=path.split("/");
     if(parts.length!==7||parts[5]!=="integracao")return errorResponse("Rota invalida.",404);

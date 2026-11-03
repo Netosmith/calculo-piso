@@ -61,8 +61,16 @@
  }
  async function renderShared(html){
   const parsed=new DOMParser().parseFromString(html,"text/html");
-  if(!parsed.head||!parsed.body||!parsed.querySelector("title"))
+  if(!parsed.head||!parsed.body||!parsed.documentElement)
    throw new Error("Documento compartilhado inválido.");
+  // Some older valid modules (notably Ordem) omit <title>.
+  // Supply a company-scoped browser title instead of rejecting the page.
+  if(!parsed.querySelector("title")){
+   const title=parsed.createElement("title");
+   const name=String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
+   title.textContent=page.replace(/\.html$/,"").replace(/-/g," ")+" | "+name;
+   parsed.head.append(title);
+  }
   const base=parsed.createElement("base");
   base.href="/pages/";
   parsed.head.prepend(base);
@@ -73,15 +81,31 @@
   bootStyle.textContent='html[data-pf-tenant-boot="1"] body{visibility:hidden!important}';
   parsed.head.insertBefore(bootStyle,base.nextSibling);
   const route=parsed.createElement("script");
-  route.src="/assets/js/tenant-route.js?v=3";
+  route.src="/assets/js/tenant-route.js?v=4";
   parsed.head.insertBefore(route,base.nextSibling);
+  // Controle uses Tailwind utilities. The Play CDN may fail when injected
+  // after DOMContentLoaded on tenant pages; use precompiled same-origin CSS.
+  // The legacy Nova Frota HTML still uses its original loading mechanism.
+  if(page==="controle.html"||page==="ordem.html"){
+   parsed.querySelectorAll('script[src*="cdn.tailwindcss.com"]').forEach(node=>node.remove());
+   parsed.querySelectorAll("script:not([src])").forEach(node=>{
+    if(/\btailwind\.config\s*=/.test(node.textContent||""))node.remove();
+   });
+   const css=parsed.createElement("link");
+   css.id=page==="controle.html"?"pfTenantControleCss":"pfTenantOrdemCss";
+   css.rel="stylesheet";
+   css.href=page==="controle.html"
+    ?"/assets/css/controle-tailwind.generated.css?v=1"
+    :"/assets/css/ordem-tailwind.generated.css?v=1";
+   parsed.head.append(css);
+  }
   // The HTML & assets remain shared; the cache key is only for this tenant
   // shell so updates do not mix with a previous app session.
   parsed.querySelectorAll('script[src],link[rel="stylesheet"][href]').forEach(node=>{
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-brand-v3"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-20261103-controle-v4"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down
@@ -90,6 +114,12 @@
   document.documentElement.setAttribute("data-pf-tenant-boot","1");
   document.documentElement.innerHTML=parsed.documentElement.innerHTML;
   document.documentElement.lang=parsed.documentElement.lang||"pt-BR";
+  const controlStylesheet=document.querySelector("#pfTenantControleCss,#pfTenantOrdemCss");
+  const cssReady=!controlStylesheet ? Promise.resolve() : new Promise((resolve,reject)=>{
+   if(controlStylesheet.sheet){resolve();return;}
+   controlStylesheet.addEventListener("load",resolve,{once:true});
+   controlStylesheet.addEventListener("error",()=>reject(new Error("CSS local do Controle indisponível.")),{once:true});
+  });
   const scripts=Array.from(document.querySelectorAll("script"));
   for(const original of scripts){
    const cloned=document.createElement("script");
@@ -117,6 +147,7 @@
     console.warn("[TENANT PAGE] optional library unavailable",error?.name);
    }
   }
+  await cssReady;
   // The shell's real DOMContentLoaded already fired before the async fetch.
   // Replay it once for the existing shared module's setup listeners.
   document.dispatchEvent(new Event("DOMContentLoaded",{bubbles:true}));

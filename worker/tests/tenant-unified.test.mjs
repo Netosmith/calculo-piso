@@ -198,7 +198,7 @@ test("inactive user or tenant revokes read access immediately on unified portal"
  env.TENANTS_DB.sql.prepare("UPDATE portal_tenants SET status='inactive' WHERE id='teste-01'").run();
  assert.equal((await sessionController(request("/v1/session","GET",null,token),env)).status,401);
 });
-test("a tenant cookie denies ALL legacy routes even with a simultaneously signed Nova Frota cookie",async()=>{
+test("tenant cookies deny legacy routes but may read shared client logos",async()=>{
  const env=environment();env.PORTAL_KEY="test-portal-signing-key";await provision(env);
  const validTenant=cookie(await login(env));
  const legacy=await createSessionToken(env,{
@@ -207,10 +207,23 @@ test("a tenant cookie denies ALL legacy routes even with a simultaneously signed
  });
  const mixed="__Host-portal_session="+legacy+"; __Host-tenant_session="+validTenant;
  for(const path of ["/v1/gateway","/v1/fleet/vehicles","/v1/monitor/state",
-  "/v1/super-admin/me","/v1/client-logos/foo"]){
+  "/v1/super-admin/me"]){
   const res=await routeRequest(request(path,"GET",null,mixed),env);
   assert.equal(res.status,403,path);
  }
+ // The common client logo bucket is available for signed tenant GET/HEAD;
+ // mutations remain blocked even when the legacy admin cookie also exists.
+ env.CLIENT_LOGOS={
+  get:async()=>({body:new Uint8Array([137,80,78,71]),
+    writeHttpMetadata:headers=>headers.set("Content-Type","image/png"),
+    httpEtag:'"shared-logo"'}),
+  head:async()=>({writeHttpMetadata:headers=>headers.set("Content-Type","image/png"),
+    httpEtag:'"shared-logo"'})
+ };
+ assert.equal((await routeRequest(request("/v1/client-logos/foo","GET",null,mixed),env)).status,200);
+ // The Request helper does not support HEAD. Router HEAD is covered by source guard tests.
+ assert.equal((await routeRequest(request("/v1/client-logos/foo","PUT",null,mixed),env)).status,403);
+ assert.equal((await routeRequest(request("/v1/client-logos/foo","DELETE",null,mixed),env)).status,403);
  const malformed="__Host-portal_session="+legacy+"; __Host-tenant_session=forged";
  assert.equal((await sessionController(request("/v1/session","GET",null,malformed),env)).status,401);
 });

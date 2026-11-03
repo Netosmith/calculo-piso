@@ -40,7 +40,52 @@
  const brandedImages=new Set();
  const artImages=new Set();
  let tenantLogoUrl=null;
- const artLogoSelector="img.nfM3Logo,img.nfM4Logo,img.m3Logo,img.multiArtLogo";
+ const artLogoSelector="img.nfM3Logo,img.nfM4Logo,img.m3Logo,img.multiArtLogo,.position-logo img";
+ function ensureHeaderTheme(){
+  document.body?.classList.add("pf-tenant-site");
+  if(document.getElementById("pfTenantBrandStyle"))return;
+  const style=document.createElement("style");
+  style.id="pfTenantBrandStyle";
+  style.textContent=`
+    /* One consistent brand on every company: name, never a header logo. */
+    body.pf-tenant-site .nf-global-nav-standalone-brand .pf-company-name{
+      color:#fff!important;display:block;max-width:230px;overflow:hidden;
+      font:800 13px/1.25 Inter,Arial,sans-serif;letter-spacing:.01em;
+      text-align:left;text-overflow:ellipsis;white-space:nowrap
+    }
+    body.pf-tenant-site .nf-global-nav-standalone-brand{
+      justify-content:flex-start!important;padding-left:12px;flex-basis:175px;min-width:140px
+    }
+    body.pf-tenant-site .nf-global-module-tools .pf-company-name{
+      display:none!important
+    }
+    body.pf-tenant-site .nf-topbar .nf-brand .pf-company-name{
+      color:#fff!important;font:800 15px/1.3 Inter,Arial,sans-serif;
+      max-width:310px;overflow:hidden;white-space:nowrap;
+      text-overflow:ellipsis;letter-spacing:0
+    }
+    html[data-nf-theme="claro"] body.pf-tenant-site .nf-topbar .nf-brand .pf-company-name{
+      color:#102d54!important
+    }
+    html[data-nf-theme="escuro"] body.pf-tenant-site .nf-topbar .nf-brand .pf-company-name{
+      color:#fff!important
+    }
+    /* Controle and all legacy page headers: no second brand logo. */
+    body.pf-tenant-site .portal-header > .flex > img[src*="logo-novafrota"]{
+      display:none!important
+    }
+    @media(max-width:760px){
+      body.pf-tenant-site .nf-global-nav-standalone-brand{
+        flex-basis:116px;min-width:100px;padding-left:5px
+      }
+      body.pf-tenant-site .nf-global-nav-standalone-brand .pf-company-name{
+        max-width:115px;font-size:11px
+      }
+      body.pf-tenant-site .nf-topbar .nf-brand .pf-company-name{max-width:150px;font-size:12px}
+    }
+  `;
+  document.head.append(style);
+ }
  function labelHeader(img){
   const container=img.closest(".nf-brand,.nf-global-nav-standalone-brand,.topbar .brand");
   if(!container)return;
@@ -127,6 +172,7 @@
   if(link)fixLink(link);
  },true);
  function ready(){
+  ensureHeaderTheme();
   if(/nova frota/i.test(document.title))
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);

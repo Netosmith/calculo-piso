@@ -8,6 +8,7 @@ import {validTenantId,normalizeTenantUser,authenticateTenant,hasTenantSessionCoo
 import {clearSessionCookie} from "../services/session.js";
 import {tenantFreights,tenantBi} from "../services/tenant-freights.js";
 import {readTenantIntegration,callTenantAppScript} from "../services/tenant-integration.js";
+import {sharedClientNamesController} from "../services/shared-client-catalog.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
@@ -123,6 +124,14 @@ export async function tenantApiController(request,env){
     "Content-Type":mime,"Cache-Control":"private, no-store",
     "X-Content-Type-Options":"nosniff","Cross-Origin-Resource-Policy":"same-site"
    }});
+  }
+  if(path==="/v1/tenant/catalogo/clientes"&&request.method==="GET"){
+    // Names and client brand images are an explicitly shared reference catalog.
+    // Operational customer details remain private to each tenant's Sheets.
+    if(!modules.some(key=>["cadastros","fretes","fretes2","controle",
+      "share","divulgacao","bi"].includes(key)))
+      return tenantJsonError("Catálogo não liberado para este perfil.",403);
+    return sharedClientNamesController(env);
   }
   if(path==="/v1/tenant/integracao"&&request.method==="GET"){
     const config=await readTenantIntegration(env,principal.tenant_id);

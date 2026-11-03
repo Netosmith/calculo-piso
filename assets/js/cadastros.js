@@ -93,6 +93,20 @@
     el.hidden=!text;
   }
   function configAtual(){return CONFIG[STATE.tab];}
+  function sharedClientsView(){
+    return STATE.tab==="clientes"&&window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+  }
+  function applySharedClientsUI(){
+    const shared=sharedClientsView();
+    for(const id of ["btnNovo","btnNovoAtalho"]){
+      const button=$("#"+id);if(button){
+        button.hidden=shared;button.style.display=shared?"none":"";
+      }
+    }
+    const saveButton=$("#btnSalvar");if(saveButton){
+      saveButton.hidden=shared;saveButton.style.display=shared?"none":"";
+    }
+  }
   function isAtivo(row){return upper(row.Ativo??row.ativo)==="SIM";}
   function rowsFrom(data){
     if(Array.isArray(data))return data;
@@ -104,6 +118,11 @@
   async function api(operation,payload={},resource=STATE.tab){
     if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
     if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true&&resource==="clientes"){
+      if(operation!=="list")throw new Error("O catálogo global de clientes é administrado centralmente.");
+      const catalog=await window.PortalAPI.tenantRequest("/catalogo/clientes");
+      return {ok:true,data:Array.isArray(catalog?.clientes)?catalog.clientes:[]};
+    }
     const actionMap={list:"read",add:"create",update:"update",toggle:"delete"};
     const result=await window.PortalAPI.call("cadastros",actionMap[operation],{
       ...payload,
@@ -268,7 +287,9 @@
     head.innerHTML="";body.innerHTML="";
     const trh=document.createElement("tr");
     cfg.columns.forEach(([,label])=>{const th=document.createElement("th");th.textContent=label;trh.appendChild(th);});
-    const th=document.createElement("th");th.textContent="Ações";trh.appendChild(th);head.appendChild(trh);
+    const th=document.createElement("th");
+    th.textContent=sharedClientsView()?"Logo":"Ações";
+    trh.appendChild(th);head.appendChild(trh);
 
     const rows=filteredRows();
     if(!rows.length){
@@ -281,9 +302,15 @@
       const tr=document.createElement("tr");
       cfg.columns.forEach(([key])=>{const td=document.createElement("td");td.appendChild(formatCell(key,row[key]));tr.appendChild(td);});
       const td=document.createElement("td"),wrap=document.createElement("div");wrap.className="actionsCell";
-      const edit=document.createElement("button");edit.type="button";edit.className="mini edit";edit.textContent="Editar";edit.onclick=()=>openModal(row);
-      const toggle=document.createElement("button");toggle.type="button";toggle.className="mini toggle";toggle.textContent=isAtivo(row)?"Desativar":"Ativar";toggle.onclick=()=>toggleRow(row);
-      wrap.append(edit,toggle);td.appendChild(wrap);tr.appendChild(td);body.appendChild(tr);
+      const edit=document.createElement("button");edit.type="button";edit.className="mini edit";
+      edit.textContent=sharedClientsView()?"Ver logo":"Editar";edit.onclick=()=>openModal(row);
+      wrap.append(edit);
+      if(!sharedClientsView()){
+        const toggle=document.createElement("button");toggle.type="button";toggle.className="mini toggle";
+        toggle.textContent=isAtivo(row)?"Desativar":"Ativar";toggle.onclick=()=>toggleRow(row);
+        wrap.append(toggle);
+      }
+      td.appendChild(wrap);tr.appendChild(td);body.appendChild(tr);
     });
   }
 
@@ -295,7 +322,10 @@
     try{
       const res=await api("list",{},tab);
       if(token!==STATE.loadToken||tab!==STATE.tab)return;
-      STATE.rows=rowsFrom(res.data);render();setStatus("✅ "+STATE.rows.length+" registro(s)");
+      STATE.rows=rowsFrom(res.data);render();
+       setStatus(sharedClientsView()
+         ? "✅ "+STATE.rows.length+" cliente(s) no catálogo compartilhado · edição central"
+         : "✅ "+STATE.rows.length+" registro(s)");
     }catch(error){
       if(token!==STATE.loadToken||tab!==STATE.tab)return;
       console.error("[cadastros] carregar:",error);
@@ -330,7 +360,16 @@
     if(STATE.tab==="clientes"){
       setTimeout(()=>loadClientLogoPreview(row?.cliente||""),70);
     }
-    setTimeout(()=>fields.querySelector("input,select")?.focus(),40);
+    const logoActions=$("#clientLogoPanel")?.querySelector(".clientLogoActions");
+    if(sharedClientsView()){
+      fields.querySelectorAll("input,select").forEach(input=>input.disabled=true);
+      if(logoActions){logoActions.hidden=true;logoActions.style.display="none";}
+      $("#btnSalvar")?.setAttribute("hidden","");
+    }else{
+      if(logoActions){logoActions.hidden=false;logoActions.style.removeProperty("display");}
+      $("#btnSalvar")?.removeAttribute("hidden");
+    }
+    setTimeout(()=>fields.querySelector("input,select:not(:disabled)")?.focus(),40);
   }
 
   function closeModal(force=false){
@@ -352,6 +391,10 @@
   async function save(event){
     event?.preventDefault();
     if(STATE.saving||STATE.toggling)return;
+    if(sharedClientsView()){
+      setModalMessage("Catálogo compartilhado: edição disponível somente na base central.","info");
+      return;
+    }
     let payload;
     try{payload=collectForm();}
     catch(error){setModalMessage(error.message,"error");return;}
@@ -406,7 +449,7 @@
   }
 
   async function toggleRow(row){
-    if(STATE.saving||STATE.toggling)return;
+    if(STATE.saving||STATE.toggling||sharedClientsView())return;
     const tab=STATE.tab,cfg=configAtual(),novoAtivo=isAtivo(row)?"NÃO":"SIM";
     const nome=row.Usuario||row.regional||row.filial||row.cliente||row.nome||"registro";
     if(!confirm((novoAtivo==="SIM"?"Ativar ":"Desativar ")+nome+"?"))return;
@@ -508,7 +551,8 @@
       const button=event.target.closest("[data-tab]");if(!button)return;
       STATE.tab=button.dataset.tab;STATE.rows=[];STATE.editing=null;STATE.loadToken++;STATE.loading=false;
       document.querySelectorAll(".tabBtn").forEach(btn=>btn.classList.toggle("active",btn===button));
-      $("#buscaCadastro").value="";loadCurrent();
+      $("#buscaCadastro").value="";
+      applySharedClientsUI();loadCurrent();
     });
     $("#buscaCadastro")?.addEventListener("input",render);
     $("#btnAtualizar")?.addEventListener("click",()=>loadCurrent(true));
@@ -538,7 +582,9 @@
     if(perfil!=="ADMINISTRADOR"){
       alert("Acesso permitido somente ao administrador.");window.location.href=window.portalTenantHref?.("home.html") || "./home.html";return;
     }
-    await loadMaintenanceStatus();
+    if(session.tenantMode!==true)await loadMaintenanceStatus();
+    else{const control=$("#maintenanceControl");if(control)control.hidden=true;}
+    applySharedClientsUI();
     await loadCurrent();
   }
 

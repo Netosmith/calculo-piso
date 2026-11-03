@@ -2,7 +2,7 @@
 // A presença neste registro NÃO concede acesso ao módulo: o backend deve validar
 // tenant, status e permissão em cada requisição antes de disponibilizar dados.
 export const TENANT_MODULES = Object.freeze([
-  "piso", "fretes", "fretes2", "bi", "divulgacao", "controle",
+  "piso", "piso2", "fretes", "fretes2", "bi", "divulgacao", "controle",
   "share", "ordem", "cadastros", "estadias", "custo-frota",
   "administrativo", "monitoramento",
 "fretes-mercado", "custo-filial", "patrimonio", "embarques", "chamados"

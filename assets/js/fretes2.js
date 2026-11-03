@@ -1,6 +1,9 @@
 /* fretes2.js | NOVA FROTA | Fretes MT | Cadência operacional */
 (function () {
   "use strict";
+  const tenantBrand=window.__PORTAL_TENANT_SESSION?.tenantMode===true
+    ? String(window.__PORTAL_TENANT_SESSION.transportadoraNome||"Portal Frete").toUpperCase()
+    : "NOVA FROTA";
 
   function emptyDirectory() {
     return {
@@ -1651,7 +1654,7 @@ function formatDateTimeBR(value) {
     contactsEl.innerHTML = "";
 
     if (n < 2) {
-      if (filialEl) filialEl.textContent = "NOVA FROTA";
+      if (filialEl) filialEl.textContent = tenantBrand;
       return;
     }
 
@@ -1699,7 +1702,7 @@ function formatDateTimeBR(value) {
 
     const filiais = [...new Set(valid.map((r) => upper(r.filial || "")).filter(Boolean))];
     if (filialEl) {
-      filialEl.textContent = filiais.length === 1 ? filiais[0] : "NOVA FROTA";
+      filialEl.textContent = filiais.length === 1 ? filiais[0] : tenantBrand;
     }
 
     model4ContactsNF(valid).forEach((contact) => {
@@ -1817,7 +1820,7 @@ function formatDateTimeBR(value) {
     if (!rows.length) return "";
 
     return [
-      "🇸🇱🇸🇱🇸🇱 NOVA FROTA 🇸🇱🇸🇱🇸🇱",
+      "🚛 "+tenantBrand,
       "✅ FRETES LIBERADOS",
       "",
       rows.map(buildFreteBloco).join("\n🟰🟰🟰🟰🟰🟰🟰🟰🟰\n")

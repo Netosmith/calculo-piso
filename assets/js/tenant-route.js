@@ -70,9 +70,27 @@
   img.hidden=true;img.style.display="none";
   labelHeader(img);
  }
+ function brandArtworkText(root){
+  const quotes=[];
+  if(root?.matches?.(".nfM3FooterQuote strong,.m3FooterQuote strong"))quotes.push(root);
+  root?.querySelectorAll?.(".nfM3FooterQuote strong,.m3FooterQuote strong")
+    ?.forEach(node=>quotes.push(node));
+  for(const node of quotes){
+    if(/nova frota/i.test(node.textContent||""))
+      node.textContent=companyName+" conecta.";
+  }
+  const filialNodes=[];
+  if(root?.id==="nfM4Filial")filialNodes.push(root);
+  root?.querySelectorAll?.("#nfM4Filial")?.forEach(node=>filialNodes.push(node));
+  for(const node of filialNodes){
+    if((node.textContent||"").trim().toUpperCase()==="NOVA FROTA")
+      node.textContent=companyName.toUpperCase();
+  }
+ }
  function brandSubtree(root){
   if(root?.matches?.("img"))brandImage(root);
   root?.querySelectorAll?.("img")?.forEach(brandImage);
+  brandArtworkText(root);
  }
  async function loadBrand(){
   // Fetch only for artwork; the header always stays name-only.
@@ -109,6 +127,8 @@
   if(link)fixLink(link);
  },true);
  function ready(){
+  if(/nova frota/i.test(document.title))
+   document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);
   void loadBrand();
   if(typeof MutationObserver==="function"){

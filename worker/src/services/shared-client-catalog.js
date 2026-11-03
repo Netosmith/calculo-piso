@@ -7,7 +7,7 @@ import {success,errorResponse} from "../utils/response.js";
 const CACHE_KEY="tenant:shared-client-names:v1";
 const CACHE_SECONDS=120;
 const MAX_CLIENTS=2500;
-const clean=value=>String(value??"").trim().replace(/\\s+/g," ").normalize("NFC");
+const clean=value=>String(value??"").trim().replace(/\s+/g," ").normalize("NFC");
 function rowsFrom(value,depth=0){
  if(Array.isArray(value))return value;
  if(depth>6||!value||typeof value!=="object")return [];
@@ -26,7 +26,7 @@ export function sanitizeSharedClients(raw){
   const active=clean(row.ativo??row.Ativo??"SIM").toUpperCase();
   if(["NAO","NÃO","FALSE","0","INATIVO"].includes(active))continue;
   const name=clean(row.cliente??row.Cliente??row.nomeCliente??"").toUpperCase();
-  if(!name||name.length>140||/[<>\\x00-\\x1f]/.test(name))continue;
+  if(!name||name.length>140||/[<>\x00-\x1f]/.test(name))continue;
   const rank=Number(row.ordem??row.Ordem);
   names.set(name,{
    id:"global:"+name,cliente:name,

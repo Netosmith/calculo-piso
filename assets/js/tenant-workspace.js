@@ -188,10 +188,8 @@ function setHomeValue(id,value){
  const element=$(id);if(element)element.textContent=String(value);
 }
 function sourceUf(origin){
- const match=String(origin||"").toUpperCase().match(/(?:^|[-,\\/\\s])([A-Z]{2})(?=$|[-,\\/\\s])/g);
- const last=match?.[match.length-1]||"";
- const code=last.replace(/[^A-Z]/g,"");
- return new Set(["GO","MT","MS","MG","SP","PR","SC","TO","BA","PA","MA"]).has(code)?code:"";
+ const codes=String(origin||"").toUpperCase().match(/\b(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/g);
+ return codes?.[codes.length-1]||"";
 }
 async function updateTenantHome(){
  // Only tenant-scoped endpoints may populate the shared Nova Frota layout.

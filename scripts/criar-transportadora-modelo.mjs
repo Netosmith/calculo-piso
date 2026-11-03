@@ -39,6 +39,9 @@ if(!valid(slug)||!valid(id)||slug==="transportadora-teste"||
   if(name==="ordem"){
    result=result.replace("Cadastro manual exclusivo da GNOVA no GitHub.",
      "Cadastro manual exclusivo desta transportadora no GitHub.");
+   // New companies must not inherit the GNOVA trade name either.
+   result=result.replace(/const NOME_TRANSPORTADORA = "[^"]*";/,
+     'const NOME_TRANSPORTADORA = "";');
    result=result.replace(/(const EMPRESAS_POR_ESTADO = \{)[\s\S]*?(\n      \};\n      window\.PORTAL_ORDEM_CONFIG)/,
      (_match,start,end)=>start+
      ["GO: \"GOIÁS\"","MG: \"MINAS GERAIS\"","SP: \"SÃO PAULO\"",

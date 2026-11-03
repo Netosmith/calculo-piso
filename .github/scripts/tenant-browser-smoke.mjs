@@ -100,6 +100,12 @@ try{
  assert.equal(state.badText,false);
  assert.equal(state.home,"/pages/transportadora-teste/home.html");
  console.log("CHROME TENANT PAGE SMOKE OK",JSON.stringify(state));
+ await page.locator("#btnNew").click();
+ await page.waitForFunction(()=>{
+  const values=[...document.querySelectorAll("#mCliente option")]
+    .map(x=>x.value).filter(Boolean);
+  return values.includes("CLIENTE MODELO");
+ },null,{timeout:15000});
  const freightForm=await page.evaluate(()=>({
   regionais:[...document.querySelectorAll("#mRegional option")].map(x=>x.value).filter(Boolean),
   filiais:[...document.querySelectorAll("#mFilial option")].map(x=>x.value).filter(Boolean),

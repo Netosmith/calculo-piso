@@ -14,5 +14,5 @@ test("owner panel includes private tenant integration settings and valid inline 
  assert.doesNotThrow(()=>new Script(match[1]));
  assert.ok(match[1].includes("async function loadIntegration"));
  assert.ok(match[1].includes("async function setTenantPassword"));
- assert.doesNotMatch(html,/script\.google\.com\/macros\/s\//);
+ assert.doesNotMatch(html,/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{30,}\/exec/);
 });

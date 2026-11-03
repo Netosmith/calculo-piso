@@ -7,6 +7,11 @@ on:
       - 'worker/src/services/tenant-auth.js'
       - 'worker/src/services/super-admin-tenant-credentials.js'
       - 'worker/src/staging.js'
+      - 'worker/src/services/tenant-integration.js'
+      - 'worker/src/services/super-admin-tenant-write.js'
+      - 'worker/src/controllers/super-admin.js'
+      - 'worker/src/staging-panel.js'
+      - 'worker/src/staging-page.js'
   workflow_dispatch:
     inputs:
       confirmation:

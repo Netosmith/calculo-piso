@@ -136,7 +136,7 @@ window.PortalAPI = {
     return portalApiRequest("/v1/transportadoras/public");
   },
   tenantRequest(path,options={}){
-    if(typeof path!=="string" || !/^\/(?:me|bi|fretes(?:\/[a-f0-9-]{36})?)$/.test(path)){
+    if(typeof path!=="string" || !/^\/(?:me|bi|integracao|fretes(?:\/[a-f0-9-]{36})?)$/.test(path)){
       return Promise.reject(new Error("Rota da transportadora inválida."));
     }
     return portalApiRequest("/v1/tenant"+path,options);
@@ -163,7 +163,8 @@ window.PortalAPI = {
     });
   },
   async call(module, action, params = {}) {
-    const result = await portalApiRequest("/v1/gateway", {
+    const isTenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+    const result = await portalApiRequest(isTenant?"/v1/tenant/gateway":"/v1/gateway", {
       method: "POST",
       body: { module, action, params }
     });

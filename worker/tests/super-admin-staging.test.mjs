@@ -47,6 +47,19 @@ test("staging admin endpoints deny requests without authenticated Cloudflare Acc
  });
  assert.equal((await staging.fetch(spoof,accessEnv)).status,403);
 });
+test("crypto diagnostics require owner Access and never expose hash or test password",async()=>{
+ const endpoint="/v1/super-admin/crypto-diagnostico";
+ assert.equal((await staging.fetch(req(endpoint),accessEnv)).status,403);
+ assert.equal((await staging.fetch(req(endpoint),accessEnv,accessCtx("attacker@example.test"))).status,403);
+ const reply=await staging.fetch(req(endpoint),accessEnv,accessCtx());
+ assert.equal(reply.status,200);
+ const result=await reply.json();
+ assert.deepEqual(result,{
+  ok:true,version:"pbkdf2-sha256-100k-v3",hashReady:true,verifyReady:true
+ });
+ assert.doesNotMatch(JSON.stringify(result),/password_hash|password_salt|PortalFrete-EdgeDiagnostic/);
+});
+
 test("owner identity requires exact email and Access audience",async()=>{
  assert.equal((await staging.fetch(req("/v1/super-admin/me"),accessEnv,accessCtx("attacker@example.test"))).status,403);
  assert.equal((await staging.fetch(req("/v1/super-admin/me"),accessEnv,accessCtx("owner@example.test","wrong-aud"))).status,403);

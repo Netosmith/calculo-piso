@@ -1378,6 +1378,7 @@
       const solicitOpen = document.getElementById("homeSolicOpen");
       if (solicitOpen) {
         const syncSolicitacoes = () => {
+          if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
           definirNumero("homeSolicStat", solicitOpen.textContent);
           definirAtualizacao("homeSolicAtualizacao");
         };
@@ -1389,6 +1390,7 @@
       const filialSelect = document.getElementById("hsFilial");
       if (filialSelect) {
         const contarFiliais = () => {
+          if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
           const total = [...filialSelect.options].filter((opcao) => opcao.value && !/selecione/i.test(opcao.textContent)).length;
           if (total) {
             definirNumero("homeFiliais",total);

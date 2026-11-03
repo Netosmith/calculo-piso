@@ -133,15 +133,16 @@ test("credential reset remains atomic and invalidates existing tenant sessions",
  assert.equal((await login(env,"teste-01","NovaSenhaForte#456")).status,200);
 });
 
-test("public transportadora selector ignores inactive tenant and fails safe if D1 unavailable",async()=>{
+test("anonymous tenant catalog never lists customer transportadoras",async()=>{
  const env=environment();
  const response=await routeRequest(request("/v1/transportadoras/public"),env);
  assert.equal(response.status,200);
  const data=await response.json();
- assert.deepEqual(data.transportadoras.map(x=>x.id),["nova-frota","outra-empresa","teste-01"]);
- assert.equal((await routeRequest(request("/v1/transportadoras/public"),{})).status,200);
+ assert.deepEqual(data.transportadoras.map(x=>x.id),["nova-frota"]);
+ assert.doesNotMatch(JSON.stringify(data),/teste-01|outra-empresa/i);
  const fallback=await (await routeRequest(request("/v1/transportadoras/public"),{})).json();
  assert.deepEqual(fallback.transportadoras.map(x=>x.id),["nova-frota"]);
+ assert.equal((await routeRequest(request("/v1/transportadoras/public","POST",{}),env)).status,405);
 });
 test("one login form authenticates a tenant with password and creates a separate secure cookie",async()=>{
  const env=environment();await provision(env);
@@ -276,6 +277,23 @@ test("tenant and Nova Frota share the same Home DOM and tenant map never reads l
  assert.ok(ia.includes("session.tenantMode===true"));
  assert.ok(home.includes("nf-home-layout"));
  assert.ok(home.includes("homeBrazilMap"));
+});
+test("dedicated tenant login uses shared scripts, fixed company and no public selector",()=>{
+ const root=new URL("../../",import.meta.url);
+ const legacy=readFileSync(new URL("pages/login.html",root),"utf8");
+ const page=readFileSync(new URL("pages/transportadora-teste/login.html",root),"utf8");
+ const script=readFileSync(new URL("assets/js/tenant-login.js",root),"utf8");
+ const auth=readFileSync(new URL("assets/js/auth.js",root),"utf8");
+ assert.doesNotThrow(()=>new Script(script));
+ assert.doesNotMatch(legacy,/id="tenantId"|loadTransportadoras|transportadorasPublicas/);
+ assert.match(legacy,/PortalAPI\.login\(usuario, senha, "nova-frota"\)/);
+ assert.match(page,/data-tenant-id="teste-01"/);
+ assert.doesNotMatch(page,/<select|transportadorasPublicas/);
+ assert.match(page,/\.\.\/\.\.\/assets\/js\/tenant-login\.js/);
+ assert.match(script,/PortalAPI\.login\(usuario,senha,tenantId\)/);
+ assert.match(script,/session\.transportadoraId!==tenantId/);
+ assert.match(auth,/pf:tenant-login-path/);
+ assert.match(script,/location\.replace\("\.\.\/home\.html"\)/);
 });
 test("unified frontend assets keep same login/Home, hide legacy modules, and parse",()=>{
  const root=new URL("../../",import.meta.url);

@@ -188,7 +188,7 @@
    if(!/<html(?:\s|>)/i.test(html)||!/<head(?:\s|>)/i.test(html))
     throw new Error("Conteúdo da página compartilhada inválido.");
    if(baseAlias){
-    const key=freightBase==="GO"?"fretes":freightBase==="MT"?"fretes2":"fretes-"+freightBase.toLowerCase();
+    const key="fretes-"+freightBase.toLowerCase();
     if(!Array.isArray(session.modules)||!session.modules.includes(key)){refuse();return;}
     window.PORTAL_BASE_MODULE=key;
     window.PORTAL_BASE_UF=freightBase;

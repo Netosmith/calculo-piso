@@ -2,7 +2,10 @@
 // No Nova Frota legacy session, Apps Script, KV or PORTAL_KEY is used.
 const COOKIE="__Host-tenant_session";
 const SESSION_SECONDS=6*60*60;
-const ITERATIONS=210000;
+// Cloudflare WebCrypto refuses PBKDF2 calls with more than 100,000 iterations.
+// Keep two domain-separated PBKDF2 passes to retain stronger password stretching.
+const ITERATIONS=100000;
+const HASH_V2="pbkdf2-sha256-2x100k:";
 const MAX_ATTEMPTS=8;
 const WINDOW_SECONDS=15*60;
 const encoder=new TextEncoder();
@@ -25,10 +28,26 @@ async function digest(value){
  return hex(new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(String(value)))));
 }
 async function derive(password,salt,iterations){
- const key=await crypto.subtle.importKey("raw",encoder.encode(password),{name:"PBKDF2"},false,["deriveBits"]);
+ if(!Number.isInteger(iterations)||iterations<1||iterations>100000)
+  throw new RangeError("PBKDF2 iteration count unsupported by Workers");
+ const key=await crypto.subtle.importKey("raw",
+  typeof password==="string"?encoder.encode(password):password,
+  {name:"PBKDF2"},false,["deriveBits"]);
  return new Uint8Array(await crypto.subtle.deriveBits({
   name:"PBKDF2",salt,iterations,hash:"SHA-256"
  },key,256));
+}
+// Versioned hash format; all rounds stay within Cloudflare's per-call limit.
+// The second salt is domain separated from the first, and the intermediate
+// key is not stored. Future KDF upgrades can be versioned without D1 migrations.
+async function deriveV2(password,salt,iterations){
+ const first=await derive(password,salt,iterations);
+ try{
+  const domain=encoder.encode("portal-frete/tenant-password/v2/round-2");
+  const secondSalt=new Uint8Array(salt.length+domain.length);
+  secondSalt.set(salt);secondSalt.set(domain,salt.length);
+  return await derive(first,secondSalt,iterations);
+ }finally{first.fill(0);}
 }
 function equalBytes(a,b){
  if(a.length!==b.length)return false;
@@ -51,15 +70,21 @@ export function validTenantPassword(value){
 export async function makePasswordRecord(password){
  if(!validTenantPassword(password))throw new TypeError("invalid password");
  const salt=randomBytes(16);
- return {password_salt:bytesToB64(salt),password_hash:bytesToB64(await derive(password,salt,ITERATIONS)),
+ return {password_salt:bytesToB64(salt),
+  password_hash:HASH_V2+bytesToB64(await deriveV2(password,salt,ITERATIONS)),
   iterations:ITERATIONS,version:crypto.randomUUID()};
 }
 export async function passwordMatches(password,record){
  try{
   if(typeof password!=="string"||password.length>128)return false;
   const salt=record?b64ToBytes(record.password_salt):fakeSalt;
-  const hash=await derive(password,salt,record?.iterations||ITERATIONS);
-  return record?equalBytes(hash,b64ToBytes(record.password_hash)):false;
+  const iterations=record?Number(record.iterations):ITERATIONS;
+  const encoded=record?.password_hash;
+  const isV2=!record||typeof encoded==="string"&&encoded.startsWith(HASH_V2);
+  const hash=isV2?await deriveV2(password,salt,iterations):
+   await derive(password,salt,iterations);
+  const expected=isV2?encoded?.slice(HASH_V2.length):encoded;
+  return record?equalBytes(hash,b64ToBytes(expected)):false;
  }catch{return false;}
 }
 export function hasTenantSessionCookie(req){

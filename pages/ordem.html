@@ -1052,6 +1052,8 @@
   async function carregarIdentidadeDaOrdem(){
     if(!tenantOrdem)return;
     const el=document.getElementById("ordemLogoPrincipal");
+    // Hide the legacy image before requesting the authenticated tenant logo.
+    if(el){el.hidden=true;el.style.display="none";}
     try{
       const response=await fetch("https://api.portalfrete.net.br/v1/tenant/logo",{
         credentials:"include",cache:"no-store"
@@ -1066,7 +1068,7 @@
         reader.onerror=()=>reject(new Error("Falha ao ler imagem"));
         reader.readAsDataURL(blob);
       });
-      if(el){el.src=ordemLogoSrc;el.alt=ordemEmpresaNome;el.hidden=false;}
+      if(el){el.src=ordemLogoSrc;el.alt=ordemEmpresaNome;el.hidden=false;el.style.removeProperty("display");}
     }catch(error){
       // Never show the Nova Frota mark in a different transportadora's order.
       console.warn("[ORDEM] Logo individual não disponível:",error.message);

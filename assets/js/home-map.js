@@ -101,6 +101,7 @@
     return {
       id: safe(firstValue(row, ["id", "idFrete", "ID", "Id"])),
       source: upper(source),
+      ufOrigem: upper(firstValue(row, ["ufOrigem","origemUf","UF_ORIGEM","estadoOrigem","ufCarregamento"])),
       regional: upper(firstValue(row, ["regional", "Regional"])),
       filial: upper(firstValue(row, ["filial", "Filial", "nomeFilial"])),
       cliente: upper(firstValue(row, ["cliente", "Cliente", "nomeCliente"])),
@@ -137,9 +138,16 @@
   }
 
   function loadingUf(row) {
-    const explicit = extractUf(row.origem) || extractUf(row.coleta);
+    const explicit = extractUf(row.ufOrigem) || extractUf(row.origem) || extractUf(row.coleta);
     if (explicit) return explicit;
-
+    // A transportadora's base is an accounting allocation, NOT the freight's
+    // origin state. Region names can be used only when they match a state.
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true) {
+      const regional=upper(row.regional).normalize("NFD").replace(/[\\u0300-\\u036f]/g,"");
+      const match=Object.entries(STATES).find(([uf,nome])=>
+        uf===regional || upper(nome).normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")===regional);
+      return match?.[0] || "";
+    }
     if (row.source === "FRETES") return "GO";
     if (row.source === "FRETES2") return "MT";
     return "";

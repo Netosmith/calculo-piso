@@ -469,10 +469,55 @@
     };
   }
 
+  const TENANT_BASES=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+  function tenantModuleForUf(uf){
+    return uf==="GO"?"fretes":uf==="MT"?"fretes2":"fretes-"+uf.toLowerCase();
+  }
+  function sourceForUf(uf){
+    return uf==="GO"?"FRETES":uf==="MT"?"FRETES2":"FRETES-"+uf;
+  }
+  function selectedBaseSources(){
+    const picker=$("#fOrigemDados");
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && picker?.multiple){
+      const values=[...picker.selectedOptions].map(option=>upper(option.value)).filter(Boolean);
+      return new Set(values);
+    }
+    const single=upper(picker?.value);
+    return single?new Set([single]):new Set();
+  }
+  function matchesSelectedBase(row){
+    const selected=selectedBaseSources();
+    return !selected.size || selected.has(upper(row.origemDados));
+  }
+  function configureTenantBases(){
+    const picker=$("#fOrigemDados"),session=window.__PORTAL_TENANT_SESSION;
+    if(!picker||session?.tenantMode!==true)return;
+    const permitted=new Set(session.modules||[]);
+    const opts=TENANT_BASES.filter(uf=>permitted.has(tenantModuleForUf(uf))).map(uf=>{
+      const option=new Option("BASE "+uf,sourceForUf(uf));
+      return option;
+    });
+    picker.replaceChildren(...opts);
+    picker.multiple=true;
+    picker.size=Math.min(5,Math.max(2,opts.length));
+    picker.setAttribute("aria-label","Selecione uma ou mais bases; sem seleção significa todas");
+    picker.title="Use Ctrl ou Shift para selecionar várias bases. Sem seleção = todas.";
+    const box=picker.closest(".fieldBox");
+    if(box&&!box.querySelector(".pf-all-bases")){
+      const all=document.createElement("button");
+      all.type="button";all.className="pf-all-bases";
+      all.textContent="TODAS AS BASES";
+      all.style.cssText="margin-top:5px;border:1px solid #99b6d8;border-radius:7px;padding:5px 8px;font-size:11px;background:#eef6ff;color:#10365a;cursor:pointer";
+      all.onclick=()=>{for(const option of picker.options)option.selected=false;picker.dispatchEvent(new Event("change"));};
+      box.append(all);
+    }
+  }
+
   function selectedBaseCode() {
     const origemDados = upper($("#fOrigemDados")?.value);
     if (origemDados === "FRETES") return "GO";
     if (origemDados === "FRETES2") return "MT";
+    if (window.__PORTAL_TENANT_SESSION?.tenantMode===true && /^FRETES-[A-Z]{2}$/.test(origemDados)) return origemDados.slice(-2);
     return "";
   }
 
@@ -480,6 +525,7 @@
     const value = upper(base);
     if (value === "GO") return "FRETES";
     if (value === "MT") return "FRETES2";
+    if (window.__PORTAL_TENANT_SESSION?.tenantMode===true && TENANT_BASES.includes(value)) return "FRETES-"+value;
     return "";
   }
 
@@ -641,7 +687,7 @@
       if (filial && row.filial !== filial) return false;
       if (cliente && row.cliente !== cliente) return false;
       if (status && row.status !== status) return false;
-      if (origemDados && row.origemDados !== origemDados) return false;
+      if (!matchesSelectedBase(row)) return false;
 
       if (busca) {
         const blob = [
@@ -689,7 +735,7 @@
       if (filial && row.filial !== filial) return false;
       if (cliente && row.cliente !== cliente) return false;
       if (status && row.status !== status) return false;
-      if (origemDados && row.origemDados !== origemDados) return false;
+      if (!matchesSelectedBase(row)) return false;
       if (origem && row.origem !== origem) return false;
       if (destino && row.destino !== destino) return false;
       if (produto && row.produto !== produto) return false;
@@ -1821,13 +1867,15 @@
   ========================================================= */
 
   async function loadCurrentRows() {
-    const results = await Promise.allSettled([
-      portalCall("fretes", "read"),
-      portalCall("fretes2", "read")
-    ]);
-
+    const tenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+    const allowed=tenant
+      ? TENANT_BASES.filter(uf=>(window.__PORTAL_TENANT_SESSION.modules||[]).includes(tenantModuleForUf(uf)))
+        .map(uf=>({module:tenantModuleForUf(uf),source:sourceForUf(uf)}))
+      : [{module:"fretes",source:"FRETES"},{module:"fretes2",source:"FRETES2"}];
+    if(!allowed.length)return [];
+    const results = await Promise.allSettled(allowed.map(entry=>portalCall(entry.module,"read")));
     const rows = [];
-    const sources = ["FRETES", "FRETES2"];
+    const sources = allowed.map(entry=>entry.source);
     const errors = [];
 
     results.forEach((result, index) => {

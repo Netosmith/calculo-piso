@@ -71,6 +71,29 @@
     }
   };
 
+  const REGIONAL_UFS=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+  const BASES_OPERACIONAIS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+  let regionalUfMap={};
+  function configureTenantRegionalFields(){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+    const cfg=CONFIG.regionais;
+    cfg.columns.splice(2,0,["uf","Estado (UF)"]);
+    cfg.fields.find(field=>field.key==="base").options=BASES_OPERACIONAIS;
+    cfg.fields.splice(2,0,{
+      key:"uf",label:"Estado da regional (UF)",type:"select",
+      options:REGIONAL_UFS,required:true,
+      hint:"UF territorial da regional; não altera a base responsável pelo frete."
+    });
+  }
+  async function loadRegionalUfCatalog(){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+    const response=await window.PortalAPI.tenantRequest("/regionais/ufs");
+    regionalUfMap=response?.regionais||{};
+  }
+  function regionalMeta(nome){
+    const key=upper(nome).replace(/\\s+/g," ").normalize("NFC");
+    return regionalUfMap[key]||null;
+  }
   const STATE={
     tab:"usuarios",
     rows:[],
@@ -322,7 +345,12 @@
     try{
       const res=await api("list",{},tab);
       if(token!==STATE.loadToken||tab!==STATE.tab)return;
-      STATE.rows=rowsFrom(res.data);render();
+      STATE.rows=rowsFrom(res.data);
+      if(tab==="regionais"&&window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+        await loadRegionalUfCatalog();
+        STATE.rows=STATE.rows.map(row=>({...row,uf:regionalMeta(row.regional)?.uf||row.uf||""}));
+      }
+      render();
        setStatus(sharedClientsView()
          ? "✅ "+STATE.rows.length+" cliente(s) no catálogo compartilhado · edição central"
          : "✅ "+STATE.rows.length+" registro(s)");
@@ -399,6 +427,9 @@
     try{payload=collectForm();}
     catch(error){setModalMessage(error.message,"error");return;}
     const tab=STATE.tab,cfg=configAtual(),editingRow=STATE.editing;
+    const tenantRegional=tab==="regionais"&&window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+    const ufRegional=tenantRegional?payload.uf:"";
+    if(tenantRegional)delete payload.uf;
     const editing=!!editingRow;
     const previousId=editing?rowIdentity(editingRow,cfg):"";
     if(editing){if(tab==="usuarios")payload.usuarioOriginal=editingRow.Usuario;else payload.id=editingRow[cfg.idField];}
@@ -416,6 +447,12 @@
       const res=await api(editing?"update":"add",payload,tab);
       cadastroSaved=true;
       updated=mergeRow(res.data,previousId,editingRow);
+      if(tenantRegional){
+        const saved=await window.PortalAPI.tenantRequest("/regionais/ufs",{
+          method:"POST",body:{regional:payload.regional,base:payload.base,uf:ufRegional}
+        });
+        regionalUfMap[upper(payload.regional).replace(/\\s+/g," ").normalize("NFC")]={uf:saved.uf,base:saved.base};
+      }
 
       let logoChanged=false;
       if(tab==="clientes"){
@@ -429,7 +466,7 @@
 
       closeModal(true);
       setStatus(logoChanged?"✅ Cadastro e logo atualizados":"✅ Cadastro salvo");
-      if(!updated)loadCurrent(true);
+      if(tenantRegional||!updated)loadCurrent(true);
     }catch(error){
       console.error("[cadastros] salvar:",error);
       if(cadastroSaved){
@@ -584,6 +621,7 @@
     }
     if(session.tenantMode!==true)await loadMaintenanceStatus();
     else{const control=$("#maintenanceControl");if(control)control.hidden=true;}
+    configureTenantRegionalFields();
     applySharedClientsUI();
     await loadCurrent();
   }

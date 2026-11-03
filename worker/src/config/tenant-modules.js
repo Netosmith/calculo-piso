@@ -4,7 +4,8 @@
 export const TENANT_MODULES = Object.freeze([
   "piso", "fretes", "fretes2", "bi", "divulgacao", "controle",
   "share", "ordem", "cadastros", "estadias", "custo-frota",
-  "administrativo", "monitoramento"
+  "administrativo", "monitoramento",
+"fretes-mercado", "custo-filial", "patrimonio", "embarques", "chamados"
 ]);
 
 export function validTenantModule(value) {

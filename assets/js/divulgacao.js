@@ -967,7 +967,7 @@
           <div class="multiPreviewShell">
             <div class="multiArt count-${count}">
               <section class="multiArtHero">
-                <img class="multiArtHeroImg" src="../assets/img/hero.jpg" alt="" crossorigin="anonymous">
+                <img class="multiArtHeroImg" src="../assets/img/divulgacao/hero-global.jpg" alt="" crossorigin="anonymous">
                 <div class="multiArtHeroWash"></div>
                 <img class="multiArtLogo" src="../assets/img/logo-novafrota.png" alt="Nova Frota" crossorigin="anonymous">
                 <div class="multiArtTitle">FRETES <strong>DISPONÍVEIS</strong></div>

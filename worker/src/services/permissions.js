@@ -36,7 +36,7 @@ export const MODULE_ACTIONS = {
   piso2: ["read", "calculate"],
   fretes: ["read", "create", "update", "delete"],
   fretes2: ["read", "create", "update", "delete"],
-  ...Object.fromEntries(["sp","ms","ba","pr","sc","ro","to","ma"].map(uf=>["fretes-"+uf, ["read","create","update","delete"]])),
+  ...Object.fromEntries(["go","mt","sp","ms","ba","pr","sc","ro","to","ma"].map(uf=>["fretes-"+uf, ["read","create","update","delete"]])),
   "fretes-mercado": ["read", "create", "update", "delete"],
   controle: ["read", "create", "update", "delete"],
   share: ["read", "export"],

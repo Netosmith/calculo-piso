@@ -1452,7 +1452,7 @@ function formatDateTimeBR(value) {
 
   function normalizePreviewModelNF(modelo) {
     const n = Number(modelo);
-    return n === 4 ? 4 : n === 3 ? 3 : n === 2 ? 2 : 1;
+    return n === 4 ? 4 : 3;
   }
 
   function syncPreviewModelUI() {

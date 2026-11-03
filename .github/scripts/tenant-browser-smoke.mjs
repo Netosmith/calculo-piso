@@ -64,8 +64,19 @@ try{
   await page.route("https://"+domain+"/**",r=>r.abort());
  }
  await page.goto(origin+"/pages/transportadora-teste/fretes.html",{waitUntil:"domcontentloaded"});
- await page.waitForFunction(()=>Boolean(document.querySelector("a.burger")) &&
-  !document.body.textContent.includes("Validando sessão da transportadora"),null,{timeout:30000});
+ try{
+  await page.waitForFunction(()=>Boolean(document.querySelector("a.burger")) &&
+   !document.body.textContent.includes("Validando sessão da transportadora"),null,{timeout:12000});
+ }catch(error){
+  const pageState=await page.evaluate(()=>({
+   href:location.href,title:document.title,stage:document.body?.textContent?.slice(0,800),
+   scripts:[...document.querySelectorAll("script[src]")].slice(0,8).map(x=>x.src),
+   tenantExpected:window.__PORTAL_TENANT_EXPECTED,
+   sessionTenant:window.__PORTAL_TENANT_SESSION?.transportadoraId
+  }));
+  console.error("TENANT BROWSER FAILURE",JSON.stringify({pageState,messages:messages.slice(-18)}));
+  throw error;
+ }
  await page.waitForFunction(()=>{
   const link=document.querySelector("a.burger");
   return link?.getAttribute("href")==="/pages/transportadora-teste/home.html";

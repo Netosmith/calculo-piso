@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {Script} from "node:vm";
 import {fileURLToPath} from "node:url";
 import {resolve,dirname} from "node:path";
 
@@ -62,4 +63,11 @@ test("tenant gateway selects private Sheets integration instead of public browse
  assert.ok(gateway.includes('APPS_SCRIPT_URL:config.scriptUrl'));
  assert.ok(gateway.includes('PORTAL_KEY:config.gatewayKey'));
  assert.ok(gateway.includes('module==="home" && action==="read"'));
+});
+
+test("shared page loader and tenant link/brand scripts compile in browser JavaScript",()=>{
+ for(const path of ["assets/js/tenant-page.js","assets/js/tenant-route.js",
+  "assets/js/tenant-login.js","assets/js/tenant-workspace.js"]){
+  assert.doesNotThrow(()=>new Script(read(path),{filename:path}),path);
+ }
 });

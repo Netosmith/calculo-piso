@@ -30,7 +30,7 @@
       const session=result?.session;
       if(session?.tenantMode===true && session.transportadoraId===tenantId){
         saveReturnPath();
-        window.location.replace("../home.html");
+        window.location.replace("./home.html");
       }
     }catch(_){/* Sem sessão ativa. */}
   }
@@ -53,7 +53,7 @@
       }
       saveReturnPath();
       pass.value="";
-      window.location.replace("../home.html");
+      window.location.replace("./home.html");
     }catch(error){
       showError(error?.message||"Usuário ou senha inválidos.");
     }finally{

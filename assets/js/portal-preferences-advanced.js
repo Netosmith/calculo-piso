@@ -18,7 +18,12 @@
         localStorage.getItem("nf_auth_user") || "").trim().toUpperCase().slice(0,128);
     } catch(_) {return "";}
   };
-  const storageKey = () => getUser() ? "nf:ui-advanced:v1:" + encodeURIComponent(getUser()) : "";
+  const storageKey = () => {
+    const user=getUser();
+    const tenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true
+      ? String(window.__PORTAL_TENANT_SESSION.transportadoraId||"") : "";
+    return user?"nf:ui-advanced:v1:"+(tenant?encodeURIComponent(tenant)+":":"")+encodeURIComponent(user):"";
+  };
   let owner = "";
   let state = {...BASE};
   let selectedTable = null;

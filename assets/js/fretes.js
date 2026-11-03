@@ -2246,17 +2246,20 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
           brand.src
             ? '<img src="'+brand.src+'" alt="'+escapeHtml(brand.nome)+'" />'
             : '<strong class="brand-print-name">'+escapeHtml(brand.nome)+'</strong>');
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-      win.onload=async ()=>{
+      const printWhenReady=async ()=>{
         try {await Promise.all(Array.from(win.document.images).map(img=>
           img.complete?Promise.resolve():new Promise(resolve=>{
             img.onload=resolve;img.onerror=resolve;
           })));}catch(_){}
+        if (win.closed) return;
         win.focus();
         win.print();
       };
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      if(win.document.readyState==="complete")void printWhenReady();
+      else win.addEventListener("load",printWhenReady,{once:true});
     } catch(error) {
       console.error("[DIVULGACAO] Erro ao preparar impressão",error);
       if (!win.closed) win.close();

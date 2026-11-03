@@ -1,0 +1,85 @@
+/* Modelo 3 | identidade consistente em Divulgação e Fretes (GO, MT).
+   O conteúdo é compartilhado; só a paleta da transportadora autenticada muda.
+   Mantenha fallback azul/verde da Nova Frota para a página legada.
+   html2canvas 1.4.1: apenas cores CSS convencionais (sem color-mix).
+*/
+:is(.templatePreview3,.nfM3Canvas){
+  --pf-m3-primary:var(--pf-art-primary,#06366f);
+  --pf-m3-accent:var(--pf-art-accent,#08a968);
+  --pf-m3-surface:var(--pf-art-surface,#f4f8fb);
+  --pf-m3-on-primary:var(--pf-art-on-primary,#ffffff);
+  --pf-m3-on-accent:var(--pf-art-on-accent,#ffffff);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Headline>span,.nfM3Headline>span),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Headline>small,.nfM3Headline>small),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3RouteCity,.nfM3RouteCity),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3MetaText strong,.nfM3MetaText strong),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3ContactsIntro strong,.nfM3ContactsIntro strong),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3ContactLine,.nfM3Contact){
+  color:var(--pf-m3-primary);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Headline>strong,.nfM3Headline>strong){
+  color:var(--pf-m3-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Headline>small,.nfM3Headline>small)::after,
+:is(.templatePreview3,.nfM3Canvas) :is(.m3FooterQuote>span,.nfM3FooterQuote>span){
+  background:var(--pf-m3-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Content,.nfM3Content){
+  background:var(--pf-m3-surface);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3RouteLabel,.nfM3RouteLabel){
+  background:var(--pf-m3-accent);
+  color:var(--pf-m3-on-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Pin,.nfM3RouteLabel .pin){
+  color:var(--pf-m3-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Arrow,.nfM3Arrow){
+  background:var(--pf-m3-accent);
+  color:var(--pf-m3-on-accent);
+  border-color:var(--pf-m3-surface);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3PriceCard,.nfM3PriceCard){
+  background:linear-gradient(104deg,
+    var(--pf-m3-primary) 0%,var(--pf-m3-primary) 36%,
+    var(--pf-m3-accent) 36%,var(--pf-m3-accent) 100%);
+  color:var(--pf-m3-on-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3PriceLabel,.nfM3PriceLabel){
+  color:var(--pf-m3-on-primary);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Currency,.nfM3Currency){
+  border-color:var(--pf-m3-on-primary);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3PriceValue,.nfM3PriceValue){
+  color:var(--pf-m3-on-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3WhatsappIcon,.nfM3WhatsappIcon){
+  background:var(--pf-m3-accent);
+  color:var(--pf-m3-on-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3ContactLine,.nfM3Contact):not(:empty)::before{
+  border-color:var(--pf-m3-accent);
+  color:var(--pf-m3-accent);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Footer,.nfM3Footer){
+  background:var(--pf-m3-primary);
+  color:var(--pf-m3-on-primary);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Footer,.nfM3Footer)::after{
+  background:linear-gradient(90deg,
+    var(--pf-m3-accent) 0 34%,var(--pf-m3-primary) 34% 66%,
+    var(--pf-m3-accent) 66%);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Benefits,.nfM3Benefits),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Benefit b,.nfM3Benefit b),
+:is(.templatePreview3,.nfM3Canvas) :is(.m3Benefit span,.nfM3Benefit span){
+  color:var(--pf-m3-on-primary);
+}
+:is(.templatePreview3,.nfM3Canvas) :is(.m3HeroWash,.nfM3HeroWash){
+  /* Hero global sem qualquer marca; logo vem separada do R2 individual. */
+  background:linear-gradient(90deg,
+    rgba(255,255,255,.97) 0%,rgba(255,255,255,.86) 26%,
+    rgba(255,255,255,.35) 48%,rgba(255,255,255,.02) 74%);
+}

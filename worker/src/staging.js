@@ -4,6 +4,7 @@ import {superAdminController} from "./controllers/super-admin.js";
 import {verifiedStagingOwner} from "./services/staging-access.js";
 import {stagingPanelHtml} from "./staging-panel.js";
 import {writeTenantCatalog} from "./services/super-admin-tenant-write.js";
+import {credentialSchemaStatus} from "./services/super-admin-tenant-credentials.js";
 import {errorResponse,success} from "./utils/response.js";
 
 function withHeaders(response,origin=null) {
@@ -85,14 +86,12 @@ export default {
           body.capabilities.tenantWrite=Boolean(ready&&tenantWrite);
           body.capabilities.membershipWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled");
           body.capabilities.brandWrite=Boolean(ready&&tenantWrite&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.TENANT_BRANDS);
-          let credentialTableReady=false;
+          let credentialSchema={ok:false,missing:[]};
           if(ready && env.SUPER_ADMIN_CREDENTIAL_WRITES==="enabled"){
-            try{
-              await env.TENANTS_DB.prepare("SELECT tenant_id FROM portal_tenant_credentials LIMIT 1").first();
-              credentialTableReady=true;
-            }catch{}
+            credentialSchema=await credentialSchemaStatus(env.TENANTS_DB);
           }
-          body.capabilities.credentialWrite=Boolean(ready&&tenantWrite&&credentialTableReady);
+          body.capabilities.credentialWrite=Boolean(ready&&tenantWrite&&credentialSchema.ok);
+          body.capabilities.credentialMissing=credentialSchema.missing;
           return withHeaders(success(body),cors);
         }
         if(request.method!=="GET"){

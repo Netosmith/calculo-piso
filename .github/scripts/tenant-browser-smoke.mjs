@@ -192,6 +192,24 @@ try{
  assert.equal(control.noTailwindPlay,true);
  console.log("CONTROLE SELF HOSTED CSS AND TITLE OK",JSON.stringify(control));
 
+ await page.goto(origin+"/pages/transportadora-teste/ordem.html",{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>
+  document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
+  !!document.querySelector("#pfTenantOrdemCss"),null,{timeout:24000});
+ const order=await page.evaluate(()=>({
+  path:location.pathname,
+  localStyles:!!document.querySelector("#pfTenantOrdemCss")?.sheet,
+  layout:document.querySelector("main")?getComputedStyle(document.querySelector("main")).display:"",
+  noTailwindPlay:!document.querySelector('script[src*="cdn.tailwindcss.com"]'),
+  company:document.querySelector(".nf-global-nav-standalone-brand .pf-company-name")?.textContent
+ }));
+ assert.equal(order.path,"/pages/transportadora-teste/ordem.html");
+ assert.equal(order.localStyles,true);
+ assert.equal(order.layout,"flex");
+ assert.equal(order.noTailwindPlay,true);
+ assert.equal(order.company,"NOVA FROTA ADMIN");
+ console.log("ORDEM SELF HOSTED CSS AND BRANDING OK",JSON.stringify(order));
+
 
  if(messages.length)console.log("Non-fatal browser diagnostics:",messages.slice(0,6));
 }finally{

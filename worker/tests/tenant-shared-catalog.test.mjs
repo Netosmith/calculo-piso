@@ -51,4 +51,9 @@ test("tenant Controle uses local generated CSS, not Tailwind Play CDN",()=>{
  assert.ok(css.includes(".grid{"));
  assert.ok(css.includes(".rounded-xl{"));
  assert.ok(css.length>8000);
+ assert.ok(loader.includes('page==="controle.html"||page==="ordem.html"'));
+ const order=read("assets/css/ordem-tailwind.generated.css");
+ assert.ok(order.includes(".flex{"));
+ assert.ok(order.length>10000);
+ assert.ok(loader.includes('ordem-tailwind.generated.css?v=1'));
 });

@@ -658,6 +658,19 @@ function formatDateTimeBR(value) {
       }
 
       DIRECTORY = novosCadastros;
+      if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+        // Lista de clientes é referência global aprovada; regionais, filiais
+        // e contatos continuam exclusivos da planilha da transportadora.
+        DIRECTORY.clientes=[];
+        try{
+          const catalog=await window.PortalAPI.tenantRequest("/catalogo/clientes");
+          DIRECTORY.clientes=(catalog?.clientes||[])
+            .map(row=>upper(row?.cliente)).filter(Boolean);
+        }catch(error){
+          console.warn("[FRETES] Catálogo compartilhado de clientes indisponível",
+            error?.status||"indisponível");
+        }
+      }
       STATE.directoryReady = true;
       rebuildContactPhoneMap();
       recordPerformance("cadastros-total", startedAt);

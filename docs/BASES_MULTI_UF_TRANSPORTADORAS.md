@@ -22,6 +22,8 @@ Para habilitar uma base:
 
 Não compartilhar IDs, tokens ou chaves em HTML público. Nenhuma base deve utilizar acidentalmente a planilha de outra; sem configuração individual, a operação da base não deve cair silenciosamente na planilha geral.
 
+O diretório de regionais/filiais/contatos das bases dedicadas usa o catálogo central da transportadora quando a integração geral está ativa. Se não houver integração geral, utiliza o diretório da própria planilha da base. Regionais que já tenham base cadastrada no catálogo privado são filtradas pela base escolhida; regionais antigas sem classificação permanecem disponíveis até serem regularizadas.
+
 ## Cadastro de regional e UF
 Em **Cadastros > Regionais** (transportadoras), escolher:
 - **Base:** `GERAL` ou uma das bases dedicadas GO/MT/SP/MS/BA/PR/SC/RO/TO/MA.

@@ -36,7 +36,7 @@ export const MODULE_ACTIONS = {
   piso2: ["read", "calculate"],
   fretes: ["read", "create", "update", "delete"],
   fretes2: ["read", "create", "update", "delete"],
-  ...Object.fromEntries(["go","mt","sp","ms","ba","pr","sc","ro","to","ma"].map(uf=>["fretes-"+uf, ["read","create","update","delete"]])),
+  ...Object.fromEntries(["go","mt","sp","ms","ba","pr","sc","ro","to","ma","ac","al","ap","am","ce","df","es","mg","pa","pb","pe","pi","rj","rn","rs","rr","se"].map(uf=>["fretes-"+uf, ["read","create","update","delete"]])),
   "fretes-mercado": ["read", "create", "update", "delete"],
   controle: ["read", "create", "update", "delete"],
   share: ["read", "export"],
@@ -80,7 +80,7 @@ export function hasFeature(session, moduleName) {
   if (ADMIN_PROFILES.has(profile)) return true;
 
   const features = PROFILE_FEATURES[profile] || [];
-  if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/.test(moduleName)){
+  if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/.test(moduleName)){
     return ["OPERACIONAL","COMERCIAL"].includes(profile);
   }
   return moduleName === "home" || features.includes(moduleName);
@@ -152,7 +152,7 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
       return FRETES2_DELETE_PROFILES.has(profile);
     }
 
-    if (moduleName === "fretes" || /^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/.test(moduleName)) {
+    if (moduleName === "fretes" || /^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/.test(moduleName)) {
       return FREIGHT_DELETE_PROFILES.has(profile);
     }
 

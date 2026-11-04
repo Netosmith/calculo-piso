@@ -61,7 +61,7 @@ test("BI origin-state mapping and accounting base are independent for tenants",(
  assert.match(bi,/tenantOriginUf/);
  assert.match(bi,/tenantRegionalUfCatalog/);
  assert.match(bi,/refreshTenantRegionalUfCatalog/);
- assert.match(bi,/origemDados:tenant\?sources\[index\]/);
+ assert.ok(bi.includes("if(tenant)row.origemDados=sources[index]"));
  const cad=read("assets/js/cadastros.js");
  assert.match(cad,/BASES_OPERACIONAIS=\["GERAL"/);
 });

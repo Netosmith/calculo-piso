@@ -79,7 +79,9 @@ test("Home only counts base modules assigned to a regional",()=>{
  assert.match(workspace,/totalTransito/);
  assert.match(homeMap,/failedBaseSources/);
  assert.match(workspace,/failedBases/);
- assert.match(workspace,/TOTAL PARCIAL/);
+ // Partial data is now flagged in the short KPI footer, not in the main number.
+ assert.match(workspace,/base\\(s\\) indisponíveis/);
+ assert.match(workspace,/failedLabels/);
  assert.match(cad,/BASES_OPERACIONAIS=\["GERAL",\.\.\.REGIONAL_UFS\]/);
 });
 

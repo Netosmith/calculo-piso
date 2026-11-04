@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
+import {Script} from "node:vm";
 import {tenantUsersController} from "../src/services/tenant-user-management.js";
 import {authenticateTenant,passwordMatches} from "../src/services/tenant-auth.js";
 import {writeTenantMembership} from "../src/services/super-admin-membership-write.js";
@@ -116,4 +117,54 @@ test("Cadastros tenant UI routes user creation and edits to D1, leaving Nova Fro
  assert.match(source,/method:"PATCH",body/);
  assert.match(source,/configureTenantUserFields\(\)/);
  assert.match(source,/window[.]PortalAPI[.]call\("cadastros",actionMap\[operation\]/);
+});
+
+test("Every tenant administrator can onboard their own users and sees no other company's accounts",async()=>{
+ const database=db();
+ const tenantA={tenant_id:"teste-01",user_id:"ADM-A",role:"ADMINISTRADOR"};
+ const tenantB={tenant_id:"outra-empresa",user_id:"ADM-B",role:"ADMINISTRADOR"};
+ const pwA="Senha-empresa-A-2026";
+ const pwB="Senha-empresa-B-2026";
+ const userA={usuario:"ANDERSON",perfil:"COMERCIAL",senha:pwA,ativo:true};
+ const userB={usuario:"ANDERSON",perfil:"PISO",senha:pwB,ativo:true};
+ assert.equal((await call(database,"POST",userA,undefined,tenantA)).status,201);
+ assert.equal((await call(database,"POST",userB,undefined,tenantB)).status,201);
+ const a=(await (await call(database,"GET",undefined,undefined,tenantA)).json()).usuarios;
+ const b=(await (await call(database,"GET",undefined,undefined,tenantB)).json()).usuarios;
+ assert.equal(a.length,1);
+ assert.equal(b.length,1);
+ assert.equal(a[0].Perfil,"COMERCIAL");
+ assert.equal(b[0].Perfil,"PISO");
+ assert.equal((await authenticateTenant(database.adapter,"teste-01","ANDERSON",pwA)).ok,true);
+ assert.equal((await authenticateTenant(database.adapter,"outra-empresa","ANDERSON",pwB)).ok,true);
+ assert.equal((await authenticateTenant(database.adapter,"teste-01","ANDERSON",pwB)).ok,false);
+ assert.equal((await authenticateTenant(database.adapter,"outra-empresa","ANDERSON",pwA)).ok,false);
+ const aPath="/v1/tenant/usuarios/ANDERSON";
+ assert.equal((await call(database,"PATCH",{perfil:"OPERACIONAL"},aPath,tenantB)).status,200);
+ assert.equal(database.sql.prepare("SELECT role FROM portal_tenant_users WHERE tenant_id='teste-01'").get().role,"COMERCIAL");
+ assert.equal(database.sql.prepare("SELECT role FROM portal_tenant_users WHERE tenant_id='outra-empresa'").get().role,"OPERACIONAL");
+});
+
+test("Company Cadastro client sends /usuarios requests to tenant D1 API and rejects unlisted routes",async()=>{
+ const api=readFileSync(new URL("../../assets/js/api.js",import.meta.url),"utf8");
+ const calls=[];
+ const sandbox={window:{},fetch:async(url,options)=>{
+  calls.push({url,method:options.method,body:options.body?JSON.parse(options.body):undefined});
+  return {ok:true,status:200,json:async()=>({ok:true,usuarios:[]})};
+ }};
+ new Script(api,{filename:"api.js"}).runInNewContext(sandbox);
+ const client=sandbox.window.PortalAPI;
+ await client.tenantRequest("/usuarios");
+ await client.tenantRequest("/usuarios",{method:"POST",body:{usuario:"ANDERSON",perfil:"PISO",senha:"Senha-de-teste-2026",ativo:true}});
+ await client.tenantRequest("/usuarios/ANDERSON",{method:"PATCH",body:{ativo:false}});
+ assert.deepEqual(calls.map(c=>c.url),[
+  "https://api.portalfrete.net.br/v1/tenant/usuarios",
+  "https://api.portalfrete.net.br/v1/tenant/usuarios",
+  "https://api.portalfrete.net.br/v1/tenant/usuarios/ANDERSON"
+ ]);
+ assert.deepEqual(calls.map(c=>c.method),["GET","POST","PATCH"]);
+ for(const wrong of ["/usuarios/../ADMIN","/usuarios/a","/usuarios/anderson","/usuarios/ANDERSON/credenciais","/super-admin/transportadoras"]){
+  await assert.rejects(client.tenantRequest(wrong),/Rota da transportadora inválida/);
+ }
+ assert.equal(calls.length,3);
 });

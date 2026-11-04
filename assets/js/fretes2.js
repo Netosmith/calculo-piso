@@ -2317,7 +2317,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
       return {nome, src:new URL("../assets/img/logo-novafrota.png", document.baseURI).href};
     }
     try {
-      const resposta=await fetch("https://api.portalfrete.net.br/v1/tenant/logo", {
+      const resposta=await fetch((window.portalTenantResourceUrl?.("logo") || "https://api.portalfrete.net.br/v1/tenant/logo"), {
         credentials:"include", cache:"no-store"
       });
       if (!resposta.ok) throw new Error("Logo ainda não cadastrada.");

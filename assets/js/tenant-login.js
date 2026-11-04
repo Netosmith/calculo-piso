@@ -27,7 +27,15 @@
   async function existingSession(){
     try{
       const result=await window.PortalAPI.session();
-      const session=result?.session;
+      let session=result?.session;
+      if(session?.tenantMode!==true || session.transportadoraId!==tenantId){
+        // Opening another company by URL must reuse the already signed owner
+        // session, never request a second password or register a tenant user.
+        try{
+          const support=await window.PortalAPI.tenantContext(tenantId);
+          session=support?.session;
+        }catch(_){/* Ordinary tenant users remain on the login form. */}
+      }
       if(session?.tenantMode===true && session.transportadoraId===tenantId){
         saveReturnPath();
         window.location.replace("./home.html");

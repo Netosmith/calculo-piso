@@ -16,6 +16,16 @@
   "calculo-antt.html","calculo-antt2.html","ordem.html"
  ]);
  const ownLogin=prefix+"login.html";
+ // Artwork and logo images cannot attach an XMLHttpRequest header. Encode
+ // only the requested tenant scope; the Worker validates signed owner cookies.
+ function tenantVisualUrl(resource){
+  if(resource!=="logo"&&resource!=="artes")throw Error("Recurso visual nao permitido.");
+  const url="https://api.portalfrete.net.br/v1/tenant/"+resource;
+  const session=window.__PORTAL_TENANT_SESSION;
+  return session?.ownerSupport===true && session.transportadoraId===tenant
+   ?url+"?supportTenant="+encodeURIComponent(tenant):url;
+ }
+ window.portalTenantResourceUrl=tenantVisualUrl;
  function route(urlText){
   if(typeof urlText!=="string"||!urlText)return null;
   if(/^(?:javascript:|data:|mailto:|tel:|#)/i.test(urlText.trim()))return null;
@@ -173,7 +183,7 @@
  async function loadBrand(){
   // Fetch only for artwork; the header always stays name-only.
   try{
-   const r=await fetch("https://api.portalfrete.net.br/v1/tenant/logo",{
+   const r=await fetch((window.portalTenantResourceUrl?.("logo") || "https://api.portalfrete.net.br/v1/tenant/logo"),{
     credentials:"include",cache:"no-store"
    });
    if(!r.ok)return;
@@ -212,7 +222,7 @@
  async function loadArtThemes(){
   // Read-only visual profile, derived exclusively from the signed tenant cookie.
   try{
-   const response=await fetch("https://api.portalfrete.net.br/v1/tenant/artes",{
+   const response=await fetch((window.portalTenantResourceUrl?.("artes") || "https://api.portalfrete.net.br/v1/tenant/artes"),{
     credentials:"include",cache:"no-store",headers:{"Accept":"application/json"}
    });
    if(!response.ok)return;

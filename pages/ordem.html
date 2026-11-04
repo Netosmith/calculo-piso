@@ -1055,7 +1055,7 @@
     // Hide the legacy image before requesting the authenticated tenant logo.
     if(el){el.hidden=true;el.style.display="none";}
     try{
-      const response=await fetch("https://api.portalfrete.net.br/v1/tenant/logo",{
+      const response=await fetch((window.portalTenantResourceUrl?.("logo") || "https://api.portalfrete.net.br/v1/tenant/logo"),{
         credentials:"include",cache:"no-store"
       });
       if(!response.ok)throw new Error("Logo não cadastrada");

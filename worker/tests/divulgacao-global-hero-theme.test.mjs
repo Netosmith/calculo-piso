@@ -78,12 +78,12 @@ test("GNOVA-only artwork logo is raised and bounded in both Divulgação and Fre
  assert.ok(loader.includes("tenant-route.js?v=visual-v2"));
  for(const page of ["divulgacao","fretes"]){
   const entry=file("pages/transportadora-teste/"+page+".html");
-  assert.ok(entry.includes("tenant-page.js?v=owner-support-v1"),page);
+  assert.ok(entry.includes("tenant-page.js?v=visual-identity-v2"),page);
  }
  for(const uf of ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
                    "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]){
   const entry=file("pages/transportadora-teste/fretes-"+uf+".html");
-  assert.ok(entry.includes("tenant-page.js?v=owner-support-v1"),uf);
+  assert.ok(entry.includes("tenant-page.js?v=visual-identity-v2"),uf);
  }
  // Preview is used as the html2canvas source for both JPG exports.
  assert.ok(file("assets/js/divulgacao.js").includes("html2canvas(preview"));

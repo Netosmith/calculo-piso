@@ -15,10 +15,19 @@ function db(){
  for(const tenant of ["teste-01","outra-empresa"])
   sql.prepare("INSERT INTO portal_tenants(id,name,status) VALUES (?,?,?)").run(tenant,tenant,"active");
  const adapter={
-  prepare(query){const stmt=sql.prepare(query);return{bind(...args){return{
-   first:async()=>stmt.get(...args),all:async()=>({results:stmt.all(...args)}),
-   run:async()=>stmt.run(...args),statement:stmt,args
-  }};}},
+  prepare(query){
+    const stmt=sql.prepare(query);
+    return {
+      bind(...args){
+        return {
+          first:async()=>stmt.get(...args),
+          all:async()=>({results:stmt.all(...args)}),
+          run:async()=>stmt.run(...args),
+          statement:stmt,args
+        };
+      }
+    };
+  },
   async batch(statements){sql.exec("BEGIN");try{
     const out=statements.map(s=>s.statement.run(...s.args));
     sql.exec("COMMIT");return out;

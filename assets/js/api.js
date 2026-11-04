@@ -6,6 +6,30 @@
 const PORTAL_API_BASE = "https://api.portalfrete.net.br";
 const PORTAL_RETRYABLE_STATUS = new Set([502, 503, 504]);
 
+// Support access is never granted by this header: the Worker independently
+// authenticates LUZIANO's signed legacy session on every request.
+function ownerSupportTenant(){
+  const session=window.__PORTAL_TENANT_SESSION;
+  const expected=window.__PORTAL_TENANT_EXPECTED;
+  if(session?.ownerSupport!==true)return "";
+  if(!expected||session.transportadoraId!==expected)
+    throw new Error("Contexto de suporte diferente da transportadora atual.");
+  return expected;
+}
+function tenantRequestOptions(options={}){
+ const target=ownerSupportTenant();
+ return target ? {...options,headers:{...(options.headers||{}),
+   "X-Portal-Support-Tenant":target}} : options;
+}
+function tenantResourceUrl(resource){
+ const suffix=resource==="logo"||resource==="artes"?resource:null;
+ if(!suffix)throw new Error("Recurso visual da transportadora invalido.");
+ const target=ownerSupportTenant();
+ return PORTAL_API_BASE+"/v1/tenant/"+suffix+
+   (target?"?supportTenant="+encodeURIComponent(target):"");
+}
+window.portalTenantResourceUrl=tenantResourceUrl;
+
 function waitPortalRetry(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -139,12 +163,22 @@ window.PortalAPI = {
     if(typeof path!=="string" || !/^\/(?:me|bi|integracao|catalogo\/clientes|regionais\/ufs|usuarios(?:\/[A-Z0-9][A-Z0-9._-]{1,79})?|fretes(?:\/[a-f0-9-]{36})?)$/.test(path)){
       return Promise.reject(new Error("Rota da transportadora inválida."));
     }
-    return portalApiRequest("/v1/tenant"+path,options);
+    return portalApiRequest("/v1/tenant"+path,tenantRequestOptions(options));
   },
   tenantLogoUrl(){
-    return PORTAL_API_BASE+"/v1/tenant/logo";
+    return tenantResourceUrl("logo");
+  },
+  tenantResourceUrl,
+  tenantContext(tenantId){
+    if(!/^[a-z][a-z0-9-]{2,47}$/.test(String(tenantId||"")))
+      return Promise.reject(new Error("Identificador de transportadora invalido."));
+    return portalApiRequest("/v1/tenant/context?tenantId="+encodeURIComponent(tenantId));
   },
   session() {
+    // The owner keeps the Nova Frota session; tenant pages derive a temporary
+    // view of the chosen company instead of creating a tenant user/login.
+    const expected=window.__PORTAL_TENANT_EXPECTED;
+    if(expected)return this.tenantContext(expected);
     return portalApiRequest("/v1/session");
   },
   selectState(estado) {
@@ -178,10 +212,11 @@ window.PortalAPI = {
       }
     }
     const isTenant=session?.tenantMode===true;
-    const result = await portalApiRequest(isTenant?"/v1/tenant/gateway":"/v1/gateway", {
-      method: "POST",
-      body: { module, action, params }
-    });
+    const requestOptions={
+      method:"POST",body:{module,action,params}
+    };
+    const result = await portalApiRequest(isTenant?"/v1/tenant/gateway":"/v1/gateway",
+      isTenant?tenantRequestOptions(requestOptions):requestOptions);
 
     return normalizeGatewayEnvelope(result);
   },

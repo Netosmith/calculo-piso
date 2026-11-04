@@ -1,7 +1,7 @@
 import {success,errorResponse} from "../utils/response.js";
 
 const MODELS=Object.freeze(["modelo3","modelo4a","modelo4b","modelo4c"]);
-const DEFAULT_MODEL=Object.freeze({primary:"#113c70",accent:"#08a968",surface:"#f4f8fb",watermark:8});
+const DEFAULT_MODEL=Object.freeze({primary:"#113c70",accent:"#08a968",surface:"#f4f8fb",watermark:8,logoWidth:290,logoHeight:96,logoTop:4,logoX:0,logoOpacity:100});
 const validTenant=id=>typeof id==="string" && id!=="nova-frota" &&
   /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(id) && id.length<=48;
 const HEX=/^#[0-9a-fA-F]{6}$/;
@@ -15,7 +15,12 @@ function normalizeModel(value,fallback=DEFAULT_MODEL){
   accent:HEX.test(raw.accent)?raw.accent.toLowerCase():fallback.accent,
   surface:HEX.test(raw.surface)?raw.surface.toLowerCase():fallback.surface,
   watermark:Number.isInteger(raw.watermark)&&raw.watermark>=0&&raw.watermark<=14
-    ?raw.watermark:fallback.watermark
+    ?raw.watermark:fallback.watermark,
+  logoWidth:Number.isInteger(raw.logoWidth)&&raw.logoWidth>=100&&raw.logoWidth<=600?raw.logoWidth:fallback.logoWidth,
+  logoHeight:Number.isInteger(raw.logoHeight)&&raw.logoHeight>=35&&raw.logoHeight<=220?raw.logoHeight:fallback.logoHeight,
+  logoTop:Number.isInteger(raw.logoTop)&&raw.logoTop>=-60&&raw.logoTop<=160?raw.logoTop:fallback.logoTop,
+  logoX:Number.isInteger(raw.logoX)&&raw.logoX>=-250&&raw.logoX<=250?raw.logoX:fallback.logoX,
+  logoOpacity:Number.isInteger(raw.logoOpacity)&&raw.logoOpacity>=10&&raw.logoOpacity<=100?raw.logoOpacity:fallback.logoOpacity
  };
 }
 export function normalizedArtThemes(input){
@@ -36,10 +41,19 @@ export function validateArtThemeUpdate(body){
   const value=body.models[key];
   if(!value||typeof value!=="object"||Array.isArray(value))return false;
   const props=Object.keys(value);
-  if(props.length!==4||props.some(p=>!["primary","accent","surface","watermark"].includes(p)))
-   return false;
+  const base=["primary","accent","surface","watermark"];
+  const logo=["logoWidth","logoHeight","logoTop","logoX","logoOpacity"];
+  const legacy=props.length===4 && props.every(p=>base.includes(p));
+  const extended=props.length===9 && props.every(p=>base.includes(p)||logo.includes(p));
+  if(!legacy&&!extended)return false;
   return ["primary","accent","surface"].every(p=>HEX.test(value[p]))&&
-   Number.isInteger(value.watermark)&&value.watermark>=0&&value.watermark<=14;
+   Number.isInteger(value.watermark)&&value.watermark>=0&&value.watermark<=14&&
+   (legacy||(
+    Number.isInteger(value.logoWidth)&&value.logoWidth>=100&&value.logoWidth<=600&&
+    Number.isInteger(value.logoHeight)&&value.logoHeight>=35&&value.logoHeight<=220&&
+    Number.isInteger(value.logoTop)&&value.logoTop>=-60&&value.logoTop<=160&&
+    Number.isInteger(value.logoX)&&value.logoX>=-250&&value.logoX<=250&&
+    Number.isInteger(value.logoOpacity)&&value.logoOpacity>=10&&value.logoOpacity<=100));
  });
 }
 async function ensureCompany(env,id){

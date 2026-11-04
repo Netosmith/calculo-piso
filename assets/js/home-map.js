@@ -154,7 +154,7 @@
         uf===regional || upper(nome).normalize("NFD").replace(/[\u0300-\u036f]/g,"")===regional);
       return match?.[0] || "";
     }
-    if (row.source === "FRETES") return "GO";
+    if (row.source === "FRETES" && window.__PORTAL_TENANT_SESSION?.tenantMode!==true) return "GO";
     if (row.source === "FRETES2") return "MT";
     return "";
   }
@@ -442,8 +442,20 @@
         const baseKeys=["fretes","fretes2","fretes-go","fretes-mt","fretes-sp","fretes-ms",
           "fretes-ba","fretes-pr","fretes-sc","fretes-ro","fretes-to","fretes-ma",
           "fretes-ac","fretes-al","fretes-ap","fretes-am","fretes-ce","fretes-df","fretes-es","fretes-mg","fretes-pa","fretes-pb","fretes-pe","fretes-pi","fretes-rj","fretes-rn","fretes-rs","fretes-rr","fretes-se"];
-        const allowed=baseKeys.filter(key=>modules.includes(key));
-        if(!allowed.length){STATE.rows=[];render();return;}
+        // A base appears in the Home only when BOTH the Super Admin has
+        // released it and at least one regional is assigned to it.
+        // Fretes2 remains an exclusive Nova Frota legacy module.
+        const assigned=new Set(Object.values(STATE.regionalUfs).map(value=>
+          upper(value?.base||"")).filter(Boolean));
+        const accountingBase=key=>key==="fretes"?"GERAL":
+          key.startsWith("fretes-")?key.slice(7).toUpperCase():"";
+        const allowed=baseKeys.filter(key=>key!=="fretes2"&&
+          modules.includes(key)&&assigned.has(accountingBase(key)));
+        const dispatchSummary=rows=>window.dispatchEvent(new CustomEvent("portal:tenant-freights-summary",{
+          detail:{tenantId:session.transportadoraId,bases:allowed.map(key=>
+            key==="fretes"?"FRETES":key.toUpperCase()),rows}
+        }));
+        if(!allowed.length){STATE.rows=[];dispatchSummary([]);render();return;}
         // Read only enabled bases from this tenant's authenticated gateway.
         const responses=await Promise.allSettled(allowed.map(key=>
           window.PortalAPI.call(key,"read",{})));
@@ -452,7 +464,13 @@
         responses.forEach((reply,index)=>{
           if(reply.status!=="fulfilled")return;
           const source=allowed[index]==="fretes2"?"FRETES2":allowed[index]==="fretes"?"FRETES":allowed[index].toUpperCase();
-          extractRows(reply.value).forEach(item=>rows.push(normalizeRow(item,source)));
+          extractRows(reply.value).forEach(item=>{
+            const row=normalizeRow(item,source);
+            const key=upper(row.regional).replace(/\\s+/g," ").normalize("NFC");
+            // No cross-base freight appears under a different regional's KPI.
+            if(upper(STATE.regionalUfs[key]?.base)!==accountingBase(allowed[index]))return;
+            rows.push(row);
+          });
         });
         if(!responses.some(r=>r.status==="fulfilled")){
           throw new Error("Não foi possível ler os fretes da planilha da transportadora.");
@@ -466,11 +484,9 @@
         STATE.rows = availableRows(merged);
       }
       if(session.tenantMode===true){
-        window.dispatchEvent(new CustomEvent("portal:tenant-freights-summary",{
-          detail:{tenantId:session.transportadoraId,rows:STATE.rows.map(row=>({
-            id:row.id,source:row.source,porta:row.porta,transito:row.transito
-          }))}
-        }));
+        dispatchSummary(STATE.rows.map(row=>({
+          id:row.id,source:row.source,porta:row.porta,transito:row.transito
+        })));
       }
       render();
       if(session.tenantMode===true&&STATE.failedBases){

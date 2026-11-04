@@ -186,12 +186,23 @@
    const sessionResponse=await get("https://api.portalfrete.net.br/v1/session",{
     credentials:"include",headers:{"Accept":"application/json"}
    });
-   if(sessionResponse.status===401||sessionResponse.status===403){refuse();return;}
-   if(!sessionResponse.ok)throw new Error("Sessão indisponível.");
-   const sessionData=await sessionResponse.json();
-   const session=sessionData?.session;
-   if(sessionData?.ok!==true||session?.tenantMode!==true||
-      session.transportadoraId!==tenant){refuse();return;}
+   let session=null;
+   if(sessionResponse.ok){
+     const sessionData=await sessionResponse.json();
+     session=sessionData?.ok===true?sessionData.session:null;
+   }else if(![401,403].includes(sessionResponse.status)){
+     throw new Error("Sessão indisponível.");
+   }
+   if(session?.tenantMode!==true||session.transportadoraId!==tenant){
+     // Owner already authenticated in Nova Frota: derive the correct company
+     // context server-side without adding LUZIANO to this tenant's users.
+     const context=await get("https://api.portalfrete.net.br/v1/tenant/context?tenantId="+
+       encodeURIComponent(tenant),{credentials:"include",headers:{"Accept":"application/json"}});
+     if(!context.ok){refuse();return;}
+     const result=await context.json();
+     session=result?.ok===true?result.session:null;
+     if(session?.tenantMode!==true||session.transportadoraId!==tenant){refuse();return;}
+   }
    // Only admins in a tenant with the Cadastros module enabled
    // can reach self-service user management. The Worker enforces the same rule.
    if(page==="cadastros.html" &&

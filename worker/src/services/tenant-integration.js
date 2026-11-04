@@ -159,10 +159,20 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const permissionModule=role==="PISO"&&module==="piso"?"piso2":module;
  if(!allowed||!canRunGatewayAction(permissionSession,permissionModule,action,payload?.params))
   return errorResponse("Acao nao permitida para este perfil ou transportadora.",403);
- const base=module.match(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/)?.[1].toUpperCase()||"";
+ const freightBase=module.match(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/)?.[1].toUpperCase()||"";
+ const requestedBase=module==="bi" && action==="read" && typeof payload?.params?.baseOperacional==="string"
+   ? payload.params.baseOperacional.toUpperCase() : "";
+ if(requestedBase && (!validFreightBase(requestedBase) ||
+   !modules.includes("fretes-"+requestedBase.toLowerCase())))
+   return errorResponse("Base do BI nao habilitada para esta transportadora.",403);
+ const base=freightBase||requestedBase;
  const config=await readTenantIntegration(env,principal.tenant_id,base);
  if(!config||!config.enabled)return errorResponse("Planilha desta transportadora ainda nao vinculada.",503);
- const requestPayload=payload.params&&typeof payload.params==="object"&&!Array.isArray(payload.params)?payload.params:{};
+ const requestPayload=payload.params&&typeof payload.params==="object"&&!Array.isArray(payload.params)
+   ? {...payload.params}:{};
+ // Metadata used only to select the signed, authorized base in this Worker.
+ // Never let it become an untrusted router parameter in Apps Script.
+ if(module==="bi")delete requestPayload.baseOperacional;
  const result=await callAppsScript({
   ...env,APPS_SCRIPT_URL:config.scriptUrl,PORTAL_KEY:config.gatewayKey
  },{

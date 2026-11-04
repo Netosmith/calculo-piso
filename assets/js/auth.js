@@ -1279,7 +1279,7 @@ function portalNavAllowed(item){
 
 function portalNavHref(item){
   const href=typeof item.href === "function" ? item.href() : item.href;
-  if(typeof href==="string" && /^\.\/[a-z0-9-]+\.html$/.test(href)){
+  if(typeof href==="string" && /^\.\/[a-zA-Z0-9-]+\.html$/.test(href)){
     return window.portalTenantHref?.(href.slice(2)) || href;
   }
   return href;

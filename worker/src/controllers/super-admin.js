@@ -1,6 +1,7 @@
 import { callAppsScript } from "../services/appscript.js";
 import { writeTenantCatalog } from "../services/super-admin-tenant-write.js";
 import { readTenantLogo } from "../services/super-admin-brand.js";
+import {credentialSchemaStatus} from "../services/super-admin-tenant-credentials.js";
 import {readTenantArtThemes} from "../services/tenant-art-themes.js";
 import {adminReadTenantIntegration,adminTestTenantIntegration} from "../services/tenant-integration.js";
 import { projectLegacyUsers } from "../services/legacy-user-projection.js";
@@ -72,7 +73,16 @@ export async function superAdminController(request, env, verifiedStagingSession 
   if (path === "/v1/super-admin/me") {
     const ready=await catalogReady(env);
     const ownerPortalEnabled=env.SUPER_ADMIN_OWNER_PORTAL_WRITES==="enabled";
-    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),userWrite:false}});
+    const credentialsRequested=env.SUPER_ADMIN_CREDENTIAL_WRITES==="enabled";
+    const credentials=credentialsRequested && ready ?
+      await credentialSchemaStatus(env.TENANTS_DB) : {ok:false,missing:[]};
+    const capabilities={tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),userWrite:false};
+    if(credentialsRequested){
+      capabilities.credentialWrite=Boolean(ready&&ownerPortalEnabled&&
+        env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&credentials.ok);
+      if(credentials.missing.length)capabilities.credentialMissing=credentials.missing;
+    }
+    return success({superAdmin:true,usuario:session.usuario,capabilities});
   }
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {

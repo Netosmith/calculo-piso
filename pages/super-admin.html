@@ -48,6 +48,9 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 .art-actions{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-top:16px}
 #artStatus{font-size:12px;color:#abc8e3}
 @media(max-width:780px){main{padding:18px 12px 40px}#galleryPanel,#companyDetail{padding:15px}#companies.company-gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))}.company-card{min-height:219px}.company-card-visual{height:110px}}
+
+/* Nova Frota uses a light-colored logo: keep gallery background contrasting. */
+.company-card-visual:has(img[data-company-logo="nova-frota"]){background:linear-gradient(135deg,#0b2845,#133a58)!important}
 </style>
 </head>
 <body>

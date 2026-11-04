@@ -360,6 +360,97 @@
       font-size:10px;
     }
 
+    /* Tenant KPIs: inherit the original Nova Frota card palette and spacing.
+       No effect on the legacy Home, Solicitações, Filiais, map or PISO mode. */
+    body.pf-tenant-mode .nf-stats > .nf-stat:nth-child(-n+2){
+      min-height:178px;
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+    }
+    body.pf-tenant-mode .nf-stats > .nf-stat:nth-child(-n+2) .nf-stat-head{
+      flex:0 0 auto;
+    }
+    body.pf-tenant-mode .nf-stats > .nf-stat:nth-child(-n+2) .nf-stat-update{
+      margin-top:auto;
+      padding-top:8px;
+      min-width:0;
+      font-size:10.5px;
+      line-height:1.2;
+    }
+    body.pf-tenant-mode .pf-tenant-freight-detail{
+      display:block;
+      min-width:0;
+      margin-top:9px;
+      min-height:18px;
+      padding:0;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      border:0;
+      font-size:11px;
+      font-weight:700;
+    }
+    body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-vehicle{
+      margin-top:8px;
+      min-width:0;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-total{
+      margin:0;
+      font-size:34px;
+      line-height:1;
+      font-weight:800;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-meta{
+      min-width:0;
+      margin-top:6px;
+      color:#d1deee;
+      font-size:10.5px;
+      font-weight:700;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-lines{
+      margin-top:5px;
+      max-height:39px;
+      overflow-y:auto;
+      overflow-x:hidden;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(155,187,222,.55) transparent;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-linha{
+      grid-template-columns:minmax(36px,.9fr) minmax(0,1.1fr) minmax(0,1.15fr);
+      gap:5px;
+      min-height:19px;
+      font-size:10px;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-uf{
+      display:block;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:10px;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-status{
+      gap:4px;
+      min-width:0;
+      font-size:9.5px;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-status i{
+      flex:0 0 5px;
+      width:5px;
+      height:5px;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-status b{
+      margin-left:auto;
+      font-size:10.5px;
+    }
+    @media (max-width:620px){
+      body.pf-tenant-mode .pf-tenant-vehicle-lines{max-height:58px}
+      body.pf-tenant-mode .nf-stats > .nf-stat:nth-child(-n+2){min-height:176px}
+    }
+
     .nf-tools{
       grid-area:tools;
       display:grid;
@@ -1042,7 +1133,7 @@
   <script src="../assets/js/auth.js?v=28"></script>
   <script src="../assets/js/home-solicitacoes-access.js?v=3"></script>
   <script src="../assets/js/home-solicitacoes.js?v=5"></script>
-  <script src="../assets/js/tenant-workspace.js?v=5" defer></script>
+  <script src="../assets/js/tenant-workspace.js?v=6" defer></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>
   <script src="../assets/js/home-map.js?v=5"></script>
   <script>

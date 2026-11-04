@@ -36,49 +36,98 @@
    acc.transito+=Number(row.transito)||0;
    byBase.set(label,acc);
   }
+  // Keep the exact totals consolidated from this company's enabled bases.
+  // Only the presentation differs from Nova Frota's legacy GO/MT Home.
   set("homeFretesAtivos",rows.length);
+  const summaries=[...byBase].map(([base,acc])=>({
+   base,fretes:acc.fretes,porta:acc.porta,transito:acc.transito,
+   total:acc.porta+acc.transito
+  }));
+  const allFreightLabels=summaries.map(x=>x.base+": "+x.fretes);
+  const visibleFreightLabels=allFreightLabels.slice(0,2);
+  if(allFreightLabels.length>2)
+    visibleFreightLabels.push("+"+(allFreightLabels.length-2)+" bases");
+  const failedLabels=[...failedBases].filter(source=>selectedBases.has(source))
+    .map(displayBase);
   const detail=$("homeFretesDetalhe");
   if(detail){
-    detail.replaceChildren();
-    detail.style.cssText="display:flex;flex-wrap:wrap;gap:6px;max-height:156px;overflow:auto;white-space:normal;padding:4px 0";
-    for(const [base,acc] of byBase){
-      const chip=document.createElement("span");
-      chip.textContent=base+": "+acc.fretes;
-      chip.style.cssText="display:inline-block;border-radius:7px;border:1px solid #8fb2cd65;padding:3px 7px;font-size:11px;white-space:nowrap";
-      detail.append(chip);
-    }
-    for(const source of failedBases){
-      if(!selectedBases.has(source))continue;
-      const chip=document.createElement("span");
-      chip.textContent=displayBase(source)+": indisponível";
-      chip.style.cssText="display:inline-block;border:1px solid #e5ab4f;border-radius:7px;padding:3px 7px;font-size:11px;color:#ffda9b";
-      detail.append(chip);
-    }
-    if(!byBase.size&&!failedBases.size)detail.textContent="Nenhuma base habilitada e vinculada a uma regional";
+   // Previous tenant version used bordered chips with inline CSS.
+   // Clear those old styles and use the same compact line as Nova Frota.
+   detail.removeAttribute("style");
+   detail.classList.add("pf-tenant-freight-detail");
+   detail.replaceChildren();
+   detail.textContent=visibleFreightLabels.join(" • ") ||
+     (failedLabels.length?"Bases indisponíveis":"Nenhuma base vinculada");
+   detail.title=[...allFreightLabels,...failedLabels.map(x=>x+": indisponível")]
+     .join(" • ");
   }
-  const totalPorta=[...byBase.values()].reduce((n,x)=>n+x.porta,0);
-  const totalTransito=[...byBase.values()].reduce((n,x)=>n+x.transito,0);
+  const totalPorta=summaries.reduce((n,x)=>n+x.porta,0);
+  const totalTransito=summaries.reduce((n,x)=>n+x.transito,0);
   const vehicle=document.querySelector(".nf-veiculos-resumo");
   if(vehicle){
    vehicle.replaceChildren();
+   vehicle.removeAttribute("style");
+   vehicle.classList.add("pf-tenant-vehicle");
+   vehicle.setAttribute("aria-label","Veículos da transportadora por base");
    const total=document.createElement("strong");
-   total.textContent=(failedBases.size?"TOTAL PARCIAL: ":"TOTAL: ")+(totalPorta+totalTransito)+" | Porta: "+totalPorta+" | Trânsito: "+totalTransito;
-   total.style.cssText="display:block;font-size:12px;margin-bottom:7px;color:#f1f7ff";
+   total.className="nf-stat-value pf-tenant-vehicle-total";
+   total.textContent=String(totalPorta+totalTransito);
    vehicle.append(total);
+
+   const meta=document.createElement("div");
+   meta.className="pf-tenant-vehicle-meta";
+   const allVehicleLabels=summaries.map(x=>x.base+": "+x.total);
+   meta.textContent=allVehicleLabels.slice(0,2).join(" • ")+
+     (allVehicleLabels.length>2?" • +"+(allVehicleLabels.length-2)+" bases":"");
+   if(!summaries.length)meta.textContent="Nenhuma base vinculada";
+   meta.title=allVehicleLabels.join(" • ");
+   vehicle.append(meta);
+
    const lines=document.createElement("div");
-   lines.style.cssText="max-height:156px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:6px;font-size:11px";
-   for(const [base,acc] of byBase){
+   lines.className="pf-tenant-vehicle-lines";
+   lines.setAttribute("aria-label","Detalhamento de Porta e Trânsito por base");
+   for(const {base,porta,transito,total:baseTotal} of summaries){
     const item=document.createElement("div");
-    item.textContent=base+": "+(acc.porta+acc.transito)+" ("+acc.porta+"P / "+acc.transito+"T)";
+    item.className="nf-veiculos-linha";
+    item.title=base+": "+baseTotal+" veículos • Porta "+porta+" • Trânsito "+transito;
+
+    const label=document.createElement("strong");
+    label.className="nf-veiculos-uf";
+    label.textContent=base;
+    label.title=base;
+    item.append(label);
+    for(const [type,name,value] of [["porta","Porta",porta],["transito","Trânsito",transito]]){
+     const status=document.createElement("span");
+     status.className="nf-veiculos-status "+type;
+     const dot=document.createElement("i");
+     dot.setAttribute("aria-hidden","true");
+     const caption=document.createElement("span");
+     caption.textContent=name;
+     const count=document.createElement("b");
+     count.textContent=String(value);
+     status.append(dot,caption,count);
+     item.append(status);
+    }
     lines.append(item);
    }
    vehicle.append(lines);
   }
-  const updateMessage=failedBases.size?failedBases.size+" base(s) sem conexão; indicadores parciais":
-    byBase.size?"Consolidado das bases vinculadas a regionais":"Selecione a base no cadastro de uma regional";
-  set("homeFretesAtualizacao",updateMessage);
-  set("homeVeiculosAtualizacao",failedBases.size?"Verifique a integração das bases indisponíveis":
-    byBase.size?"Porta e trânsito por base operacional vinculada":"Nenhuma base regional vinculada");
+  // This is the local time when the private-sheet summary was consulted,
+  // not a claim about when the spreadsheet itself was last modified.
+  const consultedAt=new Intl.DateTimeFormat("pt-BR",{
+   hour:"2-digit",minute:"2-digit"
+  }).format(new Date());
+  const status=failedLabels.length?
+   failedLabels.length+" base(s) indisponíveis • "+consultedAt:
+   summaries.length?"Consultado às "+consultedAt:"Nenhuma base vinculada";
+  set("homeFretesAtualizacao",status);
+  set("homeVeiculosAtualizacao",status);
+  for(const id of ["homeFretesAtualizacao","homeVeiculosAtualizacao"]){
+   const el=$(id);
+   if(el)el.title=failedLabels.length?
+     "Sem conexão: "+failedLabels.join(", ")+". Dados das demais bases atualizados às "+consultedAt:
+     status;
+  }
  }
 
  const $=id=>document.getElementById(id);

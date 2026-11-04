@@ -37,7 +37,17 @@
   }
   set("homeFretesAtivos",rows.length);
   const detail=$("homeFretesDetalhe");
-  if(detail)detail.textContent=[...byBase].map(([base,acc])=>base+": "+acc.fretes).join(" • ")||"Nenhuma base habilitada e vinculada a uma regional";
+  if(detail){
+    detail.replaceChildren();
+    detail.style.cssText="display:flex;flex-wrap:wrap;gap:6px;max-height:156px;overflow:auto;white-space:normal;padding:4px 0";
+    for(const [base,acc] of byBase){
+      const chip=document.createElement("span");
+      chip.textContent=base+": "+acc.fretes;
+      chip.style.cssText="display:inline-block;border-radius:7px;border:1px solid #8fb2cd65;padding:3px 7px;font-size:11px;white-space:nowrap";
+      detail.append(chip);
+    }
+    if(!byBase.size)detail.textContent="Nenhuma base habilitada e vinculada a uma regional";
+  }
   const totalPorta=[...byBase.values()].reduce((n,x)=>n+x.porta,0);
   const totalTransito=[...byBase.values()].reduce((n,x)=>n+x.transito,0);
   const vehicle=document.querySelector(".nf-veiculos-resumo");
@@ -48,7 +58,7 @@
    total.style.cssText="display:block;font-size:12px;margin-bottom:7px;color:#f1f7ff";
    vehicle.append(total);
    const lines=document.createElement("div");
-   lines.style.cssText="max-height:80px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;font-size:10px";
+   lines.style.cssText="max-height:156px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:6px;font-size:11px";
    for(const [base,acc] of byBase){
     const item=document.createElement("div");
     item.textContent=base+": "+(acc.porta+acc.transito)+" ("+acc.porta+"P / "+acc.transito+"T)";

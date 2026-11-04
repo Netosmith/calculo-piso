@@ -157,7 +157,10 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const allowed=modules.includes(module) ||
   (module==="home" && action==="read" && role!=="PISO" && modules.length>0);
  const permissionSession={perfil:role};
- const permissionModule=role==="PISO"&&module==="piso"?"piso2":module;
+ // Never alias legacy Piso 1 into Piso 2 for a PISO account.
+ if(role==="PISO"&&module!=="piso2")
+  return errorResponse("Perfil PISO autorizado apenas no Calculo de Piso 2.",403);
+ const permissionModule=module;
  if(!allowed||!canRunGatewayAction(permissionSession,permissionModule,action,payload?.params))
   return errorResponse("Acao nao permitida para este perfil ou transportadora.",403);
  const freightBase=module.match(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/)?.[1].toUpperCase()||"";

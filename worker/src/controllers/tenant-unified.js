@@ -111,6 +111,11 @@ export async function tenantApiController(request,env){
   const modules=await enabledModules(env.TENANTS_DB,principal.tenant_id);
   if(path==="/v1/tenant/me"&&request.method==="GET")
    return success({session:tenantPublicSession(principal,modules)});
+  // Except for its own identity and logo, PISO cannot access any tenant
+  // data endpoint other than the narrowly authorized Piso 2 gateway.
+  if(String(principal.role||"").toUpperCase()==="PISO" &&
+     !["/v1/tenant/me","/v1/tenant/logo","/v1/tenant/gateway"].includes(path))
+    return tenantJsonError("Perfil PISO restrito ao Calculo de Piso 2.",403);
   if(path==="/v1/tenant/artes"&&request.method==="GET"){
     return readTenantArtThemes(env,principal.tenant_id);
   }

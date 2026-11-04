@@ -67,7 +67,9 @@ const FRETES2_DELETE_PROFILES = new Set([
 ]);
 // Criar uma Solicitação da Home é diferente de abrir o painel Administrativo.
  // Perfis reconhecidos podem solicitar; os demais recursos seguem restritos.
-const HOME_REQUEST_CREATE_PROFILES = new Set(Object.keys(PROFILE_FEATURES));
+const HOME_REQUEST_CREATE_PROFILES = new Set(
+  Object.keys(PROFILE_FEATURES).filter(profile=>profile!=="PISO")
+);
 
 function normalize(value) {
   return String(value || "").trim().toUpperCase();
@@ -92,6 +94,11 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
 
   const profile = normalize(session?.perfil);
   const resource = normalize(params?.resource);
+
+  // PISO is a separate, fail-closed role: only ANTT Piso 2 is permitted.
+  // Check before collaborative home-map or solicitações exceptions.
+  if(profile==="PISO")
+    return moduleName==="piso2" && ["read","calculate"].includes(actionName);
 
   // O mapa de fretes da Home é uma visão colaborativa global e sanitizada.
   // Todos os perfis autenticados podem consultar, EXCETO o perfil PISO.

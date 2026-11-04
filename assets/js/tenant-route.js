@@ -302,6 +302,24 @@
     css+=selectors.map(selector=>"body.pf-tenant-site "+selector).join(",")+
       "{--pf-art-primary:"+primary+";--pf-art-accent:"+accent+
       ";--pf-art-surface:"+surface+";--pf-art-watermark-opacity:"+watermark+";}";
+    // Same per-tenant canvas geometry is used in generated artwork and preview.
+    const clampInt=(n,fallback,min,max)=>Number.isInteger(n)&&n>=min&&n<=max?n:fallback;
+    const isM3=model==="modelo3";
+    const logoWidth=clampInt(value.logoWidth,isM3?290:305,100,600);
+    const logoHeight=clampInt(value.logoHeight,isM3?96:128,35,220);
+    const logoTop=clampInt(value.logoTop,isM3?4:8,-60,160);
+    const logoX=clampInt(value.logoX,0,-250,250);
+    const logoOpacity=clampInt(value.logoOpacity,100,10,100)/100;
+    const logos=isM3?
+      ['[data-template-preview="3"] img.m3Logo','#nfM3Canvas img.nfM3Logo']:
+      selectors.flatMap(sel=>[sel+" img.multiArtLogo",sel+" img.nfM4Logo"]);
+    css+=logos.map(sel=>"body.pf-tenant-site "+sel+
+      ",body.pf-tenant-site.pf-gnova-art-layout "+sel).join(",")+
+      "{top:"+logoTop+"px!important;left:calc(50% + "+logoX+"px)!important;"+
+      "width:"+logoWidth+"px!important;height:"+logoHeight+"px!important;"+
+      "opacity:"+logoOpacity+"!important;object-fit:contain!important;"+
+      "object-position:center center!important;transform:translateX(-50%)!important;}";
+;
    }
    // O CSS compartilhado é a única fonte para todos os componentes visuais.
    // Aqui injetamos SOMENTE as variáveis de paleta e o posicionamento da marca d'água.

@@ -448,7 +448,7 @@ function canAccessFeature(featureKey){
     // Piso 1 and Piso 2 are independently granted by the Super Admin.
     // Never map piso2 to piso: that exposed both calculators with one checkbox.
     if(!modules.includes(feature))return false;
-    if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/.test(feature)){
+    if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/.test(feature)){
       const role=String(tenantSession.perfil||"").toUpperCase();
       return ["ADMINISTRADOR","COMERCIAL","OPERACIONAL"].includes(role);
     }
@@ -772,7 +772,7 @@ const PORTAL_NAV_ITEMS = [
 // Freight base links live in the overflow menu only for independent tenants.
 // Nova Frota keeps the original global navigation unchanged.
 if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
-  for(const uf of ["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"]){
+  for(const uf of ["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"]){
     const key="fretes-"+uf.toLowerCase();
     PORTAL_NAV_ITEMS.push({
       key,label:"Fretes "+uf,feature:key,

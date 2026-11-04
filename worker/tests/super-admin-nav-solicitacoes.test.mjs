@@ -47,7 +47,8 @@ test("Home Solicitações stays hidden until the signed role and feature agree",
   const context={document:{querySelector(key){return elements[key]||null;},getElementById(id){return id==="homeSolicCard"?button:null;}},window,
    canAccessFeature(key){assert.equal(key,"administrativo");return feature;}};
   runInNewContext(script,context);
-  await Promise.resolve();await Promise.resolve();
+  // Aguardar a resolução da sessão no contexto VM, não apenas duas microtasks.
+  await new Promise(resolve=>setImmediate(resolve));
   assert.equal(wrap.hidden,!expected,JSON.stringify(session));
   assert.equal(classes.has("has-admin-solicitations"),expected,JSON.stringify(session));
   assert.equal(button.disabled,!expected||session?.tenantMode===true,JSON.stringify(session));

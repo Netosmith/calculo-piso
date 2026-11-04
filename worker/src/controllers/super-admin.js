@@ -34,7 +34,20 @@ export async function superAdminController(request, env, verifiedStagingSession 
     && tenantIdForLegacySession(session) === LEGACY_NOVA_FROTA.id;
   if (!isOwner) return errorResponse("Acesso exclusivo do Super Admin.",403);
   const path = new URL(request.url).pathname;
+  // Sessão assinada do único proprietário; origem e cabeçalho personalizado
+  // impedem requisições cross-site de formulário e escritas por outros perfis.
+  const portalOwnerWrite = !verifiedStagingSession &&
+    env.SUPER_ADMIN_OWNER_PORTAL_WRITES === "enabled" &&
+    request.headers.get("Origin") === "https://portalfrete.net.br" &&
+    request.headers.get("X-Portal-Super-Admin-Action") === "owner-panel";
   if (request.method !== "GET") {
+    if (portalOwnerWrite) {
+      if(path==="/v1/super-admin/authorize" && request.method==="POST")
+        return success({elevated:true,tenantWrite:env.SUPER_ADMIN_TENANT_WRITES==="enabled",
+          membershipWrite:env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled",
+          brandWrite:env.SUPER_ADMIN_BRAND_WRITES==="enabled"});
+      return writeTenantCatalog(request, env, ownerId);
+    }
     let oidc=env.SUPER_ADMIN_OIDC;
     if(typeof oidc==="string") {
       try {oidc=JSON.parse(oidc);} catch {oidc=null;}
@@ -58,7 +71,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
   }
   if (path === "/v1/super-admin/me") {
     const ready=await catalogReady(env);
-    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT),userWrite:false}});
+    const ownerPortalEnabled=env.SUPER_ADMIN_OWNER_PORTAL_WRITES==="enabled";
+    return success({superAdmin:true,usuario:session.usuario,capabilities:{tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),userWrite:false}});
   }
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {

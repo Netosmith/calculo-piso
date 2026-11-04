@@ -1,7 +1,7 @@
 import {errorResponse,success} from "../utils/response.js";
 
 const UFS=new Set(["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]);
-const BASES=new Set(["GERAL","GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"]);
+const BASES=new Set(["GERAL","GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"]);
 const storageKey=id=>"tenant/"+id+"/private/regional-ufs-v1.json";
 function regionalKey(value){
  const name=String(value||"").trim().replace(/\s+/g," ").normalize("NFC").toUpperCase();

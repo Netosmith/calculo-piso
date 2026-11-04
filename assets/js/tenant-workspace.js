@@ -12,9 +12,13 @@
   const seen=new Set(),rows=[];
   for(const row of lastFreightSummary.rows||[]){
    if(!row||typeof row!=="object")continue;
+   // IDs belong to each independently managed spreadsheet, not globally.
+   // The same numeric ID may occur in different bases without being a duplicate.
    const id=String(row.id||"").trim();
-   if(id&&seen.has(id))continue;
-   if(id)seen.add(id);
+   const source=String(row.source||"").toUpperCase();
+   const recordKey=source+"::"+id;
+   if(id&&seen.has(recordKey))continue;
+   if(id)seen.add(recordKey);
    rows.push(row);
   }
   const byBase=new Map();

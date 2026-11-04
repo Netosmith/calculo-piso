@@ -645,7 +645,7 @@ const PORTAL_NAV_ITEMS = [
     key:"super-admin",
     label:"Super Admin",
     feature:"super-admin",
-    href:"https://portalfrete-super-admin-staging.luziano-transportes.workers.dev/super-admin",
+    href:"/pages/super-admin.html",
     secondary:true,
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 20 6v6c0 5-3.6 8.4-8 10-4.4-1.6-8-5-8-10V6Z"/><path d="m9 12 2 2 4-4"/></svg>'
   },

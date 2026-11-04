@@ -1,0 +1,35 @@
+name: Validate Official Super Admin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pages/super-admin.html'
+      - 'assets/js/super-admin-real-preview.js'
+      - 'worker/src/controllers/super-admin.js'
+      - 'worker/src/middleware/cors.js'
+      - 'worker/tests/**'
+      - '.github/workflows/super-admin-official-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+      - name: Install test tools
+        working-directory: worker
+        run: npm ci --ignore-scripts
+      - name: Validate all Worker and tenant isolation tests
+        working-directory: worker
+        run: npm test
+      - name: Check real preview JavaScript
+        run: node --check assets/js/super-admin-real-preview.js

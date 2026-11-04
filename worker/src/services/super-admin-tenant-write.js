@@ -73,7 +73,7 @@ export async function writeTenantCatalog(request,env,actor) {
       if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
       return writeTenantLogo(request,env,actor,brand[1]);
     }
-    const baseIntegration=action.match(/^\/([a-z0-9-]+)\/bases\/(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA)\/integracao$/);
+    const baseIntegration=action.match(/^\/([a-z0-9-]+)\/bases\/(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA|AC|AL|AP|AM|CE|DF|ES|MG|PA|PB|PE|PI|RJ|RN|RS|RR|SE)\/integracao$/);
     if(baseIntegration){
       if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
       return adminWriteTenantIntegration(request,env,actor,baseIntegration[1],baseIntegration[2]);

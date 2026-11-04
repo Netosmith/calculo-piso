@@ -15,7 +15,9 @@ test("a single logo-free JPG is used by Nova Frota and tenant art templates",()=
  assert.equal(bytes[0],0xff);
  assert.equal(bytes[1],0xd8);
  for(const path of pages){
-  assert.ok(file(path).includes("../assets/img/divulgacao/hero-global.jpg"),
+  // Both absolute /assets paths and legacy ../assets paths resolve to the
+  // same single repository asset. Art previews now use a canonical URL.
+  assert.ok(file(path).includes("assets/img/divulgacao/hero-global.jpg"),
    "Missing new shared hero: "+path);
   assert.equal(file(path).includes("../assets/img/hero.jpg"),false,
    "No old branded hero may remain in an art template: "+path);

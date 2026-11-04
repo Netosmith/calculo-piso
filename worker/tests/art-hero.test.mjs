@@ -14,6 +14,10 @@ test("Art hero asset exists; only Divulgação Modelo 3 and Fretes use corrected
  assert.match(page,/class="m3HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
  assert.match(fretes,/class="nfM3HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
  assert.match(fretes,/class="nfM4HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
+ const fretes2=load("pages/fretes2.html");
+ assert.match(fretes2,/class="nfM3HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
+ assert.match(fretes2,/class="nfM4HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
+ assert.match(fretes2,/art-hero[.]js[?]v=2/);
  assert.match(page,/art-hero[.]js[?]v=2/);
  assert.match(fretes,/art-hero[.]js[?]v=2/);
  assert.match(css,/\.m3Hero\{[\s\S]*?hero-global[.]jpg[?]v=2/);
@@ -29,9 +33,12 @@ test("Both art exporters wait for real hero loading before html2canvas",()=>{
  const fretes=load("assets/js/fretes.js");
  assert.match(divulgacao,/await window[.]PortalArtHero[.]ready\(preview\)/);
  assert.match(fretes,/await window[.]PortalArtHero[.]ready\(source\)/);
+ const fretes2=load("assets/js/fretes2.js");
+ assert.match(fretes2,/await window[.]PortalArtHero[.]ready\(source\)/);
  assert.match(divulgacao,/A imagem hero não carregou/);
  assert.match(fretes,/A imagem hero não carregou no MOD 03/);
  assert.match(fretes,/A imagem hero não carregou no MOD 04/);
  assert.doesNotThrow(()=>new Script(divulgacao));
  assert.doesNotThrow(()=>new Script(fretes));
+ assert.doesNotThrow(()=>new Script(fretes2));
 });

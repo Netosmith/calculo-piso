@@ -24,7 +24,7 @@ if(!valid(slug)||!valid(id)||slug==="transportadora-teste"||
  const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
  const from=resolve(root,"pages","transportadora-teste");
  const to=resolve(root,"pages",slug);
- const modules=["login","home","fretes","fretes2","fretes-GO","fretes-MT","fretes-SP","fretes-MS","fretes-BA","fretes-PR","fretes-SC","fretes-RO","fretes-TO","fretes-MA","bi","divulgacao","share-clientes",
+ const modules=["login","home","fretes","fretes2","fretes-GO","fretes-MT","fretes-SP","fretes-MS","fretes-BA","fretes-PR","fretes-SC","fretes-RO","fretes-TO","fretes-MA","fretes-AC","fretes-AL","fretes-AP","fretes-AM","fretes-CE","fretes-DF","fretes-ES","fretes-MG","fretes-PA","fretes-PB","fretes-PE","fretes-PI","fretes-RJ","fretes-RN","fretes-RS","fretes-RR","fretes-SE","bi","divulgacao","share-clientes",
   "controle","administrativo","cadastros","estadias","fretes-mercado","embarques",
   "chamados","patrimonio-br","relatorio","custo-filial","custo-frota-pesada",
   "monitoramento","calculo-piso","calculo-antt","calculo-antt2","ordem"];

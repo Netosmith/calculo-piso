@@ -694,6 +694,11 @@
     let canvas;
 
     if (String(templateId) === "3") {
+      // Never export a blank Modelo 3 when the shared hero cannot load.
+      if (!window.PortalArtHero || !await window.PortalArtHero.ready(preview)) {
+        alert("A imagem hero não carregou. Atualize a página e tente salvar novamente.");
+        return;
+      }
       const previewImages = Array.from(preview.querySelectorAll("img"));
       await Promise.all(previewImages.map(waitForImage));
       fitModel3(preview);

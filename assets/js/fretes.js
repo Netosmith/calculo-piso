@@ -1804,6 +1804,8 @@ function buildMessage(row) {
           throw new Error("O MOD 04 precisa de pelo menos 2 fretes selecionados.");
         }
         if (!source) throw new Error("Canvas do MOD 04 não encontrado.");
+        if (!window.PortalArtHero || !await window.PortalArtHero.ready(source))
+          throw new Error("A imagem hero não carregou no MOD 04. Atualize a página e tente novamente.");
 
         renderModel4PreviewNF(selected);
         await Promise.all(Array.from(source.querySelectorAll("img")).map(waitForImage));
@@ -1844,6 +1846,8 @@ function buildMessage(row) {
       if (modelo === 3) {
         const source = document.getElementById("nfM3Canvas");
         if (!source) throw new Error("Canvas do MOD 03 não encontrado.");
+        if (!window.PortalArtHero || !await window.PortalArtHero.ready(source))
+          throw new Error("A imagem hero não carregou no MOD 03. Atualize a página e tente novamente.");
 
         await Promise.all(
           Array.from(source.querySelectorAll("img")).map(waitForImage)

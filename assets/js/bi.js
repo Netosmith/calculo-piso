@@ -339,7 +339,7 @@
     };
   }
 
-  function normalizeCommercialRow(r) {
+  function normalizeCommercialRow(r, origemPadrao = "") {
     const valorEmpresa = num(firstValue(r, [
       "valorEmpresa", "novoValorEmpresa", "valorEmpresaNovo", "vlrEmpresa",
       "freteEmpresa", "valor_empresa", "Valor Empresa"
@@ -390,9 +390,9 @@
       dataEvento,
       dataReferencia: dateKey(dataEvento),
       evento: evento || "REGISTRO",
-      origemDados: upper(firstValue(r, [
-        "origemDados", "base", "planilha", "origemBase"
-      ])),
+      origemDados: window.__PORTAL_TENANT_SESSION?.tenantMode===true && origemPadrao
+        ? upper(origemPadrao)
+        : upper(firstValue(r, ["origemDados", "base", "planilha", "origemBase"])),
       regional: upper(firstValue(r, ["regional", "Regional"])),
       filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
       cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
@@ -1907,28 +1907,49 @@
     return rows;
   }
 
-  async function loadHistoricalRows() {
-    const { inicio, fim } = getPeriod();
-
-    const res = await portalCall("bi", "read", {
-      resource: "daily-history",
-      dataInicio: inicio,
-      dataFim: fim
-    }, "daily-history");
-
-    return extractRows(res).map((r) => normalizeCurrentRow(r));
+  function tenantHistorySources(){
+    const session=window.__PORTAL_TENANT_SESSION;
+    if(session?.tenantMode!==true)return [{base:"",source:""}];
+    const modules=new Set(session.modules||[]);
+    const general=modules.has("fretes")||modules.has("fretes2");
+    return [
+      ...(general?[{base:"",source:""}]:[]),
+      ...TENANT_BASES.filter(uf=>modules.has(tenantModuleForUf(uf)))
+        .map(uf=>({base:uf,source:sourceForUf(uf)}))
+    ];
   }
 
-  async function loadCommercialRows() {
-    const { inicio, fim } = getPeriod();
+  async function loadBiHistory(resource,normalize){
+    const {inicio,fim}=getPeriod();
+    const tenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+    if(!tenant){
+      const res=await portalCall("bi","read",{resource,dataInicio:inicio,dataFim:fim},resource);
+      return extractRows(res).map(row=>normalize(row));
+    }
+    const sources=tenantHistorySources();
+    if(!sources.length)return [];
+    const results=await Promise.allSettled(sources.map(source=>
+      portalCall("bi","read",{
+        resource,dataInicio:inicio,dataFim:fim,
+        ...(source.base?{baseOperacional:source.base}:{})
+      },resource)));
+    const rows=[],errors=[];
+    results.forEach((reply,i)=>{
+      if(reply.status==="fulfilled"){
+        rows.push(...extractRows(reply.value).map(row=>normalize(row,sources[i].source)));
+      }else errors.push(reply.reason);
+    });
+    STATE.partialBaseCount=errors.length;
+    if(errors.length===results.length)throw errors[0];
+    return rows;
+  }
 
-    const res = await portalCall("bi", "read", {
-      resource: "commercial-history",
-      dataInicio: inicio,
-      dataFim: fim
-    }, "commercial-history");
+  async function loadHistoricalRows(){
+    return loadBiHistory("daily-history",(row,source)=>normalizeCurrentRow(row,source));
+  }
 
-    return extractRows(res).map(normalizeCommercialRow);
+  async function loadCommercialRows(){
+    return loadBiHistory("commercial-history",(row,source)=>normalizeCommercialRow(row,source));
   }
 
   async function ensureModeData(mode, force = false, forceCatalog = false) {

@@ -108,7 +108,7 @@
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-27-v12"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-27-v13"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down
@@ -192,6 +192,13 @@
    const session=sessionData?.session;
    if(sessionData?.ok!==true||session?.tenantMode!==true||
       session.transportadoraId!==tenant){refuse();return;}
+   // Only admins in a tenant with the Cadastros module enabled
+   // can reach self-service user management. The Worker enforces the same rule.
+   if(page==="cadastros.html" &&
+     (session.perfil!=="ADMINISTRADOR" ||
+      !Array.isArray(session.modules) || !session.modules.includes("cadastros"))){
+     location.replace("./home.html");return;
+   }
    stage="HTML compartilhado";
    const htmlResponse=await get("/pages/"+page,{credentials:"same-origin"});
    if(!htmlResponse.ok)throw new Error("Página compartilhada retornou HTTP "+htmlResponse.status);

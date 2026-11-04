@@ -1,6 +1,7 @@
 import { callAppsScript } from "../services/appscript.js";
 import { writeTenantCatalog } from "../services/super-admin-tenant-write.js";
 import { readTenantLogo } from "../services/super-admin-brand.js";
+import {readTenantVisual} from "../services/tenant-visual-assets.js";
 import {credentialSchemaStatus} from "../services/super-admin-tenant-credentials.js";
 import {readTenantArtThemes} from "../services/tenant-art-themes.js";
 import {adminReadTenantIntegration,adminTestTenantIntegration} from "../services/tenant-integration.js";
@@ -130,6 +131,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
     if(parts.length!==6)return errorResponse("Rota invalida.",404);
     return adminReadTenantIntegration(env,parts[4]);
   }
+  const visual=path.match(/^\/v1\/super-admin\/transportadoras\/([a-z0-9-]+)\/visual\/(logo-dark|logo-light|hero-art|hero-home)$/);
+  if(visual && request.method==="GET")return readTenantVisual(env,visual[1],visual[2]);
   if(path.startsWith("/v1/super-admin/transportadoras/")&&path.endsWith("/artes")){
   const parts=path.split("/");
   if(parts.length!==6)return errorResponse("Rota invalida.",404);

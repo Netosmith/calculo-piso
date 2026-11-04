@@ -14,6 +14,7 @@ import {regionalUfController} from "../services/tenant-regional-ufs.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 import {tenantUsersController} from "../services/tenant-user-management.js";
 import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
+import {readTenantVisual} from "../services/tenant-visual-assets.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
 
@@ -136,7 +137,8 @@ export async function tenantApiController(request,env){
   // verify the signed legacy owner session on every company-scoped request.
   // Query scope is limited to image/artwork GET requests with no header support.
   const supportHeader=request.headers.get("X-Portal-Support-Tenant");
-  const supportQuery=["/v1/tenant/logo","/v1/tenant/artes"].includes(path) &&
+  const supportQuery=(["/v1/tenant/logo","/v1/tenant/artes"].includes(path) ||
+    /^\/v1\/tenant\/visual\/(?:logo-dark|logo-light|hero-art|hero-home)$/.test(path)) &&
     request.method==="GET" ? new URL(request.url).searchParams.get("supportTenant") : null;
   if(supportHeader && supportQuery && supportHeader!==supportQuery)
     return tenantJsonError("Contexto de transportadora inconsistente.",403);
@@ -158,6 +160,9 @@ export async function tenantApiController(request,env){
   if(String(principal.role||"").toUpperCase()==="PISO" &&
      !["/v1/tenant/me","/v1/tenant/logo","/v1/tenant/gateway"].includes(path))
     return tenantJsonError("Perfil PISO restrito ao Calculo de Piso 2.",403);
+  const visual=path.match(/^\/v1\/tenant\/visual\/(logo-dark|logo-light|hero-art|hero-home)$/);
+  if(visual && request.method==="GET")
+    return readTenantVisual(env,principal.tenant_id,visual[1]);
   if(path==="/v1/tenant/artes"&&request.method==="GET"){
     return readTenantArtThemes(env,principal.tenant_id);
   }

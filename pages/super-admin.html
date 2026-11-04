@@ -50,6 +50,21 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 #artStatus{font-size:12px;color:#abc8e3}
 @media(max-width:780px){main{padding:18px 12px 40px}#galleryPanel,#companyDetail{padding:15px}#companies.company-gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))}.company-card{min-height:219px}.company-card-visual{height:110px}}
 
+/* Separate image uploads with contextual dark/light previews. */
+.brand-asset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px;margin:18px 0}
+.brand-asset-card{display:flex;flex-direction:column;gap:10px;min-width:0;padding:17px;background:#133049;border:1px solid #3b5e7a;border-radius:16px}
+.brand-asset-card h3{font-size:16px;margin:0;color:#e9f5ff}
+.brand-asset-card h3 small{display:block;margin-top:5px;font-size:12px;color:#afc7df;font-weight:500}
+.brand-asset-card label{font-size:12px;color:#d1e3f3;display:grid;gap:8px}
+.brand-asset-card button{margin-top:auto;font-weight:750}
+.brand-asset-card p{margin:0;line-height:1.4}
+.brand-asset-preview{min-height:164px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:12px;border:1px solid #55738d}
+.brand-asset-light{background:linear-gradient(130deg,#fff,#e7edf3)}
+.brand-asset-dark{background:linear-gradient(130deg,#091b32,#183b5b)}
+.brand-asset-photo{background:linear-gradient(120deg,#31516b,#10223b);padding:0}
+.brand-asset-preview img{width:100%;height:164px;object-fit:contain}
+.brand-asset-photo img{object-fit:cover}
+@media(max-width:600px){.brand-asset-grid{grid-template-columns:1fr}}
 /* Nova Frota uses a light-colored logo: keep gallery background contrasting. */
 .company-card-visual:has(img[data-company-logo="nova-frota"]){background:linear-gradient(135deg,#0b2845,#133a58)!important}
 </style>
@@ -66,7 +81,44 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 <div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button></div>
 <div id="modules" class="tab"><p class="muted" id="freightBaseVersion">Painel atualizado · 27 bases estaduais · 04/11/2026</p><p>Escolha <strong>Fretes Operacional (unificado)</strong> para uma planilha única ou libere as bases estaduais abaixo. <strong>Fretes2 (MT interno)</strong> é exclusivo da Nova Frota.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
 <div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Nas novas empresas, o novo cadastro cria usuário ativo e senha. Para usuários antigos, use "Definir senha e ativar". A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo usuário</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
-<div id="brand" class="tab" hidden><h2>Identidade visual</h2><p>Logo privada da transportadora (PNG, JPG ou WebP, até 2 MB).</p><img id="tenantLogo" alt="Logo da transportadora" hidden style="max-width:220px;max-height:130px;object-fit:contain;background:#fff;padding:12px;border-radius:10px"><p id="logoStatus" class="muted">Selecione uma transportadora.</p><div class="row"><label>Selecionar imagem<br><input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label><button id="uploadLogo" type="button" disabled>Salvar logo</button></div><p class="muted">Uma logo oficial por empresa: card do Super Admin, arte de divulgação e imagens de Fretes. A barra superior do portal continua apenas com o nome.</p></div>
+<div id="brand" class="tab" hidden>
+<h2>Identidade visual</h2><p class="muted">Quatro arquivos independentes por transportadora, sem modificar as imagens da Nova Frota.</p>
+<div class="brand-asset-grid">
+<section class="brand-asset-card">
+<h3>Logo 1<small>Escritas escuras • fundos claros</small></h3>
+<div class="brand-asset-preview brand-asset-light"><img id="tenantLogo" alt="Logo 1 da transportadora" hidden></div>
+<p id="logoStatus" class="muted">Selecione uma transportadora.</p>
+<label>Selecionar Logo 1<input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label>
+<button id="uploadLogo" type="button" disabled>Salvar Logo 1</button>
+<p class="muted">Continua sendo a logo oficial das artes claras e dos cards do Super Admin. Arquivo atual preservado.</p>
+</section>
+<section class="brand-asset-card" data-visual-slot="logo-light">
+<h3>Logo 2<small>Escritas claras, para fundos escuros</small></h3>
+<div class="brand-asset-preview brand-asset-dark"><img data-visual-preview="logo-light" alt="Logo 2" hidden></div>
+<p class="muted" data-visual-status="logo-light">Nenhuma imagem carregada.</p>
+<label>Selecionar Logo 2<input data-visual-file="logo-light" type="file" accept="image/png,image/jpeg,image/webp" disabled></label>
+<button type="button" data-visual-save="logo-light" disabled>Salvar Logo 2</button>
+<p class="muted">Usada na Home escura. Se estiver vazia, o portal preserva a logo atual.</p>
+</section>
+<section class="brand-asset-card" data-visual-slot="hero-art">
+<h3>Hero das Artes<small>Caminhão da frota • Divulgação e Fretes</small></h3>
+<div class="brand-asset-preview brand-asset-photo"><img data-visual-preview="hero-art" alt="Hero das Artes" hidden></div>
+<p class="muted" data-visual-status="hero-art">Nenhuma imagem carregada.</p>
+<label>Selecionar Hero das Artes<input data-visual-file="hero-art" type="file" accept="image/png,image/jpeg,image/webp" disabled></label>
+<button type="button" data-visual-save="hero-art" disabled>Salvar Hero das Artes</button>
+<p class="muted">Aplica-se aos modelos 3 e 4A/4B/4C com o mesmo degradê já aprovado.</p>
+</section>
+<section class="brand-asset-card" data-visual-slot="hero-home">
+<h3>Hero da Home<small>Imagem de fundo da página inicial</small></h3>
+<div class="brand-asset-preview brand-asset-photo"><img data-visual-preview="hero-home" alt="Hero da Home" hidden></div>
+<p class="muted" data-visual-status="hero-home">Nenhuma imagem carregada.</p>
+<label>Selecionar Hero da Home<input data-visual-file="hero-home" type="file" accept="image/png,image/jpeg,image/webp" disabled></label>
+<button type="button" data-visual-save="hero-home" disabled>Salvar Hero da Home</button>
+<p class="muted">A Home mantém a sobreposição escura para garantir a leitura dos indicadores.</p>
+</section>
+</div>
+<p class="muted">PNG, JPG e WebP. Limite de 2 MB para logos e 6 MB para imagens hero. Cada imagem pode ser substituída individualmente.</p>
+</div>
 <div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. As cores e a marca d’água são independentes por empresa e modelo.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
 </section></div></div>
 </main>
@@ -181,6 +233,7 @@ async function loadBrand(){
  image.hidden=true;image.removeAttribute('src');
  if(logoObjectUrl){URL.revokeObjectURL(logoObjectUrl);logoObjectUrl=null;}
  $('brandFile').value='';
+ void loadOtherVisuals(tenant,serial);
  if(!tenant){$('logoStatus').textContent='Selecione uma transportadora.';return;}
  if(tenant==='nova-frota'){$('logoStatus').textContent='A identidade da Nova Frota permanece no sistema legado.';return;}
  $('logoStatus').textContent='Consultando logo privada...';
@@ -214,6 +267,70 @@ $('uploadLogo').onclick=async()=>{
  }catch(error){writeError(error);}
  finally{render();}
 };
+const VISUAL_SLOTS=["logo-light","hero-art","hero-home"];
+const visualObjectUrls=new Map();
+function setVisualPreview(slot,blob,label){
+ const img=document.querySelector('[data-visual-preview="'+slot+'"]');
+ const status=document.querySelector('[data-visual-status="'+slot+'"]');
+ if(!img||!status)return;
+ const old=visualObjectUrls.get(slot);if(old)URL.revokeObjectURL(old);
+ visualObjectUrls.delete(slot);img.hidden=true;img.removeAttribute("src");
+ if(blob){
+   const url=URL.createObjectURL(blob);visualObjectUrls.set(slot,url);
+   img.src=url;img.hidden=false;
+ }
+ status.textContent=label;
+}
+async function loadOtherVisuals(tenant,serial){
+ for(const slot of VISUAL_SLOTS){
+  if(!tenant||tenant==="nova-frota"){
+    setVisualPreview(slot,null,"A Nova Frota mantém sua identidade original.");continue;
+  }
+  setVisualPreview(slot,null,"Carregando imagem...");
+  try{
+   const result=await fetch(API_BASE+"/v1/super-admin/transportadoras/"+
+     encodeURIComponent(tenant)+"/visual/"+slot,{credentials:"include",cache:"no-store"});
+   if(serial!==logoRequest||selected?.id!==tenant)return;
+   if(result.status===404){
+     setVisualPreview(slot,null,"Sem imagem personalizada. O portal usa o padrão.");continue;
+   }
+   if(!result.ok)throw Error("Falha ao consultar imagem (HTTP "+result.status+").");
+   const blob=await result.blob();
+   if(serial!==logoRequest||selected?.id!==tenant)return;
+   if(!["image/png","image/jpeg","image/webp"].includes(blob.type))
+     throw Error("Formato não reconhecido.");
+   setVisualPreview(slot,blob,"Imagem salva na transportadora.");
+  }catch(error){
+   if(serial===logoRequest&&selected?.id===tenant)
+     setVisualPreview(slot,null,error.message);
+  }
+ }
+}
+for(const slot of VISUAL_SLOTS){
+ const input=document.querySelector('[data-visual-file="'+slot+'"]');
+ const button=document.querySelector('[data-visual-save="'+slot+'"]');
+ input.addEventListener("change",()=>{
+  const file=input.files?.[0];
+  if(file)setVisualPreview(slot,file,"Prévia local. Clique em Salvar para publicar.");
+ });
+ button.addEventListener("click",async()=>{
+  if(!canEditBrand()||!selected?.id)return;
+  const file=input.files?.[0],tenant=selected.id;
+  const limit=slot.startsWith("hero")?6291456:2097152;
+  if(!file||!["image/png","image/jpeg","image/webp"].includes(file.type)||
+     !file.size||file.size>limit){
+    notice("Selecione uma imagem PNG/JPG/WebP válida. Limite: "+(limit/1048576)+" MB.");return;
+  }
+  button.disabled=true;
+  try{
+   await writeRequest("/v1/super-admin/transportadoras/"+
+     encodeURIComponent(tenant)+"/visual/"+slot,"PUT",file,file.type);
+   input.value="";await loadBrand();await loadAudit();
+   notice("Imagem "+slot+" salva exclusivamente para "+selected.name+".");
+  }catch(error){writeError(error);}
+  finally{render();}
+ });
+}
 function renderCompanies(){
  const root=$('companies');root.replaceChildren();
  if(!companies.length){root.className='empty';root.textContent='Nenhuma transportadora cadastrada.';return}
@@ -233,6 +350,9 @@ function render(){
  $('addMembership').disabled=!canEditMembership()||!credentialReady;
  $('brandFile').disabled=!canEditBrand();
  $('uploadLogo').disabled=!canEditBrand();
+ document.querySelectorAll('[data-visual-file],[data-visual-save]').forEach(control=>{
+   control.disabled=!canEditBrand();
+ });
  renderModules();renderUsers();$('integrationSave').disabled=!canEdit();
 }
 async function writeRequest(path,method,data,contentType='application/json'){

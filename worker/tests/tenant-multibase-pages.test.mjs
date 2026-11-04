@@ -75,8 +75,13 @@ test("Home only counts base modules assigned to a regional",()=>{
  assert.match(homeMap,/dispatchSummary\(STATE\.rows\.map/);
  assert.match(workspace,/selectedBases/);
  assert.match(workspace,/activeFreightModules/);
- assert.match(workspace,/totalPorta/);
- assert.match(workspace,/totalTransito/);
+ // The tenant vehicle KPI has base totals and per-base Porta/Trânsito;
+ // there is no longer an oversized consolidated number.
+ assert.match(workspace,/total:acc\.porta\+acc\.transito/);
+ assert.match(workspace,/pf-tenant-base-total/);
+ assert.match(workspace,/pf-tenant-vehicle-divider/);
+ assert.match(workspace,/\["porta","Porta",porta\]/);
+ assert.match(workspace,/\["transito","Trânsito",transito\]/);
  assert.match(homeMap,/failedBaseSources/);
  assert.match(workspace,/failedBases/);
  // Partial data is now flagged in the short KPI footer, not in the main number.

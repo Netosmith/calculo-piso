@@ -1778,6 +1778,43 @@ function buildMessage(row) {
     });
   }
 
+  // The clipboard and JPG must use the very same rendered tenant logo.
+  // html2canvas sometimes expands an absolutely-positioned <img> when
+  // cloning a scaled artwork. Hide it in the clone and composite it once.
+  function prepareLogoCanvasExport(source){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)
+      return {onclone:()=>{},draw:()=>{},finish:()=>{}};
+    const img=source.querySelector(".nfM3Logo,.nfM4Logo,.multiArtLogo");
+    const hero=img?.closest(".nfM3Hero,.nfM4Hero,.multiArtHero");
+    if(!img||!hero||!img.complete||!img.naturalWidth)
+      return {onclone:()=>{},draw:()=>{},finish:()=>{}};
+    const root=source.getBoundingClientRect(),rect=img.getBoundingClientRect();
+    const clip=hero.getBoundingClientRect(),alpha=Number(getComputedStyle(img).opacity)||1;
+    source.setAttribute("data-pf-logo-export","true");
+    return {
+      onclone(doc){
+        const copy=doc.querySelector('[data-pf-logo-export="true"] .nfM3Logo,'+
+          '[data-pf-logo-export="true"] .nfM4Logo,'+
+          '[data-pf-logo-export="true"] .multiArtLogo');
+        if(copy)copy.style.setProperty("visibility","hidden","important");
+      },
+      draw(canvas){
+        if(!root.width||!root.height)return;
+        const ctx=canvas.getContext("2d");if(!ctx)return;
+        const sx=canvas.width/root.width,sy=canvas.height/root.height;
+        const x=(rect.left-root.left)*sx,y=(rect.top-root.top)*sy;
+        const bw=rect.width*sx,bh=rect.height*sy;
+        const ratio=Math.min(bw/img.naturalWidth,bh/img.naturalHeight);
+        const w=img.naturalWidth*ratio,h=img.naturalHeight*ratio;
+        ctx.save();ctx.beginPath();
+        ctx.rect((clip.left-root.left)*sx,(clip.top-root.top)*sy,
+          clip.width*sx,clip.height*sy);ctx.clip();ctx.globalAlpha=alpha;
+        ctx.drawImage(img,x+(bw-w)/2,y+(bh-h)/2,w,h);ctx.restore();
+      },
+      finish(){source.removeAttribute("data-pf-logo-export");}
+    };
+  }
+
   async function canvasFromPreview(row) {
     if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
       await window.portalTenantArtThemeReady;
@@ -1823,8 +1860,9 @@ function buildMessage(row) {
         card.style.overflow = "visible";
         source.style.transform = "none";
 
+        const logoExport=prepareLogoCanvasExport(source);
         try {
-          return await html2canvasLib(source, {
+          const canvas=await html2canvasLib(source, {
             backgroundColor: getComputedStyle(source).backgroundColor,
             scale: 1,
             width: 1080,
@@ -1832,9 +1870,13 @@ function buildMessage(row) {
             useCORS: true,
             allowTaint: true,
             logging: false,
-            imageTimeout: 8000
+            imageTimeout: 8000,
+            onclone:logoExport.onclone
           });
+          logoExport.draw(canvas);
+          return canvas;
         } finally {
+          logoExport.finish();
           if (oldCardStyle == null) card.removeAttribute("style");
           else card.setAttribute("style", oldCardStyle);
 
@@ -1868,8 +1910,9 @@ function buildMessage(row) {
 
         source.style.transform = "none";
 
+        const logoExport=prepareLogoCanvasExport(source);
         try {
-          return await html2canvasLib(source, {
+          const canvas=await html2canvasLib(source, {
             backgroundColor: getComputedStyle(source).backgroundColor,
             scale: 1,
             width: 1080,
@@ -1877,9 +1920,13 @@ function buildMessage(row) {
             useCORS: true,
             allowTaint: true,
             logging: false,
-            imageTimeout: 8000
+            imageTimeout: 8000,
+            onclone:logoExport.onclone
           });
+          logoExport.draw(canvas);
+          return canvas;
         } finally {
+          logoExport.finish();
           if (oldCardStyle == null) card.removeAttribute("style");
           else card.setAttribute("style", oldCardStyle);
 

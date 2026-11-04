@@ -21,7 +21,10 @@ test("Production deploy configures owner as a Worker secret; no browser-side sho
   const workflow=file(".github/workflows/deploy-portal-hotfix.yml");
   const panel=file("pages/super-admin.html");
   const controller=file("worker/src/controllers/super-admin.js");
-  assert.match(workflow,/wrangler secret put SUPER_ADMIN_USER/);
+  // The owner identity is a pre-provisioned Cloudflare secret.
+  // Redeploying it every time can race a newly staged Worker version.
+  assert.doesNotMatch(workflow,/wrangler secret put SUPER_ADMIN_USER/);
+  assert.match(workflow,/SUPER_ADMIN_USER already exists as a Worker secret/);
   assert.match(controller,/String\(env\.SUPER_ADMIN_USER \|\| ""\)/);
   assert.match(controller,/tenantIdForLegacySession\(session\) === LEGACY_NOVA_FROTA\.id/);
   assert.match(panel,/auth\?\.superAdmin!==true/);

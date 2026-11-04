@@ -18,7 +18,7 @@ test("Super Admin uses the portal global navigation",()=>{
 test("Solicitações: all signed Nova Frota profiles, any tenant profile only with enabled Administrativo",async()=>{
  const home=read("pages/home.html"),script=read("assets/js/home-solicitacoes-access.js");
  assert.match(home,/<div class="nf-solic-wrap" hidden>/);
- assert.match(home,/home-solicitacoes-access[.]js[?]v=2/);
+ assert.match(home,/home-solicitacoes-access[.]js[?]v=3/);
  assert.doesNotThrow(()=>new Script(script));
  const roles=["ADMINISTRADOR","GOADM","OPERACIONAL","COMERCIAL","PISO","MT","PR","GO"];
  const cases=[

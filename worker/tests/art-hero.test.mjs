@@ -25,7 +25,7 @@ test("Art hero asset exists; only Divulgação Modelo 3 and Fretes use corrected
  for(const [source,key] of [[css,"m3Hero"],[fretes,"nfM3Hero"],[fretes,"nfM4Hero"],[fretes2,"nfM3Hero"],[fretes2,"nfM4Hero"]]){
   const rule=source.match(new RegExp("\\."+key+"\\{([^}]*)\\}"));
   assert.ok(rule,key+" must have a hero rule");
-  assert.doesNotMatch(rule[1],/background[^;]*url\\(/,key+" must not duplicate hero image in CSS");
+  assert.doesNotMatch(rule[1],/background[^;]*url\(/,key+" must not duplicate hero image in CSS");
  }
  assert.match(page,/divulgacao[.]css[?]v=14/);
  assert.match(load("pages/super-admin.html"),/divulgacao[.]css[?]v=14/);
@@ -51,8 +51,8 @@ test("Both art exporters wait for real hero loading before html2canvas",()=>{
 
 test("Modelo 3 and both Fretes bases match the subdued 4A/4B/4C hero treatment",()=>{
  const css=load("assets/css/divulgacao.css");
- const multiImage=css.match(/\\.multiArtHeroImg\\{([^}]*)\\}/);
- const multiWash=css.match(/\\.multiArtHeroWash\\{([^}]*)\\}/);
+ const multiImage=css.match(/\.multiArtHeroImg\{([^}]*)\}/);
+ const multiWash=css.match(/\.multiArtHeroWash\{([^}]*)\}/);
  assert.ok(multiImage?.[1]?.includes("opacity:.72"));
  const correctWash=multiWash?.[1]?.match(/background:([^;}]*)/)?.[1];
  assert.ok(correctWash?.includes("rgba(255,255,255,.98)"));

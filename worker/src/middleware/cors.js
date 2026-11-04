@@ -8,7 +8,7 @@ export function corsHeaders(request) {
     "Access-Control-Allow-Origin": origin || "https://portalfrete.net.br",
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Portal-Super-Admin-Action",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Portal-Super-Admin-Action, X-Portal-Support-Tenant",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };

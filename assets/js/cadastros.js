@@ -86,6 +86,18 @@
       hint:"UF territorial da regional; não altera a base responsável pelo frete."
     });
   }
+  function configureTenantUserFields(){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+    // Tenant logins are D1 identities, never Apps Script users.
+    const cfg=CONFIG.usuarios;
+    cfg.columns=[["Usuario","Usuário"],["Perfil","Perfil"],["Ativo","Situação"],["Acesso","Acesso ao portal"]];
+    cfg.fields=[
+      {key:"Usuario",label:"Usuário",required:true,hint:"Identificador de login. Não pode ser alterado após cadastrar."},
+      {key:"Senha",label:"Senha de acesso",type:"password",requiredOnCreate:true,hint:"Mínimo 12 caracteres. Na edição, deixe vazio para manter a senha."},
+      {key:"Perfil",label:"Perfil",type:"select",options:["ADMINISTRADOR","OPERACIONAL","COMERCIAL","PISO","GOADM","MT","PR"],required:true},
+      {key:"Ativo",label:"Ativo",type:"select",options:["SIM","NÃO"],required:true}
+    ];
+  }
   async function loadRegionalUfCatalog(){
     if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
     const response=await window.PortalAPI.tenantRequest("/regionais/ufs");
@@ -142,6 +154,37 @@
   async function api(operation,payload={},resource=STATE.tab){
     if(!window.PortalAPI&&typeof ensurePortalApi==="function")await ensurePortalApi();
     if(!window.PortalAPI)throw new Error("API segura do Portal indisponível.");
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true&&resource==="usuarios"){
+      // Real login identities live in tenant-scoped D1. The legacy
+      // cadastro gateway is not an identity provider for tenants.
+      const session=window.__PORTAL_TENANT_SESSION;
+      if(session.perfil!=="ADMINISTRADOR")throw new Error("Somente ADMINISTRADOR pode gerenciar usuários.");
+      const base="/usuarios";
+      if(operation==="list"){
+        const result=await window.PortalAPI.tenantRequest(base);
+        return {ok:true,data:Array.isArray(result.usuarios)?result.usuarios:[]};
+      }
+      const usuario=upper(payload.Usuario||payload.usuarioOriginal||payload.usuario);
+      if(operation==="add"){
+        const result=await window.PortalAPI.tenantRequest(base,{
+          method:"POST",body:{usuario,perfil:payload.Perfil,senha:payload.Senha,ativo:upper(payload.Ativo)==="SIM"}
+        });
+        return {ok:true,data:result.usuario||{}};
+      }
+      if(operation==="update"){
+        const body={perfil:payload.Perfil,ativo:upper(payload.Ativo)==="SIM"};
+        if(payload.Senha)body.senha=payload.Senha;
+        const result=await window.PortalAPI.tenantRequest(base+"/"+encodeURIComponent(upper(payload.usuarioOriginal)),{method:"PATCH",body});
+        return {ok:true,data:result.usuario||{}};
+      }
+      if(operation==="toggle"){
+        const result=await window.PortalAPI.tenantRequest(base+"/"+encodeURIComponent(usuario),{
+          method:"PATCH",body:{ativo:upper(payload.ativo)==="SIM"}
+        });
+        return {ok:true,data:result.usuario||{}};
+      }
+      throw new Error("Operação de usuários não permitida.");
+    }
     if(window.__PORTAL_TENANT_SESSION?.tenantMode===true&&resource==="clientes"){
       if(operation!=="list")throw new Error("O catálogo global de clientes é administrado centralmente.");
       const catalog=await window.PortalAPI.tenantRequest("/catalogo/clientes");
@@ -384,6 +427,10 @@
     STATE.editing=row||null;const cfg=configAtual();
     $("#modalTitle").textContent=(row?"Editar ":"Novo ")+cfg.title;
     const fields=$("#formFields");fields.innerHTML="";cfg.fields.forEach(field=>fields.appendChild(createInput(field,row?row[field.key]:"")));
+    if(row && STATE.tab==="usuarios" && window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+      const userId=fields.querySelector("#fld_Usuario");
+      if(userId)userId.readOnly=true;
+    }
     setModalMessage();
     $("#cadModal").classList.add("show");$("#cadModal").setAttribute("aria-hidden","false");
     if(STATE.tab==="clientes"){
@@ -625,6 +672,7 @@
     if(session.tenantMode!==true)await loadMaintenanceStatus();
     else{const control=$("#maintenanceControl");if(control)control.hidden=true;}
     configureTenantRegionalFields();
+    configureTenantUserFields();
     applySharedClientsUI();
     await loadCurrent();
   }

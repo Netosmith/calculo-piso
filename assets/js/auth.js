@@ -442,7 +442,7 @@ function canAccessFeature(featureKey){
     if(!/^\/pages\/[a-z][a-z0-9-]{2,63}\/[a-z0-9-]+\.html$/.test(currentPath))return false;
     if(window.__PORTAL_TENANT_EXPECTED &&
        tenantSession.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return false;
-    if(feature==="super-admin")return false;
+    if(feature==="super-admin"||feature==="fretes2")return false;
     if(feature==="home")return true;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
     // Piso 1 and Piso 2 are independently granted by the Super Admin.

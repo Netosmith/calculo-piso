@@ -972,7 +972,7 @@
           <p>Abra e acompanhe solicitações de suporte do Portal.</p>
           <span class="nf-tool-arrow">→</span>
         </a>
-        <a class="nf-tool purple" id="superAdminHomeCard" href="https://portalfrete-super-admin-staging.luziano-transportes.workers.dev/super-admin" hidden style="display:none" aria-label="Painel Super Admin">
+        <a class="nf-tool purple" id="superAdminHomeCard" href="./super-admin.html" hidden style="display:none" aria-label="Painel Super Admin">
           <span class="nf-tool-icon">🛡️</span><h2>Super Admin</h2><p>Transportadoras, módulos e visão global.</p><span class="nf-tool-arrow">→</span>
         </a>
         <a class="nf-tool green" data-feature="cadastros" href="./cadastros.html">
@@ -1456,15 +1456,22 @@
     const card=document.getElementById("superAdminHomeCard");
     if(!card)return;
     try {
-      if(window.portalAuthReady)await window.portalAuthReady;
+      // A autorização global só é determinada pela API, nunca pelo perfil
+      // ADMINISTRADOR local (administradores das transportadoras não têm acesso).
       const session=window.portalAuthReady?await window.portalAuthReady:null;
-      if(session?.tenantMode===true)return;
-      if(session?.perfil==="ADMINISTRADOR"){
-        // The destination is itself protected by the owner's Cloudflare Access policy.
+      if(!session || session.tenantMode===true || session.transportadoraId!=="nova-frota")return;
+      const response=await fetch("https://api.portalfrete.net.br/v1/super-admin/me",{
+        method:"GET",credentials:"include",cache:"no-store",
+        headers:{"Accept":"application/json"}
+      });
+      if(!response.ok)return;
+      const identity=await response.json();
+      if(identity?.superAdmin===true &&
+         String(identity.usuario||"").trim().toUpperCase()===String(session.usuario||"").trim().toUpperCase()){
         card.hidden=false;
         card.style.removeProperty("display");
       }
-    }catch(_){ /* Nunca exibir sem autorização do servidor. */ }
+    }catch(_){ /* Negar por padrão se a sessão ou a API falhar. */ }
   })();
   </script>
   <script src="../assets/js/nova-frota-ia.js?v=4" defer></script>

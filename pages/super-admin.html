@@ -293,7 +293,7 @@ document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener(
 $('back').onclick=()=>location.assign('home.html');
 (async()=>{
  try{
- // Endpoint exclusivo ainda não implementado. Falha fechada: sem autorização global, não exibir o painel.
+ // A página só abre quando a API valida a sessão assinada do proprietário.
  const auth=await request('/v1/super-admin/me');
  if(auth?.superAdmin!==true)throw new Error('Sua sessão não possui autorização de Super Admin.');
  const capabilities=auth.capabilities||{};

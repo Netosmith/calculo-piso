@@ -15,7 +15,7 @@ test("model generator is dry-run safe and creates no private data",()=>{
  const response=execFileSync(process.execPath,[generator,slug,tenantId,"--dry-run"],{
   cwd:root,encoding:"utf8"
  });
- assert.match(response,/Preparadas 33 páginas/);
+ assert.match(response,/Preparadas 50 páginas/);
  assert.equal(existsSync(path),false);
  const source=readFileSync(generator,"utf8");
  assert.ok(source.includes('data-tenant-id="teste-01"'));

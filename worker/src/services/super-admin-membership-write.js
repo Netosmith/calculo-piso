@@ -1,4 +1,6 @@
 import {errorResponse,success} from "../utils/response.js";
+import {makePasswordRecord,validTenantPassword} from "./tenant-auth.js";
+import {credentialSchemaStatus} from "./super-admin-tenant-credentials.js";
 
 const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"]);
 const USER_ID=/^[A-Z0-9][A-Z0-9._-]{1,79}$/;
@@ -35,20 +37,41 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
     if(!tenant)return errorResponse("Transportadora nao encontrada.",404);
 
     if(request.method==="POST" && userId===null) {
-      const body=await readBody(request,["usuario","perfil"]);
+      const body=await readBody(request,["usuario","perfil","senha"]);
       const id=normalizeUser(body.usuario);
       if(!id || !ROLES.has(body.perfil))return errorResponse("Usuario ou perfil invalido.",400);
+      const complete=Object.hasOwn(body,"senha");
+      if(complete && (!validTenantPassword(body.senha) ||
+          env.SUPER_ADMIN_CREDENTIAL_WRITES!=="enabled"))
+        return errorResponse("Cadastro completo requer senha valida de 12 a 128 caracteres e credenciais habilitadas.",400);
+      if(complete){
+        const row=await db.prepare("SELECT status FROM portal_tenants WHERE id=?").bind(tenantId).first();
+        if(row?.status!=="active")
+          return errorResponse("Ative a transportadora antes de liberar novos logins.",409);
+        const schema=await credentialSchemaStatus(db);
+        if(!schema.ok)return errorResponse("Estrutura D1 de credenciais incompleta ("+schema.missing.join(", ")+").",503);
+      }
       const qty=await db.prepare("SELECT COUNT(*) AS n FROM portal_tenant_users WHERE tenant_id=?").bind(tenantId).first();
       if(Number(qty?.n)>=500)return errorResponse("Limite de vinculos atingido.",409);
       const found=await db.prepare("SELECT user_id FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")
         .bind(tenantId,id).first();
       if(found)return errorResponse("Vinculo ja cadastrado.",409);
+      // New complete onboarding is atomic: never leave an active account
+      // without a credential if the password hash or D1 operation fails.
+      const record=complete?await makePasswordRecord(body.senha):null;
       await db.batch([
-        db.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES (?,?,?,0)")
-          .bind(tenantId,id,body.perfil),
-        await audit(db,actor,tenantId,"membership.create",{usuario:id,perfil:body.perfil,ativo:false})
+        db.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES (?,?,?,?)")
+          .bind(tenantId,id,body.perfil,complete?1:0),
+        ...(complete?[db.prepare(`INSERT INTO portal_tenant_credentials
+          (tenant_id,user_id,password_salt,password_hash,iterations,version)
+          VALUES (?,?,?,?,?,?)`).bind(tenantId,id,record.password_salt,record.password_hash,
+             record.iterations,record.version)]:[]),
+        await audit(db,actor,tenantId,complete?"user.onboard":"membership.create",
+          {usuario:id,perfil:body.perfil,ativo:complete,senhaConfigurada:complete})
       ]);
-      return success({tenantId,usuario:{id,perfil:body.perfil,ativo:false},aviso:"Vinculo cadastrado, sem criar credenciais ou liberar login."},201);
+      return success({tenantId,usuario:{id,perfil:body.perfil,ativo:complete,
+        ...(complete?{senhaConfigurada:true}:{})},
+        aviso:complete?"Usuario ativo com senha configurada. Login liberado.":"Vinculo cadastrado sem credenciais ou login."},201);
     }
 
     if(request.method==="PATCH" && userId!==null) {

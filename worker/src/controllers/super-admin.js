@@ -210,16 +210,19 @@ export async function superAdminController(request, env, verifiedStagingSession 
       ).bind(tenantId).first();
       if (!company && tenantId !== LEGACY_NOVA_FROTA.id) return errorResponse("Transportadora não encontrada.",404);
       const result = await env.TENANTS_DB.prepare(
-        "SELECT user_id, role, active, created_at FROM portal_tenant_users WHERE tenant_id=? ORDER BY user_id LIMIT 500"
+        `SELECT u.user_id,u.role,u.active,u.created_at,
+           EXISTS(SELECT 1 FROM portal_tenant_credentials c
+             WHERE c.tenant_id=u.tenant_id AND c.user_id=u.user_id) AS password_set
+           FROM portal_tenant_users u WHERE u.tenant_id=? ORDER BY u.user_id LIMIT 500`
       ).bind(tenantId).all();
       return success({
         tenantId,
         usuarios:(result?.results || []).map(u=>({
-          id:u.user_id,perfil:u.role,ativo:u.active===1,dataVinculo:u.created_at
+          id:u.user_id,perfil:u.role,ativo:u.active===1,senhaConfigurada:Boolean(u.password_set),
+          acessoPronto:u.active===1&&Boolean(u.password_set),dataVinculo:u.created_at
         })),
-        origem:"vinculos-d1",
-        completo:false,
-        aviso:"Lista de vínculos do catálogo. Usuários legados ainda não foram sincronizados; resultado vazio não significa ausência de usuários."
+        origem:"contas-d1",completo:true,
+        aviso:"Login requer usuario ativo, senha cadastrada e transportadora ativa."
       });
     } catch (error) {
       console.error("[SUPER ADMIN] Consulta de usuários indisponível",String(error?.message || error));

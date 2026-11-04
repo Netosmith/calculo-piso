@@ -32,9 +32,13 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
   let payload;
   try{payload=JSON.parse(raw);}catch{return errorResponse("JSON invalido.",400);}
   if(!payload || Array.isArray(payload) || typeof payload!=="object" ||
-      Object.keys(payload).length!==1 || !Object.hasOwn(payload,"senha") ||
+      Object.keys(payload).some(key=>!["senha","ativar"].includes(key)) ||
+      !Object.hasOwn(payload,"senha") || (Object.hasOwn(payload,"ativar")&&payload.ativar!==true) ||
       !validTenantPassword(payload.senha))
     return errorResponse("Senha deve ter de 12 a 128 caracteres validos.",400);
+  const activate=payload.ativar===true;
+  if(activate&&env.SUPER_ADMIN_MEMBERSHIP_WRITES!=="enabled")
+    return errorResponse("Ativacao de usuario nao habilitada.",405);
   const db=env.TENANTS_DB;
   const member=await db.prepare(`SELECT u.user_id FROM portal_tenant_users u
     JOIN portal_tenants t ON t.id=u.tenant_id
@@ -48,6 +52,8 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
   const record=await makePasswordRecord(payload.senha);
   stage="gravacao-d1";
   await db.batch([
+   ...(activate?[db.prepare("UPDATE portal_tenant_users SET active=1 WHERE tenant_id=? AND user_id=?")
+     .bind(tenantId,userId)]:[]),
    db.prepare(`INSERT INTO portal_tenant_credentials
     (tenant_id,user_id,password_salt,password_hash,iterations,version)
     VALUES (?,?,?,?,?,?)
@@ -57,10 +63,10 @@ export async function setTenantCredentials(request,env,actor,tenantId,userId){
     .bind(tenantId,userId,record.password_salt,record.password_hash,record.iterations,record.version),
    db.prepare("DELETE FROM portal_tenant_sessions WHERE tenant_id=? AND user_id=?").bind(tenantId,userId),
    db.prepare("INSERT INTO portal_tenant_audit(id,actor_id,tenant_id,action,detail_json) VALUES (?,?,?,?,?)")
-    .bind(crypto.randomUUID(),actor,tenantId,"credentials.reset",JSON.stringify({usuario:userId}))
+    .bind(crypto.randomUUID(),actor,tenantId,"credentials.reset",JSON.stringify({usuario:userId,ativado:activate}))
   ]);
-  return success({tenantId,userId,senhaConfigurada:true,
-    aviso:"Senha atualizada. Sessoes anteriores encerradas; senha nao retornada."});
+  return success({tenantId,userId,senhaConfigurada:true,ativo:activate?true:undefined,
+    aviso:activate?"Usuario ativado com senha configurada.":"Senha atualizada. Sessoes anteriores encerradas."});
  }catch(error){
   // Do not log SQL strings, requests, passwords, salts or hashes.
   const cryptoCode=stage==="hash" && typeof error?.cryptoStage==="string"?

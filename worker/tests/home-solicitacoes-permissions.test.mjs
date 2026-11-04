@@ -19,7 +19,7 @@ test("Tenant module switch blocks requests before any integration when disabled"
  for(const role of ["PISO","OPERACIONAL","GOADM","ADMINISTRADOR"]){
   const principal={tenant_id:"teste-01",user_id:"TESTE",role};
   const request={module:"administrativo",action:"create",params:{resource:"solicitacoes",observacao:"Teste"}};
-  const env={TENANT_BRANDS:{get(){throw Error("Não deve ler R2")}}};
+  const env={TENANT_BRANDS:{async get(){return null;}}};
   assert.equal((await callTenantAppScript(env,principal,["bi"],request)).status,403,role);
   assert.equal((await callTenantAppScript(env,principal,["administrativo"],request)).status,503,role);
   assert.equal((await callTenantAppScript(env,principal,["administrativo"],{

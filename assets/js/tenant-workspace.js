@@ -64,7 +64,7 @@
   if(internal)internal.textContent="Fretes MT (interno)";
   for(const uf of BASE_UFS){
    const key=baseKey(uf);
-   const existing=null;
+   const existing=grid.querySelector('a[data-feature="'+key+'"]');
    const card=existing || document.createElement("a");
    if(!existing){
     card.className="nf-tool green pf-base-card";

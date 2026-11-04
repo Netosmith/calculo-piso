@@ -65,7 +65,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 <section class="panel" id="companyDetail" hidden><div class="row"><button id="galleryBack" type="button" class="ghost">← Todas as transportadoras</button><div><h2 id="companyName">Selecione uma transportadora</h2><span id="companyStatus" class="status">Sem seleção</span></div><button id="renameCompany" disabled>Renomear</button><button id="toggleCompany" disabled>Ativar / desativar</button></div>
 <div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button></div>
 <div id="modules" class="tab"><p class="muted" id="freightBaseVersion">Painel atualizado · 27 bases estaduais · 04/11/2026</p><p>Escolha <strong>Fretes Operacional (unificado)</strong> para uma planilha única ou libere as bases estaduais abaixo. <strong>Fretes2 (MT interno)</strong> é exclusivo da Nova Frota.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
-<div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Em novas empresas, estes vínculos não criam senha nem liberam login ou acesso aos fretes. A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo vínculo</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
+<div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Nas novas empresas, o novo cadastro cria usuário ativo e senha. Para usuários antigos, use "Definir senha e ativar". A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo usuário</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
 <div id="brand" class="tab" hidden><h2>Identidade visual</h2><p>Logo privada da transportadora (PNG, JPG ou WebP, até 2 MB).</p><img id="tenantLogo" alt="Logo da transportadora" hidden style="max-width:220px;max-height:130px;object-fit:contain;background:#fff;padding:12px;border-radius:10px"><p id="logoStatus" class="muted">Selecione uma transportadora.</p><div class="row"><label>Selecionar imagem<br><input id="brandFile" type="file" accept="image/png,image/jpeg,image/webp" disabled></label><button id="uploadLogo" type="button" disabled>Salvar logo</button></div><p class="muted">Uma logo oficial por empresa: card do Super Admin, arte de divulgação e imagens de Fretes. A barra superior do portal continua apenas com o nome.</p></div>
 <div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. As cores e a marca d’água são independentes por empresa e modelo.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
 </section></div></div>
@@ -84,7 +84,7 @@ const MODULES=[
 const $=id=>document.getElementById(id);
 let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,membershipReady=false,brandReady=false,mfaMembershipActive=false,mfaBrandActive=false,mfaToken="",mfaActive=false,logoObjectUrl=null,logoRequest=0;
 const canEdit=()=>Boolean(writeReady&&selected&&selected.id!=="nova-frota");
-const canEditMembership=()=>Boolean(canEdit()&&membershipReady);
+const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&selected?.id!=="nova-frota");
 const canEditBrand=()=>Boolean(canEdit()&&brandReady);
 let credentialReady=false,credentialProblem='';
 const ROLES=["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"];
@@ -117,20 +117,21 @@ function renderUsers(){
  if(!filtered.length){root.className='empty';root.textContent=users.length?'Nenhum usuário corresponde à busca.':'Nenhum vínculo encontrado nesta origem. Isso não comprova ausência de usuários no cadastro legado.';return;}
  root.className='';const table=document.createElement('table');table.style.cssText='width:100%;border-collapse:collapse;text-align:left';
  const head=document.createElement('thead'),tr=document.createElement('tr');
- const columns=['Usuário','Nome','Perfil','Estados','Situação'];
+ const columns=['Usuário','Nome','Perfil','Estados','Situação','Acesso ao portal'];
  if(canEditMembership())columns.push('Editar vínculo');
  for(const label of columns){const th=document.createElement('th');th.textContent=label;th.style.padding='10px 8px';tr.append(th);}
  head.append(tr);table.append(head);const body=document.createElement('tbody');
  for(const u of filtered){
   const row=document.createElement('tr');
-  for(const value of [u.usuario||u.id||'',u.nome||'Não informado',u.perfil||'',u.estados||'Não informado',u.ativo===true?'Ativo':u.ativo===false?'Inativo':'Não informado']){
+  for(const value of [u.usuario||u.id||'',u.nome||'Não informado',u.perfil||'',u.estados||'Não informado',u.ativo===true?'Ativo':u.ativo===false?'Inativo':'Não informado',
+    u.senhaConfigurada===false?'Sem senha':u.ativo===false?'Inativo':u.acessoPronto===true?'Pronto':'Não verificado']){
    const td=document.createElement('td');td.textContent=String(value);td.style.cssText='padding:10px 8px;border-top:1px solid #355571';row.append(td);
   }
   if(canEditMembership()){
    const actions=document.createElement('td');actions.style.padding='8px';
    const role=document.createElement('button');role.type='button';role.textContent='Perfil';role.onclick=()=>editMembership(u,'perfil');
    const status=document.createElement('button');status.type='button';status.textContent=u.ativo?'Desativar':'Ativar';status.onclick=()=>editMembership(u,'ativo');
-   actions.append(role,status);if(credentialReady){const passwordButton=document.createElement('button');passwordButton.type='button';passwordButton.textContent='Definir senha';passwordButton.onclick=()=>setTenantPassword(u);actions.append(passwordButton);}row.append(actions);
+   actions.append(role,status);if(credentialReady){const passwordButton=document.createElement('button');passwordButton.type='button';passwordButton.textContent=!u.ativo?'Definir senha e ativar':u.senhaConfigurada?'Redefinir senha':'Definir senha';passwordButton.onclick=()=>setTenantPassword(u);actions.append(passwordButton);}row.append(actions);
   }
   body.append(row);
  }
@@ -229,7 +230,7 @@ function render(){
  $('renameCompany').disabled=!canEdit();
  $('toggleCompany').disabled=!canEdit();
  $('saveModules').disabled=!canEdit();
- $('addMembership').disabled=!canEditMembership();
+ $('addMembership').disabled=!canEditMembership()||!credentialReady;
  $('brandFile').disabled=!canEditBrand();
  $('uploadLogo').disabled=!canEditBrand();
  renderModules();renderUsers();$('integrationSave').disabled=!canEdit();
@@ -417,7 +418,7 @@ async function setTenantPassword(user){
     overlay.style.cssText='position:fixed;inset:0;background:#000b;display:grid;place-items:center;z-index:9999;padding:16px';
     const panel=document.createElement('form');panel.style.cssText='background:#10283f;border:1px solid #4a7496;padding:24px;border-radius:14px;width:min(460px,100%)';
     const title=document.createElement('h2');title.textContent='Definir senha: '+user.id;
-    const note=document.createElement('p');note.textContent='Esta senha será usada no portal separado desta transportadora. Mínimo 12 caracteres. As sessões anteriores serão encerradas.';
+    const note=document.createElement('p');note.textContent='Senha com 12 a 128 caracteres. Se a conta estiver inativa, ela será ativada. As sessões anteriores serão encerradas.';
     const password=document.createElement('input');password.type='password';password.required=true;password.minLength=12;password.maxLength=128;
     password.autocomplete='new-password';password.placeholder='Nova senha (12 caracteres ou mais)';
     password.style.cssText='width:100%;padding:12px;background:#081a2d;color:white;border:1px solid #577d9a;border-radius:8px';
@@ -430,9 +431,9 @@ async function setTenantPassword(user){
     panel.onsubmit=async event=>{
       event.preventDefault();save.disabled=true;
       try{
-        await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/usuarios/'+encodeURIComponent(user.id)+'/credenciais','PUT',{senha:password.value});
-        password.value='';overlay.remove();await loadAudit();
-        notice('Senha configurada e sessões anteriores encerradas. Oriente o usuário a acessar o Portal Frete da transportadora.');
+        await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/usuarios/'+encodeURIComponent(user.id)+'/credenciais','PUT',{senha:password.value,...(!user.ativo?{ativar:true}:{})});
+        password.value='';overlay.remove();await loadUsers();await loadAudit();
+        notice('Senha registrada no D1. Usuário ativo poderá acessar o login desta transportadora.');
       }catch(error){writeError(error);password.value='';}
       finally{save.disabled=false;}
     };
@@ -456,21 +457,51 @@ async function editMembership(user,field){
   await loadUsers();await loadAudit();notice('Vínculo atualizado no catálogo com registro de auditoria. O login não foi alterado.');
  }catch(error){writeError(error);}
 }
-$('addMembership').onclick=async()=>{
- if(!canEditMembership()||!selected?.id)return;
+$('addMembership').onclick=()=>{
+ if(!canEditMembership()||!credentialReady||!selected?.id)return;
  const tenant=selected.id;
- const value=prompt('Identificador do usuário para o novo vínculo (não cria login):');
- if(value===null)return;
- const usuario=value.trim().toUpperCase();
- if(!/^[A-Z0-9][A-Z0-9._-]{1,79}$/.test(usuario)){notice('Identificador inválido. Use 2 a 80 caracteres.');return;}
- const valueRole=prompt('Perfil ('+ROLES.join(', ')+'):',"OPERACIONAL");
- if(valueRole===null)return;
- const perfil=valueRole.trim().toUpperCase();
- if(!ROLES.includes(perfil)){notice('Perfil inválido.');return;}
- try{
-  await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/usuarios','POST',{usuario,perfil});
-  await loadUsers();await loadAudit();notice('Vínculo criado como inativo. O cadastro e a senha de login não foram criados.');
- }catch(error){writeError(error);}
+ if(!selected.active){notice('Primeiro ative esta transportadora.');return;}
+ const overlay=document.createElement('div');
+ overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:#000c;display:grid;place-items:center;padding:16px';
+ const form=document.createElement('form');
+ form.style.cssText='width:min(480px,100%);max-height:90vh;overflow:auto;background:#10283f;padding:24px;border:1px solid #456d92;border-radius:16px;display:grid;gap:12px';
+ const heading=document.createElement('h2');heading.textContent='Novo usuário · '+selected.name;
+ const info=document.createElement('p');info.textContent='Conta e senha serão gravadas juntas. O login só será liberado se a operação for concluída.';
+ const field=(text,input)=>{
+  const label=document.createElement('label');label.style.cssText='display:grid;gap:6px';
+  const title=document.createElement('span');title.textContent=text;
+  input.style.cssText='width:100%;padding:12px;background:#081a2d;color:#fff;border:1px solid #50799b;border-radius:8px';
+  label.append(title,input);return label;
+ };
+ const name=document.createElement('input');name.required=true;name.maxLength=80;name.placeholder='Ex.: ANDERSON';name.autocapitalize='characters';name.autocomplete='off';
+ const role=document.createElement('select');role.required=true;
+ for(const p of ROLES){const option=document.createElement('option');option.value=p;option.textContent=p;role.append(option);}
+ role.value='OPERACIONAL';
+ const pass=document.createElement('input');pass.type='password';pass.required=true;pass.minLength=12;pass.maxLength=128;pass.autocomplete='new-password';
+ const confirmPass=document.createElement('input');confirmPass.type='password';confirmPass.required=true;confirmPass.minLength=12;confirmPass.maxLength=128;confirmPass.autocomplete='new-password';
+ const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap';
+ const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancelar';
+ const save=document.createElement('button');save.type='submit';save.textContent='Cadastrar e liberar login';
+ cancel.onclick=()=>{pass.value='';confirmPass.value='';overlay.remove();};
+ actions.append(cancel,save);
+ form.append(heading,info,field('Usuário',name),field('Perfil',role),
+  field('Senha (mínimo 12 caracteres)',pass),field('Confirme a senha',confirmPass),actions);
+ overlay.append(form);document.body.append(overlay);name.focus();
+ form.onsubmit=async event=>{
+  event.preventDefault();
+  const usuario=name.value.trim().toUpperCase();
+  if(!/^[A-Z0-9][A-Z0-9._-]{1,79}$/.test(usuario)){notice('Identificador inválido. Use 2 a 80 caracteres sem espaços.');return;}
+  if(pass.value!==confirmPass.value){notice('As senhas não conferem.');return;}
+  save.disabled=true;cancel.disabled=true;
+  try{
+   await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(tenant)+'/usuarios','POST',
+     {usuario,perfil:role.value,senha:pass.value});
+   pass.value='';confirmPass.value='';overlay.remove();
+   await loadUsers();await loadAudit();
+   notice('Conta '+usuario+' criada, ativada e com senha configurada para '+selected.name+'.');
+  }catch(error){writeError(error);}
+  finally{save.disabled=false;cancel.disabled=false;}
+ };
 };
 $('userSearch').addEventListener('input',renderUsers);
 $('refreshUsers').addEventListener('click',loadUsers);

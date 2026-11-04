@@ -926,17 +926,16 @@
 
     .nfM3Hero{
       position:absolute;inset:0 0 auto 0;height:455px;overflow:hidden;
-      background:#dce9f3 url("/assets/img/divulgacao/hero-global.jpg?v=2") center 48% / cover no-repeat;
+      background:#dce9f3; /* evita sobrepor a hero CSS à imagem com opacidade */
     }
     .nfM3HeroImg{
       position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-      object-position:center 48%;opacity:.94;display:block;
+      object-position:center 48%;opacity:.72;display:block;
     }
     .nfM3HeroWash{
       position:absolute;inset:0;
       background:
-        linear-gradient(90deg,rgba(255,255,255,.94) 0%,rgba(255,255,255,.80) 28%,rgba(255,255,255,.22) 48%,rgba(255,255,255,.03) 72%),
-        linear-gradient(180deg,rgba(255,255,255,.02) 55%,rgba(4,46,91,.09) 100%);
+        linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%);
     }
     .nfM3Logo{
       position:absolute;z-index:4;top:34px;left:50%;transform:translateX(-50%);
@@ -1132,9 +1131,9 @@
       -webkit-font-smoothing:antialiased;
     }
 
-    .nfM4Hero{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;background:#eaf2f7 url("/assets/img/divulgacao/hero-global.jpg?v=2") center 47% / cover no-repeat}
-    .nfM4HeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 47%;opacity:.94}
-    .nfM4HeroWash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.94) 0%,rgba(255,255,255,.80) 34%,rgba(255,255,255,.20) 67%,rgba(255,255,255,.03) 100%)}
+    .nfM4Hero{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;background:#eaf2f7}
+    .nfM4HeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 47%;opacity:.72}
+    .nfM4HeroWash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%)}
     .nfM4Logo{position:absolute;z-index:3;top:28px;left:50%;transform:translateX(-50%);width:350px;height:auto}
     .nfM4Title{position:absolute;z-index:3;left:48px;bottom:67px;font-size:74px;line-height:.92;font-weight:950;letter-spacing:-2.5px;color:#07366f}
     .nfM4Title strong{color:#08a968}

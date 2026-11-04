@@ -477,7 +477,7 @@
   inset:0 0 auto 0;
   height:455px;
   overflow:hidden;
-  background:#dce9f3 url("/assets/img/divulgacao/hero-global.jpg?v=2") center 48% / cover no-repeat;
+  background:#dce9f3; /* hero desenhada somente pela imagem, sem camada duplicada */
 }
 
 .m3HeroImg{
@@ -487,7 +487,7 @@
   height:100%;
   object-fit:cover;
   object-position:center 48%;
-  opacity:.94;
+  opacity:.72;
   display:block;
 }
 
@@ -495,8 +495,7 @@
   position:absolute;
   inset:0;
   background:
-    linear-gradient(90deg,rgba(255,255,255,.94) 0%,rgba(255,255,255,.80) 28%,rgba(255,255,255,.22) 48%,rgba(255,255,255,.03) 72%),
-    linear-gradient(180deg,rgba(255,255,255,.02) 55%,rgba(4,46,91,.09) 100%);
+    linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%);
 }
 
 .m3Logo{

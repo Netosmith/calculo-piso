@@ -437,7 +437,10 @@
         try{
           const catalog=await window.PortalAPI.tenantRequest("/regionais/ufs");
           STATE.regionalUfs=catalog?.regionais||{};
-        }catch(_){STATE.regionalUfs={};}
+        }catch(error){
+          STATE.regionalUfs={};
+          throw new Error("Não foi possível consultar as regionais vinculadas às bases. Atualize a Home para tentar novamente.");
+        }
         const modules=Array.isArray(session.modules)?session.modules:[];
         // Accounting bases are independent from the geographical origin UF.
         const baseKeys=["fretes","fretes2","fretes-go","fretes-mt","fretes-sp","fretes-ms",
@@ -452,15 +455,18 @@
           key.startsWith("fretes-")?key.slice(7).toUpperCase():"";
         const allowed=baseKeys.filter(key=>key!=="fretes2"&&
           modules.includes(key)&&assigned.has(accountingBase(key)));
+        let failedBaseSources=[];
         dispatchSummary=rows=>window.dispatchEvent(new CustomEvent("portal:tenant-freights-summary",{
           detail:{tenantId:session.transportadoraId,bases:allowed.map(key=>
-            key==="fretes"?"FRETES":key.toUpperCase()),rows}
+            key==="fretes"?"FRETES":key.toUpperCase()),failedBases:failedBaseSources,rows}
         }));
         if(!allowed.length){STATE.rows=[];dispatchSummary([]);render();return;}
         // Read only enabled bases from this tenant's authenticated gateway.
         const responses=await Promise.allSettled(allowed.map(key=>
           window.PortalAPI.call(key,"read",{})));
         STATE.failedBases=responses.filter(reply=>reply.status==="rejected").length;
+        failedBaseSources=allowed.filter((_,index)=>responses[index].status==="rejected")
+          .map(key=>key==="fretes"?"FRETES":key.toUpperCase());
         const rows=[];
         responses.forEach((reply,index)=>{
           if(reply.status!=="fulfilled")return;
@@ -474,7 +480,8 @@
           });
         });
         if(!responses.some(r=>r.status==="fulfilled")){
-          throw new Error("Não foi possível ler os fretes da planilha da transportadora.");
+          dispatchSummary([]);
+          throw new Error("Não foi possível ler os fretes de nenhuma base vinculada.");
         }
         STATE.rows=availableRows(rows);
       }else{

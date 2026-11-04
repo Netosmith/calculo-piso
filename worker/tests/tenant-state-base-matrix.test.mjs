@@ -43,6 +43,17 @@ test("dedicated bases never fall back to the mixed legacy Sheets integration",as
  assert.deepEqual(seen,["tenant/teste-01/private/base-sp-apps-script-v1.json"]);
 });
 
+test("all 27 dedicated integrations have distinct tenant-private R2 keys",async()=>{
+ const keys=[];
+ const env={TENANT_BRANDS:{get:async key=>{keys.push(key);return null;}}};
+ for(const uf of UFS){
+  assert.equal(await readTenantIntegration(env,"teste-01",uf),null,uf);
+ }
+ assert.deepEqual(keys,UFS.map(uf=>
+  "tenant/teste-01/private/base-"+uf.toLowerCase()+"-apps-script-v1.json"));
+ assert.equal(new Set(keys).size,27);
+});
+
 test("Home and BI group by geographic origin independently of accounting source",()=>{
  const home=read("assets/js/home-map.js");
  const bi=read("assets/js/bi.js");

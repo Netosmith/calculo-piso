@@ -56,3 +56,19 @@ test("Calculators and support screens use updated PISO permission controls",()=>
  }
  assert.ok(read("worker/src/controllers/tenant-unified.js").includes("Perfil PISO restrito ao Calculo de Piso 2."));
 });
+
+test("PISO session never reveals other enabled tenant modules",async()=>{
+ const {tenantPublicSession}=await import("../src/controllers/tenant-unified.js");
+ const principal={tenant_id:"teste-01",tenant_name:"Teste",user_id:"PISO.TESTE",role:"PISO"};
+ const grants=["piso","bi","fretes","administrativo","piso2"];
+ assert.deepEqual(tenantPublicSession(principal,grants).modules,["piso2"]);
+ assert.deepEqual(tenantPublicSession({...principal,role:"OPERACIONAL"},grants).modules,grants);
+});
+test("PISO page restriction uses signed session and hides preferences",()=>{
+ const auth=read("assets/js/auth.js"),home=read("pages/home.html");
+ assert.match(auth,/function enforcePisoPageScope\(session\)/);
+ assert.ok(auth.includes('["login.html","home.html","calculo-antt.html"]'));
+ assert.ok(auth.includes('if(getProfile()!=="PISO")shell.appendChild(settings)'));
+ assert.ok(home.includes('body.nf-profile-piso #nfPrefsOpen'));
+ assert.ok(home.includes("auth.js?v=28"));
+});

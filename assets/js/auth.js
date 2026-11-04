@@ -158,6 +158,16 @@ function logoutAll(){
   clearAuthCache();
 }
 
+function enforcePisoPageScope(session){
+  if(String(session?.perfil||"").trim().toUpperCase()!=="PISO")return true;
+  // Signed PISO sessions may navigate only Home and ANTT Piso 2.
+  // API permissions independently block every other data endpoint.
+  const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
+  if(["login.html","home.html","calculo-antt.html"].includes(file))return true;
+  window.location.href=window.portalTenantHref?.("home.html") || "./home.html";
+  return false;
+}
+
 function mirrorServerSession(session){
   // This value comes ONLY from a verified API session, never localStorage.
   window.__PORTAL_TENANT_SESSION = session?.tenantMode===true ? session : null;
@@ -329,6 +339,7 @@ async function refreshPortalSession(){
       throw new Error("A sessão não pertence a esta transportadora.");
     }
     mirrorServerSession(result.session);
+    enforcePisoPageScope(result.session);
     await applyPortalMaintenanceGate(result.session, api);
     return result.session;
   }catch(error){
@@ -1598,7 +1609,7 @@ function createPortalGlobalShell(nav, more){
   shell.appendChild(brand);
   shell.appendChild(nav);
   shell.appendChild(more);
-  shell.appendChild(settings);
+  if(getProfile()!=="PISO")shell.appendChild(settings);
   shell.appendChild(logout);
   return shell;
 }

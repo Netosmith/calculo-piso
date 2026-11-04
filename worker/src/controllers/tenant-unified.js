@@ -73,7 +73,9 @@ export function tenantPublicSession(principal,modules=[]){
   estado:"GERAL",
   transportadoraId:principal.tenant_id,
   transportadoraNome:principal.tenant_name,
-  modules,
+  // Never disclose other enabled tenant modules in a PISO session.
+  modules:String(principal.role||"").trim().toUpperCase()==="PISO"
+    ? modules.filter(module=>module==="piso2") : modules,
   tenantMode:true
  };
 }

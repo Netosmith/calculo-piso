@@ -103,8 +103,8 @@ function paint(){
    const n=Number(field(key,name));
    return Number.isFinite(n)&&n>=min&&n<=max?n:fallback;
   };
-  const w=number("logoWidth",m3?290:305,100,600);
-  const h=number("logoHeight",m3?96:128,35,220);
+  const w=number("logoWidth",m3?290:305,100,1500);
+  const h=number("logoHeight",m3?96:128,35,1500);
   const top=number("logoTop",m3?4:8,-60,160);
   const x=number("logoX",0,-250,250);
   const opacity=number("logoOpacity",100,10,100);

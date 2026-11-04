@@ -16,7 +16,7 @@ import {
 } from "./controllers/session.js";
 import { notFound, methodNotAllowed } from "./utils/response.js";
 import { pingoController } from "./controllers/pingochic.js";
-import {publicTenantsController,tenantApiController} from "./controllers/tenant-unified.js";
+import {publicTenantsController,tenantApiController,tenantContextController} from "./controllers/tenant-unified.js";
 import {hasTenantSessionCookie} from "./services/tenant-auth.js";
 import {errorResponse} from "./utils/response.js";
 
@@ -25,6 +25,7 @@ export async function routeRequest(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
   if(path==="/v1/transportadoras/public")return publicTenantsController(request,env);
+  if(path==="/v1/tenant/context")return tenantContextController(request,env);
   if(path.startsWith("/v1/tenant/"))return tenantApiController(request,env);
 
   // Never route a tenant browser context into Nova Frota legacy APIs,

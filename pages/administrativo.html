@@ -1075,7 +1075,9 @@
   <script src="../assets/js/administrativo.js?v=6"></script>
 
   <script>
-    requireHomeAuth();
+    // Entrada no painel exclusivo de GOADM e ADMINISTRADOR;
+    // criar Solicitações na Home não libera as demais funções deste app.
+    requireFeatureAuth("administrativo");
     bindLogoutButton();
   </script>
   <script src="../assets/js/nova-frota-ia.js?v=3" defer></script>

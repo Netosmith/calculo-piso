@@ -30,7 +30,9 @@
 
   async function portalCall(action, params = {}){
     const session=window.portalAuthReady?await window.portalAuthReady:null;
-    if(!session||session.tenantMode===true)throw new Error("Solicitações ainda não integradas para esta transportadora.");
+    if(!session || (session.tenantMode===true &&
+      (!Array.isArray(session.modules) || !session.modules.includes("administrativo"))))
+      throw new Error("Solicitações não liberadas para esta transportadora.");
     const api = typeof ensurePortalApi === "function"
       ? await ensurePortalApi()
       : window.PortalAPI;
@@ -92,10 +94,22 @@
     $("#homeSolicLoading")?.classList.remove("isOpen");
   }
 
-  function fillFiliais(){
+  function fillFiliais(session){
     const select = $("#hsFilial");
-    if(!select) return;
-
+    if(!select)return;
+    if(session?.tenantMode===true){
+      // As filiais da Nova Frota nunca são mostradas para outra transportadora.
+      // Campo livre até que a integração individual devolva seu cadastro.
+      const field=document.createElement("input");
+      field.id="hsFilial";
+      field.type="text";
+      field.maxLength=100;
+      field.autocomplete="organization";
+      field.placeholder="Informe a filial da transportadora";
+      field.setAttribute("aria-label","Filial da transportadora");
+      select.replaceWith(field);
+      return;
+    }
     select.innerHTML = `<option value="">Selecione...</option>` +
       FILIAIS.map(filial => `<option value="${filial}">${filial}</option>`).join("");
   }
@@ -112,7 +126,6 @@
   }
 
   function openModal(){
-    if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
     const modal = $("#homeSolicModal");
     if(!modal) return;
 
@@ -130,7 +143,9 @@
   async function refreshKpi(){
     try{
       const session=window.portalAuthReady?await window.portalAuthReady:null;
-      if(!session||session.tenantMode===true)return;
+      if(!session || (session.tenantMode===true &&
+        (!session.modules?.includes("administrativo") || 
+          String(session.perfil||"").toUpperCase()==="PISO")))return;
       const api = typeof ensurePortalApi === "function"
         ? await ensurePortalApi()
         : window.PortalAPI;
@@ -205,9 +220,10 @@
 
   window.addEventListener("DOMContentLoaded", async () => {
     const session=window.portalAuthReady?await window.portalAuthReady:null;
-    if(!session||session.tenantMode===true)return;
+    if(!session || (session.tenantMode===true &&
+      (!Array.isArray(session.modules) || !session.modules.includes("administrativo"))))return;
     ensureLoading();
-    fillFiliais();
+    fillFiliais(session);
     bind();
     resetForm();
     refreshKpi();

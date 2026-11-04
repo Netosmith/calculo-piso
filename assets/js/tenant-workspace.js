@@ -190,7 +190,8 @@
   const footer=document.querySelector(".nf-footer span:last-child");
   if(footer)footer.textContent="Portal Frete | "+session.transportadoraNome;
   document.title="Home | "+(session.transportadoraNome||"Portal Frete");
-  const solicit=$("homeSolicCard");if(solicit)solicit.disabled=true;
+  // Solicitações são controladas pela liberação do módulo no Super Admin.
+  // Não desabilitar o botão por se tratar de uma transportadora independente.
   document.querySelector(".nf-support-link")?.setAttribute("hidden","");
   cards();
   void dashboard(session);

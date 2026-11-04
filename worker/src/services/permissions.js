@@ -65,9 +65,9 @@ const FREIGHT_DELETE_PROFILES = new Set([
 const FRETES2_DELETE_PROFILES = new Set([
   "ADMINISTRADOR", "OPERACIONAL", "COMERCIAL", "MT"
 ]);
-const HOME_REQUEST_CREATE_PROFILES = new Set([
-  "ADMINISTRADOR", "GOADM", "OPERACIONAL", "COMERCIAL"
-]);
+// Criar uma Solicitação da Home é diferente de abrir o painel Administrativo.
+ // Perfis reconhecidos podem solicitar; os demais recursos seguem restritos.
+const HOME_REQUEST_CREATE_PROFILES = new Set(Object.keys(PROFILE_FEATURES));
 
 function normalize(value) {
   return String(value || "").trim().toUpperCase();

@@ -1,5 +1,5 @@
-/* O botão de Solicitações acompanha o card Administrativo e o perfil
- * confirmado pelo Worker. O cache local nunca é usado para autorizar. */
+/* Solicitações são colaborativas; o app Administrativo mantém permissão
+ * separada. Somente uma sessão assinada do Worker libera a barra. */
 (function(){
   "use strict";
   const wrap=document.querySelector(".nf-solic-wrap");
@@ -8,22 +8,21 @@
   if(!wrap||!button||!topbar)return;
 
   function canSeeHomeSolicitations(session){
-    const role=String(session?.perfil||"").trim().toUpperCase();
-    if(!session || !["GOADM","ADMINISTRADOR"].includes(role))return false;
-    if(session.tenantMode===true){
-      if(!Array.isArray(session.modules) || !session.modules.includes("administrativo"))return false;
-    }
-    return typeof canAccessFeature==="function" &&
-      canAccessFeature("administrativo")===true;
+    if(!session || !String(session.usuario||"").trim())return false;
+    // Nova Frota já usa Solicitações na Home para todos os perfis.
+    if(session.tenantMode!==true)return true;
+    // Para outras empresas, exclusivamente os módulos da sessão assinada.
+    return Boolean(session.transportadoraId &&
+      Array.isArray(session.modules) && session.modules.includes("administrativo"));
   }
 
   function apply(session){
     const allowed=canSeeHomeSolicitations(session);
     wrap.hidden=!allowed;
     topbar.classList.toggle("has-admin-solicitations",allowed);
-    // As novas transportadoras ainda usam o fluxo administrativo próprio;
-    // a Home não deve habilitar o formulário legado dessas empresas.
-    button.disabled=!allowed||session?.tenantMode===true;
+    // O formulário envia solicitações pela integração privada de cada empresa.
+    // A abertura do aplicativo Administrativo continua restrita a GOADM/ADMINISTRADOR.
+    button.disabled=!allowed;
   }
 
   window.addEventListener("portal:session",event=>apply(event.detail));

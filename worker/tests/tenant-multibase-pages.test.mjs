@@ -6,15 +6,15 @@ import {fileURLToPath} from "node:url";
 import {Script} from "node:vm";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 const read=p=>readFileSync(resolve(root,p),"utf8");
-const BASES=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+const BASES=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
-test("ten state base pages are GNOVA-only lightweight authorized aliases",()=>{
+test("all 27 state base pages are GNOVA-only lightweight authorized aliases",()=>{
  const loader=read("assets/js/tenant-page.js");
  for(const uf of BASES){
   const page=read("pages/transportadora-teste/fretes-"+uf+".html");
   assert.match(page,/data-tenant-id="teste-01"/);
   assert.ok(page.includes('data-freight-base="'+uf+'"'));
-  assert.ok(page.includes('data-shared-page="'+(uf==="MT"?"fretes2.html":"fretes.html")+'"'));
+  assert.ok(page.includes('data-shared-page="'+"fretes.html"+'"'));
   assert.ok(page.length<1000);
  }
  assert.match(loader,/session\.modules\.includes\(key\)/);
@@ -29,7 +29,7 @@ test("base modules, owner switches and gateway permissions agree",()=>{
  for(const uf of BASES){
   const module="fretes-"+uf.toLowerCase();
   assert.ok(modules.includes('"'+module+'"'),module);
-  assert.ok(owner.includes("['"+module+"'"),module);
+  assert.ok(owner.includes("...FREIGHT_UFS.map"),module);
  }
  assert.match(worker,/MODULE_ACTIONS/);
  assert.match(worker,/fretes-/);
@@ -64,4 +64,18 @@ test("BI origin-state mapping and accounting base are independent for tenants",(
  assert.ok(bi.includes("if(tenant)row.origemDados=sources[index]"));
  const cad=read("assets/js/cadastros.js");
  assert.match(cad,/BASES_OPERACIONAIS=\["GERAL"/);
+});
+
+test("Home only counts base modules assigned to a regional",()=>{
+ const homeMap=read("assets/js/home-map.js");
+ const workspace=read("assets/js/tenant-workspace.js");
+ const cad=read("assets/js/cadastros.js");
+ assert.match(homeMap,/assigned\.has\(accountingBase\(key\)\)/);
+ assert.match(homeMap,/STATE\.regionalUfs\[key\]\?\.base/);
+ assert.match(homeMap,/dispatchSummary\(STATE\.rows\.map/);
+ assert.match(workspace,/selectedBases/);
+ assert.match(workspace,/activeFreightModules/);
+ assert.match(workspace,/totalPorta/);
+ assert.match(workspace,/totalTransito/);
+ assert.match(cad,/BASES_OPERACIONAIS=\["GERAL",\.\.\.REGIONAL_UFS\]/);
 });

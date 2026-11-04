@@ -349,7 +349,7 @@
       STATE.rows=rowsFrom(res.data);
       if(tab==="regionais"&&window.__PORTAL_TENANT_SESSION?.tenantMode===true){
         await loadRegionalUfCatalog();
-        STATE.rows=STATE.rows.map(row=>({...row,uf:regionalMeta(row.regional)?.uf||row.uf||""}));
+        STATE.rows=STATE.rows.map(row=>({...row,uf:regionalMeta(row.regional)?.uf||row.uf||"",base:regionalMeta(row.regional)?.base||row.base||""}));
       }
       render();
        setStatus(sharedClientsView()

@@ -32,6 +32,9 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 .company-card-bottom{margin:0 14px 14px;background:#236696;padding:8px;text-align:center;border-radius:9px;font-weight:750;font-size:12px}
 #companyDetail{border-radius:19px;padding:24px;min-width:0}#companyDetail[hidden]{display:none!important}
 #galleryBack{background:transparent;color:#cae6fb;border-color:#547a9a}
+#tenantHomeButton{background:#14844f!important;border:1px solid #35b978!important;color:#fff!important;font-weight:800!important;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border-radius:10px;white-space:nowrap}
+#tenantHomeButton:hover{background:#0f683e!important}
+#tenantHomeButton[hidden]{display:none!important}
 #artThemePanel{padding:18px;margin-top:23px;background:#0b2237;border:1px solid #365d7e;border-radius:15px}
 #artThemePanel h3{margin:0 0 6px}.art-model-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px;margin-top:18px}
 .art-model{background:#173650;border:1px solid #426581;border-radius:14px;padding:13px}.art-model h4{margin:0 0 5px;font-size:15px}
@@ -78,14 +81,14 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 </style>
 </head>
 <body>
-<header><div><strong>PORTAL FRETE</strong><div><span>Administração global</span></div></div><button class="ghost" id="back">Voltar ao portal</button></header>
+
 <main>
 <h1>Painel Super Admin</h1><p>Gerenciamento central de transportadoras, cards, usuários e identidade visual.</p>
 <div id="notice" role="status">Verificando autorização no servidor...</div>
 <div id="app" hidden><div id="adminAuth" class="panel" hidden><div class="row"><div><strong>Autorização de alterações</strong><p class="muted">Informe temporariamente o JWT do seu provedor OIDC com MFA. Ele permanece somente nesta aba, sem armazenamento local.</p></div><button id="forgetIdentity" type="button" disabled>Encerrar autorização</button></div><div class="row"><input id="mfaProof" type="password" autocomplete="off" spellcheck="false" placeholder="Token OIDC com MFA" aria-label="Token OIDC com MFA" style="flex:1;min-width:240px;background:#071525;color:white;padding:10px;border:1px solid #55718a;border-radius:9px"><button id="verifyIdentity" type="button">Validar MFA</button></div></div>
 <div class="layout">
 <aside class="panel" id="galleryPanel"><div class="gallery-tools"><div><h2>Transportadoras</h2><span class="gallery-counter" id="companyCount">0 cadastradas</span></div><input id="companySearch" type="search" placeholder="Pesquisar transportadora" aria-label="Buscar transportadora"></div><div class="row"><h2 style="display:none">Transportadoras</h2><button id="newCompany" disabled>+ Nova</button></div><div id="companies" class="company-gallery empty">Nenhuma transportadora carregada.</div></aside>
-<section class="panel" id="companyDetail" hidden><div class="row"><button id="galleryBack" type="button" class="ghost">← Todas as transportadoras</button><div><h2 id="companyName">Selecione uma transportadora</h2><span id="companyStatus" class="status">Sem seleção</span></div><button id="renameCompany" disabled>Renomear</button><button id="toggleCompany" disabled>Ativar / desativar</button></div>
+<section class="panel" id="companyDetail" hidden><div class="row"><button id="galleryBack" type="button" class="ghost">← Todas as transportadoras</button><a id="tenantHomeButton" href="/pages/home.html" hidden title="Abrir Home da transportadora selecionada">⌂ HOME</a><div><h2 id="companyName">Selecione uma transportadora</h2><span id="companyStatus" class="status">Sem seleção</span></div><button id="renameCompany" disabled>Renomear</button><button id="toggleCompany" disabled>Ativar / desativar</button></div>
 <div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button></div>
 <div id="modules" class="tab"><p class="muted" id="freightBaseVersion">Painel atualizado · 27 bases estaduais · 04/11/2026</p><p>Escolha <strong>Fretes Operacional (unificado)</strong> para uma planilha única ou libere as bases estaduais abaixo. <strong>Fretes2 (MT interno)</strong> é exclusivo da Nova Frota.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
 <div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Nas novas empresas, o novo cadastro cria usuário ativo e senha. Para usuários antigos, use "Definir senha e ativar". A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo usuário</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
@@ -348,8 +351,20 @@ function renderCompanies(){
  button.textContent=company.name;button.onclick=()=>{selected=company;rememberSelectedCompany(company.id);render();loadUsers();loadAudit();loadBrand();loadIntegration();};root.append(button);
  }
 }
+function publicHomeForTenant(company){
+ if(!company)return "";
+ if(company.id==="nova-frota")return "/pages/home.html";
+ // The GNOVA keeps its original D1 ID despite the public slug migration.
+ const known={"teste-01":"gnova","transvale-01":"transvale"};
+ const slug=known[company.id]||String(company.slug||company.publicSlug||"").trim().toLowerCase();
+ return /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(slug)
+   ? "/pages/"+slug+"/home.html" : "";
+}
 function render(){
  renderCompanies();$('companyName').textContent=selected?.name||'Selecione uma transportadora';
+ const tenantHome=$('tenantHomeButton'),homeUrl=publicHomeForTenant(selected);
+ tenantHome.hidden=!homeUrl;
+ if(homeUrl)tenantHome.href=homeUrl;
  $('companyStatus').textContent=selected?(selected.active?'Ativa':'Inativa'):'Sem seleção';
  $('newCompany').disabled=!writeReady;
  $('renameCompany').disabled=!canEdit();
@@ -638,7 +653,7 @@ document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener(
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));
  document.querySelectorAll('.tab').forEach(panel=>panel.hidden=panel.id!==button.dataset.tab);
 }));
-$('back').onclick=()=>location.assign('https://portalfrete.net.br/pages/home.html');
+// The shared portal navigation already provides Home; no duplicate title bar.
 (async()=>{
  try{
  // Endpoint exclusivo ainda não implementado. Falha fechada: sem autorização global, não exibir o painel.

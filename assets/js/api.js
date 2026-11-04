@@ -22,7 +22,7 @@ function tenantRequestOptions(options={}){
    "X-Portal-Support-Tenant":target}} : options;
 }
 function tenantResourceUrl(resource){
- const suffix=resource==="logo"||resource==="artes"?resource:null;
+ const suffix=["logo","artes","visual/logo-light","visual/hero-art","visual/hero-home"].includes(resource)?resource:null;
  if(!suffix)throw new Error("Recurso visual da transportadora invalido.");
  const target=ownerSupportTenant();
  return PORTAL_API_BASE+"/v1/tenant/"+suffix+

@@ -19,7 +19,8 @@
  // Artwork and logo images cannot attach an XMLHttpRequest header. Encode
  // only the requested tenant scope; the Worker validates signed owner cookies.
  function tenantVisualUrl(resource){
-  if(resource!=="logo"&&resource!=="artes")throw Error("Recurso visual nao permitido.");
+  if(!["logo","artes","visual/logo-light","visual/hero-art","visual/hero-home"].includes(resource))
+   throw Error("Recurso visual nao permitido.");
   const url="https://api.portalfrete.net.br/v1/tenant/"+resource;
   const session=window.__PORTAL_TENANT_SESSION;
   return session?.ownerSupport===true && session.transportadoraId===tenant
@@ -49,7 +50,7 @@
  const companyName=String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
  const brandedImages=new Set();
  const artImages=new Set();
- let tenantLogoUrl=null;
+ let tenantLogoUrl=null,logoLightUrl=null,artHeroUrl=null,homeHeroUrl=null;
  const artLogoSelector="img.nfM3Logo,img.nfM4Logo,img.m3Logo,img.multiArtLogo,.position-logo img";
  function ensureHeaderTheme(){
   document.body?.classList.add("pf-tenant-site");
@@ -57,6 +58,14 @@
   const style=document.createElement("style");
   style.id="pfTenantBrandStyle";
   style.textContent=`
+    /* Keep the title-only header; Logo 2 appears on the dark Home hero. */
+    body.pf-tenant-site .pf-home-light-logo{
+      display:block;max-width:200px;max-height:68px;object-fit:contain;
+      object-position:left center;margin:0 0 12px;
+    }
+    body.pf-tenant-site .pf-home-light-logo.pf-home-logo-fallback{
+      background:rgba(255,255,255,.93);border-radius:9px;padding:5px;
+    }
     /* One consistent brand on every company: name, never a header logo. */
     body.pf-tenant-site .nf-global-nav-standalone-brand .pf-company-name{
       color:#fff!important;display:block;max-width:230px;overflow:hidden;
@@ -178,7 +187,55 @@
   if(root?.matches?.("img"))brandImage(root);
   root?.querySelectorAll?.("img")?.forEach(brandImage);
   brandArtworkText(root);
+  applyTenantArtHero(root);
   if(tenantLogoUrl)addArtWatermarks();
+ }
+ // A photo is one <img> in each artwork; retain the existing transparency
+ // and white wash from the globally approved models.
+ function applyTenantArtHero(root=document){
+  if(!artHeroUrl)return;
+  const selector=".m3HeroImg,.nfM3HeroImg,.nfM4HeroImg,.multiArtHeroImg";
+  const images=[];
+  if(root?.matches?.(selector))images.push(root);
+  root?.querySelectorAll?.(selector)?.forEach(el=>images.push(el));
+  for(const img of images)
+   if(img.src!==artHeroUrl)img.src=artHeroUrl;
+ }
+ function setHomeVisuals(){
+  if(!document.body)return;
+  if(homeHeroUrl){
+   const img=document.querySelector(".nf-dashboard > .nf-bg-image");
+   if(img)img.src=homeHeroUrl;
+  }
+  if(document.querySelector(".nf-welcome")&&(logoLightUrl||tenantLogoUrl)){
+   let img=document.querySelector(".pf-home-light-logo");
+   if(!img){
+    img=document.createElement("img");img.className="pf-home-light-logo";
+    img.alt=companyName;
+    document.querySelector(".nf-welcome").prepend(img);
+   }
+   img.src=logoLightUrl||tenantLogoUrl;
+   img.classList.toggle("pf-home-logo-fallback",!logoLightUrl);
+  }
+ }
+ async function fetchVisual(slot){
+  const url=window.portalTenantResourceUrl?.("visual/"+slot)||
+    "https://api.portalfrete.net.br/v1/tenant/visual/"+slot;
+  const r=await fetch(url,{credentials:"include",cache:"no-store"});
+  if(r.status===404)return null;
+  if(!r.ok)throw Error("Visual "+slot+" indisponível");
+  const file=await r.blob();
+  if(!["image/png","image/jpeg","image/webp"].includes(file.type))return null;
+  return URL.createObjectURL(file);
+ }
+ async function loadTenantVisuals(){
+  const slots=["logo-light","hero-art","hero-home"];
+  const result=await Promise.all(slots.map(slot=>fetchVisual(slot).catch(()=>null)));
+  [logoLightUrl,artHeroUrl,homeHeroUrl]=result;
+  if(artHeroUrl)window.PortalArtHero?.setSource?.(artHeroUrl);
+  applyTenantArtHero();
+  setHomeVisuals();
+  return true;
  }
  async function loadBrand(){
   // Fetch only for artwork; the header always stays name-only.
@@ -196,6 +253,7 @@
     img.hidden=false;img.style.removeProperty("display");
    }
    addArtWatermarks();
+   setHomeVisuals();
   }catch(_){}
  }
  function fixLink(link){
@@ -276,6 +334,7 @@
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);
   void loadBrand();
+  window.portalTenantVisualReady=loadTenantVisuals();
   window.portalTenantArtThemeReady=loadArtThemes();
   if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(mutations=>{

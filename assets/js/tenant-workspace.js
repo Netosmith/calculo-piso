@@ -4,11 +4,13 @@
  "use strict";
  let currentTenant="";
  let lastFreightSummary=null;
+ let activeFreightModules=new Set();
  const displayBase=source=>source==="FRETES"?"GERAL":
    source==="FRETES2"?"MT INTERNO":
    source.startsWith("FRETES-")?source.slice(7):source;
  function renderUnifiedFreightSummary(){
   if(!lastFreightSummary||lastFreightSummary.tenantId!==currentTenant)return;
+  const selectedBases=new Set((lastFreightSummary.bases||[]).map(value=>String(value).toUpperCase()));
   const seen=new Set(),rows=[];
   for(const row of lastFreightSummary.rows||[]){
    if(!row||typeof row!=="object")continue;
@@ -16,12 +18,15 @@
    // The same numeric ID may occur in different bases without being a duplicate.
    const id=String(row.id||"").trim();
    const source=String(row.source||"").toUpperCase();
+   if(!selectedBases.has(source))continue;
    const recordKey=source+"::"+id;
    if(id&&seen.has(recordKey))continue;
    if(id)seen.add(recordKey);
    rows.push(row);
   }
-  const byBase=new Map();
+  const byBase=new Map([...selectedBases].map(source=>[
+    displayBase(source),{fretes:0,porta:0,transito:0}
+  ]));
   for(const row of rows){
    const label=displayBase(String(row.source||"").toUpperCase());
    const acc=byBase.get(label)||{fretes:0,porta:0,transito:0};
@@ -32,7 +37,7 @@
   }
   set("homeFretesAtivos",rows.length);
   const detail=$("homeFretesDetalhe");
-  if(detail)detail.textContent=[...byBase].map(([base,acc])=>base+": "+acc.fretes).join(" • ")||"Nenhum frete disponível";
+  if(detail)detail.textContent=[...byBase].map(([base,acc])=>base+": "+acc.fretes).join(" • ")||"Nenhuma base habilitada e vinculada a uma regional";
   const totalPorta=[...byBase.values()].reduce((n,x)=>n+x.porta,0);
   const totalTransito=[...byBase.values()].reduce((n,x)=>n+x.transito,0);
   const vehicle=document.querySelector(".nf-veiculos-resumo");
@@ -51,8 +56,8 @@
    }
    vehicle.append(lines);
   }
-  set("homeFretesAtualizacao","Consolidado das bases habilitadas");
-  set("homeVeiculosAtualizacao","Porta e trânsito por base operacional");
+  set("homeFretesAtualizacao",byBase.size?"Consolidado das bases vinculadas a regionais":"Selecione a base no cadastro de uma regional");
+  set("homeVeiculosAtualizacao",byBase.size?"Porta e trânsito por base operacional vinculada":"Nenhuma base regional vinculada");
  }
 
  const $=id=>document.getElementById(id);
@@ -64,8 +69,8 @@
   if(!grid || !window.__PORTAL_TENANT_SESSION?.tenantMode)return;
   const general=grid.querySelector('a[data-feature="fretes"] h2');
   const internal=grid.querySelector('a[data-feature="fretes2"] h2');
-  if(general)general.textContent="Fretes Geral (multiestado)";
-  if(internal)internal.textContent="Fretes MT (interno)";
+  if(general)general.textContent="Fretes Operacional";
+  if(internal)internal.closest("a")?.remove();
   for(const uf of BASE_UFS){
    const key=baseKey(uf);
    const existing=grid.querySelector('a[data-feature="'+key+'"]');
@@ -94,8 +99,11 @@
  function cards(){
   renderBaseCards();
   document.querySelectorAll(".nf-tools a.nf-tool[data-feature]").forEach(card=>{
-   const allowed=typeof window.canAccessFeature==="function"&&
-    window.canAccessFeature(card.dataset.feature);
+   const feature=card.dataset.feature;
+   const visibleByRegional=feature==="fretes"||/^fretes-[a-z]{2}$/.test(feature)
+     ?activeFreightModules.has(feature):true;
+   const allowed=visibleByRegional&&typeof window.canAccessFeature==="function"&&
+    window.canAccessFeature(feature);
    card.hidden=!allowed;
    card.style.display=allowed?"":"none";
    card.removeAttribute("aria-disabled");
@@ -116,22 +124,18 @@
    const response=await window.PortalAPI.call("home","read",{});
    if(currentTenant!==session.transportadoraId)return;
    const data=response?.data||{};
-   const fields={
-    homeFretesAtivos:"fretesAtivos",homeFretesGO:"fretesGO",homeFretesMT:"fretesMT",
-    homeVeiculosGO:"veiculosGO",homeVeiculosMT:"veiculosMT",
-    homeVeiculosGOPorta:"goPorta",homeVeiculosGOTransito:"goTransito",
-    homeVeiculosMTPorta:"mtPorta",homeVeiculosMTTransito:"mtTransito",
-    homeSolicStat:"solicitacoes",homeSolicOpen:"solicitacoes",homeFiliais:"filiais"
-   };
+   // Freight and fleet indicators come ONLY from enabled regional bases.
+   // General Home metrics can never overwrite their consolidated counts.
+   const fields={homeSolicStat:"solicitacoes",homeSolicOpen:"solicitacoes",homeFiliais:"filiais"};
    Object.entries(fields).forEach(([id,key])=>{
     if(typeof data[key]==="number"&&Number.isFinite(data[key]))set(id,data[key]);
    });
-   updates.forEach(id=>set(id,"Atualizado pela planilha da transportadora"));
+   ["homeSolicAtualizacao","homeFiliaisAtualizacao"].forEach(id=>set(id,"Atualizado pela planilha da transportadora"));
    renderUnifiedFreightSummary();
    document.querySelector(".nf-footer-status")?.replaceChildren("Dados exclusivos");
   }catch(error){
    if(currentTenant!==session.transportadoraId)return;
-   updates.forEach(id=>set(id,"Integração da planilha indisponível"));
+   ["homeSolicAtualizacao","homeFiliaisAtualizacao"].forEach(id=>set(id,"Integração da planilha indisponível"));
    renderUnifiedFreightSummary();
    document.querySelector(".nf-footer-status")?.replaceChildren("Planilha não disponível");
   }
@@ -142,6 +146,7 @@
      session.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return;
   currentTenant=session.transportadoraId;
   lastFreightSummary=null;
+  activeFreightModules=new Set();
   document.body?.classList.add("pf-tenant-mode");
   const root=$("tenantWorkspace");
   if(root){root.replaceChildren();root.hidden=true;}
@@ -160,6 +165,9 @@
  window.addEventListener("portal:tenant-freights-summary",event=>{
   if(event.detail?.tenantId!==currentTenant)return;
   lastFreightSummary=event.detail;
+  activeFreightModules=new Set((event.detail?.bases||[]).map(source=>
+    source==="FRETES"?"fretes":String(source).toLowerCase()));
+  cards();
   renderUnifiedFreightSummary();
  });
  window.addEventListener("portal:session",event=>render(event.detail));

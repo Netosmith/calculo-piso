@@ -75,7 +75,7 @@ test("GNOVA-only artwork logo is raised and bounded in both Divulgação and Fre
   assert.ok(rule.includes(geometry),"Missing art-safe logo geometry: "+geometry);
  assert.ok(route.includes("applyGnovaArtLogoLayout();"));
  assert.ok(loader.includes('tenant==="teste-01"'));
- assert.ok(loader.includes("owner-support-20261104-1"));
+ assert.ok(loader.includes("tenant-route.js?v=visual-v2"));
  for(const page of ["divulgacao","fretes"]){
   const entry=file("pages/transportadora-teste/"+page+".html");
   assert.ok(entry.includes("tenant-page.js?v=owner-support-v1"),page);

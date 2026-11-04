@@ -82,7 +82,7 @@
   bootStyle.textContent='html[data-pf-tenant-boot="1"] body{visibility:hidden!important}';
   parsed.head.insertBefore(bootStyle,base.nextSibling);
   const route=parsed.createElement("script");
-  route.src="/assets/js/tenant-route.js?v=7";
+  route.src="/assets/js/tenant-route.js?v=8";
   parsed.head.insertBefore(route,base.nextSibling);
   // Controle uses Tailwind utilities. The Play CDN may fail when injected
   // after DOMContentLoaded on tenant pages; use precompiled same-origin CSS.

@@ -109,7 +109,7 @@ function paint(){
   const x=number("logoX",0,-500,250);
   const opacity=number("logoOpacity",100,10,100);
   Object.assign(image.style,{
-   top:top+"px",left:"calc(50% + "+x+"px)",width:w+"px",height:h+"px",
+   top:top+"px",left:"calc(50% + "+x+"px)",width:(!m3?Math.min(w,440):w)+"px",height:(!m3?Math.min(h,125):h)+"px",
    opacity:String(opacity/100),objectFit:"contain",objectPosition:"center center",
    transform:"translateX(-50%)"
   });

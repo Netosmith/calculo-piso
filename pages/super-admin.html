@@ -48,6 +48,14 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 .art-watermark input{width:70px;background:#061d30;color:#fff;border:1px solid #6888a5;border-radius:7px;padding:6px}
 .art-actions{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-top:16px}
 #artStatus{font-size:12px;color:#abc8e3}
+.art-logo-editor{margin-top:12px;padding:10px;border-radius:10px;border:1px solid #57738c;background:#0e2a40}
+.art-logo-editor h5{font-size:12px;margin:0 0 8px;color:#f0f8ff}
+.art-logo-slider{display:grid;grid-template-columns:1fr 65px;column-gap:10px;align-items:center;margin:8px 0;font-size:11px;color:#cfdeea}
+.art-logo-slider label{grid-column:1/-1;margin-bottom:3px}
+.art-logo-slider input[type=range]{width:100%;accent-color:#12aa79}
+.art-logo-slider output{font-variant-numeric:tabular-nums;text-align:right}
+.art-logo-reset{font-size:11px;padding:7px 10px;margin-top:7px}
+
 @media(max-width:780px){main{padding:18px 12px 40px}#galleryPanel,#companyDetail{padding:15px}#companies.company-gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))}.company-card{min-height:219px}.company-card-visual{height:110px}}
 
 /* Separate image uploads with contextual dark/light previews. */
@@ -119,7 +127,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 </div>
 <p class="muted">PNG, JPG e WebP. Limite de 2 MB para logos e 6 MB para imagens hero. Cada imagem pode ser substituída individualmente.</p>
 </div>
-<div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. As cores e a marca d’água são independentes por empresa e modelo.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
+<div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. Cores, marca d’água, tamanho e posição da logo são independentes por empresa e modelo. Ajuste os controles e clique em Salvar.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
 </section></div></div>
 </main>
 <script>
@@ -649,7 +657,8 @@ const galleryLogoUrls=new Map(),galleryLogoLoading=new Set();
 let galleryOpen=false,artLoadSerial=0,artSaving=false;
 const modelKeys=['modelo3','modelo4a','modelo4b','modelo4c'];
 const modelTitles=[['Modelo 3','1 frete · vertical'],['Modelo 4A','2 fretes'],['Modelo 4B','3 fretes'],['Modelo 4C','4 fretes']];
-const defaultVisual={primary:'#113c70',accent:'#08a968',surface:'#f4f8fb',watermark:8};
+const defaultVisual={primary:'#113c70',accent:'#08a968',surface:'#f4f8fb',watermark:8,logoWidth:290,logoHeight:96,logoTop:4,logoX:0,logoOpacity:100};
+function artLogoDefault(key){return {...defaultVisual,...(key==='modelo3'?{}:{logoWidth:305,logoHeight:128,logoTop:8})};}
 function createArtEditor(){
  const root=$('artModelGrid');root.replaceChildren();
  modelKeys.forEach((key,index)=>{
@@ -677,7 +686,35 @@ function createArtEditor(){
   wmInput.type='number';wmInput.min='0';wmInput.max='14';wmInput.step='1';
   wmInput.value=String(defaultVisual.watermark);wmInput.dataset.artModel=key;
   wmInput.dataset.artField='watermark';wm.append(wmInput);
-  section.append(heading,note,sample,controls,wm);root.append(section);
+  const editor=document.createElement('div');editor.className='art-logo-editor';
+  const title=document.createElement('h5');title.textContent='Posição e tamanho da logo';editor.append(title);
+  for(const [field,text,min,max,step,suffix] of [
+   ['logoWidth','Largura',100,600,5,'px'],
+   ['logoHeight','Altura da área',35,220,5,'px'],
+   ['logoTop','Subir / descer',-60,160,2,'px'],
+   ['logoX','Esquerda / direita',-250,250,5,'px'],
+   ['logoOpacity','Opacidade',10,100,5,'%']
+  ]){
+   const row=document.createElement('div');row.className='art-logo-slider';
+   const label=document.createElement('label');label.textContent=text;label.htmlFor=key+'-'+field;
+   const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;
+   input.id=key+'-'+field;input.value=artLogoDefault(key)[field];
+   input.dataset.artModel=key;input.dataset.artField=field;
+   const output=document.createElement('output');output.htmlFor=input.id;
+   output.textContent=input.value+suffix;input.addEventListener('input',()=>{output.textContent=input.value+suffix;});
+   row.append(label,input,output);editor.append(row);
+  }
+  const reset=document.createElement('button');reset.type='button';reset.className='art-logo-reset';
+  reset.textContent='Restaurar posição padrão';
+  reset.onclick=()=>{
+   const fallback=artLogoDefault(key);
+   for(const field of ['logoWidth','logoHeight','logoTop','logoX','logoOpacity']){
+    const input=section.querySelector('[data-art-field="'+field+'"]');
+    input.value=fallback[field];input.dispatchEvent(new Event('input',{bubbles:true}));
+   }
+  };
+  editor.append(reset);
+  section.append(heading,note,sample,controls,wm,editor);root.append(section);
  });
  drawArtPreviews();
 }
@@ -687,7 +724,10 @@ function allArtValues(){
   const get=field=>document.querySelector('[data-art-model="'+key+'"][data-art-field="'+field+'"]');
   models[key]={
    primary:get('primary').value.toLowerCase(),accent:get('accent').value.toLowerCase(),
-   surface:get('surface').value.toLowerCase(),watermark:Number(get('watermark').value)
+   surface:get('surface').value.toLowerCase(),watermark:Number(get('watermark').value),
+   logoWidth:Number(get('logoWidth').value),logoHeight:Number(get('logoHeight').value),
+   logoTop:Number(get('logoTop').value),logoX:Number(get('logoX').value),
+   logoOpacity:Number(get('logoOpacity').value)
   };
  }
  return {models};
@@ -703,9 +743,10 @@ function drawArtPreviews(){
 }
 function applyArtValues(data){
  for(const key of modelKeys){
-  for(const field of ['primary','accent','surface','watermark']){
+  for(const field of ['primary','accent','surface','watermark','logoWidth','logoHeight','logoTop','logoX','logoOpacity']){
    const input=document.querySelector('[data-art-model="'+key+'"][data-art-field="'+field+'"]');
-   input.value=String(data?.models?.[key]?.[field]??defaultVisual[field]);
+   input.value=String(data?.models?.[key]?.[field]??artLogoDefault(key)[field]);
+   if(input.type==='range')input.dispatchEvent(new Event('input',{bubbles:false}));
   }
  }
  drawArtPreviews();
@@ -737,7 +778,7 @@ $('artSave').onclick=async()=>{
   if(!saved.configured||JSON.stringify(saved.artes?.models)!==JSON.stringify(body.models))
    throw new Error('Não foi possível confirmar a gravação.');
   $('artStatus').textContent='Quatro modelos salvos para '+selected.name+'.';
-  notice('Cores salvas com sucesso. A logo oficial continua única por transportadora.');
+  notice('Cores, tamanho e posição da logo salvos para os quatro modelos.');
   await loadAudit();
  }catch(error){$('artStatus').textContent=error.message||'Falha ao salvar.';}
  finally{artSaving=false;$('artSave').disabled=!canEditBrand();}
@@ -821,7 +862,7 @@ addEventListener('pagehide',()=>{
 
 </script>
 <script src="../assets/js/auth.js?v=26"></script>
-<script src="../assets/js/super-admin-real-preview.js?v=1" defer></script>
+<script src="../assets/js/super-admin-real-preview.js?v=2" defer></script>
 <script src="../assets/js/portal-preferences.js?v=9" defer></script>
 <script src="../assets/js/portal-preferences-advanced.js?v=7" defer></script>
 </body></html>

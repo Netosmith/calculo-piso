@@ -55,3 +55,13 @@ test("only new companies receive a regional UF selector and multibase cards",()=
  assert.match(home,/tenantMode/);
  assert.match(map,/regionalUfs/);
 });
+
+test("BI origin-state mapping and accounting base are independent for tenants",()=>{
+ const bi=read("assets/js/bi.js");
+ assert.match(bi,/tenantOriginUf/);
+ assert.match(bi,/tenantRegionalUfCatalog/);
+ assert.match(bi,/refreshTenantRegionalUfCatalog/);
+ assert.match(bi,/origemDados:tenant\?sources\[index\]/);
+ const cad=read("assets/js/cadastros.js");
+ assert.match(cad,/BASES_OPERACIONAIS=\["GERAL"/);
+});

@@ -230,6 +230,8 @@ export async function iaController(request, env) {
   }
   const session = await getSession(env, readSessionId(request));
   if (!session) return errorResponse("Sessão expirada ou inválida.", 401);
+  if(String(session.perfil||"").trim().toUpperCase()==="PISO")
+    return errorResponse("Perfil PISO autorizado apenas no Calculo de Piso 2.",403);
   if (request.method === "GET") {
     return success({
       configured: Boolean(env.OPENAI_API_KEY),

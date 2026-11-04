@@ -241,7 +241,8 @@
     // This legacy assistant is not tenant-scoped. Never mount or call its
     // endpoints from a different company's authenticated workspace.
     const session=window.portalAuthReady?await window.portalAuthReady:null;
-    if(!session||session.tenantMode===true)return;
+    if(!session||session.tenantMode===true||
+       String(session.perfil||"").trim().toUpperCase()==="PISO")return;
     mount();
   }
   if (document.readyState === "loading"){

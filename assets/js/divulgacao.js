@@ -681,39 +681,41 @@
     });
   }
 
-  // html2canvas may resolve CSS calc()/translateX differently from Chromium.
-  // Freeze the actual on-screen logo rectangle into the exported DOM clone.
-  // This keeps the JPG identical to the preview without changing any tenant
-  // preferences or the original browser layout.
+  // Keep html2canvas from repainting a tenant logo with different CSS geometry.
+  // The visible browser rectangle is the canonical placement; paint that loaded
+  // image ONCE on the final export canvas at the full 1080px resolution.
   function prepareArtLogoExport(preview) {
     const image=preview?.querySelector(".m3Logo,.multiArtLogo");
     const hero=image?.closest(".m3Hero,.multiArtHero");
-    if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
-    const img=image.getBoundingClientRect();
-    const box=hero.getBoundingClientRect();
-    // The user-facing preview can be CSS-scaled to 300px while the actual
-    // exported artwork remains 1080px. Convert the visible rectangle back to
-    // the artwork's own coordinate system before passing it to html2canvas.
-    const sx=box.width>0?hero.offsetWidth/box.width:1;
-    const sy=box.height>0?hero.offsetHeight/box.height:1;
-    const geometry={
-      left:(img.left-box.left)*sx,top:(img.top-box.top)*sy,
-      width:img.width*sx,height:img.height*sy
-    };
+    if(!image||!hero||!image.complete||!image.naturalWidth)
+      return {onclone:()=>{},draw:()=>{},finish:()=>{}};
+    const root=preview.getBoundingClientRect();
+    const rect=image.getBoundingClientRect();
+    const clip=hero.getBoundingClientRect();
+    const opacity=Number(getComputedStyle(image).opacity)||1;
     preview.setAttribute("data-portal-export-logo","true");
     return {
-      onclone(cloneDoc) {
-        const clone=cloneDoc.querySelector('[data-portal-export-logo="true"] .m3Logo,'+
+      onclone(doc){
+        const clone=doc.querySelector('[data-portal-export-logo="true"] .m3Logo,'+
           '[data-portal-export-logo="true"] .multiArtLogo');
-        if(!clone)return;
-        for(const [key,value] of Object.entries({
-          position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
-          width:geometry.width+"px",height:geometry.height+"px",
-          transform:"none",margin:"0",maxWidth:"none",maxHeight:"none",
-          objectFit:"contain",objectPosition:"center center"
-        }))clone.style.setProperty(key,value,"important");
+        if(clone)clone.style.setProperty("visibility","hidden","important");
       },
-      finish(){preview.removeAttribute("data-portal-export-logo");}
+      draw(canvas){
+        const ctx=canvas.getContext("2d");
+        if(!ctx||!root.width||!root.height)return;
+        const sx=canvas.width/root.width,sy=canvas.height/root.height;
+        const box={x:(rect.left-root.left)*sx,y:(rect.top-root.top)*sy,
+          w:rect.width*sx,h:rect.height*sy};
+        const area={x:(clip.left-root.left)*sx,y:(clip.top-root.top)*sy,
+          w:clip.width*sx,h:clip.height*sy};
+        const ratio=Math.min(box.w/image.naturalWidth,box.h/image.naturalHeight);
+        const w=image.naturalWidth*ratio,h=image.naturalHeight*ratio;
+        ctx.save();ctx.beginPath();ctx.rect(area.x,area.y,area.w,area.h);ctx.clip();
+        ctx.globalAlpha=opacity;
+        ctx.drawImage(image,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);
+        ctx.restore();
+      },
+      finish(){delete preview.dataset.portalExportLogo;}
     };
   }
 
@@ -754,6 +756,7 @@
           logging: false,
           onclone:logoExport.onclone
         });
+        logoExport.draw(canvas);
       } finally {
         logoExport.finish();
         preview.style.transform = previousTransform;
@@ -1108,6 +1111,7 @@
         logging: false,
         onclone:logoExport.onclone
       });
+      logoExport.draw(canvas);
 
       const link = document.createElement("a");
       link.download = `divulgacao-mod04-${count}-fretes.jpg`;

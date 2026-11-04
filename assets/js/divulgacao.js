@@ -681,6 +681,36 @@
     });
   }
 
+  // html2canvas may resolve CSS calc()/translateX differently from Chromium.
+  // Freeze the actual on-screen logo rectangle into the exported DOM clone.
+  // This keeps the JPG identical to the preview without changing any tenant
+  // preferences or the original browser layout.
+  function prepareArtLogoExport(preview) {
+    const image=preview?.querySelector(".m3Logo,.multiArtLogo");
+    const hero=image?.closest(".m3Hero,.multiArtHero");
+    if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
+    const img=image.getBoundingClientRect();
+    const box=hero.getBoundingClientRect();
+    const geometry={
+      left:img.left-box.left,top:img.top-box.top,
+      width:img.width,height:img.height
+    };
+    preview.setAttribute("data-portal-export-logo","true");
+    return {
+      onclone(cloneDoc) {
+        const clone=cloneDoc.querySelector('[data-portal-export-logo="true"] .m3Logo,'+
+          '[data-portal-export-logo="true"] .multiArtLogo');
+        if(!clone)return;
+        for(const [key,value] of Object.entries({
+          position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
+          width:geometry.width+"px",height:geometry.height+"px",
+          transform:"none",margin:"0",maxWidth:"none",maxHeight:"none"
+        }))clone.style.setProperty(key,value,"important");
+      },
+      finish(){preview.removeAttribute("data-portal-export-logo");}
+    };
+  }
+
   async function saveTemplate(templateId) {
     const preview = getPreview(templateId);
     if (!preview) return;
@@ -707,6 +737,7 @@
       const previousTransform = preview.style.transform;
       preview.style.transform = "none";
 
+      const logoExport=prepareArtLogoExport(preview);
       try {
         canvas = await html2canvas(preview, {
           backgroundColor: getComputedStyle(preview).backgroundColor,
@@ -714,9 +745,11 @@
           width: 1080,
           height: 1440,
           useCORS: true,
-          logging: false
+          logging: false,
+          onclone:logoExport.onclone
         });
       } finally {
+        logoExport.finish();
         preview.style.transform = previousTransform;
       }
     } else {
@@ -1058,6 +1091,7 @@
     const previousTransform = preview.style.transform;
     preview.style.transform = "none";
 
+    const logoExport=prepareArtLogoExport(preview);
     try {
       const canvas = await window.html2canvas(preview, {
         backgroundColor: getComputedStyle(preview).backgroundColor,
@@ -1065,7 +1099,8 @@
         width: 1080,
         height: 1350,
         useCORS: true,
-        logging: false
+        logging: false,
+        onclone:logoExport.onclone
       });
 
       const link = document.createElement("a");
@@ -1073,6 +1108,7 @@
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
+      logoExport.finish();
       preview.style.transform = previousTransform;
     }
   }

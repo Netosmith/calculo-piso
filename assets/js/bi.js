@@ -307,9 +307,9 @@
       dataReferencia: safeText(firstValue(r, [
         "dataReferencia", "data", "dataCriacao", "createdAt", "timestamp"
       ])),
-      origemDados: upper(firstValue(r, [
-        "origemDados", "base", "planilha", "origemBase"
-      ], origemPadrao)),
+      origemDados: window.__PORTAL_TENANT_SESSION?.tenantMode===true && origemPadrao
+        ? upper(origemPadrao)
+        : upper(firstValue(r, ["origemDados", "base", "planilha", "origemBase"], origemPadrao)),
       regional: upper(firstValue(r, ["regional", "Regional"])),
       filial: upper(firstValue(r, ["filial", "Filial", "nomeFilial"])),
       cliente: upper(firstValue(r, ["cliente", "Cliente", "nomeCliente"])),
@@ -500,8 +500,10 @@
       const option=new Option("BASE "+uf,sourceForUf(uf));
       return option;
     })];
-    picker.replaceChildren(...opts);
     picker.multiple=true;
+    picker.replaceChildren(...opts);
+    // No selection means ALL authorized bases, including mixed and dedicated.
+    for(const option of picker.options)option.selected=false;
     picker.size=Math.min(5,Math.max(2,opts.length));
     picker.setAttribute("aria-label","Selecione uma ou mais bases; sem seleção significa todas");
     picker.title="Use Ctrl ou Shift para selecionar várias bases. Sem seleção = todas.";

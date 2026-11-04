@@ -602,9 +602,12 @@
     const base = selectedBaseCode();
     const origemDados = origemDadosForBase(base);
     const currentRegional = upper($("#fRegional")?.value);
+    const matchesRegionalBase = rowBase => !base || rowBase === base ||
+      (window.__PORTAL_TENANT_SESSION?.tenantMode===true &&
+       origemDados==="FRETES" && base==="GO" && rowBase==="GERAL");
 
     const regionaisCatalogo = STATE.regionais
-      .filter((row) => !base || row.base === base)
+      .filter((row) => matchesRegionalBase(row.base))
       .map((row) => row.regional);
 
     const regionaisDosDados = rows
@@ -631,7 +634,7 @@
     const filiaisCatalogo = STATE.filiaisCadastro
       .filter((row) => {
         if (selectedRegional && row.regional !== selectedRegional) return false;
-        if (base && regionalBase(row.regional) !== base) return false;
+        if (!matchesRegionalBase(regionalBase(row.regional))) return false;
         return true;
       })
       .map((row) => row.filial);

@@ -16,7 +16,7 @@ test("Model 4 city uses natural word boundaries and prevents orphan letters in b
   assert.match(html,/\.nfM4Canvas\.count-3 \.nfM4City\{height:76px/);
   assert.match(html,/\.nfM4Canvas\.count-4 \.nfM4City\{height:62px/);
   assert.match(html,/overflow-wrap:normal;/);
- });
+ }
 });
 
 test("Model 4 artwork hero preserves image proportions and caps the tenant logo",()=>{

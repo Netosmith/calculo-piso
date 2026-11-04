@@ -42,7 +42,9 @@ test("offline order shares original layout but uses isolated company details and
 
 test("new transportadoras get their own clean empty order preset",()=>{
  const generator=read("scripts/criar-transportadora-modelo.mjs");
- assert.match(generator,/if\(name==="ordem"\)/);
- assert.match(generator,/Never copy those records/);
- assert.match(generator,/cnpj:"", ie:"", endereco:"", email:""/);
+ const template=read("pages/modelo01/ordem.html");
+ assert.match(generator,/pages","modelo01"/);
+ assert.match(template,/NOME_TRANSPORTADORA=""/);
+ assert.match(template,/cnpj:"",ie:"",endereco:"",email:""/);
+ assert.doesNotMatch(template,/GNOVA|teste-01/);
 });

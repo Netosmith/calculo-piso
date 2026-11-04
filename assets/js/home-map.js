@@ -432,6 +432,7 @@
       }
       if (!window.PortalAPI) throw new Error("API segura do Portal indisponível.");
 
+      let dispatchSummary=()=>{};
       if(session.tenantMode===true){
         try{
           const catalog=await window.PortalAPI.tenantRequest("/regionais/ufs");
@@ -451,7 +452,7 @@
           key.startsWith("fretes-")?key.slice(7).toUpperCase():"";
         const allowed=baseKeys.filter(key=>key!=="fretes2"&&
           modules.includes(key)&&assigned.has(accountingBase(key)));
-        const dispatchSummary=rows=>window.dispatchEvent(new CustomEvent("portal:tenant-freights-summary",{
+        dispatchSummary=rows=>window.dispatchEvent(new CustomEvent("portal:tenant-freights-summary",{
           detail:{tenantId:session.transportadoraId,bases:allowed.map(key=>
             key==="fretes"?"FRETES":key.toUpperCase()),rows}
         }));
@@ -466,7 +467,7 @@
           const source=allowed[index]==="fretes2"?"FRETES2":allowed[index]==="fretes"?"FRETES":allowed[index].toUpperCase();
           extractRows(reply.value).forEach(item=>{
             const row=normalizeRow(item,source);
-            const key=upper(row.regional).replace(/\\s+/g," ").normalize("NFC");
+            const key=upper(row.regional).replace(/\s+/g," ").normalize("NFC");
             // No cross-base freight appears under a different regional's KPI.
             if(upper(STATE.regionalUfs[key]?.base)!==accountingBase(allowed[index]))return;
             rows.push(row);

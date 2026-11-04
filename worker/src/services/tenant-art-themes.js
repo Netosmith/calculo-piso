@@ -6,7 +6,8 @@ const validTenant=id=>typeof id==="string" && id!=="nova-frota" &&
   /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(id) && id.length<=48;
 const HEX=/^#[0-9a-fA-F]{6}$/;
 const storageKey=id=>"tenant/"+id+"/visual/arts-v1.json";
-const defaults=()=>Object.fromEntries(MODELS.map(key=>[key,{...DEFAULT_MODEL}]));
+const defaultFor=key=>key==="modelo3"?DEFAULT_MODEL:{...DEFAULT_MODEL,logoWidth:305,logoHeight:128,logoTop:8};
+const defaults=()=>Object.fromEntries(MODELS.map(key=>[key,{...defaultFor(key)}]));
 
 function normalizeModel(value,fallback=DEFAULT_MODEL){
  const raw=value&&typeof value==="object"&&!Array.isArray(value)?value:{};
@@ -27,7 +28,7 @@ export function normalizedArtThemes(input){
  const out=defaults();
  const source=input?.models;
  if(source&&typeof source==="object"&&!Array.isArray(source))
-  for(const key of MODELS)out[key]=normalizeModel(source[key]);
+  for(const key of MODELS)out[key]=normalizeModel(source[key],defaultFor(key));
  return {version:1,models:out};
 }
 export function validateArtThemeUpdate(body){

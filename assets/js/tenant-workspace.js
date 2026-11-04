@@ -61,52 +61,68 @@
    detail.title=[...allFreightLabels,...failedLabels.map(x=>x+": indisponível")]
      .join(" • ");
   }
-  const totalPorta=summaries.reduce((n,x)=>n+x.porta,0);
-  const totalTransito=summaries.reduce((n,x)=>n+x.transito,0);
+  // Two compact sections, matching Nova Frota:
+  // 1) totals by operational base; 2) Porta / Trânsito by base.
+  // No oversized consolidated vehicle number.
   const vehicle=document.querySelector(".nf-veiculos-resumo");
   if(vehicle){
    vehicle.replaceChildren();
    vehicle.removeAttribute("style");
    vehicle.classList.add("pf-tenant-vehicle");
-   vehicle.setAttribute("aria-label","Veículos da transportadora por base");
-   const total=document.createElement("strong");
-   total.className="nf-stat-value pf-tenant-vehicle-total";
-   total.textContent=String(totalPorta+totalTransito);
-   vehicle.append(total);
+   vehicle.setAttribute("aria-label","Veículos totais por base: totais e posições");
 
-   const meta=document.createElement("div");
-   meta.className="pf-tenant-vehicle-meta";
-   const allVehicleLabels=summaries.map(x=>x.base+": "+x.total);
-   meta.textContent=allVehicleLabels.slice(0,2).join(" • ")+
-     (allVehicleLabels.length>2?" • +"+(allVehicleLabels.length-2)+" bases":"");
-   if(!summaries.length)meta.textContent="Nenhuma base vinculada";
-   meta.title=allVehicleLabels.join(" • ");
-   vehicle.append(meta);
+   const totals=document.createElement("div");
+   totals.className="pf-tenant-vehicle-meta";
+   totals.setAttribute("aria-label","Total de veículos por base");
+   if(summaries.length){
+    for(const {base,total} of summaries){
+     const item=document.createElement("span");
+     item.className="pf-tenant-base-total";
+     const label=document.createElement("span");
+     label.className="pf-tenant-base-name";
+     label.textContent=base+":";
+     const number=document.createElement("strong");
+     number.textContent=String(total);
+     item.append(label,number);
+     totals.append(item);
+    }
+   }else{
+    const empty=document.createElement("span");
+    empty.className="pf-tenant-base-total";
+    empty.textContent=failedLabels.length?"Bases indisponíveis":"Nenhuma base vinculada";
+    totals.append(empty);
+   }
+   totals.title=summaries.map(x=>x.base+": "+x.total).join(" • ");
+   vehicle.append(totals);
+
+   const divider=document.createElement("div");
+   divider.className="pf-tenant-vehicle-divider";
+   divider.setAttribute("aria-hidden","true");
+   vehicle.append(divider);
 
    const lines=document.createElement("div");
    lines.className="pf-tenant-vehicle-lines";
-   lines.setAttribute("aria-label","Detalhamento de Porta e Trânsito por base");
+   lines.setAttribute("aria-label","Porta e Trânsito por base");
    for(const {base,porta,transito,total:baseTotal} of summaries){
     const item=document.createElement("div");
     item.className="nf-veiculos-linha";
     item.title=base+": "+baseTotal+" veículos • Porta "+porta+" • Trânsito "+transito;
-
     const label=document.createElement("strong");
     label.className="nf-veiculos-uf";
     label.textContent=base;
     label.title=base;
     item.append(label);
     for(const [type,name,value] of [["porta","Porta",porta],["transito","Trânsito",transito]]){
-     const status=document.createElement("span");
-     status.className="nf-veiculos-status "+type;
+     const position=document.createElement("span");
+     position.className="nf-veiculos-status "+type;
      const dot=document.createElement("i");
      dot.setAttribute("aria-hidden","true");
      const caption=document.createElement("span");
      caption.textContent=name;
      const count=document.createElement("b");
      count.textContent=String(value);
-     status.append(dot,caption,count);
-     item.append(status);
+     position.append(dot,caption,count);
+     item.append(position);
     }
     lines.append(item);
    }

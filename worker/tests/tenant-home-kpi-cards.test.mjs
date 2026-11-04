@@ -74,9 +74,11 @@ test("One-base transportadora uses clean numeric KPIs without pipes or bordered 
  ]});
  assert.equal(h.text("homeFretesAtivos"),"3");
  assert.equal(h.text("homeFretesDetalhe"),"GERAL: 3");
- assert.equal(h.vehicle.children[0].textContent,"16");
- assert.equal(h.vehicle.children[0].className,"nf-stat-value pf-tenant-vehicle-total");
- assert.equal(h.vehicle.children[1].textContent,"GERAL: 16");
+ assert.equal(h.vehicle.children.length,3);
+ assert.equal(h.vehicle.children[0].className,"pf-tenant-vehicle-meta");
+ assert.equal(h.vehicle.children[0].textContent,"GERAL:16");
+ assert.equal(h.vehicle.children[0].children[0].className,"pf-tenant-base-total");
+ assert.equal(h.vehicle.children[1].className,"pf-tenant-vehicle-divider");
  const rows=h.vehicle.children[2].children;
  assert.equal(rows.length,1);
  assert.equal(rows[0].className,"nf-veiculos-linha");
@@ -102,13 +104,14 @@ test("Multi-base metrics preserve sums, provide compact summary and accessible a
  assert.equal(h.text("homeFretesAtivos"),"4");
  assert.equal(h.text("homeFretesDetalhe"),"GERAL: 1 • GO: 1 • +2 bases");
  assert.match(h.elements.get("homeFretesDetalhe").title,/SP: 1/);
- assert.equal(h.vehicle.children[0].textContent,"11");
- assert.equal(h.vehicle.children[1].textContent,"GERAL: 3 • GO: 3 • +2 bases");
+ assert.equal(h.vehicle.children[0].textContent,"GERAL:3GO:3MT:4SP:1");
+ assert.equal(h.vehicle.children[0].children.length,4);
+ assert.equal(h.vehicle.children[1].className,"pf-tenant-vehicle-divider");
  const rows=h.vehicle.children[2].children;
  assert.equal(rows.length,4);
  assert.deepEqual(rows.map(r=>r.children[0].textContent),["GERAL","GO","MT","SP"]);
  assert.ok(rows.every(row=>row.children.length===3));
- assert.match(h.vehicle.children[1].title,/SP: 1/);
+ assert.match(h.vehicle.children[0].title,/SP: 1/);
 });
 
 test("Disconnected bases remain flagged without falsifying the consolidated totals",()=>{
@@ -117,17 +120,20 @@ test("Disconnected bases remain flagged without falsifying the consolidated tota
   failedBases:["FRETES-GO"],
   rows:[{id:"1",source:"FRETES",porta:3,transito:2}]});
  assert.equal(h.text("homeFretesAtivos"),"1");
- assert.equal(h.vehicle.children[0].textContent,"5");
+ assert.equal(h.vehicle.children[0].textContent,"GERAL:5");
  assert.match(h.text("homeFretesAtualizacao"),/^1 base\(s\) indisponíveis/);
  assert.match(h.elements.get("homeFretesAtualizacao").title,/GO/);
 });
 
 test("Tenant styling is scoped and preserves Nova Frota's native KPI markup",()=>{
  const source=get("pages/home.html");
- assert.match(source,/body\.pf-tenant-mode \.pf-tenant-vehicle-total/);
+ assert.doesNotMatch(get("assets/js/tenant-workspace.js"),/pf-tenant-vehicle-total/);
+ assert.match(source,/body\.pf-tenant-mode \.nf-stat-veiculos \.nf-stat-label\{/);
+ assert.match(source,/white-space:nowrap;/);
+ assert.match(source,/body\.pf-tenant-mode \.pf-tenant-vehicle-divider/);
  assert.match(source,/body\.pf-tenant-mode \.pf-tenant-vehicle-lines/);
  assert.match(source,/body\.pf-tenant-mode \.pf-tenant-freight-detail/);
- assert.match(source,/tenant-workspace[.]js[?]v=6/);
+ assert.match(source,/tenant-workspace[.]js[?]v=7/);
  assert.match(source,/id="homeVeiculosGOPorta"/);
  assert.match(source,/id="homeVeiculosMTPorta"/);
  assert.match(source,/id="homeFretesAtivos"/);

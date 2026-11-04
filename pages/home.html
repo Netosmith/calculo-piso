@@ -391,37 +391,76 @@
       font-size:11px;
       font-weight:700;
     }
-    body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-vehicle{
-      margin-top:8px;
+    /* Only the new transportadoras: same two-part fleet summary as Nova Frota. */
+    body.pf-tenant-mode .nf-stat-veiculos .nf-stat-head{
+      display:flex;
+      gap:9px;
       min-width:0;
     }
-    body.pf-tenant-mode .pf-tenant-vehicle-total{
-      margin:0;
-      font-size:34px;
-      line-height:1;
-      font-weight:800;
+    body.pf-tenant-mode .nf-stat-veiculos .nf-stat-icon{
+      flex:0 0 auto;
+    }
+    body.pf-tenant-mode .nf-stat-veiculos .nf-stat-label{
+      display:block;
+      flex:0 1 auto;
+      min-width:0;
+      white-space:nowrap;
+      font-size:10px;
+      letter-spacing:-.15px;
+    }
+    body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-vehicle{
+      min-width:0;
+      margin-top:12px;
     }
     body.pf-tenant-mode .pf-tenant-vehicle-meta{
+      display:flex;
+      align-items:center;
+      gap:12px;
       min-width:0;
-      margin-top:6px;
-      color:#d1deee;
-      font-size:10.5px;
-      font-weight:700;
+      overflow-x:auto;
+      overflow-y:hidden;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(155,187,222,.5) transparent;
+      font-size:12px;
+      font-weight:700;
+      color:#d9e8f8;
+      padding:0 0 3px;
+    }
+    body.pf-tenant-mode .pf-tenant-base-total{
+      display:inline-flex;
+      flex:0 0 auto;
+      align-items:baseline;
+      gap:4px;
+      line-height:1.15;
+    }
+    body.pf-tenant-mode .pf-tenant-base-name{
+      font-size:10.5px;
+    }
+    body.pf-tenant-mode .pf-tenant-base-total strong{
+      font-size:16px;
+      font-weight:800;
+      color:#fff;
+      font-variant-numeric:tabular-nums;
+    }
+    body.pf-tenant-mode .pf-tenant-vehicle-divider{
+      height:1px;
+      margin:7px 0 5px;
+      background:rgba(163,195,228,.22);
     }
     body.pf-tenant-mode .pf-tenant-vehicle-lines{
-      margin-top:5px;
-      max-height:39px;
+      display:grid;
+      gap:2px;
+      max-height:43px;
       overflow-y:auto;
       overflow-x:hidden;
       scrollbar-width:thin;
-      scrollbar-color:rgba(155,187,222,.55) transparent;
+      scrollbar-color:rgba(155,187,222,.5) transparent;
     }
     body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-linha{
-      grid-template-columns:minmax(36px,.9fr) minmax(0,1.1fr) minmax(0,1.15fr);
-      gap:5px;
+      grid-template-columns:minmax(32px,.9fr) minmax(0,1.1fr) minmax(0,1.15fr);
+      align-items:center;
+      gap:4px;
       min-height:19px;
       font-size:10px;
     }
@@ -433,7 +472,7 @@
       font-size:10px;
     }
     body.pf-tenant-mode .pf-tenant-vehicle-lines .nf-veiculos-status{
-      gap:4px;
+      gap:3px;
       min-width:0;
       font-size:9.5px;
     }
@@ -447,7 +486,9 @@
       font-size:10.5px;
     }
     @media (max-width:620px){
-      body.pf-tenant-mode .pf-tenant-vehicle-lines{max-height:58px}
+      body.pf-tenant-mode .nf-stat-veiculos .nf-stat-label{font-size:9.5px}
+      body.pf-tenant-mode .pf-tenant-vehicle-meta{gap:10px}
+      body.pf-tenant-mode .pf-tenant-vehicle-lines{max-height:56px}
       body.pf-tenant-mode .nf-stats > .nf-stat:nth-child(-n+2){min-height:176px}
     }
 
@@ -1133,7 +1174,7 @@
   <script src="../assets/js/auth.js?v=28"></script>
   <script src="../assets/js/home-solicitacoes-access.js?v=3"></script>
   <script src="../assets/js/home-solicitacoes.js?v=5"></script>
-  <script src="../assets/js/tenant-workspace.js?v=6" defer></script>
+  <script src="../assets/js/tenant-workspace.js?v=7" defer></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>
   <script src="../assets/js/home-map.js?v=5"></script>
   <script>

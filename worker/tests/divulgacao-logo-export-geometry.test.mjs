@@ -6,7 +6,7 @@ const root=new URL("../../",import.meta.url);
 const read=p=>readFileSync(new URL(p,root),"utf8");
 
 test("All art renderers load new scripts and parse",()=>{
- for(const [page,version] of [["divulgacao",19],["fretes",38],["fretes2",33]]){
+ for(const [page,version] of [["divulgacao",19],["fretes",39],["fretes2",34]]){
   const html=read("pages/"+page+".html");
   const code=read("assets/js/"+page+".js");
   assert.match(html,new RegExp("assets/js/"+page+"\\.js\\?v="+version));
@@ -18,6 +18,12 @@ test("Logo stays visible in html2canvas clone and uses the displayed dimensions"
   const code=read("assets/js/"+script+".js");
   assert.match(code,new RegExp("function "+method+"\\(source\\)"));
   assert.match(code,/getBoundingClientRect\(\)/);
+  if(script!=="divulgacao"){
+    assert.match(code,/left:rect\.left-parent\.left,top:rect\.top-parent\.top/);
+    assert.match(code,/width:rect\.width,height:rect\.height/);
+    assert.doesNotMatch(code,/hero\.offsetWidth\/parent\.width/);
+    assert.doesNotMatch(code,/hero\.offsetHeight\/parent\.height/);
+  }
   assert.match(code,/hero\.offsetWidth\/parent\.width/);
   assert.match(code,/hero\.offsetHeight\/parent\.height/);
   assert.match(code,/visibility:"visible"/);

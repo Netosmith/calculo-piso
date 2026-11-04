@@ -12,7 +12,10 @@ const UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM"
 
 test("each optional freight base has a private route and module grant",()=>{
  const reg=read("worker/src/config/tenant-modules.js");
- const panel=read("worker/src/staging-page.js");
+ const panelSource=read("worker/src/staging-page.js");
+ const encoded=panelSource.match(/export const stagingPage = (".*");/s)?.[1];
+ assert.ok(encoded,"Staging generated snapshot missing");
+ const panel=JSON.parse(encoded);
  const loader=read("assets/js/tenant-page.js");
  const generator=read("scripts/criar-transportadora-modelo.mjs");
  for(const uf of UFS){

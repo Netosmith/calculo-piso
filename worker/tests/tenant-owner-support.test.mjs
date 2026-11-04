@@ -139,6 +139,9 @@ test("Browser uses explicit support scope for session, API and visual assets wit
 });
 test("Tenant page loader and branded resources honor support identity without a second login",()=>{
  const read=path=>readFileSync(new URL("../../"+path,import.meta.url),"utf8");
+ const backend=read("worker/src/services/tenant-owner-support.js");
+ assert.match(backend,/export async function ownerSupportPrincipal/);
+ assert.doesNotMatch(backend,/document\.currentScript/);
  const loader=read("assets/js/tenant-page.js");
  const login=read("assets/js/tenant-login.js");
  const route=read("assets/js/tenant-route.js");

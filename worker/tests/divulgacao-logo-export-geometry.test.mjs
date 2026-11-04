@@ -2,31 +2,30 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {Script} from "node:vm";
-const source=readFileSync(new URL("../../assets/js/divulgacao.js",import.meta.url),"utf8");
-const page=readFileSync(new URL("../../pages/divulgacao.html",import.meta.url),"utf8");
-test("JPG renderer loads fresh script",()=>{
- assert.doesNotThrow(()=>new Script(source));
- assert.match(page,/assets\/js\/divulgacao\.js\?v=18/);
+const root=new URL("../../",import.meta.url);
+const read=p=>readFileSync(new URL(p,root),"utf8");
+
+test("All art renderers load new scripts and parse",()=>{
+ for(const [page,version] of [["divulgacao",19],["fretes",38],["fretes2",33]]){
+  const html=read("pages/"+page+".html");
+  const code=read("assets/js/"+page+".js");
+  assert.match(html,new RegExp("assets/js/"+page+"\\.js\\?v="+version));
+  assert.doesNotThrow(()=>new Script(code));
+ }
 });
-test("preview logo is hidden in html2canvas clone and composited at real geometry",()=>{
- assert.match(source,/function prepareArtLogoExport\(preview\)/);
- assert.match(source,/getBoundingClientRect\(\)/);
- assert.match(source,/visibility","hidden","important"/);
- assert.match(source,/ctx\.drawImage\(image,/);
- assert.match(source,/ctx\.rect\(area\.x,area\.y,area\.w,area\.h\)/);
- assert.equal((source.match(/onclone:logoExport\.onclone/g)||[]).length,2);
- assert.equal((source.match(/logoExport\.draw\(canvas\)/g)||[]).length,2);
- assert.equal((source.match(/logoExport\.finish\(\)/g)||[]).length,2);
-});
-test("Fretes JPG and clipboard both use the shared fixed logo composition",()=>{
- for(const p of ["fretes","fretes2"]){
-  const script=readFileSync(new URL("../../assets/js/"+p+".js",import.meta.url),"utf8");
-  const html=readFileSync(new URL("../../pages/"+p+".html",import.meta.url),"utf8");
-  assert.doesNotThrow(()=>new Script(script));
-  assert.match(html,new RegExp("assets/js/"+p+"\\.js\\?v="+(p==="fretes"?"37":"32")));
-  assert.match(script,/function prepareLogoCanvasExport\(source\)/);
-  assert.match(script,/ctx\.drawImage\(img,/);
-  assert.equal((script.match(/onclone:logoExport\.onclone/g)||[]).length,2);
-  assert.equal((script.match(/logoExport\.draw\(canvas\)/g)||[]).length,2);
+test("Logo stays visible in html2canvas clone and uses the displayed dimensions",()=>{
+ for(const [script,method] of [["divulgacao","prepareArtLogoExport"],["fretes","prepareLogoCanvasExport"],["fretes2","prepareLogoCanvasExport"]]){
+  const code=read("assets/js/"+script+".js");
+  assert.match(code,new RegExp("function "+method+"\\(source\\)"));
+  assert.match(code,/getBoundingClientRect\(\)/);
+  assert.match(code,/hero\.offsetWidth\/parent\.width/);
+  assert.match(code,/hero\.offsetHeight\/parent\.height/);
+  assert.match(code,/visibility:"visible"/);
+  assert.match(code,/display:"block"/);
+  assert.match(code,/style\.setProperty\(/);
+  assert.doesNotMatch(code,/visibility","hidden","important"/);
+  assert.doesNotMatch(code,/logoExport\.draw\(canvas\)/);
+  assert.equal((code.match(/onclone:logoExport\.onclone/g)||[]).length,2);
+  assert.equal((code.match(/logoExport\.finish\(\)/g)||[]).length,2);
  }
 });

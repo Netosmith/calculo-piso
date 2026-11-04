@@ -1,0 +1,57 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {resolve,dirname} from "node:path";
+import {fileURLToPath} from "node:url";
+import {Script} from "node:vm";
+const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
+const read=p=>readFileSync(resolve(root,p),"utf8");
+const BASES=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+
+test("ten state base pages are GNOVA-only lightweight authorized aliases",()=>{
+ const loader=read("assets/js/tenant-page.js");
+ for(const uf of BASES){
+  const page=read("pages/transportadora-teste/fretes-"+uf+".html");
+  assert.match(page,/data-tenant-id="teste-01"/);
+  assert.ok(page.includes('data-freight-base="'+uf+'"'));
+  assert.ok(page.includes('data-shared-page="'+(uf==="MT"?"fretes2.html":"fretes.html")+'"'));
+  assert.ok(page.length<1000);
+ }
+ assert.match(loader,/session\.modules\.includes\(key\)/);
+ assert.match(loader,/window\.PORTAL_BASE_MODULE=key/);
+ assert.doesNotThrow(()=>new Script(loader));
+});
+
+test("base modules, owner switches and gateway permissions agree",()=>{
+ const modules=read("worker/src/config/tenant-modules.js");
+ const owner=read("pages/super-admin.html");
+ const worker=read("worker/src/services/permissions.js");
+ for(const uf of BASES){
+  const module="fretes-"+uf.toLowerCase();
+  assert.ok(modules.includes('"'+module+'"'),module);
+  assert.ok(owner.includes("['"+module+"'"),module);
+ }
+ assert.match(worker,/MODULE_ACTIONS/);
+ assert.match(worker,/fretes-/);
+});
+
+test("base Sheets are selected server-side and never by an untrusted browser URL",()=>{
+ const api=read("worker/src/services/tenant-integration.js");
+ const owner=read("worker/src/services/super-admin-tenant-write.js");
+ assert.match(api,/base-.*apps-script-v1\.json/);
+ assert.match(api,/readTenantIntegration\(env,principal\.tenant_id,base\)/);
+ assert.match(api,/config\.estado!==base/);
+ assert.match(owner,/bases/);
+ assert.match(owner,/adminWriteTenantIntegration/);
+});
+
+test("only new companies receive a regional UF selector and multibase cards",()=>{
+ const cad=read("assets/js/cadastros.js");
+ const home=read("assets/js/tenant-workspace.js");
+ const map=read("assets/js/home-map.js");
+ assert.match(cad,/configureTenantRegionalFields/);
+ assert.match(cad,/tenantMode!==true\)return/);
+ assert.match(home,/renderBaseCards/);
+ assert.match(home,/tenantMode/);
+ assert.match(map,/regionalUfs/);
+});

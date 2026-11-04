@@ -83,8 +83,8 @@
   parsed.head.insertBefore(bootStyle,base.nextSibling);
   const route=parsed.createElement("script");
   route.src=tenant==="teste-01"
-   ?"/assets/js/tenant-route.js?v=visual-v3"
-   :"/assets/js/tenant-route.js?v=visual-v3";
+   ?"/assets/js/tenant-route.js?v=visual-v4"
+   :"/assets/js/tenant-route.js?v=visual-v4";
   parsed.head.insertBefore(route,base.nextSibling);
   // Controle uses Tailwind utilities. The Play CDN may fail when injected
   // after DOMContentLoaded on tenant pages; use precompiled same-origin CSS.
@@ -108,7 +108,7 @@
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-visual-v3"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-visual-v4"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down

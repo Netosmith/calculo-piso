@@ -72,13 +72,14 @@
   };
 
   const REGIONAL_UFS=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-  const BASES_OPERACIONAIS=["GERAL","GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+  const BASES_OPERACIONAIS=["GERAL",...REGIONAL_UFS];
   let regionalUfMap={};
   function configureTenantRegionalFields(){
     if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
     const cfg=CONFIG.regionais;
     cfg.columns.splice(2,0,["uf","Estado (UF)"]);
-    cfg.fields.find(field=>field.key==="base").options=BASES_OPERACIONAIS;
+    const enabled=new Set(window.__PORTAL_TENANT_SESSION?.modules||[]);
+    cfg.fields.find(field=>field.key==="base").options=BASES_OPERACIONAIS.filter(base=>enabled.has(base==="GERAL"?"fretes":"fretes-"+base.toLowerCase()));
     cfg.fields.splice(2,0,{
       key:"uf",label:"Estado da regional (UF)",type:"select",
       options:["",...REGIONAL_UFS],required:true,

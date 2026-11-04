@@ -440,7 +440,8 @@
         const modules=Array.isArray(session.modules)?session.modules:[];
         // Accounting bases are independent from the geographical origin UF.
         const baseKeys=["fretes","fretes2","fretes-go","fretes-mt","fretes-sp","fretes-ms",
-          "fretes-ba","fretes-pr","fretes-sc","fretes-ro","fretes-to","fretes-ma"];
+          "fretes-ba","fretes-pr","fretes-sc","fretes-ro","fretes-to","fretes-ma",
+          "fretes-ac","fretes-al","fretes-ap","fretes-am","fretes-ce","fretes-df","fretes-es","fretes-mg","fretes-pa","fretes-pb","fretes-pe","fretes-pi","fretes-rj","fretes-rn","fretes-rs","fretes-rr","fretes-se"];
         const allowed=baseKeys.filter(key=>modules.includes(key));
         if(!allowed.length){STATE.rows=[];render();return;}
         // Read only enabled bases from this tenant's authenticated gateway.

@@ -51,7 +51,9 @@ test("Home and BI group by geographic origin independently of accounting source"
  assert.match(home,/STATE\.regionalUfs/);
  assert.match(home,/const explicit = extractUf\(row\.ufOrigem\)/);
  assert.match(home,/window\.__PORTAL_TENANT_SESSION\?\.tenantMode===true/);
- assert.match(bi,/TENANT_BASES=\["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"\]/);
+ const baseArray=bi.match(/const TENANT_BASES=(\[[^\]]+\]);/);
+ assert.ok(baseArray,"BI missing tenant base array");
+ assert.deepEqual(JSON.parse(baseArray[1]),UFS);
  assert.match(bi,/picker\.multiple=true/);
  assert.match(bi,/TODAS AS BASES/);
  assert.match(bi,/\.\.\.TENANT_BASES\.filter/);

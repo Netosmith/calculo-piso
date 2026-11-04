@@ -19,11 +19,14 @@ test("each optional freight base has a private route and module grant",()=>{
   const shell=read("pages/transportadora-teste/fretes-"+uf+".html");
   assert.ok(shell.includes('data-tenant-id="teste-01"'),uf);
   assert.ok(shell.includes('data-freight-base="'+uf+'"'),uf);
-  assert.ok(shell.includes('data-shared-page="'+(uf==="MT"?"fretes2":"fretes")+'.html"'),uf);
+  assert.ok(shell.includes('data-shared-page="fretes.html"'),uf);
   assert.ok(reg.includes('"fretes-'+uf.toLowerCase()+'"'),uf);
-  assert.ok(panel.includes("['fretes-"+uf.toLowerCase()+"'"),uf);
+  assert.ok(panel.includes("...FREIGHT_UFS.map"),uf);
+  assert.ok(panel.includes('"' + uf + '"'),uf);
   assert.ok(generator.includes('"fretes-'+uf+'"'),uf);
  }
+ assert.ok(!panel.includes("['fretes2'"),"Legacy Fretes2 must not be offered to tenant admins");
+ assert.ok(panel.includes("Fretes Operacional (unificado)"));
  assert.match(loader,/const baseAlias=/);
  assert.match(loader,/session\.modules\.includes\(key\)/);
  assert.match(loader,/PORTAL_BASE_MODULE=key/);

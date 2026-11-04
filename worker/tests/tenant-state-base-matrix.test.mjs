@@ -92,6 +92,13 @@ test("super-admin has private base integration controls and legacy module stays 
  assert.match(save,/const baseIntegration=/);
 });
 
+test("Home does not collapse identical IDs from different base spreadsheets",()=>{
+ const workspace=read("assets/js/tenant-workspace.js");
+ assert.match(workspace,/const recordKey=source\+"::"\+id/);
+ assert.match(workspace,/seen\.has\(recordKey\)/);
+ assert.match(workspace,/seen\.add\(recordKey\)/);
+});
+
 test("new frontend scripts compile in Chromium-compatible JavaScript",()=>{
  for(const file of ["assets/js/home-map.js","assets/js/bi.js",
   "assets/js/bi-map.js","assets/js/tenant-workspace.js",

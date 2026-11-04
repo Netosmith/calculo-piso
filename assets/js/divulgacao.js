@@ -681,41 +681,34 @@
     });
   }
 
-  // Keep html2canvas from repainting a tenant logo with different CSS geometry.
-  // The visible browser rectangle is the canonical placement; paint that loaded
-  // image ONCE on the final export canvas at the full 1080px resolution.
-  function prepareArtLogoExport(preview) {
-    const image=preview?.querySelector(".m3Logo,.multiArtLogo");
+  // Preserve logo geometry in the HTML clone itself.
+  // html2canvas captures one correctly positioned image; no second drawing
+  // pass, no hidden logo, and no dependency on a cross-origin canvas overlay.
+  function prepareArtLogoExport(source){
+    const image=source?.querySelector(".m3Logo,.multiArtLogo");
     const hero=image?.closest(".m3Hero,.multiArtHero");
-    if(!image||!hero||!image.complete||!image.naturalWidth)
-      return {onclone:()=>{},draw:()=>{},finish:()=>{}};
-    const root=preview.getBoundingClientRect();
-    const rect=image.getBoundingClientRect();
-    const clip=hero.getBoundingClientRect();
-    const opacity=Number(getComputedStyle(image).opacity)||1;
-    preview.setAttribute("data-portal-export-logo","true");
+    if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
+    const rect=image.getBoundingClientRect(),parent=hero.getBoundingClientRect();
+    const sx=parent.width>0?hero.offsetWidth/parent.width:1;
+    const sy=parent.height>0?hero.offsetHeight/parent.height:1;
+    const geometry={
+      left:(rect.left-parent.left)*sx,top:(rect.top-parent.top)*sy,
+      width:rect.width*sx,height:rect.height*sy
+    };
+    source.setAttribute("data-portal-export-logo","true");
     return {
-      onclone(doc){
-        const clone=doc.querySelector('[data-portal-export-logo="true"] .m3Logo,'+
-          '[data-portal-export-logo="true"] .multiArtLogo');
-        if(clone)clone.style.setProperty("visibility","hidden","important");
+      onclone(cloneDoc){
+        const clone=cloneDoc.querySelector("[data-portal-export-logo=\"true\"] .m3Logo,[data-portal-export-logo=\"true\"] .multiArtLogo");
+        if(!clone)return;
+        const style=clone.style;
+        for(const [prop,value] of Object.entries({
+          position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
+          width:geometry.width+"px",height:geometry.height+"px",
+          transform:"none",objectFit:"contain",objectPosition:"center center",
+          visibility:"visible",display:"block",maxWidth:"none",maxHeight:"none"
+        }))style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
       },
-      draw(canvas){
-        const ctx=canvas.getContext("2d");
-        if(!ctx||!root.width||!root.height)return;
-        const sx=canvas.width/root.width,sy=canvas.height/root.height;
-        const box={x:(rect.left-root.left)*sx,y:(rect.top-root.top)*sy,
-          w:rect.width*sx,h:rect.height*sy};
-        const area={x:(clip.left-root.left)*sx,y:(clip.top-root.top)*sy,
-          w:clip.width*sx,h:clip.height*sy};
-        const ratio=Math.min(box.w/image.naturalWidth,box.h/image.naturalHeight);
-        const w=image.naturalWidth*ratio,h=image.naturalHeight*ratio;
-        ctx.save();ctx.beginPath();ctx.rect(area.x,area.y,area.w,area.h);ctx.clip();
-        ctx.globalAlpha=opacity;
-        ctx.drawImage(image,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);
-        ctx.restore();
-      },
-      finish(){delete preview.dataset.portalExportLogo;}
+      finish(){source.removeAttribute("data-portal-export-logo");}
     };
   }
 
@@ -756,7 +749,6 @@
           logging: false,
           onclone:logoExport.onclone
         });
-        logoExport.draw(canvas);
       } finally {
         logoExport.finish();
         preview.style.transform = previousTransform;
@@ -1111,7 +1103,6 @@
         logging: false,
         onclone:logoExport.onclone
       });
-      logoExport.draw(canvas);
 
       const link = document.createElement("a");
       link.download = `divulgacao-mod04-${count}-fretes.jpg`;

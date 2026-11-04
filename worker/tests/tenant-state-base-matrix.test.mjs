@@ -8,7 +8,7 @@ import {readTenantIntegration} from "../src/services/tenant-integration.js";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 const read=path=>readFileSync(resolve(root,path),"utf8");
-const UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+const UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"];
 
 test("each optional freight base has a private route and module grant",()=>{
  const reg=read("worker/src/config/tenant-modules.js");

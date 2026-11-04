@@ -1895,7 +1895,7 @@
     results.forEach((result, index) => {
       if (result.status === "fulfilled") {
         rows.push(
-          ...extractRows(result.value).map((r) => normalizeCurrentRow(r, sources[index]))
+          ...extractRows(result.value).map((r) => ({...normalizeCurrentRow(r, sources[index]), origemDados:tenant?sources[index]:normalizeCurrentRow(r, sources[index]).origemDados}))
         );
       } else {
         errors.push(result.reason);

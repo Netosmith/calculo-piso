@@ -73,8 +73,21 @@ function paint(){
   const wm=Math.max(0,Math.min(14,Number(field(key,"watermark"))||0));mark.style.opacity=String(wm/100);
   if(url){image.src=url;mark.src=url;}
   image.hidden=!url;mark.hidden=!url;
-  if(tenant?.id==="teste-01"){const m3=key==="modelo3";Object.assign(image.style,{top:m3?"4px":"8px",height:m3?"96px":"128px",width:m3?"290px":"305px",objectFit:"contain"});}
-  else Object.assign(image.style,{top:"",height:"",width:"",objectFit:""});
+  const m3=key==="modelo3";
+  const number=(name,fallback,min,max)=>{
+   const n=Number(field(key,name));
+   return Number.isFinite(n)&&n>=min&&n<=max?n:fallback;
+  };
+  const w=number("logoWidth",m3?290:305,100,600);
+  const h=number("logoHeight",m3?96:128,35,220);
+  const top=number("logoTop",m3?4:8,-60,160);
+  const x=number("logoX",0,-250,250);
+  const opacity=number("logoOpacity",100,10,100);
+  Object.assign(image.style,{
+   top:top+"px",left:"calc(50% + "+x+"px)",width:w+"px",height:h+"px",
+   opacity:String(opacity/100),objectFit:"contain",objectPosition:"center center",
+   transform:"translateX(-50%)"
+  });
   const quote=art.querySelector(".m3FooterQuote strong");if(quote&&tenant)quote.textContent=tenant.name+" conecta.";
   const filial=art.querySelector(".preview-filial");if(filial&&tenant)filial.textContent=tenant.name;
  }

@@ -535,7 +535,7 @@
     const picker=$("#fOrigemDados"),session=window.__PORTAL_TENANT_SESSION;
     if(!picker||session?.tenantMode!==true)return;
     const permitted=new Set(session.modules||[]);
-    const opts=[...([{module:"fretes",source:"FRETES",label:"BASE Geral (legada)"},{module:"fretes2",source:"FRETES2",label:"BASE MT (interna)"}]
+    const opts=[...([{module:"fretes",source:"FRETES",label:"Fretes Operacional (unificado)"}]
       .filter(entry=>permitted.has(entry.module)).map(entry=>new Option(entry.label,entry.source))),
       ...TENANT_BASES.filter(uf=>permitted.has(tenantModuleForUf(uf))).map(uf=>{
       const option=new Option("BASE "+uf,sourceForUf(uf));

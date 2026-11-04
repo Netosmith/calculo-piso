@@ -92,7 +92,7 @@
     regionalUfMap=response?.regionais||{};
   }
   function regionalMeta(nome){
-    const key=upper(nome).replace(/\\s+/g," ").normalize("NFC");
+    const key=upper(nome).replace(/\s+/g," ").normalize("NFC");
     return regionalUfMap[key]||null;
   }
   const STATE={
@@ -452,7 +452,7 @@
         const saved=await window.PortalAPI.tenantRequest("/regionais/ufs",{
           method:"POST",body:{regional:payload.regional,base:payload.base,uf:ufRegional}
         });
-        regionalUfMap[upper(payload.regional).replace(/\\s+/g," ").normalize("NFC")]={uf:saved.uf,base:saved.base};
+        regionalUfMap[upper(payload.regional).replace(/\s+/g," ").normalize("NFC")]={uf:saved.uf,base:saved.base};
       }
 
       let logoChanged=false;

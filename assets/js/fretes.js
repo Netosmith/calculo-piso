@@ -1786,11 +1786,11 @@ function buildMessage(row) {
     const hero=image?.closest(".nfM3Hero,.nfM4Hero,.multiArtHero");
     if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
     const rect=image.getBoundingClientRect(),parent=hero.getBoundingClientRect();
-    const sx=parent.width>0?hero.offsetWidth/parent.width:1;
-    const sy=parent.height>0?hero.offsetHeight/parent.height:1;
+    // The preview is already laid out at the full export resolution.
+    // Extra sx/sy scaling made the uploaded logo larger than shown.
     const geometry={
-      left:(rect.left-parent.left)*sx,top:(rect.top-parent.top)*sy,
-      width:rect.width*sx,height:rect.height*sy
+      left:rect.left-parent.left,top:rect.top-parent.top,
+      width:rect.width,height:rect.height
     };
     source.setAttribute("data-pf-logo-export","true");
     return {

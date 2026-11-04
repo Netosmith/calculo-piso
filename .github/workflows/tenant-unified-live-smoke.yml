@@ -30,6 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          trap 'echo "LIVE SMOKE FAILED at line $LINENO: $BASH_COMMAND"' ERR
           api="https://api.portalfrete.net.br"
           website="https://portalfrete.net.br"
           # Pages and Worker publish separately. Retry for the new static alias,
@@ -79,7 +80,8 @@ jobs:
           grep -Fq 'data-tenant-id="teste-01"' /tmp/private-login.html
           grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html
           grep -Fq 'data-shared-page="fretes.html"' /tmp/tenant-fretes.html
-          grep -Fq 'tenant-page.js?v=11' /tmp/tenant-fretes.html
+          # Tenant aliases may legitimately use a newer cache-busting version.
+          grep -Eq 'tenant-page[.]js[?]v=[A-Za-z0-9._-]+' /tmp/tenant-fretes.html
           grep -Fq 'data-shared-page="bi.html"' /tmp/tenant-bi.html
           grep -Fq 'location.replace("./home.html")' /tmp/tenant-login.js
           grep -Fq 'session.transportadoraId!==tenant' /tmp/tenant-page.js

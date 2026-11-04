@@ -297,6 +297,47 @@
     return [];
   }
 
+  // Separação entre a base contábil do frete e sua UF geográfica de origem.
+  let tenantRegionalUfCatalog={};
+  const TENANT_UF_NOMES={
+    AC:"ACRE",AL:"ALAGOAS",AP:"AMAPA",AM:"AMAZONAS",BA:"BAHIA",
+    CE:"CEARA",DF:"DISTRITO FEDERAL",ES:"ESPIRITO SANTO",GO:"GOIAS",
+    MA:"MARANHAO",MT:"MATO GROSSO",MS:"MATO GROSSO DO SUL",MG:"MINAS GERAIS",
+    PA:"PARA",PB:"PARAIBA",PR:"PARANA",PE:"PERNAMBUCO",PI:"PIAUI",
+    RJ:"RIO DE JANEIRO",RN:"RIO GRANDE DO NORTE",RS:"RIO GRANDE DO SUL",
+    RO:"RONDONIA",RR:"RORAIMA",SC:"SANTA CATARINA",SP:"SAO PAULO",
+    SE:"SERGIPE",TO:"TOCANTINS"
+  };
+  const withoutAccents=value=>upper(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  function tenantOriginUf(row){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return "";
+    const from=firstValue(row,["ufOrigem","origemUf","UF_ORIGEM","estadoOrigem"]);
+    const tagged=withoutAccents(from);
+    if(Object.hasOwn(TENANT_UF_NOMES,tagged))return tagged;
+    const route=withoutAccents(firstValue(row,["origem","Origem","cidadeOrigem"]));
+    const routeMatch=route.match(/(?:^|[-/\\s,])([A-Z]{2})(?=$|[-/\\s,])/g);
+    if(routeMatch)for(const item of routeMatch){
+      const uf=item.replace(/[^A-Z]/g,"");
+      if(Object.hasOwn(TENANT_UF_NOMES,uf))return uf;
+    }
+    const regional=upper(firstValue(row,["regional","Regional"])).replace(/\s+/g," ").normalize("NFC");
+    const saved=upper(tenantRegionalUfCatalog[regional]?.uf);
+    if(Object.hasOwn(TENANT_UF_NOMES,saved))return saved;
+    const named=withoutAccents(regional);
+    return Object.entries(TENANT_UF_NOMES).find(([uf,name])=>uf===named||name===named)?.[0]||"";
+  }
+  async function refreshTenantRegionalUfCatalog(){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+    try{
+      const api=await getPortalApi();
+      const response=await api.tenantRequest("/regionais/ufs");
+      tenantRegionalUfCatalog=response?.regionais||{};
+    }catch(error){
+      console.warn("[BI] UF das regionais indisponível",error?.message);
+      tenantRegionalUfCatalog={};
+    }
+  }
+
   /* =========================================================
      NORMALIZAÇÃO
   ========================================================= */
@@ -318,7 +359,7 @@
       coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
       contato: upper(firstValue(r, ["contato", "Contato"])),
       destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
-      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      uf: window.__PORTAL_TENANT_SESSION?.tenantMode===true ? tenantOriginUf(r) : upper(firstValue(r, ["uf", "UF", "estado"])),
       descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
       volume: num(firstValue(r, ["volume", "Volume"])),
       valorEmpresa: num(firstValue(r, [
@@ -399,7 +440,7 @@
       origem: upper(firstValue(r, ["origem", "Origem", "cidadeOrigem"])),
       coleta: upper(firstValue(r, ["coleta", "Coleta", "localColeta"])),
       destino: upper(firstValue(r, ["destino", "Destino", "cidadeDestino"])),
-      uf: upper(firstValue(r, ["uf", "UF", "estado"])),
+      uf: window.__PORTAL_TENANT_SESSION?.tenantMode===true ? tenantOriginUf(r) : upper(firstValue(r, ["uf", "UF", "estado"])),
       descarga: upper(firstValue(r, ["descarga", "Descarga", "localDescarga"])),
       produto: upper(firstValue(r, ["produto", "Produto"])),
       status: upper(firstValue(r, ["status", "Status"])),
@@ -1995,6 +2036,7 @@
 
       if (showStatus) setStatus("🔄 Carregando...", true);
 
+      if(window.__PORTAL_TENANT_SESSION?.tenantMode===true) await refreshTenantRegionalUfCatalog();
       await ensureModeData(mode, force, showStatus && force);
       if (requestId !== STATE.loadSequence) return;
 

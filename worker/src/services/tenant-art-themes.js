@@ -17,8 +17,8 @@ function normalizeModel(value,fallback=DEFAULT_MODEL){
   surface:HEX.test(raw.surface)?raw.surface.toLowerCase():fallback.surface,
   watermark:Number.isInteger(raw.watermark)&&raw.watermark>=0&&raw.watermark<=14
     ?raw.watermark:fallback.watermark,
-  logoWidth:Number.isInteger(raw.logoWidth)&&raw.logoWidth>=100&&raw.logoWidth<=600?raw.logoWidth:fallback.logoWidth,
-  logoHeight:Number.isInteger(raw.logoHeight)&&raw.logoHeight>=35&&raw.logoHeight<=220?raw.logoHeight:fallback.logoHeight,
+  logoWidth:Number.isInteger(raw.logoWidth)&&raw.logoWidth>=100&&raw.logoWidth<=1500?raw.logoWidth:fallback.logoWidth,
+  logoHeight:Number.isInteger(raw.logoHeight)&&raw.logoHeight>=35&&raw.logoHeight<=1500?raw.logoHeight:fallback.logoHeight,
   logoTop:Number.isInteger(raw.logoTop)&&raw.logoTop>=-60&&raw.logoTop<=160?raw.logoTop:fallback.logoTop,
   logoX:Number.isInteger(raw.logoX)&&raw.logoX>=-250&&raw.logoX<=250?raw.logoX:fallback.logoX,
   logoOpacity:Number.isInteger(raw.logoOpacity)&&raw.logoOpacity>=10&&raw.logoOpacity<=100?raw.logoOpacity:fallback.logoOpacity
@@ -50,8 +50,8 @@ export function validateArtThemeUpdate(body){
   return ["primary","accent","surface"].every(p=>HEX.test(value[p]))&&
    Number.isInteger(value.watermark)&&value.watermark>=0&&value.watermark<=14&&
    (legacy||(
-    Number.isInteger(value.logoWidth)&&value.logoWidth>=100&&value.logoWidth<=600&&
-    Number.isInteger(value.logoHeight)&&value.logoHeight>=35&&value.logoHeight<=220&&
+    Number.isInteger(value.logoWidth)&&value.logoWidth>=100&&value.logoWidth<=1500&&
+    Number.isInteger(value.logoHeight)&&value.logoHeight>=35&&value.logoHeight<=1500&&
     Number.isInteger(value.logoTop)&&value.logoTop>=-60&&value.logoTop<=160&&
     Number.isInteger(value.logoX)&&value.logoX>=-250&&value.logoX<=250&&
     Number.isInteger(value.logoOpacity)&&value.logoOpacity>=10&&value.logoOpacity<=100));

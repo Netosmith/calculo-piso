@@ -723,51 +723,36 @@
       .nf-footer{ flex-wrap:wrap; padding:14px 18px; }
       .nf-footer-sep{ display:none; }
     }
-    /* =========================
-       PISO - OFUSCAÇÃO DOS INDICADORES
-       Mantém os títulos visíveis, mas não expõe os números operacionais.
-    ========================= */
-    body.nf-profile-piso .nf-stats .nf-stat-value,
-    body.nf-profile-piso .nf-stats .nf-stat-detail,
-    body.nf-profile-piso .nf-stats .nf-veiculos-resumo,
-    body.nf-profile-piso .nf-stats .nf-stat-update{
-      filter: blur(7px);
-      opacity:.52;
-      user-select:none;
-      pointer-events:none;
-    }
+    /* Separar PISO da Home operacional: conteúdo protegido não fica
+       visível sequer durante a espera pela sessão assinada. */
+    body.pf-home-pending .nf-stats,
+    body.pf-home-pending .nf-home-side,
+    body.pf-home-pending .nf-tools,
+    body.pf-home-pending .nf-solic-wrap{display:none!important}
 
-    body.nf-profile-piso .nf-stats .nf-stat{
-      position:relative;
-      overflow:hidden;
+    body.nf-profile-piso .nf-home-layout{grid-template-columns:minmax(0,1fr)!important}
+    body.nf-profile-piso .nf-stats,
+    body.nf-profile-piso .nf-home-side,
+    body.nf-profile-piso .nf-solic-wrap,
+    body.nf-profile-piso .nf-support-link,
+    body.nf-profile-piso #tenantWorkspace,
+    body.nf-profile-piso #homeSolicModal{display:none!important}
+    body.nf-profile-piso .nf-tools{
+      display:grid!important;
+      width:min(100%,460px);
+      grid-template-columns:minmax(0,1fr)!important;
+      margin:24px auto;
     }
-
-    body.nf-profile-piso .nf-stats .nf-stat::after{
-      content:"INFORMAÇÃO RESTRITA";
-      position:absolute;
-      left:50%;
-      bottom:18px;
-      transform:translateX(-50%);
-      z-index:6;
-      padding:5px 10px;
-      border-radius:999px;
-      background:rgba(4,19,42,.88);
-      border:1px solid rgba(255,255,255,.14);
-      color:#dbeafe;
-      font-size:9px;
-      line-height:1;
-      font-weight:900;
-      letter-spacing:.08em;
-      white-space:nowrap;
-      box-shadow:0 5px 16px rgba(0,0,0,.18);
+    body.nf-profile-piso .nf-tools > *{display:none!important}
+    body.nf-profile-piso.pf-piso2-allowed .nf-tools > [data-feature="piso2"]{
+      display:flex!important;visibility:visible!important
     }
-
   </style>
   <link rel="stylesheet" href="../assets/css/nova-frota-ia.css?v=2">
   <link rel="stylesheet" href="../assets/css/portal-preferences.css?v=9">
 </head>
 
-<body>
+<body class="pf-home-pending">
   <header class="nf-topbar">
     <div class="nf-topbar-inner">
       <div class="nf-brand">
@@ -1053,10 +1038,10 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=26"></script>
-  <script src="../assets/js/home-solicitacoes-access.js?v=2"></script>
-  <script src="../assets/js/home-solicitacoes.js?v=4"></script>
-  <script src="../assets/js/tenant-workspace.js?v=4" defer></script>
+  <script src="../assets/js/auth.js?v=27"></script>
+  <script src="../assets/js/home-solicitacoes-access.js?v=3"></script>
+  <script src="../assets/js/home-solicitacoes.js?v=5"></script>
+  <script src="../assets/js/tenant-workspace.js?v=5" defer></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>
   <script src="../assets/js/home-map.js?v=5"></script>
   <script>
@@ -1213,19 +1198,27 @@
     window.atualizarMetricasHome = atualizarMetricasHome;
 
     function isPerfilPisoHome(session = null) {
-      const perfilSessao = String(session?.perfil || "").trim().toUpperCase();
-      const perfilLocal = typeof getProfile === "function"
-        ? String(getProfile() || "").trim().toUpperCase()
-        : "";
-
-      return (perfilSessao || perfilLocal) === "PISO";
+      // Apenas a sessão assinada determina se esta é uma Home PISO.
+      return String(session?.perfil || "").trim().toUpperCase() === "PISO";
     }
 
     function aplicarOfuscacaoPisoHome(session = null) {
       const restrito = isPerfilPisoHome(session);
+      if(!session)return false;
       document.body.classList.toggle("nf-profile-piso", restrito);
-
+      document.body.classList.toggle("pf-piso2-allowed",
+        restrito && typeof canAccessFeature==="function" &&
+        canAccessFeature("piso2"));
+      document.body.classList.remove("pf-home-pending");
       if (!restrito) return false;
+      const description=document.getElementById("homeSub");
+      if(description)description.textContent="Acesso exclusivo ao Cálculo de Piso 2 (ANTT)";
+      // Garante que nenhum outro link possa receber foco pelo teclado.
+      document.querySelectorAll(".nf-tools > *").forEach(card=>{
+        if(card.getAttribute("data-feature")!=="piso2"){
+          card.hidden=true;card.style.display="none";
+        }
+      });
 
       /* Remove qualquer dado operacional que possa ter ficado no DOM/cache
          antes da confirmação da sessão atual. */
@@ -1373,7 +1366,10 @@
           ? await window.portalAuthReady
           : null;
 
-        if(session?.tenantMode===true)return;
+        if(session?.tenantMode===true){
+          aplicarOfuscacaoPisoHome(session);
+          return;
+        }
         if (aplicarOfuscacaoPisoHome(session)) {
           return;
         }
@@ -1435,7 +1431,9 @@
     async function carregarResumoChamadosHome(){
       try{
         const session = window.portalAuthReady ? await window.portalAuthReady : null;
-        if(!session || session.tenantMode===true || !window.PortalAPI) return;
+        if(!session || session.tenantMode===true ||
+           String(session.perfil||"").trim().toUpperCase()==="PISO" ||
+           !window.PortalAPI) return;
 
         const resultado = await window.PortalAPI.call("chamados","read",{resource:"resumo"});
         const resumo = resultado?.data || {};

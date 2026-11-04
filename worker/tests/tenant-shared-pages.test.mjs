@@ -8,7 +8,7 @@ import {resolve,dirname} from "node:path";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 const read=path=>readFileSync(resolve(root,path),"utf8");
 const pages=[
- "home","fretes","fretes2","bi","divulgacao","share-clientes",
+ "home","fretes","bi","divulgacao","share-clientes",
  "controle","administrativo","cadastros","estadias","fretes-mercado",
  "embarques","chamados","patrimonio-br","relatorio","custo-filial",
  "custo-frota-pesada","monitoramento","calculo-piso","calculo-antt",
@@ -77,7 +77,7 @@ test("shared tenant loader uses mobile-safe DOM replacement and replays module s
  assert.ok(loader.includes("session.transportadoraId!==tenant"));
  for(const page of pages){
   const alias=read("pages/transportadora-teste/"+page+".html");
-  assert.ok(alias.includes('/assets/js/tenant-page.js?v=11'));
+  assert.ok(alias.includes('/assets/js/tenant-page.js?v=12'));
  }
 });
 
@@ -118,4 +118,15 @@ test("Fretes and Fretes MT never prefill transportadora directories from GitHub"
  const div=read("assets/js/divulgacao.js");
  assert.ok(div.includes("if(isTenant)void carregarFiliaisTenant()"));
  assert.ok(div.includes("isTenant ? [] : (FILIAIS_CONTATOS[key] || [])"));
+});
+
+test("Fretes2 remains exclusive to the legacy Nova Frota and not a tenant capability",()=>{
+ const loader=read("assets/js/tenant-page.js");
+ const modules=read("worker/src/config/tenant-modules.js");
+ const gateway=read("worker/src/services/tenant-integration.js");
+ const generator=read("scripts/criar-transportadora-modelo.mjs");
+ assert.ok(loader.includes('file==="fretes2.html"'));
+ assert.ok(!modules.includes('"fretes", "fretes2"'));
+ assert.ok(gateway.includes('if(module==="fretes2")'));
+ assert.ok(!generator.includes('"fretes","fretes2"'));
 });

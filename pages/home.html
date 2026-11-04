@@ -71,6 +71,9 @@
     .nf-brand img{ display:block; width:168px; max-height:46px; object-fit:contain; }
 
     .nf-solic-wrap{ display:flex; justify-content:center; }
+    /* O indicador administrativo não ocupa espaço antes da autorização. */
+    .nf-solic-wrap[hidden]{ display:none !important; }
+    .nf-topbar-inner:not(.has-admin-solicitations){ grid-template-columns:1fr auto; }
     .nf-solic-card{
       min-width:268px;
       height:54px;
@@ -774,8 +777,8 @@
         <img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA" />
       </div>
 
-      <div class="nf-solic-wrap">
-        <button class="nf-solic-card" id="homeSolicCard" type="button">
+      <div class="nf-solic-wrap" hidden>
+        <button class="nf-solic-card" id="homeSolicCard" type="button" disabled>
           <span class="nf-solic-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5h6"/><path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M8 11h8M8 15h8"/></svg>
           </span>
@@ -1051,6 +1054,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=26"></script>
+  <script src="../assets/js/home-solicitacoes-access.js?v=1"></script>
   <script src="../assets/js/home-solicitacoes.js?v=3"></script>
   <script src="../assets/js/tenant-workspace.js?v=3" defer></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/brazil-map@1.1.8/dist/brazil-map.es.js"></script>

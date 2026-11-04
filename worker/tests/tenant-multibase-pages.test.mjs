@@ -77,5 +77,21 @@ test("Home only counts base modules assigned to a regional",()=>{
  assert.match(workspace,/activeFreightModules/);
  assert.match(workspace,/totalPorta/);
  assert.match(workspace,/totalTransito/);
+ assert.match(homeMap,/failedBaseSources/);
+ assert.match(workspace,/failedBases/);
+ assert.match(workspace,/TOTAL PARCIAL/);
  assert.match(cad,/BASES_OPERACIONAIS=\["GERAL",\.\.\.REGIONAL_UFS\]/);
+});
+
+
+test("Fretes Operacional is unified and MT never reuses the legacy Fretes2",()=>{
+ const panel=read("pages/super-admin.html");
+ const loader=read("assets/js/tenant-page.js");
+ const model=read("scripts/criar-transportadora-modelo.mjs");
+ assert.match(panel,/Fretes Operacional \(unificado\)/);
+ assert.match(panel,/FREIGHT_UFS\.map/);
+ assert.ok(!panel.includes("['fretes2'"));
+ assert.ok(loader.includes('page!=="fretes.html"'));
+ assert.ok(model.includes('"fretes","fretes-GO"'));
+ assert.ok(!model.includes('"fretes","fretes2"'));
 });

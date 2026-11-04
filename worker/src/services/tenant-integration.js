@@ -166,6 +166,8 @@ export async function callTenantAppScript(env,principal,modules,payload){
    !modules.includes("fretes-"+requestedBase.toLowerCase())))
    return errorResponse("Base do BI nao habilitada para esta transportadora.",403);
  const base=freightBase||requestedBase;
+ if(module==="bi" && base && !modules.includes("fretes-"+base.toLowerCase()))
+   return errorResponse("Base do BI nao habilitada para esta transportadora.",403);
  const config=await readTenantIntegration(env,principal.tenant_id,base);
  if(!config||!config.enabled)return errorResponse("Planilha desta transportadora ainda nao vinculada.",503);
  const requestPayload=payload.params&&typeof payload.params==="object"&&!Array.isArray(payload.params)

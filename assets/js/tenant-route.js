@@ -307,8 +307,8 @@
     const isM3=model==="modelo3";
     const logoWidth=clampInt(value.logoWidth,isM3?290:305,100,1500);
     const logoHeight=clampInt(value.logoHeight,isM3?96:128,35,1500);
-    const logoTop=clampInt(value.logoTop,isM3?4:8,-60,160);
-    const logoX=clampInt(value.logoX,0,-250,250);
+    const logoTop=clampInt(value.logoTop,isM3?4:8,-500,250);
+    const logoX=clampInt(value.logoX,0,-500,250);
     const logoOpacity=clampInt(value.logoOpacity,100,10,100)/100;
     const logos=isM3?
       ['[data-template-preview="3"] img.m3Logo','#nfM3Canvas img.nfM3Logo']:

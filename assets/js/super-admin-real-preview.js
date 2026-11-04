@@ -60,6 +60,31 @@ function mount(key,index){
  const image=art.querySelector(index===0?".m3Logo":".multiArtLogo");
  stage.append(art);view.append(stage);target.replaceChildren(view);target.classList.add("pf-real-ready");
  canvases.set(key,{art,image,mark});
+ // Drag the logo on the true 1080px canvas; sliders remain source of truth.
+ image.style.cursor="grab";image.style.touchAction="none";
+ let drag=null;
+ image.addEventListener("pointerdown",event=>{
+  if(!logo()||typeof canEditBrand!=="function"||!canEditBrand())return;
+  const get=name=>document.querySelector('[data-art-model="'+key+'"][data-art-field="'+name+'"]');
+  drag={x:event.clientX,y:event.clientY,left:Number(get("logoX").value),top:Number(get("logoTop").value)};
+  image.setPointerCapture(event.pointerId);image.style.cursor="grabbing";event.preventDefault();
+ });
+ image.addEventListener("pointermove",event=>{
+  if(!drag)return;
+  const scale=view.clientWidth/1080||1;
+  for(const [name,value] of [
+   ["logoX",drag.left+(event.clientX-drag.x)/scale],
+   ["logoTop",drag.top+(event.clientY-drag.y)/scale]
+  ]){
+   const input=document.querySelector('[data-art-model="'+key+'"][data-art-field="'+name+'"]');
+   if(!input)continue;
+   input.value=String(Math.max(Number(input.min),Math.min(Number(input.max),Math.round(value))));
+   input.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+ });
+ const release=()=>{drag=null;image.style.cursor="grab";};
+ image.addEventListener("pointerup",release);
+ image.addEventListener("pointercancel",release);
  const large=document.createElement("button");large.type="button";large.className="pf-preview-large";large.textContent="Ampliar prévia real";large.onclick=()=>expand(key);
  target.insertAdjacentElement("afterend",large);
  if(window.ResizeObserver)new ResizeObserver(()=>adjust(view,stage)).observe(view);else window.addEventListener("resize",()=>adjust(view,stage));

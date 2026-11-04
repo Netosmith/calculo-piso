@@ -77,7 +77,8 @@ test("shared tenant loader uses mobile-safe DOM replacement and replays module s
  assert.ok(loader.includes("session.transportadoraId!==tenant"));
  for(const page of pages){
   const alias=read("pages/transportadora-teste/"+page+".html");
-  assert.ok(alias.includes('/assets/js/tenant-page.js?v=12'));
+  assert.match(alias,/\/assets\/js\/tenant-page[.]js[?]v=[A-Za-z0-9._-]+/);
+   assert.match(alias,/data-shared-page="/);
  }
 });
 

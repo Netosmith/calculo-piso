@@ -29,8 +29,9 @@ test("offline order shares original layout but uses isolated company details and
  assert.match(html,/window\.__PORTAL_TENANT_SESSION\.transportadoraNome/);
  assert.match(html,/\/v1\/tenant\/logo/);
  assert.match(html,/ordemLogoSrc \?/);
- assert.match(gnova,/const EMPRESAS_POR_ESTADO = \{/);
- assert.match(gnova,/window\.PORTAL_ORDEM_CONFIG=\{ EMPRESAS_POR_ESTADO \}/);
+ assert.match(gnova,/data-tenant-id="teste-01"/);
+ assert.match(gnova,/data-shared-page="ordem.html"/);
+ assert.match(gnova,/tenant-page[.]js[?]v=/);
  assert.doesNotMatch(gnova,/21\.984\.393/);
  assert.doesNotMatch(gnova,/novafrotalogistica\.com\.br/);
  assert.match(html,/function imprimirDuasVias/);

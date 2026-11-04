@@ -93,7 +93,8 @@ async function start(){
   if(typeof load==="function")window.loadArtThemes=async function(){const v=await load();paint();return v;};
   document.addEventListener("input",e=>{if(e.target?.matches("[data-art-model]"))paint();});
   const gallery=document.getElementById("companies");
-  if(gallery){gallery.addEventListener("click",()=>queueMicrotask(paint));new MutationObserver(paint).observe(gallery,{childList:true,subtree:true});}
+  if(gallery){gallery.addEventListener("click",()=>queueMicrotask(paint));
+    gallery.addEventListener("load",paint,true);new MutationObserver(paint).observe(gallery,{childList:true,subtree:true});}
   paint();
  }catch(e){const label=document.getElementById("artStatus");if(label)label.textContent="Prévia real indisponível: "+e.message;console.warn(e);}
 }

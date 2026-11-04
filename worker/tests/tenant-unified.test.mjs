@@ -323,7 +323,8 @@ test("unified frontend assets keep same login/Home, hide legacy modules, and par
  assert.match(login,/session\?\.tenantMode===true/);
  assert.match(home,/tenantWorkspace/);
  assert.match(home,/tenant-workspace\.js/);
- assert.match(home,/portalfrete-super-admin-staging/);
+ assert.doesNotMatch(home,/portalfrete-super-admin-staging/);
+  assert.match(home,/id="superAdminHomeCard" href="\.\/super-admin\.html"/);
  assert.match(workspace,/window\.PortalAPI\.call\("home","read",\{\}\)/);
  assert.match(auth,/window\.__PORTAL_TENANT_SESSION/);
 });

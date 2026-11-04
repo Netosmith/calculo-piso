@@ -13,6 +13,10 @@ test("Divulgacao script parses and is refreshed for clients",()=>{
 test("JPG export freezes rendered logo geometry in cloned DOM for all art models",()=>{
  assert.match(source,/function prepareArtLogoExport\(preview\)/);
  assert.match(source,/getBoundingClientRect\(\)/);
+ assert.match(source,/hero\.offsetWidth\/box\.width/);
+ assert.match(source,/hero\.offsetHeight\/box\.height/);
+ assert.match(source,/width:img\.width\*sx/);
+ assert.match(source,/height:img\.height\*sy/);
  assert.match(source,/geometry\.left\+"px"/);
  assert.match(source,/geometry\.top\+"px"/);
  assert.match(source,/transform:"none"/);

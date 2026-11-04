@@ -18,6 +18,8 @@ function db(){
   prepare(query){
     const stmt=sql.prepare(query);
     return {
+      first:async()=>stmt.get(),
+      all:async()=>({results:stmt.all()}),
       bind(...args){
         return {
           first:async()=>stmt.get(...args),

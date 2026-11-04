@@ -154,6 +154,8 @@
   if(session?.tenantMode!==true||!session.transportadoraId)return;
   if(window.__PORTAL_TENANT_EXPECTED &&
      session.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return;
+  // Auth may notify twice; do not discard regional assignments loaded meanwhile.
+  if(currentTenant===session.transportadoraId && document.body?.classList.contains("pf-tenant-mode"))return;
   currentTenant=session.transportadoraId;
   lastFreightSummary=null;
   activeFreightModules=new Set();

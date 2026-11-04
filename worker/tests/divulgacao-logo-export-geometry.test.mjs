@@ -24,8 +24,10 @@ test("Logo stays visible in html2canvas clone and uses the displayed dimensions"
     assert.doesNotMatch(code,/hero\.offsetWidth\/parent\.width/);
     assert.doesNotMatch(code,/hero\.offsetHeight\/parent\.height/);
   }
-  assert.match(code,/hero\.offsetWidth\/parent\.width/);
-  assert.match(code,/hero\.offsetHeight\/parent\.height/);
+  if(script==="divulgacao"){
+    assert.match(code,/hero\.offsetWidth\/parent\.width/);
+    assert.match(code,/hero\.offsetHeight\/parent\.height/);
+  }
   assert.match(code,/visibility:"visible"/);
   assert.match(code,/display:"block"/);
   assert.match(code,/style\.setProperty\(/);

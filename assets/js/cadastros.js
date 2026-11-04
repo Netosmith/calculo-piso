@@ -72,7 +72,7 @@
   };
 
   const REGIONAL_UFS=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-  const BASES_OPERACIONAIS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+  const BASES_OPERACIONAIS=["GERAL","GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
   let regionalUfMap={};
   function configureTenantRegionalFields(){
     if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
@@ -471,8 +471,10 @@
       console.error("[cadastros] salvar:",error);
       if(cadastroSaved){
         closeModal(true);
-        setStatus("⚠️ Cadastro salvo; erro na logo");
-        alert("Cadastro salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."));
+        setStatus(tenantRegional?"⚠️ Regional salva, mas o vínculo UF/base não foi confirmado":"⚠️ Cadastro salvo; erro na logo");
+        alert(tenantRegional
+          ?"Regional salva na planilha, mas não foi possível registrar UF/base: "+(error.message||"falha no catálogo.")
+          :"Cadastro salvo, mas a logo não foi atualizada: "+(error.message||"falha no upload."));
         if(!updated)loadCurrent(true);
       }else{
         $("#cadModal")?.classList.add("show");

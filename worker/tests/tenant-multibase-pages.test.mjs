@@ -11,7 +11,7 @@ const BASES=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","P
 test("all 27 state base pages are GNOVA-only lightweight authorized aliases",()=>{
  const loader=read("assets/js/tenant-page.js");
  for(const uf of BASES){
-  const page=read("pages/transportadora-teste/fretes-"+uf+".html");
+  const page=read("pages/gnova/fretes-"+uf+".html");
   assert.match(page,/data-tenant-id="teste-01"/);
   assert.ok(page.includes('data-freight-base="'+uf+'"'));
   assert.ok(page.includes('data-shared-page="'+"fretes.html"+'"'));

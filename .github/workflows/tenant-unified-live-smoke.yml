@@ -7,7 +7,7 @@ on:
       - 'worker/**'
       - 'pages/login.html'
       - 'pages/home.html'
-      - 'pages/transportadora-teste/**'
+      - 'pages/gnova/**'
       - 'assets/js/auth.js'
       - 'assets/js/api.js'
       - 'assets/js/tenant-login.js'
@@ -37,7 +37,7 @@ jobs:
           # not a now-removed public company selector.
           for attempt in $(seq 1 20); do
             api_code=$(curl -sSL --max-time 20 -o /tmp/public-tenants.json -w "%{http_code}" "$api/v1/transportadoras/public" || true)
-            page_code=$(curl -sSL --max-time 20 -o /tmp/tenant-home.html -w "%{http_code}" "$website/pages/transportadora-teste/home.html" || true)
+            page_code=$(curl -sSL --max-time 20 -o /tmp/tenant-home.html -w "%{http_code}" "$website/pages/gnova/home.html" || true)
             if [ "$api_code" = "200" ] && [ "$page_code" = "200" ] &&
                grep -Fq 'data-shared-page="home.html"' /tmp/tenant-home.html; then
               break
@@ -67,9 +67,9 @@ jobs:
           test "$code" = "401" || { echo "Invalid tenant login must return 401, got $code"; exit 1; }
           curl -fsSL --max-time 25 "$website/pages/login.html" -o /tmp/legacy-login.html
           curl -fsSL --max-time 25 "$website/pages/home.html" -o /tmp/shared-home.html
-          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/login.html" -o /tmp/private-login.html
-          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/fretes.html" -o /tmp/tenant-fretes.html
-          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/bi.html" -o /tmp/tenant-bi.html
+          curl -fsSL --max-time 25 "$website/pages/gnova/login.html" -o /tmp/private-login.html
+          curl -fsSL --max-time 25 "$website/pages/gnova/fretes.html" -o /tmp/tenant-fretes.html
+          curl -fsSL --max-time 25 "$website/pages/gnova/bi.html" -o /tmp/tenant-bi.html
           curl -fsSL --max-time 25 "$website/assets/js/tenant-login.js?v=2" -o /tmp/tenant-login.js
           curl -fsSL --max-time 25 "$website/assets/js/tenant-page.js?v=11" -o /tmp/tenant-page.js
           curl -fsSL --max-time 25 "$website/assets/js/tenant-route.js?v=7" -o /tmp/tenant-route.js
@@ -90,12 +90,12 @@ jobs:
           grep -Fq 'window.portalTenantHref' /tmp/tenant-route.js
           grep -Fq 'window.PortalAPI.call("home","read",{})' /tmp/tenant-workspace.js
           ! grep -Fq 'tenantRequest("/fretes")' /tmp/tenant-workspace.js
-          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/controle.html" -o /tmp/tenant-controle.html
+          curl -fsSL --max-time 25 "$website/pages/gnova/controle.html" -o /tmp/tenant-controle.html
           curl -fsSL --max-time 25 "$website/assets/css/controle-tailwind.generated.css?v=1" -o /tmp/controle.css
           grep -Fq 'data-shared-page="controle.html"' /tmp/tenant-controle.html
           grep -Fq '.grid{' /tmp/controle.css
           grep -Fq 'controle-tailwind.generated.css?v=1' /tmp/tenant-page.js
-          curl -fsSL --max-time 25 "$website/pages/transportadora-teste/ordem.html" -o /tmp/tenant-ordem.html
+          curl -fsSL --max-time 25 "$website/pages/gnova/ordem.html" -o /tmp/tenant-ordem.html
           curl -fsSL --max-time 25 "$website/assets/css/ordem-tailwind.generated.css?v=1" -o /tmp/ordem.css
           grep -Fq 'data-shared-page="ordem.html"' /tmp/tenant-ordem.html
           grep -Fq '.flex{' /tmp/ordem.css

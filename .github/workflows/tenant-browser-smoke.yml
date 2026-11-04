@@ -5,7 +5,7 @@ on:
     paths:
       - 'assets/js/tenant-page.js'
       - 'assets/js/tenant-route.js'
-      - 'pages/transportadora-teste/**'
+      - 'pages/gnova/**'
       - 'assets/js/auth.js'
       - '.github/scripts/tenant-browser-smoke.mjs'
       - '.github/scripts/super-admin-gallery-browser-smoke.mjs'

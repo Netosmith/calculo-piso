@@ -294,7 +294,7 @@ test("tenant and Nova Frota share the same Home DOM and tenant map never reads l
 test("dedicated tenant login uses shared scripts, fixed company and no public selector",()=>{
  const root=new URL("../../",import.meta.url);
  const legacy=readFileSync(new URL("pages/login.html",root),"utf8");
- const page=readFileSync(new URL("pages/transportadora-teste/login.html",root),"utf8");
+ const page=readFileSync(new URL("pages/gnova/login.html",root),"utf8");
  const script=readFileSync(new URL("assets/js/tenant-login.js",root),"utf8");
  const auth=readFileSync(new URL("assets/js/auth.js",root),"utf8");
  assert.doesNotThrow(()=>new Script(script));

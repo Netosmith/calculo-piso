@@ -19,7 +19,7 @@ test("each optional freight base has a private route and module grant",()=>{
  const loader=read("assets/js/tenant-page.js");
  const generator=read("scripts/criar-transportadora-modelo.mjs");
  for(const uf of UFS){
-  const shell=read("pages/transportadora-teste/fretes-"+uf+".html");
+  const shell=read("pages/gnova/fretes-"+uf+".html");
   assert.ok(shell.includes('data-tenant-id="teste-01"'),uf);
   assert.ok(shell.includes('data-freight-base="'+uf+'"'),uf);
   assert.ok(shell.includes('data-shared-page="fretes.html"'),uf);

@@ -23,7 +23,7 @@ test("both printable freight lists load the signed tenant logo, never Nova Frota
 
 test("offline order shares original layout but uses isolated company details and signed logo",()=>{
  const html=read("pages/ordem.html");
- const gnova=read("pages/transportadora-teste/ordem.html");
+ const gnova=read("pages/gnova/ordem.html");
  assert.match(html,/const EMPRESAS_NOVA_FROTA_POR_ESTADO/);
  assert.match(html,/window\.PORTAL_ORDEM_CONFIG\?\.EMPRESAS_POR_ESTADO/);
  assert.match(html,/window\.__PORTAL_TENANT_SESSION\.transportadoraNome/);

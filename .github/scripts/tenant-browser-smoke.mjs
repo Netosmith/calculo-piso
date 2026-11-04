@@ -21,7 +21,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 let browser;
 try{
  for(let i=0;i<25;i++){
-  try{const response=await fetch(origin+"/pages/transportadora-teste/fretes.html");
+  try{const response=await fetch(origin+"/pages/gnova/fretes.html");
    if(response.ok)break;
   }catch(_){}
   if(i===24)throw new Error("Local server did not start");
@@ -49,7 +49,7 @@ try{
    await route.fulfill({status:200,headers,body:JSON.stringify({ok:true,session:{
     usuario:"TESTE",nome:"TESTE",perfil:"ADMINISTRADOR",
     estado:"GERAL",estados:["GERAL"],tenantMode:true,
-    transportadoraId:"teste-01",transportadoraNome:"NOVA FROTA ADMIN",
+    transportadoraId:"teste-01",transportadoraNome:"GNOVA TRANSPORTES",
     modules:["fretes","fretes2","bi","cadastros","divulgacao","controle"]
    }})});return;
   }
@@ -74,7 +74,7 @@ try{
   "cdnjs.cloudflare.com","html2canvas.hertzen.com","unpkg.com"]){
   await page.route("https://"+domain+"/**",r=>r.abort());
  }
- await page.goto(origin+"/pages/transportadora-teste/fretes.html",{waitUntil:"domcontentloaded"});
+ await page.goto(origin+"/pages/gnova/fretes.html",{waitUntil:"domcontentloaded"});
  try{
   await page.waitForFunction(()=>Boolean(document.querySelector("a.burger")) &&
    !document.body.textContent.includes("Validando sessão da transportadora"),null,{timeout:12000});
@@ -90,7 +90,7 @@ try{
  }
  await page.waitForFunction(()=>{
   const link=document.querySelector("a.burger");
-  return link?.getAttribute("href")==="/pages/transportadora-teste/home.html";
+  return link?.getAttribute("href")==="/pages/gnova/home.html";
  },null,{timeout:10000});
  const state=await page.evaluate(()=>({
   url:location.pathname,tenant:window.__PORTAL_TENANT_EXPECTED,
@@ -99,12 +99,12 @@ try{
   badText:document.body.textContent.includes("Não foi possível abrir o aplicativo"),
   home:document.querySelector("a.burger")?.getAttribute("href")
  }));
- assert.equal(state.url,"/pages/transportadora-teste/fretes.html");
+ assert.equal(state.url,"/pages/gnova/fretes.html");
  assert.equal(state.tenant,"teste-01");
  assert.equal(state.expected,"teste-01");
  assert.equal(state.hasFretes,true);
  assert.equal(state.badText,false);
- assert.equal(state.home,"/pages/transportadora-teste/home.html");
+ assert.equal(state.home,"/pages/gnova/home.html");
  console.log("CHROME TENANT PAGE SMOKE OK",JSON.stringify(state));
  await page.locator("#btnNew").click();
  try{
@@ -142,7 +142,7 @@ try{
  assert.equal(freightForm.headerLogoVisible,false);
  console.log("FRETES EMPTY SHEETS AND NAME-ONLY HEADER OK");
 
- await page.goto(origin+"/pages/transportadora-teste/home.html",{waitUntil:"domcontentloaded"});
+ await page.goto(origin+"/pages/gnova/home.html",{waitUntil:"domcontentloaded"});
  try{
   await page.waitForFunction(()=>
    document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
@@ -170,7 +170,7 @@ try{
   cards:[...document.querySelectorAll(".nf-tools a.nf-tool[data-feature]")]
     .filter(x=>getComputedStyle(x).display!=="none").map(x=>x.dataset.feature)
  }));
- assert.equal(homeState.path,"/pages/transportadora-teste/home.html");
+ assert.equal(homeState.path,"/pages/gnova/home.html");
  assert.equal(homeState.loading,false);
  assert.equal(homeState.brand,"NOVA FROTA ADMIN");
  assert.equal(homeState.logoVisible,false);
@@ -188,7 +188,7 @@ try{
  assert.equal(colors.dark,"rgb(255, 255, 255)");
  console.log("HOME HEADER THEME COLORS OK",JSON.stringify(colors));
 
- await page.goto(origin+"/pages/transportadora-teste/controle.html",{waitUntil:"domcontentloaded"});
+ await page.goto(origin+"/pages/gnova/controle.html",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>
   !!document.getElementById("gridFiliais") &&
   document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
@@ -203,7 +203,7 @@ try{
     getComputedStyle(document.querySelector(".nf-global-nav-standalone-brand .pf-company-name")).color:null,
   noTailwindPlay:!document.querySelector('script[src*="cdn.tailwindcss.com"]')
  }));
- assert.equal(control.url,"/pages/transportadora-teste/controle.html");
+ assert.equal(control.url,"/pages/gnova/controle.html");
  assert.equal(control.cssLoaded,true,"Local Tailwind CSS must load");
  assert.equal(control.grid,"grid");
  assert.equal(control.company,"NOVA FROTA ADMIN");
@@ -211,7 +211,7 @@ try{
  assert.equal(control.noTailwindPlay,true);
  console.log("CONTROLE SELF HOSTED CSS AND TITLE OK",JSON.stringify(control));
 
- await page.goto(origin+"/pages/transportadora-teste/ordem.html",{waitUntil:"domcontentloaded"});
+ await page.goto(origin+"/pages/gnova/ordem.html",{waitUntil:"domcontentloaded"});
  try{
   await page.waitForFunction(()=>
    document.documentElement.getAttribute("data-pf-tenant-boot")===null &&
@@ -234,14 +234,14 @@ try{
   noTailwindPlay:!document.querySelector('script[src*="cdn.tailwindcss.com"]'),
   company:document.querySelector(".nf-global-nav-standalone-brand .pf-company-name")?.textContent
  }));
- assert.equal(order.path,"/pages/transportadora-teste/ordem.html");
+ assert.equal(order.path,"/pages/gnova/ordem.html");
  assert.equal(order.localStyles,true);
  assert.equal(order.layout,"flex");
  assert.equal(order.noTailwindPlay,true);
  assert.equal(order.company,"NOVA FROTA ADMIN");
  console.log("ORDEM SELF HOSTED CSS AND BRANDING OK",JSON.stringify(order));
 
- await page.goto(origin+"/pages/transportadora-teste/divulgacao.html",{waitUntil:"domcontentloaded"});
+ await page.goto(origin+"/pages/gnova/divulgacao.html",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(document.querySelector(".templatePreview3")) &&
   Boolean(document.getElementById("pfTenantArtTheme")) &&
   document.querySelector(".m3HeroImg")?.complete &&

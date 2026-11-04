@@ -18,11 +18,12 @@ test("model generator is dry-run safe and creates no private data",()=>{
  assert.match(response,/Preparadas 49 páginas/);
  assert.equal(existsSync(path),false);
  const source=readFileSync(generator,"utf8");
- assert.ok(source.includes('data-tenant-id="teste-01"'));
+ assert.ok(source.includes('data-tenant-id="__TENANT_ID__"'));
  assert.ok(source.includes("Nenhum dado operacional, segredo ou planilha foi copiado."));
+ assert.ok(source.includes('const from=resolve(root,"pages","modelo01")'));
 });
 test("model generator rejects path traversal and existing test company",()=>{
- for(const slug of ["../bad","transportadora-teste","A-INVALID","1empresa"]){
+ for(const slug of ["../bad","transportadora-teste","gnova","modelo01","A-INVALID","1empresa"]){
   const result=spawnSync(process.execPath,[generator,slug,"empresa-09","--dry-run"],{cwd:root});
   assert.equal(result.status,2,slug);
  }

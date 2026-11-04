@@ -8,7 +8,7 @@ Implementação exclusiva para as novas transportadoras, como GNOVA (`teste-01`)
 - **Fretes2:** página e módulo exclusivos da Nova Frota (MT). Não são disponibilizados a novas transportadoras.
 - **Bases dedicadas:** as 27 UFs em `fretes-<uf>` (por exemplo `fretes-go`, `fretes-sp`, `fretes-mt`, `fretes-mg`). Cada módulo é liberado separadamente no Super Admin e utiliza a mesma estrutura HTML de `fretes.html`, inclusive a Base MT.
 
-As entradas da GNOVA ficam em `pages/transportadora-teste/fretes-GO.html` até `fretes-TO.html`, incluindo as demais UFs. Elas reutilizam o layout comum e enviam o identificador de base validado pela sessão ao Worker. O gerador `scripts/criar-transportadora-modelo.mjs` cria os mesmos atalhos para as futuras transportadoras.
+As entradas da GNOVA ficam em `pages/gnova/fretes-GO.html` até `fretes-TO.html`, incluindo as demais UFs. Elas reutilizam o layout comum e enviam o identificador de base validado pela sessão ao Worker. O gerador `scripts/criar-transportadora-modelo.mjs` cria os mesmos atalhos para as futuras transportadoras.
 
 ## Uma planilha e um Apps Script por base dedicada
 No **Super Admin > Transportadora > Configurações > Planilha individual**, selecionar uma das 27 bases estaduais. Cada base tem configuração **privada** de URL do Apps Script, ID de planilha e chave, registrada separadamente em R2. A planilha geral permanece independente.

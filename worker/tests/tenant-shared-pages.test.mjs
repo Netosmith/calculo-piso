@@ -17,7 +17,7 @@ const pages=[
 
 test("tenant-specific URL aliases keep ONE common original HTML per module",()=>{
  for(const page of pages){
-  const html=read("pages/transportadora-teste/"+page+".html");
+  const html=read("pages/gnova/"+page+".html");
   assert.match(html,/data-tenant-id="teste-01"/);
   assert.ok(html.includes('data-shared-page="'+page+'.html"'));
   assert.ok(html.includes('/assets/js/tenant-page.js'));
@@ -76,7 +76,7 @@ test("shared tenant loader uses mobile-safe DOM replacement and replays module s
  assert.ok(loader.includes("document.dispatchEvent(new Event(\"DOMContentLoaded\""));
  assert.ok(loader.includes("session.transportadoraId!==tenant"));
  for(const page of pages){
-  const alias=read("pages/transportadora-teste/"+page+".html");
+  const alias=read("pages/gnova/"+page+".html");
   assert.match(alias,/\/assets\/js\/tenant-page[.]js[?]v=[A-Za-z0-9._-]+/);
    assert.match(alias,/data-shared-page="/);
  }

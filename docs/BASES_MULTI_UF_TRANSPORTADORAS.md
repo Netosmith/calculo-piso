@@ -39,7 +39,7 @@ O filtro **Base** do BI permite escolher várias bases (Ctrl/Shift) ou **TODAS A
 A mesma carga deve ser registrada **uma única vez** na sua base contábil responsável. Não se deve copiar a linha para outra planilha para fazê-la aparecer em outro estado: os mapas já agregam todos os registros autorizados.
 
 ## Homologação antes da produção
-Verificar uma carga de origem MG na Base GO; uma de PR na Geral; uma de SP na Base SP; BI com cada base separada e com todas; cards e indicadores visíveis somente para bases habilitadas e selecionadas nas regionais; rejeição de acesso a base desabilitada; identidade e planilha corretas no teste de integração; permanência após recarga; e ausência de qualquer mudança funcional na Nova Frota.
+Verificar uma carga de origem MG na Base GO; uma de PR na Geral; uma de SP na Base SP; BI com cada base separada e com todas; atalhos de Fretes visíveis com liberação no Super Admin; indicadores e mapa filtrados também pelo vínculo com regionais; rejeição de acesso a base desabilitada; identidade e planilha corretas no teste de integração; permanência após recarga; e ausência de qualquer mudança funcional na Nova Frota.
 
 **Limite:** os HTMLs, Worker, integrações privadas e lógica dos módulos foram preparados no repositório. As planilhas independentes e implantação do Apps Script ainda precisam ser vinculadas e validadas com as contas e credenciais reais de cada transportadora. O registro de código não equivale a uma homologação em produção.
 

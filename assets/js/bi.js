@@ -470,7 +470,7 @@
     };
   }
 
-  const TENANT_BASES=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+  const TENANT_BASES=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"];
   function tenantModuleForUf(uf){
     return "fretes-"+uf.toLowerCase();
   }

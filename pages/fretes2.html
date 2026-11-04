@@ -1137,9 +1137,11 @@
     }
 
     .nfM4Hero{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;background:#eaf2f7}
-    .nfM4HeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 47%;opacity:.72}
+    .nfM4HeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 55%;opacity:.60}
     .nfM4HeroWash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%)}
     .nfM4Logo{position:absolute;z-index:3;top:28px;left:50%;transform:translateX(-50%);width:350px;height:auto}
+    /* Multi-freight artwork: keep uploaded branding out of the headline. */
+    body.pf-tenant-site .nfM4Hero .nfM4Logo{max-width:440px!important;max-height:125px!important;object-fit:contain!important;}
     .nfM4Title{position:absolute;z-index:3;left:48px;bottom:67px;font-size:74px;line-height:.92;font-weight:950;letter-spacing:-2.5px;color:#07366f}
     .nfM4Title strong{color:#08a968}
     .nfM4Subtitle{position:absolute;z-index:3;left:52px;bottom:29px;font-size:24px;letter-spacing:3px;font-weight:850;color:#254d76}
@@ -1189,8 +1191,9 @@
       letter-spacing:-.35px;
       text-transform:uppercase;
       white-space:normal;
-      overflow-wrap:break-word;
-      word-break:normal
+      overflow-wrap:normal;
+      word-break:normal;
+      hyphens:none
     }
     .nfM4Detail{
       width:100%;height:31px;margin-top:3px;padding:0 10px;box-sizing:border-box;display:flex;align-items:center;
@@ -1218,9 +1221,9 @@
     .nfM4Canvas.count-2 .nfM4Detail{height:38px;font-size:22px}
     .nfM4Canvas.count-2 .nfM4Product strong{font-size:33px;height:38px}
     .nfM4Canvas.count-2 .nfM4Price strong{font-size:50px;height:58px}
-    .nfM4Canvas.count-3 .nfM4City{height:68px;font-size:34px;line-height:.94}
+    .nfM4Canvas.count-3 .nfM4City{height:76px;font-size:34px;line-height:1}
     .nfM4Canvas.count-3 .nfM4Price strong{font-size:43px}
-    .nfM4Canvas.count-4 .nfM4City{height:56px;font-size:29px;line-height:.94}
+    .nfM4Canvas.count-4 .nfM4City{height:62px;font-size:29px;line-height:1}
     .nfM4Canvas.count-4 .nfM4Price{transform:translateY(-10px)}
 
     .nfM4Contacts{

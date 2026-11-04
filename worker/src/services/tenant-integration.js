@@ -52,7 +52,7 @@ export async function adminReadTenantIntegration(env,id,base=""){
  try{
   const tenant=await env.TENANTS_DB.prepare("SELECT id FROM portal_tenants WHERE id=?").bind(id).first();
   if(!tenant)return errorResponse("Transportadora nao encontrada.",404);
-  return success({tenantId:id,base:base||"geral",integracao:summary(await readTenantIntegration(env,id,base))});
+  return success({tenantId:id,...(base?{base}:{}),integracao:summary(await readTenantIntegration(env,id,base))});
  }catch{
   return errorResponse("Nao foi possivel consultar a integracao.",503);
  }
@@ -105,7 +105,7 @@ export async function adminWriteTenantIntegration(request,env,actor,id,base=""){
   ).bind(crypto.randomUUID(),actor,id,base?"base.integration.update":"integration.update",JSON.stringify({base:base||"geral",
    provider:"apps-script",enabled:config.enabled,estado:config.estado
   })).run();
-  return success({tenantId:id,base:base||"geral",integracao:summary(config)});
+  return success({tenantId:id,...(base?{base}:{}),integracao:summary(config)});
  }catch(error){
   console.error("[TENANT INTEGRATION] write failed",{type:error?.name||"Error"});
   return errorResponse("Nao foi possivel salvar a integracao.",503);
@@ -139,7 +139,7 @@ export async function adminTestTenantIntegration(env,id,base=""){
    return errorResponse("Apps Script conectado a outra empresa ou planilha. Integracao continua sem validacao.",409,{
     tenantMatch,spreadsheetMatch
    });
-  return success({tenantId:id,base:base||"geral",conectado:true,gatewayAutorizado:true,
+  return success({tenantId:id,...(base?{base}:{}),conectado:true,gatewayAutorizado:true,
    empresaCorreta:true,planilhaCorreta:true,integracaoAtiva:config.enabled});
  }catch(error){
   // Do not log script URLs, keys, raw remote bodies, or tenant records.

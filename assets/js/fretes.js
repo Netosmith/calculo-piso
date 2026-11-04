@@ -1474,53 +1474,36 @@ function formatDateTimeBR(value) {
   }
 
   function fitModel4TextNF(target) {
-    if (!target || !target.hasAttribute("data-nf-m4-fit")) return;
-
-    const max = Number(target.dataset.max || 36);
-    const min = Number(target.dataset.min || 15);
-    const lines = Math.max(1, Number(target.dataset.lines || 1));
-    let size = max;
-
-    target.style.fontSize = max + "px";
-    target.style.letterSpacing = "";
-
-    if (lines > 1) {
-      target.style.whiteSpace = "normal";
-      target.style.display = "-webkit-box";
-      target.style.webkitBoxOrient = "vertical";
-      target.style.webkitLineClamp = String(lines);
-      target.style.overflow = "hidden";
-      target.style.overflowWrap = "break-word";
-      target.style.wordBreak = "normal";
-    } else {
-      target.style.display = "";
-      target.style.webkitBoxOrient = "";
-      target.style.webkitLineClamp = "";
-      target.style.whiteSpace = "nowrap";
-      target.style.overflow = "hidden";
+    if(!target || !target.hasAttribute("data-nf-m4-fit"))return;
+    const max=Number(target.dataset.max||36),min=Number(target.dataset.min||15);
+    const lines=Math.max(1,Number(target.dataset.lines||1));
+    const text=String(target.textContent||"").trim();
+    const isCity=target.classList.contains("nfM4City");
+    // A single city (e.g. PARANAGUA) must never split its last letter.
+    // Multiple words may use two lines, only at natural word boundaries.
+    const singleWord=isCity && !/\s/.test(text);
+    target.style.fontSize=max+"px";
+    target.style.letterSpacing="";
+    target.style.whiteSpace=singleWord||lines===1?"nowrap":"normal";
+    target.style.wordBreak="normal";
+    target.style.overflowWrap="normal";
+    target.style.hyphens="none";
+    target.style.display="block";
+    target.style.webkitLineClamp="unset";
+    target.style.webkitBoxOrient="";
+    target.style.overflow="hidden";
+    let size=max;
+    while(size>min && (
+      target.scrollHeight>target.clientHeight+1 ||
+      (singleWord||lines===1 ? target.scrollWidth>target.clientWidth+1
+         : target.scrollHeight>target.clientHeight+1)
+    )){
+      size-=1;
+      target.style.fontSize=size+"px";
     }
-
-    let guard = 0;
-
-    while (size > min && guard < 120) {
-      const overflowY = target.scrollHeight > target.clientHeight + 1;
-      const overflowX = lines === 1 && target.scrollWidth > target.clientWidth + 1;
-
-      if (!overflowY && !overflowX) break;
-
-      size -= 1;
-      target.style.fontSize = size + "px";
-      guard += 1;
-    }
-
-    if (
-      size <= min &&
-      (
-        target.scrollHeight > target.clientHeight + 1 ||
-        (lines === 1 && target.scrollWidth > target.clientWidth + 1)
-      )
-    ) {
-      target.style.letterSpacing = "-0.8px";
+    // Avoid truncating a single word at the configured minimum.
+    if(singleWord && target.scrollWidth>target.clientWidth+1){
+      target.style.fontSize=Math.max(12,Math.floor(size*target.clientWidth/target.scrollWidth))+"px";
     }
   }
 

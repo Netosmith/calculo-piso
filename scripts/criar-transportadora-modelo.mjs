@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Create another transportadora's static URL entrypoints, using GNOVA/teste-01
- * as the REFERENCE ONLY. Does not copy data, credentials, JS or CSS.
+ * Create a new transportadora's isolated static URL entrypoints from
+ * pages/modelo01. Never copies any existing company's data or credentials.
  *
  * Usage:
  *   node scripts/criar-transportadora-modelo.mjs <slug-publico> <tenant-id> [--dry-run]
@@ -16,13 +16,14 @@ import {fileURLToPath} from "node:url";
 const [slug,id,option]=process.argv.slice(2);
 const valid=value=>typeof value==="string"&&
  /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(value)&&value.length<=48;
-if(!valid(slug)||!valid(id)||slug==="transportadora-teste"||
+const reserved=new Set(["gnova","modelo01","transportadora-teste","teste-01","nova-frota"]);
+if(!valid(slug)||!valid(id)||reserved.has(slug)||reserved.has(id)||
  (option!==undefined&&option!=="--dry-run")){
  console.error("Uso: node scripts/criar-transportadora-modelo.mjs <slug-publico> <tenant-id> [--dry-run]");
  process.exitCode=2;
 }else{
  const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
- const from=resolve(root,"pages","transportadora-teste");
+ const from=resolve(root,"pages","modelo01");
  const to=resolve(root,"pages",slug);
  const modules=["login","home","fretes","fretes-GO","fretes-MT","fretes-SP","fretes-MS","fretes-BA","fretes-PR","fretes-SC","fretes-RO","fretes-TO","fretes-MA","fretes-AC","fretes-AL","fretes-AP","fretes-AM","fretes-CE","fretes-DF","fretes-ES","fretes-MG","fretes-PA","fretes-PB","fretes-PE","fretes-PI","fretes-RJ","fretes-RN","fretes-RS","fretes-RR","fretes-SE","bi","divulgacao","share-clientes",
   "controle","administrativo","cadastros","estadias","fretes-mercado","embarques",
@@ -30,28 +31,13 @@ if(!valid(slug)||!valid(id)||slug==="transportadora-teste"||
   "monitoramento","calculo-piso","calculo-antt","calculo-antt2","ordem"];
  const entries=modules.map(name=>{
   const source=readFileSync(resolve(from,name+".html"),"utf8");
-  if(!source.includes('data-tenant-id="teste-01"'))throw Error("Modelo inválido: "+name);
-  let result=source.replace('data-tenant-id="teste-01"','data-tenant-id="'+id+'"')
-   .replaceAll("TRANSPORTADORA TESTE","ACESSO EMPRESARIAL")
-   .replaceAll("Transportadora Teste","Acesso empresarial");
-  // The GNOVA order shell may eventually contain real fiscal records.
-  // Never copy those records to a new transportadora.
-  if(name==="ordem"){
-   result=result.replace("Cadastro manual exclusivo da GNOVA no GitHub.",
-     "Cadastro manual exclusivo desta transportadora no GitHub.");
-   // New companies must not inherit the GNOVA trade name either.
-   result=result.replace(/const NOME_TRANSPORTADORA = "[^"]*";/,
-     'const NOME_TRANSPORTADORA = "";');
-   result=result.replace(/(const EMPRESAS_POR_ESTADO = \{)[\s\S]*?(\n      \};\n      window\.PORTAL_ORDEM_CONFIG)/,
-     (_match,start,end)=>start+
-     ["GO: \"GOIÁS\"","MG: \"MINAS GERAIS\"","SP: \"SÃO PAULO\"",
-      "MT: \"MATO GROSSO\"","PR: \"PARANÁ\"","SC: \"SANTA CATARINA\"",
-      "TO: \"TOCANTINS\"","PA: \"PARÁ\"","MA: \"MARANHÃO\"",
-      "BA: \"BAHIA\""].map(entry=>{
-       const [uf,filial]=entry.split(": ");
-       return '\n        '+uf+': { filial:'+filial+', cnpj:"", ie:"", endereco:"", email:"" }';
-     }).join(",") +end);
-  }
+  const placeholder='data-tenant-id="__TENANT_ID__"';
+  if(!source.includes(placeholder))throw Error("Modelo inválido: "+name);
+  const result=source.replaceAll(placeholder,'data-tenant-id="'+id+'"');
+  if(result.includes("__TENANT_ID__")||/GNOVA|teste-01|transportadora-teste/i.test(result))
+    throw Error("Modelo contém identificador de outra transportadora: "+name);
+  // No private identifiers, fiscal data, passwords or Apps Script URLs are
+  // copied. Those are configured after tenant creation via the Super Admin.
   return {name,target:resolve(to,name+".html"),content:result};
  });
  if(existsSync(to)||entries.some(x=>existsSync(x.target))){

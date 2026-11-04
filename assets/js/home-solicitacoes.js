@@ -30,7 +30,8 @@
 
   async function portalCall(action, params = {}){
     const session=window.portalAuthReady?await window.portalAuthReady:null;
-    if(!session || (session.tenantMode===true &&
+    if(!session || String(session.perfil||"").trim().toUpperCase()==="PISO" ||
+      (session.tenantMode===true &&
       (!Array.isArray(session.modules) || !session.modules.includes("administrativo"))))
       throw new Error("Solicitações não liberadas para esta transportadora.");
     const api = typeof ensurePortalApi === "function"
@@ -126,6 +127,10 @@
   }
 
   function openModal(){
+    const session=window.__PORTAL_TENANT_SESSION;
+    const profile=String(session?.perfil||
+      (typeof window.getProfile==="function"?window.getProfile():"")).trim().toUpperCase();
+    if(profile==="PISO")return;
     const modal = $("#homeSolicModal");
     if(!modal) return;
 
@@ -143,7 +148,8 @@
   async function refreshKpi(){
     try{
       const session=window.portalAuthReady?await window.portalAuthReady:null;
-      if(!session || (session.tenantMode===true &&
+      if(!session || String(session.perfil||"").trim().toUpperCase()==="PISO" ||
+      (session.tenantMode===true &&
         (!session.modules?.includes("administrativo") || 
           String(session.perfil||"").toUpperCase()==="PISO")))return;
       const api = typeof ensurePortalApi === "function"
@@ -220,7 +226,8 @@
 
   window.addEventListener("DOMContentLoaded", async () => {
     const session=window.portalAuthReady?await window.portalAuthReady:null;
-    if(!session || (session.tenantMode===true &&
+    if(!session || String(session.perfil||"").trim().toUpperCase()==="PISO" ||
+      (session.tenantMode===true &&
       (!Array.isArray(session.modules) || !session.modules.includes("administrativo"))))return;
     ensureLoading();
     fillFiliais(session);

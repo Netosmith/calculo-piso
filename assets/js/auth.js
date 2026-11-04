@@ -443,20 +443,24 @@ function canAccessFeature(featureKey){
     if(window.__PORTAL_TENANT_EXPECTED &&
        tenantSession.transportadoraId!==window.__PORTAL_TENANT_EXPECTED)return false;
     if(feature==="super-admin"||feature==="fretes2")return false;
-    if(feature==="home")return true;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
+    const role=String(tenantSession.perfil||"").trim().toUpperCase();
+    // PISO only gets the empty Home entrypoint and an enabled Piso 2.
+    if(role==="PISO")return feature==="home" ||
+      (feature==="piso2" && modules.includes("piso2"));
+    if(feature==="home")return true;
     // Piso 1 and Piso 2 are independently granted by the Super Admin.
     // Never map piso2 to piso: that exposed both calculators with one checkbox.
     if(!modules.includes(feature))return false;
     if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/.test(feature)){
-      const role=String(tenantSession.perfil||"").toUpperCase();
       return ["ADMINISTRADOR","COMERCIAL","OPERACIONAL"].includes(role);
     }
-    const role=String(tenantSession.perfil||"").toUpperCase();
     if(role==="ADMINISTRADOR")return true;
-    if(role==="PISO")return feature==="piso" || feature==="piso2";
     return featuresForProfile(role).includes(feature);
   }
+
+  // PISO cannot inherit global support, Piso 1 or other modules.
+  if(profile==="PISO")return isAuthedHome() && feature==="piso2";
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.
   // Assim, novos módulos não precisam ser adicionados manualmente ao array ADMINISTRADOR.

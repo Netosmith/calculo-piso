@@ -179,6 +179,12 @@
   document.body?.classList.add("pf-tenant-mode");
   set("homeFretesAtivos","—");
   set("homeFretesDetalhe","Consultando bases vinculadas às regionais...");
+  // A PISO session must never fetch or render tenant's dashboard, freights,
+  // regional assignments or operational data.
+  if(String(session.perfil||"").trim().toUpperCase()==="PISO"){
+    set("homeSub","Acesso exclusivo ao Cálculo de Piso 2 (ANTT)");
+    return;
+  }
   const pendingFleet=document.querySelector(".nf-veiculos-resumo");
   if(pendingFleet)pendingFleet.textContent="Consultando veículos das bases vinculadas...";
   const root=$("tenantWorkspace");

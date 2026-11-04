@@ -8,7 +8,8 @@
   if(!wrap||!button||!topbar)return;
 
   function canSeeHomeSolicitations(session){
-    if(!session || !String(session.usuario||"").trim())return false;
+    if(!session || !String(session.usuario||"").trim() ||
+       String(session.perfil||"").trim().toUpperCase()==="PISO")return false;
     // Nova Frota já usa Solicitações na Home para todos os perfis.
     if(session.tenantMode!==true)return true;
     // Para outras empresas, exclusivamente os módulos da sessão assinada.

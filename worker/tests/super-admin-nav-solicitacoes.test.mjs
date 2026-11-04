@@ -22,8 +22,8 @@ test("Solicitações: all signed Nova Frota profiles, any tenant profile only wi
  assert.doesNotThrow(()=>new Script(script));
  const roles=["ADMINISTRADOR","GOADM","OPERACIONAL","COMERCIAL","PISO","MT","PR","GO"];
  const cases=[
-  ...roles.map(perfil=>[{usuario:"TESTE",perfil,tenantMode:false},true]),
-  ...roles.map(perfil=>[{usuario:"TESTE",perfil,tenantMode:true,transportadoraId:"teste-01",modules:["administrativo"]},true]),
+  ...roles.map(perfil=>[{usuario:"TESTE",perfil,tenantMode:false},perfil!=="PISO"]),
+  ...roles.map(perfil=>[{usuario:"TESTE",perfil,tenantMode:true,transportadoraId:"teste-01",modules:["administrativo"]},perfil!=="PISO"]),
   ...roles.map(perfil=>[{usuario:"TESTE",perfil,tenantMode:true,transportadoraId:"teste-01",modules:["bi"]},false]),
   [{usuario:"TESTE",perfil:"PISO",tenantMode:true,transportadoraId:"teste-01",modules:[]},false],
   [null,false],[{usuario:"",perfil:"ADMINISTRADOR",tenantMode:false},false]

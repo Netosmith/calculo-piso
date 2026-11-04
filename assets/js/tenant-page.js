@@ -175,7 +175,7 @@
  }
  async function load(){
   if(!tenant||!slug||!allowed.has(page)){refuse();return;}
-  const baseAlias=/^fretes-(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA)\.html$/.exec(file);
+  const baseAlias=/^fretes-(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA|AC|AL|AP|AM|CE|DF|ES|MG|PA|PB|PE|PI|RJ|RN|RS|RR|SE)\.html$/.exec(file);
   if(baseAlias){
    if(freightBase!==baseAlias[1]||page!==(freightBase==="MT"?"fretes2.html":"fretes.html")){refuse();return;}
   }else if(page!==file){refuse();return;}

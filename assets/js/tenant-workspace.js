@@ -110,10 +110,16 @@
   renderBaseCards();
   document.querySelectorAll(".nf-tools a.nf-tool[data-feature]").forEach(card=>{
    const feature=card.dataset.feature;
-   const visibleByRegional=feature==="fretes"||/^fretes-[a-z]{2}$/.test(feature)
-     ?activeFreightModules.has(feature):true;
-   const allowed=visibleByRegional&&typeof window.canAccessFeature==="function"&&
+   // Shortcut availability follows Super Admin grants. Regional assignments
+   // control KPIs, not whether the operator may open and prepare that base.
+   const allowed=typeof window.canAccessFeature==="function"&&
     window.canAccessFeature(feature);
+   if(allowed&&(feature==="fretes"||/^fretes-[a-z]{2}$/.test(feature))){
+    const description=card.querySelector("p");
+    if(description)description.textContent=activeFreightModules.has(feature)
+      ?"Base habilitada e vinculada às regionais."
+      :"Vincule uma regional para contabilizar esta base na Home.";
+   }
    card.hidden=!allowed;
    card.style.display=allowed?"":"none";
    card.removeAttribute("aria-disabled");

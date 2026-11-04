@@ -9,7 +9,7 @@ const SLUG=/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const SHEET_ID=/^[A-Za-z0-9_-]{20,160}$/;
 const UF=/^(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$/;
 const KEY=/^[A-Za-z0-9_\-!@#$%^&*+=]{24,256}$/;
-const BASE_UFS=new Set(["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"]);
+const BASE_UFS=new Set(["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"]);
 export const validFreightBase=base=>BASE_UFS.has(String(base||"").toUpperCase());
 const integrationObjectKey=(id,base="")=>base
  ? "tenant/"+id+"/private/base-"+base.toLowerCase()+"-apps-script-v1.json"
@@ -159,7 +159,7 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const permissionModule=role==="PISO"&&module==="piso"?"piso2":module;
  if(!allowed||!canRunGatewayAction(permissionSession,permissionModule,action,payload?.params))
   return errorResponse("Acao nao permitida para este perfil ou transportadora.",403);
- const freightBase=module.match(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma)$/)?.[1].toUpperCase()||"";
+ const freightBase=module.match(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/)?.[1].toUpperCase()||"";
  const requestedBase=module==="bi" && action==="read" && typeof payload?.params?.baseOperacional==="string"
    ? payload.params.baseOperacional.toUpperCase() : "";
  if(requestedBase && (!validFreightBase(requestedBase) ||

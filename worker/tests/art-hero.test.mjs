@@ -17,9 +17,9 @@ test("Art hero asset exists; only Divulgação Modelo 3 and Fretes use corrected
  const fretes2=load("pages/fretes2.html");
  assert.match(fretes2,/class="nfM3HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
  assert.match(fretes2,/class="nfM4HeroImg" src="\/assets\/img\/divulgacao\/hero-global[.]jpg[?]v=2"/);
- assert.match(fretes2,/art-hero[.]js[?]v=2/);
- assert.match(page,/art-hero[.]js[?]v=2/);
- assert.match(fretes,/art-hero[.]js[?]v=2/);
+ assert.match(fretes2,/art-hero[.]js[?]v=3/);
+ assert.match(page,/art-hero[.]js[?]v=3/);
+ assert.match(fretes,/art-hero[.]js[?]v=3/);
  // The hero is a single <img> with 72% opacity. A duplicate CSS
  // background makes the opacity ineffective and harms text readability.
  for(const [source,key] of [[css,"m3Hero"],[fretes,"nfM3Hero"],[fretes,"nfM4Hero"],[fretes2,"nfM3Hero"],[fretes2,"nfM4Hero"]]){

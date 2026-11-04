@@ -90,7 +90,7 @@ export async function superAdminController(request, env, verifiedStagingSession 
   }
   // Cloudflare Access / owner session gate is evaluated above this route.
   // Each freight base has its own private Apps Script and spreadsheet.
-  const baseRoute=path.match(/^\/v1\/super-admin\/transportadoras\/([a-z0-9-]+)\/bases\/(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA)\/integracao(\/testar)?$/);
+  const baseRoute=path.match(/^\/v1\/super-admin\/transportadoras\/([a-z0-9-]+)\/bases\/(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA|AC|AL|AP|AM|CE|DF|ES|MG|PA|PB|PE|PI|RJ|RN|RS|RR|SE)\/integracao(\/testar)?$/);
   if(baseRoute){
     return baseRoute[3]
       ? adminTestTenantIntegration(env,baseRoute[1],baseRoute[2])

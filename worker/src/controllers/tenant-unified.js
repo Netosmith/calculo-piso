@@ -13,6 +13,7 @@ import {sharedClientNamesController} from "../services/shared-client-catalog.js"
 import {regionalUfController} from "../services/tenant-regional-ufs.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 import {tenantUsersController} from "../services/tenant-user-management.js";
+import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
 
@@ -77,7 +78,8 @@ export function tenantPublicSession(principal,modules=[]){
   // Never disclose other enabled tenant modules in a PISO session.
   modules:String(principal.role||"").trim().toUpperCase()==="PISO"
     ? modules.filter(module=>module==="piso2") : modules,
-  tenantMode:true
+  tenantMode:true,
+  ...(principal.owner_support===true ? {ownerSupport:true} : {})
  };
 }
 export async function currentTenantPrincipal(request,env){
@@ -99,6 +101,27 @@ export async function tenantLogoutController(request,env){
  response.headers.append("Set-Cookie",clearSessionCookie());
  return response;
 }
+// The company URL selects a target, but only an authenticated signed owner
+// session may open that target without becoming one of its local users.
+export async function tenantContextController(request,env){
+ if(request.method!=="GET")return tenantJsonError("Metodo nao permitido.",405);
+ if(!tenantPortalEnabled(env))return tenantJsonError("Portal de transportadoras indisponivel.",503);
+ const target=new URL(request.url).searchParams.get("tenantId");
+ if(!validTenantId(target))return tenantJsonError("Transportadora invalida.",400);
+ try{
+  const owner=await ownerSupportPrincipal(request,env,target);
+  if(owner)return success({session:tenantPublicSession(owner,
+   await enabledModules(env.TENANTS_DB,target))});
+  const current=await tenantSession(env.TENANTS_DB,request);
+  if(!current||current.tenant_id!==target)return tenantJsonError("Sessao sem acesso a esta transportadora.",403);
+  return success({session:tenantPublicSession(current,
+   await enabledModules(env.TENANTS_DB,target))});
+ }catch(error){
+  console.error("[TENANT CONTEXT] Unavailable",{type:error?.name||"Error"});
+  return tenantJsonError("Nao foi possivel validar o acesso a transportadora.",503);
+ }
+}
+
 export async function tenantApiController(request,env){
  if(!tenantPortalEnabled(env))return tenantJsonError("Portal de transportadoras indisponivel.",503);
  const path=new URL(request.url).pathname;
@@ -109,7 +132,23 @@ export async function tenantApiController(request,env){
   if(type!=="application/json")return tenantJsonError("Formato de dados nao permitido.",415);
  }
  try{
-  const principal=await tenantSession(env.TENANTS_DB,request);
+  // An explicit support context is NEVER an identity supplied by the browser:
+  // verify the signed legacy owner session on every company-scoped request.
+  // Query scope is limited to image/artwork GET requests with no header support.
+  const supportHeader=request.headers.get("X-Portal-Support-Tenant");
+  const supportQuery=["/v1/tenant/logo","/v1/tenant/artes"].includes(path) &&
+    request.method==="GET" ? new URL(request.url).searchParams.get("supportTenant") : null;
+  if(supportHeader && supportQuery && supportHeader!==supportQuery)
+    return tenantJsonError("Contexto de transportadora inconsistente.",403);
+  const supportTarget=supportHeader||supportQuery;
+  let principal;
+  if(supportTarget){
+    if(!validTenantId(supportTarget))return tenantJsonError("Transportadora invalida.",403);
+    principal=await ownerSupportPrincipal(request,env,supportTarget);
+    if(!principal)return tenantJsonError("Acesso exclusivo do proprietario.",403);
+  }else{
+    principal=await tenantSession(env.TENANTS_DB,request);
+  }
   if(!principal)return tenantJsonError("Sessao invalida ou transportadora inativa.",401);
   const modules=await enabledModules(env.TENANTS_DB,principal.tenant_id);
   if(path==="/v1/tenant/me"&&request.method==="GET")

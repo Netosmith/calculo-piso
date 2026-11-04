@@ -86,6 +86,38 @@
   `;
   document.head.append(style);
  }
+ // GNOVA (tenant teste-01) only: the uploaded logo is taller than the
+ // default artwork logo. Its lower portion used to overlap FRETES DISPONÍVEIS.
+ // Fixed 1080px-canvas coordinates are shared by preview and html2canvas JPG.
+ // Do not apply these overrides to Nova Frota or to any other tenant.
+ function applyGnovaArtLogoLayout(){
+  if(tenant!=="teste-01"||window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+  document.body?.classList.add("pf-gnova-art-layout");
+  if(document.getElementById("pfGnovaArtLogoLayout"))return;
+  const style=document.createElement("style");
+  style.id="pfGnovaArtLogoLayout";
+  style.textContent=`
+    /* Model 3: logo ends at y=100, above the headline starting at y=112. */
+    body.pf-tenant-site.pf-gnova-art-layout img.m3Logo,
+    body.pf-tenant-site.pf-gnova-art-layout img.nfM3Logo{
+      top:4px!important;
+      width:290px!important;
+      height:96px!important;
+      object-fit:contain!important;
+      object-position:center top!important;
+    }
+    /* Models 4A / 4B / 4C: logo ends at y=136, above the title. */
+    body.pf-tenant-site.pf-gnova-art-layout img.multiArtLogo,
+    body.pf-tenant-site.pf-gnova-art-layout img.nfM4Logo{
+      top:8px!important;
+      width:305px!important;
+      height:128px!important;
+      object-fit:contain!important;
+      object-position:center top!important;
+    }
+  `;
+  document.head.append(style);
+ }
  function labelHeader(img){
   const container=img.closest(".nf-brand,.nf-global-nav-standalone-brand,.topbar .brand");
   if(!container)return;
@@ -229,6 +261,7 @@
  }
  function ready(){
   ensureHeaderTheme();
+  applyGnovaArtLogoLayout();
   if(/nova frota/i.test(document.title))
    document.title=document.title.replace(/nova frota/ig,companyName);
   fixSubtree(document);

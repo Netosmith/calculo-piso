@@ -8,7 +8,7 @@ const page=readFileSync(new URL("../../pages/divulgacao.html",import.meta.url),"
 
 test("Divulgacao script parses and is refreshed for clients",()=>{
  assert.doesNotThrow(()=>new Script(source));
- assert.match(page,/assets\/js\/divulgacao\.js\?v=16/);
+ assert.match(page,/assets\/js\/divulgacao\.js\?v=17/);
 });
 test("JPG export freezes rendered logo geometry in cloned DOM for all art models",()=>{
  assert.match(source,/function prepareArtLogoExport\(preview\)/);

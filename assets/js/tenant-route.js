@@ -24,7 +24,7 @@
   if(url.origin!==location.origin)return null;
   const tenantPath=prefix.slice(0,-1);
   if(url.pathname.startsWith(tenantPath+"/"))return null;
-  const match=url.pathname.match(/^\/pages\/([a-z][a-z0-9-]*\.html)$/);
+  const match=url.pathname.match(/^\/pages\/([a-zA-Z][a-zA-Z0-9-]*\.html)$/);
   if(!match)return null;
   if(match[1]==="login.html")return ownLogin;
   if(!modules.has(match[1]))return null;

@@ -1,241 +1,30 @@
-/*
- * One shared source of truth: /pages/<module>.html.
- * Private transportadora URLs render that source in place. Browser URL is only
- * presentation; Worker session and R2 configuration select the data source.
- *
- * Do NOT use document.open/write/close after asynchronous fetches. They can
- * destroy the live parser / script context in mobile browsers.
+import {getSession,readSessionId} from "./session.js";
+import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
+import {validTenantId} from "./tenant-auth.js";
+
+/**
+ * Owner support access is derived from the existing signed Nova Frota login.
+ * This never provisions a tenant user, password, or tenant session cookie.
+ * The requested tenant is only a scope; it is NOT an authorization grant.
  */
-(function(){
- "use strict";
- const script=document.currentScript;
- const tenant=String(script?.dataset.tenantId||"");
- const page=String(script?.dataset.sharedPage||"");
- const freightBase=String(script?.dataset.freightBase||"").toUpperCase();
- const match=location.pathname.match(/^\/pages\/([a-z][a-z0-9-]{2,63})\/([a-zA-Z][a-zA-Z0-9-]*\.html)$/);
- const slug=match?.[1]||"";
- const file=match?.[2]||"";
- const login="/pages/"+slug+"/login.html";
- const allowed=new Set([
-  "home.html","fretes.html","bi.html","divulgacao.html",
-  "share-clientes.html","controle.html","administrativo.html","cadastros.html",
-  "estadias.html","fretes-mercado.html","embarques.html","chamados.html",
-  "patrimonio-br.html","relatorio.html","custo-filial.html",
-  "custo-frota-pesada.html","monitoramento.html","calculo-piso.html",
-  "calculo-antt.html","calculo-antt2.html","ordem.html"
- ]);
- let stage="inicio";
- function refuse(){location.replace(login);}
- function showFailure(){
-  document.documentElement.removeAttribute("data-pf-tenant-boot");
-  const body=document.body||document.documentElement;
-  body.replaceChildren();
-  const main=document.createElement("main");
-  main.style.cssText="max-width:600px;margin:12vh auto;padding:24px;font-family:system-ui,Arial,sans-serif;color:#1b3754;text-align:center";
-  const h=document.createElement("h1");
-  h.textContent="Não foi possível abrir o aplicativo";
-  h.style.cssText="font-size:23px;line-height:1.3";
-  const p=document.createElement("p");
-  p.textContent="Falha no carregamento da página compartilhada ("+stage+").";
-  const btn=document.createElement("button");
-  btn.textContent="Tentar novamente";
-  btn.style.cssText="border:0;border-radius:8px;padding:12px 18px;background:#1c65a7;color:white;font:inherit;cursor:pointer";
-  btn.addEventListener("click",()=>location.reload());
-  const link=document.createElement("a");
-  link.href=login;link.textContent="Voltar ao login";
-  link.style.cssText="display:block;margin:20px auto";
-  main.append(h,p,btn,link);
-  body.appendChild(main);
- }
- async function get(url,options){
-  let lastError;
-  for(let attempt=0;attempt<2;attempt++){
-   try{
-    const response=await fetch(url,{...options,cache:"no-store"});
-    if(response.status>=500 && attempt===0)continue;
-    return response;
-   }catch(error){
-    lastError=error;
-   }
-  }
-  throw lastError||new Error("Recurso temporariamente indisponível.");
- }
- async function renderShared(html){
-  const parsed=new DOMParser().parseFromString(html,"text/html");
-  if(!parsed.head||!parsed.body||!parsed.documentElement)
-   throw new Error("Documento compartilhado inválido.");
-  // Some older valid modules (notably Ordem) omit <title>.
-  // Supply a company-scoped browser title instead of rejecting the page.
-  if(!parsed.querySelector("title")){
-   const title=parsed.createElement("title");
-   const name=String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
-   title.textContent=page.replace(/\.html$/,"").replace(/-/g," ")+" | "+name;
-   parsed.head.append(title);
-  }
-  const base=parsed.createElement("base");
-  base.href="/pages/";
-  parsed.head.prepend(base);
-  // Hide legacy Home defaults until signed session + tenant customization
-  // finish. This also prevents flashes of Nova Frota logos, names and cards.
-  const bootStyle=parsed.createElement("style");
-  bootStyle.id="pfTenantBootStyle";
-  bootStyle.textContent='html[data-pf-tenant-boot="1"] body{visibility:hidden!important}';
-  parsed.head.insertBefore(bootStyle,base.nextSibling);
-  const route=parsed.createElement("script");
-  route.src=tenant==="teste-01"
-   ?"/assets/js/tenant-route.js?v=gnova-logo-20261104-1"
-   :"/assets/js/tenant-route.js?v=8";
-  parsed.head.insertBefore(route,base.nextSibling);
-  // Controle uses Tailwind utilities. The Play CDN may fail when injected
-  // after DOMContentLoaded on tenant pages; use precompiled same-origin CSS.
-  // The legacy Nova Frota HTML still uses its original loading mechanism.
-  if(page==="controle.html"||page==="ordem.html"){
-   parsed.querySelectorAll('script[src*="cdn.tailwindcss.com"]').forEach(node=>node.remove());
-   parsed.querySelectorAll("script:not([src])").forEach(node=>{
-    if(/\btailwind\.config\s*=/.test(node.textContent||""))node.remove();
-   });
-   const css=parsed.createElement("link");
-   css.id=page==="controle.html"?"pfTenantControleCss":"pfTenantOrdemCss";
-   css.rel="stylesheet";
-   css.href=page==="controle.html"
-    ?"/assets/css/controle-tailwind.generated.css?v=1"
-    :"/assets/css/ordem-tailwind.generated.css?v=1";
-   parsed.head.append(css);
-  }
-  // The HTML & assets remain shared; the cache key is only for this tenant
-  // shell so updates do not mix with a previous app session.
-  parsed.querySelectorAll('script[src],link[rel="stylesheet"][href]').forEach(node=>{
-   const attr=node.hasAttribute("src")?"src":"href";
-   const raw=node.getAttribute(attr)||"";
-   if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-27-v13"));
-   }
-  });
-  // Unlike document.write in a completed document, this does not tear down
-  // the browsing context. HTML-inserted scripts are inert, so explicitly
-  // re-create them in document order.
-  document.documentElement.setAttribute("data-pf-tenant-boot","1");
-  document.documentElement.innerHTML=parsed.documentElement.innerHTML;
-  document.documentElement.lang=parsed.documentElement.lang||"pt-BR";
-  const controlStylesheet=document.querySelector("#pfTenantControleCss,#pfTenantOrdemCss");
-  const cssReady=!controlStylesheet ? Promise.resolve() : new Promise((resolve,reject)=>{
-   if(controlStylesheet.sheet){resolve();return;}
-   controlStylesheet.addEventListener("load",resolve,{once:true});
-   controlStylesheet.addEventListener("error",()=>reject(new Error("CSS local do Controle indisponível.")),{once:true});
-  });
-  const scripts=Array.from(document.querySelectorAll("script"));
-  for(const original of scripts){
-   const cloned=document.createElement("script");
-   for(const attr of original.attributes){
-    if(!["async","defer","src"].includes(attr.name))
-     cloned.setAttribute(attr.name,attr.value);
-   }
-   const source=original.getAttribute("src");
-   if(!source){
-    cloned.textContent=original.textContent||"";
-    original.replaceWith(cloned);
-    continue;
-   }
-   cloned.async=false; // Ensure auth.js runs before dependent page modules.
-   const loaded=new Promise((resolve,reject)=>{
-    cloned.onload=resolve;
-    cloned.onerror=()=>reject(new Error("Não foi possível carregar "+new URL(source,document.baseURI).pathname));
-   });
-   cloned.setAttribute("src",source);
-   original.replaceWith(cloned);
-   try{await loaded;}catch(error){
-    // Missing optional remote libraries should not erase an otherwise
-    // valid module. Essential local scripts must still load successfully.
-    if(new URL(source,document.baseURI).origin===location.origin)throw error;
-    console.warn("[TENANT PAGE] optional library unavailable",error?.name);
-   }
-  }
-  await cssReady;
-  // The shell's real DOMContentLoaded already fired before the async fetch.
-  // Replay it once for the existing shared module's setup listeners.
-  document.dispatchEvent(new Event("DOMContentLoaded",{bubbles:true}));
-  window.dispatchEvent(new Event("load"));
-  // Render tenant branding and permissions before showing the Home.
-  if(window.portalAuthReady){
-   try{await window.portalAuthReady;}catch(error){
-    throw new Error("Não foi possível validar a sessão do aplicativo.");
-   }
-  }
-  if(window.PORTAL_BASE_UF){
-   const uf=window.PORTAL_BASE_UF;
-   const title=document.querySelector("h1");
-   if(title&&/^fretes/i.test(title.textContent||""))title.textContent="Fretes | BASE "+uf;
-   document.title="Fretes "+uf+" | "+String(window.__PORTAL_TENANT_SESSION?.transportadoraNome||"Portal Frete");
-   const origin=document.getElementById("mOrigem");
-   if(origin){
-    origin.placeholder="Cidade-UF (ex.: CATANDUVA-SP)";
-    origin.title="Informe o estado da origem para classificação correta no mapa e no BI.";
-   }
-  }
-  await Promise.resolve();
-  document.documentElement.removeAttribute("data-pf-tenant-boot");
- }
- async function load(){
-  if(!tenant||!slug||!allowed.has(page)){refuse();return;}
-  const baseAlias=/^fretes-(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA|AC|AL|AP|AM|CE|DF|ES|MG|PA|PB|PE|PI|RJ|RN|RS|RR|SE)\.html$/.exec(file);
-  if(baseAlias){
-   if(freightBase!==baseAlias[1]||page!=="fretes.html"){refuse();return;}
-  }else if(page!==file||file==="fretes2.html"){refuse();return;}
-  try{
-   stage="sessão";
-   const sessionResponse=await get("https://api.portalfrete.net.br/v1/session",{
-    credentials:"include",headers:{"Accept":"application/json"}
-   });
-   let session=null;
-   if(sessionResponse.ok){
-     const sessionData=await sessionResponse.json();
-     session=sessionData?.ok===true?sessionData.session:null;
-   }else if(![401,403].includes(sessionResponse.status)){
-     throw new Error("Sessão indisponível.");
-   }
-   if(session?.tenantMode!==true||session.transportadoraId!==tenant){
-     // Owner already authenticated in Nova Frota: derive the correct company
-     // context server-side without adding LUZIANO to this tenant's users.
-     const context=await get("https://api.portalfrete.net.br/v1/tenant/context?tenantId="+
-       encodeURIComponent(tenant),{credentials:"include",headers:{"Accept":"application/json"}});
-     if(!context.ok){refuse();return;}
-     const result=await context.json();
-     session=result?.ok===true?result.session:null;
-     if(session?.tenantMode!==true||session.transportadoraId!==tenant){refuse();return;}
-   }
-   // Only admins in a tenant with the Cadastros module enabled
-   // can reach self-service user management. The Worker enforces the same rule.
-   if(page==="cadastros.html" &&
-     (session.perfil!=="ADMINISTRADOR" ||
-      !Array.isArray(session.modules) || !session.modules.includes("cadastros"))){
-     location.replace("./home.html");return;
-   }
-   stage="HTML compartilhado";
-   const htmlResponse=await get("/pages/"+page,{credentials:"same-origin"});
-   if(!htmlResponse.ok)throw new Error("Página compartilhada retornou HTTP "+htmlResponse.status);
-   const html=await htmlResponse.text();
-   // Several original modules start with an HTML comment before <!doctype>.
-   // Do not reject valid shared pages because their doctype is not byte zero.
-   if(!/<html(?:\s|>)/i.test(html)||!/<head(?:\s|>)/i.test(html))
-    throw new Error("Conteúdo da página compartilhada inválido.");
-   if(baseAlias){
-    const key="fretes-"+freightBase.toLowerCase();
-    if(!Array.isArray(session.modules)||!session.modules.includes(key)){refuse();return;}
-    window.PORTAL_BASE_MODULE=key;
-    window.PORTAL_BASE_UF=freightBase;
-   }
-   window.__PORTAL_TENANT_EXPECTED=tenant;
-   window.__PORTAL_TENANT_ROUTE_PREFIX="/pages/"+slug+"/";
-   window.__PORTAL_TENANT_SESSION=session;
-   try{sessionStorage.setItem("pf:tenant-login-path",login);}catch(_){}
-   stage="scripts do aplicativo";
-   await renderShared(html);
-  }catch(error){
-   console.error("[TENANT PAGE] error stage="+stage,{
-    name:error?.name||"Error",message:String(error?.message||"").slice(0,180)
-   });
-   showFailure();
-  }
- }
- void load();
-})();
+export async function ownerSupportPrincipal(request,env,tenantId){
+ if(!validTenantId(tenantId)||!env?.TENANTS_DB)return null;
+ const ownerId=String(env.SUPER_ADMIN_USER||"").trim().toUpperCase();
+ if(!ownerId)return null;
+ const legacy=await getSession(env,readSessionId(request));
+ if(!legacy ||
+   String(legacy.usuario||"").trim().toUpperCase()!==ownerId ||
+   String(legacy.perfil||"").trim().toUpperCase()!=="ADMINISTRADOR" ||
+   tenantIdForLegacySession(legacy)!==LEGACY_NOVA_FROTA.id)return null;
+ const tenant=await env.TENANTS_DB.prepare(
+  "SELECT id,name FROM portal_tenants WHERE id=? LIMIT 1"
+ ).bind(tenantId).first();
+ if(!tenant)return null;
+ return {
+  tenant_id:tenant.id,
+  tenant_name:tenant.name,
+  user_id:ownerId,
+  role:"ADMINISTRADOR",
+  owner_support:true
+ };
+}

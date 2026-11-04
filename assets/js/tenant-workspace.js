@@ -11,6 +11,7 @@
  function renderUnifiedFreightSummary(){
   if(!lastFreightSummary||lastFreightSummary.tenantId!==currentTenant)return;
   const selectedBases=new Set((lastFreightSummary.bases||[]).map(value=>String(value).toUpperCase()));
+  const failedBases=new Set((lastFreightSummary.failedBases||[]).map(value=>String(value).toUpperCase()));
   const seen=new Set(),rows=[];
   for(const row of lastFreightSummary.rows||[]){
    if(!row||typeof row!=="object")continue;
@@ -24,7 +25,7 @@
    if(id)seen.add(recordKey);
    rows.push(row);
   }
-  const byBase=new Map([...selectedBases].map(source=>[
+  const byBase=new Map([...selectedBases].filter(source=>!failedBases.has(source)).map(source=>[
     displayBase(source),{fretes:0,porta:0,transito:0}
   ]));
   for(const row of rows){
@@ -46,7 +47,14 @@
       chip.style.cssText="display:inline-block;border-radius:7px;border:1px solid #8fb2cd65;padding:3px 7px;font-size:11px;white-space:nowrap";
       detail.append(chip);
     }
-    if(!byBase.size)detail.textContent="Nenhuma base habilitada e vinculada a uma regional";
+    for(const source of failedBases){
+      if(!selectedBases.has(source))continue;
+      const chip=document.createElement("span");
+      chip.textContent=displayBase(source)+": indisponível";
+      chip.style.cssText="display:inline-block;border:1px solid #e5ab4f;border-radius:7px;padding:3px 7px;font-size:11px;color:#ffda9b";
+      detail.append(chip);
+    }
+    if(!byBase.size&&!failedBases.size)detail.textContent="Nenhuma base habilitada e vinculada a uma regional";
   }
   const totalPorta=[...byBase.values()].reduce((n,x)=>n+x.porta,0);
   const totalTransito=[...byBase.values()].reduce((n,x)=>n+x.transito,0);
@@ -54,7 +62,7 @@
   if(vehicle){
    vehicle.replaceChildren();
    const total=document.createElement("strong");
-   total.textContent="TOTAL: "+(totalPorta+totalTransito)+" | Porta: "+totalPorta+" | Trânsito: "+totalTransito;
+   total.textContent=(failedBases.size?"TOTAL PARCIAL: ":"TOTAL: ")+(totalPorta+totalTransito)+" | Porta: "+totalPorta+" | Trânsito: "+totalTransito;
    total.style.cssText="display:block;font-size:12px;margin-bottom:7px;color:#f1f7ff";
    vehicle.append(total);
    const lines=document.createElement("div");
@@ -66,8 +74,11 @@
    }
    vehicle.append(lines);
   }
-  set("homeFretesAtualizacao",byBase.size?"Consolidado das bases vinculadas a regionais":"Selecione a base no cadastro de uma regional");
-  set("homeVeiculosAtualizacao",byBase.size?"Porta e trânsito por base operacional vinculada":"Nenhuma base regional vinculada");
+  const updateMessage=failedBases.size?failedBases.size+" base(s) sem conexão; indicadores parciais":
+    byBase.size?"Consolidado das bases vinculadas a regionais":"Selecione a base no cadastro de uma regional";
+  set("homeFretesAtualizacao",updateMessage);
+  set("homeVeiculosAtualizacao",failedBases.size?"Verifique a integração das bases indisponíveis":
+    byBase.size?"Porta e trânsito por base operacional vinculada":"Nenhuma base regional vinculada");
  }
 
  const $=id=>document.getElementById(id);
@@ -166,6 +177,10 @@
   lastFreightSummary=null;
   activeFreightModules=new Set();
   document.body?.classList.add("pf-tenant-mode");
+  set("homeFretesAtivos","—");
+  set("homeFretesDetalhe","Consultando bases vinculadas às regionais...");
+  const pendingFleet=document.querySelector(".nf-veiculos-resumo");
+  if(pendingFleet)pendingFleet.textContent="Consultando veículos das bases vinculadas...";
   const root=$("tenantWorkspace");
   if(root){root.replaceChildren();root.hidden=true;}
   const name=String(session.usuario||"Usuário").split(".")[0];

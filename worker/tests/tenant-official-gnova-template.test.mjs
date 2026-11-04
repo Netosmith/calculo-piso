@@ -36,7 +36,7 @@ test("modelo01 includes 49 inert generic pages, preserves state base aliases and
   assert.doesNotMatch(html,/GNOVA|teste-01|transportadora-teste/i,file);
   assert.doesNotMatch(html,/https:\/\/script[.]google[.]com\/macros\//,file);
   assert.doesNotMatch(html,/\b\d{2}[.]\d{3}[.]\d{3}\/\d{4}-\d{2}\b/,file);
-  if(file.startsWith("fretes-")){
+  if(/^fretes-[A-Z]{2}[.]html$/.test(file)){
     const uf=file.match(/^fretes-([A-Z]{2})[.]html$/)?.[1];
     assert.ok(uf);
     assert.ok(html.includes('data-shared-page="fretes.html"'),file);

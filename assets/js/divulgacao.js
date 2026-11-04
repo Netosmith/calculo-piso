@@ -691,9 +691,14 @@
     if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
     const img=image.getBoundingClientRect();
     const box=hero.getBoundingClientRect();
+    // The user-facing preview can be CSS-scaled to 300px while the actual
+    // exported artwork remains 1080px. Convert the visible rectangle back to
+    // the artwork's own coordinate system before passing it to html2canvas.
+    const sx=box.width>0?hero.offsetWidth/box.width:1;
+    const sy=box.height>0?hero.offsetHeight/box.height:1;
     const geometry={
-      left:img.left-box.left,top:img.top-box.top,
-      width:img.width,height:img.height
+      left:(img.left-box.left)*sx,top:(img.top-box.top)*sy,
+      width:img.width*sx,height:img.height*sy
     };
     preview.setAttribute("data-portal-export-logo","true");
     return {
@@ -704,7 +709,8 @@
         for(const [key,value] of Object.entries({
           position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
           width:geometry.width+"px",height:geometry.height+"px",
-          transform:"none",margin:"0",maxWidth:"none",maxHeight:"none"
+          transform:"none",margin:"0",maxWidth:"none",maxHeight:"none",
+          objectFit:"contain",objectPosition:"center center"
         }))clone.style.setProperty(key,value,"important");
       },
       finish(){preview.removeAttribute("data-portal-export-logo");}

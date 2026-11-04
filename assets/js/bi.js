@@ -522,7 +522,7 @@
     const selected=selectedBaseSources();
     if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && selected.size!==1)return "";
     const origemDados = upper($("#fOrigemDados")?.value);
-    if (origemDados === "FRETES") return "GO";
+    if (origemDados === "FRETES") return window.__PORTAL_TENANT_SESSION?.tenantMode===true ? "GERAL" : "GO";
     if (origemDados === "FRETES2") return "MT";
     if (window.__PORTAL_TENANT_SESSION?.tenantMode===true && /^FRETES-[A-Z]{2}$/.test(origemDados)) return origemDados.slice(-2);
     return "";

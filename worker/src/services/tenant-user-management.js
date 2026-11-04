@@ -104,6 +104,11 @@ export async function tenantUsersController(request,env,principal,modules,path){
    if(Number(count?.n)<=1)return error("Mantenha pelo menos um administrador ativo.",409);
   }
   const reset=typeof data.senha==="string"&&data.senha.length>0;
+  if(active&&!reset){
+   const hasPassword=await db.prepare("SELECT user_id FROM portal_tenant_credentials WHERE tenant_id=? AND user_id=?")
+    .bind(tenant,id).first();
+   if(!hasPassword)return error("Defina uma senha antes de ativar o usuario.",409);
+  }
   const password=reset?await makePasswordRecord(data.senha):null;
   const statements=[
    db.prepare("UPDATE portal_tenant_users SET role=?,active=? WHERE tenant_id=? AND user_id=?")

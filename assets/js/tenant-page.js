@@ -108,7 +108,7 @@
    const attr=node.hasAttribute("src")?"src":"href";
    const raw=node.getAttribute(attr)||"";
    if(/^(\.\.\/assets\/(?:js|css)\/[^"'?]+\?v=)\d+$/.test(raw)){
-    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-27-v11"));
+    node.setAttribute(attr,raw.replace(/\?v=\d+$/,"?v=tenant-brasil-27-v12"));
    }
   });
   // Unlike document.write in a completed document, this does not tear down

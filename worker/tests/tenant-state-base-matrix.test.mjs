@@ -79,6 +79,11 @@ test("super-admin has private base integration controls and legacy module stays 
  const router=read("worker/src/controllers/super-admin.js");
  const save=read("worker/src/services/super-admin-tenant-write.js");
  assert.match(owner,/id="integrationBase"/);
+ for(const uf of UFS){
+  assert.ok(owner.includes("<option>"+uf+"</option>"),"Missing Super Admin base option "+uf);
+ }
+ assert.match(read("assets/js/tenant-route.js"),/fretes-DF\.html/);
+ assert.match(read("assets/js/tenant-route.js"),/fretes-RR\.html/);
  assert.match(owner,/baseIntegrationPath/);
  assert.match(server,/private\/base-/);
  assert.match(server,/readTenantIntegration\(env,principal\.tenant_id,base\)/);

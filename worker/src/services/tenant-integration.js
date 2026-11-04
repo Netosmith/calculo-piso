@@ -153,6 +153,7 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const role=String(principal.role||"").toUpperCase();
  // The Home KPI request is read-only and belongs to every non-PISO tenant
  // with at least one enabled module. Never allow a tenant-wide D1 fallback.
+ if(module==="fretes2") return errorResponse("Fretes2 e exclusivo da Nova Frota. Use Fretes Operacional ou Fretes-UF.",403);
  const allowed=modules.includes(module) ||
   (module==="home" && action==="read" && role!=="PISO" && modules.length>0);
  const permissionSession={perfil:role};

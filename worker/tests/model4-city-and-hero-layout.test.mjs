@@ -8,7 +8,7 @@ test("Model 4 city uses natural word boundaries and prevents orphan letters in b
  for(const name of ["fretes","fretes2"]){
   const js=read("assets/js/"+name+".js"),html=read("pages/"+name+".html");
   assert.doesNotThrow(()=>new Script(js));
-  assert.match(js,/const singleWord=isCity && !\/\\s\/\.test\(text\)/);
+  assert.ok(js.includes('const singleWord=isCity && !/\\s/.test(text)'));
   assert.match(js,/target\.style\.whiteSpace=singleWord\|\|lines===1\?"nowrap":"normal"/);
   assert.match(js,/target\.style\.overflowWrap="normal"/);
   assert.match(js,/target\.style\.wordBreak="normal"/);

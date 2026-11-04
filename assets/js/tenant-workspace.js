@@ -53,7 +53,7 @@
 
  const $=id=>document.getElementById(id);
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=String(value);};
- const BASE_UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA"];
+ const BASE_UFS=["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"];
  function baseKey(uf){return "fretes-"+uf.toLowerCase();}
  function renderBaseCards(){
   const grid=document.querySelector(".nf-tools");

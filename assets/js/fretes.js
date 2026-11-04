@@ -1778,38 +1778,32 @@ function buildMessage(row) {
     });
   }
 
-  // The clipboard and JPG must use the very same rendered tenant logo.
-  // html2canvas sometimes expands an absolutely-positioned <img> when
-  // cloning a scaled artwork. Hide it in the clone and composite it once.
+  // Preserve logo geometry in the HTML clone itself.
+  // html2canvas captures one correctly positioned image; no second drawing
+  // pass, no hidden logo, and no dependency on a cross-origin canvas overlay.
   function prepareLogoCanvasExport(source){
-    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)
-      return {onclone:()=>{},draw:()=>{},finish:()=>{}};
-    const img=source.querySelector(".nfM3Logo,.nfM4Logo,.multiArtLogo");
-    const hero=img?.closest(".nfM3Hero,.nfM4Hero,.multiArtHero");
-    if(!img||!hero||!img.complete||!img.naturalWidth)
-      return {onclone:()=>{},draw:()=>{},finish:()=>{}};
-    const root=source.getBoundingClientRect(),rect=img.getBoundingClientRect();
-    const clip=hero.getBoundingClientRect(),alpha=Number(getComputedStyle(img).opacity)||1;
+    const image=source?.querySelector(".nfM3Logo,.nfM4Logo,.multiArtLogo");
+    const hero=image?.closest(".nfM3Hero,.nfM4Hero,.multiArtHero");
+    if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
+    const rect=image.getBoundingClientRect(),parent=hero.getBoundingClientRect();
+    const sx=parent.width>0?hero.offsetWidth/parent.width:1;
+    const sy=parent.height>0?hero.offsetHeight/parent.height:1;
+    const geometry={
+      left:(rect.left-parent.left)*sx,top:(rect.top-parent.top)*sy,
+      width:rect.width*sx,height:rect.height*sy
+    };
     source.setAttribute("data-pf-logo-export","true");
     return {
-      onclone(doc){
-        const copy=doc.querySelector('[data-pf-logo-export="true"] .nfM3Logo,'+
-          '[data-pf-logo-export="true"] .nfM4Logo,'+
-          '[data-pf-logo-export="true"] .multiArtLogo');
-        if(copy)copy.style.setProperty("visibility","hidden","important");
-      },
-      draw(canvas){
-        if(!root.width||!root.height)return;
-        const ctx=canvas.getContext("2d");if(!ctx)return;
-        const sx=canvas.width/root.width,sy=canvas.height/root.height;
-        const x=(rect.left-root.left)*sx,y=(rect.top-root.top)*sy;
-        const bw=rect.width*sx,bh=rect.height*sy;
-        const ratio=Math.min(bw/img.naturalWidth,bh/img.naturalHeight);
-        const w=img.naturalWidth*ratio,h=img.naturalHeight*ratio;
-        ctx.save();ctx.beginPath();
-        ctx.rect((clip.left-root.left)*sx,(clip.top-root.top)*sy,
-          clip.width*sx,clip.height*sy);ctx.clip();ctx.globalAlpha=alpha;
-        ctx.drawImage(img,x+(bw-w)/2,y+(bh-h)/2,w,h);ctx.restore();
+      onclone(cloneDoc){
+        const clone=cloneDoc.querySelector("[data-pf-logo-export=\"true\"] .nfM3Logo,[data-pf-logo-export=\"true\"] .nfM4Logo,[data-pf-logo-export=\"true\"] .multiArtLogo");
+        if(!clone)return;
+        const style=clone.style;
+        for(const [prop,value] of Object.entries({
+          position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
+          width:geometry.width+"px",height:geometry.height+"px",
+          transform:"none",objectFit:"contain",objectPosition:"center center",
+          visibility:"visible",display:"block",maxWidth:"none",maxHeight:"none"
+        }))style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
       },
       finish(){source.removeAttribute("data-pf-logo-export");}
     };
@@ -1873,7 +1867,6 @@ function buildMessage(row) {
             imageTimeout: 8000,
             onclone:logoExport.onclone
           });
-          logoExport.draw(canvas);
           return canvas;
         } finally {
           logoExport.finish();
@@ -1923,7 +1916,6 @@ function buildMessage(row) {
             imageTimeout: 8000,
             onclone:logoExport.onclone
           });
-          logoExport.draw(canvas);
           return canvas;
         } finally {
           logoExport.finish();

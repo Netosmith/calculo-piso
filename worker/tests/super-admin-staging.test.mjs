@@ -242,3 +242,21 @@ test("Nova Frota is protected from administrative mutations in staging",async()=
   {id:"nova-frota",name:"Nao alterar"}),config,ctx);
  assert.equal(created.status,400);
 });
+
+test("staging panel exposes unified Fretes and all 27 state bases, never legacy Fretes2",async()=>{
+ const response=await staging.fetch(req("/super-admin"),accessEnv,accessCtx());
+ assert.equal(response.status,200);
+ const html=await response.text();
+ const match=html.match(/const FREIGHT_UFS=(\\[[^\\n]+?\\]);/);
+ assert.ok(match,"All state bases must be defined in the deployed staging page");
+ const states=JSON.parse(match[1]);
+ assert.equal(states.length,27);
+ assert.equal(new Set(states).size,27);
+ assert.match(html,/Fretes Operacional \\(unificado\\)/);
+ assert.match(html,/\\.\\.\\.FREIGHT_UFS\\.map/);
+ assert.match(html,/Fretes por estado \\(27 bases disponíveis\\)/);
+ assert.doesNotMatch(html,/\\['fretes2'/);
+ const inline=html.match(/<script>([\\s\\S]*?)<\\/script>/);
+ assert.ok(inline);
+ assert.doesNotThrow(()=>new Script(inline[1]));
+});

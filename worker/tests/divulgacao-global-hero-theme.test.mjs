@@ -56,3 +56,34 @@ test("export waits for palette and uses actual rendered surface, not fixed JPG b
   assert.ok(script.includes("backgroundColor: getComputedStyle(source).backgroundColor"));
  }
 });
+
+test("GNOVA-only artwork logo is raised and bounded in both Divulgação and Fretes",()=>{
+ const route=file("assets/js/tenant-route.js");
+ const loader=file("assets/js/tenant-page.js");
+ const start=route.indexOf("function applyGnovaArtLogoLayout(){");
+ const end=route.indexOf("function labelHeader(img)",start);
+ assert.ok(start>0&&end>start,"Missing isolated GNOVA artwork layout");
+ const rule=route.slice(start,end);
+ assert.ok(rule.includes('tenant!=="teste-01"'),"No change for Nova Frota or other tenants");
+ assert.ok(rule.includes('pf-gnova-art-layout'),"Styles must be scoped to GNOVA");
+ for(const selector of ["img.m3Logo","img.nfM3Logo","img.multiArtLogo","img.nfM4Logo"])
+  assert.ok(rule.includes(selector),"Missing preview model: "+selector);
+ for(const geometry of ["top:4px!important","height:96px!important",
+   "top:8px!important","height:128px!important","object-fit:contain!important"])
+  assert.ok(rule.includes(geometry),"Missing art-safe logo geometry: "+geometry);
+ assert.ok(route.includes("applyGnovaArtLogoLayout();"));
+ assert.ok(loader.includes('tenant==="teste-01"'));
+ assert.ok(loader.includes("gnova-logo-20261104-1"));
+ for(const page of ["divulgacao","fretes"]){
+  const entry=file("pages/transportadora-teste/"+page+".html");
+  assert.ok(entry.includes("tenant-page.js?v=gnova-logo-20261104-1"),page);
+ }
+ for(const uf of ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
+                   "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]){
+  const entry=file("pages/transportadora-teste/fretes-"+uf+".html");
+  assert.ok(entry.includes("tenant-page.js?v=gnova-logo-20261104-1"),uf);
+ }
+ // Preview is used as the html2canvas source for both JPG exports.
+ assert.ok(file("assets/js/divulgacao.js").includes("html2canvas(preview"));
+ assert.ok(file("assets/js/fretes.js").includes("html2canvasLib(source"));
+});

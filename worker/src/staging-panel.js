@@ -11,6 +11,13 @@ const GALLERY_JS="\nconst galleryLogoUrls=new Map(),galleryLogoLoading=new Set()
 export function stagingPanelHtml(){
   let html=stagingPage;
   html=required(html,"const API_BASE = 'https://api.portalfrete.net.br';","const API_BASE = '';");
+  // The isolated Cloudflare staging panel must ship the same 27-state switch
+  // matrix as pages/super-admin.html. Publishing only GitHub Pages is not enough.
+  if(!html.includes("...FREIGHT_UFS.map")||html.includes("['fretes2'"))
+   throw new Error("Staging Super Admin module matrix is outdated.");
+  html=required(html,
+    '<div id="modules" class="tab"><p>Escolha <strong>Fretes Operacional (unificado)</strong>',
+    '<div id="modules" class="tab"><p class="muted" id="freightBaseVersion">Painel atualizado · 27 bases estaduais · 04/11/2026</p><p>Escolha <strong>Fretes Operacional (unificado)</strong>');
   html=required(html,"location.assign('home.html')","location.assign('https://portalfrete.net.br/pages/home.html')");
   html=required(html,'const canEdit=()=>Boolean(writeReady&&mfaActive&&selected&&selected.id!=="nova-frota");','const canEdit=()=>Boolean(writeReady&&selected&&selected.id!=="nova-frota");');
   html=required(html,"const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&mfaMembershipActive);","const canEditMembership=()=>Boolean(canEdit()&&membershipReady);");

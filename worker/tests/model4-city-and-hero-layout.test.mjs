@@ -47,3 +47,19 @@ test("Tall logos remain visible at the top of Models 4A, 4B and 4C",()=>{
   assert.match(read("pages/"+name+".html"),/\.nfM4Logo\{[^}]*object-position:center top/);
  }
 });
+
+test("oversized saved logos are normalized only for Models 4A/B/C and preview equals tenant artwork",()=>{
+ const route=read("assets/js/tenant-route.js");
+ const preview=read("assets/js/super-admin-real-preview.js");
+ for(const source of [route,preview]){
+  assert.match(source,/savedWidth>=1000&&savedHeight>=1000/);
+  assert.match(source,/oversizedMulti\?440:savedWidth/);
+  assert.match(source,/oversizedMulti\?125:savedHeight/);
+ }
+ assert.match(route,/const oversizedMulti=!isM3/);
+ assert.match(preview,/const oversizedMulti=!m3/);
+ for(const script of ["fretes","fretes2","divulgacao"]){
+  const code=read("assets/js/"+script+".js");
+  assert.match(code,/objectPosition:getComputedStyle\(image\)\.objectPosition/);
+ }
+});

@@ -298,15 +298,12 @@
     const isM3=model==="modelo3";
     const savedWidth=clampInt(value.logoWidth,isM3?290:305,100,1500);
     const savedHeight=clampInt(value.logoHeight,isM3?96:128,35,1500);
-    // Multi-art headline begins inside the 300px hero. Never let the logo
-    // box occupy the headline, even when an old profile stores 1500x1500.
-    // object-fit:contain preserves the actual image aspect ratio in this box.
-    const logoWidth=isM3?savedWidth:Math.min(savedWidth,440);
-    const logoHeight=isM3?savedHeight:Math.min(savedHeight,125);
-    const savedTop=clampInt(value.logoTop,isM3?4:8,-500,250);
-    const logoTop=isM3?savedTop:Math.max(0,Math.min(140-logoHeight,savedTop));
-    const savedX=clampInt(value.logoX,0,-500,250);
-    const logoX=isM3?savedX:Math.max(-540+logoWidth/2,Math.min(540-logoWidth/2,savedX));
+    // Same rules for GNOVA, TRANSVALE and every tenant. Keep saved geometry
+    // intact; the owner can reset legacy oversized values in Super Admin.
+    const logoWidth=savedWidth;
+    const logoHeight=savedHeight;
+    const logoTop=clampInt(value.logoTop,isM3?4:8,-500,250);
+    const logoX=clampInt(value.logoX,0,-500,250);
     const logoOpacity=clampInt(value.logoOpacity,100,10,100)/100;
     const logos=isM3?
       ['[data-template-preview="3"] img.m3Logo','#nfM3Canvas img.nfM3Logo']:

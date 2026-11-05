@@ -318,7 +318,7 @@
       "{top:"+logoTop+"px!important;left:calc(50% + "+logoX+"px)!important;"+
       "width:"+logoWidth+"px!important;height:"+logoHeight+"px!important;"+
       "opacity:"+logoOpacity+"!important;object-fit:contain!important;"+
-      "object-position:center center!important;transform:translateX(-50%)!important;}";
+      "object-position:center top!important;transform:translateX(-50%)!important;}";
 ;
    }
    // O CSS compartilhado é a única fonte para todos os componentes visuais.

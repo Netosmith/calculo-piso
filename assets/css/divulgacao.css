@@ -1097,7 +1097,7 @@
 .multiArtHero{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;background:#eaf2f7}
 .multiArtHeroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 55%;opacity:.60}
 .multiArtHeroWash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.92) 34%,rgba(255,255,255,.34) 67%,rgba(255,255,255,.12) 100%)}
-.multiArtLogo{position:absolute;z-index:3;top:28px;left:50%;transform:translateX(-50%);width:350px;height:auto}
+.multiArtLogo{position:absolute;z-index:3;top:28px;left:50%;transform:translateX(-50%);width:350px;height:auto;object-fit:contain;object-position:center top}
 .multiArtTitle{position:absolute;z-index:3;left:48px;bottom:67px;font-size:74px;line-height:.92;font-weight:950;letter-spacing:-2.5px;color:#07366f}
 .multiArtTitle strong{color:#08a968}
 .multiArtSubtitle{position:absolute;z-index:3;left:52px;bottom:29px;font-size:24px;letter-spacing:3px;font-weight:850;color:#254d76}

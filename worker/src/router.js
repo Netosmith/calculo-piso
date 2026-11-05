@@ -1,7 +1,6 @@
 import { superAdminController } from "./controllers/super-admin.js";
 import { fleetController } from "./controllers/fleet.js";
 import { monitorController } from "./controllers/monitor.js";
-import { iaController } from "./controllers/ia.js";
 import {gamesController} from "../../games/server/api.js";
 import { healthController } from "./controllers/health.js";
 import { gatewayTestController } from "./controllers/gateway.js";
@@ -41,8 +40,6 @@ export async function routeRequest(request, env, ctx) {
     return errorResponse("Recurso exclusivo da operacao legada.",403);
 
   if (path.startsWith("/v1/super-admin/")) return superAdminController(request, env);
-
-  if (path === "/v1/ia/chat" || path === "/v1/ia/status") return iaController(request, env);
 
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);
   if (path.startsWith("/v1/monitor/")) return monitorController(request, env);

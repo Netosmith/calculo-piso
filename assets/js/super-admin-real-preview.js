@@ -105,14 +105,11 @@ function paint(){
   };
   const savedWidth=number("logoWidth",m3?290:305,100,1500);
   const savedHeight=number("logoHeight",m3?96:128,35,1500);
-  // Same visible hero bounds used by the tenant pages and export.
-  // Model 3 intentionally retains its original independent geometry.
-  const w=m3?savedWidth:Math.min(savedWidth,440);
-  const h=m3?savedHeight:Math.min(savedHeight,125);
-  const savedTop=number("logoTop",m3?4:8,-500,250);
-  const top=m3?savedTop:Math.max(0,Math.min(140-h,savedTop));
-  const savedX=number("logoX",0,-500,250);
-  const x=m3?savedX:Math.max(-540+w/2,Math.min(540-w/2,savedX));
+  // The saved dimensions are displayed unmodified for every transportadora.
+  const w=savedWidth;
+  const h=savedHeight;
+  const top=number("logoTop",m3?4:8,-500,250);
+  const x=number("logoX",0,-500,250);
   const opacity=number("logoOpacity",100,10,100);
   Object.assign(image.style,{
    top:top+"px",left:"calc(50% + "+x+"px)",width:w+"px",height:h+"px",

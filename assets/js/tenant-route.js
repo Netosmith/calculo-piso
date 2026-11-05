@@ -125,15 +125,6 @@
       object-fit:contain!important;
       object-position:center top!important;
     }
-    /* Models 4A / 4B / 4C: logo ends at y=136, above the title. */
-    body.pf-tenant-site.pf-gnova-art-layout img.multiArtLogo,
-    body.pf-tenant-site.pf-gnova-art-layout img.nfM4Logo{
-      top:8px!important;
-      width:305px!important;
-      height:128px!important;
-      object-fit:contain!important;
-      object-position:center top!important;
-    }
   `;
   document.head.append(style);
  }
@@ -307,14 +298,16 @@
     const isM3=model==="modelo3";
     const savedWidth=clampInt(value.logoWidth,isM3?290:305,100,1500);
     const savedHeight=clampInt(value.logoHeight,isM3?96:128,35,1500);
-    // Legacy 1500x1500 slider values cannot fit inside a 300px hero.
-    // Normalize only the obviously oversized pair for Models 4A/B/C.
-    // Model 3 and all ordinarily sized custom placements are unaffected.
-    const oversizedMulti=!isM3&&savedWidth>=1000&&savedHeight>=1000;
-    const logoWidth=oversizedMulti?440:savedWidth;
-    const logoHeight=oversizedMulti?125:savedHeight;
-    const logoTop=clampInt(value.logoTop,isM3?4:8,-500,250);
-    const logoX=clampInt(value.logoX,0,-500,250);
+    // Multi-art headline begins inside the 300px hero. Never let the logo
+    // box occupy the headline, even when an old profile stores 1500x1500.
+    // Width and height are normalized together, preserving image proportions.
+    const logoScale=isM3?1:Math.min(1,440/savedWidth,125/savedHeight);
+    const logoWidth=Math.round(savedWidth*logoScale);
+    const logoHeight=Math.round(savedHeight*logoScale);
+    const savedTop=clampInt(value.logoTop,isM3?4:8,-500,250);
+    const logoTop=isM3?savedTop:Math.max(0,Math.min(140-logoHeight,savedTop));
+    const savedX=clampInt(value.logoX,0,-500,250);
+    const logoX=isM3?savedX:Math.max(-540+logoWidth/2,Math.min(540-logoWidth/2,savedX));
     const logoOpacity=clampInt(value.logoOpacity,100,10,100)/100;
     const logos=isM3?
       ['[data-template-preview="3"] img.m3Logo','#nfM3Canvas img.nfM3Logo']:

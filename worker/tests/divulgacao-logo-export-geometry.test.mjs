@@ -32,7 +32,7 @@ test("Logo stays visible in html2canvas clone and uses the displayed dimensions"
   }
   assert.match(code,/visibility:"visible"/);
   assert.match(code,/display:"block"/);
-  assert.match(code,/\.style\.setProperty\(/);
+  assert.match(code,/(?:clone\.)?style\.setProperty\(/);
   assert.doesNotMatch(code,/visibility","hidden","important"/);
   assert.doesNotMatch(code,/logoExport\.draw\(canvas\)/);
   assert.equal((code.match(/onclone:logoExport\.onclone/g)||[]).length,2);

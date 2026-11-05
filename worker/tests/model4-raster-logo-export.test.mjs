@@ -31,7 +31,7 @@ for(const module of ["fretes","fretes2"]){
     set src(value){this.imageSource=value}
    }
   };
-  const getComputedStyle=()=>({display:"block",objectPosition:"center top",opacity:"1"});
+  const getComputedStyle=()=>({display:"block",objectPosition:"50% 0%",opacity:"1"});
   const Image=class{set src(value){this.imageSource=value}async decode(){}};
   const source={
    querySelector:()=>logo,

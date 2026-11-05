@@ -6,7 +6,7 @@ const root=new URL("../../",import.meta.url);
 const read=p=>readFileSync(new URL(p,root),"utf8");
 
 test("All art renderers load new scripts and parse",()=>{
- for(const [page,version] of [["divulgacao",20],["fretes",41],["fretes2",36]]){
+ for(const [page,version] of [["divulgacao",20],["fretes",42],["fretes2",37]]){
   const html=read("pages/"+page+".html");
   const code=read("assets/js/"+page+".js");
   assert.match(html,new RegExp("assets/js/"+page+"\\.js\\?v="+version));
@@ -23,8 +23,11 @@ test("Logo stays visible in html2canvas clone and uses the displayed dimensions"
     assert.match(code,/visualSnapshot&&parent\.height\?hero\.offsetHeight\/parent\.height:1/);
     assert.match(code,/left:\(rect\.left-parent\.left\)\*sx/);
     assert.match(code,/width:rect\.width\*sx/);
-    assert.equal((code.match(/prepareLogoCanvasExport\(source,true\)/g)||[]).length,1);
+    assert.equal((code.match(/prepareLogoCanvasExport\(source,true\)/g)||[]).length,0);
     assert.equal((code.match(/prepareLogoCanvasExport\(source\)/g)||[]).length,1);
+    assert.equal((code.match(/await prepareMultiLogoRasterExport\(source\)/g)||[]).length,1);
+    assert.match(code,/clone\.replaceWith\(replacement\)/);
+    assert.match(code,/raster\.toDataURL\("image\/png"\)/);
   }
   if(script==="divulgacao"){
     assert.match(code,/hero\.offsetWidth\/parent\.width/);

@@ -35,3 +35,15 @@ test("Model 4 hero maintains photo proportions without limiting uploaded logo sl
  assert.match(admin,/\['logoWidth','Largura',100,1500,5,'px'\]/);
  assert.match(admin,/\['logoHeight','Altura da área',35,1500,5,'px'\]/);
 });
+
+test("Tall logos remain visible at the top of Models 4A, 4B and 4C",()=>{
+ const preview=read("assets/js/super-admin-real-preview.js");
+ const route=read("assets/js/tenant-route.js");
+ const css=read("assets/css/divulgacao.css");
+ assert.match(preview,/objectPosition:"center top"/);
+ assert.match(route,/object-position:center top!important/);
+ assert.match(css,/\.multiArtLogo\{[^}]*object-position:center top/);
+ for(const name of ["fretes","fretes2"]){
+  assert.match(read("pages/"+name+".html"),/\.nfM4Logo\{[^}]*object-position:center top/);
+ }
+});

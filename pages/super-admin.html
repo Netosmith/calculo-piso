@@ -703,6 +703,12 @@ function createArtEditor(){
   wmInput.dataset.artField='watermark';wm.append(wmInput);
   const editor=document.createElement('div');editor.className='art-logo-editor';
   const title=document.createElement('h5');title.textContent='Posição e tamanho da logo';editor.append(title);
+  if(key!=='modelo3'){
+   const help=document.createElement('small');
+   help.textContent='Área útil das artes 4A/4B/4C: até 440 px de largura e 125 px de altura na imagem final. Valores maiores são ajustados automaticamente para não cobrir o título.';
+   help.style.cssText='display:block;color:#b7d0e2;font-size:11px;line-height:1.45;margin:0 0 9px';
+   editor.append(help);
+  }
   for(const [field,text,min,max,step,suffix] of [
    ['logoWidth','Largura',100,1500,5,'px'],
    ['logoHeight','Altura da área',35,1500,5,'px'],

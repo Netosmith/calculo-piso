@@ -300,10 +300,9 @@
     const savedHeight=clampInt(value.logoHeight,isM3?96:128,35,1500);
     // Multi-art headline begins inside the 300px hero. Never let the logo
     // box occupy the headline, even when an old profile stores 1500x1500.
-    // Width and height are normalized together, preserving image proportions.
-    const logoScale=isM3?1:Math.min(1,440/savedWidth,125/savedHeight);
-    const logoWidth=Math.round(savedWidth*logoScale);
-    const logoHeight=Math.round(savedHeight*logoScale);
+    // object-fit:contain preserves the actual image aspect ratio in this box.
+    const logoWidth=isM3?savedWidth:Math.min(savedWidth,440);
+    const logoHeight=isM3?savedHeight:Math.min(savedHeight,125);
     const savedTop=clampInt(value.logoTop,isM3?4:8,-500,250);
     const logoTop=isM3?savedTop:Math.max(0,Math.min(140-logoHeight,savedTop));
     const savedX=clampInt(value.logoX,0,-500,250);

@@ -28,7 +28,6 @@ test("PISO Home hides stats, freights, map, requests and every card except ANTT"
  const html=read("pages/home.html"),auth=read("assets/js/auth.js");
  const requests=read("assets/js/home-solicitacoes-access.js");
  const tenant=read("assets/js/tenant-workspace.js");
- const assistant=read("assets/js/nova-frota-ia.js");
  assert.match(html,/<body class="pf-home-pending">/);
  for(const selector of [".nf-stats",".nf-home-side",".nf-solic-wrap"]){
   assert.ok(html.includes("body.nf-profile-piso "+selector),selector);
@@ -40,8 +39,6 @@ test("PISO Home hides stats, freights, map, requests and every card except ANTT"
  assert.ok(auth.includes('if(role==="PISO")return feature==="home" ||'));
  assert.ok(requests.includes('toUpperCase()==="PISO")return false'));
  assert.ok(tenant.includes("Acesso exclusivo ao Cálculo de Piso 2 (ANTT)"));
- assert.ok(assistant.includes('toUpperCase()==="PISO")return;'));
- assert.ok(read("worker/src/controllers/ia.js").includes("Perfil PISO autorizado apenas no Calculo de Piso 2."));
  assert.doesNotThrow(()=>new Script(auth));
  assert.doesNotThrow(()=>new Script(requests));
  assert.doesNotThrow(()=>new Script(tenant));

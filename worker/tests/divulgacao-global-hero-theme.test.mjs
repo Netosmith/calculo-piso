@@ -68,11 +68,13 @@ test("GNOVA-only artwork logo is raised and bounded in both Divulgação and Fre
  const rule=route.slice(start,end);
  assert.ok(rule.includes('tenant!=="teste-01"'),"No change for Nova Frota or other tenants");
  assert.ok(rule.includes('pf-gnova-art-layout'),"Styles must be scoped to GNOVA");
- for(const selector of ["img.m3Logo","img.nfM3Logo","img.multiArtLogo","img.nfM4Logo"])
-  assert.ok(rule.includes(selector),"Missing preview model: "+selector);
- for(const geometry of ["top:4px!important","height:96px!important",
-   "top:8px!important","height:128px!important","object-fit:contain!important"])
-  assert.ok(rule.includes(geometry),"Missing art-safe logo geometry: "+geometry);
+ for(const selector of ["img.m3Logo","img.nfM3Logo"])
+  assert.ok(rule.includes(selector),"Missing Model 3 preview rule: "+selector);
+ for(const geometry of ["top:4px!important","height:96px!important","object-fit:contain!important"])
+  assert.ok(rule.includes(geometry),"Missing preserved Model 3 logo geometry: "+geometry);
+ // Multi-art uses one layout resolver for all tenants, not a GNOVA-specific override.
+ assert.ok(!rule.includes("img.multiArtLogo")&&!rule.includes("img.nfM4Logo"),
+  "Legacy GNOVA multi-art rule must not override saved layout");
  assert.ok(route.includes("applyGnovaArtLogoLayout();"));
  assert.ok(loader.includes('tenant==="teste-01"'));
  assert.ok(loader.includes("tenant-route.js?v=visual-v9"));

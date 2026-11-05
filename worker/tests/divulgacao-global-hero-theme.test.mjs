@@ -77,15 +77,15 @@ test("GNOVA-only artwork logo is raised and bounded in both Divulgação and Fre
   "Legacy GNOVA multi-art rule must not override saved layout");
  assert.ok(route.includes("applyGnovaArtLogoLayout();"));
  assert.ok(loader.includes('tenant==="teste-01"'));
- assert.ok(loader.includes("tenant-route.js?v=visual-v11"));
+ assert.ok(loader.includes("tenant-route.js?v=visual-v12"));
  for(const page of ["divulgacao","fretes"]){
   const entry=file("pages/gnova/"+page+".html");
-  assert.ok(entry.includes("tenant-page.js?v=visual-identity-v11"),page);
+  assert.ok(entry.includes("tenant-page.js?v=visual-identity-v12"),page);
  }
  for(const uf of ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
                    "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]){
   const entry=file("pages/gnova/fretes-"+uf+".html");
-  assert.ok(entry.includes("tenant-page.js?v=visual-identity-v11"),uf);
+  assert.ok(entry.includes("tenant-page.js?v=visual-identity-v12"),uf);
  }
  // Preview is used as the html2canvas source for both JPG exports.
  assert.ok(file("assets/js/divulgacao.js").includes("html2canvas(preview"));

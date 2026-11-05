@@ -103,8 +103,12 @@ function paint(){
    const n=Number(field(key,name));
    return Number.isFinite(n)&&n>=min&&n<=max?n:fallback;
   };
-  const w=number("logoWidth",m3?290:305,100,1500);
-  const h=number("logoHeight",m3?96:128,35,1500);
+  const savedWidth=number("logoWidth",m3?290:305,100,1500);
+  const savedHeight=number("logoHeight",m3?96:128,35,1500);
+  // Mirror the oversized legacy Model 4 safeguard in tenant-route.js.
+  const oversizedMulti=!m3&&savedWidth>=1000&&savedHeight>=1000;
+  const w=oversizedMulti?440:savedWidth;
+  const h=oversizedMulti?125:savedHeight;
   const top=number("logoTop",m3?4:8,-500,250);
   const x=number("logoX",0,-500,250);
   const opacity=number("logoOpacity",100,10,100);

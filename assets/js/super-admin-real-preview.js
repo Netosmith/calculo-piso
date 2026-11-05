@@ -110,7 +110,7 @@ function paint(){
   const opacity=number("logoOpacity",100,10,100);
   Object.assign(image.style,{
    top:top+"px",left:"calc(50% + "+x+"px)",width:w+"px",height:h+"px",
-   opacity:String(opacity/100),objectFit:"contain",objectPosition:"center center",
+   opacity:String(opacity/100),objectFit:"contain",objectPosition:"center top",
    transform:"translateX(-50%)"
   });
   const quote=art.querySelector(".m3FooterQuote strong");if(quote&&tenant)quote.textContent=tenant.name+" conecta.";

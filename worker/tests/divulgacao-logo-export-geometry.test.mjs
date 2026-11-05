@@ -6,7 +6,7 @@ const root=new URL("../../",import.meta.url);
 const read=p=>readFileSync(new URL(p,root),"utf8");
 
 test("All art renderers load new scripts and parse",()=>{
- for(const [page,version] of [["divulgacao",19],["fretes",39],["fretes2",34]]){
+ for(const [page,version] of [["divulgacao",20],["fretes",40],["fretes2",35]]){
   const html=read("pages/"+page+".html");
   const code=read("assets/js/"+page+".js");
   assert.match(html,new RegExp("assets/js/"+page+"\\.js\\?v="+version));

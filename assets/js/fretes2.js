@@ -1928,9 +1928,15 @@ function formatDateTimeBR(value) {
     if(!ctx)throw new Error("Não foi possível preparar a logo para exportação.");
     const ratio=Math.min(box.width/image.naturalWidth,box.height/image.naturalHeight);
     const width=image.naturalWidth*ratio,height=image.naturalHeight*ratio;
-    const position=getComputedStyle(image).objectPosition.toLowerCase();
-    const alignX=position.includes("left")?0:position.includes("right")?1:0.5;
-    const alignY=position.includes("bottom")?1:position.includes("top")?0:0.5;
+    // CSSOM may return "50% 0%" rather than "center top".
+    const position=String(getComputedStyle(image).objectPosition||"center top").toLowerCase();
+    const parts=position.trim().split(/\s+/);
+    const fraction=(token,fallback)=>/%$/.test(token||"")
+      ?Math.max(0,Math.min(1,Number.parseFloat(token)/100)):fallback;
+    const alignX=position.includes("left")?0:position.includes("right")?1
+      :fraction(parts[0],0.5);
+    const alignY=position.includes("bottom")?1:position.includes("top")?0
+      :fraction(parts[1],0.5);
     const opacity=Number.parseFloat(getComputedStyle(image).opacity);
     ctx.globalAlpha=Number.isFinite(opacity)?opacity:1;
     ctx.drawImage(image,

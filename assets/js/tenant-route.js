@@ -305,8 +305,14 @@
     // Same per-tenant canvas geometry is used in generated artwork and preview.
     const clampInt=(n,fallback,min,max)=>Number.isInteger(n)&&n>=min&&n<=max?n:fallback;
     const isM3=model==="modelo3";
-    const logoWidth=clampInt(value.logoWidth,isM3?290:305,100,1500);
-    const logoHeight=clampInt(value.logoHeight,isM3?96:128,35,1500);
+    const savedWidth=clampInt(value.logoWidth,isM3?290:305,100,1500);
+    const savedHeight=clampInt(value.logoHeight,isM3?96:128,35,1500);
+    // Legacy 1500x1500 slider values cannot fit inside a 300px hero.
+    // Normalize only the obviously oversized pair for Models 4A/B/C.
+    // Model 3 and all ordinarily sized custom placements are unaffected.
+    const oversizedMulti=!isM3&&savedWidth>=1000&&savedHeight>=1000;
+    const logoWidth=oversizedMulti?440:savedWidth;
+    const logoHeight=oversizedMulti?125:savedHeight;
     const logoTop=clampInt(value.logoTop,isM3?4:8,-500,250);
     const logoX=clampInt(value.logoX,0,-500,250);
     const logoOpacity=clampInt(value.logoOpacity,100,10,100)/100;

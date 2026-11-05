@@ -1764,29 +1764,34 @@ function buildMessage(row) {
   // Preserve logo geometry in the HTML clone itself.
   // html2canvas captures one correctly positioned image; no second drawing
   // pass, no hidden logo, and no dependency on a cross-origin canvas overlay.
-  function prepareLogoCanvasExport(source){
+  // Snapshot the displayed geometry BEFORE the art is moved offscreen.
+  // Model 3 keeps its proven export behavior; Model 4 uses a real visual
+  // snapshot so the clone cannot recalculate the logo at its saved raw size.
+  function prepareLogoCanvasExport(source,visualSnapshot=false){
     const image=source?.querySelector(".nfM3Logo,.nfM4Logo,.multiArtLogo");
     const hero=image?.closest(".nfM3Hero,.nfM4Hero,.multiArtHero");
     if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
     const rect=image.getBoundingClientRect(),parent=hero.getBoundingClientRect();
-    // The preview is already laid out at the full export resolution.
-    // Extra sx/sy scaling made the uploaded logo larger than shown.
+    const sx=visualSnapshot&&parent.width?hero.offsetWidth/parent.width:1;
+    const sy=visualSnapshot&&parent.height?hero.offsetHeight/parent.height:1;
     const geometry={
-      left:rect.left-parent.left,top:rect.top-parent.top,
-      width:rect.width,height:rect.height
+      left:(rect.left-parent.left)*sx,top:(rect.top-parent.top)*sy,
+      width:rect.width*sx,height:rect.height*sy
     };
+    const objectPosition=getComputedStyle(image).objectPosition||"center top";
     source.setAttribute("data-pf-logo-export","true");
     return {
       onclone(cloneDoc){
-        const clone=cloneDoc.querySelector("[data-pf-logo-export=\"true\"] .nfM3Logo,[data-pf-logo-export=\"true\"] .nfM4Logo,[data-pf-logo-export=\"true\"] .multiArtLogo");
+        const clone=cloneDoc.querySelector('[data-pf-logo-export="true"] .nfM3Logo,'+
+          '[data-pf-logo-export="true"] .nfM4Logo,'+
+          '[data-pf-logo-export="true"] .multiArtLogo');
         if(!clone)return;
-        const style=clone.style;
         for(const [prop,value] of Object.entries({
           position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
           width:geometry.width+"px",height:geometry.height+"px",
-          transform:"none",objectFit:"contain",objectPosition:getComputedStyle(image).objectPosition||"center top",
+          transform:"none",objectFit:"contain",objectPosition,
           visibility:"visible",display:"block",maxWidth:"none",maxHeight:"none"
-        }))style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
+        }))clone.style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
       },
       finish(){source.removeAttribute("data-pf-logo-export");}
     };
@@ -1826,6 +1831,7 @@ function buildMessage(row) {
         fitModel4PreviewNF();
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+        const logoExport=prepareLogoCanvasExport(source,true);
         const oldCardStyle = card.getAttribute("style");
         const oldSourceStyle = source.getAttribute("style");
 
@@ -1837,7 +1843,6 @@ function buildMessage(row) {
         card.style.overflow = "visible";
         source.style.transform = "none";
 
-        const logoExport=prepareLogoCanvasExport(source);
         try {
           const canvas=await html2canvasLib(source, {
             backgroundColor: getComputedStyle(source).backgroundColor,

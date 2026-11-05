@@ -1797,6 +1797,68 @@ function buildMessage(row) {
     };
   }
 
+  // Model 4 is displayed at 240x300 but exported at 1080x1350.
+  // Pre-rasterize only the visible logo within its 1080x300 hero. This
+  // eliminates html2canvas differences with large transparent tenant PNGs,
+  // CSS object-fit, blob URLs, and resized offscreen image elements.
+  async function prepareMultiLogoRasterExport(source){
+    const image=source?.querySelector(".nfM4Logo");
+    const hero=image?.closest(".nfM4Hero");
+    if(!image||!hero||image.hidden||getComputedStyle(image).display==="none")
+      return {onclone:()=>{},finish:()=>{}};
+    if(!image.complete||!image.naturalWidth||!image.naturalHeight)
+      throw new Error("A logo ainda não carregou. Atualize a prévia e tente copiar novamente.");
+    const parent=hero.getBoundingClientRect(),rect=image.getBoundingClientRect();
+    const heroWidth=hero.offsetWidth,heroHeight=hero.offsetHeight;
+    if(!parent.width||!parent.height||!heroWidth||!heroHeight)
+      throw new Error("Não foi possível medir o cabeçalho da divulgação.");
+    const scaleX=heroWidth/parent.width,scaleY=heroHeight/parent.height;
+    const box={
+      x:(rect.left-parent.left)*scaleX,y:(rect.top-parent.top)*scaleY,
+      width:rect.width*scaleX,height:rect.height*scaleY
+    };
+    const raster=document.createElement("canvas");
+    raster.width=heroWidth;raster.height=heroHeight;
+    const ctx=raster.getContext("2d");
+    if(!ctx)throw new Error("Não foi possível preparar a logo para exportação.");
+    const ratio=Math.min(box.width/image.naturalWidth,box.height/image.naturalHeight);
+    const width=image.naturalWidth*ratio,height=image.naturalHeight*ratio;
+    const position=getComputedStyle(image).objectPosition.toLowerCase();
+    const alignX=position.includes("left")?0:position.includes("right")?1:0.5;
+    const alignY=position.includes("bottom")?1:position.includes("top")?0:0.5;
+    const opacity=Number.parseFloat(getComputedStyle(image).opacity);
+    ctx.globalAlpha=Number.isFinite(opacity)?opacity:1;
+    ctx.drawImage(image,
+      box.x+(box.width-width)*alignX,
+      box.y+(box.height-height)*alignY,width,height);
+    let frozenUrl;
+    try{frozenUrl=raster.toDataURL("image/png");}
+    catch(_){throw new Error("Não foi possível renderizar a logo. Verifique o arquivo de imagem cadastrado.");}
+    const ready=new Image();
+    ready.src=frozenUrl;
+    if(ready.decode)await ready.decode();
+    source.setAttribute("data-pf-logo-raster","true");
+    return {
+      onclone(doc){
+        const clone=doc.querySelector('[data-pf-logo-raster="true"] .nfM4Logo');
+        if(!clone)return;
+        const replacement=doc.createElement("img");
+        replacement.src=frozenUrl;
+        replacement.alt="";
+        for(const [prop,value] of Object.entries({
+          position:"absolute",left:"0px",top:"0px",width:heroWidth+"px",
+          height:heroHeight+"px",transform:"none",objectFit:"fill",
+          objectPosition:"center center",display:"block",visibility:"visible",
+          opacity:"1",zIndex:"3",maxWidth:"none",maxHeight:"none",
+          pointerEvents:"none"
+        }))replacement.style.setProperty(
+          prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
+        clone.replaceWith(replacement);
+      },
+      finish(){source.removeAttribute("data-pf-logo-raster");}
+    };
+  }
+
   async function canvasFromPreview(row) {
     if(window.__PORTAL_TENANT_SESSION?.tenantMode===true && window.portalTenantArtThemeReady)
       await window.portalTenantArtThemeReady;
@@ -1831,7 +1893,7 @@ function buildMessage(row) {
         fitModel4PreviewNF();
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        const logoExport=prepareLogoCanvasExport(source,true);
+        const logoExport=await prepareMultiLogoRasterExport(source);
         const oldCardStyle = card.getAttribute("style");
         const oldSourceStyle = source.getAttribute("style");
 

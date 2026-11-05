@@ -1889,7 +1889,7 @@ function formatDateTimeBR(value) {
         for(const [prop,value] of Object.entries({
           position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
           width:geometry.width+"px",height:geometry.height+"px",
-          transform:"none",objectFit:"contain",objectPosition:"center center",
+          transform:"none",objectFit:"contain",objectPosition:getComputedStyle(image).objectPosition||"center top",
           visibility:"visible",display:"block",maxWidth:"none",maxHeight:"none"
         }))style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
       },

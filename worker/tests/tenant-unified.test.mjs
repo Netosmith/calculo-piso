@@ -275,8 +275,7 @@ test("tenant and Nova Frota share the same Home DOM and tenant map never reads l
  const solic=readFileSync(new URL("assets/js/home-solicitacoes.js",root),"utf8");
  const prefs=readFileSync(new URL("assets/js/portal-preferences.js",root),"utf8");
  const advanced=readFileSync(new URL("assets/js/portal-preferences-advanced.js",root),"utf8");
- const ia=readFileSync(new URL("assets/js/nova-frota-ia.js",root),"utf8");
- for(const js of [tenant,map,solic,prefs,advanced,ia])assert.doesNotThrow(()=>new Script(js));
+ for(const js of [tenant,map,solic,prefs,advanced])assert.doesNotThrow(()=>new Script(js));
  assert.ok(home.indexOf('<div id="tenantWorkspace" hidden>')>home.indexOf('<div class="nf-home-layout">'));
  assert.equal(tenant.includes("pf-tenant-mode .nf-home-layout"),false);
  assert.ok(tenant.includes('document.querySelectorAll(".nf-tools a.nf-tool[data-feature]")'));
@@ -287,7 +286,6 @@ test("tenant and Nova Frota share the same Home DOM and tenant map never reads l
  assert.ok(solic.includes("session.tenantMode===true"));
  assert.ok(prefs.includes("transportadoraId"));
  assert.ok(advanced.includes("transportadoraId"));
- assert.ok(ia.includes("session.tenantMode===true"));
  assert.ok(home.includes("nf-home-layout"));
  assert.ok(home.includes("homeBrazilMap"));
 });

@@ -7,6 +7,7 @@
     theme:null,       // Sem escolha: conserva o tema original de cada módulo.
     showMap:true,
     showList:true,
+    cardArtwork:true,   // Artes temáticas e movimento somente nos cards da Home.
     layout:"padrao",
     density:"normal"
   });
@@ -54,6 +55,7 @@
       theme:["escuro","claro","automatico"].includes(p.theme) ? p.theme : null,
       showMap:typeof p.showMap === "boolean" ? p.showMap : true,
       showList:typeof p.showList === "boolean" ? p.showList : true,
+      cardArtwork:typeof p.cardArtwork === "boolean" ? p.cardArtwork : true,
       layout:p.layout === "amplo" ? "amplo" : "padrao",
       density:p.density === "compacta" ? "compacta" : "normal"
     };
@@ -93,6 +95,8 @@
     root.dataset.nfHome = home ? "1" : "0";
     root.dataset.nfMap = state.showMap ? "on" : "off";
     root.dataset.nfList = state.showList ? "on" : "off";
+    if(home)root.dataset.nfCardArts = state.cardArtwork ? "on" : "off";
+    else delete root.dataset.nfCardArts;
     if(home) {
       document.body?.classList.add("nf-pref-home");
       if(state.showMap && $("#homeBrazilMap")){
@@ -123,7 +127,7 @@
     $$("[data-nf-setting]").forEach(el=>{
       const name = el.dataset.nfSetting;
       const val = el.dataset.nfValue;
-      if(name === "showMap" || name === "showList"){
+      if(name === "showMap" || name === "showList" || name === "cardArtwork"){
         el.setAttribute("aria-checked", String(state[name]));
       }else if(name === "layout" || name === "density"){
         el.setAttribute("aria-pressed",String(state[name] === val));
@@ -178,6 +182,10 @@
               ${icon("auto")}<span>Automático</span></button>
           </div>
           <p class="nf-pref-note" id="nfPrefThemeHint"></p>
+          <div class="nf-pref-row" style="margin-top:12px">
+            <div><strong>Artes e animações dos cards</strong><small>Exibe os fundos ilustrados de cada ferramenta. Desative para voltar aos cards simples, sem efeitos.</small></div>
+            <button type="button" class="nf-pref-switch" role="switch" aria-label="Artes e animações dos cards" aria-checked="true" data-nf-setting="cardArtwork"></button>
+          </div>
         </section>
         <section class="nf-pref-section" aria-labelledby="nfPrefHomeTitle">
           <h3 id="nfPrefHomeTitle">Página inicial</h3>
@@ -222,7 +230,7 @@
       const control=event.target.closest("[data-nf-setting]");
       if(!control)return;
       const name=control.dataset.nfSetting;
-      if(name==="showMap" || name==="showList")update({[name]:!state[name]});
+      if(name==="showMap" || name==="showList" || name==="cardArtwork")update({[name]:!state[name]});
       if(name==="layout" || name==="density")update({[name]:control.dataset.nfValue});
     });
     syncControls();

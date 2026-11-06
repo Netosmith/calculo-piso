@@ -265,3 +265,42 @@ body{
 @media(prefers-reduced-motion:reduce){
   .loto-hero,.mode-card,.ticket,.action-btn{animation:none!important;transition:none!important}
 }
+
+
+/* Correção dos cards no tema gelo:
+   o botão global do Games tem button:hover com fundo escuro.
+   Aqui todos os estados visuais permanecem claros, inclusive hover/foco. */
+.loto-shell button.mode-card,
+.loto-shell button.mode-card.cyan,
+.loto-shell button.mode-card.green,
+.loto-shell button.mode-card.purple,
+.loto-shell button.mode-card.amber{
+  color:#183a50;
+  background:linear-gradient(145deg,#ffffff 0%,#f1f8fc 60%,#e9f5fa 100%);
+  border-color:#cadfe9;
+}
+.loto-shell button.mode-card.simple{
+  background:linear-gradient(138deg,#e3f8fa,#f8ffff 45%,#edf6fc);
+}
+.loto-shell button.mode-card:hover,
+.loto-shell button.mode-card:focus-visible,
+.loto-shell button.mode-card:active{
+  color:#143a51;
+  background:linear-gradient(135deg,#fcffff,#e5f5f9);
+  border-color:var(--tone,#1e92ad);
+  box-shadow:0 12px 29px rgba(39,116,151,.16);
+}
+.loto-shell button.mode-card.selected,
+.loto-shell button.mode-card.selected:hover,
+.loto-shell button.mode-card.selected:focus-visible,
+.loto-shell button.mode-card.selected:active{
+  color:#103a50;
+  background:linear-gradient(140deg,#e4f8f7 0%,#f9ffff 52%,#e9f4fa 100%);
+  border-color:var(--tone,#1599aa);
+  box-shadow:0 0 0 2px var(--tone,#1599aa),0 12px 26px rgba(37,105,135,.13);
+}
+.loto-shell button.mode-card .mode-small{color:var(--tone,#0b7e9f)}
+.loto-shell button.mode-card strong,
+.loto-shell button.mode-card .mode-price{color:#173b55}
+.loto-shell button.mode-card small,
+.loto-shell button.mode-card .mode-foot{color:#526e82}

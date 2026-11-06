@@ -36,3 +36,29 @@ jobs:
               rm -f /tmp/retro-response
             fi
           done
+
+      - name: Testar abertura real no navegador Chromium
+        shell: bash
+        run: |
+          set +e
+          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          echo "BROWSER=$BROWSER"
+          if [ -z "$BROWSER" ]; then
+            echo "BROWSER_UNAVAILABLE"
+            exit 0
+          fi
+          "$BROWSER" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-background-networking --virtual-time-budget=7000 --dump-dom "https://portalfrete.net.br/ACERVO-RETRO/index.html" >/tmp/retro-dom 2>/tmp/retro-chrome-errors
+          echo "RENDERED_HTML_SIZE=$(wc -c </tmp/retro-dom)"
+          if grep -q 'Meus Consoles' /tmp/retro-dom; then
+            echo "RENDER_HOME=SUCCESS"
+          else
+            echo "RENDER_HOME=FAIL"
+          fi
+          if grep -q 'Carregando Portal' /tmp/retro-dom; then
+            echo "POSSIBLE_STUCK_LOADING"
+          fi
+          echo "CHROME_LOG:"
+          tail -n 18 /tmp/retro-chrome-errors
+          echo "DOC_PREVIEW:"
+          head -c 500 /tmp/retro-dom
+          echo

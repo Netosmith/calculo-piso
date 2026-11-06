@@ -8,6 +8,10 @@
   --l-teal:#098b88;--l-purple:#7654b1;--l-gold:#aa7936;--l-danger:#c24b62;
 }
 html{background:#edf5f9}
+/* A tela de senha permanece escura, com contraste próprio. */
+.access-lock,.access-lock .access-card{color:#f3faff}
+.access-lock .access-card h1,.access-lock .access-card p{color:#f3faff}
+
 body{
   color:#1a354d;
   background:

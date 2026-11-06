@@ -46,3 +46,21 @@ a{text-decoration:none}a:hover{text-decoration:none}
 @media(min-width:1151px) and (max-width:1320px){.mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:800px){.simple-quantity-panel{align-items:flex-start;flex-direction:column}.simple-quantity-controls{justify-content:flex-start}}
 @media(max-width:590px){.simple-quantity-panel{padding:14px;gap:15px}.simple-quantity-copy strong{font-size:19px}.simple-quantity-controls{width:100%;gap:12px}.quantity-stepper button{width:40px;height:46px}.quantity-stepper output{min-width:44px;font-size:24px}.quantity-dropdown select{height:46px}.quantity-price strong{font-size:22px}}
+
+
+/* Lotofácil Lab • Número sequencial confirmado pela planilha e busca por ID */
+.combination-status{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:11px;line-height:1.55;color:#b9cce2}
+.combination-status.saved{color:#a1f7cd}
+.combination-number{display:inline-flex;align-items:center;padding:7px 11px;border:1px solid #6ce9c5;border-radius:9px;background:#183e40;color:#d6fff1;font:900 16px Outfit,Inter,sans-serif;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.combination-status.saving{color:#e5d5a0}
+.combination-status.error{color:#ffb7ad}
+.combination-status .action-btn{font-size:10px;min-height:34px;padding:7px 11px;color:#fff}
+.combination-lookup{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:20px;row-gap:8px;margin-bottom:17px;border:1px solid #4c8b96;background:linear-gradient(115deg,#0d3d4b,#152840 78%);border-radius:16px;padding:17px 20px;box-shadow:inset 0 1px #fff1}
+.combination-lookup label{flex:0 0 auto;font-weight:900;letter-spacing:.10em;font-size:11px;color:#acecdd}
+.lookup-controls{display:flex;align-items:center;gap:9px;flex:1;min-width:230px;justify-content:flex-end}
+.lookup-controls input{background:#081c30;color:#f7ffff;border:1px solid #629da8;border-radius:10px;padding:11px 13px;width:min(100%,200px);font:800 17px Outfit,Inter;letter-spacing:.06em;outline:none}
+.lookup-controls input:focus-visible{border-color:#a1fce1;box-shadow:0 0 0 2px #42d6a448}
+.lookup-controls .action-btn{min-height:47px}
+.combination-lookup small{width:100%;color:#a2c5d4;font-size:10px;line-height:1.6}
+@media(max-width:650px){.combination-lookup{align-items:stretch;padding:15px}.lookup-controls{width:100%;justify-content:stretch;min-width:0}.lookup-controls input{flex:1;width:1px;min-width:0}.lookup-controls .action-btn{font-size:10px;padding:10px}}
+@media print{.combination-status{color:#171717}.combination-number{color:#111;border-color:#777;background:#fff}}

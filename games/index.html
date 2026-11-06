@@ -1,1 +1,45 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Nova Frota Games</title><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./central.css"></head><body class="games-locked"><section class="access-lock" id="accessScreen" aria-labelledby="accessTitle"><div class="access-card"><span class="brandmark">N<span>F</span></span><span class="pill">ACESSO PROTEGIDO</span><h1 id="accessTitle">Nova Frota Games</h1><p>Olá, <b id="accessUser">Administrador</b>. Digite a senha de acesso para entrar.</p><form id="accessForm"><label for="accessPassword">SENHA DE 4 NÚMEROS</label><input id="accessPassword" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" aria-describedby="accessError" required><button id="unlockGames" class="primary" type="submit">Entrar no Games ↗</button><p id="accessError" role="alert" aria-live="polite"></p></form><a href="../pages/home.html">← Voltar ao Portal Fretes</a><small>Exclusivo para perfil ADMINISTRADOR</small></div></section><header><a class="brand" href="../pages/home.html">NOVA FROTA <b>GAMES</b></a><a href="../pages/home.html">Voltar ao Portal</a></header><main class="central"><p class="pill">SUA PAUSA, DO SEU JEITO</p><h1>Escolha o próximo programa.</h1><p>Jogos rápidos e uma sala de cinema para a frota.</p><section class="cards" aria-label="Jogos e entretenimento"><a class="module office" href="./guerra-de-escritorio.html"><span class="module-icon" aria-hidden="true">🎮</span><small>ARCADE · 1×1 A 3×3</small><h2>Guerra de Escritório</h2><p>Papel, poderes e três minutos de disputa.</p><b>Jogar →</b></a><a class="module office" href="./sinuca/"><span class="module-icon" aria-hidden="true">🎱</span><small>BOLA 8 · TREINO E 1×1 ONLINE</small><h2>Sinuca Nova Frota</h2><p>Capriche na mira e desafie alguém da frota.</p><b>Jogar →</b></a><a class="module office" href="./caca-palavras/"><span class="module-icon" aria-hidden="true">🔎</span><small>DESAFIO SOLO · 26 PALAVRAS</small><h2>Caça-Palavras</h2><p>Encontre termos da operação e continue de onde parou.</p><b>Jogar →</b></a><a class="module cinema" href="./cine-nova-frota/"><span class="module-icon" aria-hidden="true">▶</span><small>TV & ENTRETENIMENTO</small><h2>Cine Nova Frota</h2><p>Seus canais, categorias e favoritos em um só lugar.</p><b>Abrir Cine →</b></a></section><p class="next">Novos jogos chegam aqui conforme forem concluídos.</p></main><script type="module">import {authorize} from './js/network.js';const invite=new URLSearchParams(location.search).get('sala');if(invite){const url=new URL('./guerra-de-escritorio.html',location.href);url.searchParams.set('sala',invite);location.replace(url)}else{await authorize()}</script></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Nova Frota Games</title><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./central.css?v=racing-20261106-1"></head><body class="games-locked"><section class="access-lock" id="accessScreen" aria-labelledby="accessTitle"><div class="access-card"><span class="brandmark">N<span>F</span></span><span class="pill">ACESSO PROTEGIDO</span><h1 id="accessTitle">Nova Frota Games</h1><p>Olá, <b id="accessUser">Administrador</b>. Digite a senha de acesso para entrar.</p><form id="accessForm"><label for="accessPassword">SENHA DE 4 NÚMEROS</label><input id="accessPassword" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" aria-describedby="accessError" required><button id="unlockGames" class="primary" type="submit">Entrar no Games ↗</button><p id="accessError" role="alert" aria-live="polite"></p></form><a href="../pages/home.html">← Voltar ao Portal Fretes</a><small>Exclusivo para perfil ADMINISTRADOR</small></div></section><header><a class="brand" href="../pages/home.html">NOVA FROTA <b>GAMES</b></a><a href="../pages/home.html">Voltar ao Portal</a></header><main class="central"><p class="pill">SUA PAUSA, DO SEU JEITO</p><h1>Escolha o próximo programa.</h1><p>Jogos rápidos e uma sala de cinema para a frota.</p><section class="cards" aria-label="Jogos e entretenimento"><a class="module office" href="./guerra-de-escritorio.html"><span class="module-icon" aria-hidden="true">🎮</span><small>ARCADE · 1×1 A 3×3</small><h2>Guerra de Escritório</h2><p>Papel, poderes e três minutos de disputa.</p><b>Jogar →</b></a><a class="module office" href="./sinuca/"><span class="module-icon" aria-hidden="true">🎱</span><small>BOLA 8 · TREINO E 1×1 ONLINE</small><h2>Sinuca Nova Frota</h2><p>Capriche na mira e desafie alguém da frota.</p><b>Jogar →</b></a><a class="module office" href="./caca-palavras/"><span class="module-icon" aria-hidden="true">🔎</span><small>DESAFIO SOLO · 26 PALAVRAS</small><h2>Caça-Palavras</h2><p>Encontre termos da operação e continue de onde parou.</p><b>Jogar →</b></a><a class="module cinema" href="./cine-nova-frota/"><span class="module-icon" aria-hidden="true">▶</span><small>TV & ENTRETENIMENTO</small><h2>Cine Nova Frota</h2><p>Seus canais, categorias e favoritos em um só lugar.</p><b>Abrir Cine →</b></a>
+</section>
+<section class="race-zone" aria-labelledby="raceZoneTitle">
+  <div class="race-zone-head">
+    <div>
+      <span class="race-zone-label">ACELERE ALÉM DO PORTAL</span>
+      <h2 id="raceZoneTitle">🏁 Street Racing Online</h2>
+      <p>Três clássicos de corrida para abrir e jogar diretamente no navegador. Escolha sua pista!</p>
+    </div>
+    <span class="race-zone-status">3 destinos de corrida</span>
+  </div>
+  <div class="racer-grid">
+    <a class="racer-card racer-card--underground" href="https://nfsu2.xyz/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Jogar Need for Speed Underground 2 no site externo, abre em nova aba">
+      <span class="racer-art" aria-hidden="true"></span>
+      <span class="racer-top"><span class="racer-category">🌃 NOITES DE NEON</span><span class="racer-link-indicator" aria-hidden="true">↗</span></span>
+      <span class="racer-bottom">
+        <span class="racer-series">NEED FOR SPEED</span>
+        <strong class="racer-title">Underground <span>2</span></strong>
+        <span class="racer-desc">Acelere por uma cidade iluminada, personalize seu carro e viva a adrenalina das ruas.</span>
+        <span class="racer-play">Jogar Underground 2 <span class="racer-play-arrow" aria-hidden="true">→</span></span>
+      </span>
+    </a>
+    <a class="racer-card racer-card--carbon" href="https://nfscrb.xyz/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Jogar Need for Speed Carbon no site externo, abre em nova aba">
+      <span class="racer-art" aria-hidden="true"></span>
+      <span class="racer-top"><span class="racer-category">⛰️ ASFALTO & CÂNIONS</span><span class="racer-link-indicator" aria-hidden="true">↗</span></span>
+      <span class="racer-bottom">
+        <span class="racer-series">NEED FOR SPEED</span>
+        <strong class="racer-title">Carbon</strong>
+        <span class="racer-desc">Curvas fechadas, noites intensas e disputas em alta velocidade pelas montanhas.</span>
+        <span class="racer-play">Jogar Carbon <span class="racer-play-arrow" aria-hidden="true">→</span></span>
+      </span>
+    </a>
+    <a class="racer-card racer-card--wanted" href="https://web.nfsmwo.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Jogar Need for Speed Most Wanted no site externo, abre em nova aba">
+      <span class="racer-art" aria-hidden="true"></span>
+      <span class="racer-top"><span class="racer-category">🚨 PERSEGUIÇÃO URBANA</span><span class="racer-link-indicator" aria-hidden="true">↗</span></span>
+      <span class="racer-bottom">
+        <span class="racer-series">NEED FOR SPEED</span>
+        <strong class="racer-title">Most <span>Wanted</span></strong>
+        <span class="racer-desc">Corra pelas ruas, enfrente perseguições e entre no clima das disputas mais procuradas.</span>
+        <span class="racer-play">Jogar Most Wanted <span class="racer-play-arrow" aria-hidden="true">→</span></span>
+      </span>
+    </a>
+  </div>
+  <p class="race-zone-foot">↗ Os jogos são projetos externos. Ao clicar, você abre o site escolhido em uma nova aba, sem sair da Nova Frota Games.</p>
+</section><p class="next">Novos jogos da Nova Frota Games chegam aqui conforme forem concluídos.</p></main><script type="module">import {authorize} from './js/network.js';const invite=new URLSearchParams(location.search).get('sala');if(invite){const url=new URL('./guerra-de-escritorio.html',location.href);url.searchParams.set('sala',invite);location.replace(url)}else{await authorize()}</script></body></html>

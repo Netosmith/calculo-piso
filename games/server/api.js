@@ -2,6 +2,7 @@ import {getSession,readSessionId} from '../../worker/src/services/session.js';
 import {validSession} from './rooms.js';
 import {sinucaController} from './sinuca.js';
 import {cineController} from './cine.js';
+import {lotofacilController} from './lotofacil.js';
 
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const encoder=new TextEncoder();
@@ -38,6 +39,7 @@ export async function gamesController(request,env){
  if(!await unlocked(env,sessionId))return reply({ok:false,error:'Digite a senha do Nova Frota Games para continuar.'},423);
  if(path.startsWith('/v1/games/sinuca'))return sinucaController(request,env,session);
  if(path.startsWith('/v1/games/cine/'))return cineController(request,env,sessionId,session);
+ if(path.startsWith('/v1/games/lotofacil/'))return lotofacilController(request,env,session);
  if(!env.GAMES_ROOMS)return reply({ok:false,error:'Multiplayer aguardando configuração na Cloudflare.'},503);
  if(path==='/v1/games/rooms'&&request.method==='POST'){
   const text=await request.text();if(text.length>512)return reply({ok:false,error:'Pedido inválido.'},400);

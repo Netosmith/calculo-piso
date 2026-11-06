@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="270" viewBox="0 0 480 270">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2=".86" y2="1"><stop stop-color="#164666"/><stop offset=".62" stop-color="#112d52"/><stop offset="1" stop-color="#1d607b"/></linearGradient>
+<radialGradient id="halo" cx=".75" cy=".45" r=".7"><stop stop-color="#8edaf9" stop-opacity=".34"/><stop offset="1" stop-color="#8edaf9" stop-opacity="0"/></radialGradient>
+<linearGradient id="body" x1="0" x2=".8" y1="0" y2="1"><stop stop-color="#8edaf9"/><stop offset=".65" stop-color="#93b1ff"/><stop offset="1" stop-color="#164666"/></linearGradient>
+<linearGradient id="shine" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#e6fbff"/><stop offset=".5" stop-color="#8edaf9"/><stop offset="1" stop-color="#93b1ff"/></linearGradient>
+<filter id="drop" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="3" dy="10" stdDeviation="7" flood-color="#030e20" flood-opacity=".6"/></filter>
+<pattern id="grid" patternUnits="userSpaceOnUse" width="27" height="27"><path d="M27 0H0V27" fill="none" stroke="#8edaf9" stroke-opacity=".15" stroke-width="1"/></pattern>
+</defs><rect width="480" height="270" fill="url(#sky)"/><rect width="480" height="270" fill="url(#halo)"/>
+<path d="M0 160Q105 99 235 160T480 156v114H0Z" fill="#164666" opacity=".42"/>
+<rect y="38" width="480" height="232" fill="url(#grid)" opacity=".75"/>
+<path d="M0 55Q120 29 250 76T480 36M0 197Q135 144 245 213T480 181" fill="none" stroke="#8edaf9" stroke-width="2" stroke-opacity=".37"/>
+<path d="M0 264L480 262" fill="none" stroke="#93b1ff" stroke-opacity=".5" stroke-width="4"/>
+<rect x="149" y="52" width="168" height="161" rx="12" fill="#154e73" stroke="#aadfff" stroke-width="2" stroke-opacity=".7"/><path d="M176 85h113M176 98h108" fill="none" stroke="#beeaff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+<rect x="181" y="145" width="17" height="32" rx="4" fill="url(#body)"/><rect x="209" y="125" width="17" height="52" rx="4" fill="url(#body)"/><rect x="237" y="136" width="17" height="41" rx="4" fill="url(#body)"/><rect x="265" y="107" width="17" height="70" rx="4" fill="url(#body)"/>
+<rect x="278" y="161" width="124" height="76" rx="12" fill="#1e5776" stroke="#b5efff" stroke-width="2" stroke-opacity=".7"/><text x="300" y="189" fill="#e6faff" font-size="19" font-weight="800" font-family="Arial,sans-serif" letter-spacing=".5">↓ CSV</text><path d="M294 206h89" fill="none" stroke="#a8e7ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+<path d="M0 0h480v270H0Z" fill="none" stroke="#93b1ff" stroke-opacity=".17" stroke-width="3"/>
+</svg>

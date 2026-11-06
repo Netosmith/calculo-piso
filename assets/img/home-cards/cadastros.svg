@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="270" viewBox="0 0 480 270">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2=".86" y2="1"><stop stop-color="#0e4c53"/><stop offset=".62" stop-color="#112d52"/><stop offset="1" stop-color="#1d607b"/></linearGradient>
+<radialGradient id="halo" cx=".75" cy=".45" r=".7"><stop stop-color="#76eed0" stop-opacity=".34"/><stop offset="1" stop-color="#76eed0" stop-opacity="0"/></radialGradient>
+<linearGradient id="body" x1="0" x2=".8" y1="0" y2="1"><stop stop-color="#76eed0"/><stop offset=".65" stop-color="#a4fbea"/><stop offset="1" stop-color="#0e4c53"/></linearGradient>
+<linearGradient id="shine" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#e6fbff"/><stop offset=".5" stop-color="#76eed0"/><stop offset="1" stop-color="#a4fbea"/></linearGradient>
+<filter id="drop" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="3" dy="10" stdDeviation="7" flood-color="#030e20" flood-opacity=".6"/></filter>
+<pattern id="grid" patternUnits="userSpaceOnUse" width="27" height="27"><path d="M27 0H0V27" fill="none" stroke="#76eed0" stroke-opacity=".15" stroke-width="1"/></pattern>
+</defs><rect width="480" height="270" fill="url(#sky)"/><rect width="480" height="270" fill="url(#halo)"/>
+<path d="M0 160Q105 99 235 160T480 156v114H0Z" fill="#0e4c53" opacity=".42"/>
+<rect y="38" width="480" height="232" fill="url(#grid)" opacity=".75"/>
+<path d="M0 55Q120 29 250 76T480 36M0 197Q135 144 245 213T480 181" fill="none" stroke="#76eed0" stroke-width="2" stroke-opacity=".37"/>
+<path d="M0 264L480 262" fill="none" stroke="#a4fbea" stroke-opacity=".5" stroke-width="4"/>
+<rect x="130" y="59" width="230" height="145" rx="14" fill="#0a4960" stroke="#8beddb" stroke-width="2" stroke-opacity=".7"/><rect x="147" y="78" width="70" height="72" rx="10" fill="#3b928d" stroke="#cafcf0" stroke-width="2" stroke-opacity=".7"/>
+<circle cx="182" cy="100" r="15" fill="#d6fff4"/><path d="M156 145q1-26 26-25t27 25" fill="#d6fff4"/>
+<path d="M238 91h103" fill="none" stroke="#b5ffea" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.67"/><path d="M238 117h103" fill="none" stroke="#b5ffea" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.67"/><path d="M238 143h103" fill="none" stroke="#b5ffea" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.67"/><rect x="281" y="167" width="113" height="52" rx="14" fill="#2a776e" stroke="#c6ffe9" stroke-width="2" stroke-opacity=".7"/><text x="300" y="201" fill="#e6faff" font-size="18" font-weight="800" font-family="Arial,sans-serif" letter-spacing=".5">✓ ✓ ✓</text>
+<path d="M0 0h480v270H0Z" fill="none" stroke="#a4fbea" stroke-opacity=".17" stroke-width="3"/>
+</svg>

@@ -107,3 +107,52 @@ body.super-admin-shell{
 @media(max-width:1000px){.super-admin-shell .hub-card-copy{max-width:72%}.super-admin-shell .hub-illustration{right:-30px;width:175px;opacity:.4}.super-admin-shell .hub-intro{padding:32px}.super-admin-shell .hub-intro-visual{right:0;opacity:.6}.super-admin-shell .hub-card-copy strong{font-size:21px}}
 @media(max-width:700px){.super-admin-shell main{padding:24px 16px 40px}.super-admin-shell .hub-grid{grid-template-columns:1fr;gap:15px}.super-admin-shell .hub-intro{padding:30px 24px;min-height:285px}.super-admin-shell .hub-intro-copy{max-width:100%}.super-admin-shell .hub-intro-visual{width:65%;opacity:.13;right:-40px}.super-admin-shell .hub-intro h2{font-size:37px}.super-admin-shell .hub-intro p{font-size:13px}.super-admin-shell .hub-intro-note{max-width:260px;line-height:1.8}.hub-section-heading>span{display:none}.super-admin-shell .admin-hub .hub-card{min-height:274px;padding:24px}.super-admin-shell .hub-card-copy{max-width:70%;min-height:145px}.super-admin-shell .hub-illustration{right:-8px;top:85px;opacity:.5;width:185px}.super-admin-shell .hub-card--acervo{grid-column:auto}.super-admin-shell .hub-card--acervo .hub-card-copy{max-width:72%;min-height:165px}.super-admin-shell .hub-card--acervo .hub-illustration{right:-42px;top:90px;width:220px;opacity:.4}.super-admin-shell .hub-card--acervo .hub-action{max-width:100%}}
 @media(prefers-reduced-motion:reduce){.super-admin-shell .hub-card:hover{transform:none}.super-admin-shell .hub-card:hover .hub-illustration{transform:none}}
+
+/* Compact desktop home: five modules in two rows, without clipping content. */
+@media(min-width:1100px){
+ .super-admin-shell:has(#adminHome:not([hidden])) main{max-width:1560px;padding:16px 32px 20px}
+ .super-admin-shell:has(#adminHome:not([hidden])) main>h1{font-size:11px;margin-bottom:6px}
+ .super-admin-shell:has(#adminHome:not([hidden])) main>p{display:none}
+ .super-admin-shell:has(#adminHome:not([hidden])) #notice{padding:7px 12px;font-size:10px;line-height:1.5}
+ .super-admin-shell .admin-hub{margin-top:14px}
+ .super-admin-shell .hub-intro{min-height:148px;padding:22px 28px;margin-bottom:16px;border-radius:18px}
+ .super-admin-shell .hub-intro-copy{max-width:75%}
+ .super-admin-shell .hub-intro h2{font-size:32px;margin:10px 0 8px;line-height:1.15}
+ .super-admin-shell .hub-intro h2 br{display:none}
+ .super-admin-shell .hub-intro h2 span:before{content:" "}
+ .super-admin-shell .hub-intro p{font-size:12px;line-height:1.6;max-width:640px}
+ .super-admin-shell .hub-eyebrow{font-size:9px}
+ .super-admin-shell .hub-intro-note{display:none}
+ .super-admin-shell .hub-intro-visual{width:230px;right:28px;height:100%}
+ .super-admin-shell .hub-intro-visual svg{max-height:155px}
+ .super-admin-shell .hub-section-heading{margin-bottom:12px}
+ .super-admin-shell .hub-section-heading h3{font-size:14px}
+ .super-admin-shell .hub-section-heading p{display:none}
+ .super-admin-shell .hub-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+ .super-admin-shell .admin-hub .hub-card{min-height:204px;padding:18px 20px 14px;border-radius:16px}
+ .super-admin-shell .hub-icon{width:34px;height:34px;border-radius:10px}
+ .super-admin-shell .hub-icon svg{width:24px;height:24px}
+ .super-admin-shell .hub-card-top{gap:10px}
+ .super-admin-shell .hub-card-kicker{font-size:8px;letter-spacing:.08em}
+ .super-admin-shell .hub-card-copy{max-width:75%;padding:14px 0 12px;min-height:106px}
+ .super-admin-shell .hub-card-copy strong{font-size:19px}
+ .super-admin-shell .hub-desc{font-size:11px;line-height:1.6;margin-top:7px}
+ .super-admin-shell .hub-illustration{width:145px;height:125px;top:56px;right:-18px;opacity:.45}
+ .super-admin-shell .hub-action{font-size:10px;min-height:30px;padding-top:8px}
+ .super-admin-shell .hub-action-arrow{width:24px;height:24px;flex-basis:24px;font-size:15px}
+ .super-admin-shell .hub-card--acervo{grid-column:span 2;min-height:204px!important}
+ .super-admin-shell .hub-card--acervo .hub-card-copy{max-width:72%;min-height:106px}
+ .super-admin-shell .hub-card--acervo .hub-desc{max-width:520px}
+ .super-admin-shell .hub-card--acervo .hub-illustration{width:220px;height:165px;right:16px;top:16px}
+ .super-admin-shell .hub-card--acervo .hub-action{max-width:100%}
+}
+@media(min-width:1100px) and (max-height:800px){
+ .super-admin-shell:has(#adminHome:not([hidden])) main{padding-top:10px;padding-bottom:12px}
+ .super-admin-shell .admin-hub{margin-top:10px}
+ .super-admin-shell .hub-intro{min-height:125px;padding:16px 24px;margin-bottom:12px}
+ .super-admin-shell .hub-intro h2{font-size:28px;margin:8px 0 6px}
+ .super-admin-shell .hub-grid{gap:12px}
+ .super-admin-shell .admin-hub .hub-card{min-height:184px;padding:14px 18px 12px}
+ .super-admin-shell .hub-card-copy,.super-admin-shell .hub-card--acervo .hub-card-copy{min-height:94px;padding-top:10px;padding-bottom:8px}
+ .super-admin-shell .hub-card--acervo{min-height:184px!important}
+}

@@ -46,6 +46,7 @@ export async function routeRequest(request, env, ctx) {
 
   if (path === "/v1/pingo" || path.startsWith("/v1/pingo/")) return pingoController(request, env);
 
+  // Inclui /v1/games/lotofacil/combination: acesso, PIN e perfil permanecem sob gamesController.
   if (path === "/v1/games" || path.startsWith("/v1/games/")) return gamesController(request, env);
 
   if (path === "/health") {

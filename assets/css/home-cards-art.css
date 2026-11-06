@@ -1,5 +1,5 @@
 /* PORTAL FRETE • Artes temáticas dos cards da Home
-   v20261106-1 | Não altera links, dados, módulos ou controle de acesso.
+   v20261106-3 | Não altera links, dados, módulos ou controle de acesso.
    Desligar Configurações -> Aparência da Home -> Artes e animações
    remove integralmente estes estilos. */
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="piso"]{--nf-art-url:url("../img/home-cards/piso.svg");}
@@ -24,142 +24,67 @@ html[data-nf-home="1"][data-nf-card-arts="on"] #superAdminHomeCard{
   --nf-art-url:url("../img/home-cards/superadmin.svg");
 }
 
-/* Cada cartão é uma vitrine independente da ferramenta. */
+/* Arte discreta. Mantém exatamente as dimensões, ícones e tipografia
+   originais da Home. Nada é aplicado quando a preferência está desligada. */
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool{
   position:relative;
   isolation:isolate;
   overflow:hidden;
-  min-height:310px;
-  padding:16px 17px 20px;
-  border:1px solid color-mix(in srgb,var(--accent,#4e8df7) 46%,#a0c4e7);
-  border-radius:19px;
-  color:#102b4b;
-  background:linear-gradient(180deg,#deedfb 0%,#e8f3ff 58%,#f8fbff 79%,#eef5fd 100%);
-  box-shadow:0 14px 32px rgba(2,14,36,.22),inset 0 1px 0 #ffffffc0;
-  transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease;
 }
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool::after{
   content:"";
   position:absolute;
-  inset:0 0 auto;
-  width:100%;
-  height:73%;
+  inset:0;
   z-index:0;
   pointer-events:none;
-  opacity:1;
-  background-image:var(--nf-art-url,linear-gradient(135deg,#1b6c9e,#4bb9d3));
+  border-radius:inherit;
+  opacity:.26;
+  background-image:var(--nf-art-url,none);
   background-size:cover;
+  background-position:center 34%;
   background-repeat:no-repeat;
-  background-position:center 28%;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 46%,rgba(0,0,0,.84) 66%,transparent 100%);
-  mask-image:linear-gradient(180deg,#000 0%,#000 46%,rgba(0,0,0,.84) 66%,transparent 100%);
-  filter:saturate(1.04);
-  transform-origin:50% 35%;
-  animation:nf-home-card-drift 14s ease-in-out infinite alternate;
-  transition:filter .24s ease;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.83) 47%,transparent 95%);
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.83) 47%,transparent 95%);
+  transform-origin:center;
+  animation:nf-home-card-drift 16s ease-in-out infinite alternate;
+  transition:opacity .24s ease;
 }
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:nth-child(3n)::after{animation-delay:-4s}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:nth-child(3n+2)::after{animation-delay:-9s;animation-duration:16s}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:nth-child(4n+3)::after{animation-duration:18s}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:hover{
-  transform:translateY(-5px);
-  border-color:color-mix(in srgb,var(--accent,#4e8df7) 76%,#bbf0ff);
-  box-shadow:0 23px 43px rgba(2,16,42,.34),0 0 23px color-mix(in srgb,var(--accent,#4e8df7) 19%,transparent),inset 0 1px #fff;
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:nth-child(3n)::after{
+  animation-delay:-5s;
+}
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:nth-child(3n+2)::after{
+  animation-delay:-9s;
+  animation-duration:19s;
 }
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:hover::after{
-  filter:saturate(1.24) brightness(1.05);
+  opacity:.37;
 }
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool:focus-visible{
-  outline:3px solid var(--accent,#6fbbf9);
-  outline-offset:3px;
-}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool .nf-tool-icon{
-  position:relative;
-  z-index:2;
-  flex:0 0 47px;
-  display:grid;
-  place-items:center;
-  width:47px;
-  height:47px;
-  margin:0 0 12px;
-  border:1px solid #ffffffb8;
-  border-radius:13px;
-  background:rgba(246,251,255,.92);
-  color:#2864aa;
-  box-shadow:0 4px 18px rgba(3,29,62,.19);
-  backdrop-filter:blur(5px);
-}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool.green .nf-tool-icon{color:#159b79}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool.gold .nf-tool-icon{color:#ba8527}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool.purple .nf-tool-icon{color:#8b56c5}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool .nf-tool-icon svg{width:27px;height:27px}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool h2{
-  position:relative;
-  z-index:2;
-  max-width:100%;
-  flex:0 0 auto;
-  margin:auto 0 0;
-  font-size:16px;
-  font-weight:800;
-  line-height:1.23;
-  letter-spacing:-.035em;
-  color:#09243f;
-  text-shadow:0 1px 0 #ffffffae;
-  text-wrap:pretty;
-}
-html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool p{
-  position:relative;
-  z-index:2;
-  flex:0 0 auto;
-  max-width:100%;
-  min-height:40px;
-  margin:9px 0 4px;
-  padding-right:19px;
-  font-size:11px;
-  line-height:1.45;
-  color:#435d79;
-  text-wrap:pretty;
-}
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool .nf-tool-icon,
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool h2,
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool p,
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool .nf-tool-arrow{
-  z-index:3;
-  right:13px;
-  bottom:11px;
-  color:#153a5b;
-  font-size:23px;
+  position:relative;
+  z-index:1;
+}
+/* A seta já tem posicionamento absoluto no CSS original. */
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool .nf-tool-arrow{
+  position:absolute;
 }
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool.nf-adv-favorite::before{
-  z-index:4;
-  top:12px;
-  right:12px;
-  color:#ffe198;
-  text-shadow:0 1px 6px #0c2045;
-  filter:drop-shadow(0 2px 2px #08264d);
+  z-index:2;
 }
 @keyframes nf-home-card-drift{
-  from{transform:scale(1.025) translate3d(-.5%,0,0)}
-  to{transform:scale(1.085) translate3d(1%,-1.35%,0)}
+  from{transform:scale(1.03) translate3d(-.6%,0,0)}
+  to{transform:scale(1.09) translate3d(.9%,-.9%,0)}
 }
-
-/* Mantém preferências de tema, fontes, disposição, favoritos e motion. */
-@media(max-width:1150px){
- html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool{min-height:305px;padding:15px}
-}
-@media(max-width:700px){
- html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool{min-height:285px;padding:15px}
-}
-@media(max-width:390px){
- html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool{min-height:295px}
-}
-html[data-nf-motion="reduzido"] .nf-tools > .nf-tool::after,
-html[data-nf-motion="reduzido"] .nf-tools > .nf-tool{
- animation:none!important;
- transition:none!important;
+html[data-nf-motion="reduzido"] .nf-tools > .nf-tool::after{
+  animation:none!important;
+  transition:none!important;
 }
 @media(prefers-reduced-motion:reduce){
- html[data-nf-card-arts="on"] .nf-tools > .nf-tool::after{
-  animation:none!important;transform:none!important;
- }
- html[data-nf-card-arts="on"] .nf-tools > .nf-tool{
-  transition:none!important;
- }
+  html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool::after{
+    animation:none!important;
+    transform:none!important;
+    transition:none!important;
+  }
 }

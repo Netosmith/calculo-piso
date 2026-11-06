@@ -7,7 +7,7 @@
     theme:null,       // Sem escolha: conserva o tema original de cada módulo.
     showMap:true,
     showList:true,
-    cardArtwork:true,   // Artes temáticas e movimento somente nos cards da Home.
+    cardArtwork:false,  // Visual simples é o padrão; artes são opcionais na Home.
     layout:"padrao",
     density:"normal"
   });
@@ -55,7 +55,7 @@
       theme:["escuro","claro","automatico"].includes(p.theme) ? p.theme : null,
       showMap:typeof p.showMap === "boolean" ? p.showMap : true,
       showList:typeof p.showList === "boolean" ? p.showList : true,
-      cardArtwork:typeof p.cardArtwork === "boolean" ? p.cardArtwork : true,
+      cardArtwork:typeof p.cardArtwork === "boolean" ? p.cardArtwork : false,
       layout:p.layout === "amplo" ? "amplo" : "padrao",
       density:p.density === "compacta" ? "compacta" : "normal"
     };
@@ -184,7 +184,7 @@
           <p class="nf-pref-note" id="nfPrefThemeHint"></p>
           <div class="nf-pref-row" style="margin-top:12px">
             <div><strong>Artes e animações dos cards</strong><small>Exibe os fundos ilustrados de cada ferramenta. Desative para voltar aos cards simples, sem efeitos.</small></div>
-            <button type="button" class="nf-pref-switch" role="switch" aria-label="Artes e animações dos cards" aria-checked="true" data-nf-setting="cardArtwork"></button>
+            <button type="button" class="nf-pref-switch" role="switch" aria-label="Artes e animações dos cards" aria-checked="false" data-nf-setting="cardArtwork"></button>
           </div>
         </section>
         <section class="nf-pref-section" aria-labelledby="nfPrefHomeTitle">

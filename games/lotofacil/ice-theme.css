@@ -1,0 +1,263 @@
+/* Lotofácil Lab • Edição Branco Gelo, 06/11/2026
+ * Camada visual exclusiva para games/lotofacil.
+ * Mantém todos os controles, integração com Google Sheets e estados do simulador.
+ */
+:root{
+  --l-bg:#f0f7fb;--l-panel:#ffffff;--l-line:#cbdde8;
+  --l-text:#19364e;--l-muted:#526d7f;--l-blue:#247da8;
+  --l-teal:#098b88;--l-purple:#7654b1;--l-gold:#aa7936;--l-danger:#c24b62;
+}
+html{background:#edf5f9}
+body{
+  color:#1a354d;
+  background:
+   linear-gradient(180deg,rgba(250,253,255,.22),rgba(237,247,250,.20)),
+   url("./ice-background.svg") center top / cover fixed no-repeat,
+   #f2f8fb;
+  font-family:Inter,system-ui,sans-serif;
+}
+.loto-shell::before{display:none}
+.loto-shell{color:#1a354d}
+.loto-shell .eyebrow{color:#067c83}
+.loto-shell .section-head h2{color:#15344f}
+.loto-shell .section-head p{color:#526c7e}
+.loto-shell .section-head strong{color:#124c62}
+
+/* Navegação branca, acessível e com contraste. */
+.loto-nav{border-bottom:1px solid rgba(123,169,188,.26)}
+.loto-nav .back-link{
+  color:#20546d;border:1px solid #c4dfeb;border-radius:12px;
+  background:rgba(255,255,255,.87);box-shadow:0 5px 14px #446c8111;
+}
+.loto-nav .back-link:hover{color:#0b657e;border-color:#7ebcce;background:#f7feff}
+.loto-nav .loto-logo{color:#173a50}
+.loto-nav .loto-logo b{color:#087e83}
+.loto-nav .loto-menu a{color:#4c6d80}
+.loto-nav .loto-menu a:hover{color:#0b6378;background:#ddedf4}
+
+/* Cabeçalho com gelo translúcido e figuras matemáticas sutis. */
+.loto-hero{
+  color:#14334d;
+  border:1px solid #badde5;
+  border-radius:25px;
+  background:
+    radial-gradient(ellipse at 82% 52%,rgba(100,203,209,.23),transparent 46%),
+    radial-gradient(ellipse at 27% 2%,rgba(170,200,231,.30),transparent 51%),
+    linear-gradient(125deg,rgba(255,255,255,.97),rgba(234,248,251,.95) 65%,rgba(228,243,250,.92));
+  box-shadow:0 19px 44px #4e819824,inset 0 1px 0 #fff;
+}
+.loto-hero::before{
+  content:"";
+  position:absolute;inset:0;pointer-events:none;opacity:.55;
+  background:
+    radial-gradient(circle at 77% 65%,transparent 0 59px,rgba(91,169,189,.13) 61px 63px,transparent 65px 86px,rgba(91,169,189,.1) 87px 89px,transparent 90px),
+    linear-gradient(126deg,transparent 68%,rgba(108,197,212,.08) 68.2%,transparent 68.7%),
+    linear-gradient(129deg,transparent 72%,rgba(108,197,212,.10) 72.2%,transparent 72.6%);
+}
+.loto-hero::after{border-color:rgba(70,162,185,.25);box-shadow:0 -2px 22px rgba(78,171,191,.12)}
+.loto-hero h1{color:#153f56;text-shadow:0 1px 0 #fff}
+.loto-hero h1 span{color:#068e91}
+.loto-hero p{color:#476879}
+.loto-hero .hero-points span{
+  color:#256074;background:rgba(255,255,255,.83);border:1px solid #c0dee5;
+}
+.loto-hero .hero-rings{filter:drop-shadow(0 10px 18px #72b6c238)}
+.loto-hero .hero-rings::before{border-color:#57a6be55}
+.loto-hero .hero-rings::after{border-color:#6a8cc34d}
+
+/* Cartões das modalidades, contendo o valor e custo completo. */
+.mode-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(234,245,251,.97));
+  color:#17374c;border-color:#cee0e8;
+  box-shadow:0 8px 22px #547c8b17,inset 0 1px #fff;
+}
+.mode-card.cyan{--tone:#087ca3}
+.mode-card.green{--tone:#07886e}
+.mode-card.purple{--tone:#7553b4}
+.mode-card.amber{--tone:#a06d24}
+.mode-card.simple{
+  --tone:#057e9b;
+  background:linear-gradient(138deg,#e3f8fa,#f8ffff 45%,#eef7fc);
+}
+.mode-card:hover{
+  border-color:var(--tone,#299ab2);
+  box-shadow:0 11px 30px #467e9c28;
+}
+.mode-card.selected{
+  color:#123950;border-color:var(--tone,#198eb1);
+  background:linear-gradient(145deg,rgba(234,251,251,.98),rgba(242,249,253,.99));
+  box-shadow:0 0 0 1px var(--tone,#198eb1),0 12px 28px #497d9a22;
+}
+.mode-card .mode-small{color:var(--tone,#087e9c)}
+.mode-card strong{color:#183b52}
+.mode-card small,.mode-card .mode-foot{color:#547287}
+.mode-card .mode-price{color:#15334d}
+.mode-card:focus-visible{outline:3px solid #1d8da7;outline-offset:3px}
+
+/* Controles de quantidade e gerador. */
+.simple-quantity-panel,.generator-bar{
+  background:linear-gradient(122deg,rgba(255,255,255,.94),rgba(235,247,250,.96));
+  border:1px solid #c9dfe7;
+  box-shadow:0 9px 27px #58899d17,inset 0 1px #fff;
+  color:#193a50;
+}
+.simple-quantity-copy strong{color:#193e58}
+.simple-quantity-copy small,.g-left small{color:#536e83}
+.quantity-stepper{background:#f9fdff;border-color:#92b8c6}
+.quantity-stepper button{background:#e1f1f6;color:#176a81}
+.quantity-stepper button:hover:not(:disabled){background:#d1eaf2}
+.quantity-stepper output{color:#153f5c}
+.quantity-dropdown,.quantity-price,.g-right div span{color:#536f83}
+.quantity-dropdown select{
+  color:#153c55;background:#f7fdff;border:1px solid #9cbfcb;
+}
+.quantity-price strong{color:#087d7b}
+.segmented{background:#e7f1f6;border-color:#c9dce5}
+.segmented button{color:#3d657c}
+.segmented button:hover{background:#d8e8f0}
+.segmented button.active{
+  color:#073f4d;background:linear-gradient(110deg,#adede6,#cceef6);
+  box-shadow:0 2px 8px #3b869b17;
+}
+.g-right div strong{color:#8b6129}
+.action-btn{color:#1b536a;background:#edf6fa;border-color:#aecedb}
+.action-btn:hover{background:#dceff5}
+.action-btn.outline{color:#20566e;background:#f7fcfe;border-color:#bbd5df}
+.action-btn.subtle{color:#86505a;background:#fff9fa;border-color:#e8cbd1}
+.action-btn.primary{
+  color:#063a47;background:linear-gradient(112deg,#8ee5d9,#a6dcf1);
+  border-color:#74bbcb;box-shadow:0 8px 21px #2b9cab24;
+}
+.action-btn:focus-visible,.quantity-stepper button:focus-visible{outline:3px solid #1686a1;outline-offset:3px}
+
+/* Jogos gerados em papel gelo, sem perder a cor das dezenas. */
+.empty-panel,.empty-saved{
+  background:rgba(255,255,255,.86);
+  border:1px dashed #aacbd6;color:#567081;box-shadow:0 6px 20px #678aa515;
+}
+.empty-panel h3{color:#244158}
+.empty-panel p{color:#526e80}
+.ticket{
+  color:#163750;
+  background:linear-gradient(140deg,rgba(255,255,255,.98),rgba(239,249,251,.99));
+  border:1px solid #c6dce7;box-shadow:0 12px 24px #537e9919;
+}
+.ticket-head{color:#31576e}
+.ticket-foot{color:#5b7587;border-top-color:#d5e6ec}
+.ticket-foot span:first-child{color:#806125}
+.tag{border-color:#bed7de;color:#186e76;background:#e3f6f4}
+.tag.boost{border-color:#e0c68c;color:#8f641f;background:#fff4d9}
+.ball{color:#0b4150;background:radial-gradient(circle at 28% 22%,#fff 0%,#bbf8eb 46%,#59bdbf 100%);border-color:#7bbfc5}
+.ball.hit{color:#59420b;background:radial-gradient(circle at 25% 20%,#fff,#ffebbb 53%,#d6a858);border-color:#e8c975}
+
+/* Chances e cobertura matemática. */
+.analysis-panel{
+  background:linear-gradient(129deg,rgba(255,255,255,.96),rgba(239,248,251,.96));
+  border:1px solid #bfdbe3;box-shadow:0 12px 30px #547f9820;color:#17394f;
+}
+.fact{
+  background:#f6fcff;color:#1c3d54;border:1px solid #cce0e9;
+  box-shadow:inset 0 1px 0 #fff;
+}
+.fact span{color:#526e82}
+.fact strong{color:#174666}
+.fact small{color:#627e91}
+.chance-table{border-color:#cadae3;background:#fbfeff}
+.chance-row{border-bottom-color:#e1ebf0;color:#183a50}
+.chance-row.header{background:#e8f3f8;color:#27536d}
+.chance-row>span:last-child,.chance-row small{color:#5e7688}
+.prob-bar{background:#dce9ef}
+.prob-bar i{background:linear-gradient(90deg,#248fac,#34c7ad)}
+.disclaimer,.source-line{color:#526e80}
+.disclaimer strong{color:#8d5b20}
+.insight-panel{
+  color:#1e4560;background:linear-gradient(125deg,#e0f3f3,#eff6fb);
+  border-color:#bcd7db;box-shadow:0 6px 20px #3c80901b;
+}
+.insight-symbol{color:#0c9d94}
+.insight-panel b{color:#18465a}
+.insight-panel p{color:#496a7b}
+
+/* Conferência e busca por número no Sheets. */
+.combination-lookup{
+  color:#183e53;background:linear-gradient(120deg,#e9f8f8,#f9fdff 80%);
+  border:1px solid #a9d0d8;box-shadow:0 8px 24px #4d86931c;
+}
+.combination-lookup label{color:#1a6b7b}
+.combination-lookup small{color:#5a7586}
+.lookup-controls input,
+.variable-prizes input{
+  color:#173f57;background:#fff;border:1px solid #9abecb;
+  box-shadow:inset 0 1px 2px #5c819512;
+}
+.lookup-controls input:focus,.variable-prizes input:focus{border-color:#398ba6;outline:2px solid #a6e5ed}
+.draw-board{
+  color:#183c56;background:rgba(255,255,255,.94);
+  border:1px solid #c5dce6;box-shadow:0 9px 23px #4b79971b;
+}
+.chosen-count{background:#e5f7f6;border:1px solid #aed7d5;color:#22586b}
+.chosen-count b{color:#087c76}
+.draw-ball{
+  color:#42667d;background:#eaf3f8;border:1px solid #bfd5e2;
+}
+.draw-ball:hover{color:#12546f;background:#d8eef3;border-color:#6ab7bf}
+.draw-ball.chosen{
+  color:#10414b;background:linear-gradient(135deg,#b0f4e8,#6dced3);
+  border-color:#4fbbb4;box-shadow:0 4px 16px #5bbaba38;
+}
+.variable-prizes label{color:#48697c}
+.empty-copy{color:#557084}
+.check-summary .fact{background:#f6fcff}
+.payout-row div{background:#f3fafb;border-color:#c9dee5}
+.payout-row span{color:#557185}
+.payout-row strong{color:#163b52}
+.check-note{background:#e1f6ea;border-color:#8ccbb3;color:#23614e}
+.check-warning{background:#fff6e7;border-color:#e6cea4;color:#916020}
+.result-table{background:#fff;border-color:#c7dce4}
+.result-row{color:#2a4c64;border-bottom-color:#dfebf1}
+.result-row.heading{background:#e5f2f8;color:#194764}
+.result-row>strong{color:#087c77}
+.nums-inline i{background:#f9fdff;color:#254b62;border-color:#bfd4df}
+.nums-inline i.hit{background:#d1f4e9;color:#126154;border-color:#6fc9b2}
+
+/* Estudo enxuto: apenas preços e premiação. */
+.study-card{
+  color:#1e3c55;background:linear-gradient(130deg,rgba(255,255,255,.96),rgba(241,249,252,.98));
+  border:1px solid #c8dde6;box-shadow:0 9px 24px #4f79991a;
+}
+.study-card h3{color:#1a445c}
+.study-card p{color:#536e81}
+.study-card p b{color:#1a5568}
+.study-card th{color:#315e73;border-bottom-color:#c1dce6}
+.study-card td{color:#2c4c61;border-bottom-color:#dceaf0}
+.study-card td:last-child{color:#0c7669}
+.prize-list div{background:#f5fbfd;border-color:#cbdfe9}
+.prize-list strong{color:#0b7c76}
+.source-line a{color:#0b758b}
+.saved-item{
+  color:#23435b;background:rgba(255,255,255,.97);
+  border:1px solid #ccdee7;box-shadow:0 6px 18px #4a7b9416;
+}
+.saved-item strong{color:#193c55}
+.saved-item span{color:#5c7689}
+.loto-footer{border-top-color:#cbdfe7;color:#617c8e}
+
+/* Destaque: número sequencial só indica gravação depois da resposta da API. */
+.combination-status{color:#536e7b}
+.combination-status.saved{color:#087c68}
+.combination-status.saving{color:#8b6723}
+.combination-status.error{color:#af3851}
+.combination-number{color:#075c65;background:#def6f3;border-color:#7fc7bd}
+.combination-status .action-btn{color:#19516a}
+
+/* Respeito ao modo impressão e às preferências de movimento. */
+@media print{
+  body{background:#fff!important;color:#101a21!important}
+  .loto-shell{color:#101a21!important}
+  .ticket{background:#fff!important;border:1px solid #586b73!important;box-shadow:none!important}
+  .ticket-head,.ticket-foot,.tag,.combination-number{color:#101a21!important}
+  .ball{background:#eaf6f4!important;border:1px solid #6a858d!important;color:#111!important;box-shadow:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .loto-hero,.mode-card,.ticket,.action-btn{animation:none!important;transition:none!important}
+}

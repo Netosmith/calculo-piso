@@ -1,0 +1,38 @@
+name: Portal Retro Games - diagnostico de acesso
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/portal-retro-check.yml'
+      - 'ACERVO-RETRO/**'
+permissions:
+  contents: read
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar URLs e recursos do Portal Retro
+        shell: bash
+        run: |
+          set +e
+          urls=(
+            "https://portalfrete.net.br/ACERVO-RETRO/"
+            "http://portalfrete.net.br/ACERVO-RETRO/"
+            "https://portalfrete.net.br/ACERVO-RETRO/index.html"
+            "https://portalfrete.net.br/ACERVO-RETRO/assets/app.js"
+            "https://portalfrete.net.br/ACERVO-RETRO/assets/style.css"
+            "https://netosmith.github.io/calculo-piso/ACERVO-RETRO/"
+          )
+          for url in "${urls[@]}"; do
+            echo "=============================="
+            echo "CHECK: $url"
+            curl --location --silent --show-error --max-time 20 --output /tmp/retro-response --write-out 'HTTP=%{http_code} FINAL=%{url_effective} SSL=%{ssl_verify_result} TYPE=%{content_type} BYTES=%{size_download}\n' "$url"
+            code=$?
+            echo "CURL_EXIT=$code"
+            if [ -f /tmp/retro-response ]; then
+              printf 'FIRST='
+              head -c 180 /tmp/retro-response | tr '\n' ' '
+              echo
+              rm -f /tmp/retro-response
+            fi
+          done

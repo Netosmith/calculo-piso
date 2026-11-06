@@ -1,0 +1,197 @@
+/* Nova Frota Games | Artes dos cards originais
+   Quatro módulos existentes: Guerra de Escritório, Sinuca, Caça-Palavras e Cine.
+   SVGs locais. Não altera navegação, acesso ou as outras páginas. */
+.cards .module.scene-card{
+  --scene-accent:#80cdff;
+  --scene-glow:rgba(68,151,241,.25);
+  --scene-art:none;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:374px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  padding:26px 27px 24px;
+  color:#f6f9ff;
+  border:1px solid color-mix(in srgb,var(--scene-accent) 48%,#1d3c56);
+  border-radius:20px;
+  background:linear-gradient(120deg,#142843,#0a182e) !important;
+  box-shadow:0 16px 41px #01071380,inset 0 1px #ffffff20;
+  text-decoration:none;
+  transform:translateZ(0);
+  transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease;
+}
+.cards .module.scene-card.module--guerra{
+  --scene-accent:#83d5ff;
+  --scene-glow:rgba(66,158,248,.23);
+  --scene-art:url("./assets/guerra-escritorio-card.svg");
+}
+.cards .module.scene-card.module--sinuca{
+  --scene-accent:#80f2c2;
+  --scene-glow:rgba(42,230,156,.25);
+  --scene-art:url("./assets/sinuca-card.svg");
+}
+.cards .module.scene-card.module--palavras{
+  --scene-accent:#c4a4ff;
+  --scene-glow:rgba(146,86,246,.28);
+  --scene-art:url("./assets/caca-palavras-card.svg");
+}
+.cards .module.scene-card.module--cine{
+  --scene-accent:#f2a2da;
+  --scene-glow:rgba(224,92,186,.23);
+  --scene-art:url("./assets/cine-card.svg");
+}
+.cards .module.scene-card::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:-3%;
+  pointer-events:none;
+  background-image:var(--scene-art);
+  background-size:cover;
+  background-position:65% 36%;
+  background-repeat:no-repeat;
+  filter:saturate(1.05) contrast(1.03);
+  transform:scale(1.025);
+  animation:nf-scene-drift 17s ease-in-out infinite alternate;
+  transition:filter .38s ease;
+}
+.cards .module.scene-card:nth-child(2)::before{animation-delay:-6s;animation-duration:19s}
+.cards .module.scene-card:nth-child(3)::before{animation-delay:-11s;animation-duration:16s}
+.cards .module.scene-card:nth-child(4)::before{animation-delay:-4s;animation-duration:20s}
+.cards .module.scene-card::after{
+  content:"";
+  position:absolute;
+  z-index:1;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(7,15,32,.44),rgba(7,15,32,.04) 88%),
+    linear-gradient(180deg,rgba(5,12,28,.13) 0%,rgba(5,12,28,.20) 38%,rgba(4,11,27,.84) 67%,rgba(4,11,26,.98) 100%);
+}
+.cards .module.scene-card > *:not(.module-glint){
+  position:relative;
+  z-index:3;
+}
+.cards .module.scene-card > .module-glint{
+  position:absolute;
+  z-index:2;
+  display:block;
+  pointer-events:none;
+  top:-60%;
+  left:-65%;
+  width:44%;
+  height:230%;
+  margin:0;
+  padding:0;
+  opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.21),transparent);
+  transform:rotate(22deg);
+  transition:left .75s cubic-bezier(.18,.65,.23,1),opacity .25s ease;
+}
+.cards .module.scene-card .module-icon{
+  width:64px;
+  height:64px;
+  display:grid;
+  place-items:center;
+  margin:0 0 12px;
+  font-size:39px;
+  flex:none;
+  color:#f4e4ff;
+  border:1px solid rgba(255,255,255,.26);
+  border-radius:17px;
+  background:rgba(8,19,38,.59);
+  backdrop-filter:blur(8px);
+  box-shadow:inset 0 1px rgba(255,255,255,.15),0 8px 22px rgba(0,0,0,.24);
+}
+.cards .module.scene-card small{
+  margin-top:auto;
+  color:var(--scene-accent);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  text-shadow:0 2px 11px #000;
+}
+.cards .module.scene-card h2{
+  font-size:clamp(23px,2.8vw,31px);
+  font-weight:900;
+  letter-spacing:-.035em;
+  line-height:1.13;
+  color:#fff;
+  text-shadow:0 3px 16px #000d;
+  margin:10px 0 8px;
+}
+.cards .module.scene-card p{
+  font-size:13px;
+  line-height:1.55;
+  color:#e0eaf6;
+  text-shadow:0 2px 9px #000c;
+  max-width:360px;
+  min-height:39px;
+  margin:0;
+}
+.cards .module.scene-card b{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:42px;
+  padding:10px 16px;
+  margin-top:17px;
+  border:1px solid color-mix(in srgb,var(--scene-accent) 60%,transparent);
+  border-radius:11px;
+  font-size:12px;
+  color:#ecffff;
+  font-weight:900;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--scene-accent) 25%,#09152a),rgba(8,20,40,.88));
+  box-shadow:inset 0 1px rgba(255,255,255,.10);
+  transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.cards .module.scene-card:hover,
+.cards .module.scene-card:focus-visible{
+  transform:translateY(-6px);
+  border-color:var(--scene-accent);
+  box-shadow:0 26px 58px #010816c9,0 0 30px var(--scene-glow),inset 0 1px #ffffff24;
+}
+.cards .module.scene-card:hover::before,
+.cards .module.scene-card:focus-visible::before{
+  filter:saturate(1.22) brightness(1.07);
+}
+.cards .module.scene-card:hover > .module-glint,
+.cards .module.scene-card:focus-visible > .module-glint{
+  left:136%;
+  opacity:1;
+}
+.cards .module.scene-card:hover b{
+  border-color:var(--scene-accent);
+  box-shadow:0 0 22px var(--scene-glow),inset 0 1px rgba(255,255,255,.24);
+}
+.cards .module.scene-card:focus-visible{outline:3px solid #c3ffeb;outline-offset:4px}
+@keyframes nf-scene-drift{
+  from{transform:scale(1.025) translate3d(-.7%,0,0)}
+  to{transform:scale(1.09) translate3d(1%,-1%,0)}
+}
+@media(max-width:700px){
+  .cards .module.scene-card{
+    min-height:315px;
+    padding:22px;
+  }
+  .cards .module.scene-card .module-icon{width:55px;height:55px;font-size:33px}
+  .cards .module.scene-card h2{font-size:26px}
+  .cards .module.scene-card p{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .cards .module.scene-card,
+  .cards .module.scene-card::before,
+  .cards .module.scene-card > .module-glint,
+  .cards .module.scene-card b{
+    animation:none!important;
+    transition:none!important;
+  }
+  .cards .module.scene-card::before{transform:none!important}
+  .cards .module.scene-card:hover,
+  .cards .module.scene-card:focus-visible{transform:none}
+  .cards .module.scene-card:hover > .module-glint{opacity:0}
+}

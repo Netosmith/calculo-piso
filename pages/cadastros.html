@@ -280,7 +280,7 @@
   </div>
 
   <script src="../assets/js/auth.js?v=26"></script>
-  <script src="../assets/js/cadastros.js?v=10"></script>
+  <script src="../assets/js/cadastros.js?v=20261107-clientes-inclusao-1"></script>
   <script>
   (async function(){
     try {
@@ -341,11 +341,14 @@
       }
       function syncLogoPanel(){
         const panel=$("clientLogoPanel");if(!panel)return;
-        const show=activeTab()==="clientes" && $("cadModal")?.classList.contains("show");
+        const tenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
+        const creating=String($("modalTitle")?.textContent||"").startsWith("Novo ");
+        const show=activeTab()==="clientes" && $("cadModal")?.classList.contains("show") && !(tenant&&creating);
         panel.hidden=!show;
         if(!show)resetLogoDraft();
       }
       function chooseLogo(action){
+        if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
         const panel=$("clientLogoPanel"),input=$("clientLogoFile");
         if(!panel||!input)return;
         panel.dataset.logoAction=action;
@@ -366,6 +369,7 @@
         if(badge)badge.textContent=panel.dataset.logoAction==="change"?"ALTERAR":"INCLUIR";
       }
       function markLogoRemoval(){
+        if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
         const panel=$("clientLogoPanel"),input=$("clientLogoFile"),img=$("clientLogoPreviewImg"),ph=$("clientLogoPlaceholder"),st=$("clientLogoStatus"),badge=$("clientLogoState");
         if(!panel)return;
         panel.dataset.logoAction="delete";delete panel.dataset.logoFileName;

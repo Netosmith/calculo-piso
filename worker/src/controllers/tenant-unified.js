@@ -130,7 +130,11 @@ export async function tenantApiController(request,env){
   if(!["POST","PATCH"].includes(request.method))return tenantJsonError("Metodo nao permitido.",405);
   if(!sameSiteWrite(request))return tenantJsonError("Origem nao autorizada.",403);
   const type=(request.headers.get("Content-Type")||"").split(";")[0].trim().toLowerCase();
-  if(type!=="application/json")return tenantJsonError("Formato de dados nao permitido.",415);
+  // Multipart é permitido SOMENTE ao criar um novo cliente e sua logo.
+  // As demais operações da transportadora continuam estritamente JSON.
+  const logoCreate=path==="/v1/tenant/catalogo/clientes" && request.method==="POST";
+  if(type!=="application/json" && !(logoCreate && type==="multipart/form-data"))
+    return tenantJsonError("Formato de dados nao permitido.",415);
  }
  try{
   // An explicit support context is NEVER an identity supplied by the browser:

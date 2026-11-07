@@ -151,6 +151,13 @@ export async function callTenantAppScript(env,principal,modules,payload){
  const module=String(payload?.module||"").trim().toLowerCase();
  const action=String(payload?.action||"").trim().toLowerCase();
  const role=String(principal.role||"").toUpperCase();
+ // Clientes compõem um catálogo global. O gateway privado de cada tenant
+ // não pode criar, alterar ou apagar nomes diretamente. A única inclusão
+ // passa pelo endpoint central /v1/tenant/catalogo/clientes, com auditoria.
+ if(module==="cadastros" &&
+    String(payload?.params?.resource||"").toLowerCase()==="clientes" &&
+    action!=="read")
+   return errorResponse("Clientes compartilhados: somente inclusão pelo catálogo central, sem editar ou excluir.",403);
  // The Home KPI request is read-only and belongs to every non-PISO tenant
  // with at least one enabled module. Never allow a tenant-wide D1 fallback.
  if(module==="fretes2") return errorResponse("Fretes2 e exclusivo da Nova Frota. Use Fretes Operacional ou Fretes-UF.",403);

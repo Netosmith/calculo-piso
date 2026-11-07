@@ -681,35 +681,16 @@
     });
   }
 
-  // Preserve logo geometry in the HTML clone itself.
-  // html2canvas captures one correctly positioned image; no second drawing
-  // pass, no hidden logo, and no dependency on a cross-origin canvas overlay.
-  function prepareArtLogoExport(source){
-    const image=source?.querySelector(".m3Logo,.multiArtLogo");
-    const hero=image?.closest(".m3Hero,.multiArtHero");
-    if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
-    const rect=image.getBoundingClientRect(),parent=hero.getBoundingClientRect();
-    const sx=parent.width>0?hero.offsetWidth/parent.width:1;
-    const sy=parent.height>0?hero.offsetHeight/parent.height:1;
-    const geometry={
-      left:(rect.left-parent.left)*sx,top:(rect.top-parent.top)*sy,
-      width:rect.width*sx,height:rect.height*sy
-    };
-    source.setAttribute("data-portal-export-logo","true");
-    return {
-      onclone(cloneDoc){
-        const clone=cloneDoc.querySelector("[data-portal-export-logo=\"true\"] .m3Logo,[data-portal-export-logo=\"true\"] .multiArtLogo");
-        if(!clone)return;
-        const style=clone.style;
-        for(const [prop,value] of Object.entries({
-          position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
-          width:geometry.width+"px",height:geometry.height+"px",
-          transform:"none",objectFit:"contain",objectPosition:getComputedStyle(image).objectPosition||"center top",
-          visibility:"visible",display:"block",maxWidth:"none",maxHeight:"none"
-        }))style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
-      },
-      finish(){source.removeAttribute("data-portal-export-logo");}
-    };
+  // Tanto o Modelo 3 como as artes 4A/4B/4C devem exportar exatamente
+  // a logo vista na prévia, preservando as proporções da imagem de origem.
+  async function prepareArtLogoExport(source){
+    if(!window.PortalArtLogoRaster?.prepare)
+      throw new Error("Gerador de logo indisponível. Atualize a página e tente novamente.");
+    const model3=Boolean(source?.querySelector(".m3Logo"));
+    return window.PortalArtLogoRaster.prepare(source,{
+      logoSelector:model3?".m3Logo":".multiArtLogo",
+      heroSelector:model3?".m3Hero":".multiArtHero"
+    });
   }
 
   async function saveTemplate(templateId) {
@@ -738,7 +719,7 @@
       const previousTransform = preview.style.transform;
       preview.style.transform = "none";
 
-      const logoExport=prepareArtLogoExport(preview);
+      const logoExport=await prepareArtLogoExport(preview);
       try {
         canvas = await html2canvas(preview, {
           backgroundColor: getComputedStyle(preview).backgroundColor,
@@ -1092,7 +1073,7 @@
     const previousTransform = preview.style.transform;
     preview.style.transform = "none";
 
-    const logoExport=prepareArtLogoExport(preview);
+    const logoExport=await prepareArtLogoExport(preview);
     try {
       const canvas = await window.html2canvas(preview, {
         backgroundColor: getComputedStyle(preview).backgroundColor,

@@ -133,14 +133,18 @@
     return STATE.tab==="clientes"&&window.__PORTAL_TENANT_SESSION?.tenantMode===true;
   }
   function applySharedClientsUI(){
-    const shared=sharedClientsView();
+    // O catálogo global pode receber NOVOS clientes das transportadoras.
+    // Registros existentes seguem somente leitura (sem editar ou desativar).
+    const readonly=sharedClientsView()&&!!STATE.editing;
     for(const id of ["btnNovo","btnNovoAtalho"]){
       const button=$("#"+id);if(button){
-        button.hidden=shared;button.style.display=shared?"none":"";
+        button.hidden=false;button.style.removeProperty("display");
       }
     }
     const saveButton=$("#btnSalvar");if(saveButton){
-      saveButton.hidden=shared;saveButton.style.display=shared?"none":"";
+      saveButton.hidden=readonly;
+      if(readonly)saveButton.style.display="none";
+      else saveButton.style.removeProperty("display");
     }
   }
   function isAtivo(row){return upper(row.Ativo??row.ativo)==="SIM";}
@@ -186,9 +190,20 @@
       throw new Error("Operação de usuários não permitida.");
     }
     if(window.__PORTAL_TENANT_SESSION?.tenantMode===true&&resource==="clientes"){
-      if(operation!=="list")throw new Error("O catálogo global de clientes é administrado centralmente.");
-      const catalog=await window.PortalAPI.tenantRequest("/catalogo/clientes");
-      return {ok:true,data:Array.isArray(catalog?.clientes)?catalog.clientes:[]};
+      if(operation==="list"){
+        const catalog=await window.PortalAPI.tenantRequest("/catalogo/clientes");
+        return {ok:true,data:Array.isArray(catalog?.clientes)?catalog.clientes:[]};
+      }
+      if(operation==="add"){
+        if(STATE.editing)throw new Error("Não é permitido alterar clientes cadastrados.");
+        const name=upper(payload?.cliente).replace(/\s+/g," ").trim();
+        if(name.length<2||name.length>140)throw new Error("Informe um nome de cliente válido.");
+        const created=await window.PortalAPI.tenantRequest("/catalogo/clientes",{
+          method:"POST",body:{cliente:name}
+        });
+        return {ok:true,data:created.cliente||{cliente:name,id:"global:"+name,ordem:0,ativo:"SIM"}};
+      }
+      throw new Error("As transportadoras podem apenas incluir clientes novos. Edição e exclusão são bloqueadas.");
     }
     const actionMap={list:"read",add:"create",update:"update",toggle:"delete"};
     const result=await window.PortalAPI.call("cadastros",actionMap[operation],{
@@ -396,7 +411,7 @@
       }
       render();
        setStatus(sharedClientsView()
-         ? "✅ "+STATE.rows.length+" cliente(s) no catálogo compartilhado · edição central"
+         ? "✅ "+STATE.rows.length+" cliente(s) no catálogo compartilhado · inclusão liberada (sem editar/excluir)"
          : "✅ "+STATE.rows.length+" registro(s)");
     }catch(error){
       if(token!==STATE.loadToken||tab!==STATE.tab)return;
@@ -433,18 +448,30 @@
     }
     setModalMessage();
     $("#cadModal").classList.add("show");$("#cadModal").setAttribute("aria-hidden","false");
-    if(STATE.tab==="clientes"){
+    const tenantClients=sharedClientsView();
+    if(STATE.tab==="clientes"&&!(tenantClients&&!row)){
       setTimeout(()=>loadClientLogoPreview(row?.cliente||""),70);
     }
-    const logoActions=$("#clientLogoPanel")?.querySelector(".clientLogoActions");
-    if(sharedClientsView()){
-      fields.querySelectorAll("input,select").forEach(input=>input.disabled=true);
+    const logoPanel=$("#clientLogoPanel");
+    const logoActions=logoPanel?.querySelector(".clientLogoActions");
+    if(tenantClients){
+      // Um cliente novo só precisa do nome; ordem/status são fixados no servidor.
+      if(row)fields.querySelectorAll("input,select").forEach(input=>input.disabled=true);
+      else{
+        const ordem=fields.querySelector("#fld_ordem");
+        const ativo=fields.querySelector("#fld_ativo");
+        if(ordem){ordem.value="0";ordem.closest(".field").hidden=true;}
+        if(ativo){ativo.value="SIM";ativo.closest(".field").hidden=true;}
+      }
+      if(logoPanel)logoPanel.hidden=!row;
       if(logoActions){logoActions.hidden=true;logoActions.style.display="none";}
-      $("#btnSalvar")?.setAttribute("hidden","");
+      setModalMessage(row
+        ?"Cliente compartilhado: somente visualização, sem alterações ou exclusões."
+        :"Inclusão de nome no catálogo compartilhado. Este cliente ficará visível para as transportadoras.","info");
     }else{
       if(logoActions){logoActions.hidden=false;logoActions.style.removeProperty("display");}
-      $("#btnSalvar")?.removeAttribute("hidden");
     }
+    applySharedClientsUI();
     setTimeout(()=>fields.querySelector("input,select:not(:disabled)")?.focus(),40);
   }
 
@@ -467,8 +494,8 @@
   async function save(event){
     event?.preventDefault();
     if(STATE.saving||STATE.toggling)return;
-    if(sharedClientsView()){
-      setModalMessage("Catálogo compartilhado: edição disponível somente na base central.","info");
+    if(sharedClientsView()&&STATE.editing){
+      setModalMessage("Somente clientes novos podem ser incluídos. Alteração e exclusão estão bloqueadas.","error");
       return;
     }
     let payload;
@@ -503,7 +530,7 @@
       }
 
       let logoChanged=false;
-      if(tab==="clientes"){
+      if(tab==="clientes"&&!sharedClientsView()){
         const logoAction=safe($("#clientLogoPanel")?.dataset.logoAction).toLowerCase();
         if(logoAction){
           saveButton.textContent=logoAction==="delete"?"Excluindo logo...":"Enviando logo...";
@@ -514,7 +541,7 @@
 
       closeModal(true);
       setStatus(logoChanged?"✅ Cadastro e logo atualizados":"✅ Cadastro salvo");
-      if(tenantRegional||!updated)loadCurrent(true);
+      if(tenantRegional||sharedClientsView()||!updated)loadCurrent(true);
     }catch(error){
       console.error("[cadastros] salvar:",error);
       if(cadastroSaved){

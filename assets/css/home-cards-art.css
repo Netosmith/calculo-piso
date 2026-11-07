@@ -14,6 +14,7 @@ html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="custo-filial"]{--nf-art-url:url("../img/home-cards/custo-filial.svg");}
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="custo-frota"]{--nf-art-url:url("../img/home-cards/custo-frota.svg");}
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="divulgacao"]{--nf-art-url:url("../img/home-cards/divulgacao.svg");}
+html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="funcionarios"]{--nf-art-url:url("../img/home-cards/funcionarios.svg");}
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="administrativo"]{--nf-art-url:url("../img/home-cards/administrativo.svg");}
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="embarques"]{--nf-art-url:url("../img/home-cards/embarques.svg");}
 html[data-nf-home="1"][data-nf-card-arts="on"] .nf-tools > .nf-tool[data-feature="chamados"]{--nf-art-url:url("../img/home-cards/chamados.svg");}

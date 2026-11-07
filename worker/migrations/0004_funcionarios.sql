@@ -25,7 +25,11 @@ CREATE TABLE IF NOT EXISTS rh_entries (
  amount_cents INTEGER NOT NULL CHECK(amount_cents BETWEEN 1 AND 100000000000),
  date TEXT NOT NULL,
  created_by TEXT NOT NULL,
- created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+ updated_by TEXT NOT NULL DEFAULT '',
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ deleted_at TEXT,
+ deleted_by TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_rh_entries_month ON rh_entries(date);
 CREATE INDEX IF NOT EXISTS idx_rh_entries_employee_month ON rh_entries(employee_id,date);

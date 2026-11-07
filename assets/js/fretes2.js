@@ -1866,40 +1866,14 @@ function formatDateTimeBR(value) {
     });
   }
 
-  // Preserve logo geometry in the HTML clone itself.
-  // html2canvas captures one correctly positioned image; no second drawing
-  // pass, no hidden logo, and no dependency on a cross-origin canvas overlay.
-  // Snapshot the displayed geometry BEFORE the art is moved offscreen.
-  // Model 3 keeps its proven export behavior; Model 4 uses a real visual
-  // snapshot so the clone cannot recalculate the logo at its saved raw size.
-  function prepareLogoCanvasExport(source,visualSnapshot=false){
-    const image=source?.querySelector(".nfM3Logo,.nfM4Logo,.multiArtLogo");
-    const hero=image?.closest(".nfM3Hero,.nfM4Hero,.multiArtHero");
-    if(!image||!hero)return {onclone:()=>{},finish:()=>{}};
-    const rect=image.getBoundingClientRect(),parent=hero.getBoundingClientRect();
-    const sx=visualSnapshot&&parent.width?hero.offsetWidth/parent.width:1;
-    const sy=visualSnapshot&&parent.height?hero.offsetHeight/parent.height:1;
-    const geometry={
-      left:(rect.left-parent.left)*sx,top:(rect.top-parent.top)*sy,
-      width:rect.width*sx,height:rect.height*sy
-    };
-    const objectPosition=getComputedStyle(image).objectPosition||"center top";
-    source.setAttribute("data-pf-logo-export","true");
-    return {
-      onclone(cloneDoc){
-        const clone=cloneDoc.querySelector('[data-pf-logo-export="true"] .nfM3Logo,'+
-          '[data-pf-logo-export="true"] .nfM4Logo,'+
-          '[data-pf-logo-export="true"] .multiArtLogo');
-        if(!clone)return;
-        for(const [prop,value] of Object.entries({
-          position:"absolute",left:geometry.left+"px",top:geometry.top+"px",
-          width:geometry.width+"px",height:geometry.height+"px",
-          transform:"none",objectFit:"contain",objectPosition,
-          visibility:"visible",display:"block",maxWidth:"none",maxHeight:"none"
-        }))clone.style.setProperty(prop.replace(/[A-Z]/g,c=>"-"+c.toLowerCase()),value,"important");
-      },
-      finish(){source.removeAttribute("data-pf-logo-export");}
-    };
+  // Modelo 3: fotografa a logo no mesmo tamanho e na mesma posição da prévia.
+  // Diferente do html2canvas direto, o raster mantém a proporção da imagem original.
+  async function prepareLogoCanvasExport(source,visualSnapshot=false){
+    if(!window.PortalArtLogoRaster?.prepare)
+      throw new Error("Gerador de logo indisponível. Atualize a página e tente novamente.");
+    return window.PortalArtLogoRaster.prepare(source,{
+      logoSelector:".nfM3Logo",heroSelector:".nfM3Hero"
+    });
   }
 
   // Model 4 is displayed at 240x300 but exported at 1080x1350.
@@ -2064,7 +2038,7 @@ function formatDateTimeBR(value) {
 
         source.style.transform = "none";
 
-        const logoExport=prepareLogoCanvasExport(source);
+        const logoExport=await prepareLogoCanvasExport(source);
         try {
           const canvas=await html2canvasLib(source, {
             backgroundColor: getComputedStyle(source).backgroundColor,

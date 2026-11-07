@@ -133,18 +133,26 @@
     return STATE.tab==="clientes"&&window.__PORTAL_TENANT_SESSION?.tenantMode===true;
   }
   function applySharedClientsUI(){
-    // O catálogo global pode receber NOVOS clientes das transportadoras.
-    // Registros existentes seguem somente leitura (sem editar ou desativar).
-    const readonly=sharedClientsView()&&!!STATE.editing;
+    // Apenas na aba Clientes dos tenants: botão explícito de inclusão.
+    // Clientes existentes permanecem somente leitura, sem excluir ou desativar.
+    const creatingShared=sharedClientsView();
+    const readonly=creatingShared&&!!STATE.editing;
+    const newClient=$("#btnNovoCliente");
+    if(newClient){
+      newClient.hidden=!creatingShared;
+      newClient.style.display=creatingShared?"inline-flex":"none";
+    }
     for(const id of ["btnNovo","btnNovoAtalho"]){
-      const button=$("#"+id);if(button){
-        button.hidden=false;button.style.removeProperty("display");
+      const button=$("#"+id);
+      if(button){
+        button.hidden=creatingShared;
+        button.style.display=creatingShared?"none":"";
       }
     }
-    const saveButton=$("#btnSalvar");if(saveButton){
+    const saveButton=$("#btnSalvar");
+    if(saveButton){
       saveButton.hidden=readonly;
-      if(readonly)saveButton.style.display="none";
-      else saveButton.style.removeProperty("display");
+      saveButton.style.display=readonly?"none":"";
     }
   }
   function isAtivo(row){return upper(row.Ativo??row.ativo)==="SIM";}
@@ -411,7 +419,7 @@
       }
       render();
        setStatus(sharedClientsView()
-         ? "✅ "+STATE.rows.length+" cliente(s) no catálogo compartilhado · inclusão liberada (sem editar/excluir)"
+         ? "✅ "+STATE.rows.length+" clientes compartilhados · + Novo cliente liberado · alterações e exclusões bloqueadas"
          : "✅ "+STATE.rows.length+" registro(s)");
     }catch(error){
       if(token!==STATE.loadToken||tab!==STATE.tab)return;
@@ -671,6 +679,9 @@
     $("#buscaCadastro")?.addEventListener("input",render);
     $("#btnAtualizar")?.addEventListener("click",()=>loadCurrent(true));
     $("#btnNovo")?.addEventListener("click",()=>openModal(null));
+    $("#btnNovoCliente")?.addEventListener("click",()=>{
+      if(sharedClientsView())openModal(null);
+    });
     $("#btnMaintenanceToggle")?.addEventListener("click",toggleMaintenance);
     $("#cadForm")?.addEventListener("submit",save);
     $("#btnCancelar")?.addEventListener("click",()=>closeModal());

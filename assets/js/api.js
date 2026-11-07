@@ -165,6 +165,23 @@ window.PortalAPI = {
     }
     return portalApiRequest("/v1/tenant"+path,tenantRequestOptions(options));
   },
+  tenantCreateClient({cliente,ativo="SIM",file=null}={}){
+    const name=String(cliente||"").trim().replace(/\s+/g," ").toUpperCase();
+    if(name.length<2||name.length>140)
+      return Promise.reject(new Error("Informe um nome de cliente válido."));
+    if(ativo!=="SIM")
+      return Promise.reject(new Error("O novo cliente deve permanecer ativo."));
+    if(file){
+      if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>2*1024*1024||file.size<8)
+        return Promise.reject(new Error("A logo deve ser PNG, JPG ou WEBP e ter até 2 MB."));
+    }
+    const form=new FormData();
+    form.append("cliente",name);
+    form.append("ativo","SIM");
+    if(file)form.append("logo",file,file.name||"logo");
+    const options=tenantRequestOptions({method:"POST",body:form});
+    return portalFileRequest("/v1/tenant/catalogo/clientes",options);
+  },
   tenantLogoUrl(){
     return tenantResourceUrl("logo");
   },

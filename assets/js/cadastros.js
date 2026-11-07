@@ -86,6 +86,12 @@
       hint:"UF territorial da regional; não altera a base responsável pelo frete."
     });
   }
+  function configureTenantClientFields(){
+    if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+    // Novos clientes são sempre ATIVOS; não há permissão de alteração posterior.
+    const field=CONFIG.clientes.fields.find(f=>f.key==="ativo");
+    if(field)field.options=["SIM"];
+  }
   function configureTenantUserFields(){
     if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
     // Tenant logins are D1 identities, never Apps Script users.
@@ -206,10 +212,11 @@
         if(STATE.editing)throw new Error("Não é permitido alterar clientes cadastrados.");
         const name=upper(payload?.cliente).replace(/\s+/g," ").trim();
         if(name.length<2||name.length>140)throw new Error("Informe um nome de cliente válido.");
-        const created=await window.PortalAPI.tenantRequest("/catalogo/clientes",{
-          method:"POST",body:{cliente:name}
-        });
-        return {ok:true,data:created.cliente||{cliente:name,id:"global:"+name,ordem:0,ativo:"SIM"}};
+        const file=logoElements().input?.files?.[0]||null;
+        const created=await window.PortalAPI.tenantCreateClient({cliente:name,ativo:"SIM",file});
+        return {ok:true,data:created.cliente||{cliente:name,id:"global:"+name,ordem:0,ativo:"SIM"},
+          logoIncluded:created.logoIncluded===true,logoSaved:created.logoSaved===true,
+          logoError:safe(created.logoError)};
       }
       throw new Error("As transportadoras podem apenas incluir clientes novos. Edição e exclusão são bloqueadas.");
     }
@@ -419,7 +426,7 @@
       }
       render();
        setStatus(sharedClientsView()
-         ? "✅ "+STATE.rows.length+" clientes compartilhados · + Novo cliente liberado · alterações e exclusões bloqueadas"
+         ? "✅ "+STATE.rows.length+" cliente(s) cadastrados · + Novo cliente disponível"
          : "✅ "+STATE.rows.length+" registro(s)");
     }catch(error){
       if(token!==STATE.loadToken||tab!==STATE.tab)return;
@@ -457,25 +464,32 @@
     setModalMessage();
     $("#cadModal").classList.add("show");$("#cadModal").setAttribute("aria-hidden","false");
     const tenantClients=sharedClientsView();
-    if(STATE.tab==="clientes"&&!(tenantClients&&!row)){
+    if(STATE.tab==="clientes"){
       setTimeout(()=>loadClientLogoPreview(row?.cliente||""),70);
     }
     const logoPanel=$("#clientLogoPanel");
     const logoActions=logoPanel?.querySelector(".clientLogoActions");
     if(tenantClients){
-      // Um cliente novo só precisa do nome; ordem/status são fixados no servidor.
+      // Ordem é automática; o cliente novo fica ATIVO e pode receber logo.
       if(row)fields.querySelectorAll("input,select").forEach(input=>input.disabled=true);
       else{
         const ordem=fields.querySelector("#fld_ordem");
         const ativo=fields.querySelector("#fld_ativo");
-        if(ordem){ordem.value="0";ordem.closest(".field").hidden=true;}
-        if(ativo){ativo.value="SIM";ativo.closest(".field").hidden=true;}
+        if(ordem){ordem.value="0";ordem.closest(".field")?.setAttribute("hidden","");}
+        if(ativo){ativo.value="SIM";ativo.disabled=false;}
       }
-      if(logoPanel)logoPanel.hidden=!row;
-      if(logoActions){logoActions.hidden=true;logoActions.style.display="none";}
+      if(logoPanel)logoPanel.hidden=false;
+      if(logoActions){
+        logoActions.hidden=!!row;
+        logoActions.style.display=row?"none":"flex";
+      }
+      const includeLogo=$("#btnLogoIncluir"),changeLogo=$("#btnLogoAlterar"),removeLogo=$("#btnLogoExcluir");
+      if(includeLogo)includeLogo.hidden=!!row;
+      if(changeLogo)changeLogo.hidden=true;
+      if(removeLogo)removeLogo.hidden=true;
       setModalMessage(row
-        ?"Cliente compartilhado: somente visualização, sem alterações ou exclusões."
-        :"Inclusão de nome no catálogo compartilhado. Este cliente ficará visível para as transportadoras.","info");
+        ?"Consulta de cliente e logo. Os dados cadastrados não podem ser alterados."
+        :"Informe o nome, mantenha o status ATIVO e selecione uma logo, se desejar.","info");
     }else{
       if(logoActions){logoActions.hidden=false;logoActions.style.removeProperty("display");}
     }
@@ -526,9 +540,13 @@
     // Closing here used to erase the chosen logo before PUT /v1/client-logos.
     let cadastroSaved=false;
     let updated=false;
+    let tenantLogoSaved=false;
+    let tenantLogoError="";
     try{
       const res=await api(editing?"update":"add",payload,tab);
       cadastroSaved=true;
+      tenantLogoSaved=sharedClientsView()&&res.logoSaved===true;
+      tenantLogoError=sharedClientsView()?safe(res.logoError):"";
       updated=mergeRow(res.data,previousId,editingRow);
       if(tenantRegional){
         const saved=await window.PortalAPI.tenantRequest("/regionais/ufs",{
@@ -537,7 +555,7 @@
         regionalUfMap[upper(payload.regional).replace(/\s+/g," ").normalize("NFC")]={uf:saved.uf,base:saved.base};
       }
 
-      let logoChanged=false;
+      let logoChanged=tenantLogoSaved;
       if(tab==="clientes"&&!sharedClientsView()){
         const logoAction=safe($("#clientLogoPanel")?.dataset.logoAction).toLowerCase();
         if(logoAction){
@@ -548,7 +566,8 @@
       }
 
       closeModal(true);
-      setStatus(logoChanged?"✅ Cadastro e logo atualizados":"✅ Cadastro salvo");
+      setStatus(tenantLogoError?"⚠️ Cliente cadastrado; logo pendente":logoChanged?"✅ Cadastro e logo salvos":"✅ Cadastro salvo");
+      if(tenantLogoError)alert(tenantLogoError);
       if(tenantRegional||sharedClientsView()||!updated)loadCurrent(true);
     }catch(error){
       console.error("[cadastros] salvar:",error);
@@ -711,6 +730,7 @@
     else{const control=$("#maintenanceControl");if(control)control.hidden=true;}
     configureTenantRegionalFields();
     configureTenantUserFields();
+    configureTenantClientFields();
     applySharedClientsUI();
     await loadCurrent();
   }

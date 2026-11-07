@@ -9,7 +9,7 @@ import {clearSessionCookie} from "../services/session.js";
 import {tenantFreights,tenantBi} from "../services/tenant-freights.js";
 import {readTenantIntegration,callTenantAppScript} from "../services/tenant-integration.js";
 import {readTenantArtThemes} from "../services/tenant-art-themes.js";
-import {sharedClientNamesController} from "../services/shared-client-catalog.js";
+import {sharedClientNamesController,createSharedClientController} from "../services/shared-client-catalog.js";
 import {regionalUfController} from "../services/tenant-regional-ufs.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 import {tenantUsersController} from "../services/tenant-user-management.js";
@@ -186,9 +186,17 @@ export async function tenantApiController(request,env){
     return tenantUsersController(request,env,principal,modules,path);
   if(path==="/v1/tenant/regionais/ufs"&&["GET","POST"].includes(request.method))
     return regionalUfController(request,env,principal,modules);
-  if(path==="/v1/tenant/catalogo/clientes"&&request.method==="GET"){
-    // Names and client brand images are an explicitly shared reference catalog.
-    // Operational customer details remain private to each tenant's Sheets.
+  if(path==="/v1/tenant/catalogo/clientes"){
+    // O catálogo central é visível onde já era autorizado (somente nomes).
+    // Exclusivamente ADMINISTRADOR com CADASTROS habilitado pode adicionar
+    // novo cliente. Não existem rotas PATCH/PUT/DELETE deste catálogo.
+    if(request.method==="POST"){
+      if(String(principal.role||"").toUpperCase()!=="ADMINISTRADOR"||
+         !modules.includes("cadastros"))
+        return tenantJsonError("Somente o administrador com Cadastros liberado pode adicionar clientes.",403);
+      return createSharedClientController(env,principal,request);
+    }
+    if(request.method!=="GET")return tenantJsonError("Alteração ou exclusão de clientes não permitida.",405);
     if(!modules.some(key=>key.startsWith("fretes-")||["cadastros","fretes","fretes2","controle",
       "share","divulgacao","bi"].includes(key)))
       return tenantJsonError("Catálogo não liberado para este perfil.",403);

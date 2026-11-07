@@ -124,7 +124,7 @@ export async function createSharedClientController(env,principal,request){
    params:{
     module:"cadastros",action:"create",
     payload:{resource:"clientes",operation:"add",cliente,ordem:"0",ativo:"SIM"},
-    auth:{usuario:"CATALOGO-"+tenant+"-"+user,perfil:"ADMINISTRADOR",
+    auth:{usuario:"PORTAL-CATALOGO",perfil:"ADMINISTRADOR",
       estado:"GO",estados:["GO","MT"]}
    }
   });

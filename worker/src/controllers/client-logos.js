@@ -21,7 +21,7 @@ function normalizeClientName(value) {
   return name;
 }
 
-function clientLogoKey(clientName) {
+export function clientLogoKey(clientName) {
   return `clientes/${encodeURIComponent(clientName)}`;
 }
 
@@ -38,7 +38,7 @@ async function requireAdministrator(request, env) {
   return { session };
 }
 
-function validImageSignature(contentType, bytes) {
+export function validImageSignature(contentType, bytes) {
   const u8 = new Uint8Array(bytes);
 
   if (contentType === "image/png") {

@@ -116,6 +116,7 @@
 
     .clientLogoPanel{grid-column:1/-1;margin-top:4px;border:1px solid #d8e2ef;border-radius:15px;background:linear-gradient(180deg,#fbfdff,#f7faff);overflow:hidden}
     .clientLogoPanel[hidden]{display:none!important}
+    html .logoAction[hidden]{display:none!important}
     .clientLogoHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid #e4eaf2}
     .clientLogoTitle{display:flex;align-items:center;gap:9px;color:var(--navy);font-size:12px;font-weight:1000}
     .clientLogoBadge{display:inline-flex;align-items:center;height:23px;padding:0 8px;border-radius:999px;background:#eaf1ff;color:#1d4ed8;font-size:9px;font-weight:1000}
@@ -247,7 +248,7 @@
 
           <section class="clientLogoPanel" id="clientLogoPanel" hidden aria-label="Logo do cliente">
             <div class="clientLogoHead">
-              <div class="clientLogoTitle">🖼️ Logo do cliente <span class="clientLogoBadge">SHARE CLIENTES</span></div>
+              <div class="clientLogoTitle">🖼️ Logo do cliente <span class="clientLogoBadge">IDENTIDADE VISUAL</span></div>
               <span class="clientLogoBadge" id="clientLogoState">SEM ALTERAÇÃO</span>
             </div>
             <div class="clientLogoBody">
@@ -256,7 +257,7 @@
                 <div class="clientLogoPlaceholder" id="clientLogoPlaceholder"><strong>🏭</strong>SEM LOGO<br>CADASTRADA</div>
               </div>
               <div class="clientLogoInfo">
-                <h3>Imagem exibida no Share Clientes</h3>
+                <h3>Pré-visualização da logo do cliente</h3>
                 <p>Use PNG, JPG, JPEG ou WEBP. Recomendado: fundo transparente ou branco e imagem quadrada/horizontal de boa qualidade. Limite previsto: 2 MB.</p>
                 <div class="clientLogoActions">
                   <button class="logoAction include" id="btnLogoIncluir" type="button">＋ Incluir logo</button>
@@ -280,8 +281,8 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=26"></script>
-  <script src="../assets/js/cadastros.js?v=20261107-clientes-inclusao-2"></script>
+  <script src="../assets/js/auth.js?v=20261107-client-logo"></script>
+  <script src="../assets/js/cadastros.js?v=20261107-clientes-logo-1"></script>
   <script>
   (async function(){
     try {
@@ -344,12 +345,16 @@
         const panel=$("clientLogoPanel");if(!panel)return;
         const tenant=window.__PORTAL_TENANT_SESSION?.tenantMode===true;
         const creating=String($("modalTitle")?.textContent||"").startsWith("Novo ");
-        const show=activeTab()==="clientes" && $("cadModal")?.classList.contains("show") && !(tenant&&creating);
+        const show=activeTab()==="clientes" && $("cadModal")?.classList.contains("show");
         panel.hidden=!show;
         if(!show)resetLogoDraft();
       }
       function chooseLogo(action){
-        if(window.__PORTAL_TENANT_SESSION?.tenantMode===true)return;
+        if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+          // Apenas escolher logo durante NOVO cadastro.
+          if(action!=="include" || activeTab()!=="clientes" ||
+             !String($("modalTitle")?.textContent||"").startsWith("Novo "))return;
+        }
         const panel=$("clientLogoPanel"),input=$("clientLogoFile");
         if(!panel||!input)return;
         panel.dataset.logoAction=action;

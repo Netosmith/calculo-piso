@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270" role="img" aria-label="Ilustração de equipe, salários e controle de custos">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0e4e52"/><stop offset=".52" stop-color="#0d314d"/><stop offset="1" stop-color="#145f6f"/></linearGradient><linearGradient id="glow" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b4fff3"/><stop offset="1" stop-color="#28c6b8"/></linearGradient><pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#76dfd7" stroke-opacity=".15"/></pattern><filter id="shadow"><feDropShadow dx="1" dy="8" stdDeviation="7" flood-color="#031423" flood-opacity=".65"/></filter></defs>
+<rect width="480" height="270" fill="url(#bg)"/><rect width="480" height="270" fill="url(#grid)"/>
+<ellipse cx="309" cy="94" rx="165" ry="120" fill="#63cfc6" opacity=".09"/>
+<path d="M0 204Q80 139 176 193T355 204T480 164" fill="none" stroke="#77e2d0" opacity=".35" stroke-width="3"/>
+<g filter="url(#shadow)"><rect x="92" y="46" width="235" height="180" rx="17" fill="#15465b" stroke="#80e9da" stroke-width="3"/>
+<rect x="113" y="65" width="193" height="132" rx="8" fill="#0b2b48" stroke="#73c8c5" stroke-width="1"/>
+<circle cx="165" cy="103" r="21" fill="#aefcf1"/><path d="M131 164q3-39 34-39t34 39" fill="#aefcf1"/>
+<circle cx="225" cy="113" r="17" fill="#7cddcd"/><path d="M200 165q0-32 25-32t25 32" fill="#7cddcd"/>
+<path d="M254 96h37m-37 17h37m-37 17h25" stroke="#b1fce8" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+<path d="M141 183h134" stroke="#62cbc1" stroke-opacity=".8" stroke-width="4" stroke-linecap="round"/></g>
+<g transform="rotate(8 354 123)" filter="url(#shadow)"><rect x="326" y="65" width="107" height="132" rx="11" fill="#0b354e" stroke="#83edcb" stroke-width="3"/><rect x="341" y="86" width="77" height="34" rx="5" fill="#b3fce9" opacity=".82"/><path d="M351 151h58m-58 15h41" stroke="#81e2d4" stroke-width="7" stroke-linecap="round"/><circle cx="376" cy="102" r="12" fill="#248e8d"/><path d="M376 94v16m-5-13h9m-8 10h8" stroke="#f6fff7" stroke-width="2" stroke-linecap="round"/></g>
+<g fill="#b8fff3"><circle cx="74" cy="95" r="5" opacity=".75"/><circle cx="62" cy="134" r="3" opacity=".5"/><circle cx="393" cy="45" r="5" opacity=".6"/><circle cx="423" cy="224" r="3" opacity=".7"/></g>
+</svg>

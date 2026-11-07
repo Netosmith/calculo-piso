@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#071c35">
+<title>Painel de Funcionários | NOVA FROTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261107-rh-1">
+</head>
+<body class="rh-body" data-rh-page="dashboard">
+<header class="rh-topbar"><div class="rh-topbar-in">
+<a class="rh-brand" href="./home.html"><img src="../assets/img/logo-novafrota.png" alt="NOVA FROTA"><small>GESTÃO DE FUNCIONÁRIOS</small></a>
+<div class="rh-topright"><span id="rhUser" class="rh-user">Acesso administrativo</span><a class="rh-home" href="./home.html" aria-label="Voltar à Home">⌂ Home</a><button class="rh-btn" data-logout type="button">Sair</button></div>
+</div></header>
+<main class="rh-content">
+<section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
+<div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Painel de Funcionários</div>
+<h1>Painel de Funcionários</h1><p>Folha gerencial, vales e custos por competência. Apenas administradores da Nova Frota.</p></div></div>
+<div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
+</section>
+<div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" class="active" aria-current="page">Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vale / custo</a><a href="./funcionarios-tabela.html" >Tabela geral</a></nav>
+<div class="rh-kpis">
+<article class="rh-kpi"><div class="rh-icon">♙</div><span>Funcionários ativos</span><strong id="rhKPeople">0</strong><small>Cadastros ativos da empresa</small></article>
+<article class="rh-kpi"><div class="rh-icon">▣</div><span>Folha salarial cadastrada</span><strong id="rhKSalary">R$ 0,00</strong><small>Base dos funcionários ativos</small></article>
+<article class="rh-kpi teal"><div class="rh-icon">◇</div><span>Total de vales</span><strong id="rhKVales">R$ 0,00</strong><small>Na competência selecionada</small></article>
+<article class="rh-kpi amber"><div class="rh-icon">▤</div><span>Total de custos</span><strong id="rhKCosts">R$ 0,00</strong><small>Despesas registradas no mês</small></article>
+</div>
+<div class="rh-shortcuts"><a href="./funcionarios-cadastro.html"><strong>＋ Novo funcionário</strong><small>Nome, função, cidade/filial e salário</small></a>
+<a href="./funcionarios-lancamentos.html"><strong>◇ Adicionar vale ou custo</strong><small>Registrar despesas e adiantamentos</small></a>
+<a href="./funcionarios-tabela.html"><strong>▦ Abrir tabela geral</strong><small>Planilha, filtros e exportação CSV</small></a></div>
+<section class="rh-panel"><header><div><h2>Últimos lançamentos</h2><div class="rh-muted">Referência <span id="rhPeriodText">—</span></div></div>
+<div class="rh-filter"><label>Competência <input id="rhMonth" type="month"></label><label>Filial <select id="rhDashboardBranch"><option value="">Todas as filiais</option></select></label><button class="rh-btn" id="rhReload" type="button">↻ Atualizar</button></div>
+</header>
+<div class="rh-table-wrap"><table class="rh-table"><thead><tr><th>Data</th><th>Funcionário</th><th>Tipo</th><th>Descrição</th><th class="money">Valor</th><th class="actions">Ações</th></tr></thead>
+<tbody id="rhRecentBody"><tr><td colspan="6" class="rh-empty">Carregando dados...</td></tr></tbody></table></div>
+<div class="rh-help">Vales representam adiantamentos informados. Custos são acompanhados separadamente, sem desconto automático do salário. Este painel é gerencial e não substitui o cálculo legal da folha de pagamento.</div>
+</section>
+<footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
+</main>
+<script src="../assets/js/auth.js?v=28"></script>
+<script src="../assets/js/funcionarios.js?v=20261107-rh-1" defer></script>
+</body>
+</html>

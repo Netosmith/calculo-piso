@@ -1,0 +1,32 @@
+name: Recover a stale GitHub Pages deployment (one-shot)
+on:
+  push:
+    paths:
+      - .github/workflows/recover-stale-pages-20261107.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+
+jobs:
+  recover-stale-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify target deployment and cancel only the stale SHA
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STUCK_SHA: a852742fecf16653c43bacd9a5e5ec5e14ca2fe9
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checking stale Pages deployment SHA: ${STUCK_SHA}"
+          status="$(gh api "repos/${GITHUB_REPOSITORY}/pages/deployments/${STUCK_SHA}" --jq '.status' 2>/dev/null || echo unavailable)"
+          echo "Recorded Pages status: ${status}"
+          if [[ "${status}" == "succeed" || "${status}" == "success" ]]; then
+            echo "Target is already a successful deployment; leaving it untouched."
+            exit 0
+          fi
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/deployments/${STUCK_SHA}/cancel"             -H "Accept: application/vnd.github+json" --silent
+          echo "Cancellation request for the exact stale Pages SHA completed."

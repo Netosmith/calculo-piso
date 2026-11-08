@@ -1,177 +1,208 @@
-/* Nova Frota RH • Comissões. O servidor recalcula e valida antes de salvar. */
-(() => {
+/* Nova Frota • Comissões calculadas exclusivamente pelas toneladas.
+ * Cada linha é um funcionário; modalidade e taxa vêm do cadastro.
+ * Valores são conferidos novamente no Worker antes de gravar.
+ */
+(()=>{
 "use strict";
 const API="https://api.portalfrete.net.br/v1/funcionarios";
 const $=id=>document.getElementById(id);
 const escape=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const currency=c=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format((Number(c)||0)/100);
-const fmtInt=n=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n);
+const brl=c=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format((Number(c)||0)/100);
+const num=n=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n);
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const params=new URLSearchParams(location.search);
 let month=/^20\d{2}-(0[1-9]|1[0-2])$/.test(params.get("month")||"")?params.get("month"):today().slice(0,7);
-let employees=[],commissions=[],totals={};
-let working=false;
-function notice(message,err=false){
-  const target=$("rhNotice");if(!target)return;
-  target.hidden=false;target.className="rh-alert"+(err?" error":" success");
-  target.textContent=message;
+let employees=[],commissions=[],totals={},working=false;
+const drafts=new Map();
+function notice(message,error=false){
+ const node=$("rhNotice");if(!node)return;
+ node.className="rh-alert"+(error?" error":" success");
+ node.textContent=message;node.hidden=false;
 }
-const cleared=()=>{if($("rhNotice"))$("rhNotice").hidden=true};
-async function api(route="",method="GET",body){
-  const options={method,credentials:"include",cache:"no-store",headers:{Accept:"application/json"}};
-  if(body!==undefined){options.headers["Content-Type"]="application/json";options.body=JSON.stringify(body)}
-  const response=await fetch(API+route,options);
-  let data;try{data=await response.json()}catch{throw Error("Falha ao receber resposta da API de funcionários.")}
-  if(!response.ok||data.ok!==true)throw Error(data.error||"A operação não foi concluída.");
-  return data;
+async function api(path="",method="GET",body){
+ const options={method,credentials:"include",cache:"no-store",headers:{Accept:"application/json"}};
+ if(body!==undefined){options.headers["Content-Type"]="application/json";options.body=JSON.stringify(body)}
+ const res=await fetch(API+path,options);
+ let data;try{data=await res.json()}catch{throw Error("A API de funcionários não respondeu corretamente.")}
+ if(!res.ok||data.ok!==true)throw Error(data.error||"Não foi possível salvar a comissão.");
+ return data;
 }
-function readDecimal(value,scale,max,decimals){
-  let s=String(value??"").trim().replace(/\s/g,"");
-  if(!s)return 0;
-  if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
-  else if(/^(\d{1,3}\.)+\d{3}$/.test(s))s=s.replace(/\./g,"");
-  if(!new RegExp("^[0-9]+(?:[.][0-9]{1,"+decimals+"})?$").test(s))return null;
-  const v=Math.round(Number(s)*scale);
-  return Number.isSafeInteger(v)&&v>=0&&v<=max?v:null;
+function decimal(value,scale,max,places){
+ let s=String(value??"").trim().replace(/\s/g,"");
+ if(!s)return 0;
+ if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
+ else if(/^\d{1,3}(?:\.\d{3})+$/.test(s))s=s.replace(/\./g,"");
+ if(!new RegExp("^[0-9]+(?:[.][0-9]{1,"+places+"})?$").test(s))return null;
+ const v=Math.round(Number(s)*scale);
+ return Number.isSafeInteger(v)&&v>=0&&v<=max?v:null;
 }
-const tonnes=value=>readDecimal(value,1000,1000000000,3);
-const centavos=value=>readDecimal(value,100,100000000000,2);
-const kindLabel=(person)=>{
-  if(!person)return "Selecione um funcionário";
-  const rate=Number(person.commissionRate||0);
-  if(person.commissionKind==="TON")return currency(rate)+"/t";
-  if(person.commissionKind==="PERCENT")return (rate/100).toLocaleString("pt-BR",{minimumFractionDigits:2})+"% sobre o valor do frete";
-  if(person.commissionKind==="MANUAL")return "Comissão manual · valor definido no lançamento";
-  if(person.commissionKind==="AGENCIA")return "Agência · valor a definir";
-  return "Nenhuma comissão cadastrada";
-};
-function currentPerson(){return employees.find(e=>e.id===$("rhCommissionEmployee")?.value)}
-function preview(){
-  const person=currentPerson(),kind=person?.commissionKind||"NONE";
-  const tonne=tonnes($("rhCommissionTonnes")?.value||"");
-  const freight=centavos($("rhCommissionFreight")?.value||"");
-  const manual=centavos($("rhCommissionManual")?.value||"");
-  if(!person||kind==="NONE"||tonne===null||freight===null||manual===null)return null;
-  let amount=0,freightCentsPerTon=0,manualAmountCents=0;
-  if(kind==="TON"){
-    if(tonne<=0)return null;
-    amount=Math.round(tonne*person.commissionRate/1000);
-  }else if(kind==="PERCENT"){
-    if(tonne<=0||freight<=0)return null;
-    freightCentsPerTon=freight;
-    const freightTotal=Math.round(tonne*freight/1000);
-    if(freightTotal>100000000000)return null;
-    amount=Math.round(freightTotal*person.commissionRate/10000);
-  }else if(kind==="MANUAL"||kind==="AGENCIA"){
-    if(manual<=0)return null;
-    manualAmountCents=manual;
-    amount=manual;
-  }
-  if(!Number.isSafeInteger(amount)||amount<=0||amount>100000000000)return null;
-  return {employeeId:person.id,tonnesMilli:tonne,freightCentsPerTon,manualAmountCents,amountCents:amount};
+const tonnes=v=>decimal(v,1000,1000000000,3);
+const cents=v=>decimal(v,100,100000000000,2);
+const isManual=k=>k==="MANUAL"||k==="AGENCIA";
+function modeLabel(kind,rate,oldBase=false){
+ const rateNum=Number(rate||0);
+ if(kind==="TON")return brl(rateNum)+"/tonelada";
+ if(kind==="PERCENT")return (rateNum/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"+
+   (oldBase?" (cálculo antigo)":" sobre toneladas");
+ if(kind==="MANUAL")return "Manual";
+ if(kind==="AGENCIA")return "Agência";
+ return "Sem comissão";
 }
-function syncForm(){
-  const person=currentPerson(),kind=person?.commissionKind||"NONE";
-  if($("rhCommissionContext"))$("rhCommissionContext").textContent=kindLabel(person);
-  if($("rhCommissionFreightWrap"))$("rhCommissionFreightWrap").hidden=kind!=="PERCENT";
-  if($("rhCommissionManualWrap"))$("rhCommissionManualWrap").hidden=!["MANUAL","AGENCIA"].includes(kind);
-  if($("rhCommissionTonnes"))$("rhCommissionTonnes").required=["TON","PERCENT"].includes(kind);
-  if($("rhCommissionFreight"))$("rhCommissionFreight").required=kind==="PERCENT";
-  if($("rhCommissionManual"))$("rhCommissionManual").required=["MANUAL","AGENCIA"].includes(kind);
-  if($("rhCommissionSubmit"))$("rhCommissionSubmit").disabled=!person||kind==="NONE"||working;
-  const amount=preview();
-  if($("rhCommissionPreview"))$("rhCommissionPreview").textContent=amount?currency(amount.amountCents):"R$ 0,00";
-  if($("rhCommissionNote"))$("rhCommissionNote").textContent=
-    kind==="PERCENT"?"Fórmula: toneladas × R$/t × percentual. É necessário informar o valor do frete.":kind==="TON"?
-    "Fórmula: toneladas × comissão por tonelada.":kind==="MANUAL"||kind==="AGENCIA"?
-    "Preencha o valor definido. As toneladas são opcionais e ficam registradas para consulta.":
-    "Escolha um funcionário com comissão configurada no Cadastro.";
+function rowDraft(p){
+ if(!drafts.has(p.id))drafts.set(p.id,{tonnes:$("rhGlobalTonnes")?.value?.trim()||"",manual:"",reference:""});
+ return drafts.get(p.id);
 }
-function showRows(){
-  const target=$("rhCommissionRows");if(!target)return;
-  const term=String($("rhCommissionSearch")?.value||"").toLocaleLowerCase("pt-BR").trim();
-  const shown=commissions.filter(c=>!term||(c.employeeName+" "+(c.description||"")).toLocaleLowerCase("pt-BR").includes(term));
-  target.innerHTML=shown.length?shown.map(c=>'<tr><td>'+escape(c.date?.split("-").reverse().join("/")||"")+
-    '</td><td class="strong">'+escape(c.employeeName)+'</td><td>'+escape(kindLabel({commissionKind:c.kind,commissionRate:c.rateValue}))+
-    '</td><td class="money">'+(c.tonnesMilli?fmtInt(c.tonnesMilli/1000):"—")+
-    '</td><td class="money">'+(c.freightCentsPerTon?currency(c.freightCentsPerTon):"—")+
-    '</td><td class="money strong">'+currency(c.amountCents)+'</td><td>'+escape(c.description||"")+
-    '</td><td class="actions"><button class="rh-table-action danger" type="button" data-rh-void="'+escape(c.id)+'">Anular</button></td></tr>').join("")
-    :'<tr><td colspan="8" class="rh-empty">Nenhuma comissão lançada nesta competência.</td></tr>';
+function calculate(p){
+ const d=rowDraft(p),t=tonnes(d.tonnes),m=cents(d.manual);
+ if(t===null||t<=0||m===null)return null;
+ const kind=p.commissionKind,rate=Number(p.commissionRate||0);
+ let amount=0;
+ if(kind==="TON")amount=Math.round(t*rate/1000);
+ else if(kind==="PERCENT")amount=Math.round(t*rate/100000);
+ else if(isManual(kind))amount=m;
+ if(!Number.isSafeInteger(amount)||amount<=0||amount>100000000000)return null;
+ return {employeeId:p.id,tonnesMilli:t,manualAmountCents:isManual(kind)?m:0,amountCents:amount};
+}
+function previewRow(id){
+ const p=employees.find(x=>x.id===id),el=$("rhPreview_"+id);
+ if(!p||!el)return;
+ const draft=calculate(p);
+ el.textContent=draft?brl(draft.amountCents):"—";
+ el.classList.toggle("positive",Boolean(draft));
+}
+function filterEmployee(p){
+ const q=String($("rhCommissionSearch")?.value||"").trim().toLocaleLowerCase("pt-BR");
+ return !q||(p.name+" "+p.role+" "+p.branch+" "+p.city).toLocaleLowerCase("pt-BR").includes(q);
+}
+function renderGrid(){
+ const root=$("rhCommissionGrid");if(!root)return;
+ const people=employees.filter(e=>e.active&&e.commissionKind&&e.commissionKind!=="NONE"&&filterEmployee(e));
+ const count=$("rhEligibleCount");if(count)count.textContent=String(people.length);
+ if(!people.length){
+  root.innerHTML='<tr><td colspan="8" class="rh-empty">Nenhum funcionário com comissão habilitada. Configure a modalidade no Cadastro de Funcionários.</td></tr>';
+  return;
+ }
+ root.innerHTML=people.map(p=>{
+  const d=rowDraft(p),manual=isManual(p.commissionKind),value=calculate(p);
+  return '<tr data-rh-person="'+escape(p.id)+'">'+
+   '<td class="strong">'+escape(p.name)+'<div class="rh-muted">'+escape(p.branch)+'</div></td>'+
+   '<td>'+escape(modeLabel(p.commissionKind,p.commissionRate))+'</td>'+
+   '<td><input class="rh-grid-input" type="text" inputmode="decimal" aria-label="Toneladas de '+escape(p.name)+
+     '" data-rh-tons="'+escape(p.id)+'" value="'+escape(d.tonnes)+'" placeholder="80.000"></td>'+
+   '<td>'+(manual?
+     '<input class="rh-grid-input" type="text" inputmode="decimal" aria-label="Valor manual de '+escape(p.name)+
+     '" data-rh-manual="'+escape(p.id)+'" value="'+escape(d.manual)+'" placeholder="R$ 0,00">'
+     :'<span class="rh-muted">Automático</span>')+'</td>'+
+   '<td class="money strong" id="rhPreview_'+escape(p.id)+'">'+(value?brl(value.amountCents):"—")+'</td>'+
+   '<td class="money">'+brl(p.commissionsCents||0)+'</td>'+
+   '<td><input class="rh-grid-input rh-grid-reference" type="text" maxlength="160" data-rh-reference="'+escape(p.id)+
+     '" aria-label="Referência de '+escape(p.name)+'" value="'+escape(d.reference)+'" placeholder="Opcional"></td>'+
+   '<td class="actions"><button type="button" class="rh-btn primary rh-grid-save" data-rh-save="'+escape(p.id)+'"'+
+     (!value||working?" disabled":"")+'>Salvar</button></td></tr>';
+ }).join("");
+}
+function updateRow(id){
+ previewRow(id);
+ const p=employees.find(x=>x.id===id),row=document.querySelector('tr[data-rh-person="'+id+'"]');
+ const save=row?.querySelector("[data-rh-save]");
+ if(save)save.disabled=working||!p||!calculate(p);
+}
+function applyGlobalTonnes(){
+ const common=String($("rhGlobalTonnes")?.value||"").trim();
+ for(const p of employees)if(p.active&&p.commissionKind!=="NONE")rowDraft(p).tonnes=common;
+ renderGrid();
+}
+function renderHistory(){
+ const root=$("rhCommissionRows");if(!root)return;
+ root.innerHTML=commissions.length?commissions.map(c=>
+  '<tr><td>'+escape(String(c.date||"").split("-").reverse().join("/"))+'</td>'+
+  '<td class="strong">'+escape(c.employeeName)+'</td>'+
+  '<td>'+escape(modeLabel(c.kind,c.rateValue,c.kind==="PERCENT"&&c.freightCentsPerTon>0))+'</td>'+
+  '<td class="money">'+num(c.tonnesMilli/1000)+'</td>'+
+  '<td class="money strong">'+brl(c.amountCents)+'</td>'+
+  '<td>'+escape(c.description||"")+'</td>'+
+  '<td class="actions"><button type="button" class="rh-table-action danger" data-rh-void="'+
+    escape(c.id)+'">Anular</button></td></tr>').join("")
+  :'<tr><td colspan="7" class="rh-empty">Nenhuma comissão lançada no mês selecionado.</td></tr>';
 }
 async function refresh(){
-  const data=await api("?month="+encodeURIComponent(month));
-  employees=data.employees||[];commissions=data.commissions||[];totals=data.totals||{};
-  if($("rhCommissionTotal"))$("rhCommissionTotal").textContent=currency(totals.commissionsCents||0);
-  if($("rhCommissionCount"))$("rhCommissionCount").textContent=String(commissions.length);
-  const select=$("rhCommissionEmployee");
-  const previous=select?.value||params.get("employee")||"";
-  if(select){
-    const available=employees.filter(p=>p.active&&p.commissionKind&&p.commissionKind!=="NONE");
-    select.innerHTML='<option value="">Selecione um funcionário</option>'+available.map(p=>
-      '<option value="'+escape(p.id)+'">'+escape(p.name)+" · "+escape(p.branch)+'</option>').join("");
-    if(available.some(x=>x.id===previous))select.value=previous;
-  }
-  showRows();syncForm();
-  if(data.complete===false)notice("O limite de registros da competência foi atingido. Verifique o histórico.",true);
+ const data=await api("?month="+encodeURIComponent(month));
+ employees=data.employees||[];commissions=data.commissions||[];totals=data.totals||{};
+ if($("rhCommissionTotal"))$("rhCommissionTotal").textContent=brl(totals.commissionsCents||0);
+ if($("rhCommissionCount"))$("rhCommissionCount").textContent=String(commissions.length);
+ if($("rhMonth"))$("rhMonth").value=month;
+ renderGrid();renderHistory();
+ if(data.complete===false)notice("Há mais registros do que o limite de consulta. Verifique o histórico.",true);
 }
-async function submit(event){
-  event.preventDefault();if(working)return;
-  const draft=preview(),date=$("rhCommissionDate")?.value||"";
-  if(!draft)return notice("Preencha os dados necessários ao cálculo da comissão.",true);
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return notice("Escolha uma data válida.",true);
-  working=true;syncForm();
-  try{
-    const response=await api("/commissions","POST",{
-      employeeId:draft.employeeId,date,
-      description:$("rhCommissionDescription")?.value?.trim()||"",
-      tonnesMilli:draft.tonnesMilli,
-      freightCentsPerTon:draft.freightCentsPerTon,
-      manualAmountCents:draft.manualAmountCents
-    });
+async function savePerson(id){
+ if(working)return;
+ const p=employees.find(e=>e.id===id);
+ if(!p||!p.active||p.commissionKind==="NONE")return;
+ const draft=calculate(p);
+ const date=$("rhCommissionDate")?.value||"";
+ if(!draft)return notice("Informe toneladas válidas e, se for manual ou agência, o valor da linha de "+p.name+".",true);
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return notice("Escolha a data da comissão.",true);
+ working=true;
+ updateRow(id);
+ try{
+  const saved=await api("/commissions","POST",{
+    employeeId:id,date,tonnesMilli:draft.tonnesMilli,
+    freightCentsPerTon:0,manualAmountCents:draft.manualAmountCents,
+    description:rowDraft(p).reference.trim()
+  });
+  drafts.delete(id);
+  if(date.slice(0,7)!==month){
     month=date.slice(0,7);
-    if($("rhMonth"))$("rhMonth").value=month;
     params.set("month",month);history.replaceState(null,"","?"+params);
-    for(const id of ["rhCommissionTonnes","rhCommissionFreight","rhCommissionManual","rhCommissionDescription"])
-      if($(id))$(id).value="";
-    await refresh();
-    notice("Comissão de "+currency(response.commission?.amountCents)+" registrada com sucesso.");
-  }catch(e){notice(e.message,true)}
-  finally{working=false;syncForm()}
+  }
+  await refresh();
+  notice("Comissão de "+p.name+" salva: "+brl(saved.commission.amountCents)+".");
+ }catch(e){notice(e.message,true)}
+ finally{working=false;renderGrid()}
 }
 async function voidRecord(id){
-  const c=commissions.find(x=>x.id===id);
-  if(!c||!confirm("Anular a comissão de "+c.employeeName+" ("+currency(c.amountCents)+")? A anulação ficará registrada."))return;
-  try{await api("/commissions/"+encodeURIComponent(id),"DELETE");await refresh();notice("Comissão anulada.")}
-  catch(e){notice(e.message,true)}
+ const c=commissions.find(x=>x.id===id);
+ if(!c||!confirm("Anular a comissão de "+c.employeeName+" ("+brl(c.amountCents)+")? O lançamento ficará registrado como anulado."))return;
+ try{await api("/commissions/"+encodeURIComponent(id),"DELETE");await refresh();notice("Comissão anulada.")}
+ catch(e){notice(e.message,true)}
 }
 async function init(){
-  const session=window.portalAuthReady?await window.portalAuthReady:null;
-  if(!session||!requireFeatureAuth("funcionarios"))return;
-  if(session.tenantMode===true||session.transportadoraId!=="nova-frota"||
-     String(session.perfil||"").toUpperCase()!=="ADMINISTRADOR"){
-    location.replace("./home.html");return;
-  }
-  if($("rhUser"))$("rhUser").textContent=session.nome||session.usuario||"Administração";
-  if($("rhMonth"))$("rhMonth").value=month;
-  if($("rhCommissionDate"))$("rhCommissionDate").value=today();
-  if($("rhCommissionForm"))$("rhCommissionForm").addEventListener("submit",submit);
-  if($("rhCommissionEmployee"))$("rhCommissionEmployee").addEventListener("change",syncForm);
-  for(const id of ["rhCommissionTonnes","rhCommissionFreight","rhCommissionManual"])
-    if($(id))$(id).addEventListener("input",syncForm);
-  if($("rhCommissionSearch"))$("rhCommissionSearch").addEventListener("input",showRows);
-  if($("rhReload"))$("rhReload").addEventListener("click",()=>refresh().catch(e=>notice(e.message,true)));
-  if($("rhMonth"))$("rhMonth").addEventListener("change",()=>{
-    const m=$("rhMonth").value;
-    if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(m))return;
-    month=m;params.set("month",m);history.replaceState(null,"","?"+params);
-    refresh().catch(e=>notice(e.message,true));
-  });
-  document.addEventListener("click",e=>{
-    const button=e.target.closest("[data-rh-void]");
-    if(button)voidRecord(button.dataset.rhVoid);
-  });
-  await refresh();
+ const sess=window.portalAuthReady?await window.portalAuthReady:null;
+ if(!sess||!requireFeatureAuth("funcionarios"))return;
+ if(sess.tenantMode===true||sess.transportadoraId!=="nova-frota"||
+    String(sess.perfil||"").toUpperCase()!=="ADMINISTRADOR"){
+  location.replace("./home.html");return;
+ }
+ if($("rhUser"))$("rhUser").textContent=sess.nome||sess.usuario||"Administração";
+ if($("rhMonth"))$("rhMonth").value=month;
+ if($("rhCommissionDate"))$("rhCommissionDate").value=today();
+ if($("rhGlobalTonnes"))$("rhGlobalTonnes").addEventListener("change",applyGlobalTonnes);
+ if($("rhApplyTonnes"))$("rhApplyTonnes").addEventListener("click",applyGlobalTonnes);
+ if($("rhCommissionSearch"))$("rhCommissionSearch").addEventListener("input",renderGrid);
+ if($("rhReload"))$("rhReload").addEventListener("click",()=>refresh().catch(e=>notice(e.message,true)));
+ if($("rhMonth"))$("rhMonth").addEventListener("change",()=>{
+  const next=$("rhMonth").value;
+  if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(next))return;
+  month=next;params.set("month",next);history.replaceState(null,"","?"+params);
+  refresh().catch(e=>notice(e.message,true));
+ });
+ document.addEventListener("input",e=>{
+  const t=e.target;
+  const id=t?.dataset?.rhTons||t?.dataset?.rhManual||t?.dataset?.rhReference;
+  if(!id)return;
+  const p=employees.find(x=>x.id===id);
+  if(!p)return;
+  const d=rowDraft(p);
+  if(t.dataset.rhTons)d.tonnes=t.value;
+  else if(t.dataset.rhManual)d.manual=t.value;
+  else d.reference=t.value;
+  updateRow(id);
+ });
+ document.addEventListener("click",e=>{
+  const save=e.target.closest("[data-rh-save]");if(save){savePerson(save.dataset.rhSave);return}
+  const revoke=e.target.closest("[data-rh-void]");if(revoke)voidRecord(revoke.dataset.rhVoid);
+ });
+ await refresh();
 }
 init().catch(e=>notice(e.message,true));
 })();

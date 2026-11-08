@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
-<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261107-rh-1">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-rh-2">
 </head>
 <body class="rh-body" data-rh-page="table">
 <header class="rh-topbar"><div class="rh-topbar-in">
@@ -19,11 +19,11 @@
 <main class="rh-content">
 <section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
 <div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Funcionários • Tabela Geral</div>
-<h1>Funcionários • Tabela Geral</h1><p>Visão de planilha com salários, somatórios mensais, filtros e exportação.</p></div></div>
+<h1>Funcionários • Tabela Geral</h1><p>Visão de planilha com salários, comissões, vales, custos e exportação.</p></div></div>
 <div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
 </section>
 <div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
-<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vale / custo</a><a href="./funcionarios-tabela.html" class="active" aria-current="page">Tabela geral</a></nav>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vale / custo</a><a href="./funcionarios-tabela.html" class="active" aria-current="page">Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
 <section class="rh-panel">
 <header><div><h2>Relação geral de funcionários</h2><p class="rh-muted" id="rhCountShown">Carregando...</p></div>
 <div class="rh-actions"><button id="rhExport" class="rh-btn" type="button">↓ Exportar CSV (Excel)</button><button id="rhReload" class="rh-btn" type="button">↻ Atualizar</button></div></header>
@@ -35,14 +35,14 @@
 <label>Competência <input id="rhMonth" type="month"></label>
 </div>
 <div class="rh-table-wrap"><table class="rh-table" aria-label="Tabela geral de funcionários"><thead><tr>
-<th>Nome</th><th>Função</th><th>Cidade / Filial</th><th class="money">Salário</th><th class="money">Vales</th><th class="money">Custos</th>
-<th class="money">Saldo após vales</th><th>Situação</th><th class="actions">Ações</th></tr></thead>
-<tbody id="rhListBody"><tr><td class="rh-empty" colspan="9">Carregando funcionários...</td></tr></tbody></table></div>
-<div class="rh-help">Os somatórios de vales e custos consideram o mês selecionado. “Saldo após vales” é apenas salário base menos os vales registrados; não representa salário líquido legal, impostos nem outras deduções.</div>
+<th>Nome</th><th>Função</th><th>Cidade / Filial</th><th class="money">Salário</th><th class="money">Vales</th><th class="money">Custos</th><th class="money">Comissões</th>
+<th class="money">Saldo gerencial</th><th>Situação</th><th class="actions">Ações</th></tr></thead>
+<tbody id="rhListBody"><tr><td class="rh-empty" colspan="11">Carregando funcionários...</td></tr></tbody></table></div>
+<div class="rh-help">Os somatórios de vales e custos consideram o mês selecionado. “Saldo gerencial” representa salário base + comissões do mês − vales registrados; não representa salário líquido legal, impostos nem outras deduções.</div>
 </section>
 <footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
 </main>
 <script src="../assets/js/auth.js?v=28"></script>
-<script src="../assets/js/funcionarios.js?v=20261107-rh-1" defer></script>
+<script src="../assets/js/funcionarios.js?v=20261108-rh-2" defer></script>
 </body>
 </html>

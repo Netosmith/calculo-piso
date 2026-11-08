@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
-<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-rh-2">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-toneladas-v2">
 </head>
 <body class="rh-body" data-rh-page="commissions">
 <header class="rh-topbar"><div class="rh-topbar-in">
@@ -19,42 +19,37 @@
 <main class="rh-content">
 <section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
 <div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Comissões</div>
-<h1>Comissões</h1><p>Calcule e registre comissões por tonelada, percentual ou valor definido.</p></div></div>
+<h1>Comissões</h1><p>Todos os cálculos partem das toneladas. Valor manual informado na linha do funcionário.</p></div></div>
 <div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
 </section>
 <div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
-<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" class="active" aria-current="page">Vale / custo</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html" class="active" aria-current="page">Comissões</a></nav>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html">Vale / custo</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html" class="active" aria-current="page">Comissões</a></nav>
 <section class="rh-kpis rh-commission-kpis" aria-label="Totais da competência">
   <article class="rh-kpi teal"><div class="rh-icon">◉</div><span>Comissões registradas no mês</span>
-    <strong id="rhCommissionTotal">R$ 0,00</strong><small>Total dos funcionários ativos</small></article>
+    <strong id="rhCommissionTotal">R$ 0,00</strong><small>Total de comissões registradas na competência</small></article>
   <article class="rh-kpi"><div class="rh-icon">▦</div><span>Registros de comissões</span>
     <strong id="rhCommissionCount">0</strong><small>Na competência selecionada</small></article>
 </section>
-<section class="rh-panel" aria-label="Lançamento de comissão">
-  <header><div><h2>Lançar nova comissão</h2>
-  <p class="rh-muted">A modalidade e a taxa vêm do cadastro de cada funcionário.</p></div></header>
-  <form id="rhCommissionForm" class="rh-form" autocomplete="off">
-    <label class="span2">Funcionário * <select id="rhCommissionEmployee" required>
-      <option value="">Selecione um funcionário</option></select></label>
-    <div class="span2 rh-commission-context" id="rhCommissionContext" aria-live="polite">
-      Selecione um funcionário que tenha comissão configurada no cadastro.
-    </div>
-    <label>Toneladas <input id="rhCommissionTonnes" type="text" inputmode="decimal" placeholder="Ex.: 1.250,500"></label>
-    <label>Data da comissão * <input id="rhCommissionDate" type="date" required></label>
-    <label id="rhCommissionFreightWrap" hidden>Valor do frete por tonelada (R$/t) *
-      <input id="rhCommissionFreight" type="text" inputmode="decimal" placeholder="Ex.: 180,00"></label>
-    <label id="rhCommissionManualWrap" hidden>Valor da comissão (R$) *
-      <input id="rhCommissionManual" type="text" inputmode="decimal" placeholder="Ex.: 200,00"></label>
-    <label class="span2">Descrição / referência <input id="rhCommissionDescription" maxlength="320"
-      placeholder="Ex.: Fretes do período, cliente, referência do relatório..."></label>
-    <div class="span2 rh-commission-result">
-      <div><span>Comissão calculada</span><strong id="rhCommissionPreview">R$ 0,00</strong>
-        <small id="rhCommissionNote">Informe os dados da comissão.</small></div>
-      <button id="rhCommissionSubmit" class="rh-btn primary" type="submit" disabled>＋ Salvar comissão</button>
-    </div>
-  </form>
-  <div class="rh-help">Em <b>Porcentagem</b>, o percentual é aplicado ao valor total do frete (toneladas × R$/t).
-    <b>Manual</b> e <b>Agência</b> permitem definir o valor no lançamento. Os registros são gerenciais e não substituem o cálculo oficial da folha.</div>
+<section class="rh-panel" aria-label="Planilha para lançamento de comissões">
+ <header><div><h2>Planilha de comissões por funcionário</h2>
+ <p class="rh-muted">Informe as toneladas, confira o cálculo automático e salve na linha de cada funcionário.</p></div></header>
+ <div class="rh-filter rh-commission-filters">
+  <label>Toneladas do período <input id="rhGlobalTonnes" type="text" inputmode="decimal" placeholder="Ex.: 80.000"></label>
+  <button id="rhApplyTonnes" class="rh-btn navy" type="button">Aplicar toneladas a todos</button>
+  <label>Data do lançamento <input id="rhCommissionDate" type="date" required></label>
+  <label class="grow">Buscar funcionário <input id="rhCommissionSearch" type="search" placeholder="Nome, filial, função..."></label>
+ </div>
+ <div class="rh-help">As taxas vêm do <b>Cadastro de Funcionários</b>. A mesma tonelagem pode ser aplicada a todos e ajustada individualmente por linha. <b>R$ 0,15/t × 80.000 t = R$ 12.000,00</b>; <b>1,5% × 80.000 t = R$ 1.200,00</b>. Não é necessário informar o valor do frete.</div>
+ <header style="margin-top:18px"><h2>Funcionários com comissão</h2><span class="rh-muted"><span id="rhEligibleCount">0</span> funcionário(s) nesta visualização</span></header>
+ <div class="rh-table-wrap"><table class="rh-table rh-commission-grid" aria-label="Comissões para cada funcionário">
+  <thead><tr>
+   <th>Funcionário / Filial</th><th>Modalidade</th><th>Toneladas (t)</th>
+   <th>Valor manual (R$)</th><th class="money">Comissão calculada</th>
+   <th class="money">Acumulado do mês</th><th>Referência</th><th class="actions">Ação</th>
+  </tr></thead>
+  <tbody id="rhCommissionGrid"><tr><td colspan="8" class="rh-empty">Carregando funcionários...</td></tr></tbody>
+ </table></div>
+ <div class="rh-help">Para <b>Manual</b> e <b>Agência</b>, digite o valor da comissão na própria linha do funcionário. A tonelagem continua registrada como referência. Cada botão <b>Salvar</b> gera um lançamento identificado e auditável.</div>
 </section>
 <section class="rh-panel" aria-label="Histórico de comissões">
   <header><div><h2>Histórico de comissões</h2>
@@ -66,14 +61,13 @@
     </div></header>
   <div class="rh-table-wrap"><table class="rh-table" aria-label="Comissões mensais">
     <thead><tr><th>Data</th><th>Funcionário</th><th>Modalidade / Taxa</th>
-      <th class="money">Toneladas</th><th class="money">Frete R$/t</th>
-      <th class="money">Comissão</th><th>Referência</th><th class="actions">Ação</th></tr></thead>
-    <tbody id="rhCommissionRows"><tr><td colspan="8" class="rh-empty">Carregando comissões...</td></tr></tbody>
+      <th class="money">Toneladas</th><th class="money">Comissão</th><th>Referência</th><th class="actions">Ação</th></tr></thead>
+    <tbody id="rhCommissionRows"><tr><td colspan="7" class="rh-empty">Carregando comissões...</td></tr></tbody>
   </table></div>
 </section>
 <footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
 </main>
 <script src="../assets/js/auth.js?v=28"></script>
-<script src="../assets/js/funcionarios-comissoes.js?v=20261108-rh-1" defer></script>
+<script src="../assets/js/funcionarios-comissoes.js?v=20261108-toneladas-v2" defer></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
-<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-toneladas-v3">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-folha-v1">
 </head>
 <body class="rh-body" data-rh-page="dashboard">
 <header class="rh-topbar"><div class="rh-topbar-in">
@@ -17,33 +17,39 @@
 <div class="rh-topright"><span id="rhUser" class="rh-user">Acesso administrativo</span><a class="rh-home" href="./home.html" aria-label="Voltar à Home">⌂ Home</a><button class="rh-btn" data-logout type="button">Sair</button></div>
 </div></header>
 <main class="rh-content">
-<section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
-<div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Painel de Funcionários</div>
-<h1>Painel de Funcionários</h1><p>Folha gerencial, vales, custos e comissões por competência. Apenas administradores da Nova Frota.</p></div></div>
-<div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
-</section>
 <div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
-<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" class="active" aria-current="page">Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vale / custo</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" class="active" aria-current="page">Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vales</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
+<section class="rh-volume-panel" aria-label="Volume embarcado do mês">
+ <div class="rh-volume-header"><div><h2>Volume total embarcado no mês</h2>
+  <p>Informe uma vez a tonelagem total. A comissão de cada funcionário será recalculada automaticamente.</p></div></div>
+ <div class="rh-volume-controls">
+  <label>Competência <input id="rhMonth" type="month"></label>
+  <label>Toneladas embarcadas <input id="rhMonthVolume" type="text" inputmode="decimal" placeholder="Ex.: 80.000"></label>
+  <button type="button" id="rhApplyMonthVolume" class="rh-btn primary">Aplicar toneladas</button>
+  <a class="rh-btn" href="./funcionarios-tabela.html">Ver tabela geral</a>
+ </div>
+ <div id="rhVolumeStatus" class="rh-volume-status" aria-live="polite">Carregando volume...</div>
+</section>
 <div class="rh-kpis rh-kpis-5">
 <article class="rh-kpi"><div class="rh-icon">♙</div><span>Funcionários ativos</span><strong id="rhKPeople">0</strong><small>Cadastros ativos da empresa</small></article>
 <article class="rh-kpi"><div class="rh-icon">▣</div><span>Folha salarial cadastrada</span><strong id="rhKSalary">R$ 0,00</strong><small>Base dos funcionários ativos</small></article>
 <article class="rh-kpi teal"><div class="rh-icon">◇</div><span>Total de vales</span><strong id="rhKVales">R$ 0,00</strong><small>Na competência selecionada</small></article>
-<article class="rh-kpi amber"><div class="rh-icon">▤</div><span>Total de custos</span><strong id="rhKCosts">R$ 0,00</strong><small>Despesas registradas no mês</small></article>
+<article class="rh-kpi"><div class="rh-icon">▣</div><span>Total a pagar</span><strong id="rhKPayable">R$ 0,00</strong><small>Salário + comissão − vales</small></article>
 <article class="rh-kpi teal"><div class="rh-icon">◉</div><span>Total de comissões</span><strong id="rhKCommissions">R$ 0,00</strong><small>Comissões do mês selecionado</small></article>
 </div>
-<div class="rh-shortcuts"><a href="./funcionarios-cadastro.html"><strong>＋ Novo funcionário</strong><small>Nome, função, cidade/filial e salário</small></a>
-<a href="./funcionarios-lancamentos.html"><strong>◇ Adicionar vale ou custo</strong><small>Registrar despesas e adiantamentos</small></a>
-<a href="./funcionarios-tabela.html"><strong>▦ Abrir tabela geral</strong><small>Planilha, filtros e exportação CSV</small></a><a href="./funcionarios-comissoes.html"><strong>◉ Calcular comissões</strong><small>Toneladas, percentual, manual ou agência</small></a></div>
-<section class="rh-panel"><header><div><h2>Últimos lançamentos</h2><div class="rh-muted">Referência <span id="rhPeriodText">—</span></div></div>
-<div class="rh-filter"><label>Competência <input id="rhMonth" type="month"></label><label>Filial <select id="rhDashboardBranch"><option value="">Todas as filiais</option></select></label><button class="rh-btn" id="rhReload" type="button">↻ Atualizar</button></div>
+<div class="rh-shortcuts"><a href="./funcionarios-cadastro.html"><strong>＋ Novo funcionário</strong><small>Nome, função, filial e salário</small></a>
+<a href="./funcionarios-lancamentos.html"><strong>◇ Adicionar vale ou custo</strong><small>Registrar adiantamentos por funcionário</small></a>
+<a href="./funcionarios-tabela.html"><strong>▦ Abrir tabela geral</strong><small>Planilha e quatro versões para download</small></a><a href="./funcionarios-comissoes.html"><strong>◉ Calcular comissões</strong><small>Lançamentos manuais e de agência</small></a></div>
+<section class="rh-panel"><header><div><h2>Últimos vales</h2><div class="rh-muted">Referência <span id="rhPeriodText">—</span></div></div>
+<div class="rh-filter"><label>Filial <select id="rhDashboardBranch"><option value="">Todas as filiais</option></select></label><button class="rh-btn" id="rhReload" type="button">↻ Atualizar</button></div>
 </header>
 <div class="rh-table-wrap"><table class="rh-table"><thead><tr><th>Data</th><th>Funcionário</th><th>Tipo</th><th>Descrição</th><th class="money">Valor</th><th class="actions">Ações</th></tr></thead>
 <tbody id="rhRecentBody"><tr><td colspan="6" class="rh-empty">Carregando dados...</td></tr></tbody></table></div>
-<div class="rh-help">Vales representam adiantamentos informados. Custos são acompanhados separadamente, sem desconto automático do salário. Este painel é gerencial e não substitui o cálculo legal da folha de pagamento.</div>
+<div class="rh-help">A folha gerencial considera salário-base + comissão calculada pelas toneladas do mês − vales registrados. Ela não substitui o cálculo legal da folha.</div>
 </section>
 <footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
 </main>
 <script src="../assets/js/auth.js?v=28"></script>
-<script src="../assets/js/funcionarios.js?v=20261108-toneladas-v3" defer></script>
+<script src="../assets/js/funcionarios.js?v=20261108-folha-v1" defer></script>
 </body>
 </html>

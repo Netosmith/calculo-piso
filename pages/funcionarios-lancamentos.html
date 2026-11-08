@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#071c35">
-<title>Lançar Vale / Custo | NOVA FROTA</title>
+<title>Lançar Vale / Vale | NOVA FROTA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
-<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-toneladas-v3">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-folha-v1">
 </head>
 <body class="rh-body" data-rh-page="entry">
 <header class="rh-topbar"><div class="rh-topbar-in">
@@ -17,25 +17,20 @@
 <div class="rh-topright"><span id="rhUser" class="rh-user">Acesso administrativo</span><a class="rh-home" href="./home.html" aria-label="Voltar à Home">⌂ Home</a><button class="rh-btn" data-logout type="button">Sair</button></div>
 </div></header>
 <main class="rh-content">
-<section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
-<div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Lançar Vale / Custo</div>
-<h1>Lançar Vale / Custo</h1><p>Registre vales e custos individualmente, com data e descrição.</p></div></div>
-<div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
-</section>
 <div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
-<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" class="active" aria-current="page">Vale / custo</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" class="active" aria-current="page">Vales</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
 <section class="rh-panel"><header><div><h2 id="rhFormTitle">Novo lançamento</h2><p class="rh-muted">Os totais são somados conforme a competência de cada lançamento.</p></div></header>
 <form id="rhEntryForm" class="rh-form" autocomplete="off">
 <label class="span2">Funcionário * <select id="rhEmployee" required><option value="">Carregando funcionários...</option></select></label>
-<label>Tipo * <select id="rhType" required><option value="VALE">Vale / adiantamento</option><option value="CUSTO">Custo / despesa</option></select></label>
+<label>Tipo * <select id="rhType" required><option value="VALE">Vale / adiantamento</option></select></label>
 <label>Data * <input id="rhEntryDate" type="date" required></label>
 <label class="span2">Descrição * <input id="rhDescription" maxlength="320" placeholder="Ex.: Vale alimentação, viagem, uniforme, material..." required></label>
 <label>Valor (R$) * <input id="rhAmount" type="text" inputmode="decimal" maxlength="22" placeholder="Ex.: 350,00" required></label>
 <div class="span2 rh-form-actions"><a href="./funcionarios.html" class="rh-btn">Cancelar</a><button id="rhSubmit" class="rh-btn primary" type="submit">＋ Salvar lançamento</button></div>
-</form><div class="rh-help">Vale e custo não são a mesma coisa: vales entram no saldo gerencial após adiantamentos; custos são gastos classificados separadamente e não reduzem automaticamente o salário.</div></section>
+</form><div class="rh-help">Vale e vale não são a mesma coisa: vales entram no saldo gerencial após adiantamentos; vales são gastos classificados separadamente e não reduzem automaticamente o salário.</div></section>
 <footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
 </main>
 <script src="../assets/js/auth.js?v=28"></script>
-<script src="../assets/js/funcionarios.js?v=20261108-toneladas-v3" defer></script>
+<script src="../assets/js/funcionarios.js?v=20261108-folha-v1" defer></script>
 </body>
 </html>

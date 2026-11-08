@@ -1,6 +1,7 @@
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
+import { monitorDriverUpload, monitorManagerProof } from "./monitor-proof.js";
 
 // O monitoramento legado continua exclusivo da Nova Frota.
 const PROFILES = new Set(["ADMINISTRADOR", "COMERCIAL", "OPERACIONAL"]);
@@ -37,13 +38,16 @@ const toTrip = row => ({
   origin: row.origin, destination: row.destination,
   active: row.active === 1, createdAt: row.created_at, updatedAt: row.updated_at,
   linkExpiresAt: row.token_expires_at,
+  selfieRequired: Number(row.proof_required||0)===1,
+  selfieStatus: row.selfie_status||"missing", receiptStatus:row.receipt_status||"missing",
+  selfieSubmittedAt:row.selfie_at||null,receiptSubmittedAt:row.receipt_at||null,
   lastPosition: row.last_position_at ? {
     lat: row.lat, lng: row.lng, accuracy: row.accuracy, at: row.last_position_at
   } : null
 });
 async function tripForToken(db, value) {
   if (!validToken(value)) return null;
-  return db.prepare("SELECT * FROM monitor_trips WHERE token_hash=? AND token_expires_at>?")
+  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.token_hash=? AND t.token_expires_at>?")
     .bind(await hashToken(value), now()).first();
 }
 function dbError(error, stage) {
@@ -65,6 +69,10 @@ export async function monitorController(request, env) {
   if (!env.FLEET_DB) return errorResponse("Banco D1 não configurado.", 503, { stage: "db-binding" });
   const db = env.FLEET_DB;
 
+  // Uploads privados vinculados à viagem autenticada pelo token.
+  if(path==="/v1/monitor/selfie"&&method==="POST")return monitorDriverUpload(request,env,"selfie");
+  if(path==="/v1/monitor/receipt"&&method==="POST")return monitorDriverUpload(request,env,"receipt");
+
   // Acesso por token: apenas a viagem, nunca dados de outras viagens.
   if (path === "/v1/monitor/driver" && method === "POST") {
     const body = await parse(request);
@@ -85,6 +93,8 @@ export async function monitorController(request, env) {
       const row = await tripForToken(db, body?.token);
       if (!row) return errorResponse("Link inválido ou expirado.", 404);
       if (row.active !== 1) return errorResponse("Viagem encerrada.", 409);
+      if(Number(row.proof_required||0)===1&&!row.selfie_key)
+        return errorResponse("Envie uma selfie para iniciar a viagem.",409);
       const time = now();
       // O batch é atômico. Uma viagem encerrada não recebe novas posições.
       await db.batch([
@@ -104,9 +114,10 @@ export async function monitorController(request, env) {
   if (path === "/v1/monitor/trips" && method === "GET") {
     try {
       const result = await db.prepare(
-        "SELECT t.*, COALESCE(e.branch,'') AS branch FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
+        "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
       ).all();
-      return success({ trips: (result.results || []).map(toTrip), complete: true });
+      return success({ trips: (result.results || []).map(toTrip), complete: true,
+        canReview:["ADMINISTRADOR","OPERACIONAL"].includes(clean(auth.session.perfil).toUpperCase()) });
     } catch (e) { return dbError(e, "trips-read"); }
   }
   if (path === "/v1/monitor/trips" && method === "POST") {
@@ -120,16 +131,22 @@ export async function monitorController(request, env) {
       await db.batch([
         db.prepare("INSERT INTO monitor_trips (id,plate,driver,origin,destination,created_by,created_at,updated_at,active,token_hash,token_expires_at) VALUES (?,?,?,?,?,?,?,?,1,?,?)")
           .bind(tripId, p, driver, origin, destination, actor, time, time, tokenHash, expires),
-        db.prepare("INSERT INTO monitor_trip_extras (trip_id,branch) VALUES (?,?)").bind(tripId, branch)
+        db.prepare("INSERT INTO monitor_trip_extras (trip_id,branch) VALUES (?,?)").bind(tripId, branch),
+        db.prepare("INSERT INTO monitor_trip_proofs (trip_id,proof_required) VALUES (?,1)").bind(tripId)
       ]);
       return success({
         trip: { id: tripId, plate: p, driver, origin, destination, branch, active: true,
-          createdAt: time, updatedAt: time, linkExpiresAt: expires, lastPosition: null },
+          createdAt: time, updatedAt: time, linkExpiresAt: expires, lastPosition: null,
+          selfieRequired:true,selfieStatus:"missing",receiptStatus:"missing" },
         token: access, linkExpiresDays: LINK_DAYS
       }, 201);
     } catch (e) { return dbError(e, "trip-create"); }
   }
   const parts = path.split("/").filter(Boolean);
+  if(parts.length===7&&parts[0]==="v1"&&parts[1]==="monitor"&&parts[2]==="trips"&&
+    parts[4]==="proofs"&&["selfie","receipt"].includes(parts[5])&&
+    ((parts[6]==="download"&&method==="GET")||(parts[6]==="review"&&method==="POST")))
+    return monitorManagerProof(request,env,parts[3],parts[5],parts[6],auth.session);
   if (parts.length === 5 && parts[0] === "v1" && parts[1] === "monitor" &&
       parts[2] === "trips" && parts[4] === "positions" && method === "GET") {
     if (!validId(parts[3])) return errorResponse("Identificador inválido.", 400);
@@ -156,12 +173,24 @@ export async function monitorController(request, env) {
       parts[2] === "trips" && parts[4] === "stop" && method === "POST") {
     if (!validId(parts[3])) return errorResponse("Identificador inválido.", 400);
     try {
-      const time = now();
-      const result = await db.prepare("UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1")
-        .bind(time, parts[3]).run();
+      const doc=await db.prepare("SELECT proof_required,selfie_status,receipt_status FROM monitor_trip_proofs WHERE trip_id=?").bind(parts[3]).first();
+      const complete=doc?.selfie_status==="approved"&&doc?.receipt_status==="approved";
+      const body=await parse(request);
+      const actorRole=clean(auth.session.perfil).toUpperCase();
+      const reason=clean(body?.reason,500);
+      const emergency=Number(doc?.proof_required||0)===1&&!complete&&
+        actorRole==="ADMINISTRADOR"&&body?.emergency===true&&reason.length>=15;
+      if(Number(doc?.proof_required||0)===1&&!complete&&!emergency)
+        return errorResponse("Encerramento exige aprovação da selfie e do comprovante. Em emergência, um administrador pode registrar justificativa.",409);
+      const time=now();
+      const result=await db.prepare("UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1")
+        .bind(time,parts[3]).run();
+      if(emergency&&result.meta?.changes)
+        await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (? ,'trip','emergency_stop',?,?,?)")
+          .bind(parts[3],clean(auth.session.usuario),reason,time).run();
       if (!result.meta?.changes) return errorResponse("Viagem não encontrada ou já encerrada.", 404);
       const row = await db.prepare(
-        "SELECT t.*, COALESCE(e.branch,'') AS branch FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id WHERE t.id=?"
+        "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.id=?"
       ).bind(parts[3]).first();
       return success({ trip: toTrip(row) });
     } catch (e) { return dbError(e, "trip-stop"); }

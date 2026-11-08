@@ -1,97 +1,432 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Monitoramento Nova Frota</title>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Central de Monitoramento | Nova Frota</title>
 <link rel="stylesheet" href="../assets/css/app.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#edf3fa;color:#183657;font:14px Inter,Arial,sans-serif}
-main{max-width:1540px;margin:88px auto 25px;padding:0 18px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
-h1{font-size:25px;margin:0;color:#0a3568}.muted{color:#637d99}.panel{background:white;border:1px solid #d5e1ee;border-radius:15px;box-shadow:0 8px 24px #142e4b12;padding:18px}
-.layout{display:grid;grid-template-columns:350px minmax(0,1fr);gap:16px}.stack{display:grid;gap:16px}h2{margin:0 0 12px;font-size:16px}
-label{display:grid;gap:4px;color:#315371;font-weight:700;font-size:12px}input{width:100%;padding:11px;border:1px solid #c9d8e8;border-radius:9px;font:inherit}
-form{display:grid;gap:10px}button{border:0;border-radius:9px;padding:11px 14px;cursor:pointer;font-weight:800;background:#0967b2;color:white}
-button:disabled{opacity:.5;cursor:not-allowed}.ghost{background:#e7f0fa;color:#145080}.danger{background:#b91c3c}.trip{border:1px solid #d7e3ef;border-radius:11px;padding:12px;margin-top:8px;cursor:pointer;background:#fafcff}
-.trip.active{border-color:#2794e5;background:#edf8ff}.trip strong{display:block;margin-bottom:4px}.trip small{display:block;color:#63809e}
-.status{display:inline-block;border-radius:20px;padding:4px 8px;background:#e5f6e9;color:#147a49;font-weight:800;font-size:11px;margin-top:8px}.status.off{background:#f3e9e9;color:#a44848}
-#map{height:min(70vh,700px);min-height:420px;border-radius:12px;overflow:hidden;background:#dfeaf4}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.note{background:#eff6ff;border:1px solid #d0e6fa;padding:12px;border-radius:10px;line-height:1.5}.error{color:#b3263e}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.kpi{background:#f5f9fd;border-radius:10px;padding:11px}.kpi strong{font-size:22px;display:block}
-@media(max-width:850px){main{margin-top:75px}.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}#map{height:420px}}
-</style></head><body>
-<main>
-<div class="head"><div><h1>📍 MONITORAMENTO NOVA FROTA</h1><div class="muted">Acompanhamento de viagens por localização compartilhada pelo motorista</div></div>
-<div class="tools"><button id="refresh" class="ghost">↻ Atualizar</button><a href="./home.html">← Voltar à Home</a></div></div>
-<div class="kpis"><div class="kpi"><small>Viagens ativas</small><strong id="kActive">0</strong></div><div class="kpi"><small>Com posição</small><strong id="kLive">0</strong></div><div class="kpi"><small>Sem atualização há 15 min</small><strong id="kStale">0</strong></div></div>
-<div class="layout"><div class="stack"><section class="panel"><h2>Nova viagem monitorada</h2>
-<form id="newTrip"><label>Placa do caminhão<input name="plate" maxlength="7" required placeholder="ABC1D23" autocomplete="off"></label>
-<label>Motorista<input name="driver" maxlength="100" required placeholder="Nome do motorista"></label>
-<label>Origem<input name="origin" maxlength="100" placeholder="Rio Verde-GO"></label>
-<label>Destino<input name="destination" maxlength="100" placeholder="Santos-SP"></label>
-<button type="submit">+ Criar link de rastreamento</button></form>
-<div id="linkBox" class="note" hidden style="margin-top:12px"><strong>Link do motorista criado</strong><p>Envie este link ao motorista. Válido por 24 horas para iniciar o compartilhamento.</p><input id="driverLink" readonly><div class="tools" style="margin-top:8px"><button type="button" id="copyLink">Copiar link</button><button type="button" class="ghost" id="shareLink">Compartilhar</button></div></div>
-</section><section class="panel"><h2>Viagens recentes</h2><div id="tripList" class="muted">Carregando...</div></section></div>
-<section class="panel"><h2>Mapa de acompanhamento</h2><div id="map"></div><div id="details" class="note" style="margin-top:12px">Selecione uma viagem para visualizar os detalhes.</div><p class="muted" style="font-size:12px">O navegador do motorista precisa permanecer aberto para atualizações contínuas. A posição pode ficar desatualizada se o celular bloquear ou perder sinal.</p></section></div>
-<p id="feedback" role="status" class="muted"></p></main>
-<script src="../assets/js/api.js?v=5"></script><script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+:root{color-scheme:light;--blue:#0b396d;--blue2:#0874bc;--green:#16864f;--muted:#667e98;--line:#dae4ef}
+*{box-sizing:border-box}
+body{margin:0;background:#f2f6fb;color:#193957;font:14px Inter,Arial,sans-serif}
+main{max-width:1800px;margin:92px auto 28px;padding:0 20px}
+h1,h2,h3,p{margin-top:0}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{color:#16854d;font-weight:900;font-size:11px;letter-spacing:1.6px;margin-bottom:5px}
+h1{font-size:27px;color:var(--blue);margin:0 0 5px;letter-spacing:-.55px}
+.subtitle,.muted{color:var(--muted)}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn,main button{border:0;cursor:pointer;font:800 13px Inter,Arial,sans-serif;border-radius:10px;background:#086eb7;color:white;padding:11px 14px}
+main button:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost,main button.ghost{background:#e9f1fa;color:#21567c}
+.btn.danger,main button.danger{background:#c52d44;color:#fff}
+.link{color:#0b6199;text-decoration:none;font-weight:800}
+.pill{display:inline-flex;align-items:center;gap:7px;color:#36647f;border:1px solid #d7e3ef;border-radius:30px;padding:9px 12px;background:white;font-size:12px;font-weight:700}
+.dot{width:8px;height:8px;background:#1baf65;border-radius:50%;display:inline-block}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 14px}
+.kpi{border:1px solid var(--line);border-radius:14px;background:#fff;min-height:100px;padding:15px 17px;box-shadow:0 6px 20px #143b5e09}
+.kpi small{display:block;font-weight:750;color:#6b829a;line-height:1.4}
+.kpi strong{display:block;font-size:31px;letter-spacing:-1px;color:#163b64;margin-top:9px}
+.kpi.green strong{color:#168654}.kpi.amber strong{color:#ba7312}.kpi.red strong{color:#c6374f}
+.alerts{display:none;background:#fff;border:1px solid #f2d8a6;border-left:4px solid #dc9a29;border-radius:12px;padding:13px 16px;margin-bottom:14px;gap:6px}
+.alerts.show{display:grid}.alerts strong{color:#845411}
+.alerts span{color:#735c42;font-size:12px}
+.workbench{display:grid;grid-template-columns:minmax(320px,390px) minmax(0,1fr);gap:14px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 25px #153a580a;padding:17px}
+.panel h2{font-size:16px;color:var(--blue);margin-bottom:13px}
+.sidebar{min-width:0}
+.fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fieldgrid .full{grid-column:1/-1}
+main label{display:grid;gap:5px;font-size:11px;color:#42617e;font-weight:800}
+main input,main select{width:100%;border:1px solid #ccdbea;border-radius:9px;padding:10px 11px;font:13px Inter,Arial,sans-serif;background:#fff;color:#163657}
+main input:focus,main select:focus{outline:2px solid #acd7f7;outline-offset:1px}
+main input::placeholder{color:#9aaec0}
+.listhead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:17px 0 8px}
+.listhead strong{color:var(--blue)}.listhead small{color:var(--muted)}
+#tripList{display:grid;gap:9px;max-height:520px;overflow-y:auto;padding-right:3px}
+.trip{border:1px solid #dbe6f1;border-radius:12px;background:#fbfdff;padding:12px;text-align:left;width:100%;color:#173856;transition:border-color .15s,background .15s}
+.trip:hover,.trip:focus-visible{border-color:#69b0e7;outline:none}
+.trip.active{border-color:#1c8cd1;background:#eff8ff;box-shadow:inset 3px 0 #1c8cd1}
+.trip .name{font-weight:850;font-size:14px;display:block}.trip .route{font-size:12px;color:#657c93;margin:5px 0 8px;overflow-wrap:anywhere}
+.trip .foot{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tag{display:inline-block;border-radius:22px;padding:5px 9px;font-size:10px;font-weight:900}
+.tag.live{background:#e1f7ec;color:#158452}.tag.warn{background:#fff0d5;color:#a76b13}
+.tag.lost{background:#ffe6e9;color:#ae2f45}.tag.wait{background:#eaf2fa;color:#506f89}
+.tag.done{background:#edf0f3;color:#667787}
+.trip .foot small{color:#71869a;font-size:10px}
+#map{height:min(61vh,650px);min-height:450px;border-radius:12px;background:#dbe8f2;overflow:hidden}
+.maphead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:11px}
+.maphead h2{margin:0}
+.mapbadge{border-radius:22px;background:#f0f7fc;color:#47708a;font-size:11px;font-weight:800;padding:6px 9px}
+.map-pin{background:#0977be;border:3px solid white;box-shadow:0 2px 10px #1640615e;border-radius:50%;color:#fff;width:31px;height:31px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.map-pin.warn{background:#d39b30}.map-pin.lost{background:#c74255}
+.map-pin.wait{background:#71869a}
+.detail{margin-top:13px;border:1px solid #d9e7f3;background:#f7fbff;border-radius:12px;padding:14px;min-height:110px}
+.detail strong{font-size:15px;color:#123c68}.detail p{margin:8px 0;color:#496780;line-height:1.45}
+.detail .meta{display:flex;gap:14px;flex-wrap:wrap}
+.detail .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.history{margin-top:14px;border-top:1px solid #e3eaf2;padding-top:13px}
+.history h3{font-size:14px;margin-bottom:6px;color:#183c62}
+.history-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.history-note{color:#6d8296;font-size:11px;margin:6px 0 0}
+.create-trip{margin-top:14px}
+.create-trip summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;color:#0b548d;font-weight:900}
+.create-trip summary::-webkit-details-marker{display:none}
+.create-trip summary::after{content:"+";font-size:19px}
+.create-trip[open] summary::after{content:"−"}
+.create-trip form{display:grid;gap:12px;margin-top:13px}
+.note{background:#edf6ff;border:1px solid #cde4f8;border-radius:10px;padding:11px 12px;color:#355b78;font-size:12px;line-height:1.5}
+.note strong{color:#174f7b}
+#linkBox{margin-top:13px}
+#linkBox input{margin-top:8px}
+#linkBox .toolbar{margin-top:8px}
+#feedback{font-size:12px;color:#53768f;min-height:18px;margin:12px 3px}
+.leaflet-container{font-family:Inter,Arial,sans-serif}
+@media(max-width:1150px){.kpis{grid-template-columns:repeat(3,1fr)}.workbench{grid-template-columns:340px minmax(0,1fr)}}
+@media(max-width:880px){main{margin-top:78px;padding:0 12px}.workbench{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}#map{height:450px;min-height:360px}#tripList{max-height:310px}}
+@media(max-width:500px){h1{font-size:22px}.kpis{gap:8px}.kpi{padding:12px;min-height:85px}.kpi strong{font-size:25px}.panel{padding:12px}.fieldgrid{gap:7px}#map{height:360px;min-height:340px}}
+</style></head>
+<body><main>
+<header class="topline">
+  <div><div class="eyebrow">NOVA FROTA · CONTROLE OPERACIONAL</div>
+    <h1>Central de Monitoramento</h1>
+    <div class="subtitle">Posição GPS de viagens autorizadas pelos motoristas, com histórico e alertas.</div>
+  </div>
+  <div class="toolbar"><span class="pill"><span class="dot"></span><span id="lastUpdate">Aguardando atualização</span></span>
+    <button id="refresh" class="ghost" type="button">↻ Atualizar</button>
+    <a class="link" href="./home.html">← Home</a>
+  </div>
+</header>
+<section class="kpis" aria-label="Indicadores do monitoramento">
+  <div class="kpi"><small>Viagens ativas</small><strong id="kActive">0</strong></div>
+  <div class="kpi green"><small>GPS recente (até 5 min)</small><strong id="kLive">0</strong></div>
+  <div class="kpi amber"><small>Atenção (5 a 15 min)</small><strong id="kWarn">0</strong></div>
+  <div class="kpi red"><small>Sem sinal (mais de 15 min)</small><strong id="kLost">0</strong></div>
+  <div class="kpi"><small>Aguardando primeiro GPS</small><strong id="kWait">0</strong></div>
+</section>
+<section class="alerts" id="alerts" aria-live="polite"></section>
+<div class="workbench">
+  <aside class="sidebar">
+    <section class="panel">
+      <h2>Veículos monitorados</h2>
+      <div class="fieldgrid">
+        <label class="full">Buscar placa, motorista ou rota
+          <input id="search" type="search" placeholder="Ex.: ABC1D23, Rio Verde..." autocomplete="off">
+        </label>
+        <label>Situação<select id="filterStatus">
+          <option value="active">Viagens ativas</option>
+          <option value="all">Todas as viagens</option>
+          <option value="live">Transmitindo GPS</option>
+          <option value="warn">Atenção</option>
+          <option value="lost">Sem sinal</option>
+          <option value="wait">Aguardando GPS</option>
+          <option value="done">Encerradas</option>
+        </select></label>
+        <label>Filial<select id="filterBranch"><option value="">Todas as filiais</option></select></label>
+      </div>
+      <div class="listhead"><strong>Viagens</strong><small id="shownCount">0 encontradas</small></div>
+      <div id="tripList" role="list"><div class="muted">Carregando viagens...</div></div>
+    </section>
+    <section class="panel create-trip">
+      <details id="newTripDetails">
+        <summary>Cadastrar nova viagem monitorada</summary>
+        <form id="newTrip">
+          <div class="fieldgrid">
+            <label>Placa do caminhão<input name="plate" maxlength="7" required placeholder="ABC1D23" autocomplete="off"></label>
+            <label>Filial<input name="branch" maxlength="60" placeholder="Ex.: Rio Verde" list="filiais"></label>
+            <datalist id="filiais"></datalist>
+            <label class="full">Nome do motorista<input name="driver" maxlength="100" required placeholder="Motorista responsável"></label>
+            <label>Origem<input name="origin" maxlength="100" placeholder="Rio Verde-GO"></label>
+            <label>Destino<input name="destination" maxlength="100" placeholder="Santos-SP"></label>
+          </div>
+          <button type="submit">+ Criar link de rastreamento</button>
+        </form>
+        <div class="note" id="linkBox" hidden>
+          <strong>Link criado para o motorista</strong>
+          <div>Válido por sete dias, ou até a viagem ser encerrada. O GPS só começa após a autorização do motorista.</div>
+          <input id="driverLink" aria-label="Link de rastreamento" readonly>
+          <div class="toolbar"><button id="copyLink" type="button">Copiar link</button>
+            <button id="shareLink" class="ghost" type="button">Compartilhar</button></div>
+        </div>
+      </details>
+    </section>
+  </aside>
+  <section class="panel">
+    <div class="maphead"><h2>Mapa de acompanhamento</h2>
+      <span class="mapbadge" id="mapCount">0 veículos no mapa</span></div>
+    <div id="map" aria-label="Mapa de posições GPS dos veículos"></div>
+    <div class="detail" id="details">Selecione uma viagem para acompanhar a posição e visualizar o trajeto recebido.</div>
+    <section class="history" aria-labelledby="historyTitle">
+      <div class="history-row"><div><h3 id="historyTitle">Histórico de percurso</h3><span class="muted" id="historySummary">Selecione um veículo para carregar o trajeto.</span></div>
+        <button class="ghost" id="morePositions" type="button" hidden>Carregar posições anteriores</button></div>
+      <p class="history-note">Distância aproximada entre pontos GPS, não equivale à quilometragem oficial do caminhão. Paradas e sinal GPS podem afetar o cálculo.</p>
+    </section>
+  </section>
+</div>
+<p id="feedback" role="status"></p>
+</main>
+<script src="../assets/js/api.js?v=5"></script>
+<script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
 <script src="../assets/js/portal-preferences.js?v=7" defer></script>
 <script src="../assets/js/portal-preferences-advanced.js?v=6" defer></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-(() => {"use strict";
+(() => {
+"use strict";
 const $=s=>document.querySelector(s),API="https://api.portalfrete.net.br";
-let trips=[],selected=null,map=null,markers=new Map(),viewportInitialized=false;
-const status=(m,bad=false)=>{const e=$("#feedback");e.textContent=m;e.className=bad?"error":"muted"};
+const FIVE=5*60*1000,FIFTEEN=15*60*1000;
+let trips=[],selected=null,map=null,line=null,markers=new Map(),viewportInitialized=false;
+let history=[],historyBefore=null,historyMore=false,historyRequest=0,refreshing=false;
+const fmt=at=>at?new Date(at).toLocaleString("pt-BR"):"Ainda não recebida";
+const status=(m,bad=false)=>{const el=$("#feedback");el.textContent=m;el.style.color=bad?"#b3263e":"#53768f";};
 const request=async(path,method="GET",body)=>{
- const r=await fetch(API+path,{method,credentials:"include",cache:"no-store",headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
- const d=await r.json();if(!r.ok||!d.ok)throw Error((d.error||"Falha na API")+(d.details?.stage?" ["+d.details.stage+"]":""));return d;
+  const r=await fetch(API+path,{method,credentials:"include",cache:"no-store",
+    headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  const d=await r.json();
+  if(!r.ok||!d.ok)throw Error(d.error||"Falha na API de monitoramento");
+  return d;
 };
-function ensureMap(){if(map||!window.L)return;map=L.map("map").setView([-15.7,-50.4],4);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(map);}
-function showTrip(t){selected=t.id;renderList();const p=t.lastPosition;const detail=$("#details");detail.replaceChildren();
-const h=document.createElement("strong");h.textContent=t.plate+" • "+t.driver;detail.append(h);
-const info=document.createElement("p");info.textContent=(t.origin||"Origem não informada")+" → "+(t.destination||"Destino não informado");detail.append(info);
-const loc=document.createElement("p");loc.textContent=p?"Última posição: "+new Date(p.at).toLocaleString("pt-BR")+" • Precisão: "+Math.round(p.accuracy)+" m":"O motorista ainda não enviou localização.";detail.append(loc);
-if(p&&map&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))){map.setView([Number(p.lat),Number(p.lng)],12);const pin=markers.get(t.id);if(pin)pin.openPopup();}
-if(t.active){const b=document.createElement("button");b.className="danger";b.textContent="Encerrar monitoramento";b.onclick=async()=>{if(!confirm("Encerrar esta viagem? O link deixará de aceitar posições."))return;try{await request("/v1/monitor/trips/"+t.id+"/stop","POST");await refresh();status("Viagem encerrada.")}catch(e){status(e.message,true)}};detail.append(b);}
+function stateOf(t){
+  if(!t.active)return "done";
+  if(!t.lastPosition)return "wait";
+  const age=Date.now()-Date.parse(t.lastPosition.at);
+  if(!Number.isFinite(age)||age>FIFTEEN)return "lost";
+  if(age>FIVE)return "warn";
+  return "live";
+}
+const labels={live:"Transmitindo",warn:"Atenção",lost:"Sem sinal",wait:"Aguardando GPS",done:"Encerrada"};
+function ensureMap(){
+  if(map||!window.L)return;
+  map=L.map("map",{zoomControl:true}).setView([-15.7,-50.4],4);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:18,attribution:"© OpenStreetMap contributors"
+  }).addTo(map);
+  setTimeout(()=>map.invalidateSize(),100);
+}
+function filtered(){
+  const q=$("#search").value.trim().toLocaleLowerCase("pt-BR"),
+    st=$("#filterStatus").value,br=$("#filterBranch").value;
+  return trips.filter(t=>{
+    const state=stateOf(t);
+    if(st==="active"&&!t.active)return false;
+    if(st!=="active"&&st!=="all"&&st!==state)return false;
+    if(br&&(t.branch||"")!==br)return false;
+    return !q||[t.plate,t.driver,t.origin,t.destination,t.branch].join(" ").toLocaleLowerCase("pt-BR").includes(q);
+  });
+}
+function make(tag,text,cls){
+  const el=document.createElement(tag);
+  if(text!==undefined&&text!==null)el.textContent=String(text);
+  if(cls)el.className=cls;
+  return el;
+}
+function updateBranchOptions(){
+  const branches=[...new Set(trips.map(t=>t.branch).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  const select=$("#filterBranch"),v=select.value;
+  select.replaceChildren(new Option("Todas as filiais",""));
+  $("#filiais").replaceChildren();
+  branches.forEach(b=>{select.add(new Option(b,b));const o=make("option");o.value=b;$("#filiais").append(o);});
+  select.value=branches.includes(v)?v:"";
+}
+function renderKpis(){
+  const active=trips.filter(t=>t.active);
+  $("#kActive").textContent=active.length;
+  for(const st of ["live","warn","lost","wait"]){
+    const id={live:"#kLive",warn:"#kWarn",lost:"#kLost",wait:"#kWait"}[st];
+    $(id).textContent=active.filter(t=>stateOf(t)===st).length;
+  }
+  const issues=active.filter(t=>["warn","lost"].includes(stateOf(t))).sort((a,b)=>{
+    return (stateOf(a)==="lost"?0:1)-(stateOf(b)==="lost"?0:1);
+  });
+  const panel=$("#alerts");panel.replaceChildren();
+  if(issues.length){
+    panel.classList.add("show");
+    panel.append(make("strong","⚠ "+issues.length+" viagem(ns) exigem atenção"));
+    panel.append(make("span",issues.slice(0,4).map(t=>t.plate+" · "+labels[stateOf(t)]+" · "+fmt(t.lastPosition?.at)).join("  |  ")));
+    if(issues.length>4)panel.append(make("span","E mais "+(issues.length-4)+" viagem(ns) com GPS desatualizado."));
+  }else panel.classList.remove("show");
+}
+function renderList(){
+  const box=$("#tripList"),data=filtered();
+  box.replaceChildren();
+  $("#shownCount").textContent=data.length+" encontrada(s)";
+  if(!data.length){box.append(make("p","Nenhuma viagem corresponde aos filtros.","muted"));return;}
+  for(const t of data){
+    const item=make("button",null,"trip"+(selected===t.id?" active":""));
+    item.type="button";item.setAttribute("role","listitem");
+    item.append(make("span",t.plate+" · "+t.driver,"name"));
+    item.append(make("div",(t.origin||"Origem não informada")+" → "+(t.destination||"Destino não informado"),"route"));
+    const foot=make("div",null,"foot");
+    foot.append(make("span",labels[stateOf(t)],"tag "+stateOf(t)));
+    foot.append(make("small",t.branch||"Sem filial"));
+    item.append(foot);item.onclick=()=>selectTrip(t.id);
+    box.append(item);
+  }
+}
+function pinIcon(state){
+  return L.divIcon({className:"",html:'<div class="map-pin '+state+'">🚛</div>',iconSize:[31,31],iconAnchor:[15,15]});
 }
 function syncMarkers(){
- if(!map)return;
- const valid=trips.filter(t=>t.active&&t.lastPosition&&Number.isFinite(Number(t.lastPosition.lat))&&Number.isFinite(Number(t.lastPosition.lng)));
- const ids=new Set(valid.map(t=>t.id));
- for(const [id,pin] of markers){if(!ids.has(id)){pin.remove();markers.delete(id);}}
- for(const t of valid){
-  const lat=Number(t.lastPosition.lat),lng=Number(t.lastPosition.lng);
-  let pin=markers.get(t.id);
-  if(!pin){
-   pin=L.marker([lat,lng]).addTo(map);
-   pin.on("click",()=>{const trip=trips.find(x=>x.id===t.id);if(trip)showTrip(trip);});
-   markers.set(t.id,pin);
-  }else pin.setLatLng([lat,lng]);
-  const popup=document.createElement("div");
-  const title=document.createElement("strong");title.textContent=t.plate+" • "+t.driver;
-  const route=document.createElement("div");route.textContent=(t.origin||"—")+" → "+(t.destination||"—");
-  const time=document.createElement("small");time.textContent="GPS: "+new Date(t.lastPosition.at).toLocaleString("pt-BR");
-  popup.append(title,route,time);pin.bindPopup(popup);
- }
- if(valid.length&&!viewportInitialized){
-  const bounds=L.latLngBounds(valid.map(t=>[Number(t.lastPosition.lat),Number(t.lastPosition.lng)]));
-  map.fitBounds(bounds.pad(.25),{maxZoom:12});
-  viewportInitialized=true;
- }
+  if(!map)return;
+  const data=filtered().filter(t=>t.active&&t.lastPosition&&
+    Number.isFinite(Number(t.lastPosition.lat))&&Number.isFinite(Number(t.lastPosition.lng)));
+  const ids=new Set(data.map(t=>t.id));
+  for(const [id,pin] of markers){if(!ids.has(id)){pin.remove();markers.delete(id);}}
+  for(const t of data){
+    const coords=[Number(t.lastPosition.lat),Number(t.lastPosition.lng)];
+    let pin=markers.get(t.id);
+    if(!pin){
+      pin=L.marker(coords,{icon:pinIcon(stateOf(t))}).addTo(map);
+      pin.on("click",()=>selectTrip(t.id));
+      markers.set(t.id,pin);
+    }else{pin.setLatLng(coords);pin.setIcon(pinIcon(stateOf(t)));}
+    const popup=make("div");
+    popup.append(make("strong",t.plate+" · "+t.driver));
+    popup.append(make("div",(t.origin||"—")+" → "+(t.destination||"—")));
+    popup.append(make("small","Último GPS: "+fmt(t.lastPosition.at)));
+    pin.bindPopup(popup);
+  }
+  $("#mapCount").textContent=data.length+" veículo(s) com GPS";
+  if(data.length&&!viewportInitialized){
+    const bounds=L.latLngBounds(data.map(t=>[Number(t.lastPosition.lat),Number(t.lastPosition.lng)]));
+    map.fitBounds(bounds.pad(.25),{maxZoom:12});viewportInitialized=true;
+  }
 }
-function renderList(){const box=$("#tripList");box.replaceChildren();if(!trips.length){box.textContent="Nenhuma viagem cadastrada.";return;}
-for(const t of trips){const el=document.createElement("div");el.className="trip"+(selected===t.id?" active":"");el.tabIndex=0;el.role="button";
-const strong=document.createElement("strong");strong.textContent=t.plate+" • "+t.driver;const small=document.createElement("small");small.textContent=(t.origin||"—")+" → "+(t.destination||"—");
-const tag=document.createElement("span");tag.className="status"+(t.active?"":" off");tag.textContent=t.active?"Em monitoramento":"Encerrada";
-el.append(strong,small,tag);el.onclick=()=>showTrip(t);el.onkeydown=e=>{if(e.key==="Enter")showTrip(t)};box.append(el);}
+function showDetails(t){
+  const area=$("#details");area.replaceChildren();
+  if(!t){area.textContent="Selecione uma viagem para acompanhar a posição e visualizar o trajeto recebido.";return;}
+  area.append(make("strong",t.plate+" · "+t.driver));
+  area.append(make("p",(t.origin||"Origem não informada")+" → "+(t.destination||"Destino não informado")));
+  const meta=make("div",null,"meta");
+  meta.append(make("span","Filial: "+(t.branch||"Não informada")));
+  meta.append(make("span","Situação: "+labels[stateOf(t)]));
+  area.append(meta);
+  area.append(make("p",t.lastPosition?
+    "Último GPS: "+fmt(t.lastPosition.at)+" · Precisão aproximada: "+Math.round(Number(t.lastPosition.accuracy)||0)+" m":
+    "O motorista ainda não enviou posição GPS."));
+  if(t.active&&t.linkExpiresAt&&Date.parse(t.linkExpiresAt)<=Date.now())
+    area.append(make("p","O link de rastreamento expirou. Encerre esta viagem e crie uma nova para continuar.","muted"));
+  const actions=make("div",null,"actions");
+  if(t.lastPosition){
+    const focus=make("button","Centralizar veículo","ghost");
+    focus.type="button";focus.onclick=()=>focusVehicle(t);actions.append(focus);
+  }
+  if(t.active){
+    const stop=make("button","Encerrar monitoramento","danger");
+    stop.type="button";stop.onclick=async()=>{
+      if(!confirm("Encerrar a viagem de "+t.plate+"? O link será revogado e o GPS não poderá enviar novas posições."))return;
+      stop.disabled=true;
+      try{await request("/v1/monitor/trips/"+t.id+"/stop","POST");await refresh();status("Viagem encerrada. O acesso do motorista foi revogado.");}
+      catch(e){stop.disabled=false;status(e.message,true);}
+    };
+    actions.append(stop);
+  }
+  area.append(actions);
 }
-async function refresh(){try{const data=await request("/v1/monitor/trips");trips=data.trips||[];const live=trips.filter(t=>t.active&&t.lastPosition);const stale=live.filter(t=>Date.now()-Date.parse(t.lastPosition.at)>900000);
-$("#kActive").textContent=trips.filter(t=>t.active).length;$("#kLive").textContent=live.length;$("#kStale").textContent=stale.length;
-renderList();syncMarkers();const current=trips.find(t=>t.id===selected);if(current)showTrip(current);status("Atualizado às "+new Date().toLocaleTimeString("pt-BR"));}catch(e){status(e.message,true)}}
+function focusVehicle(t){
+  if(!map||!t.lastPosition)return;
+  const coords=[Number(t.lastPosition.lat),Number(t.lastPosition.lng)];
+  if(coords.every(Number.isFinite)){map.setView(coords,12);markers.get(t.id)?.openPopup();}
+}
+function distanceKm(a,b){
+  const x=Number(a.lat),y=Number(b.lat),u=Number(a.lng),v=Number(b.lng);
+  if(![x,y,u,v].every(Number.isFinite))return 0;
+  const rad=Math.PI/180,d1=(y-x)*rad,d2=(v-u)*rad;
+  const h=Math.sin(d1/2)**2+Math.cos(x*rad)*Math.cos(y*rad)*Math.sin(d2/2)**2;
+  return 12742*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function renderHistory(){
+  if(line){map?.removeLayer(line);line=null;}
+  if(!selected){$("#historySummary").textContent="Selecione um veículo para carregar o trajeto.";$("#morePositions").hidden=true;return;}
+  if(!history.length){$("#historySummary").textContent="Nenhuma coordenada histórica disponível para esta viagem.";$("#morePositions").hidden=true;return;}
+  const coords=history.filter(p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))).map(p=>[Number(p.lat),Number(p.lng)]);
+  if(map&&coords.length>1){
+    line=L.polyline(coords,{color:"#097dc4",weight:4,opacity:.85}).addTo(map);
+  }
+  let dist=0;
+  for(let i=1;i<history.length;i++){
+    const part=distanceKm(history[i-1],history[i]);
+    if(part<20)dist+=part; // ignora saltos GPS inverossímeis; não é odômetro
+  }
+  $("#historySummary").textContent=history.length+" ponto(s) recebidos · ~"+dist.toLocaleString("pt-BR",{maximumFractionDigits:1})+
+    " km estimados · "+fmt(history[0].at)+" a "+fmt(history[history.length-1].at);
+  $("#morePositions").hidden=!historyMore;
+}
+async function loadHistory(id,appendOlder=false){
+  const seq=++historyRequest;
+  if(!appendOlder){history=[];historyBefore=null;historyMore=false;$("#historySummary").textContent="Carregando histórico...";renderHistory();}
+  const endpoint="/v1/monitor/trips/"+id+"/positions"+(appendOlder&&historyBefore?"?before="+encodeURIComponent(historyBefore):"");
+  try{
+    const data=await request(endpoint);
+    if(seq!==historyRequest||selected!==id)return;
+    history=appendOlder?[...(data.points||[]),...history]:(data.points||[]);
+    historyMore=!!data.hasMore;historyBefore=data.nextBefore||null;
+    renderHistory();
+  }catch(e){if(seq===historyRequest){$("#historySummary").textContent="Histórico indisponível: "+e.message;status(e.message,true);}}
+}
+function selectTrip(id){
+  const changed=selected!==id;selected=id;
+  const t=trips.find(x=>x.id===id);
+  renderList();showDetails(t);
+  if(t)focusVehicle(t);
+  if(changed)loadHistory(id);
+}
+function renderAll(){
+  renderKpis();renderList();syncMarkers();
+  const t=trips.find(x=>x.id===selected);
+  if(t)showDetails(t);else if(selected){selected=null;history=[];renderHistory();showDetails(null);}
+}
+async function refresh(){
+  if(refreshing)return;
+  refreshing=true;$("#refresh").disabled=true;
+  try{
+    const data=await request("/v1/monitor/trips");
+    trips=data.trips||[];
+    updateBranchOptions();renderAll();
+    $("#lastUpdate").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR");
+    status("Dados de monitoramento atualizados.");
+    if(selected)await loadHistory(selected);
+  }catch(e){status(e.message,true);$("#lastUpdate").textContent="Não foi possível atualizar";}
+  finally{refreshing=false;$("#refresh").disabled=false;}
+}
 $("#refresh").onclick=refresh;
-$("#newTrip").onsubmit=async e=>{e.preventDefault();const form=e.currentTarget;const body=Object.fromEntries(new FormData(form));const btn=form.querySelector("button");btn.disabled=true;
-try{const data=await request("/v1/monitor/trips","POST",body);const link=new URL("./monitorar-motorista.html",location.href);link.hash=data.token;$("#driverLink").value=link.href;$("#linkBox").hidden=false;form.reset();await refresh();showTrip(data.trip);status("Viagem criada. Envie o link ao motorista.");}catch(err){status(err.message,true)}finally{btn.disabled=false}};
-$("#copyLink").onclick=async()=>{await navigator.clipboard.writeText($("#driverLink").value);status("Link copiado.")};
-$("#shareLink").onclick=async()=>{const url=$("#driverLink").value;if(navigator.share){try{await navigator.share({title:"Rastreamento Nova Frota",url})}catch{}}else{await navigator.clipboard.writeText(url);status("Link copiado.")}};
-(async()=>{try{await window.portalAuthReady;if(typeof requireFeatureAuth!=="function"||!requireFeatureAuth("monitoramento"))return;ensureMap();await refresh();setInterval(refresh,30000);}catch(e){status(e.message,true)}})();
+$("#morePositions").onclick=()=>{if(selected&&historyMore)loadHistory(selected,true);};
+for(const id of ["#search","#filterStatus","#filterBranch"]){
+  $(id).addEventListener(id==="#search"?"input":"change",()=>{viewportInitialized=false;renderList();syncMarkers();});
+}
+$("#newTrip").onsubmit=async e=>{
+  e.preventDefault();const form=e.currentTarget,body=Object.fromEntries(new FormData(form));
+  const btn=form.querySelector('button[type="submit"]');btn.disabled=true;
+  try{
+    const data=await request("/v1/monitor/trips","POST",body);
+    const link=new URL("./monitorar-motorista.html",location.href);link.hash=data.token;
+    $("#driverLink").value=link.href;$("#linkBox").hidden=false;
+    form.reset();$("#filterStatus").value="active";$("#search").value="";
+    $("#filterBranch").value="";
+    await refresh();selectTrip(data.trip.id);
+    status("Viagem criada. Compartilhe o link apenas com o motorista responsável.");
+  }catch(err){status(err.message,true);}finally{btn.disabled=false;}
+};
+$("#copyLink").onclick=async()=>{
+  try{await navigator.clipboard.writeText($("#driverLink").value);status("Link copiado.");}
+  catch(e){status("Não foi possível copiar automaticamente. Selecione o link para copiar.",true);}
+};
+$("#shareLink").onclick=async()=>{
+  const url=$("#driverLink").value;
+  if(navigator.share){
+    try{await navigator.share({title:"Rastreamento Nova Frota",url});}
+    catch(e){if(e.name!=="AbortError")status("Compartilhamento indisponível.",true);}
+  }else $("#copyLink").click();
+};
+(async()=>{
+  try{
+    await window.portalAuthReady;
+    if(typeof requireFeatureAuth!=="function"||!requireFeatureAuth("monitoramento"))return;
+    ensureMap();await refresh();
+    setInterval(()=>{if(!document.hidden)refresh();},30000);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh();});
+  }catch(e){status(e.message,true);}
 })();
-</script></body></html>
+})();
+</script>
+</body></html>

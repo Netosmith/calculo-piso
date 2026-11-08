@@ -225,21 +225,67 @@ async function deleteEntry(id){
   try{await call("/entries/"+encodeURIComponent(id),"DELETE");await refresh();status("Lançamento excluído da listagem.",false)}
   catch(e){status(e.message,true)}
 }
-function downloadCSV(){
-  const safe=v=>{
-    let s=String(v??"");
-    if(/^[=+\-@\t\r]/.test(s))s="'"+s;
-    return '"'+s.replace(/"/g,'""')+'"';
-  };
-  const rows=[["Nome","Função","Cidade","Filial","Salário (R$)","Vales (R$)","Custos (R$)","Comissões (R$)","Saldo gerencial (R$)","Status"]];
-  for(const e of selectedEmployees())rows.push([e.name,e.role,e.city,e.branch,(e.salaryCents/100).toFixed(2),(e.valesCents/100).toFixed(2),(e.costsCents/100).toFixed(2),((e.commissionsCents||0)/100).toFixed(2),((e.salaryCents+(e.commissionsCents||0)-e.valesCents)/100).toFixed(2),e.active?"Ativo":"Inativo"]);
-  const csv="\uFEFF"+rows.map(r=>r.map(safe).join(";")).join("\r\n");
-  const u=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-  const a=document.createElement("a");a.href=u;a.download="nova-frota-funcionarios-"+month+".csv";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+function downloadCSV(mode="geral"){
+ const variant=DOWNLOAD_VARIANTS[mode];
+ if(!variant)return status("Opção de download inválida.",true);
+ const csvSafe=v=>{
+  let t=String(v??"");
+  if(/^[=+\-@\t\r]/.test(t))t="'"+t;
+  return '"'+t.replace(/"/g,'""')+'"';
+ };
+ const cell=c=>(Number(c)/100).toFixed(2).replace(".",",");
+ const header=["Nome","Função","Filial","Salário (R$)"];
+ if(variant.vales)header.push("Vales (R$)");
+ if(variant.commission)header.push("Comissão (R$)");
+ header.push("Total (R$)","Situação");
+ const rows=[header];
+ let sumSalary=0,sumVale=0,sumCommission=0,sumTotal=0;
+ for(const e of selectedEmployees()){
+  const salary=Number(e.salaryCents||0),vale=Number(e.valesCents||0),
+    commission=Number(e.commissionsCents||0),total=totalCents(e,variant);
+  const row=[e.name,e.role,e.branch,cell(salary)];
+  if(variant.vales)row.push(cell(vale));
+  if(variant.commission)row.push(cell(commission));
+  row.push(cell(total),e.active?"Ativo":"Inativo");
+  rows.push(row);
+  sumSalary+=salary;sumVale+=vale;sumCommission+=commission;sumTotal+=total;
+ }
+ const sum=["TOTAL GERAL","","",cell(sumSalary)];
+ if(variant.vales)sum.push(cell(sumVale));
+ if(variant.commission)sum.push(cell(sumCommission));
+ sum.push(cell(sumTotal),"");
+ rows.push(sum);
+ rows.push(["Relatório",variant.label,"Competência",month,"Toneladas",
+    state.monthlyVolume?new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(state.monthlyVolume.tonnesMilli/1000):"Não aplicado"]);
+ const csv="\uFEFF"+rows.map(row=>row.map(csvSafe).join(";")).join("\r\n");
+ const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ const link=document.createElement("a");link.href=url;
+ link.download="nova-frota-funcionarios-"+mode+"-"+month+".csv";
+ document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function volumeToMilli(raw){
+ let s=String(raw??"").trim().replace(/\s/g,"");
+ if(!s)return null;
+ if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
+ else if(/^\d{1,3}(?:\.\d{3})+$/.test(s))s=s.replace(/\./g,"");
+ if(!/^\d+(?:\.\d{1,3})?$/.test(s))return null;
+ const value=Math.round(Number(s)*1000);
+ return Number.isSafeInteger(value)&&value>=0&&value<=1000000000?value:null;
+}
+async function applyMonthlyVolume(){
+ const milli=volumeToMilli($("rhMonthVolume")?.value);
+ if(milli===null)return status("Informe toneladas válidas. Exemplo: 80.000 ou 80.000,500.",true);
+ const button=$("rhApplyMonthVolume");if(button)button.disabled=true;
+ try{
+  await call("/volume","POST",{month,tonnesMilli:milli});
+  await refresh();
+  status("Foram aplicadas "+new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(milli/1000)+" toneladas para "+month+".",false);
+ }catch(error){status(error.message,true)}
+ finally{if(button)button.disabled=false}
 }
 function applyDashboardBranch(){
   const branch=$("rhDashboardBranch")?.value||"";
-  const items=state.entries.filter(x=>!branch||state.employees.some(e=>e.id===x.employeeId&&e.branch===branch));
+  const items=state.entries.filter(x=>x.kind==="VALE"&&(!branch||state.employees.some(e=>e.id===x.employeeId&&e.branch===branch)));
   const t=$("rhRecentBody");if(t)t.innerHTML=entryRows(items.slice(0,12));
 }
 async function init(){

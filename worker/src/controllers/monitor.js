@@ -190,10 +190,9 @@ export async function monitorController(request, env) {
         const audit=db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) "+
           "SELECT ?,'trip','emergency_stop',?,?,? WHERE EXISTS (SELECT 1 FROM monitor_trips WHERE id=? AND active=1)")
           .bind(parts[3],clean(auth.session.usuario),reason,time,parts[3]);
-        [result]=await db.batch([audit,update]);
+        const changes=await db.batch([audit,update]);
         // O batch transacional impede encerrar sem registrar o motivo excepcional.
-        result=(await db.prepare("SELECT active FROM monitor_trips WHERE id=?").bind(parts[3]).first())?.active===0
-          ?{meta:{changes:1}}:{meta:{changes:0}};
+        result=changes[1];
       }else result=await update.run();
       if (!result.meta?.changes) return errorResponse("Viagem não encontrada ou já encerrada.", 404);
       const row = await db.prepare(

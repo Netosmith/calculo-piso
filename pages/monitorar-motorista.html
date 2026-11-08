@@ -41,7 +41,7 @@ p{margin:0;line-height:1.55;color:var(--muted)}
 .trip-card .label{font-size:10px;color:#47799b;font-weight:900;letter-spacing:.09em}
 .trip-card .value{font-size:21px;font-weight:900;letter-spacing:-.015em;color:#0d3662;margin-top:5px;overflow-wrap:anywhere}
 .trip-card .route{font-size:13px;color:#436a8c;margin-top:9px;overflow-wrap:anywhere}
-.journey-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:19px}
+.journey-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:19px}
 .track-item{border:1px solid #e3ecf6;border-radius:11px;padding:9px 6px;text-align:center;background:#fbfdff;color:#69819a;font-size:10px;font-weight:800;line-height:1.3}
 .track-item .track-number{display:block;margin:0 auto 5px;width:24px;height:24px;line-height:24px;border-radius:8px;background:#e9f1f8;color:#477394;font-size:12px}
 .track-item.done{border-color:#bce4d1;background:#f0fbf5;color:#14774b}
@@ -79,6 +79,19 @@ button+button{margin-top:10px}
 }
 .privacy-control:hover:not(:disabled){background:#f5f9fd;color:#2a526c}
 #finishHint{background:#fff6e6;border-radius:10px;padding:10px 12px;color:#835c21}
+.term-card{background:#f3f8fc;border:1px solid #d9e8f3;border-radius:13px;padding:14px 13px;margin:13px 0}
+.term-card h3{font-size:13px;margin:0 0 8px;color:#143a5c}
+.term-card p{font-size:12px;line-height:1.55;margin:0 0 10px;color:#4d6b83}
+.term-card .tick{font-size:12px;font-weight:750;padding-top:6px;border-top:1px solid #dce9f3}
+.active-gps{background:#e5f7ee;border:1px solid #a5dabe;border-radius:13px;padding:13px 14px;color:#116b42;font-weight:850;font-size:13px;margin-top:12px}
+.active-gps small{display:block;font-weight:500;font-size:11px;margin-top:4px}
+.step-wait{background:#fff5e4;color:#845c1f;padding:12px 13px;border-radius:11px;font-size:12px;line-height:1.5}
+.step-good{background:#e9f8ef;color:#147445;padding:12px 13px;border-radius:11px;font-size:12px;line-height:1.5}
+#finishButton{background:#158354;min-height:61px;font-size:15px;margin-top:13px}
+@media(max-width:440px){
+ .journey-track{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .track-item{padding:7px 6px}
+}
 
 #sendSelfie{background:var(--green);margin-top:13px}
 #sendReceipt{background:var(--green);margin-top:12px}
@@ -145,12 +158,13 @@ button+button{margin-top:10px}
     </section>
 
     <nav class="journey-track" aria-label="Etapas da viagem">
-      <div class="track-item current" id="stageSelfie"><span class="track-number">1</span>Identificação</div>
-      <div class="track-item" id="stageGps"><span class="track-number">2</span>Localização</div>
+      <div class="track-item current" id="stageSelfie"><span class="track-number">1</span>Selfie</div>
+      <div class="track-item" id="stageGps"><span class="track-number">2</span>Iniciar viagem</div>
       <div class="track-item" id="stageReceipt"><span class="track-number">3</span>Descarga</div>
+      <div class="track-item" id="stageFinish"><span class="track-number">4</span>Finalizar</div>
     </nav>
 
-    <section class="step" id="selfieBox" hidden>
+    <section class="step" id="selfieBox">
       <div class="step-heading">
         <span class="step-icon" aria-hidden="true">📷</span>
         <div><small>Etapa 1</small><h2>Selfie de identificação</h2></div>
@@ -175,18 +189,25 @@ button+button{margin-top:10px}
     <section class="step" id="gpsBox">
       <div class="step-heading">
         <span class="step-icon" aria-hidden="true">📍</span>
-        <div><small>Etapa 2</small><h2>Localização da viagem</h2></div>
+        <div><small>Etapa 2</small><h2>Iniciar viagem</h2></div>
       </div>
-      <p>Ao iniciar, você autoriza o compartilhamento da localização do celular durante o transporte.</p>
-      <button id="start" type="button" disabled>Iniciar viagem</button>
-      <button id="stop" type="button" hidden>Concluir compartilhamento do GPS</button>
-      <p class="notice" id="finishHint" hidden>Para concluir normalmente o GPS, primeiro envie o comprovante de descarga e aguarde a aprovação da selfie e do comprovante pela Nova Frota.</p>
-      <button id="pauseGps" type="button" class="privacy-control" hidden>Suspender minha localização por privacidade</button>
-      <p class="notice">O encerramento normal do compartilhamento só é liberado após a validação documental. A permissão de localização continua sob seu controle e pode ser revogada no celular. Caso isso aconteça antes da aprovação, a viagem continuará aberta e será sinalizada à Nova Frota. O navegador pode pausar o GPS com a tela bloqueada.</p>
-      <p id="status" role="status">Aguardando validação do link.</p>
+      <p>Depois de enviar sua selfie, leia o termo e inicie o acompanhamento da viagem.</p>
+      <div class="term-card" id="travelTerm">
+        <h3>Termo de acompanhamento da viagem</h3>
+        <p>Estou ciente de que, ao iniciar a viagem, a Nova Frota acompanhará as posições que meu celular enviar durante o transporte da carga, para segurança e acompanhamento operacional, até a entrega e a conferência dos documentos.</p>
+        <p>A finalização normal do acompanhamento será liberada após o envio e a aprovação da selfie e do comprovante de descarga pela Nova Frota. O navegador pode interromper os envios se a tela for bloqueada, o aplicativo for fechado ou faltar sinal. Sei que posso revogar a permissão de localização no celular; isso não encerra a viagem e a Nova Frota poderá identificar a ausência de sinal.</p>
+        <label class="tick"><input id="gpsConsent" type="checkbox"> <span>Li e aceito o termo de acompanhamento desta viagem e autorizo o envio das posições do meu aparelho durante o percurso.</span></label>
+        <div class="uploadstatus" id="consentStatus">Termo ainda não aceito.</div>
+      </div>
+      <button id="start" type="button" disabled>INICIAR VIAGEM</button>
+      <div id="trackingActive" class="active-gps" hidden>
+        <span>📍 Acompanhamento GPS iniciado</span>
+        <small>O GPS será atualizado enquanto esta página permanecer ativa e o celular permitir. Mantenha o acesso à localização autorizado.</small>
+      </div>
+      <p id="status" role="status">Aguardando validação da viagem.</p>
     </section>
 
-    <section class="step" id="receiptBox">
+    <section class="step" id="receiptBox" hidden>
       <div class="step-heading">
         <span class="step-icon" aria-hidden="true">📄</span>
         <div><small>Etapa 3</small><h2>Comprovante de descarga</h2></div>
@@ -209,6 +230,17 @@ button+button{margin-top:10px}
       <p class="notice">As opções exibidas pelo seletor da biblioteca dependem do iOS ou Android. Esta tela oferece apenas câmera e biblioteca.</p>
       <button id="sendReceipt" type="button" disabled>Enviar comprovante de descarga</button>
       <div class="uploadstatus" id="receiptStatus" role="status">Comprovante ainda não enviado.</div>
+    </section>
+
+    <section class="step" id="finishBox" hidden>
+      <div class="step-heading">
+        <span class="step-icon" aria-hidden="true">✅</span>
+        <div><small>Etapa 4</small><h2>Finalizar acompanhamento</h2></div>
+      </div>
+      <p>Após o envio do comprovante de descarga, a equipe da Nova Frota conferirá os documentos e liberará a finalização normal do GPS.</p>
+      <p id="finishHint" class="step-wait">Comprovante aguardando análise da Nova Frota.</p>
+      <div id="finishDone" class="step-good" hidden>Acompanhamento concluído. A finalização operacional da viagem permanece sob responsabilidade da Nova Frota.</div>
+      <button id="finishButton" type="button" hidden>FINALIZAR ACOMPANHAMENTO</button>
     </section>
 
     <div class="privacy"><strong>Privacidade dos documentos:</strong> a selfie e o comprovante ficam disponíveis à equipe autorizada da Nova Frota para conferência humana. Não há reconhecimento facial automático.</div>

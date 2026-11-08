@@ -86,11 +86,20 @@ export async function monitorController(request, env) {
   // Interrupção voluntária registra um alerta imediato, sem impedir a escolha do motorista.
   if (path === "/v1/monitor/gps-event" && method === "POST") {
     const body=await parse(request);
-    if(body?.action!=="stopped")return errorResponse("Evento GPS inválido.",400);
+    if(!["stopped","finished"].includes(body?.action))return errorResponse("Evento GPS inválido.",400);
     try{
       const row=await tripForToken(db,body?.token);
       if(!row)return errorResponse("Link inválido ou expirado.",404);
       if(row.active!==1)return errorResponse("Viagem já encerrada.",409);
+      if(body.action==="finished"){
+        // Encerramento normal de GPS segue a mesma validação documental do fim da viagem.
+        if(Number(row.proof_required||0)===1&&
+           !(row.selfie_status==="approved"&&row.receipt_status==="approved"))
+          return errorResponse("Aguarde a aprovação da selfie e do comprovante pela Nova Frota.",409);
+        await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (?,'gps','finished','MOTORISTA','Finalização do compartilhamento após aprovação documental',?)").bind(row.id,now()).run();
+        return success({recorded:true,tripActive:true,documentsApproved:true});
+      }
+      // Interrupção revogável, distinta de finalizar a viagem.
       const last=await db.prepare("SELECT created_at FROM monitor_proof_audit WHERE trip_id=? AND proof_kind='gps' AND action='stopped' ORDER BY id DESC LIMIT 1").bind(row.id).first();
       // Evita eventos repetidos se o motorista tocar várias vezes sem novas coordenadas.
       if(!last?.created_at||(row.last_position_at&&Date.parse(row.last_position_at)>Date.parse(last.created_at))){

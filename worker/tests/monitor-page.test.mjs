@@ -33,17 +33,22 @@ test("comprovante usa apenas botoes de camera e biblioteca na pagina",()=>{
   assert.match(html,/TIRAR FOTO/);
   assert.match(html,/BIBLIOTECA/);
   assert.doesNotMatch(html,/ESCOLHER ARQUIVO/);
-  assert.match(html,/id="stop"/);
+  assert.match(html,/id="finishButton"/);
   assert.match(html,/\/v1\/monitor\/gps-event/);
   assert.match(html,/\/v1\/monitor\/receipt/);
 });
 
-test("conclusao normal do GPS exige aprovacao documental e suspensao voluntaria distinta",()=>{
+test("motorista tem quatro etapas, aceite do termo e finalizacao depois da descarga",()=>{
   const html=assertScriptsCompile(driver);
-  assert.match(html,/id="stop"[^>]*>Concluir compartilhamento do GPS/);
-  assert.match(html,/id="pauseGps"[^>]*>Suspender minha localização por privacidade/);
-  assert.match(html,/receipt==="approved"/);
+  for(const id of ["stageSelfie","stageGps","stageReceipt","stageFinish","gpsConsent","travelTerm",
+    "start","trackingActive","receiptBox","finishBox","finishButton"])
+    assert.ok(html.includes('id="'+id+'"'),"Ausente: "+id);
+  assert.match(html,/INICIAR VIAGEM/);
+  assert.match(html,/RETOMAR ACOMPANHAMENTO GPS/);
   assert.match(html,/action:"finished"/);
-  assert.match(html,/action:"stopped"/);
+  assert.match(html,/\/v1\/monitor\/consent/);
+  assert.match(html,/receipt==="approved"/);
+  assert.doesNotMatch(html,/id="pauseGps"/);
+  assert.doesNotMatch(html,/id="stop"/);
   assert.match(html,/setInterval\(\(\)=>\{if\(!document.hidden\)updateReview\(\);\},30000\)/);
 });

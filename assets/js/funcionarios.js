@@ -76,29 +76,64 @@ function selectedEmployees(){
   );
 }
 function renderDashboard(){
-  const t=state.totals;
-  if($("rhKPeople"))$("rhKPeople").textContent=String(t.active??0);
-  if($("rhKSalary"))$("rhKSalary").textContent=brl(t.salaryCents);
-  if($("rhKVales"))$("rhKVales").textContent=brl(t.valesCents);
-  if($("rhKCosts"))$("rhKCosts").textContent=brl(t.costsCents);
-  if($("rhKCommissions"))$("rhKCommissions").textContent=brl(t.commissionsCents);
-  if($("rhPeriodText"))$("rhPeriodText").textContent=month.slice(5)+"/"+month.slice(0,4);
-  const target=$("rhRecentBody");if(target)target.innerHTML=entryRows(state.entries.slice(0,12));
-  const branchSelect=$("rhDashboardBranch");if(branchSelect){
-    const current=branchSelect.value;
-    const branches=[...new Set(state.employees.map(e=>e.branch))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
-    branchSelect.innerHTML='<option value="">Todas as filiais</option>'+branches.map(v=>'<option value="'+html(v)+'">'+html(v)+'</option>').join("");
-    branchSelect.value=branches.includes(current)?current:"";
-  }
+ const t=state.totals;
+ for(const [id,value] of [["rhKPeople",String(t.active||0)],["rhKSalary",brl(t.salaryCents)],
+  ["rhKVales",brl(t.valesCents)],["rhKCommissions",brl(t.commissionsCents)],
+  ["rhKPayable",brl((t.salaryCents||0)+(t.commissionsCents||0)-(t.valesCents||0))]]){
+  if($(id))$(id).textContent=value;
+ }
+ if($("rhPeriodText"))$("rhPeriodText").textContent=month.slice(5)+"/"+month.slice(0,4);
+ const fmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3});
+ if($("rhMonthVolume"))$("rhMonthVolume").value=state.monthlyVolume
+   ?fmt.format(state.monthlyVolume.tonnesMilli/1000):"";
+ if($("rhVolumeStatus"))$("rhVolumeStatus").textContent=state.monthlyVolume
+   ?"Aplicado: "+fmt.format(state.monthlyVolume.tonnesMilli/1000)+" toneladas • "+month.slice(5)+"/"+month.slice(0,4)
+   :"Ainda não há volume mensal aplicado. Os lançamentos anteriores permanecem preservados.";
+ if($("rhRecentBody"))$("rhRecentBody").innerHTML=entryRows(state.entries.filter(x=>x.kind==="VALE").slice(0,12));
+ const select=$("rhDashboardBranch");
+ if(select){
+  const prev=select.value,branches=[...new Set(state.employees.map(x=>x.branch))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  select.innerHTML='<option value="">Todas as filiais</option>'+branches.map(b=>'<option value="'+html(b)+'">'+html(b)+'</option>').join("");
+  select.value=branches.includes(prev)?prev:"";
+ }
+}
+function totalCents(e,{vales=true,commission=true}={}){
+ return Number(e.salaryCents||0)+(commission?Number(e.commissionsCents||0):0)-(vales?Number(e.valesCents||0):0);
+}
+const DOWNLOAD_VARIANTS={
+ geral:{label:"Geral",vales:true,commission:true},
+ sem_vales:{label:"Sem vales",vales:false,commission:true},
+ sem_comissao:{label:"Sem comissão",vales:true,commission:false},
+ sem_vales_comissao:{label:"Sem vale e comissão",vales:false,commission:false}
+};
+function updateDownloadTotals(){
+ const people=selectedEmployees();
+ for(const [mode,variant] of Object.entries(DOWNLOAD_VARIANTS)){
+  const btn=document.querySelector('[data-rh-download="'+mode+'"]');
+  if(btn)btn.textContent="↓ "+variant.label+" · "+brl(people.reduce((a,e)=>a+totalCents(e,variant),0));
+ }
+ if($("rhTableTotal"))$("rhTableTotal").textContent=brl(people.reduce((a,e)=>a+totalCents(e),0));
+ if($("rhTableVolume"))$("rhTableVolume").textContent=state.monthlyVolume
+  ?"Volume da competência: "+new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(state.monthlyVolume.tonnesMilli/1000)+" t"
+  :"Volume mensal não informado: utilize o Painel para aplicar.";
 }
 function renderTable(){
-  populateSelect("rhBranch",[...new Set(state.employees.map(x=>x.branch))].sort((a,b)=>a.localeCompare(b,"pt-BR")),"Todas as filiais");
-  populateSelect("rhRole",[...new Set(state.employees.map(x=>x.role))].sort((a,b)=>a.localeCompare(b,"pt-BR")),"Todas as funções");
-  const shown=selectedEmployees();
-  const c=$("rhCountShown");if(c)c.textContent=shown.length+" funcionário(s) exibido(s)";
-  const tbody=$("rhListBody");if(!tbody)return;
-  if(!shown.length){tbody.innerHTML='<tr><td colspan="10" class="rh-empty">Nenhum funcionário encontrado. Use “Cadastrar funcionário” para começar.</td></tr>';return;}
-  tbody.innerHTML=shown.map(e=>'<tr><td class="strong">'+html(e.name)+'</td><td>'+html(e.role)+'</td><td>'+html(e.city)+' / '+html(e.branch)+'</td><td class="money">'+brl(e.salaryCents)+'</td><td class="money">'+brl(e.valesCents)+'</td><td class="money">'+brl(e.costsCents)+'</td><td class="money strong">'+brl(e.commissionsCents||0)+'</td><td class="money positive">'+brl(e.salaryCents+(e.commissionsCents||0)-e.valesCents)+'</td><td><span class="rh-pill '+(e.active?"":"off")+'">'+(e.active?"ATIVO":"INATIVO")+'</span></td><td class="actions"><a class="rh-table-action" href="./funcionarios-cadastro.html?id='+encodeURIComponent(e.id)+'">Editar</a><a class="rh-table-action" href="./funcionarios-lancamentos.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Vale/custo</a><a class="rh-table-action" href="./funcionarios-comissoes.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Comissões</a></td></tr>').join("");
+ populateSelect("rhBranch",[...new Set(state.employees.map(x=>x.branch))].sort((a,b)=>a.localeCompare(b,"pt-BR")),"Todas as filiais");
+ populateSelect("rhRole",[...new Set(state.employees.map(x=>x.role))].sort((a,b)=>a.localeCompare(b,"pt-BR")),"Todas as funções");
+ const shown=selectedEmployees();
+ if($("rhCountShown"))$("rhCountShown").textContent=shown.length+" funcionário(s) exibido(s)";
+ const tbody=$("rhListBody");if(!tbody)return;
+ tbody.innerHTML=shown.length?shown.map(e=>
+   '<tr><td class="strong">'+html(e.name)+'</td><td>'+html(e.role)+'</td><td>'+html(e.branch)+'</td>'+
+   '<td class="money">'+brl(e.salaryCents)+'</td><td class="money">'+brl(e.valesCents)+'</td>'+
+   '<td class="money strong">'+brl(e.commissionsCents||0)+'</td>'+
+   '<td class="money positive">'+brl(totalCents(e))+'</td>'+
+   '<td><span class="rh-pill '+(e.active?"":"off")+'">'+(e.active?"ATIVO":"INATIVO")+'</span></td>'+
+   '<td class="actions"><a class="rh-table-action" href="./funcionarios-cadastro.html?id='+encodeURIComponent(e.id)+'">Editar</a>'+
+   '<a class="rh-table-action" href="./funcionarios-lancamentos.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Vale</a>'+
+   '<a class="rh-table-action" href="./funcionarios-comissoes.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Comissão</a></td></tr>').join("")
+  :'<tr><td colspan="9" class="rh-empty">Nenhum funcionário encontrado.</td></tr>';
+ updateDownloadTotals();
 }
 const RH_COMMISSION_RATES={
   TON:[[5,"R$ 0,05/t"],[6,"R$ 0,06/t"],[7,"R$ 0,07/t"],[8,"R$ 0,08/t"],[9,"R$ 0,09/t"],[10,"R$ 0,10/t"],[15,"R$ 0,15/t"],[20,"R$ 0,20/t"]],

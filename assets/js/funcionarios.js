@@ -11,7 +11,7 @@ const localDate=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getM
 const qp=new URLSearchParams(location.search);
 const validMonth=v=>/^20\d{2}-(0[1-9]|1[0-2])$/.test(String(v||""));
 let month=validMonth(qp.get("month"))?qp.get("month"):localMonth();
-let state={employees:[],entries:[],commissions:[],totals:{}},busy=false;
+let state={employees:[],entries:[],commissions:[],totals:{},monthlyVolume:null},busy=false;
 const page=document.body.dataset.rhPage||"dashboard";
 function status(msg,error=false){
   const box=$("rhNotice");if(!box)return;
@@ -43,7 +43,7 @@ async function refresh(){
   clearStatus();
   try{
     const data=await call("?month="+encodeURIComponent(month));
-    state={employees:data.employees||[],entries:data.entries||[],commissions:data.commissions||[],totals:data.totals||{}};
+    state={employees:data.employees||[],entries:data.entries||[],commissions:data.commissions||[],totals:data.totals||{},monthlyVolume:data.monthlyVolume||null};
     if(!data.complete)status("O limite de registros foi atingido. Refine a consulta para obter todas as linhas.",true);
     if(page==="dashboard")renderDashboard();
     if(page==="table")renderTable();
@@ -53,9 +53,9 @@ async function refresh(){
   }catch(err){status(err.message,true)}
   finally{busy=false;if(btn)btn.disabled=false}
 }
-const personOptions=()=>state.employees.filter(x=>x.active).map(x=>'<option value="'+html(x.id)+'">'+html(x.name)+" • "+html(x.city)+" / "+html(x.branch)+"</option>").join("");
+const personOptions=()=>state.employees.filter(x=>x.active).map(x=>'<option value="'+html(x.id)+'">'+html(x.name)+" • "+html(x.branch)+"</option>").join("");
 function entryRows(items,withActions=true){
-  if(!items.length)return '<tr><td colspan="6" class="rh-empty">Nenhum vale ou custo registrado nesta competência.</td></tr>';
+  if(!items.length)return '<tr><td colspan="6" class="rh-empty">Nenhum vale registrado nesta competência.</td></tr>';
   return items.map(x=>'<tr><td>'+html(fmtDate(x.date))+'</td><td class="strong">'+html(x.employeeName)+'</td><td><span class="rh-pill '+(x.kind==="CUSTO"?"cost":"")+'">'+html(x.kind)+'</span></td><td>'+html(x.description)+'</td><td class="money strong">'+brl(x.amountCents)+'</td><td class="actions">'+(withActions?'<a class="rh-table-action" href="./funcionarios-lancamentos.html?id='+encodeURIComponent(x.id)+'&month='+month+'">Editar</a><button type="button" class="rh-table-action danger" data-delete-entry="'+html(x.id)+'">Excluir</button>':"")+'</td></tr>').join("");
 }
 function populateSelect(id,items,placeholder){
@@ -70,7 +70,7 @@ function selectedEmployees(){
   const role=$("rhRole")?.value||"";
   const active=$("rhStatus")?.value||"";
   return state.employees.filter(e=>
-    (!q||(e.name+" "+e.role+" "+e.city+" "+e.branch).toLocaleLowerCase("pt-BR").includes(q))&&
+    (!q||(e.name+" "+e.role+" "+e.branch).toLocaleLowerCase("pt-BR").includes(q))&&
     (!branch||e.branch===branch)&&(!role||e.role===role)&&
     (!active||(active==="active"?e.active:!e.active))
   );
@@ -126,7 +126,7 @@ function renderEmployeeForm(){
   if(!id)return;
   if(!e){status("Funcionário não encontrado no cadastro.",true);return}
   if($("rhFormTitle"))$("rhFormTitle").textContent="Editar funcionário";
-  $("rhName").value=e.name;$("rhRoleInput").value=e.role;$("rhCity").value=e.city;
+  $("rhName").value=e.name;$("rhRoleInput").value=e.role;
   $("rhBranchInput").value=e.branch;$("rhSalary").value=(e.salaryCents/100).toFixed(2).replace(".",",");
   $("rhNotes").value=e.notes||"";$("rhActive").checked=e.active;
   if($("rhCommissionKind")){
@@ -158,12 +158,13 @@ async function saveEmployee(event){
   event.preventDefault();if(busy)return;
   const id=qp.get("id"),salary=moneyToCents($("rhSalary").value);
   if(salary===null)return status("Confira o salário. Exemplo: 4800,00.",true);
-  const body={name:$("rhName").value.trim(),role:$("rhRoleInput").value.trim(),city:$("rhCity").value.trim(),
+  const old=state.employees.find(e=>e.id===id);
+  const body={name:$("rhName").value.trim(),role:$("rhRoleInput").value.trim(),city:old?.city||"",
     branch:$("rhBranchInput").value.trim(),salaryCents:salary,notes:$("rhNotes").value.trim(),
     active:$("rhActive").checked,
     commissionKind:$("rhCommissionKind")?.value||"NONE",
     commissionRate:Number($("rhCommissionRate")?.value||0)};
-  if(!body.name||!body.role||!body.city||!body.branch)return status("Preencha todos os campos obrigatórios.",true);
+  if(!body.name||!body.role||!body.branch)return status("Preencha todos os campos obrigatórios.",true);
   const submit=$("rhSubmit");submit.disabled=true;
   try{
     await call(id?"/people/"+encodeURIComponent(id):"/people",id?"PUT":"POST",body);
@@ -218,6 +219,7 @@ async function init(){
   const r=$("rhReload");if(r)r.addEventListener("click",refresh);
   const f=$("rhEmployeeForm");if(f)f.addEventListener("submit",saveEmployee);
   const ef=$("rhEntryForm");if(ef)ef.addEventListener("submit",saveEntry);
+  if($("rhApplyMonthVolume"))$("rhApplyMonthVolume").addEventListener("click",applyMonthlyVolume);
   const kindInput=$("rhCommissionKind");if(kindInput){
     kindInput.addEventListener("change",updateCommissionSettings);
     updateCommissionSettings();
@@ -226,7 +228,7 @@ async function init(){
   for(const id of ["rhSearch","rhStatus"])if($(id))$(id).addEventListener(id==="rhSearch"?"input":"change",renderTable);
   for(const id of ["rhRole","rhBranch"])if($(id))$(id).addEventListener("change",renderTable);
   if($("rhDashboardBranch"))$("rhDashboardBranch").addEventListener("change",applyDashboardBranch);
-  if($("rhExport"))$("rhExport").addEventListener("click",downloadCSV);
+  document.querySelectorAll("[data-rh-download]").forEach(b=>b.addEventListener("click",()=>downloadCSV(b.dataset.rhDownload)));
   document.addEventListener("click",ev=>{const button=ev.target.closest("[data-delete-entry]");if(button)deleteEntry(button.dataset.deleteEntry)});
   await refresh();
 }

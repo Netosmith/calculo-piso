@@ -59,7 +59,7 @@ main input::placeholder{color:#9aaec0}
 .maphead h2{margin:0}
 .mapbadge{border-radius:22px;background:#f0f7fc;color:#47708a;font-size:11px;font-weight:800;padding:6px 9px}
 .map-pin{background:#0977be;border:3px solid white;box-shadow:0 2px 10px #1640615e;border-radius:50%;color:#fff;width:31px;height:31px;display:flex;align-items:center;justify-content:center;font-size:15px}
-.map-pin.warn{background:#d39b30}.map-pin.lost{background:#c74255}
+.map-pin.warn{background:#d39b30}.map-pin.lost,.map-pin.paused{background:#c74255}
 .map-pin.wait{background:#71869a}
 .detail{margin-top:13px;border:1px solid #d9e7f3;background:#f7fbff;border-radius:12px;padding:14px;min-height:110px}
 .detail strong{font-size:15px;color:#123c68}.detail p{margin:8px 0;color:#496780;line-height:1.45}
@@ -110,7 +110,7 @@ main button.reject{background:#ffedf0;color:#a82f45}
   <div class="kpi"><small>Viagens ativas</small><strong id="kActive">0</strong></div>
   <div class="kpi green"><small>GPS recente (até 5 min)</small><strong id="kLive">0</strong></div>
   <div class="kpi amber"><small>Atenção (5 a 15 min)</small><strong id="kWarn">0</strong></div>
-  <div class="kpi red"><small>Sem sinal (mais de 15 min)</small><strong id="kLost">0</strong></div>
+  <div class="kpi red"><small>Sem sinal / GPS interrompido</small><strong id="kLost">0</strong></div>
   <div class="kpi"><small>Aguardando primeiro GPS</small><strong id="kWait">0</strong></div>
 </section>
 <section class="alerts" id="alerts" aria-live="polite"></section>
@@ -128,6 +128,7 @@ main button.reject{background:#ffedf0;color:#a82f45}
           <option value="live">Transmitindo GPS</option>
           <option value="warn">Atenção</option>
           <option value="lost">Sem sinal</option>
+          <option value="paused">GPS interrompido pelo motorista</option>
           <option value="wait">Aguardando GPS</option>
           <option value="done">Encerradas</option>
         </select></label>
@@ -198,13 +199,14 @@ const request=async(path,method="GET",body)=>{
 };
 function stateOf(t){
   if(!t.active)return "done";
+  if(t.gpsStoppedAt&&(!t.lastPosition||Date.parse(t.gpsStoppedAt)>Date.parse(t.lastPosition.at)))return "paused";
   if(!t.lastPosition)return "wait";
   const age=Date.now()-Date.parse(t.lastPosition.at);
   if(!Number.isFinite(age)||age>FIFTEEN)return "lost";
   if(age>FIVE)return "warn";
   return "live";
 }
-const labels={live:"Transmitindo",warn:"Atenção",lost:"Sem sinal",wait:"Aguardando GPS",done:"Encerrada"};
+const labels={live:"Transmitindo",warn:"Atenção",lost:"Sem sinal",paused:"Interrompido pelo motorista",wait:"Aguardando GPS",done:"Encerrada"};
 function ensureMap(){
   if(map||!window.L)return;
   map=L.map("map",{zoomControl:true}).setView([-15.7,-50.4],4);
@@ -243,10 +245,11 @@ function renderKpis(){
   $("#kActive").textContent=active.length;
   for(const st of ["live","warn","lost","wait"]){
     const id={live:"#kLive",warn:"#kWarn",lost:"#kLost",wait:"#kWait"}[st];
-    $(id).textContent=active.filter(t=>stateOf(t)===st).length;
+    $(id).textContent=active.filter(t=>st==="lost"?["lost","paused"].includes(stateOf(t)):stateOf(t)===st).length;
   }
-  const issues=active.filter(t=>["warn","lost"].includes(stateOf(t))).sort((a,b)=>{
-    return (stateOf(a)==="lost"?0:1)-(stateOf(b)==="lost"?0:1);
+  const issues=active.filter(t=>["warn","lost","paused"].includes(stateOf(t))).sort((a,b)=>{
+    const rank={paused:0,lost:1,warn:2};
+    return rank[stateOf(a)]-rank[stateOf(b)];
   });
   const panel=$("#alerts");panel.replaceChildren();
   const documents=active.filter(t=>t.selfieRequired&&
@@ -254,8 +257,8 @@ function renderKpis(){
   if(issues.length||documents.length){
     panel.classList.add("show");
     if(issues.length){
-      panel.append(make("strong","⚠ "+issues.length+" viagem(ns) com GPS desatualizado"));
-      panel.append(make("span",issues.slice(0,4).map(t=>t.plate+" · "+labels[stateOf(t)]+" · "+fmt(t.lastPosition?.at)).join("  |  ")));
+      panel.append(make("strong","⚠ "+issues.length+" viagem(ns) exigem atenção no GPS"));
+      panel.append(make("span",issues.slice(0,4).map(t=>t.plate+" · "+labels[stateOf(t)]+" · "+fmt(stateOf(t)==="paused"?t.gpsStoppedAt:t.lastPosition?.at)).join("  |  ")));
       if(issues.length>4)panel.append(make("span","E mais "+(issues.length-4)+" viagem(ns) com sinal desatualizado."));
     }
     if(documents.length){

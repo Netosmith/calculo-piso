@@ -24,6 +24,10 @@ jobs:
         working-directory: worker
         run: npm ci --ignore-scripts
 
+      - name: Testar regras de comissões antes do deploy
+        working-directory: worker
+        run: node --test tests/rh-commissions.test.mjs
+
       - name: Garantir bucket R2 de logos
         working-directory: worker
         env:

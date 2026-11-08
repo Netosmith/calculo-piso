@@ -25,3 +25,15 @@ test("pagina compartilhada com motorista tem Javascript valido e autorizacao",()
   assert.match(html,/navigator\.geolocation\.watchPosition/);
   assert.match(html,/location\.hash/);
 });
+
+test("comprovante usa apenas botoes de camera e biblioteca na pagina",()=>{
+  const html=assertScriptsCompile(driver);
+  assert.match(html,/id="receiptCamera"[^>]*capture="environment"/);
+  assert.match(html,/id="receiptFile"[^>]*accept="image\/\*"/);
+  assert.match(html,/TIRAR FOTO/);
+  assert.match(html,/BIBLIOTECA/);
+  assert.doesNotMatch(html,/ESCOLHER ARQUIVO/);
+  assert.match(html,/id="stop"/);
+  assert.match(html,/\/v1\/monitor\/gps-event/);
+  assert.match(html,/\/v1\/monitor\/receipt/);
+});

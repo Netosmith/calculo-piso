@@ -89,3 +89,37 @@ body.rh-body button{cursor:pointer}
 @media(max-width:950px){.rh-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rh-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.rh-topbar-in{padding:11px 12px}.rh-brand{gap:10px}.rh-brand img{width:112px}.rh-user{display:none}.rh-content{padding:16px 10px 55px}.rh-heading{padding:19px 16px}.rh-title-row{align-items:flex-start}.rh-hero-icon{width:43px;height:43px;font-size:22px}.rh-kpis{gap:8px}.rh-kpi{padding:15px}.rh-kpi strong{font-size:20px}.rh-shortcuts{grid-template-columns:1fr}.rh-form{grid-template-columns:1fr}.rh-form .span2{grid-column:auto}.rh-panel{padding:16px}.rh-filter{align-items:stretch}.rh-filter>*{width:100%}.rh-filter select,.rh-filter input{width:100%;min-width:0}}
 @media print{body.rh-body{background:white}.rh-topbar,.rh-nav,.rh-actions,.rh-filter,.rh-table .actions,.rh-footer{display:none!important}.rh-panel,.rh-heading{border:0;box-shadow:none}.rh-content{max-width:none;padding:0}.rh-table{min-width:0}}
+
+/* Comissões: controles de cadastro, cálculo mensal e detalhamento. */
+.rh-form label[hidden],.rh-form [hidden]{display:none!important}
+.rh-commission-section-title{
+  border-top:1px solid #dce9ee;padding:16px 0 0;margin-top:7px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.rh-commission-section-title strong{color:#13536b;font-size:14px}
+.rh-commission-section-title small{color:#58768c;font-size:12px}
+.rh-commission-inline-hint{
+  font-size:12px;color:#42677a;background:#eff9fc;border:1px solid #d7e7ef;
+  padding:10px 14px;border-radius:10px;margin:0;
+}
+.rh-commission-context{
+  border:1px solid #abdccd;background:#e8f8f4;border-radius:11px;
+  color:#106554;padding:12px 15px;font-weight:800;font-size:13px;
+}
+.rh-commission-result{
+  background:linear-gradient(115deg,#ebf9fb,#f7fcff);
+  border:1px solid #bddfdc;border-radius:15px;padding:18px;
+  display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+}
+.rh-commission-result span{font-size:12px;color:#47697d;font-weight:850}
+.rh-commission-result strong{font-size:29px;color:#087d70;display:block;line-height:1.25}
+.rh-commission-result small{font-size:11px;color:#627f90;display:block;margin-top:5px}
+.rh-kpis-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.rh-commission-kpis{grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px}
+.rh-commission-kpis .rh-kpi{padding:16px 20px}
+@media(max-width:1150px){.rh-kpis-5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.rh-kpis-5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){
+ .rh-commission-kpis{grid-template-columns:1fr}
+ .rh-commission-result .rh-btn{width:100%}
+}

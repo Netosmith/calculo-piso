@@ -117,7 +117,7 @@ export async function monitorController(request, env) {
         "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
       ).all();
       return success({ trips: (result.results || []).map(toTrip), complete: true,
-        canReview:["ADMINISTRADOR","OPERACIONAL"].includes(clean(auth.session.perfil).toUpperCase()) });
+        canReview:["ADMINISTRADOR","OPERACIONAL"].includes(clean(auth.session.perfil).toUpperCase()), canEmergency:clean(auth.session.perfil).toUpperCase()==="ADMINISTRADOR" });
     } catch (e) { return dbError(e, "trips-read"); }
   }
   if (path === "/v1/monitor/trips" && method === "POST") {

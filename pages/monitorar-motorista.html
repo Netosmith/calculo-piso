@@ -269,7 +269,7 @@ async function upload(path,blob){
 }
 function refreshUi(){
   const selfie=trip?.selfieStatus||"missing",receipt=trip?.receiptStatus||"missing";
-  const selfieReady=!trip?.selfieRequired||["pending","approved"].includes(selfie);
+  const selfieReady=!!trip&&(!trip.selfieRequired||["pending","approved"].includes(selfie));
   const gpsStarted=watch!==null||!!trip?.gpsConsentAt||!!trip?.lastPosition;
   const finished=!!trip?.gpsFinishedAt||trip?.active===false;
   const approved=trip?.selfieRequired
@@ -431,7 +431,7 @@ async function updateReview(){
 $("#finishButton").onclick=async()=>{
   await updateReview();
   if(!trip?.active)return;
-  if(!(trip.selfieStatus==="approved"&&trip.receiptStatus==="approved")){
+  if(!(trip.receiptStatus==="approved"&&(!trip.selfieRequired||trip.selfieStatus==="approved"))){
     message("A Nova Frota ainda precisa aprovar a selfie e o comprovante.",true);
     refreshUi();return;
   }

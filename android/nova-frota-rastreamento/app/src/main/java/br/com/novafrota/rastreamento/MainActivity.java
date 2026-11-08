@@ -68,6 +68,10 @@ public class MainActivity extends Activity {
         Button verify = button("Verificar viagem", blue);
         root.addView(verify, new LinearLayout.LayoutParams(-1, dp(52)));
         verify.setOnClickListener(v -> verifyLink());
+        addGap(root, 12);
+        Button selfie = button("SELFIE / COMPROVANTE NO NAVEGADOR", blue);
+        root.addView(selfie, new LinearLayout.LayoutParams(-1, dp(54)));
+        selfie.setOnClickListener(v -> openDriverPage());
         addGap(root, 20);
         status = text("Aguardando link de rastreamento.", 15, Color.DKGRAY, false);
         root.addView(status);
@@ -78,7 +82,7 @@ public class MainActivity extends Activity {
         consent.setChecked(false);
         root.addView(consent);
         addGap(root, 16);
-        startButton = button("INICIAR RASTREAMENTO", green);
+        startButton = button("INICIAR VIAGEM / GPS", green);
         startButton.setEnabled(false);
         root.addView(startButton, new LinearLayout.LayoutParams(-1, dp(56)));
         startButton.setOnClickListener(v -> startWithPermission());
@@ -97,8 +101,26 @@ public class MainActivity extends Activity {
                     status.setText("Rastreamento encerrado neste celular.");
                 }).show());
         addGap(root, 24);
-        root.addView(text("Durante o rastreamento, o Android exibirá uma notificação permanente. Sem internet, o envio será retomado quando uma nova posição for obtida com conexão. O aplicativo piloto ainda não guarda o histórico offline.", 12, Color.GRAY, false));
+        root.addView(text("Use o botão SELFIE / COMPROVANTE antes de iniciar o GPS. Durante o rastreamento, o Android exibirá uma notificação permanente. Sem internet, o envio será retomado quando uma nova posição for obtida com conexão. O aplicativo piloto ainda não guarda o histórico offline.", 12, Color.GRAY, false));
         setContentView(scroll);
+    }
+
+    private void openDriverPage() {
+        String token=parseToken(linkInput.getText().toString());
+        if(token==null){status.setText("Cole um link válido da viagem para enviar os documentos.");return;}
+        Uri url=Uri.parse("https://portalfrete.net.br/pages/monitorar-motorista.html#"+token);
+        Intent browser=new Intent(Intent.ACTION_VIEW,url);
+        browser.setPackage("com.android.chrome");
+        try { startActivity(browser); }
+        catch(RuntimeException chromeError) {
+            browser.setPackage("com.sec.android.app.sbrowser");
+            try { startActivity(browser); }
+            catch(RuntimeException samsungError) {
+                browser.setPackage(null);
+                try { startActivity(Intent.createChooser(browser, "Abrir a página do motorista")); }
+                catch(RuntimeException e) { status.setText("Não foi possível abrir o navegador."); }
+            }
+        }
     }
 
     private void consumeLink(Intent intent) {

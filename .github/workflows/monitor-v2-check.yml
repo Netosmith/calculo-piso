@@ -6,6 +6,9 @@ on:
       - 'pages/monitoramento.html'
       - 'pages/monitorar-motorista.html'
       - 'worker/src/controllers/monitor.js'
+      - 'worker/src/controllers/monitor-proof.js'
+      - 'worker/src/middleware/cors.js'
+      - 'worker/migrations/0009_monitor_proof_review.sql'
       - 'worker/tests/monitor-*.test.mjs'
       - 'worker/migrations/0008_monitor_v2.sql'
       - '.github/workflows/monitor-v2-check.yml'
@@ -23,4 +26,5 @@ jobs:
       - name: Validar JS da API e da pagina
         run: |
           node --check worker/src/controllers/monitor.js
-          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-page.test.mjs
+          node --check worker/src/controllers/monitor-proof.js
+          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs

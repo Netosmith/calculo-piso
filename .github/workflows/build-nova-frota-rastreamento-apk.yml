@@ -5,6 +5,11 @@ on:
     paths:
       - 'android/nova-frota-rastreamento/**'
       - '.github/workflows/build-nova-frota-rastreamento-apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/nova-frota-rastreamento/**'
+      - '.github/workflows/build-nova-frota-rastreamento-apk.yml'
   workflow_dispatch:
 permissions:
   contents: read

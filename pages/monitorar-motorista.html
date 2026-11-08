@@ -1,23 +1,184 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Compartilhar localização | Nova Frota</title>
-<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#eaf2fa;font:15px Inter,Arial,sans-serif;color:#183657;padding:18px}
-main{max-width:480px;width:100%;background:white;border:1px solid #d4e1ee;border-radius:20px;padding:24px;box-shadow:0 12px 35px #12345618}
-h1{font-size:24px;margin:6px 0 8px}p{line-height:1.5;color:#56718d}button{border:0;border-radius:11px;padding:14px 18px;font:700 15px inherit;background:#0875ba;color:white;cursor:pointer;width:100%;margin-top:10px}
-button:disabled{opacity:.5}.stop{background:#b42342}.box{background:#f0f6fd;border-radius:12px;padding:14px;margin:15px 0}.label{font-size:12px;text-transform:uppercase;font-weight:800;color:#587797}.value{font-size:20px;font-weight:800;margin-top:4px}.ok{color:#087c46}.err{color:#b42342}.muted{font-size:12px;color:#67809a}
-</style></head><body><main><div style="color:#0b72ba;font-weight:900">🚛 NOVA FROTA</div><h1>Compartilhar localização</h1><p>Você poderá compartilhar sua localização somente durante esta viagem, após tocar em Iniciar. O operacional acompanhará as posições enviadas.</p>
-<div class="box"><div class="label">Viagem</div><div class="value" id="trip">Validando link...</div><p id="route"></p></div>
-<button id="start" disabled>📍 Iniciar compartilhamento</button><button id="stop" class="stop" hidden>Parar compartilhamento</button>
-<p id="status" role="status">Aguardando validação.</p><p class="muted">O compartilhamento exige sua autorização e pode ser interrompido a qualquer momento. No navegador, mantenha esta página aberta: o GPS pode parar quando a tela é bloqueada. No Android, o aplicativo piloto usa serviço de localização em primeiro plano.</p></main>
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Iniciar viagem | Nova Frota</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#eaf2fa;font:15px Inter,Arial,sans-serif;color:#183657;padding:18px;display:grid;place-items:center}
+main{max-width:520px;width:100%;background:#fff;border:1px solid #d4e1ee;border-radius:20px;padding:24px;box-shadow:0 12px 35px #12345618}
+h1{font-size:25px;color:#102f52;margin:6px 0 8px}
+p{line-height:1.5;color:#56718d}h2{font-size:16px;margin:0 0 6px}
+button{border:0;border-radius:11px;padding:14px 18px;font:700 15px Inter,Arial,sans-serif;background:#0875ba;color:#fff;cursor:pointer;width:100%;margin-top:10px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.ghost{background:#e8f2fb;color:#14568c}.stop{background:#b42342}
+.box{background:#f0f6fd;border-radius:12px;padding:14px;margin:15px 0}
+.label{font-size:12px;text-transform:uppercase;font-weight:800;color:#587797}
+.value{font-size:20px;font-weight:800;margin-top:4px}
+.ok{color:#087c46}.err{color:#b42342}.muted{font-size:12px;color:#67809a}
+.step{border:1px solid #dbe6f2;border-radius:12px;padding:14px;margin-top:12px}
+.step p{margin:5px 0 12px}
+input[type=file]{display:block;margin:10px 0 6px;width:100%;font-size:13px}
+.tick{display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5;color:#42617c}
+.tick input{margin-top:3px}
+.preview{display:block;width:100%;height:auto;max-height:250px;object-fit:contain;border-radius:9px;margin:10px auto;background:#edf2f8}
+.banner{padding:12px;border:1px solid #a8d4ed;background:#f1f9ff;color:#245773;border-radius:12px;font-size:12px;line-height:1.5}
+.uploadstatus{font-size:12px;font-weight:700;color:#186385}
+</style></head><body>
+<main>
+  <div style="color:#0b72ba;font-weight:900">🚛 NOVA FROTA</div>
+  <h1>Iniciar viagem</h1>
+  <p>Confirme o motorista contratado, autorize o envio de sua localização e acompanhe o processo de descarga.</p>
+  <div class="box">
+    <div class="label">Viagem</div><div class="value" id="trip">Validando link...</div>
+    <p id="route"></p>
+  </div>
+  <div class="banner">A selfie e o comprovante são documentos privados, acessíveis somente à equipe autorizada da Nova Frota para conferência humana. Não há reconhecimento facial automático. Uma foto isolada não garante a identidade.</div>
+  <section class="step" id="selfieBox">
+    <h2>1. Selfie de abertura</h2>
+    <p>Fotografe seu rosto de frente, sem óculos escuros. A Nova Frota verificará a selfie com o cadastro e outros dados da contratação.</p>
+    <input id="selfieFile" type="file" accept="image/jpeg,image/png,image/webp,image/*" capture="user" aria-label="Tirar selfie">
+    <img id="selfiePreview" class="preview" alt="Prévia da foto enviada" hidden>
+    <label class="tick"><input type="checkbox" id="photoNotice"> <span>Li o aviso de uso da foto para conferência de identidade durante esta viagem.</span></label>
+    <button id="sendSelfie" type="button" disabled>Enviar selfie e iniciar viagem</button>
+    <div class="uploadstatus" id="selfieStatus">Selfie ainda não enviada.</div>
+  </section>
+  <section class="step">
+    <h2>2. Compartilhamento de localização</h2>
+    <p>Após enviar a selfie, você poderá transmitir o GPS durante a viagem.</p>
+    <button id="start" type="button" disabled>📍 Iniciar viagem</button>
+    <button id="stop" type="button" class="stop" hidden>Interromper GPS neste aparelho</button>
+    <p class="muted">Interromper o GPS não encerra a viagem no sistema. Se o sinal parar, a Nova Frota receberá um alerta de falta de atualização.</p>
+    <p id="status" role="status">Aguardando validação do link.</p>
+  </section>
+  <section class="step" id="receiptBox">
+    <h2>3. Comprovante de descarga</h2>
+    <p>Após descarregar, anexe a documentação de entrega. O encerramento operacional depende de conferência e aprovação pela Nova Frota.</p>
+    <input id="receiptFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" aria-label="Anexar comprovante de descarga">
+    <button id="sendReceipt" type="button" class="ghost">Enviar comprovante de descarga</button>
+    <div class="uploadstatus" id="receiptStatus">Comprovante ainda não enviado.</div>
+  </section>
+  <section class="step">
+    <h2>GPS com a tela bloqueada</h2>
+    <p>O navegador pode suspender o GPS quando a tela bloqueia. Para acompanhamento com a tela bloqueada no Android, use o aplicativo piloto <strong>Nova Frota Rastreamento</strong> após enviar a selfie. O aplicativo utiliza um serviço de localização em primeiro plano, com notificação permanente e opção de interromper.</p>
+    <p class="muted">A continuidade do GPS depende das permissões, bateria, conexão e das políticas do Android. Não é possível garantir rastreamento ininterrupto nem oculto.</p>
+  </section>
+</main>
 <script>
-(()=>{"use strict";const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);let watch=null,last=0,trip=null;
-const msg=(text,bad=false)=>{$("#status").textContent=text;$("#status").className=bad?"err":"ok"};
-const req=async(path,body)=>{const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Falha de comunicação");return d};
-async function validate(){try{if(!/^[a-f0-9]{64}$/.test(token))throw Error("Link inválido.");const d=await req("/v1/monitor/driver",{token});trip=d.trip;$("#trip").textContent=trip.plate+" • "+trip.driver;$("#route").textContent=(trip.origin||"—")+" → "+(trip.destination||"—");$("#start").disabled=!trip.active;msg(trip.active?"Viagem pronta. Toque em iniciar para autorizar o GPS.":"Esta viagem já foi encerrada.");}catch(e){msg(e.message,true);$("#trip").textContent="Link indisponível"}}
-$("#start").onclick=()=>{if(!navigator.geolocation){msg("GPS não disponível neste navegador.",true);return}if(watch!==null)return;$("#start").disabled=true;
-watch=navigator.geolocation.watchPosition(async pos=>{if(Date.now()-last<15000)return;last=Date.now();try{const d=await req("/v1/monitor/position",{token,latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy});msg("Localização enviada às "+new Date(d.receivedAt).toLocaleTimeString("pt-BR"));$("#stop").hidden=false;}catch(e){msg(e.message,true);if(/encerrada|expirado|inválido/i.test(e.message))stop();}},err=>{msg("Não foi possível acessar a localização: "+err.message,true);stop()},{enableHighAccuracy:true,maximumAge:10000,timeout:20000});
-$("#stop").hidden=false;msg("GPS iniciado. Aguardando primeira posição...")};
-function stop(){if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;$("#start").disabled=!trip?.active;$("#stop").hidden=true}
-$("#stop").onclick=()=>{stop();msg("Compartilhamento interrompido neste aparelho.")};
-window.addEventListener("pagehide",stop);validate();
+(()=>{
+"use strict";
+const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);
+const fileSelfie=$("#selfieFile"),fileReceipt=$("#receiptFile");
+let trip=null,watch=null,last=0,uploading=false,showSelfie=false;
+const message=(m,bad=false)=>{$("#status").textContent=m;$("#status").className=bad?"err":"ok";};
+const statusName={missing:"Não enviado",pending:"Aguardando análise",approved:"Aprovado pela Nova Frota",rejected:"Rejeitado: envie outro arquivo"};
+async function post(path,body){
+  const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store"});
+  const d=await r.json().catch(()=>({ok:false,error:"Resposta inválida."}));
+  if(!r.ok||!d.ok)throw Error(d.error||"Falha na API.");
+  return d;
+}
+async function upload(path,blob){
+  const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":blob.type,"X-Monitor-Token":token},body:blob,cache:"no-store"});
+  const d=await r.json().catch(()=>({ok:false,error:"Resposta inválida."}));
+  if(!r.ok||!d.ok)throw Error(d.error||"Falha no envio do arquivo.");
+  return d;
+}
+function refreshUi(){
+  const selfie=trip?.selfieStatus||"missing",receipt=trip?.receiptStatus||"missing";
+  $("#selfieStatus").textContent="Selfie: "+statusName[selfie];
+  $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
+  $("#selfieBox").hidden=!trip?.active||selfie==="approved"||(selfie==="missing"&&!showSelfie);
+  $("#start").disabled=!trip?.active||watch!==null;
+  $("#sendSelfie").disabled=!trip?.active||uploading||!$("#photoNotice").checked||!fileSelfie.files.length;
+  $("#sendReceipt").disabled=!trip?.active||uploading||!fileReceipt.files.length||(trip.selfieRequired&&selfie==="missing");
+  if(!trip?.active){$("#stop").hidden=true;$("#start").disabled=true;}
+}
+async function validate(){
+  try{
+    if(!/^[a-f0-9]{64}$/.test(token))throw Error("Link inválido.");
+    const d=await post("/v1/monitor/driver",{token});trip=d.trip;
+    $("#trip").textContent=trip.plate+" • "+trip.driver;
+    $("#route").textContent=(trip.origin||"—")+" → "+(trip.destination||"—");
+    refreshUi();
+    message(trip.active?"Viagem disponível. Tire a selfie e inicie o compartilhamento.":"Viagem já encerrada pela Nova Frota.");
+  }catch(e){$("#trip").textContent="Link indisponível";message(e.message,true);}
+}
+function stop(){
+  if(watch!==null)navigator.geolocation.clearWatch(watch);
+  watch=null;$("#stop").hidden=true;refreshUi();
+}
+function startGps(){
+  if(!trip?.active||!navigator.geolocation){message("GPS indisponível neste navegador.",true);return;}
+  if(watch!==null)return;
+  if(trip.selfieRequired&&trip.selfieStatus==="missing"){message("Envie uma selfie antes de iniciar.",true);return;}
+  watch=navigator.geolocation.watchPosition(async pos=>{
+    if(Date.now()-last<15000)return;last=Date.now();
+    try{
+      const d=await post("/v1/monitor/position",{token,latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy});
+      message("Localização enviada às "+new Date(d.receivedAt).toLocaleTimeString("pt-BR"));
+    }catch(e){
+      message(e.message,true);
+      if(/encerrada|expirado|inválido|selfie/i.test(e.message))stop();
+    }
+  },err=>{message("Não foi possível obter a localização: "+err.message,true);stop();},{
+    enableHighAccuracy:true,maximumAge:10000,timeout:20000
+  });
+  $("#stop").hidden=false;refreshUi();message("Viagem iniciada. Aguardando primeira posição GPS...");
+}
+async function cleanJpeg(file){
+  const bitmap=await createImageBitmap(file);
+  const scale=Math.min(1,1400/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
+  bitmap.close?.();
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error("Falha na foto.")),"image/jpeg",.84));
+  if(blob.size>3*1024*1024)throw Error("Selfie acima do limite de 3 MB.");
+  return blob;
+}
+fileSelfie.onchange=async()=>{
+  $("#selfiePreview").hidden=true;
+  const f=fileSelfie.files[0];refreshUi();if(!f)return;
+  const url=URL.createObjectURL(f);$("#selfiePreview").src=url;$("#selfiePreview").hidden=false;
+  $("#selfiePreview").onload=()=>URL.revokeObjectURL(url);
+};
+$("#photoNotice").onchange=refreshUi;
+$("#sendSelfie").onclick=async()=>{
+  if(!fileSelfie.files.length||!$("#photoNotice").checked)return;
+  uploading=true;refreshUi();
+  try{
+    const blob=await cleanJpeg(fileSelfie.files[0]);
+    const d=await upload("/v1/monitor/selfie",blob);
+    trip.selfieStatus=d.status;fileSelfie.value="";refreshUi();
+    message("Selfie enviada para conferência. Iniciando GPS...");
+    startGps();
+  }catch(e){message("Não foi possível enviar a selfie: "+e.message,true);}
+  finally{uploading=false;refreshUi();}
+};
+$("#start").onclick=()=>{
+  if((trip?.selfieStatus||"missing")==="missing"){
+    showSelfie=true;refreshUi();$("#selfieBox").scrollIntoView({behavior:"smooth"});message("Tire e envie a selfie primeiro.");return;
+  }
+  startGps();
+};
+$("#stop").onclick=()=>{
+  stop();message("GPS interrompido por você. A viagem não foi encerrada.");
+};
+fileReceipt.onchange=refreshUi;
+$("#sendReceipt").onclick=async()=>{
+  if(!trip?.active||!fileReceipt.files.length)return;
+  const file=fileReceipt.files[0];
+  if(!confirm("Enviar este comprovante para conferência da Nova Frota?"))return;
+  uploading=true;refreshUi();
+  try{
+    const d=await upload("/v1/monitor/receipt",file);
+    trip.receiptStatus=d.status;fileReceipt.value="";refreshUi();
+    message("Comprovante enviado. A Nova Frota fará a análise; o encerramento não é automático.");
+  }catch(e){message("Falha ao enviar comprovante: "+e.message,true);}
+  finally{uploading=false;refreshUi();}
+};
+window.addEventListener("pagehide",stop);
+validate();
 })();
 </script></body></html>

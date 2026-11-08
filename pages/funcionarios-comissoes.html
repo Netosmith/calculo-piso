@@ -27,14 +27,14 @@
 </section>
 <section class="rh-panel" aria-label="Planilha para lançamento de comissões">
  <header><div><h2>Planilha de comissões por funcionário</h2>
- <p class="rh-muted">Informe as toneladas, confira o cálculo automático e salve na linha de cada funcionário.</p></div></header>
+ <p class="rh-muted">A comissão por tonelada ou percentual é automática. Para Manual e Agência, digite o valor na linha do funcionário.</p></div></header>
  <div class="rh-filter rh-commission-filters">
-  <label>Toneladas do período <input id="rhGlobalTonnes" type="text" inputmode="decimal" placeholder="Ex.: 80.000"></label>
-  <button id="rhApplyTonnes" class="rh-btn navy" type="button">Aplicar toneladas a todos</button>
+  <label>Volume mensal aplicado no Painel <input id="rhGlobalTonnes" type="text" placeholder="Sem volume aplicado" readonly></label>
+  <a class="rh-btn navy" href="./funcionarios.html">Alterar volume no Painel</a>
   <label>Data do lançamento <input id="rhCommissionDate" type="date" required></label>
   <label class="grow">Buscar funcionário <input id="rhCommissionSearch" type="search" placeholder="Nome, filial, função..."></label>
  </div>
- <div class="rh-help">As taxas vêm do <b>Cadastro de Funcionários</b>. A mesma tonelagem pode ser aplicada a todos e ajustada individualmente por linha. <b>R$ 0,15/t × 80.000 t = R$ 12.000,00</b>; <b>1,5% × 80.000 t = R$ 1.200,00</b>. Não é necessário informar o valor do frete.</div>
+ <div class="rh-help">As taxas vêm do <b>Cadastro de Funcionários</b>. O volume mensal aplicado no Painel vale para todos os funcionários. <b>R$ 0,15/t × 80.000 t = R$ 12.000,00</b>; <b>1,5% × 80.000 t = R$ 1.200,00</b>. Não é necessário informar o valor do frete.</div>
  <header style="margin-top:18px"><h2>Funcionários com comissão</h2><span class="rh-muted"><span id="rhEligibleCount">0</span> funcionário(s) nesta visualização</span></header>
  <div class="rh-table-wrap"><table class="rh-table rh-commission-grid" aria-label="Comissões para cada funcionário">
   <thead><tr>
@@ -44,14 +44,14 @@
   </tr></thead>
   <tbody id="rhCommissionGrid"><tr><td colspan="8" class="rh-empty">Carregando funcionários...</td></tr></tbody>
  </table></div>
- <div class="rh-help">Para <b>Manual</b> e <b>Agência</b>, digite o valor da comissão na própria linha do funcionário. A tonelagem continua registrada como referência. Cada botão <b>Salvar</b> gera um lançamento identificado e auditável.</div>
+ <div class="rh-help">Para <b>Manual</b> e <b>Agência</b>, digite o valor da comissão na própria linha do funcionário. A tonelagem continua registrada como referência. Use <b>Salvar</b> apenas para Manual e Agência; as comissões por tonelada e percentual são automáticas.</div>
 </section>
 <section class="rh-panel" aria-label="Histórico de comissões">
   <header><div><h2>Histórico de comissões</h2>
     <p class="rh-muted">Lançamentos por mês com taxa e quantidade utilizadas no cálculo.</p></div>
     <div class="rh-filter">
       <label>Competência <input id="rhMonth" type="month"></label>
-      <label>Buscar <input id="rhCommissionSearch" type="search" placeholder="Nome ou referência..."></label>
+      
       <button id="rhReload" class="rh-btn" type="button">↻ Atualizar</button>
     </div></header>
   <div class="rh-table-wrap"><table class="rh-table" aria-label="Comissões mensais">

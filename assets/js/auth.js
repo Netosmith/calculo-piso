@@ -1316,6 +1316,10 @@ function portalNavCurrentFile(){
 
 function portalNavAllowed(item){
   if(item.always) return isAuthedHome();
+  // Bases Fretes por Estado pertencem SOMENTE aos tenants; nunca misturar
+  // itens residuais numa troca de sessão com a Home principal da Nova Frota.
+  if(/^fretes-[a-z]{2}$/.test(item.key) &&
+     window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return false;
   // RH é exclusivo da Nova Frota; não expor links quebrados às outras empresas.
   if(item.key==="funcionarios"){
     return window.__PORTAL_TENANT_SESSION?.tenantMode!==true &&

@@ -344,16 +344,33 @@ async function photoForUpload(file) {
   const valid=new Set(["image/jpeg","image/png","image/webp"]);
   if(valid.has(file.type)&&file.size<=8*1024*1024)return file;
   // Fotos HEIC/HEIF do iPhone e fotos acima de 8 MB precisam ser convertidas em JPEG.
-  let bitmap;
-  try {bitmap=await createImageBitmap(file);} catch {
-    throw Error("Este formato de foto não é compatível neste navegador. Tente fotografar o comprovante com a câmera.");
+  let source,sourceUrl=null,width,height;
+  try {
+    source=await createImageBitmap(file);
+    width=source.width;height=source.height;
+  } catch {
+    // Alguns navegadores no iPhone decodificam HEIC em <img>, mas não em createImageBitmap.
+    sourceUrl=URL.createObjectURL(file);
+    try {
+      source=await new Promise((resolve,reject)=>{
+        const image=new Image();
+        image.onload=()=>resolve(image);
+        image.onerror=()=>reject(Error("Foto não suportada"));
+        image.src=sourceUrl;
+      });
+      width=source.naturalWidth;height=source.naturalHeight;
+    }catch{
+      URL.revokeObjectURL(sourceUrl);
+      throw Error("Este formato não pôde ser aberto. Tente tirar uma nova foto com a câmera.");
+    }
   }
-  const scale=Math.min(1,2000/Math.max(bitmap.width,bitmap.height));
+  const scale=Math.min(1,2000/Math.max(width,height));
   const canvas=document.createElement("canvas");
-  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
-  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
-  bitmap.close?.();
+  canvas.width=Math.max(1,Math.round(width*scale));
+  canvas.height=Math.max(1,Math.round(height*scale));
+  canvas.getContext("2d").drawImage(source,0,0,canvas.width,canvas.height);
+  source.close?.();
+  if(sourceUrl)URL.revokeObjectURL(sourceUrl);
   const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error("Não foi possível converter a foto.")),"image/jpeg",.82));
   if(blob.size>8*1024*1024)throw Error("A foto ultrapassa 8 MB. Tente fotografar novamente.");
   return blob;

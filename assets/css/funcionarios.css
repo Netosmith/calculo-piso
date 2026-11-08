@@ -123,3 +123,28 @@ body.rh-body button{cursor:pointer}
  .rh-commission-kpis{grid-template-columns:1fr}
  .rh-commission-result .rh-btn{width:100%}
 }
+
+/* Comissões por tonelada na própria linha de cada funcionário. */
+.rh-commission-grid{min-width:1280px}
+.rh-commission-grid th{background:#e7f3f6}
+.rh-commission-grid td{vertical-align:middle}
+.rh-commission-grid .rh-grid-input{
+ min-width:110px;max-width:155px;width:100%;
+ padding:10px 11px;border:1px solid #c6dbe3;
+ background:#f9fcfe;color:#123a52;border-radius:10px;
+ font-size:13px;font-variant-numeric:tabular-nums
+}
+.rh-commission-grid .rh-grid-reference{max-width:190px;min-width:130px}
+.rh-commission-grid .rh-grid-input:focus{
+ outline:3px solid #bee8e8;border-color:#178b93;background:#fff
+}
+.rh-commission-grid .rh-grid-save{padding:8px 12px;min-height:38px}
+.rh-commission-grid tr:focus-within{background:#f0faf7}
+.rh-commission-filters{padding:13px;border:1px solid #deebf1;background:#f7fbfd;border-radius:14px}
+.rh-commission-filters .rh-btn{align-self:end}
+.rh-commission-grid .positive{color:#087e64}
+@media(max-width:750px){
+ .rh-commission-grid{min-width:1180px}
+ .rh-commission-filters{display:grid;grid-template-columns:1fr}
+ .rh-commission-filters .rh-btn{width:100%}
+}

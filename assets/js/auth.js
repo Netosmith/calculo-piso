@@ -433,7 +433,7 @@ function featuresForProfile(profile){
   return STATE_FEATURES[normalizeUpper(profile)] || [];
 }
 
-function canAccessFeature(featureKey){
+function canAccessFeature(featureKey, context=""){
   let feature = String(featureKey || "").trim().toLowerCase();
   const profile = getProfile();
 
@@ -442,7 +442,7 @@ function canAccessFeature(featureKey){
   // a permissão correta é "fretes2". A conversão é limitada à rota Fretes2,
   // sem liberar o módulo Fretes GO para o perfil MT.
   const currentPath = String(window.location.pathname || "").toLowerCase();
-  if(feature === "fretes" && currentPath.endsWith("/fretes2.html")){
+  if(feature === "fretes" && currentPath.endsWith("/fretes2.html") && context!=="navigation"){
     feature = "fretes2";
   }
 
@@ -652,22 +652,35 @@ const PORTAL_NAV_ITEMS = [
   {
     key:"piso",
     label:"Cálculo Piso",
-    feature:["piso2","piso"],
-    href:() => canAccessFeature("piso2") ? "./calculo-antt.html" : "./calculo-piso.html",
-    paths:["calculo-piso.html","calculo-antt.html","calculo-antt2.html"],
+    feature:"piso",
+    href:"./calculo-piso.html",
+    paths:["calculo-piso.html"],
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 6-7"/></svg>'
+  },
+  {
+    key:"piso2",
+    label:"Piso ANTT",
+    feature:"piso2",
+    href:"./calculo-antt.html",
+    paths:["calculo-antt.html","calculo-antt2.html"],
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 6-7"/><circle cx="19" cy="5" r="2"/></svg>'
   },
   {
     key:"fretes",
     label:"Fretes",
-    feature:["fretes","fretes2"],
-    href:() => {
-      const uf = typeof getSelectedState === "function" ? getSelectedState() : "";
-      if(uf === "MT" && canAccessFeature("fretes2")) return "./fretes2.html";
-      if(canAccessFeature("fretes")) return "./fretes.html";
-      return "./fretes2.html";
-    },
-    paths:["fretes.html","fretes2.html"],
+    feature:"fretes",
+    href:"./fretes.html",
+    paths:["fretes.html"],
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
+  },
+  {
+    key:"fretes2",
+    label:"Fretes MT",
+    feature:"fretes2",
+    href:"./fretes2.html",
+    paths:["fretes2.html"],
+    secondary:true,
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
   },
   {
@@ -705,6 +718,15 @@ const PORTAL_NAV_ITEMS = [
     feature:"bi",
     href:"./bi.html",
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10h3v10M11 20V4h3v16M17 20v-7h3v7M3 20h19"/></svg>'
+  },
+  {
+    key:"funcionarios",
+    label:"Funcionários",
+    feature:"funcionarios",
+    href:"./funcionarios.html",
+    paths:["funcionarios.html","funcionarios-cadastro.html","funcionarios-lancamentos.html","funcionarios-tabela.html","funcionarios-comissoes.html"],
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2"/><circle cx="18" cy="9" r="2.4"/><path d="M16 15c3 0 5 2 5 5"/></svg>'
   },
   {
     key:"administrativo",
@@ -786,8 +808,13 @@ const PORTAL_NAV_ITEMS = [
 
 // Freight base links live in the overflow menu only for independent tenants.
 // Nova Frota keeps the original global navigation unchanged.
-if(window.__PORTAL_TENANT_SESSION?.tenantMode===true){
+function ensureTenantFreightNavItems(){
+  // Carregar as bases DEPOIS que a sessão assinada terminar de carregar.
+  // Antes, alguns módulos de Fretes por Estado sumiam ao trocar de página.
+  if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return;
+  const existing=new Set(PORTAL_NAV_ITEMS.map(item=>item.key));
   for(const uf of ["GO","MT","SP","MS","BA","PR","SC","RO","TO","MA","AC","AL","AP","AM","CE","DF","ES","MG","PA","PB","PE","PI","RJ","RN","RS","RR","SE"]){
+    if(existing.has("fretes-"+uf.toLowerCase()))continue;
     const key="fretes-"+uf.toLowerCase();
     PORTAL_NAV_ITEMS.push({
       key,label:"Fretes "+uf,feature:key,
@@ -970,6 +997,7 @@ function injectPortalNavStyles(){
       stroke-width:2;
       stroke-linecap:round;
     }
+    .nf-global-nav-more-count[hidden]{display:none!important}
     .nf-global-nav-more-count{
       position:absolute;
       top:-5px;
@@ -1288,8 +1316,13 @@ function portalNavCurrentFile(){
 
 function portalNavAllowed(item){
   if(item.always) return isAuthedHome();
+  // RH é exclusivo da Nova Frota; não expor links quebrados às outras empresas.
+  if(item.key==="funcionarios"){
+    return window.__PORTAL_TENANT_SESSION?.tenantMode!==true &&
+      isAuthedHome() && getProfile()==="ADMINISTRADOR";
+  }
   const features = Array.isArray(item.feature) ? item.feature : [item.feature];
-  return features.filter(Boolean).some(feature => canAccessFeature(feature));
+  return features.filter(Boolean).some(feature => canAccessFeature(feature,"navigation"));
 }
 
 function portalNavHref(item){
@@ -1307,6 +1340,7 @@ function portalNavIsActive(item){
 }
 
 function createPortalGlobalNav(){
+  ensureTenantFreightNavItems();
   const nav = document.createElement("nav");
   nav.className = "nf-global-nav";
   nav.id = "nfGlobalNav";
@@ -1336,8 +1370,8 @@ function createPortalNavMoreButton(){
   button.id = "nfGlobalNavMore";
   button.className = "nf-global-nav-more-button";
   button.hidden = true;
-  button.title = "Mais módulos";
-  button.setAttribute("aria-label","Abrir mais módulos");
+  button.title = "Todos os módulos";
+  button.setAttribute("aria-label","Abrir lista de todos os módulos liberados");
   button.setAttribute("aria-expanded","false");
   button.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1384,7 +1418,7 @@ function ensurePortalNavDrawer(){
   drawer.innerHTML = `
     <div class="nf-global-nav-drawer-head">
       <div class="nf-global-nav-drawer-title">
-        <strong>Mais módulos</strong>
+        <strong>Todos os módulos</strong>
         <span>Acessos liberados para o seu perfil</span>
       </div>
       <button class="nf-global-nav-drawer-close" type="button" aria-label="Fechar menu">×</button>
@@ -1428,59 +1462,40 @@ function syncPortalNavOverflow(){
   const more = document.getElementById("nfGlobalNavMore");
   if(!nav || !more) return;
 
-  const items = Array.from(nav.querySelectorAll(".nf-global-nav-item"));
-  items.forEach(item => item.classList.remove("nf-nav-overflow-hidden"));
-  more.hidden = true;
+  const items=Array.from(nav.querySelectorAll(".nf-global-nav-item"));
+  items.forEach(item=>item.classList.remove("nf-nav-overflow-hidden"));
+
+  // O botão Todos os módulos é permanente. Mesmo se alguma largura estiver
+  // incorreta (mobile, fontes carregando, zoom), NENHUM acesso liberado se perde.
+  more.hidden=false;
   closePortalNavDrawer();
+  const count=document.getElementById("nfGlobalNavMoreCount");
+  const space=nav.clientWidth;
+  let used=items.reduce((total,item)=>total+item.getBoundingClientRect().width,0);
 
-  // Primeira medição: se couber tudo, não há menu lateral.
-  const totalWidth = items.reduce((sum,item) => sum + item.getBoundingClientRect().width, 0);
-  if(totalWidth <= nav.clientWidth + 2){
-    populatePortalNavDrawer([]);
-    return;
+  if(space>0 && used>space+2){
+    // Manter primeiro o módulo atual e os acessos principais.
+    // Esconder ícones secundários ou do fim da barra quando não couberem.
+    const secondary=items.filter(item=>item.dataset.secondary==="1"&&!item.classList.contains("active")).reverse();
+    const regular=items.filter(item=>item.dataset.secondary!=="1"&&item.dataset.navKey!=="home"&&!item.classList.contains("active")).reverse();
+    const home=items.filter(item=>item.dataset.navKey==="home"&&!item.classList.contains("active"));
+    for(const item of [...secondary,...regular,...home]){
+      if(used<=space+2)break;
+      const width=item.getBoundingClientRect().width;
+      if(width<=0)continue;
+      item.classList.add("nf-nav-overflow-hidden");
+      used-=width;
+    }
   }
 
-  // Reserva o espaço do botão "Mais" e recalcula o espaço útil.
-  more.hidden = false;
-  const available = nav.clientWidth;
-  let used = items.reduce((sum,item) => sum + item.getBoundingClientRect().width, 0);
-
-  // Esconde primeiro os módulos secundários; depois, do fim para o começo.
-  const secondary = items
-    .filter(item => item.dataset.secondary === "1" && !item.classList.contains("active"))
-    .reverse();
-
-  const regular = items
-    .filter(item =>
-      item.dataset.secondary !== "1" &&
-      item.dataset.navKey !== "home" &&
-      !item.classList.contains("active")
-    )
-    .reverse();
-
-  const finalFallback = items
-    .filter(item =>
-      item.dataset.navKey === "home" &&
-      !item.classList.contains("active")
-    );
-
-  [...secondary,...regular,...finalFallback].some(item => {
-    if(used <= available + 2) return true;
-    const width = item.getBoundingClientRect().width;
-    item.classList.add("nf-nav-overflow-hidden");
-    used -= width;
-    return false;
-  });
-
-  const hiddenItems = items.filter(item => item.classList.contains("nf-nav-overflow-hidden"));
-  populatePortalNavDrawer(hiddenItems);
-
-  const count = document.getElementById("nfGlobalNavMoreCount");
-  if(count) count.textContent = String(hiddenItems.length);
-
-  if(!hiddenItems.length){
-    more.hidden = true;
+  const hidden=items.filter(item=>item.classList.contains("nf-nav-overflow-hidden"));
+  if(count){
+    count.textContent=String(hidden.length);
+    count.hidden=hidden.length===0;
   }
+  // Exibir a LISTA COMPLETA no menu, não apenas os ícones cortados.
+  // Garante acesso a todos os módulos liberados em qualquer tela ou largura.
+  populatePortalNavDrawer(items);
 }
 
 let portalNavResizeFrame = 0;

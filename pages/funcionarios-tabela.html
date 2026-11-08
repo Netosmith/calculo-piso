@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
-<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-toneladas-v3">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-folha-v1">
 </head>
 <body class="rh-body" data-rh-page="table">
 <header class="rh-topbar"><div class="rh-topbar-in">
@@ -17,32 +17,38 @@
 <div class="rh-topright"><span id="rhUser" class="rh-user">Acesso administrativo</span><a class="rh-home" href="./home.html" aria-label="Voltar à Home">⌂ Home</a><button class="rh-btn" data-logout type="button">Sair</button></div>
 </div></header>
 <main class="rh-content">
-<section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
-<div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Funcionários • Tabela Geral</div>
-<h1>Funcionários • Tabela Geral</h1><p>Visão de planilha com salários, comissões, vales, custos e exportação.</p></div></div>
-<div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
-</section>
 <div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
-<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vale / custo</a><a href="./funcionarios-tabela.html" class="active" aria-current="page">Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" >Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vales</a><a href="./funcionarios-tabela.html" class="active" aria-current="page">Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
 <section class="rh-panel">
 <header><div><h2>Relação geral de funcionários</h2><p class="rh-muted" id="rhCountShown">Carregando...</p></div>
-<div class="rh-actions"><button id="rhExport" class="rh-btn" type="button">↓ Exportar CSV (Excel)</button><button id="rhReload" class="rh-btn" type="button">↻ Atualizar</button></div></header>
+<div class="rh-actions"><button id="rhReload" class="rh-btn" type="button">↻ Atualizar</button></div></header>
 <div class="rh-filter" style="margin-bottom:16px">
-<label class="grow">Buscar <input id="rhSearch" type="search" placeholder="Nome, cidade, função ou filial..."></label>
+<label class="grow">Buscar <input id="rhSearch" type="search" placeholder="Nome, função ou filial..."></label>
 <label>Filial <select id="rhBranch"><option value="">Todas as filiais</option></select></label>
 <label>Função <select id="rhRole"><option value="">Todas as funções</option></select></label>
 <label>Situação <select id="rhStatus"><option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option></select></label>
 <label>Competência <input id="rhMonth" type="month"></label>
 </div>
-<div class="rh-table-wrap"><table class="rh-table" aria-label="Tabela geral de funcionários"><thead><tr>
-<th>Nome</th><th>Função</th><th>Cidade / Filial</th><th class="money">Salário</th><th class="money">Vales</th><th class="money">Custos</th><th class="money">Comissões</th>
-<th class="money">Saldo gerencial</th><th>Situação</th><th class="actions">Ações</th></tr></thead>
-<tbody id="rhListBody"><tr><td class="rh-empty" colspan="10">Carregando funcionários...</td></tr></tbody></table></div>
-<div class="rh-help">Os somatórios de vales e custos consideram o mês selecionado. “Saldo gerencial” representa salário base + comissões do mês − vales registrados; não representa salário líquido legal, impostos nem outras deduções.</div>
+<div class="rh-download-bar">
+  <div><h3>Baixar tabela</h3><p>O valor total de cada arquivo já considera as colunas incluídas.</p></div>
+  <div class="rh-download-buttons">
+   <button class="rh-btn" data-rh-download="geral" type="button">↓ Geral</button>
+   <button class="rh-btn" data-rh-download="sem_vales" type="button">↓ Sem vales</button>
+   <button class="rh-btn" data-rh-download="sem_comissao" type="button">↓ Sem comissão</button>
+   <button class="rh-btn" data-rh-download="sem_vales_comissao" type="button">↓ Sem vale e comissão</button>
+  </div>
+ </div>
+ <div class="rh-table-overview"><span id="rhTableVolume">Carregando toneladas...</span>
+ <strong>Total geral (com vales e comissão): <b id="rhTableTotal">R$ 0,00</b></strong></div>
+ <div class="rh-table-wrap"><table class="rh-table" aria-label="Tabela geral de funcionários"><thead><tr><th>Nome</th><th>Função</th><th>Filial</th>
+ <th class="money">Salário</th><th class="money">Vales</th><th class="money">Comissão</th>
+ <th class="money">Total</th><th>Situação</th><th class="actions">Ações</th></tr></thead>
+<tbody id="rhListBody"><tr><td class="rh-empty" colspan="9">Carregando funcionários...</td></tr></tbody></table></div>
+<div class="rh-help">Total por funcionário: salário-base + comissão do mês − vales. Nos downloads, as colunas excluídas não afetam o total. Os valores são gerenciais e não representam salário líquido legal.</div>
 </section>
 <footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
 </main>
 <script src="../assets/js/auth.js?v=28"></script>
-<script src="../assets/js/funcionarios.js?v=20261108-toneladas-v3" defer></script>
+<script src="../assets/js/funcionarios.js?v=20261108-folha-v1" defer></script>
 </body>
 </html>

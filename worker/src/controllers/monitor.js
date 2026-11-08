@@ -50,10 +50,10 @@ const toTrip = row => ({
 });
 async function tripForToken(db, value) {
   if (!validToken(value)) return null;
-  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at,
-    (SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='consent' ORDER BY a.id DESC LIMIT 1) AS gps_consent_at,
-    (SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='finished' ORDER BY a.id DESC LIMIT 1) AS gps_finished_at
-    FROM monitor_trips t LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.token_hash=? AND t.token_expires_at>?")
+  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at, "+
+    "(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='consent' ORDER BY a.id DESC LIMIT 1) AS gps_consent_at, "+
+    "(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='finished' ORDER BY a.id DESC LIMIT 1) AS gps_finished_at "+
+    "FROM monitor_trips t LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.token_hash=? AND t.token_expires_at>?")
     .bind(await hashToken(value), now()).first();
 }
 function dbError(error, stage) {

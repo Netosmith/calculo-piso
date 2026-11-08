@@ -55,11 +55,18 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler d1 execute portal-frota --remote --file=migrations/0008_monitor_v2.sql
 
+      - name: Preparar selfie e comprovante para viagens monitoradas
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 execute portal-frota --remote --file=migrations/0009_monitor_proof_review.sql
       - name: Validar sintaxe do monitoramento
         working-directory: worker
         run: |
           node --check src/controllers/monitor.js
-          node --test tests/monitor-v2.test.mjs
+          node --check src/controllers/monitor-proof.js
+          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs
       - name: Preparar tabelas de Funcionários Nova Frota
         working-directory: worker
         env:

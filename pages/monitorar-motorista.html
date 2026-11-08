@@ -269,30 +269,52 @@ async function upload(path,blob){
 }
 function refreshUi(){
   const selfie=trip?.selfieStatus||"missing",receipt=trip?.receiptStatus||"missing";
+  const selfieReady=!trip?.selfieRequired||["pending","approved"].includes(selfie);
+  const gpsStarted=watch!==null||!!trip?.gpsConsentAt||!!trip?.lastPosition;
+  const finished=!!trip?.gpsFinishedAt||trip?.active===false;
+  const approved=trip?.selfieRequired
+    ? selfie==="approved"&&receipt==="approved"
+    : receipt==="approved";
+  const consented=!!trip?.gpsConsentAt;
+
   $("#selfieStatus").textContent="Selfie: "+statusName[selfie];
-  $("#stageSelfie").className="track-item "+(selfie==="missing"?"current":"done");
-  $("#stageGps").className="track-item "+(watch!==null?"done":selfie==="missing"?"":"current");
-  $("#stageReceipt").className="track-item "+(receipt==="missing"?"":receipt==="approved"?"done":"current");
+  $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
+  $("#stageSelfie").className="track-item "+(selfieReady?"done":"current");
+  $("#stageGps").className="track-item "+(gpsStarted?"done":selfieReady?"current":"");
+  $("#stageReceipt").className="track-item "+(receipt==="approved"?"done":gpsStarted?"current":"");
+  $("#stageFinish").className="track-item "+(finished?"done":receipt!=="missing"?"current":"");
+
+  // A selfie é sempre a primeira etapa nas novas viagens.
+  $("#selfieBox").hidden=!trip?.active||(!trip?.selfieRequired&&selfie==="missing")||selfieReady;
+  $("#travelTerm").hidden=!trip?.active||!selfieReady;
+  $("#gpsConsent").checked=consented||$("#gpsConsent").checked;
+  $("#gpsConsent").disabled=consented||!selfieReady||uploading;
+  $("#consentStatus").textContent=consented?"Termo aceito e registrado para esta viagem.":"Termo ainda não aceito.";
+  $("#consentStatus").hidden=!selfieReady;
+  $("#start").hidden=watch!==null||finished;
+  $("#start").textContent=consented?"RETOMAR ACOMPANHAMENTO GPS":"INICIAR VIAGEM";
+  $("#start").disabled=!trip?.active||!selfieReady||
+    (!consented&&!$("#gpsConsent").checked)||uploading;
+  $("#trackingActive").hidden=watch===null||!trip?.active;
+
+  $("#receiptBox").hidden=!trip?.active||!gpsStarted;
+  $("#finishBox").hidden=!trip?.active||receipt==="missing"&&!finished;
+  $("#finishHint").hidden=approved||finished;
+  $("#finishHint").textContent=receipt==="rejected"
+    ?"Comprovante rejeitado. Envie uma nova foto para análise da Nova Frota."
+    :"Aguardando análise e aprovação da selfie e do comprovante de descarga pela Nova Frota.";
+  $("#finishDone").hidden=!finished;
+  $("#finishButton").hidden=!trip?.active||!approved||finished;
+  $("#finishButton").disabled=uploading;
+
   fileSelfie.disabled=!trip?.active||uploading;
   fileReceipt.disabled=!trip?.active||uploading||(trip.selfieRequired&&selfie==="missing");
   fileReceiptCamera.disabled=fileReceipt.disabled;
   $("#selfieAction").setAttribute("aria-disabled",String(fileSelfie.disabled));
   $("#receiptAction").setAttribute("aria-disabled",String(fileReceipt.disabled));
   $("#receiptCameraAction").setAttribute("aria-disabled",String(fileReceiptCamera.disabled));
-  $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
-  $("#selfieBox").hidden=!trip?.active||selfie==="approved"||(selfie==="missing"&&!showSelfie);
-  $("#start").disabled=!trip?.active||watch!==null;
-  const approved=!trip?.selfieRequired||
-    (selfie==="approved"&&receipt==="approved");
-  $("#stop").hidden=watch===null||!trip?.active||!approved;
-  $("#pauseGps").hidden=watch===null||!trip?.active;
-  $("#finishHint").hidden=watch===null||!trip?.active||approved;
   $("#sendSelfie").disabled=!trip?.active||uploading||!$("#photoNotice").checked||!fileSelfie.files.length;
   $("#sendReceipt").disabled=!trip?.active||uploading||!selectedReceiptFile||(trip.selfieRequired&&selfie==="missing");
-  if(!trip?.active){
-    $("#stop").hidden=true;$("#pauseGps").hidden=true;$("#finishHint").hidden=true;
-    $("#start").disabled=true;
-  }
 }
 async function validate(){
   try{
@@ -301,7 +323,7 @@ async function validate(){
     $("#trip").textContent=trip.plate+" • "+trip.driver;
     $("#route").textContent=(trip.origin||"—")+" → "+(trip.destination||"—");
     refreshUi();
-    message(trip.active?"Viagem disponível. Tire a selfie e inicie o compartilhamento.":"Viagem já encerrada pela Nova Frota.");
+    message(trip.active?(trip.selfieStatus==="missing"?"Comece pela selfie. Depois aceite o termo e inicie a viagem.":trip.gpsConsentAt?"Acompanhamento registrado. Toque RETOMAR GPS se precisar continuar enviando posições.":"Leia e aceite o termo para iniciar a viagem."):"Viagem já encerrada pela Nova Frota.");
   }catch(e){$("#trip").textContent="Link indisponível";message(e.message,true);}
 }
 function stop(){
@@ -324,7 +346,7 @@ function startGps(){
   },err=>{message("Não foi possível obter a localização: "+err.message,true);stop();},{
     enableHighAccuracy:true,maximumAge:10000,timeout:20000
   });
-  refreshUi();message("Viagem iniciada. Aguardando primeira posição GPS...");
+  refreshUi();message("Acompanhamento iniciado. Aguardando primeira posição GPS...");
 }
 async function cleanJpeg(file){
   const bitmap=await createImageBitmap(file);
@@ -354,16 +376,37 @@ $("#sendSelfie").onclick=async()=>{
     const blob=await cleanJpeg(fileSelfie.files[0]);
     const d=await upload("/v1/monitor/selfie",blob);
     trip.selfieStatus=d.status;fileSelfie.value="";$("#selfieName").textContent="Foto enviada com sucesso";refreshUi();
-    message("Selfie enviada para conferência. Iniciando GPS...");
-    startGps();
+    message("Selfie enviada para conferência. Leia o termo e toque em INICIAR VIAGEM.");
+    $("#gpsBox").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){message("Não foi possível enviar a selfie: "+e.message,true);}
   finally{uploading=false;refreshUi();}
 };
-$("#start").onclick=()=>{
-  if((trip?.selfieStatus||"missing")==="missing"){
-    showSelfie=true;refreshUi();$("#selfieBox").scrollIntoView({behavior:"smooth"});message("Tire e envie a selfie primeiro.");return;
+$("#gpsConsent").onchange=refreshUi;
+$("#start").onclick=async()=>{
+  if(!trip?.active)return;
+  if(trip.selfieRequired&&!["pending","approved"].includes(trip.selfieStatus)){
+    $("#selfieBox").scrollIntoView({behavior:"smooth"});
+    message("Primeiro envie uma selfie válida para a conferência.",true);
+    return;
   }
-  startGps();
+  if(!trip.gpsConsentAt&&!$("#gpsConsent").checked){
+    message("Leia e aceite o termo antes de iniciar a viagem.",true);
+    $("#travelTerm").scrollIntoView({behavior:"smooth"});
+    return;
+  }
+  const button=$("#start");
+  button.disabled=true;
+  try{
+    if(!trip.gpsConsentAt){
+      const result=await post("/v1/monitor/consent",{token,accepted:true,version:"gps-viagem-v1"});
+      trip.gpsConsentAt=result.consentAt||new Date().toISOString();
+    }
+    startGps();
+    refreshUi();
+  }catch(e){
+    message("Não foi possível iniciar: "+e.message,true);
+    refreshUi();
+  }
 };
 async function updateReview(){
   if(checkingReview||!trip?.active)return;
@@ -385,31 +428,22 @@ async function updateReview(){
     if(/expirado|inválido|encerrada/i.test(e.message)){stop();message(e.message,true);}
   }finally{checkingReview=false;}
 }
-$("#stop").onclick=async()=>{
+$("#finishButton").onclick=async()=>{
   await updateReview();
   if(!trip?.active)return;
-  if(!(!trip.selfieRequired||
-       (trip.selfieStatus==="approved"&&trip.receiptStatus==="approved"))){
-    message("Aguarde a aprovação da selfie e do comprovante pela Nova Frota.",true);
-    return;
+  if(!(trip.selfieStatus==="approved"&&trip.receiptStatus==="approved")){
+    message("A Nova Frota ainda precisa aprovar a selfie e o comprovante.",true);
+    refreshUi();return;
   }
-  if(!confirm("Documentos aprovados. Concluir o compartilhamento do GPS neste aparelho? A Nova Frota finalizará a viagem operacional separadamente."))return;
+  if(!confirm("Comprovante aprovado. Finalizar o acompanhamento do GPS desta viagem? O encerramento operacional será confirmado pela Nova Frota."))return;
+  const button=$("#finishButton");button.disabled=true;
   try{
     await post("/v1/monitor/gps-event",{token,action:"finished"});
+    trip.gpsFinishedAt=new Date().toISOString();
     stop();
-    message("Compartilhamento do GPS concluído após a aprovação documental. A viagem permanece sob controle da Nova Frota.");
-  }catch(e){message(e.message,true);}
-};
-$("#pauseGps").onclick=async()=>{
-  if(!confirm("Suspender a localização por decisão sua? O transporte NÃO será encerrado e a Nova Frota receberá um alerta. Você pode reativar o GPS depois."))return;
-  stop();
-  message("Sua localização foi suspensa. A viagem continua aberta e a Nova Frota será avisada.");
-  try{
-    await post("/v1/monitor/gps-event",{token,action:"stopped"});
-    message("Localização suspensa, com alerta enviado à Nova Frota. A viagem continua aberta.");
-  }catch(e){
-    message("Localização suspensa neste aparelho; não foi possível transmitir o alerta. A ausência de sinal também ficará visível na central.",true);
-  }
+    refreshUi();
+    message("Acompanhamento concluído com documentos aprovados. A Nova Frota finalizará a operação.");
+  }catch(e){message(e.message,true);button.disabled=false;}
 };
 function onReceiptSelect(input) {
   const chosen=input.files?.[0]||null;

@@ -16,6 +16,8 @@ const dateOK=v=>{
 };
 const cents=(value,allowZero)=>typeof value==="number"&&Number.isSafeInteger(value)&&
   value>=(allowZero?0:1)&&value<=MONEY_MAX?value:null;
+const tonnesValid=value=>typeof value==="number"&&Number.isSafeInteger(value)&&
+ value>=0&&value<=1000000000;
 async function bodyJSON(request){
   if(Number(request.headers.get("Content-Length")||0)>6000)throw Error("Dados acima do limite.");
   const raw=await request.text();
@@ -68,23 +70,48 @@ export async function employeesController(req,env){
   const resource=part[0]||"",id=part[1]||"";
   const actor=txt(access.session.usuario,100);
   try{
+    // O volume mensal alimenta automaticamente as comissões da tabela.
+    if(method==="POST"&&resource==="volume"&&!id){
+      const p=await bodyJSON(req),month=String(p.month||"");
+      if(!monthOK(month)||!tonnesValid(p.tonnesMilli))
+        return errorResponse("Informe competência AAAA-MM e toneladas válidas.",400);
+      await db.prepare("INSERT INTO rh_monthly_volumes(month,tonnes_milli,updated_by,updated_at) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(month) DO UPDATE SET tonnes_milli=excluded.tonnes_milli,updated_by=excluded.updated_by,updated_at=CURRENT_TIMESTAMP")
+        .bind(month,p.tonnesMilli,actor).run();
+      return success({month,tonnesMilli:p.tonnesMilli,applied:true});
+    }
     if(method==="GET"&&path==="/v1/funcionarios"){
       const month=String(url.searchParams.get("month")||new Date().toISOString().slice(0,7));
       if(!monthOK(month))return errorResponse("Competência inválida. Use AAAA-MM.",400);
       const [year,m]=month.split("-").map(Number);
       const first=month+"-01",next=new Date(Date.UTC(year,m,1)).toISOString().slice(0,10);
-      const [people,launches,commissionRows]=await Promise.all([
+      const [people,launches,commissionRows,monthlyVolume]=await Promise.all([
         db.prepare("SELECT e.*,COALESCE(s.kind,'NONE') AS commission_kind,COALESCE(s.rate_value,0) AS commission_rate,COALESCE(SUM(CASE WHEN l.kind='VALE' THEN l.amount_cents ELSE 0 END),0) AS vales_cents,COALESCE(SUM(CASE WHEN l.kind='CUSTO' THEN l.amount_cents ELSE 0 END),0) AS costs_cents FROM rh_employees e LEFT JOIN rh_commission_settings s ON s.employee_id=e.id LEFT JOIN rh_entries l ON l.employee_id=e.id AND l.deleted_at IS NULL AND l.date>=? AND l.date<? GROUP BY e.id ORDER BY e.active DESC,e.name COLLATE NOCASE ASC LIMIT 3000")
         .bind(first,next).all(),
         db.prepare("SELECT l.id,l.employee_id,e.name AS employee_name,l.kind,l.description,l.amount_cents,l.date,l.created_at,l.created_by FROM rh_entries l JOIN rh_employees e ON e.id=l.employee_id WHERE l.deleted_at IS NULL AND l.date>=? AND l.date<? ORDER BY l.date DESC,l.created_at DESC LIMIT 5000").bind(first,next).all(),
-        db.prepare("SELECT c.id,c.employee_id,e.name AS employee_name,c.kind,c.rate_value,c.tonnes_milli,c.freight_cents_per_ton,c.amount_cents,c.description,c.date,c.created_at,c.created_by FROM rh_commissions c JOIN rh_employees e ON e.id=c.employee_id WHERE c.voided_at IS NULL AND c.date>=? AND c.date<? ORDER BY c.date DESC,c.created_at DESC LIMIT 5000").bind(first,next).all()
+        db.prepare("SELECT c.id,c.employee_id,e.name AS employee_name,c.kind,c.rate_value,c.tonnes_milli,c.freight_cents_per_ton,c.amount_cents,c.description,c.date,c.created_at,c.created_by FROM rh_commissions c JOIN rh_employees e ON e.id=c.employee_id WHERE c.voided_at IS NULL AND c.date>=? AND c.date<? ORDER BY c.date DESC,c.created_at DESC LIMIT 5000").bind(first,next).all(),
+        db.prepare("SELECT tonnes_milli,updated_by,updated_at FROM rh_monthly_volumes WHERE month=?").bind(month).first()
       ]);
       const employees=(people.results||[]).map(toEmployee),entries=(launches.results||[]).map(toEntry);
       const commissions=(commissionRows.results||[]).map(toCommission);
       const employeeById=new Map(employees.map(e=>[e.id,e]));
+      // A comissão gravada anteriormente continua no histórico. Quando o volume
+      // mensal é informado, TON e PERCENT são recalculados uma única vez
+      // automaticamente. Manual e Agência permanecem por lançamentos gravados.
       for(const record of commissions){
         const owner=employeeById.get(record.employeeId);
-        if(owner)owner.commissionsCents+=record.amountCents;
+        if(owner && (!monthlyVolume || !["TON","PERCENT"].includes(owner.commissionKind)
+          || ["MANUAL","AGENCIA"].includes(record.kind)))
+          owner.commissionsCents+=record.amountCents;
+      }
+      if(monthlyVolume){
+        for(const person of employees){
+          if(!["TON","PERCENT"].includes(person.commissionKind))continue;
+          const t=Number(monthlyVolume.tonnes_milli);
+          person.commissionsCents=t===0?0:calculateCommission(
+            {kind:person.commissionKind,rateValue:person.commissionRate},
+            {tonnesMilli:t,freightCentsPerTon:0,manualAmountCents:0}
+          ).amountCents;
+        }
       }
       const active=employees.filter(x=>x.active);
       const totals={
@@ -92,17 +119,22 @@ export async function employeesController(req,env){
         salaryCents:active.reduce((s,x)=>s+x.salaryCents,0),
         valesCents:active.reduce((s,x)=>s+x.valesCents,0),
         costsCents:active.reduce((s,x)=>s+x.costsCents,0),
-        commissionsCents:commissions.reduce((s,x)=>s+x.amountCents,0)
+        commissionsCents:active.reduce((sum,x)=>sum+x.commissionsCents,0)
       };
       return success({month,employees,entries,commissions,totals,
+        monthlyVolume:monthlyVolume?{
+          tonnesMilli:Number(monthlyVolume.tonnes_milli),
+          updatedAt:String(monthlyVolume.updated_at||""),
+          updatedBy:String(monthlyVolume.updated_by||"")
+        }:null,
         complete:(people.results||[]).length<3000&&(launches.results||[]).length<5000&&(commissionRows.results||[]).length<5000});
     }
     if(resource==="people"){
       if(method==="POST"&&!id){
         const p=await bodyJSON(req),name=txt(p.name),role=txt(p.role,100),city=txt(p.city,100),
           branch=txt(p.branch,100),notes=txt(p.notes,800),salary=cents(p.salaryCents,true);
-        if(name.length<2||!role||!city||!branch||salary===null)
-          return errorResponse("Preencha nome, função, cidade, filial e salário válido.",400);
+        if(name.length<2||!role||!branch||salary===null)
+          return errorResponse("Preencha nome, função, filial e salário válido.",400);
         const setting=parseCommissionSetting(p);
         const employeeId=crypto.randomUUID();
         await db.batch([
@@ -114,7 +146,7 @@ export async function employeesController(req,env){
       if(method==="PUT"&&uuid(id)){
         const p=await bodyJSON(req),name=txt(p.name),role=txt(p.role,100),city=txt(p.city,100),
           branch=txt(p.branch,100),notes=txt(p.notes,800),salary=cents(p.salaryCents,true);
-        if(name.length<2||!role||!city||!branch||salary===null||typeof p.active!=="boolean")
+        if(name.length<2||!role||!branch||salary===null||typeof p.active!=="boolean")
           return errorResponse("Dados do funcionário inválidos.",400);
         // Clientes antigos sem campo de comissão conservam a configuração atual.
         const commands=[
@@ -164,8 +196,8 @@ export async function employeesController(req,env){
         const p=await bodyJSON(req),employeeId=String(p.employeeId||""),
           kind=String(p.kind||"").toUpperCase(),description=txt(p.description,320),
           amount=cents(p.amountCents,false),date=String(p.date||"");
-        if(!uuid(employeeId)||!["VALE","CUSTO"].includes(kind)||description.length<3||
-           amount===null||!dateOK(date))return errorResponse("Informe funcionário, tipo, descrição, valor e data válidos.",400);
+        if(!uuid(employeeId)||kind!=="VALE"||description.length<3||
+           amount===null||!dateOK(date))return errorResponse("Informe funcionário, vale, descrição, valor e data válidos.",400);
         const owner=await db.prepare("SELECT id,active FROM rh_employees WHERE id=?").bind(employeeId).first();
         if(!owner||!owner.active)return errorResponse("Funcionário inexistente ou inativo.",400);
         const entryId=crypto.randomUUID();
@@ -175,14 +207,14 @@ export async function employeesController(req,env){
       if(method==="PUT"&&uuid(id)){
         const p=await bodyJSON(req),kind=String(p.kind||"").toUpperCase(),
           description=txt(p.description,320),amount=cents(p.amountCents,false),date=String(p.date||"");
-        if(!["VALE","CUSTO"].includes(kind)||description.length<3||amount===null||!dateOK(date))
-          return errorResponse("Lançamento inválido.",400);
-        const result=await db.prepare("UPDATE rh_entries SET kind=?,description=?,amount_cents=?,date=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL")
+        if(kind!=="VALE"||description.length<3||amount===null||!dateOK(date))
+          return errorResponse("Somente vales podem ser alterados neste módulo.",400);
+        const result=await db.prepare("UPDATE rh_entries SET kind=?,description=?,amount_cents=?,date=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL AND kind='VALE'")
           .bind(kind,description,amount,date,actor,id).run();
         return result.meta?.changes?success({id}):errorResponse("Lançamento não encontrado.",404);
       }
       if(method==="DELETE"&&uuid(id)){
-        const result=await db.prepare("UPDATE rh_entries SET deleted_at=CURRENT_TIMESTAMP,deleted_by=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL")
+        const result=await db.prepare("UPDATE rh_entries SET deleted_at=CURRENT_TIMESTAMP,deleted_by=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL AND kind='VALE'")
           .bind(actor,actor,id).run();
         return result.meta?.changes?success({deleted:true}):errorResponse("Lançamento não encontrado.",404);
       }

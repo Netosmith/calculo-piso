@@ -68,7 +68,7 @@ input[type=file]{display:block;margin:10px 0 6px;width:100%;font-size:13px}
 "use strict";
 const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);
 const fileSelfie=$("#selfieFile"),fileReceipt=$("#receiptFile");
-let trip=null,watch=null,last=0,uploading=false;
+let trip=null,watch=null,last=0,uploading=false,showSelfie=false;
 const message=(m,bad=false)=>{$("#status").textContent=m;$("#status").className=bad?"err":"ok";};
 const statusName={missing:"Não enviado",pending:"Aguardando análise",approved:"Aprovado pela Nova Frota",rejected:"Rejeitado: envie outro arquivo"};
 async function post(path,body){
@@ -87,7 +87,7 @@ function refreshUi(){
   const selfie=trip?.selfieStatus||"missing",receipt=trip?.receiptStatus||"missing";
   $("#selfieStatus").textContent="Selfie: "+statusName[selfie];
   $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
-  $("#selfieBox").hidden=!trip?.active||selfie==="approved";
+  $("#selfieBox").hidden=!trip?.active||selfie==="approved"||(selfie==="missing"&&!showSelfie);
   $("#start").disabled=!trip?.active||watch!==null;
   $("#sendSelfie").disabled=!trip?.active||uploading||!$("#photoNotice").checked||!fileSelfie.files.length;
   $("#sendReceipt").disabled=!trip?.active||uploading||!fileReceipt.files.length||(trip.selfieRequired&&selfie==="missing");
@@ -158,7 +158,7 @@ $("#sendSelfie").onclick=async()=>{
 };
 $("#start").onclick=()=>{
   if((trip?.selfieStatus||"missing")==="missing"){
-    $("#selfieBox").scrollIntoView({behavior:"smooth"});message("Tire e envie a selfie primeiro.");return;
+    showSelfie=true;refreshUi();$("#selfieBox").scrollIntoView({behavior:"smooth"});message("Tire e envie a selfie primeiro.");return;
   }
   startGps();
 };

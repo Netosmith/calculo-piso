@@ -85,6 +85,14 @@ button+button{margin-top:10px}
 .file-action.camera strong{font-size:18px}
 .file-action svg{width:23px;height:23px;flex-shrink:0}
 .file-action[aria-disabled=true]{opacity:.48;cursor:not-allowed}
+.receipt-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.receipt-choice{min-height:108px;padding:15px 8px;flex-direction:column;gap:8px;border:2px solid #afd2ea;border-radius:15px;background:#f0f8ff;color:#0c669e}
+.receipt-choice strong{font-size:14px;line-height:1.25}
+.receipt-choice small{font-size:10px;font-weight:650;color:#6588a5}
+.receipt-choice svg{width:26px;height:26px}
+.receipt-choice[aria-disabled=true]{opacity:.52;cursor:not-allowed}
+@media(max-width:380px){.receipt-choices{gap:8px}.receipt-choice{padding:13px 6px}.receipt-choice strong{font-size:12px}}
+
 .filename{margin:10px 0 0;font-size:12px;color:#5f7d96;overflow-wrap:anywhere}
 .preview{width:100%;height:auto;max-height:290px;object-fit:contain;border-radius:12px;margin:13px auto;background:#eff4f8;border:1px solid var(--border)}
 .tick{display:flex;align-items:flex-start;gap:10px;margin-top:14px;cursor:pointer;color:#4c6a86;font-size:12px;line-height:1.5}
@@ -164,7 +172,7 @@ button+button{margin-top:10px}
       <p>Ao iniciar, você autoriza o compartilhamento da localização do celular durante o transporte.</p>
       <button id="start" type="button" disabled>Iniciar viagem</button>
       <button id="stop" type="button" hidden>Interromper GPS neste aparelho</button>
-      <p class="notice">Você pode interromper o GPS a qualquer momento. Isso não encerra a viagem operacional. No navegador, o envio pode pausar com a tela bloqueada.</p>
+      <p class="notice">O GPS pode ser interrompido pelo motorista ou pelo sistema do celular. A Nova Frota identifica a falta de sinal; a viagem só será encerrada após a conferência do comprovante de descarga. No navegador, o envio pode pausar com a tela bloqueada.</p>
       <p id="status" role="status">Aguardando validação do link.</p>
     </section>
 
@@ -173,14 +181,22 @@ button+button{margin-top:10px}
         <span class="step-icon" aria-hidden="true">📄</span>
         <div><small>Etapa 3</small><h2>Comprovante de descarga</h2></div>
       </div>
-      <p>Depois de descarregar, escolha a foto ou o PDF do comprovante. A Nova Frota irá analisar o documento antes de encerrar a viagem.</p>
-      <input class="file-input" id="receiptFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" aria-label="Escolher arquivo do comprovante de descarga">
-      <label class="file-action" for="receiptFile" id="receiptAction">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg>
-        <strong>ESCOLHER ARQUIVO</strong>
-        <small>Foto ou PDF, até 8 MB</small>
-      </label>
-      <p class="filename" id="receiptName" aria-live="polite">Nenhum arquivo selecionado</p>
+      <p>Ao terminar a descarga, tire uma foto do comprovante ou escolha uma imagem da sua biblioteca. A Nova Frota fará a conferência antes de encerrar a viagem.</p>
+      <input class="file-input" id="receiptCamera" type="file" accept="image/*" capture="environment" aria-label="Fotografar comprovante de descarga">
+      <input class="file-input" id="receiptFile" type="file" accept="image/*" aria-label="Selecionar comprovante na biblioteca de fotos">
+      <div class="receipt-choices" aria-label="Origem da foto do comprovante">
+        <label class="file-action receipt-choice" for="receiptCamera" id="receiptCameraAction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <strong>TIRAR FOTO</strong><small>Câmera do celular</small>
+        </label>
+        <label class="file-action receipt-choice" for="receiptFile" id="receiptAction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="2"/><path d="m4 18 6-6 4 4 2-2 4 4"/></svg>
+          <strong>BIBLIOTECA</strong><small>Fotos salvas</small>
+        </label>
+      </div>
+      <p class="filename" id="receiptName" aria-live="polite">Nenhuma foto selecionada</p>
+      <img id="receiptPreview" class="preview" alt="Prévia do comprovante selecionado" hidden>
+      <p class="notice">As opções exibidas pelo seletor da biblioteca dependem do iOS ou Android. Esta tela oferece apenas câmera e biblioteca.</p>
       <button id="sendReceipt" type="button" disabled>Enviar comprovante de descarga</button>
       <div class="uploadstatus" id="receiptStatus" role="status">Comprovante ainda não enviado.</div>
     </section>
@@ -193,8 +209,8 @@ button+button{margin-top:10px}
 (()=>{
 "use strict";
 const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);
-const fileSelfie=$("#selfieFile"),fileReceipt=$("#receiptFile");
-let trip=null,watch=null,last=0,uploading=false,showSelfie=false;
+const fileSelfie=$("#selfieFile"),fileReceipt=$("#receiptFile"),fileReceiptCamera=$("#receiptCamera");
+let trip=null,watch=null,last=0,uploading=false,showSelfie=false,selectedReceiptFile=null,receiptObjectUrl=null;
 const message=(m,bad=false)=>{$("#status").textContent=m;$("#status").className=bad?"err":"ok";};
 const statusName={missing:"Não enviado",pending:"Aguardando análise",approved:"Aprovado pela Nova Frota",rejected:"Rejeitado: envie outro arquivo"};
 async function post(path,body){
@@ -217,13 +233,15 @@ function refreshUi(){
   $("#stageReceipt").className="track-item "+(receipt==="missing"?"":receipt==="approved"?"done":"current");
   fileSelfie.disabled=!trip?.active||uploading;
   fileReceipt.disabled=!trip?.active||uploading||(trip.selfieRequired&&selfie==="missing");
+  fileReceiptCamera.disabled=fileReceipt.disabled;
   $("#selfieAction").setAttribute("aria-disabled",String(fileSelfie.disabled));
   $("#receiptAction").setAttribute("aria-disabled",String(fileReceipt.disabled));
+  $("#receiptCameraAction").setAttribute("aria-disabled",String(fileReceiptCamera.disabled));
   $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
   $("#selfieBox").hidden=!trip?.active||selfie==="approved"||(selfie==="missing"&&!showSelfie);
   $("#start").disabled=!trip?.active||watch!==null;
   $("#sendSelfie").disabled=!trip?.active||uploading||!$("#photoNotice").checked||!fileSelfie.files.length;
-  $("#sendReceipt").disabled=!trip?.active||uploading||!fileReceipt.files.length||(trip.selfieRequired&&selfie==="missing");
+  $("#sendReceipt").disabled=!trip?.active||uploading||!selectedReceiptFile||(trip.selfieRequired&&selfie==="missing");
   if(!trip?.active){$("#stop").hidden=true;$("#start").disabled=true;}
 }
 async function validate(){
@@ -297,22 +315,76 @@ $("#start").onclick=()=>{
   }
   startGps();
 };
-$("#stop").onclick=()=>{
-  stop();message("GPS interrompido por você. A viagem não foi encerrada.");
+$("#stop").onclick=async()=>{
+  if(!confirm("Interromper o GPS neste aparelho? A viagem continuará aberta e a Nova Frota poderá identificar a falta de localização. A descarga ainda exige comprovante aprovado."))return;
+  stop();
+  message("GPS interrompido por você. A viagem continua aberta e requer comprovante aprovado.");
+  try {
+    await post("/v1/monitor/gps-event",{token,action:"stopped"});
+    message("GPS interrompido e alerta registrado para a Nova Frota. A viagem continua aberta.");
+  } catch(e) {
+    message("GPS interrompido. Não foi possível registrar o alerta imediato; o painel também identifica a ausência de novas posições.",true);
+  }
 };
-fileReceipt.onchange=()=>{
-  const f=fileReceipt.files[0];
-  $("#receiptName").textContent=f?"Arquivo selecionado: "+f.name:"Nenhum arquivo selecionado";
+function onReceiptSelect(input) {
+  const chosen=input.files?.[0]||null;
+  if(!chosen)return;
+  selectedReceiptFile=chosen;
+  if(input===fileReceipt)fileReceiptCamera.value="";else fileReceipt.value="";
+  $("#receiptName").textContent="Foto selecionada: "+chosen.name;
+  if(receiptObjectUrl)URL.revokeObjectURL(receiptObjectUrl);
+  receiptObjectUrl=URL.createObjectURL(chosen);
+  $("#receiptPreview").src=receiptObjectUrl;
+  $("#receiptPreview").hidden=false;
   refreshUi();
-};
+}
+fileReceipt.onchange=()=>onReceiptSelect(fileReceipt);
+fileReceiptCamera.onchange=()=>onReceiptSelect(fileReceiptCamera);
+async function photoForUpload(file) {
+  const valid=new Set(["image/jpeg","image/png","image/webp"]);
+  if(valid.has(file.type)&&file.size<=8*1024*1024)return file;
+  // Fotos HEIC/HEIF do iPhone e fotos acima de 8 MB precisam ser convertidas em JPEG.
+  let source,sourceUrl=null,width,height;
+  try {
+    source=await createImageBitmap(file);
+    width=source.width;height=source.height;
+  } catch {
+    // Alguns navegadores no iPhone decodificam HEIC em <img>, mas não em createImageBitmap.
+    sourceUrl=URL.createObjectURL(file);
+    try {
+      source=await new Promise((resolve,reject)=>{
+        const image=new Image();
+        image.onload=()=>resolve(image);
+        image.onerror=()=>reject(Error("Foto não suportada"));
+        image.src=sourceUrl;
+      });
+      width=source.naturalWidth;height=source.naturalHeight;
+    }catch{
+      URL.revokeObjectURL(sourceUrl);
+      throw Error("Este formato não pôde ser aberto. Tente tirar uma nova foto com a câmera.");
+    }
+  }
+  const scale=Math.min(1,2000/Math.max(width,height));
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(width*scale));
+  canvas.height=Math.max(1,Math.round(height*scale));
+  canvas.getContext("2d").drawImage(source,0,0,canvas.width,canvas.height);
+  source.close?.();
+  if(sourceUrl)URL.revokeObjectURL(sourceUrl);
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error("Não foi possível converter a foto.")),"image/jpeg",.82));
+  if(blob.size>8*1024*1024)throw Error("A foto ultrapassa 8 MB. Tente fotografar novamente.");
+  return blob;
+}
 $("#sendReceipt").onclick=async()=>{
-  if(!trip?.active||!fileReceipt.files.length)return;
-  const file=fileReceipt.files[0];
+  if(!trip?.active||!selectedReceiptFile)return;
+  const file=selectedReceiptFile;
   if(!confirm("Enviar este comprovante para conferência da Nova Frota?"))return;
   uploading=true;refreshUi();
   try{
-    const d=await upload("/v1/monitor/receipt",file);
-    trip.receiptStatus=d.status;fileReceipt.value="";$("#receiptName").textContent="Comprovante enviado com sucesso";refreshUi();
+    const photo=await photoForUpload(file);
+    const d=await upload("/v1/monitor/receipt",photo);
+    trip.receiptStatus=d.status;selectedReceiptFile=null;fileReceipt.value="";fileReceiptCamera.value="";$("#receiptName").textContent="Comprovante enviado com sucesso";
+    if(receiptObjectUrl)URL.revokeObjectURL(receiptObjectUrl);receiptObjectUrl=null;$("#receiptPreview").hidden=true;refreshUi();
     message("Comprovante enviado. A Nova Frota fará a análise; o encerramento não é automático.");
   }catch(e){message("Falha ao enviar comprovante: "+e.message,true);}
   finally{uploading=false;refreshUi();}

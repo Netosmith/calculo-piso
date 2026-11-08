@@ -198,5 +198,5 @@ test("posicao de nova viagem exige termo e aceita GPS antes do comprovante de de
   const allowed=await monitorController(req(),{FLEET_DB:consented});
   assert.equal(allowed.status,200);
   assert.ok(consented.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET lat=")));
-  assert.equal(consented.calls.some(x=>x.sql.includes("monitor_proof_audit")&&x.sql.includes("'finished'")),false);
+  assert.equal(consented.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")&&x.sql.includes("'finished'")),false);
 });

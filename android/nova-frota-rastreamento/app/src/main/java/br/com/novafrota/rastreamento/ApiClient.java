@@ -26,6 +26,8 @@ final class ApiClient {
             JSONObject trip = response.optJSONObject("trip");
             if (trip == null) return new Result(false, "Viagem não encontrada.", true);
             if (!trip.optBoolean("active", false)) return new Result(false, "Esta viagem está encerrada.", true);
+            if (trip.optBoolean("selfieRequired", false) && "missing".equals(trip.optString("selfieStatus", "missing")))
+                return new Result(false, "Envie a selfie de abertura pelo link da viagem e verifique novamente.", false);
             String route = trip.optString("plate") + " • " + trip.optString("driver") + "\n"
                     + trip.optString("origin") + " → " + trip.optString("destination");
             return new Result(true, route, false);

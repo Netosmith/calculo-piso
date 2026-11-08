@@ -162,3 +162,41 @@ test("conclusao normal do GPS exige selfie e comprovante aprovados no servidor",
   assert.ok(approvedDb.calls.some(x=>x.sql.includes("'finished'")&&x.values[0]===id));
   assert.equal(approvedDb.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET active=0")),false);
 });
+
+test("termo deve ser aceito apos selfie, com versao registrada em auditoria",async()=>{
+  const req=()=>new Request("https://api.portalfrete.net.br/v1/monitor/consent",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,accepted:true,version:"gps-viagem-v1"})
+  });
+  const withoutSelfie=db();
+  const refused=await monitorController(req(),{FLEET_DB:withoutSelfie});
+  assert.equal(refused.status,409);
+  assert.equal(withoutSelfie.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")),false);
+
+  const withSelfie=db({trip:{id,active:1,proof_required:1,selfie_key:"selfie/private",selfie_status:"pending",gps_consent_at:null}});
+  const accepted=await monitorController(req(),{FLEET_DB:withSelfie});
+  assert.equal(accepted.status,200);
+  assert.equal((await accepted.json()).accepted,true);
+  assert.ok(withSelfie.calls.some(x=>x.sql.includes("'consent'")&&x.sql.includes("INSERT INTO monitor_proof_audit")));
+
+  const invalid=await monitorController(new Request("https://api.portalfrete.net.br/v1/monitor/consent",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,accepted:false,version:"gps-viagem-v1"})
+  }),{FLEET_DB:withSelfie});
+  assert.equal(invalid.status,400);
+});
+test("posicao de nova viagem exige termo e aceita GPS antes do comprovante de descarga",async()=>{
+  const req=()=>new Request("https://api.portalfrete.net.br/v1/monitor/position",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,latitude:-17.795,longitude:-50.922,accuracy:12})
+  });
+  const noTerm=db({trip:{id,active:1,proof_required:1,selfie_key:"selfie/private",selfie_status:"pending",gps_consent_at:null,receipt_status:"missing"}});
+  const refused=await monitorController(req(),{FLEET_DB:noTerm});
+  assert.equal(refused.status,409);
+  assert.match((await refused.json()).error,/termo/i);
+  const consented=db({trip:{id,active:1,proof_required:1,selfie_key:"selfie/private",selfie_status:"pending",gps_consent_at:"2026-11-08T20:00:00.000Z",receipt_status:"missing"}});
+  const allowed=await monitorController(req(),{FLEET_DB:consented});
+  assert.equal(allowed.status,200);
+  assert.ok(consented.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET lat=")));
+  assert.equal(consented.calls.some(x=>x.sql.includes("monitor_proof_audit")&&x.sql.includes("'finished'")),false);
+});

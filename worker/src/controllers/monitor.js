@@ -41,6 +41,7 @@ const toTrip = row => ({
   selfieRequired: Number(row.proof_required||0)===1,
   selfieStatus: row.selfie_status||"missing", receiptStatus:row.receipt_status||"missing",
   selfieSubmittedAt:row.selfie_at||null,receiptSubmittedAt:row.receipt_at||null,
+  gpsStoppedAt:row.gps_stopped_at||null,
   lastPosition: row.last_position_at ? {
     lat: row.lat, lng: row.lng, accuracy: row.accuracy, at: row.last_position_at
   } : null
@@ -82,6 +83,22 @@ export async function monitorController(request, env) {
       return success({ trip: toTrip(row) });
     } catch (e) { return dbError(e, "driver-read"); }
   }
+  // Interrupção voluntária registra um alerta imediato, sem impedir a escolha do motorista.
+  if (path === "/v1/monitor/gps-event" && method === "POST") {
+    const body=await parse(request);
+    if(body?.action!=="stopped")return errorResponse("Evento GPS inválido.",400);
+    try{
+      const row=await tripForToken(db,body?.token);
+      if(!row)return errorResponse("Link inválido ou expirado.",404);
+      if(row.active!==1)return errorResponse("Viagem já encerrada.",409);
+      const last=await db.prepare("SELECT created_at FROM monitor_proof_audit WHERE trip_id=? AND proof_kind='gps' AND action='stopped' ORDER BY id DESC LIMIT 1").bind(row.id).first();
+      // Evita eventos repetidos se o motorista tocar várias vezes sem novas coordenadas.
+      if(!last?.created_at||(!row.last_position_at||Date.parse(row.last_position_at)>Date.parse(last.created_at))){
+        await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (?,'gps','stopped','MOTORISTA','Interrompido pelo motorista no navegador',?)").bind(row.id,now()).run();
+      }
+      return success({recorded:true,tripActive:true,receiptRequired:Number(row.proof_required||0)===1});
+    }catch(e){return dbError(e,"gps-stop-event");}
+  }
   if (path === "/v1/monitor/position" && method === "POST") {
     const body = await parse(request);
     const lat = Number(body?.latitude), lng = Number(body?.longitude), accuracy = Number(body?.accuracy);
@@ -114,7 +131,7 @@ export async function monitorController(request, env) {
   if (path === "/v1/monitor/trips" && method === "GET") {
     try {
       const result = await db.prepare(
-        "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
+        "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at,(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='stopped' ORDER BY a.id DESC LIMIT 1) AS gps_stopped_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
       ).all();
       return success({ trips: (result.results || []).map(toTrip), complete: true,
         canReview:["ADMINISTRADOR","OPERACIONAL"].includes(clean(auth.session.perfil).toUpperCase()), canEmergency:clean(auth.session.perfil).toUpperCase()==="ADMINISTRADOR" });

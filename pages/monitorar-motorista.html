@@ -319,6 +319,12 @@ $("#stop").onclick=async()=>{
   if(!confirm("Interromper o GPS neste aparelho? A viagem continuará aberta e a Nova Frota poderá identificar a falta de localização. A descarga ainda exige comprovante aprovado."))return;
   stop();
   message("GPS interrompido por você. A viagem continua aberta e requer comprovante aprovado.");
+  try {
+    await post("/v1/monitor/gps-event",{token,action:"stopped"});
+    message("GPS interrompido e alerta registrado para a Nova Frota. A viagem continua aberta.");
+  } catch(e) {
+    message("GPS interrompido. Não foi possível registrar o alerta imediato; o painel também identifica a ausência de novas posições.",true);
+  }
 };
 function onReceiptSelect(input) {
   const chosen=input.files?.[0]||null;

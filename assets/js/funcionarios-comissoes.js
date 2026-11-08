@@ -12,7 +12,7 @@ const num=n=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:3}).format(n);
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const params=new URLSearchParams(location.search);
 let month=/^20\d{2}-(0[1-9]|1[0-2])$/.test(params.get("month")||"")?params.get("month"):today().slice(0,7);
-let employees=[],commissions=[],totals={},working=false;
+let employees=[],commissions=[],totals={},monthlyVolume=null,working=false;
 const drafts=new Map();
 function notice(message,error=false){
  const node=$("rhNotice");if(!node)return;
@@ -49,12 +49,12 @@ function modeLabel(kind,rate,oldBase=false){
  return "Sem comissão";
 }
 function rowDraft(p){
- if(!drafts.has(p.id))drafts.set(p.id,{tonnes:$("rhGlobalTonnes")?.value?.trim()||"",manual:"",reference:""});
+ if(!drafts.has(p.id))drafts.set(p.id,{tonnes:monthlyVolume?num(monthlyVolume.tonnesMilli/1000):"",manual:"",reference:""});
  return drafts.get(p.id);
 }
 function calculate(p){
  const d=rowDraft(p),t=tonnes(d.tonnes),m=cents(d.manual);
- if(t===null||t<=0||m===null)return null;
+ if(t===null||t<=0||m===null||!monthlyVolume)return null;
  const kind=p.commissionKind,rate=Number(p.commissionRate||0);
  let amount=0;
  if(kind==="TON")amount=Math.round(t*rate/1000);
@@ -67,7 +67,7 @@ function previewRow(id){
  const p=employees.find(x=>x.id===id),el=$("rhPreview_"+id);
  if(!p||!el)return;
  const draft=calculate(p);
- el.textContent=draft?brl(draft.amountCents):"—";
+ el.textContent=isManual(p.commissionKind)?(draft?brl(draft.amountCents):"—"):(monthlyVolume?brl(p.commissionsCents||0):"Aplique volume");
  el.classList.toggle("positive",Boolean(draft));
 }
 function filterEmployee(p){
@@ -83,34 +83,29 @@ function renderGrid(){
   return;
  }
  root.innerHTML=people.map(p=>{
-  const d=rowDraft(p),manual=isManual(p.commissionKind),value=calculate(p);
+  const d=rowDraft(p),manual=isManual(p.commissionKind),value=manual?calculate(p):null;
   return '<tr data-rh-person="'+escape(p.id)+'">'+
    '<td class="strong">'+escape(p.name)+'<div class="rh-muted">'+escape(p.branch)+'</div></td>'+
    '<td>'+escape(modeLabel(p.commissionKind,p.commissionRate))+'</td>'+
    '<td><input class="rh-grid-input" type="text" inputmode="decimal" aria-label="Toneladas de '+escape(p.name)+
-     '" data-rh-tons="'+escape(p.id)+'" value="'+escape(d.tonnes)+'" placeholder="80.000"></td>'+
+     '" data-rh-tons="'+escape(p.id)+'" value="'+escape(d.tonnes)+'" readonly placeholder="Volume do Painel"></td>'+
    '<td>'+(manual?
      '<input class="rh-grid-input" type="text" inputmode="decimal" aria-label="Valor manual de '+escape(p.name)+
      '" data-rh-manual="'+escape(p.id)+'" value="'+escape(d.manual)+'" placeholder="R$ 0,00">'
      :'<span class="rh-muted">Automático</span>')+'</td>'+
-   '<td class="money strong" id="rhPreview_'+escape(p.id)+'">'+(value?brl(value.amountCents):"—")+'</td>'+
+   '<td class="money strong" id="rhPreview_'+escape(p.id)+'">'+(manual?(value?brl(value.amountCents):"—"):(monthlyVolume?brl(p.commissionsCents||0):"Aplique volume"))+'</td>'+
    '<td class="money">'+brl(p.commissionsCents||0)+'</td>'+
    '<td><input class="rh-grid-input rh-grid-reference" type="text" maxlength="160" data-rh-reference="'+escape(p.id)+
      '" aria-label="Referência de '+escape(p.name)+'" value="'+escape(d.reference)+'" placeholder="Opcional"></td>'+
-   '<td class="actions"><button type="button" class="rh-btn primary rh-grid-save" data-rh-save="'+escape(p.id)+'"'+
-     (!value||working?" disabled":"")+'>Salvar</button></td></tr>';
+   '<td class="actions">'+(manual?'<button type="button" class="rh-btn primary rh-grid-save" data-rh-save="'+escape(p.id)+'"'+
+     (!value||working?" disabled":"")+'>Salvar</button>':'<span class="rh-pill">Automático</span>')+'</td></tr>';
  }).join("");
 }
 function updateRow(id){
  previewRow(id);
  const p=employees.find(x=>x.id===id),row=document.querySelector('tr[data-rh-person="'+id+'"]');
  const save=row?.querySelector("[data-rh-save]");
- if(save)save.disabled=working||!p||!calculate(p);
-}
-function applyGlobalTonnes(){
- const common=String($("rhGlobalTonnes")?.value||"").trim();
- for(const p of employees)if(p.active&&p.commissionKind!=="NONE")rowDraft(p).tonnes=common;
- renderGrid();
+ if(save)save.disabled=working||!p||!isManual(p.commissionKind)||!calculate(p);
 }
 function renderHistory(){
  const root=$("rhCommissionRows");if(!root)return;
@@ -127,7 +122,8 @@ function renderHistory(){
 }
 async function refresh(){
  const data=await api("?month="+encodeURIComponent(month));
- employees=data.employees||[];commissions=data.commissions||[];totals=data.totals||{};
+ employees=data.employees||[];commissions=data.commissions||[];totals=data.totals||{};monthlyVolume=data.monthlyVolume||null;
+ if($("rhGlobalTonnes"))$("rhGlobalTonnes").value=monthlyVolume?num(monthlyVolume.tonnesMilli/1000):"";
  if($("rhCommissionTotal"))$("rhCommissionTotal").textContent=brl(totals.commissionsCents||0);
  if($("rhCommissionCount"))$("rhCommissionCount").textContent=String(commissions.length);
  if($("rhMonth"))$("rhMonth").value=month;
@@ -137,7 +133,7 @@ async function refresh(){
 async function savePerson(id){
  if(working)return;
  const p=employees.find(e=>e.id===id);
- if(!p||!p.active||p.commissionKind==="NONE")return;
+ if(!p||!p.active||!isManual(p.commissionKind))return;
  const draft=calculate(p);
  const date=$("rhCommissionDate")?.value||"";
  if(!draft)return notice("Informe toneladas válidas e, se for manual ou agência, o valor da linha de "+p.name+".",true);
@@ -176,25 +172,22 @@ async function init(){
  if($("rhUser"))$("rhUser").textContent=sess.nome||sess.usuario||"Administração";
  if($("rhMonth"))$("rhMonth").value=month;
  if($("rhCommissionDate"))$("rhCommissionDate").value=today();
- if($("rhGlobalTonnes"))$("rhGlobalTonnes").addEventListener("change",applyGlobalTonnes);
- if($("rhApplyTonnes"))$("rhApplyTonnes").addEventListener("click",applyGlobalTonnes);
  if($("rhCommissionSearch"))$("rhCommissionSearch").addEventListener("input",renderGrid);
  if($("rhReload"))$("rhReload").addEventListener("click",()=>refresh().catch(e=>notice(e.message,true)));
  if($("rhMonth"))$("rhMonth").addEventListener("change",()=>{
   const next=$("rhMonth").value;
   if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(next))return;
-  month=next;params.set("month",next);history.replaceState(null,"","?"+params);
+  month=next;drafts.clear();params.set("month",next);history.replaceState(null,"","?"+params);
   refresh().catch(e=>notice(e.message,true));
  });
  document.addEventListener("input",e=>{
   const t=e.target;
-  const id=t?.dataset?.rhTons||t?.dataset?.rhManual||t?.dataset?.rhReference;
+  const id=t?.dataset?.rhManual||t?.dataset?.rhReference;
   if(!id)return;
   const p=employees.find(x=>x.id===id);
   if(!p)return;
   const d=rowDraft(p);
-  if(t.dataset.rhTons)d.tonnes=t.value;
-  else if(t.dataset.rhManual)d.manual=t.value;
+  if(t.dataset.rhManual)d.manual=t.value;
   else d.reference=t.value;
   updateRow(id);
  });

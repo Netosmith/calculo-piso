@@ -34,7 +34,7 @@ function fakeDB(records=[]) {
       };
       return statement;
     },
-    async batch(stmts){assert.equal(stmts.length,2);return stmts.map(()=>({meta:{changes:1}}));}
+    async batch(stmts){assert.ok(stmts.length===2||stmts.length===3);return stmts.map(()=>({meta:{changes:1}}));}
   };
 }
 test("tenant de outra transportadora nao pode ver viagens Nova Frota",async()=>{
@@ -62,6 +62,7 @@ test("nova viagem registra filial e expira link em sete dias",async()=>{
   const diff=Date.parse(data.trip.linkExpiresAt)-start;
   assert.ok(diff>6.99*86400000&&diff<=7*86400000+1000);
   assert.ok(db.records.some(r=>r.sql.includes("INSERT INTO monitor_trip_extras")&&r.values[1]==="Rio Verde"));
+  assert.ok(db.records.some(r=>r.sql.includes("INSERT INTO monitor_trip_proofs")&&r.values[0]===data.trip.id));
 });
 test("consulta de historico exige autorizacao e fornece array vazio",async()=>{
   const db=fakeDB();

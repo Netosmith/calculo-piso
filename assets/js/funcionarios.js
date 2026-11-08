@@ -11,7 +11,7 @@ const localDate=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getM
 const qp=new URLSearchParams(location.search);
 const validMonth=v=>/^20\d{2}-(0[1-9]|1[0-2])$/.test(String(v||""));
 let month=validMonth(qp.get("month"))?qp.get("month"):localMonth();
-let state={employees:[],entries:[],totals:{}},busy=false;
+let state={employees:[],entries:[],commissions:[],totals:{}},busy=false;
 const page=document.body.dataset.rhPage||"dashboard";
 function status(msg,error=false){
   const box=$("rhNotice");if(!box)return;
@@ -43,7 +43,7 @@ async function refresh(){
   clearStatus();
   try{
     const data=await call("?month="+encodeURIComponent(month));
-    state={employees:data.employees||[],entries:data.entries||[],totals:data.totals||{}};
+    state={employees:data.employees||[],entries:data.entries||[],commissions:data.commissions||[],totals:data.totals||{}};
     if(!data.complete)status("O limite de registros foi atingido. Refine a consulta para obter todas as linhas.",true);
     if(page==="dashboard")renderDashboard();
     if(page==="table")renderTable();
@@ -81,6 +81,7 @@ function renderDashboard(){
   if($("rhKSalary"))$("rhKSalary").textContent=brl(t.salaryCents);
   if($("rhKVales"))$("rhKVales").textContent=brl(t.valesCents);
   if($("rhKCosts"))$("rhKCosts").textContent=brl(t.costsCents);
+  if($("rhKCommissions"))$("rhKCommissions").textContent=brl(t.commissionsCents);
   if($("rhPeriodText"))$("rhPeriodText").textContent=month.slice(5)+"/"+month.slice(0,4);
   const target=$("rhRecentBody");if(target)target.innerHTML=entryRows(state.entries.slice(0,12));
   const branchSelect=$("rhDashboardBranch");if(branchSelect){
@@ -96,8 +97,29 @@ function renderTable(){
   const shown=selectedEmployees();
   const c=$("rhCountShown");if(c)c.textContent=shown.length+" funcionário(s) exibido(s)";
   const tbody=$("rhListBody");if(!tbody)return;
-  if(!shown.length){tbody.innerHTML='<tr><td colspan="9" class="rh-empty">Nenhum funcionário encontrado. Use “Cadastrar funcionário” para começar.</td></tr>';return;}
-  tbody.innerHTML=shown.map(e=>'<tr><td class="strong">'+html(e.name)+'</td><td>'+html(e.role)+'</td><td>'+html(e.city)+' / '+html(e.branch)+'</td><td class="money">'+brl(e.salaryCents)+'</td><td class="money">'+brl(e.valesCents)+'</td><td class="money">'+brl(e.costsCents)+'</td><td class="money positive">'+brl(e.salaryCents-e.valesCents)+'</td><td><span class="rh-pill '+(e.active?"":"off")+'">'+(e.active?"ATIVO":"INATIVO")+'</span></td><td class="actions"><a class="rh-table-action" href="./funcionarios-cadastro.html?id='+encodeURIComponent(e.id)+'">Editar</a><a class="rh-table-action" href="./funcionarios-lancamentos.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Vale/custo</a></td></tr>').join("");
+  if(!shown.length){tbody.innerHTML='<tr><td colspan="11" class="rh-empty">Nenhum funcionário encontrado. Use “Cadastrar funcionário” para começar.</td></tr>';return;}
+  tbody.innerHTML=shown.map(e=>'<tr><td class="strong">'+html(e.name)+'</td><td>'+html(e.role)+'</td><td>'+html(e.city)+' / '+html(e.branch)+'</td><td class="money">'+brl(e.salaryCents)+'</td><td class="money">'+brl(e.valesCents)+'</td><td class="money">'+brl(e.costsCents)+'</td><td class="money strong">'+brl(e.commissionsCents||0)+'</td><td class="money positive">'+brl(e.salaryCents+(e.commissionsCents||0)-e.valesCents)+'</td><td><span class="rh-pill '+(e.active?"":"off")+'">'+(e.active?"ATIVO":"INATIVO")+'</span></td><td class="actions"><a class="rh-table-action" href="./funcionarios-cadastro.html?id='+encodeURIComponent(e.id)+'">Editar</a><a class="rh-table-action" href="./funcionarios-lancamentos.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Vale/custo</a><a class="rh-table-action" href="./funcionarios-comissoes.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Comissões</a></td></tr>').join("");
+}
+const RH_COMMISSION_RATES={
+  TON:[[5,"R$ 0,05/t"],[6,"R$ 0,06/t"],[7,"R$ 0,07/t"],[8,"R$ 0,08/t"],[9,"R$ 0,09/t"],[10,"R$ 0,10/t"],[15,"R$ 0,15/t"],[20,"R$ 0,20/t"]],
+  PERCENT:[[10,"0,10%"],[15,"0,15%"],[20,"0,20%"],[25,"0,25%"],[100,"1,00%"]]
+};
+function updateCommissionSettings(){
+  const kind=$("rhCommissionKind")?.value||"NONE",select=$("rhCommissionRate");
+  if(!select)return;
+  const previous=select.value;
+  const options=RH_COMMISSION_RATES[kind]||[];
+  select.replaceChildren(...options.map(([value,label])=>new Option(label,String(value))));
+  if(options.some(([value])=>String(value)===previous))select.value=previous;
+  if($("rhCommissionRateWrap"))$("rhCommissionRateWrap").hidden=!options.length;
+  const hints={
+    NONE:"Sem comissão. Você pode habilitar depois.",
+    TON:"Calculada automaticamente a partir das toneladas lançadas.",
+    PERCENT:"Calculada sobre o total do frete: toneladas × frete por tonelada.",
+    MANUAL:"O valor será informado no lançamento da comissão.",
+    AGENCIA:"Comissão de agência a definir em cada lançamento."
+  };
+  if($("rhCommissionHint"))$("rhCommissionHint").textContent=hints[kind]||"";
 }
 function renderEmployeeForm(){
   const id=qp.get("id"),e=state.employees.find(x=>x.id===id);
@@ -107,6 +129,11 @@ function renderEmployeeForm(){
   $("rhName").value=e.name;$("rhRoleInput").value=e.role;$("rhCity").value=e.city;
   $("rhBranchInput").value=e.branch;$("rhSalary").value=(e.salaryCents/100).toFixed(2).replace(".",",");
   $("rhNotes").value=e.notes||"";$("rhActive").checked=e.active;
+  if($("rhCommissionKind")){
+    $("rhCommissionKind").value=e.commissionKind||"NONE";
+    updateCommissionSettings();
+    $("rhCommissionRate").value=String(e.commissionRate||0);
+  }
 }
 function renderEntryForm(){
   const select=$("rhEmployee");
@@ -133,7 +160,9 @@ async function saveEmployee(event){
   if(salary===null)return status("Confira o salário. Exemplo: 4800,00.",true);
   const body={name:$("rhName").value.trim(),role:$("rhRoleInput").value.trim(),city:$("rhCity").value.trim(),
     branch:$("rhBranchInput").value.trim(),salaryCents:salary,notes:$("rhNotes").value.trim(),
-    active:$("rhActive").checked};
+    active:$("rhActive").checked,
+    commissionKind:$("rhCommissionKind")?.value||"NONE",
+    commissionRate:Number($("rhCommissionRate")?.value||0)};
   if(!body.name||!body.role||!body.city||!body.branch)return status("Preencha todos os campos obrigatórios.",true);
   const submit=$("rhSubmit");submit.disabled=true;
   try{
@@ -166,8 +195,8 @@ function downloadCSV(){
     if(/^[=+\-@\t\r]/.test(s))s="'"+s;
     return '"'+s.replace(/"/g,'""')+'"';
   };
-  const rows=[["Nome","Função","Cidade","Filial","Salário (R$)","Vales (R$)","Custos (R$)","Saldo após vales (R$)","Status"]];
-  for(const e of selectedEmployees())rows.push([e.name,e.role,e.city,e.branch,(e.salaryCents/100).toFixed(2),(e.valesCents/100).toFixed(2),(e.costsCents/100).toFixed(2),((e.salaryCents-e.valesCents)/100).toFixed(2),e.active?"Ativo":"Inativo"]);
+  const rows=[["Nome","Função","Cidade","Filial","Salário (R$)","Vales (R$)","Custos (R$)","Comissões (R$)","Saldo gerencial (R$)","Status"]];
+  for(const e of selectedEmployees())rows.push([e.name,e.role,e.city,e.branch,(e.salaryCents/100).toFixed(2),(e.valesCents/100).toFixed(2),(e.costsCents/100).toFixed(2),((e.commissionsCents||0)/100).toFixed(2),((e.salaryCents+(e.commissionsCents||0)-e.valesCents)/100).toFixed(2),e.active?"Ativo":"Inativo"]);
   const csv="\uFEFF"+rows.map(r=>r.map(safe).join(";")).join("\r\n");
   const u=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");a.href=u;a.download="nova-frota-funcionarios-"+month+".csv";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
@@ -189,6 +218,10 @@ async function init(){
   const r=$("rhReload");if(r)r.addEventListener("click",refresh);
   const f=$("rhEmployeeForm");if(f)f.addEventListener("submit",saveEmployee);
   const ef=$("rhEntryForm");if(ef)ef.addEventListener("submit",saveEntry);
+  const kindInput=$("rhCommissionKind");if(kindInput){
+    kindInput.addEventListener("change",updateCommissionSettings);
+    updateCommissionSettings();
+  }
   const date=$("rhEntryDate");if(date)date.value=localDate();
   for(const id of ["rhSearch","rhStatus"])if($(id))$(id).addEventListener(id==="rhSearch"?"input":"change",renderTable);
   for(const id of ["rhRole","rhBranch"])if($(id))$(id).addEventListener("change",renderTable);

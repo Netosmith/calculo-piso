@@ -65,6 +65,15 @@ main input::placeholder{color:#9aaec0}
 .detail strong{font-size:15px;color:#123c68}.detail p{margin:8px 0;color:#496780;line-height:1.45}
 .detail .meta{display:flex;gap:14px;flex-wrap:wrap}
 .detail .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.proofs{margin-top:14px;padding:13px;border:1px solid #dbe8f2;border-radius:12px;background:#fff}
+.proofs h3{font-size:14px;color:#123d67;margin:0 0 9px}
+.proofrow{padding:10px 0;border-top:1px solid #e8eef5}
+.proofrow:first-of-type{border-top:0}
+.proofrow strong{display:block;margin-bottom:4px;color:#244c73}
+.proofrow small{font-size:12px;color:#55728e}
+.proofbuttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+main button.approve{background:#e1f6e9;color:#167d4d}
+main button.reject{background:#ffedf0;color:#a82f45}
 .history{margin-top:14px;border-top:1px solid #e3eaf2;padding-top:13px}
 .history h3{font-size:14px;margin-bottom:6px;color:#183c62}
 .history-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -176,6 +185,7 @@ main input::placeholder{color:#9aaec0}
 const $=s=>document.querySelector(s),API="https://api.portalfrete.net.br";
 const FIVE=5*60*1000,FIFTEEN=15*60*1000;
 let trips=[],selected=null,map=null,line=null,markers=new Map(),viewportInitialized=false;
+let canReview=false,canEmergency=false;
 let history=[],historyBefore=null,historyMore=false,historyRequest=0,refreshing=false;
 const fmt=at=>at?new Date(at).toLocaleString("pt-BR"):"Ainda não recebida";
 const status=(m,bad=false)=>{const el=$("#feedback");el.textContent=m;el.style.color=bad?"#b3263e":"#53768f";};
@@ -292,6 +302,64 @@ function syncMarkers(){
     map.fitBounds(bounds.pad(.25),{maxZoom:12});viewportInitialized=true;
   }
 }
+const proofLabels={missing:"Não enviado",pending:"Aguardando validação",approved:"Aprovado",rejected:"Rejeitado"};
+async function downloadProof(t,kind){
+  try{
+    const url=API+"/v1/monitor/trips/"+t.id+"/proofs/"+kind+"/download";
+    const r=await fetch(url,{credentials:"include",cache:"no-store"});
+    if(!r.ok){
+      const data=await r.json().catch(()=>({}));
+      throw Error(data.error||"Não foi possível abrir o documento.");
+    }
+    const blob=await r.blob(),file=URL.createObjectURL(blob);
+    const ext=blob.type==="application/pdf"?"pdf":blob.type==="image/png"?"png":blob.type==="image/webp"?"webp":"jpg";
+    const a=make("a");a.href=file;a.download=kind+"-"+t.plate+"."+ext;
+    document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(file),30000);
+    status("Documento baixado para conferência.");
+  }catch(e){status(e.message,true);}
+}
+async function reviewProof(t,kind,decision){
+  const name=kind==="selfie"?"selfie de identidade":"comprovante de descarga";
+  let note="";
+  if(decision==="rejected"){
+    const entered=prompt("Informe o motivo para rejeitar "+name+":");
+    if(entered===null)return;
+    note=entered.trim();if(note.length<5){status("Descreva o motivo com pelo menos cinco caracteres.",true);return;}
+  }else if(!confirm("Confirmar aprovação de "+name+" da viagem "+t.plate+"? A conferência é responsabilidade do operador."))return;
+  try{
+    await request("/v1/monitor/trips/"+t.id+"/proofs/"+kind+"/review","POST",{decision,note});
+    await refresh();status(name+" "+(decision==="approved"?"aprovado.":"rejeitado.")+" Registro adicionado à auditoria.");
+  }catch(e){status(e.message,true);}
+}
+function addProofReview(t,area){
+  if(!t.selfieRequired && t.selfieStatus==="missing" && t.receiptStatus==="missing")return;
+  const p=make("section",null,"proofs");
+  p.append(make("h3","Conferência documental Nova Frota"));
+  for(const [kind,label] of [["selfie","Selfie do motorista"],["receipt","Comprovante de descarga"]]){
+    const st=t[kind+"Status"]||"missing";
+    const block=make("div",null,"proofrow");
+    block.append(make("strong",label));
+    block.append(make("small",proofLabels[st]||st));
+    if(canReview&&st!=="missing"){
+      const buttons=make("div",null,"proofbuttons");
+      const dl=make("button","Baixar para conferir","ghost");
+      dl.type="button";dl.onclick=()=>downloadProof(t,kind);buttons.append(dl);
+      if(st==="pending"){
+        const yes=make("button","Aprovar","approve");
+        yes.type="button";yes.onclick=()=>reviewProof(t,kind,"approved");
+        const no=make("button","Rejeitar","reject");
+        no.type="button";no.onclick=()=>reviewProof(t,kind,"rejected");
+        buttons.append(yes,no);
+      }
+      block.append(buttons);
+    }
+    p.append(block);
+  }
+  if(t.active&&t.selfieRequired) {
+    p.append(make("p","O encerramento exige selfie e comprovante aprovados. O motorista pode interromper voluntariamente o GPS a qualquer momento.","muted"));
+  }
+  area.append(p);
+}
 function showDetails(t){
   const area=$("#details");area.replaceChildren();
   if(!t){area.textContent="Selecione uma viagem para acompanhar a posição e visualizar o trajeto recebido.";return;}
@@ -311,8 +379,11 @@ function showDetails(t){
     const focus=make("button","Centralizar veículo","ghost");
     focus.type="button";focus.onclick=()=>focusVehicle(t);actions.append(focus);
   }
+  addProofReview(t,area);
   if(t.active){
-    const stop=make("button","Encerrar monitoramento","danger");
+    const docsOk=!t.selfieRequired||(t.selfieStatus==="approved"&&t.receiptStatus==="approved");
+    const stop=make("button",docsOk?"Encerrar viagem aprovada":"Aguardando aprovação dos documentos","danger");
+    stop.disabled=!docsOk;
     stop.type="button";stop.onclick=async()=>{
       if(!confirm("Encerrar a viagem de "+t.plate+"? O link será revogado e o GPS não poderá enviar novas posições."))return;
       stop.disabled=true;
@@ -320,6 +391,18 @@ function showDetails(t){
       catch(e){stop.disabled=false;status(e.message,true);}
     };
     actions.append(stop);
+    if(!docsOk&&canEmergency){
+      const emergency=make("button","Encerramento excepcional (administrador)","ghost");
+      emergency.type="button";emergency.onclick=async()=>{
+        const reason=prompt("Justifique o encerramento excepcional. A ação ficará registrada na auditoria:");
+        if(reason===null)return;
+        if(reason.trim().length<15){status("A justificativa deve ter pelo menos 15 caracteres.",true);return;}
+        if(!confirm("Confirmar encerramento excepcional desta viagem?"))return;
+        emergency.disabled=true;
+        try{await request("/v1/monitor/trips/"+t.id+"/stop","POST",{emergency:true,reason:reason.trim()});await refresh();status("Viagem encerrada excepcionalmente, com justificativa em auditoria.");}
+        catch(e){emergency.disabled=false;status(e.message,true);}
+      };actions.append(emergency);
+    }
   }
   area.append(actions);
 }
@@ -382,6 +465,7 @@ async function refresh(){
   try{
     const data=await request("/v1/monitor/trips");
     trips=data.trips||[];
+    canReview=!!data.canReview;canEmergency=!!data.canEmergency;
     updateBranchOptions();renderAll();
     $("#lastUpdate").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR");
     status("Dados de monitoramento atualizados.");

@@ -107,10 +107,15 @@ export async function employeesController(req,env){
         for(const person of employees){
           if(!["TON","PERCENT"].includes(person.commissionKind))continue;
           const t=Number(monthlyVolume.tonnes_milli);
-          person.commissionsCents=t===0?0:calculateCommission(
+          // Volumes muito pequenos podem produzir menos de R$ 0,01;
+          // nesse caso a comissão mensal é zero, não um erro na API.
+          const estimated=person.commissionKind==="TON"
+            ?Math.round(t*person.commissionRate/1000)
+            :Math.round(t*person.commissionRate/100000);
+          person.commissionsCents=estimated>0?calculateCommission(
             {kind:person.commissionKind,rateValue:person.commissionRate},
             {tonnesMilli:t,freightCentsPerTon:0,manualAmountCents:0}
-          ).amountCents;
+          ).amountCents:0;
         }
       }
       const active=employees.filter(x=>x.active);

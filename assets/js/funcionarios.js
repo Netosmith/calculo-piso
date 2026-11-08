@@ -97,7 +97,7 @@ function renderTable(){
   const shown=selectedEmployees();
   const c=$("rhCountShown");if(c)c.textContent=shown.length+" funcionário(s) exibido(s)";
   const tbody=$("rhListBody");if(!tbody)return;
-  if(!shown.length){tbody.innerHTML='<tr><td colspan="11" class="rh-empty">Nenhum funcionário encontrado. Use “Cadastrar funcionário” para começar.</td></tr>';return;}
+  if(!shown.length){tbody.innerHTML='<tr><td colspan="10" class="rh-empty">Nenhum funcionário encontrado. Use “Cadastrar funcionário” para começar.</td></tr>';return;}
   tbody.innerHTML=shown.map(e=>'<tr><td class="strong">'+html(e.name)+'</td><td>'+html(e.role)+'</td><td>'+html(e.city)+' / '+html(e.branch)+'</td><td class="money">'+brl(e.salaryCents)+'</td><td class="money">'+brl(e.valesCents)+'</td><td class="money">'+brl(e.costsCents)+'</td><td class="money strong">'+brl(e.commissionsCents||0)+'</td><td class="money positive">'+brl(e.salaryCents+(e.commissionsCents||0)-e.valesCents)+'</td><td><span class="rh-pill '+(e.active?"":"off")+'">'+(e.active?"ATIVO":"INATIVO")+'</span></td><td class="actions"><a class="rh-table-action" href="./funcionarios-cadastro.html?id='+encodeURIComponent(e.id)+'">Editar</a><a class="rh-table-action" href="./funcionarios-lancamentos.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Vale/custo</a><a class="rh-table-action" href="./funcionarios-comissoes.html?employee='+encodeURIComponent(e.id)+'&month='+month+'">Comissões</a></td></tr>').join("");
 }
 const RH_COMMISSION_RATES={

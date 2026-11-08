@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
-<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-toneladas-v3">
+<link rel="stylesheet" href="../assets/css/funcionarios.css?v=20261108-folha-v1">
 </head>
 <body class="rh-body" data-rh-page="employee">
 <header class="rh-topbar"><div class="rh-topbar-in">
@@ -17,18 +17,12 @@
 <div class="rh-topright"><span id="rhUser" class="rh-user">Acesso administrativo</span><a class="rh-home" href="./home.html" aria-label="Voltar à Home">⌂ Home</a><button class="rh-btn" data-logout type="button">Sair</button></div>
 </div></header>
 <main class="rh-content">
-<section class="rh-heading"><div class="rh-title-row"><div class="rh-hero-icon" aria-hidden="true">♧</div><div>
-<div class="rh-breadcrumb"><a href="./home.html">Home</a><span>›</span><a href="./funcionarios.html">Funcionários</a><span>›</span>Cadastro de Funcionário</div>
-<h1>Cadastro de Funcionário</h1><p>Cadastre colaboradores e mantenha os dados salariais organizados.</p></div></div>
-<div class="rh-actions"><a class="rh-btn primary" href="./funcionarios-cadastro.html">＋ Cadastrar</a><a class="rh-btn" href="./funcionarios-lancamentos.html">◇ Lançar vale / custo</a></div>
-</section>
 <div id="rhNotice" class="rh-alert" role="status" aria-live="polite" hidden></div>
-<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" class="active" aria-current="page">Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vale / custo</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
+<nav class="rh-nav" aria-label="Navegação de Funcionários"><a href="./funcionarios.html" >Painel</a><a href="./funcionarios-cadastro.html" class="active" aria-current="page">Cadastrar funcionário</a><a href="./funcionarios-lancamentos.html" >Vales</a><a href="./funcionarios-tabela.html" >Tabela geral</a><a href="./funcionarios-comissoes.html">Comissões</a></nav>
 <section class="rh-panel"><header><div><h2 id="rhFormTitle">Cadastrar funcionário</h2><p class="rh-muted">Campos com * são obrigatórios. Os dados ficam no banco privado do Portal Frete.</p></div></header>
 <form id="rhEmployeeForm" class="rh-form" autocomplete="off">
 <label>Nome completo * <input id="rhName" name="name" maxlength="160" placeholder="Nome do funcionário" required></label>
 <label>Função / cargo * <input id="rhRoleInput" name="role" maxlength="100" placeholder="Ex.: Auxiliar Administrativo" required></label>
-<label>Cidade * <input id="rhCity" name="city" maxlength="100" placeholder="Ex.: Rio Verde" required></label>
 <label>Filial * <input id="rhBranchInput" name="branch" maxlength="100" placeholder="Ex.: Matriz" required></label>
 <label>Salário base mensal (R$) * <input id="rhSalary" name="salary" type="text" inputmode="decimal" maxlength="22" placeholder="Ex.: 4.800,00" required><small>Valor cadastrado como referência mensal. Não inclui encargos.</small></label>
 <label class="check" style="align-self:center"><input id="rhActive" type="checkbox" checked> Funcionário ativo</label>
@@ -47,10 +41,10 @@
   Sem comissão. Você pode habilitar depois.</p>
 <label class="span2">Observações <textarea id="rhNotes" maxlength="800" placeholder="Observações internas, se necessário"></textarea></label>
 <div class="span2 rh-form-actions"><a class="rh-btn" href="./funcionarios-tabela.html">Cancelar</a><button id="rhSubmit" class="rh-btn primary" type="submit">Salvar funcionário</button></div>
-</form><div class="rh-help">A edição do salário altera o valor de referência cadastrado. Vales, custos e comissões permanecem registrados por data e funcionário, mesmo quando uma taxa de comissão é alterada.</div></section>
+</form><div class="rh-help">A edição do salário altera o valor de referência cadastrado. Vales e comissões permanecem registrados por data e funcionário, mesmo quando uma taxa de comissão é alterada.</div></section>
 <footer class="rh-footer">NOVA FROTA • Dados internos de funcionários • Acesso administrativo • Banco privado D1</footer>
 </main>
 <script src="../assets/js/auth.js?v=28"></script>
-<script src="../assets/js/funcionarios.js?v=20261108-toneladas-v3" defer></script>
+<script src="../assets/js/funcionarios.js?v=20261108-folha-v1" defer></script>
 </body>
 </html>

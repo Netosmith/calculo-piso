@@ -183,11 +183,18 @@ export async function monitorController(request, env) {
       if(Number(doc?.proof_required||0)===1&&!complete&&!emergency)
         return errorResponse("Encerramento exige aprovação da selfie e do comprovante. Em emergência, um administrador pode registrar justificativa.",409);
       const time=now();
-      const result=await db.prepare("UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1")
-        .bind(time,parts[3]).run();
-      if(emergency&&result.meta?.changes)
-        await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (? ,'trip','emergency_stop',?,?,?)")
-          .bind(parts[3],clean(auth.session.usuario),reason,time).run();
+      const update=db.prepare("UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1")
+        .bind(time,parts[3]);
+      let result;
+      if(emergency){
+        const audit=db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) "+
+          "SELECT ?,'trip','emergency_stop',?,?,? WHERE EXISTS (SELECT 1 FROM monitor_trips WHERE id=? AND active=1)")
+          .bind(parts[3],clean(auth.session.usuario),reason,time,parts[3]);
+        [result]=await db.batch([audit,update]);
+        // O batch transacional impede encerrar sem registrar o motivo excepcional.
+        result=(await db.prepare("SELECT active FROM monitor_trips WHERE id=?").bind(parts[3]).first())?.active===0
+          ?{meta:{changes:1}}:{meta:{changes:0}};
+      }else result=await update.run();
       if (!result.meta?.changes) return errorResponse("Viagem não encontrada ou já encerrada.", 404);
       const row = await db.prepare(
         "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.id=?"

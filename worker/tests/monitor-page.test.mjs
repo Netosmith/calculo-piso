@@ -37,3 +37,13 @@ test("comprovante usa apenas botoes de camera e biblioteca na pagina",()=>{
   assert.match(html,/\/v1\/monitor\/gps-event/);
   assert.match(html,/\/v1\/monitor\/receipt/);
 });
+
+test("conclusao normal do GPS exige aprovacao documental e suspensao voluntaria distinta",()=>{
+  const html=assertScriptsCompile(driver);
+  assert.match(html,/id="stop"[^>]*>Concluir compartilhamento do GPS/);
+  assert.match(html,/id="pauseGps"[^>]*>Suspender minha localização por privacidade/);
+  assert.match(html,/receipt==="approved"/);
+  assert.match(html,/action:"finished"/);
+  assert.match(html,/action:"stopped"/);
+  assert.match(html,/setInterval\(\(\)=>\{if\(!document.hidden\)updateReview\(\);\},30000\)/);
+});

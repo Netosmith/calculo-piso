@@ -42,13 +42,18 @@ const toTrip = row => ({
   selfieStatus: row.selfie_status||"missing", receiptStatus:row.receipt_status||"missing",
   selfieSubmittedAt:row.selfie_at||null,receiptSubmittedAt:row.receipt_at||null,
   gpsStoppedAt:row.gps_stopped_at||null,
+  gpsConsentAt:row.gps_consent_at||null,
+  gpsFinishedAt:row.gps_finished_at||null,
   lastPosition: row.last_position_at ? {
     lat: row.lat, lng: row.lng, accuracy: row.accuracy, at: row.last_position_at
   } : null
 });
 async function tripForToken(db, value) {
   if (!validToken(value)) return null;
-  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at FROM monitor_trips t LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.token_hash=? AND t.token_expires_at>?")
+  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at,
+    (SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='consent' ORDER BY a.id DESC LIMIT 1) AS gps_consent_at,
+    (SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='finished' ORDER BY a.id DESC LIMIT 1) AS gps_finished_at
+    FROM monitor_trips t LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.token_hash=? AND t.token_expires_at>?")
     .bind(await hashToken(value), now()).first();
 }
 function dbError(error, stage) {
@@ -82,6 +87,26 @@ export async function monitorController(request, env) {
       if (!row) return errorResponse("Link inválido ou expirado.", 404);
       return success({ trip: toTrip(row) });
     } catch (e) { return dbError(e, "driver-read"); }
+  }
+  // O aceite do termo é registrado antes do início do monitoramento das novas viagens.
+  if (path === "/v1/monitor/consent" && method === "POST") {
+    const body = await parse(request);
+    if (body?.accepted !== true || body?.version !== "gps-viagem-v1")
+      return errorResponse("É necessário aceitar o termo de monitoramento da viagem.",400);
+    try {
+      const row=await tripForToken(db,body.token);
+      if(!row)return errorResponse("Link inválido ou expirado.",404);
+      if(row.active!==1)return errorResponse("Viagem encerrada.",409);
+      if(Number(row.proof_required||0)===1&&!row.selfie_key)
+        return errorResponse("Envie a selfie antes de aceitar o termo.",409);
+      if(row.gps_finished_at)return errorResponse("Acompanhamento já concluído.",409);
+      if(!row.gps_consent_at){
+        await db.prepare(
+          "INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (?,'gps','consent','MOTORISTA',?,?)"
+        ).bind(row.id,"Termo de rastreamento da viagem gps-viagem-v1 aceito; localização durante o percurso, encerramento normal após validação de documentos e possibilidade de revogação da permissão.",now()).run();
+      }
+      return success({accepted:true,version:"gps-viagem-v1",consentAt:row.gps_consent_at||now()});
+    }catch(e){return dbError(e,"gps-consent");}
   }
   // Interrupção voluntária registra um alerta imediato, sem impedir a escolha do motorista.
   if (path === "/v1/monitor/gps-event" && method === "POST") {
@@ -121,6 +146,9 @@ export async function monitorController(request, env) {
       if (row.active !== 1) return errorResponse("Viagem encerrada.", 409);
       if(Number(row.proof_required||0)===1&&!row.selfie_key)
         return errorResponse("Envie uma selfie para iniciar a viagem.",409);
+      if(Number(row.proof_required||0)===1&&!row.gps_consent_at)
+        return errorResponse("Aceite o termo de acompanhamento para iniciar a viagem.",409);
+      if(row.gps_finished_at)return errorResponse("O compartilhamento já foi concluído.",409);
       const time = now();
       // O batch é atômico. Uma viagem encerrada não recebe novas posições.
       await db.batch([

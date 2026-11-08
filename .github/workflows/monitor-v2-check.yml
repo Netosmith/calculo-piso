@@ -1,0 +1,26 @@
+name: Validar Monitoramento Nova Frota 2.0
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pages/monitoramento.html'
+      - 'pages/monitorar-motorista.html'
+      - 'worker/src/controllers/monitor.js'
+      - 'worker/tests/monitor-*.test.mjs'
+      - 'worker/migrations/0008_monitor_v2.sql'
+      - '.github/workflows/monitor-v2-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar JS da API e da pagina
+        run: |
+          node --check worker/src/controllers/monitor.js
+          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-page.test.mjs

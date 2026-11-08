@@ -92,7 +92,7 @@ export async function employeesController(req,env){
         salaryCents:active.reduce((s,x)=>s+x.salaryCents,0),
         valesCents:active.reduce((s,x)=>s+x.valesCents,0),
         costsCents:active.reduce((s,x)=>s+x.costsCents,0),
-        commissionsCents:active.reduce((s,x)=>s+x.commissionsCents,0)
+        commissionsCents:commissions.reduce((s,x)=>s+x.amountCents,0)
       };
       return success({month,employees,entries,commissions,totals,
         complete:(people.results||[]).length<3000&&(launches.results||[]).length<5000&&(commissionRows.results||[]).length<5000});

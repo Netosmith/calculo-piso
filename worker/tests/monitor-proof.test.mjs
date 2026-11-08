@@ -144,3 +144,21 @@ test("evento GPS rejeita link invalido e acoes desconhecidas",async()=>{
   }),{FLEET_DB:database});
   assert.equal(badAction.status,400);
 });
+
+test("conclusao normal do GPS exige selfie e comprovante aprovados no servidor",async()=>{
+  const pendingDb=db({trip:{id,active:1,proof_required:1,selfie_status:"approved",receipt_status:"pending"}});
+  const makeReq=()=>new Request("https://api.portalfrete.net.br/v1/monitor/gps-event",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,action:"finished"})
+  });
+  const pending=await monitorController(makeReq(),{FLEET_DB:pendingDb});
+  assert.equal(pending.status,409);
+  assert.match((await pending.json()).error,/aprova/i);
+  assert.equal(pendingDb.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")),false);
+  const approvedDb=db({trip:{id,active:1,proof_required:1,selfie_status:"approved",receipt_status:"approved"}});
+  const approved=await monitorController(makeReq(),{FLEET_DB:approvedDb});
+  assert.equal(approved.status,200);
+  assert.equal((await approved.json()).documentsApproved,true);
+  assert.ok(approvedDb.calls.some(x=>x.sql.includes("'finished'")&&x.values[0]===id));
+  assert.equal(approvedDb.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET active=0")),false);
+});

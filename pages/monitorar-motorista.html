@@ -71,7 +71,15 @@ button:focus-visible,.file-action:focus-within,.file-input:focus-visible+.file-a
 button:disabled{opacity:.53;cursor:not-allowed}
 button+button{margin-top:10px}
 #start{background:#1179bb;font-size:15px;min-height:61px}
-#stop{background:#c44458}
+#stop{background:#128354}
+.privacy-control{
+  border:0;background:none;color:#536f86;min-height:36px;padding:6px 10px;
+  margin-top:12px;font-size:11px;font-weight:650;text-decoration:underline;
+  text-underline-offset:3px
+}
+.privacy-control:hover:not(:disabled){background:#f5f9fd;color:#2a526c}
+#finishHint{background:#fff6e6;border-radius:10px;padding:10px 12px;color:#835c21}
+
 #sendSelfie{background:var(--green);margin-top:13px}
 #sendReceipt{background:var(--green);margin-top:12px}
 .file-input{
@@ -171,8 +179,10 @@ button+button{margin-top:10px}
       </div>
       <p>Ao iniciar, você autoriza o compartilhamento da localização do celular durante o transporte.</p>
       <button id="start" type="button" disabled>Iniciar viagem</button>
-      <button id="stop" type="button" hidden>Interromper GPS neste aparelho</button>
-      <p class="notice">O GPS pode ser interrompido pelo motorista ou pelo sistema do celular. A Nova Frota identifica a falta de sinal; a viagem só será encerrada após a conferência do comprovante de descarga. No navegador, o envio pode pausar com a tela bloqueada.</p>
+      <button id="stop" type="button" hidden>Concluir compartilhamento do GPS</button>
+      <p class="notice" id="finishHint" hidden>Para concluir normalmente o GPS, primeiro envie o comprovante de descarga e aguarde a aprovação da selfie e do comprovante pela Nova Frota.</p>
+      <button id="pauseGps" type="button" class="privacy-control" hidden>Suspender minha localização por privacidade</button>
+      <p class="notice">O encerramento normal do compartilhamento só é liberado após a validação documental. A permissão de localização continua sob seu controle e pode ser revogada no celular. Caso isso aconteça antes da aprovação, a viagem continuará aberta e será sinalizada à Nova Frota. O navegador pode pausar o GPS com a tela bloqueada.</p>
       <p id="status" role="status">Aguardando validação do link.</p>
     </section>
 
@@ -210,7 +220,7 @@ button+button{margin-top:10px}
 "use strict";
 const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);
 const fileSelfie=$("#selfieFile"),fileReceipt=$("#receiptFile"),fileReceiptCamera=$("#receiptCamera");
-let trip=null,watch=null,last=0,uploading=false,showSelfie=false,selectedReceiptFile=null,receiptObjectUrl=null;
+let trip=null,watch=null,last=0,uploading=false,showSelfie=false,selectedReceiptFile=null,receiptObjectUrl=null,checkingReview=false;
 const message=(m,bad=false)=>{$("#status").textContent=m;$("#status").className=bad?"err":"ok";};
 const statusName={missing:"Não enviado",pending:"Aguardando análise",approved:"Aprovado pela Nova Frota",rejected:"Rejeitado: envie outro arquivo"};
 async function post(path,body){
@@ -240,9 +250,17 @@ function refreshUi(){
   $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
   $("#selfieBox").hidden=!trip?.active||selfie==="approved"||(selfie==="missing"&&!showSelfie);
   $("#start").disabled=!trip?.active||watch!==null;
+  const approved=!trip?.selfieRequired||
+    (selfie==="approved"&&receipt==="approved");
+  $("#stop").hidden=watch===null||!trip?.active||!approved;
+  $("#pauseGps").hidden=watch===null||!trip?.active;
+  $("#finishHint").hidden=watch===null||!trip?.active||approved;
   $("#sendSelfie").disabled=!trip?.active||uploading||!$("#photoNotice").checked||!fileSelfie.files.length;
   $("#sendReceipt").disabled=!trip?.active||uploading||!selectedReceiptFile||(trip.selfieRequired&&selfie==="missing");
-  if(!trip?.active){$("#stop").hidden=true;$("#start").disabled=true;}
+  if(!trip?.active){
+    $("#stop").hidden=true;$("#pauseGps").hidden=true;$("#finishHint").hidden=true;
+    $("#start").disabled=true;
+  }
 }
 async function validate(){
   try{
@@ -256,7 +274,7 @@ async function validate(){
 }
 function stop(){
   if(watch!==null)navigator.geolocation.clearWatch(watch);
-  watch=null;$("#stop").hidden=true;refreshUi();
+  watch=null;refreshUi();
 }
 function startGps(){
   if(!trip?.active||!navigator.geolocation){message("GPS indisponível neste navegador.",true);return;}
@@ -274,7 +292,7 @@ function startGps(){
   },err=>{message("Não foi possível obter a localização: "+err.message,true);stop();},{
     enableHighAccuracy:true,maximumAge:10000,timeout:20000
   });
-  $("#stop").hidden=false;refreshUi();message("Viagem iniciada. Aguardando primeira posição GPS...");
+  refreshUi();message("Viagem iniciada. Aguardando primeira posição GPS...");
 }
 async function cleanJpeg(file){
   const bitmap=await createImageBitmap(file);
@@ -315,15 +333,50 @@ $("#start").onclick=()=>{
   }
   startGps();
 };
+async function updateReview(){
+  if(checkingReview||!trip?.active)return;
+  checkingReview=true;
+  try{
+    const data=await post("/v1/monitor/driver",{token});
+    if(!data.trip.active){
+      trip=data.trip;
+      stop();
+      message("Viagem encerrada pela Nova Frota. O GPS deste navegador foi desativado.");
+      return;
+    }
+    const previous=trip?.receiptStatus;
+    trip=data.trip;
+    refreshUi();
+    if(previous!=="approved"&&trip.receiptStatus==="approved")
+      message("Comprovante aprovado pela Nova Frota. O encerramento normal do GPS está liberado.");
+  }catch(e){
+    if(/expirado|inválido|encerrada/i.test(e.message)){stop();message(e.message,true);}
+  }finally{checkingReview=false;}
+}
 $("#stop").onclick=async()=>{
-  if(!confirm("Interromper o GPS neste aparelho? A viagem continuará aberta e a Nova Frota poderá identificar a falta de localização. A descarga ainda exige comprovante aprovado."))return;
+  await updateReview();
+  if(!trip?.active)return;
+  if(!(!trip.selfieRequired||
+       (trip.selfieStatus==="approved"&&trip.receiptStatus==="approved"))){
+    message("Aguarde a aprovação da selfie e do comprovante pela Nova Frota.",true);
+    return;
+  }
+  if(!confirm("Documentos aprovados. Concluir o compartilhamento do GPS neste aparelho? A Nova Frota finalizará a viagem operacional separadamente."))return;
+  try{
+    await post("/v1/monitor/gps-event",{token,action:"finished"});
+    stop();
+    message("Compartilhamento do GPS concluído após a aprovação documental. A viagem permanece sob controle da Nova Frota.");
+  }catch(e){message(e.message,true);}
+};
+$("#pauseGps").onclick=async()=>{
+  if(!confirm("Suspender a localização por decisão sua? O transporte NÃO será encerrado e a Nova Frota receberá um alerta. Você pode reativar o GPS depois."))return;
   stop();
-  message("GPS interrompido por você. A viagem continua aberta e requer comprovante aprovado.");
-  try {
+  message("Sua localização foi suspensa. A viagem continua aberta e a Nova Frota será avisada.");
+  try{
     await post("/v1/monitor/gps-event",{token,action:"stopped"});
-    message("GPS interrompido e alerta registrado para a Nova Frota. A viagem continua aberta.");
-  } catch(e) {
-    message("GPS interrompido. Não foi possível registrar o alerta imediato; o painel também identifica a ausência de novas posições.",true);
+    message("Localização suspensa, com alerta enviado à Nova Frota. A viagem continua aberta.");
+  }catch(e){
+    message("Localização suspensa neste aparelho; não foi possível transmitir o alerta. A ausência de sinal também ficará visível na central.",true);
   }
 };
 function onReceiptSelect(input) {
@@ -385,11 +438,15 @@ $("#sendReceipt").onclick=async()=>{
     const d=await upload("/v1/monitor/receipt",photo);
     trip.receiptStatus=d.status;selectedReceiptFile=null;fileReceipt.value="";fileReceiptCamera.value="";$("#receiptName").textContent="Comprovante enviado com sucesso";
     if(receiptObjectUrl)URL.revokeObjectURL(receiptObjectUrl);receiptObjectUrl=null;$("#receiptPreview").hidden=true;refreshUi();
-    message("Comprovante enviado. A Nova Frota fará a análise; o encerramento não é automático.");
+    message("Comprovante recebido. O GPS continua em acompanhamento até a aprovação documental pela Nova Frota.");
   }catch(e){message("Falha ao enviar comprovante: "+e.message,true);}
   finally{uploading=false;refreshUi();}
 };
 window.addEventListener("pagehide",stop);
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden)updateReview();
+});
+setInterval(()=>{if(!document.hidden)updateReview();},30000);
 validate();
 })();
 </script></body></html>

@@ -30,7 +30,7 @@ function readDecimal(value,scale,max,decimals){
   if(!s)return 0;
   if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
   else if(/^(\d{1,3}\.)+\d{3}$/.test(s))s=s.replace(/\./g,"");
-  if(!new RegExp("^\\\\d+(?:\\\\.\\\\d{1,"+decimals+"})?$").test(s))return null;
+  if(!new RegExp("^[0-9]+(?:[.][0-9]{1,"+decimals+"})?$").test(s))return null;
   const v=Math.round(Number(s)*scale);
   return Number.isSafeInteger(v)&&v>=0&&v<=max?v:null;
 }

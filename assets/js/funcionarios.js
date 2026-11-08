@@ -102,7 +102,7 @@ function renderTable(){
 }
 const RH_COMMISSION_RATES={
   TON:[[5,"R$ 0,05/t"],[6,"R$ 0,06/t"],[7,"R$ 0,07/t"],[8,"R$ 0,08/t"],[9,"R$ 0,09/t"],[10,"R$ 0,10/t"],[15,"R$ 0,15/t"],[20,"R$ 0,20/t"]],
-  PERCENT:[[10,"0,10%"],[15,"0,15%"],[20,"0,20%"],[25,"0,25%"],[100,"1,00%"]]
+  PERCENT:[[10,"0,10%"],[15,"0,15%"],[20,"0,20%"],[25,"0,25%"],[100,"1,00%"],[150,"1,50%"]]
 };
 function updateCommissionSettings(){
   const kind=$("rhCommissionKind")?.value||"NONE",select=$("rhCommissionRate");
@@ -115,9 +115,9 @@ function updateCommissionSettings(){
   const hints={
     NONE:"Sem comissão. Você pode habilitar depois.",
     TON:"Calculada automaticamente a partir das toneladas lançadas.",
-    PERCENT:"Calculada sobre o total do frete: toneladas × frete por tonelada.",
-    MANUAL:"O valor será informado no lançamento da comissão.",
-    AGENCIA:"Comissão de agência a definir em cada lançamento."
+    PERCENT:"Calculada diretamente sobre as toneladas. Exemplo: 80.000 t × 1,5% = R$ 1.200,00.",
+    MANUAL:"O valor será digitado na linha do funcionário na planilha de comissões.",
+    AGENCIA:"Valor da agência definido na linha do funcionário na planilha de comissões."
   };
   if($("rhCommissionHint"))$("rhCommissionHint").textContent=hints[kind]||"";
 }

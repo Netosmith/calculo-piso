@@ -99,8 +99,7 @@ export async function employeesController(req,env){
       // automaticamente. Manual e Agência permanecem por lançamentos gravados.
       for(const record of commissions){
         const owner=employeeById.get(record.employeeId);
-        if(owner && (!monthlyVolume || !["TON","PERCENT"].includes(owner.commissionKind)
-          || ["MANUAL","AGENCIA"].includes(record.kind)))
+        if(owner && (!monthlyVolume || ["MANUAL","AGENCIA"].includes(record.kind)))
           owner.commissionsCents+=record.amountCents;
       }
       if(monthlyVolume){

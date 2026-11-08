@@ -116,3 +116,31 @@ test("pending documents block operational completion while old journeys remain c
   const denied=await monitorController(other,{FLEET_DB:database,PORTAL_KEY:secret});
   assert.equal(denied.status,403);
 });
+
+test("interrupcao voluntaria de GPS gera alerta auditavel sem encerrar a viagem",async()=>{
+  const database=db({trip:{id,active:1,proof_required:1,selfie_status:"pending",selfie_key:"foto",receipt_status:"missing",last_position_at:"2026-11-08T20:10:00.000Z"}});
+  const response=await monitorController(new Request("https://api.portalfrete.net.br/v1/monitor/gps-event",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,action:"stopped"})
+  }),{FLEET_DB:database});
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.recorded,true);
+  assert.equal(data.tripActive,true);
+  assert.equal(data.receiptRequired,true);
+  assert.ok(database.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")&&x.values[0]===id));
+  assert.equal(database.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET active=0")),false);
+});
+test("evento GPS rejeita link invalido e acoes desconhecidas",async()=>{
+  const database=db({trip:null});
+  const denied=await monitorController(new Request("https://api.portalfrete.net.br/v1/monitor/gps-event",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,action:"stopped"})
+  }),{FLEET_DB:database});
+  assert.equal(denied.status,404);
+  const badAction=await monitorController(new Request("https://api.portalfrete.net.br/v1/monitor/gps-event",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,action:"stop-trip"})
+  }),{FLEET_DB:database});
+  assert.equal(badAction.status,400);
+});

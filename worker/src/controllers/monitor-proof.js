@@ -61,9 +61,9 @@ export async function monitorDriverUpload(request,env,kind){
   const hash=await digest(bytes),key="monitor/nova-frota/"+trip.id+"/"+kind+"/"+crypto.randomUUID();
   const oldKey=trip[kind+"_key"];
   const sql=kind==="selfie"?
-    "INSERT INTO monitor_trip_proofs (trip_id,proof_required,selfie_key,selfie_sha256,selfie_mime,selfie_at,selfie_status) VALUES (?,1,?,?,?,?,'pending') "+
+    "INSERT INTO monitor_trip_proofs (trip_id,proof_required,selfie_key,selfie_sha256,selfie_mime,selfie_at,selfie_status) VALUES (?,?,?,?,?,?,'pending') "+
     "ON CONFLICT(trip_id) DO UPDATE SET selfie_key=excluded.selfie_key,selfie_sha256=excluded.selfie_sha256,selfie_mime=excluded.selfie_mime,selfie_at=excluded.selfie_at,selfie_status='pending',selfie_reviewed_by=NULL,selfie_reviewed_at=NULL,selfie_review_note=NULL":
-    "INSERT INTO monitor_trip_proofs (trip_id,proof_required,receipt_key,receipt_sha256,receipt_mime,receipt_at,receipt_status) VALUES (?,1,?,?,?,?,'pending') "+
+    "INSERT INTO monitor_trip_proofs (trip_id,proof_required,receipt_key,receipt_sha256,receipt_mime,receipt_at,receipt_status) VALUES (?,?,?,?,?,?,'pending') "+
     "ON CONFLICT(trip_id) DO UPDATE SET receipt_key=excluded.receipt_key,receipt_sha256=excluded.receipt_sha256,receipt_mime=excluded.receipt_mime,receipt_at=excluded.receipt_at,receipt_status='pending',receipt_reviewed_by=NULL,receipt_reviewed_at=NULL,receipt_review_note=NULL";
   try{
     await env.FLEET_FILES.put(key,bytes,{
@@ -71,7 +71,7 @@ export async function monitorDriverUpload(request,env,kind){
       customMetadata:{type:kind,trip:trip.id,sha256:hash,receivedAt:time()}
     });
     await env.FLEET_DB.batch([
-      env.FLEET_DB.prepare(sql).bind(trip.id,key,hash,mime,time()),
+      env.FLEET_DB.prepare(sql).bind(trip.id,Number(trip.proof_required||0),key,hash,mime,time()),
       env.FLEET_DB.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,created_at) VALUES (?,?,?,'MOTORISTA',?)")
         .bind(trip.id,kind,"submitted",time())
     ]);

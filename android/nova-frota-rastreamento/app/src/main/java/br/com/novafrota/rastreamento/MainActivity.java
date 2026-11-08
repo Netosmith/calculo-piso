@@ -110,7 +110,17 @@ public class MainActivity extends Activity {
         if(token==null){status.setText("Cole um link válido da viagem para enviar os documentos.");return;}
         Uri url=Uri.parse("https://portalfrete.net.br/pages/monitorar-motorista.html#"+token);
         Intent browser=new Intent(Intent.ACTION_VIEW,url);
-        try { startActivity(browser); } catch(RuntimeException e) { status.setText("Não foi possível abrir o navegador."); }
+        browser.setPackage("com.android.chrome");
+        try { startActivity(browser); }
+        catch(RuntimeException chromeError) {
+            browser.setPackage("com.sec.android.app.sbrowser");
+            try { startActivity(browser); }
+            catch(RuntimeException samsungError) {
+                browser.setPackage(null);
+                try { startActivity(Intent.createChooser(browser, "Abrir a página do motorista")); }
+                catch(RuntimeException e) { status.setText("Não foi possível abrir o navegador."); }
+            }
+        }
     }
 
     private void consumeLink(Intent intent) {

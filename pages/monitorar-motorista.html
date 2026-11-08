@@ -88,9 +88,9 @@ function refreshUi(){
   $("#selfieStatus").textContent="Selfie: "+statusName[selfie];
   $("#receiptStatus").textContent="Comprovante: "+statusName[receipt];
   $("#selfieBox").hidden=!trip?.active||selfie==="approved";
-  $("#start").disabled=!trip?.active||(trip.selfieRequired&&selfie==="missing")||watch!==null;
+  $("#start").disabled=!trip?.active||watch!==null;
   $("#sendSelfie").disabled=!trip?.active||uploading||!$("#photoNotice").checked||!fileSelfie.files.length;
-  $("#sendReceipt").disabled=!trip?.active||uploading||!fileReceipt.files.length;
+  $("#sendReceipt").disabled=!trip?.active||uploading||!fileReceipt.files.length||(trip.selfieRequired&&selfie==="missing");
   if(!trip?.active){$("#stop").hidden=true;$("#start").disabled=true;}
 }
 async function validate(){

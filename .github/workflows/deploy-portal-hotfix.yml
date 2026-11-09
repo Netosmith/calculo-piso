@@ -72,7 +72,7 @@ jobs:
         run: |
           node --check src/controllers/monitor.js
           node --check src/controllers/monitor-proof.js
-          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs
+          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs
       - name: Preparar tabelas de Funcionários Nova Frota
         working-directory: worker
         env:

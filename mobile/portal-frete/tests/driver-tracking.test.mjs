@@ -31,8 +31,8 @@ test("tarefa é registrada no nível global e não transmite sem aceite prévio"
 test("APK exige permissões nativas e distingue motorista de funcionário",()=>{
   const app=JSON.parse(read("app.json")).expo;
   const shell=read("App.js");
-  assert.equal(app.version,"0.3.0");
-  assert.equal(app.android.versionCode,4);
+  assert.equal(app.version,"0.3.1");
+  assert.equal(app.android.versionCode,5);
   assert.ok(app.android.permissions.includes("RECEIVE_BOOT_COMPLETED"));
   assert.ok(app.android.permissions.includes("FOREGROUND_SERVICE_LOCATION"));
   assert.ok(app.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&
@@ -50,14 +50,17 @@ test("motorista só ativa GPS depois de selfie e termo; fretes internos não sã
   assert.match(ui,/Os dados operacionais internos não são exibidos/i);
 });
 
-test("versão 0.3 exibe fretes públicos sem abrir o módulo operacional",()=>{
+test("versão 0.3.1 exibe fretes públicos com WhatsApp do embarcador",()=>{
   const app=JSON.parse(read("app.json")).expo;
-  assert.equal(app.version,"0.3.0");
-  assert.equal(app.android.versionCode,4);
+  assert.equal(app.version,"0.3.1");
+  assert.equal(app.android.versionCode,5);
   const area=read("src/DriverArea.js");
   assert.match(area,/\/v1\/driver-freights/);
   assert.match(area,/Buscar origem, destino ou produto/);
-  assert.match(area,/Compartilhar frete/);
+  assert.match(area,/Falar com o embarcador no WhatsApp/);
+  assert.match(area,/Linking.openURL\(url\)/);
+  assert.match(area,/whatsappForOffer\(offer\)/);
+  assert.doesNotMatch(area,/Share.share/);
   assert.match(area,/Nenhum frete divulgado neste momento/);
   assert.doesNotMatch(area,/portalPage\("fretes"/);
 });

@@ -915,113 +915,61 @@
   </div>
 
   <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+  <script src="../assets/js/module-pin.js?v=1"></script>
   <script>
-    (function(){
-      const PIN_HASH="73a2af8864fc500fa49048bf3003776c19938f360e56bd03663866fb3087884a";
-      const ACCESS_KEY="nf_custo_filial_pin_ok";
-
+    (() => {
       const gate=document.getElementById("cfPinGate");
       const content=document.getElementById("cfProtectedContent");
       const form=document.getElementById("cfPinForm");
       const input=document.getElementById("cfPinInput");
       const error=document.getElementById("cfPinError");
       let moduleLoaded=false;
-
-      function bytesToHex(buffer){
-        return Array.from(new Uint8Array(buffer))
-          .map(b=>b.toString(16).padStart(2,"0"))
-          .join("");
-      }
-
-      async function sha256(value){
-        const bytes=new TextEncoder().encode(String(value||""));
-        const digest=await crypto.subtle.digest("SHA-256",bytes);
-        return bytesToHex(digest);
-      }
-
       function loadModule(){
         if(moduleLoaded)return;
         moduleLoaded=true;
         const script=document.createElement("script");
         script.src="../assets/js/custo-filial.js?v=11";
         script.dataset.custoFilial="1";
-        script.onerror=()=>{
-          moduleLoaded=false;
-          error.textContent="Não foi possível carregar o módulo. Atualize a página.";
-        };
+        script.onerror=()=>{moduleLoaded=false;error.textContent="Não foi possível carregar o módulo. Atualize a página.";};
         document.body.appendChild(script);
       }
-
       function unlock(){
-        sessionStorage.setItem(ACCESS_KEY,"1");
         gate.hidden=true;
         content.hidden=false;
-
-        const logoutButton=document.querySelector("[data-logout]");
-        if(logoutButton){
-          logoutButton.addEventListener("click",()=>sessionStorage.removeItem(ACCESS_KEY),{once:true,capture:true});
-        }
-
-        if(typeof bindLogoutButton==="function") bindLogoutButton();
+        if(typeof bindLogoutButton==="function")bindLogoutButton();
         loadModule();
       }
-
       function lock(){
-        sessionStorage.removeItem(ACCESS_KEY);
-        content.hidden=true;
-        gate.hidden=false;
-        setTimeout(()=>input?.focus(),50);
+        content.hidden=true;gate.hidden=false;
+        setTimeout(()=>input.focus(),50);
       }
-
       async function validatePortal(){
-        try{
-          if(typeof requireFeatureAuth==="function"){
-            if(requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.")!==true)return false;
-          }else if(typeof requireHomeAuth==="function"){
-            if(requireHomeAuth()!==true)return false;
-          }
-
-          if(window.portalAuthReady){
-            const session=await window.portalAuthReady;
-            if(!session)return false;
-          }
-
-          return true;
-        }catch(err){
-          console.warn("[CUSTO-FILIAL] Falha na validação do Portal.",err);
-          return false;
-        }
+        if(typeof requireFeatureAuth==="function"){
+          if(requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.")!==true)return false;
+        }else if(typeof requireHomeAuth==="function"&&requireHomeAuth()!==true)return false;
+        const sess=window.portalAuthReady?await window.portalAuthReady:null;
+        return Boolean(sess&&sess.tenantMode!==true);
       }
-
-      form.addEventListener("submit",async function(event){
-        event.preventDefault();
-        error.textContent="";
-        const value=String(input.value||"").trim();
-        if(!value){
-          error.textContent="Informe a senha.";
-          return;
-        }
-
-        const hash=await sha256(value);
-        if(hash!==PIN_HASH){
-          input.value="";
-          error.textContent="Senha incorreta.";
-          input.focus();
-          return;
-        }
-
-        unlock();
+      form.addEventListener("submit",async event=>{
+        event.preventDefault();error.textContent="";
+        const pin=String(input.value||"");
+        if(!/^[0-9]{4}$/.test(pin)){error.textContent="Informe os 4 dígitos da senha.";return;}
+        const button=form.querySelector('button[type="submit"]');
+        button.disabled=true;
+        try{
+          await window.PortalModulePin.unlock("custo-filial",pin);
+          input.value="";unlock();
+        }catch(e){
+          input.value="";error.textContent=e.message||"Senha incorreta.";input.focus();
+        }finally{button.disabled=false;}
       });
-
-      document.addEventListener("DOMContentLoaded",async function(){
-        const allowed=await validatePortal();
+      document.addEventListener("DOMContentLoaded",async()=>{
+        const allowed=await validatePortal().catch(()=>false);
         if(!allowed)return;
-
-        if(sessionStorage.getItem(ACCESS_KEY)==="1"){
-          unlock();
-        }else{
-          lock();
-        }
+        try{
+          if(await window.PortalModulePin.unlocked("custo-filial"))unlock();
+          else lock();
+        }catch(e){gate.hidden=false;content.hidden=true;error.textContent=e.message||"Não foi possível validar o acesso.";}
       });
     })();
   </script>

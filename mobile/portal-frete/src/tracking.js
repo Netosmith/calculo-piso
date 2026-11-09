@@ -207,6 +207,27 @@ export async function startDriverTracking(token){
     throw e;
   }
 }
+// Quando o aplicativo volta ao primeiro plano, recupera a sessão consentida
+// sem pedir novamente o início; nunca recria uma permissão revogada.
+export async function restoreApprovedTracking(){
+  const token=await currentToken();
+  if(!safeToken(token))return {token:null,restored:false};
+  const trip=await getDriverTrip(token);
+  if(!eligible(trip)){
+    await stopNative({clearCredentials:true});
+    return {token:null,restored:false};
+  }
+  let restored=false;
+  if(!await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK)){
+    const fg=await Location.getForegroundPermissionsAsync();
+    const bg=await Location.getBackgroundPermissionsAsync();
+    if(fg.status==="granted"&&bg.status==="granted"){
+      await startDriverTracking(token);
+      restored=true;
+    }
+  }
+  return {token,trip,restored};
+}
 export async function driverTrackingStatus(){
   const token=await currentToken();
   const running=await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);

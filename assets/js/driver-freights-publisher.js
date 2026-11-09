@@ -111,7 +111,8 @@
   }
   async function afterSave(row,source){
     if(!enabled(source)||!isPublished(row,source))return;
-    if(String(row.status||"").trim().toUpperCase()==="LIBERADO")
+    const data=snapshot(row,source);
+    if(data.status==="LIBERADO"&&data.origem&&data.destino&&data.produto)
       await publish(row,source,{silent:true});
     else await unpublish(row,source,{silent:true});
   }

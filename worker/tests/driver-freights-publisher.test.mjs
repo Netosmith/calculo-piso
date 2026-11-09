@@ -35,7 +35,7 @@ const row={
 function requestBody(h){return JSON.parse(h.requests.find(r=>r.init.method==="POST").init.body)}
 test("frete totalmente preenchido publica sem pedir origem, destino ou produto novamente",async()=>{
   const h=harness();
-  assert.equal(await h.app.toggle(row,"fretes"),true);
+  assert.equal(await h.app.toggle(row,"fretes",{whatsappEmbarcador:"(64) 99988-7766"}),true);
   assert.equal(h.prompts.length,0);
   assert.equal(h.confirmations.length,1);
   const body=requestBody(h);
@@ -43,6 +43,7 @@ test("frete totalmente preenchido publica sem pedir origem, destino ou produto n
   assert.equal(body.destino,row.destino);
   assert.equal(body.produto,row.produto);
   assert.equal(body.valorMotorista,row.valorMotorista);
+  assert.equal(body.whatsappEmbarcador,"5564999887766");
   assert.equal(body.cliente,undefined);
   assert.equal(body.valorEmpresa,undefined);
   assert.equal(body.obs,undefined);
@@ -53,7 +54,7 @@ test("aceita cabeçalhos alternativos devolvidos pelo Google Sheets, em qualquer
     id:"F-002",STATUS:"LIBERADO",ORIGEM:"JATAÍ-GO",DESTINO:"CUIABÁ-MT",
     PRODUTO:"MILHO","Cadência":"50 t","Valor Motorista":"R$ 270/t"
   };
-  assert.equal(await h.app.toggle(sourceRow,"fretes2"),true);
+  assert.equal(await h.app.toggle(sourceRow,"fretes2",{whatsappEmbarcador:"5564999887766"}),true);
   assert.equal(h.prompts.length,0);
   const body=requestBody(h);
   assert.equal(body.origem,"JATAÍ-GO");
@@ -61,30 +62,41 @@ test("aceita cabeçalhos alternativos devolvidos pelo Google Sheets, em qualquer
   assert.equal(body.produto,"MILHO");
   assert.equal(body.volume,"50 t");
   assert.equal(body.valorMotorista,"R$ 270/t");
+  assert.equal(body.whatsappEmbarcador,"5564999887766");
 });
 test("quando um campo realmente falta, informa qual é e permite completar só a divulgação",async()=>{
   const h=harness({promptAnswer:"SORGO"});
-  assert.equal(await h.app.toggle({...row,produto:""},"fretes"),true);
+  assert.equal(await h.app.toggle({...row,produto:""},"fretes",{whatsappEmbarcador:"5564999887766"}),true);
   assert.equal(h.prompts.length,1);
   assert.match(h.prompts[0].message,/PRODUTO/);
   assert.equal(requestBody(h).produto,"SORGO");
 });
 test("cancelar um preenchimento ausente não publica frete nem consulta dados internos",async()=>{
   const h=harness({promptAnswer:null});
-  assert.equal(await h.app.toggle({...row,origem:""},"fretes"),false);
+  assert.equal(await h.app.toggle({...row,origem:""},"fretes",{whatsappEmbarcador:"5564999887766"}),false);
   assert.equal(h.requests.length,0);
   assert.equal(h.prompts.length,1);
 });
+test("solicita WhatsApp ausente e exige telefone brasileiro válido",async()=>{
+  const h=harness({promptAnswer:"(64) 99988-7766"});
+  assert.equal(await h.app.toggle(row,"fretes"),true);
+  assert.equal(h.prompts.length,1);
+  assert.match(h.prompts[0].message,/WHATSAPP DO EMBARCADOR/);
+  assert.equal(requestBody(h).whatsappEmbarcador,"5564999887766");
+  const wrong=harness({promptAnswer:"12345"});
+  await assert.rejects(wrong.app.toggle(row,"fretes"),/válido/);
+  assert.equal(wrong.requests.length,0);
+});
 test("não publica itens sem status LIBERADO, e não ativa controles em empresas terceiras",async()=>{
   const h=harness();
-  await assert.rejects(h.app.toggle({...row,status:"SUSPENSO"},"fretes"),/LIBERADOS/);
+  await assert.rejects(h.app.toggle({...row,status:"SUSPENSO"},"fretes",{whatsappEmbarcador:"5564999887766"}),/LIBERADOS/);
   const tenant=harness({path:"/pages/gnova/fretes.html"});
   assert.equal(tenant.app.enabled("fretes"),false);
 });
 test("ao alterar um anúncio e apagar dados obrigatórios, ele é retirado da lista pública",async()=>{
   const h=harness();
-  assert.equal(await h.app.toggle(row,"fretes"),true);
-  await h.app.afterSave({...row,produto:""},"fretes");
+  assert.equal(await h.app.toggle(row,"fretes",{whatsappEmbarcador:"(64) 99988-7766"}),true);
+  await h.app.afterSave({...row,produto:""},"fretes",{whatsappEmbarcador:"5564999887766"});
   assert.equal(h.requests.filter(r=>r.init.method==="DELETE").length,1);
   assert.equal(h.app.isPublished(row,"fretes"),false);
 });
@@ -93,7 +105,7 @@ test("o controle em Fretes GO e MT usa a mesma leitura dos campos, com versão d
   for(const module of ["fretes","fretes2"]){
     const script=readFileSync(new URL("assets/js/"+module+".js",root),"utf8");
     const html=readFileSync(new URL("pages/"+module+".html",root),"utf8");
-    assert.match(script,/NFDriverFreights\.toggle\(row,freightModule\)/);
-    assert.match(html,/driver-freights-publisher\.js\?v=2/);
+    assert.match(script,/NFDriverFreights\.toggle\(row,freightModule,\{whatsappEmbarcador:/);
+    assert.match(html,/driver-freights-publisher\.js\?v=3/);
   }
 });

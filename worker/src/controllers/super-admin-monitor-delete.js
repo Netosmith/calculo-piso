@@ -75,20 +75,22 @@ async function archiveAndDelete(env,id,actor,reason){
   });
   // D1 batch is transactional: a failed statement leaves trip and children intact.
   const statements=[
+    db.prepare("INSERT INTO monitor_trip_deletion_audit "+
+      "(id,trip_id,plate,driver,was_active,actor,reason,backup_key,positions_count,deleted_at) "+
+      "SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM monitor_trips WHERE id=?)")
+      .bind(auditId,id,snapshot.trip.plate,snapshot.trip.driver,
+        snapshot.trip.active===1?1:0,actor,reason,archiveKey,snapshot.positions.length,time,id),
     db.prepare("DELETE FROM monitor_positions WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_proof_audit WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_trip_documents_audit WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_trip_documents WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_trip_proofs WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_trip_extras WHERE trip_id=?").bind(id),
-    db.prepare("DELETE FROM monitor_trips WHERE id=?").bind(id),
-    db.prepare("INSERT INTO monitor_trip_deletion_audit "+
-      "(id,trip_id,plate,driver,was_active,actor,reason,backup_key,positions_count,deleted_at) "+
-      "VALUES (?,?,?,?,?,?,?,?,?,?)")
-      .bind(auditId,id,snapshot.trip.plate,snapshot.trip.driver,
-        snapshot.trip.active===1?1:0,actor,reason,archiveKey,snapshot.positions.length,time)
+    db.prepare("DELETE FROM monitor_trips WHERE id=?").bind(id)
   ];
-  await db.batch(statements);
+  const changes=await db.batch(statements);
+  if(changes[changes.length-1]?.meta?.changes!==1)
+    return {error:"A viagem já foi excluída por outra sessão.",id};
   const cleanFailures=[];
   for(const item of Object.values(files)){
     try{await store.delete(item.originalKey);}

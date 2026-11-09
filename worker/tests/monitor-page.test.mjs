@@ -44,7 +44,9 @@ test("motorista tem quatro etapas, aceite do termo e finalizacao depois da desca
     "start","trackingActive","receiptBox","finishBox","finishButton"])
     assert.ok(html.includes('id="'+id+'"'),"Ausente: "+id);
   assert.match(html,/INICIAR VIAGEM/);
-  assert.match(html,/RETOMAR ACOMPANHAMENTO GPS/);
+  assert.match(html,/A viagem será monitorada até a finalização, por comprovante anexado\./);
+  assert.match(html,/>FINALIZAR VIAGEM<\/button>/);
+  assert.match(html,/RETOMAR VIAGEM/);
   assert.match(html,/action:"finished"/);
   assert.match(html,/\/v1\/monitor\/consent/);
   assert.match(html,/receipt==="approved"/);

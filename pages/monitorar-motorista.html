@@ -145,7 +145,7 @@ button+button{margin-top:10px}
       <div class="brand-icon" aria-hidden="true">🚛</div>
       <div><strong>NOVA FROTA</strong><small>LOGÍSTICA E TRANSPORTES</small></div>
     </div>
-    <div class="eyebrow">ACOMPANHAMENTO DE TRANSPORTE</div>
+    <div class="eyebrow">SEGURANÇA DA VIAGEM</div>
     <h1>Iniciar viagem</h1>
     <p class="lead">Confirme sua identidade, compartilhe a localização da viagem e envie o comprovante ao descarregar.</p>
   </header>
@@ -191,18 +191,18 @@ button+button{margin-top:10px}
         <span class="step-icon" aria-hidden="true">📍</span>
         <div><small>Etapa 2</small><h2>Iniciar viagem</h2></div>
       </div>
-      <p>Depois de enviar sua selfie, leia o termo e inicie o acompanhamento da viagem.</p>
+      <p>Depois de enviar sua selfie, leia o termo e inicie a viagem.</p>
       <div class="term-card" id="travelTerm">
-        <h3>Termo de acompanhamento da viagem</h3>
-        <p>Estou ciente de que, ao iniciar a viagem, a Nova Frota acompanhará as posições que meu celular enviar durante o transporte da carga, para segurança e acompanhamento operacional, até a entrega e a conferência dos documentos.</p>
-        <p>A finalização normal do acompanhamento será liberada após o envio e a aprovação da selfie e do comprovante de descarga pela Nova Frota. O navegador pode interromper os envios se a tela for bloqueada, o aplicativo for fechado ou faltar sinal. Sei que posso revogar a permissão de localização no celular; isso não encerra a viagem e a Nova Frota poderá identificar a ausência de sinal.</p>
-        <label class="tick"><input id="gpsConsent" type="checkbox"> <span>Li e aceito o termo de acompanhamento desta viagem e autorizo o envio das posições do meu aparelho durante o percurso.</span></label>
+        <h3>Termo da viagem</h3>
+        <p>Estou ciente de que, ao iniciar a viagem, a Nova Frota acompanhará as posições que meu celular enviar durante o transporte da carga, para segurança da viagem, até a entrega e a conferência dos documentos.</p>
+        <p>A finalização da viagem será liberada após o envio e a aprovação da selfie e do comprovante de descarga pela Nova Frota. O navegador pode interromper os envios se a tela for bloqueada, o aplicativo for fechado ou faltar sinal. Sei que posso revogar a permissão de localização no celular; isso não encerra a viagem e a Nova Frota poderá identificar a ausência de sinal.</p>
+        <label class="tick"><input id="gpsConsent" type="checkbox"> <span>Li e aceito o termo desta viagem e autorizo o envio das posições do meu aparelho durante o percurso.</span></label>
         <div class="uploadstatus" id="consentStatus">Termo ainda não aceito.</div>
       </div>
       <button id="start" type="button" disabled>INICIAR VIAGEM</button>
       <div id="trackingActive" class="active-gps" hidden>
-        <span>📍 Acompanhamento GPS iniciado</span>
-        <small>O GPS será atualizado enquanto esta página permanecer ativa e o celular permitir. Mantenha o acesso à localização autorizado.</small>
+        <span>📍 Viagem iniciada</span>
+        <small>A viagem será monitorada até a finalização, por comprovante anexado.</small>
       </div>
       <p id="status" role="status">Aguardando validação da viagem.</p>
     </section>
@@ -235,12 +235,12 @@ button+button{margin-top:10px}
     <section class="step" id="finishBox" hidden>
       <div class="step-heading">
         <span class="step-icon" aria-hidden="true">✅</span>
-        <div><small>Etapa 4</small><h2>Finalizar acompanhamento</h2></div>
+        <div><small>Etapa 4</small><h2>Finalizar viagem</h2></div>
       </div>
-      <p>Após o envio do comprovante de descarga, a equipe da Nova Frota conferirá os documentos e liberará a finalização normal do GPS.</p>
+      <p>Após o envio do comprovante de descarga, a Nova Frota conferirá os documentos e liberará a finalização da viagem.</p>
       <p id="finishHint" class="step-wait">Comprovante aguardando análise da Nova Frota.</p>
-      <div id="finishDone" class="step-good" hidden>Acompanhamento concluído. A finalização operacional da viagem permanece sob responsabilidade da Nova Frota.</div>
-      <button id="finishButton" type="button" hidden>FINALIZAR ACOMPANHAMENTO</button>
+      <div id="finishDone" class="step-good" hidden>Etapa de finalização concluída. O encerramento operacional permanece sob responsabilidade da Nova Frota.</div>
+      <button id="finishButton" type="button" hidden>FINALIZAR VIAGEM</button>
     </section>
 
     <div class="privacy"><strong>Privacidade dos documentos:</strong> a selfie e o comprovante ficam disponíveis à equipe autorizada da Nova Frota para conferência humana. Não há reconhecimento facial automático.</div>
@@ -292,7 +292,7 @@ function refreshUi(){
   $("#consentStatus").textContent=consented?"Termo aceito e registrado para esta viagem.":"Termo ainda não aceito.";
   $("#consentStatus").hidden=!selfieReady;
   $("#start").hidden=watch!==null||finished;
-  $("#start").textContent=consented?"RETOMAR ACOMPANHAMENTO GPS":"INICIAR VIAGEM";
+  $("#start").textContent=consented?"RETOMAR VIAGEM":"INICIAR VIAGEM";
   $("#start").disabled=!trip?.active||!selfieReady||
     (!consented&&!$("#gpsConsent").checked)||uploading;
   $("#trackingActive").hidden=watch===null||!trip?.active;
@@ -323,7 +323,7 @@ async function validate(){
     $("#trip").textContent=trip.plate+" • "+trip.driver;
     $("#route").textContent=(trip.origin||"—")+" → "+(trip.destination||"—");
     refreshUi();
-    message(trip.active?(trip.selfieStatus==="missing"?"Comece pela selfie. Depois aceite o termo e inicie a viagem.":trip.gpsConsentAt?"Acompanhamento registrado. Toque RETOMAR GPS se precisar continuar enviando posições.":"Leia e aceite o termo para iniciar a viagem."):"Viagem já encerrada pela Nova Frota.");
+    message(trip.active?(trip.selfieStatus==="missing"?"Comece pela selfie. Depois aceite o termo e inicie a viagem.":trip.gpsConsentAt?"Viagem iniciada anteriormente. Toque RETOMAR VIAGEM para continuar enviando sua localização.":"Leia e aceite o termo para iniciar a viagem."):"Viagem já encerrada pela Nova Frota.");
   }catch(e){$("#trip").textContent="Link indisponível";message(e.message,true);}
 }
 function stop(){
@@ -331,7 +331,7 @@ function stop(){
   watch=null;refreshUi();
 }
 function startGps(){
-  if(!trip?.active||!navigator.geolocation){message("GPS indisponível neste navegador.",true);return;}
+  if(!trip?.active||!navigator.geolocation){message("Localização indisponível neste navegador.",true);return;}
   if(watch!==null)return;
   if(trip.selfieRequired&&trip.selfieStatus==="missing"){message("Envie uma selfie antes de iniciar.",true);return;}
   watch=navigator.geolocation.watchPosition(async pos=>{
@@ -346,7 +346,7 @@ function startGps(){
   },err=>{message("Não foi possível obter a localização: "+err.message,true);stop();},{
     enableHighAccuracy:true,maximumAge:10000,timeout:20000
   });
-  refreshUi();message("Acompanhamento iniciado. Aguardando primeira posição GPS...");
+  refreshUi();message("Viagem iniciada. Aguardando primeira localização...");
 }
 async function cleanJpeg(file){
   const bitmap=await createImageBitmap(file);
@@ -416,14 +416,14 @@ async function updateReview(){
     if(!data.trip.active){
       trip=data.trip;
       stop();
-      message("Viagem encerrada pela Nova Frota. O GPS deste navegador foi desativado.");
+      message("Viagem encerrada pela Nova Frota. O envio de localização foi desativado.");
       return;
     }
     const previous=trip?.receiptStatus;
     trip=data.trip;
     refreshUi();
     if(previous!=="approved"&&trip.receiptStatus==="approved")
-      message("Comprovante aprovado pela Nova Frota. O encerramento normal do GPS está liberado.");
+      message("Comprovante aprovado pela Nova Frota. A etapa de finalização da viagem está liberada.");
   }catch(e){
     if(/expirado|inválido|encerrada/i.test(e.message)){stop();message(e.message,true);}
   }finally{checkingReview=false;}
@@ -435,14 +435,14 @@ $("#finishButton").onclick=async()=>{
     message("A Nova Frota ainda precisa aprovar a selfie e o comprovante.",true);
     refreshUi();return;
   }
-  if(!confirm("Comprovante aprovado. Finalizar o acompanhamento do GPS desta viagem? O encerramento operacional será confirmado pela Nova Frota."))return;
+  if(!confirm("Comprovante aprovado. Confirmar a finalização desta etapa da viagem? O encerramento operacional será confirmado pela Nova Frota."))return;
   const button=$("#finishButton");button.disabled=true;
   try{
     await post("/v1/monitor/gps-event",{token,action:"finished"});
     trip.gpsFinishedAt=new Date().toISOString();
     stop();
     refreshUi();
-    message("Acompanhamento concluído com documentos aprovados. A Nova Frota finalizará a operação.");
+    message("Finalização da viagem registrada com documentos aprovados. A Nova Frota confirmará o encerramento operacional.");
   }catch(e){message(e.message,true);button.disabled=false;}
 };
 function onReceiptSelect(input) {
@@ -504,7 +504,7 @@ $("#sendReceipt").onclick=async()=>{
     const d=await upload("/v1/monitor/receipt",photo);
     trip.receiptStatus=d.status;selectedReceiptFile=null;fileReceipt.value="";fileReceiptCamera.value="";$("#receiptName").textContent="Comprovante enviado com sucesso";
     if(receiptObjectUrl)URL.revokeObjectURL(receiptObjectUrl);receiptObjectUrl=null;$("#receiptPreview").hidden=true;refreshUi();
-    message("Comprovante recebido. O GPS continua em acompanhamento até a aprovação documental pela Nova Frota.");
+    message("Comprovante recebido. A viagem continua aberta até a aprovação documental pela Nova Frota.");
   }catch(e){message("Falha ao enviar comprovante: "+e.message,true);}
   finally{uploading=false;refreshUi();}
 };

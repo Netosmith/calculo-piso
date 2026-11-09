@@ -8,6 +8,8 @@ import * as SecureStore from "expo-secure-store";
 import * as SQLite from "expo-sqlite";
 import * as Crypto from "expo-crypto";
 import {Platform} from "react-native";
+import {extractDriverToken} from "./driver-link";
+export {extractDriverToken};
 
 export const LOCATION_TASK="portalfrete-native-driver-trip-v2";
 const TOKEN_KEY="pf_driver_trip_access_v2";
@@ -16,23 +18,6 @@ const API="https://api.portalfrete.net.br";
 const SECURE_OPTIONS={keychainAccessible:SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY};
 let databasePromise=null,keyPromise=null,operation=Promise.resolve();
 const safeToken=value=>/^[a-f0-9]{64}$/i.test(String(value||""));
-export function extractDriverToken(value){
-  const source=String(value||"").trim();
-  if(safeToken(source))return source.toLowerCase();
-  try{
-    const url=new URL(source);
-    if(url.protocol==="portalfrete:"&&url.hostname==="viagem"){
-      const token=url.pathname.slice(1);
-      return safeToken(token)?token.toLowerCase():null;
-    }
-    if(url.protocol==="https:"&&url.hostname==="portalfrete.net.br"&&
-      url.pathname==="/pages/monitorar-motorista.html"){
-      const token=url.hash.replace(/^#/,"");
-      return safeToken(token)?token.toLowerCase():null;
-    }
-  }catch{}
-  return null;
-}
 const serial=job=>{
   const next=operation.then(job);
   operation=next.catch(()=>{});

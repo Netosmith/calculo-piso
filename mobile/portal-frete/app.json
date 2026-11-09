@@ -3,7 +3,7 @@
     "name": "Portal Frete",
     "slug": "portal-frete-mobile",
     "scheme": "portalfrete",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -13,7 +13,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "A câmera pode ser usada para anexar fotos e comprovantes dentro dos módulos do Portal Frete.",
         "NSPhotoLibraryUsageDescription": "As fotos selecionadas são utilizadas para anexar documentos às viagens.",
-        "NSLocationWhenInUseUsageDescription": "A localização pode ser compartilhada durante uma viagem iniciada e autorizada pelo motorista."
+        "NSLocationWhenInUseUsageDescription": "A localização pode ser compartilhada durante uma viagem iniciada e autorizada pelo motorista.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Durante uma viagem autorizada, o Portal Frete compartilha a localização mesmo com o aplicativo em segundo plano, até a finalização da viagem."
       }
     },
     "android": {
@@ -24,8 +25,25 @@
         "ACCESS_FINE_LOCATION"
       ],
       "edgeToEdgeEnabled": true,
-      "versionCode": 2
+      "versionCode": 3
     },
-    "plugins": []
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Portal Frete utiliza a localização durante a viagem autorizada.",
+          "locationAlwaysAndWhenInUsePermission": "Permite monitorar a viagem autorizada com a tela bloqueada ou o app em segundo plano.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ]
+    ]
   }
 }

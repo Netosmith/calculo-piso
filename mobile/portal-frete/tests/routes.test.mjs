@@ -38,12 +38,12 @@ test("permite abrir transportadora por convite específico sem listar outras emp
   assert.equal(slugFromInvite("https://evil.example/pages/gnova/login.html"),null);
   assert.equal(slugFromInvite("portalfrete://acesso/../../super-admin"),null);
 });
-test("shell não promete localização em background sem recurso nativo",()=>{
+test("shell preserva portal web e declara localização nativa sob autorização",()=>{
   const app=readFileSync(new URL("../App.js",import.meta.url),"utf8");
   const config=JSON.parse(readFileSync(new URL("../app.json",import.meta.url),"utf8"));
   assert.match(app,/sharedCookiesEnabled/);
   assert.match(app,/onShouldStartLoadWithRequest=\{mayNavigate\}/);
   assert.match(app,/Portal Frete/);
-  assert.ok(!config.expo.ios.infoPlist.UIBackgroundModes);
-  assert.ok(!config.expo.android.permissions.includes("ACCESS_BACKGROUND_LOCATION"));
+  assert.ok(config.expo.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&x[1].isAndroidBackgroundLocationEnabled));
+  assert.ok(config.expo.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&x[1].isIosBackgroundLocationEnabled));
 });

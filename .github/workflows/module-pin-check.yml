@@ -1,0 +1,38 @@
+name: Validar senha dos cards Nova Frota
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pages/home.html'
+      - 'pages/funcionarios*.html'
+      - 'pages/custo-filial.html'
+      - 'pages/custo-frota-pesada.html'
+      - 'assets/js/module-pin.js'
+      - 'worker/src/services/module-pin.js'
+      - 'worker/src/controllers/module-pin.js'
+      - 'worker/src/controllers/fleet.js'
+      - 'worker/src/controllers/employees.js'
+      - 'worker/src/controllers/portal-gateway.js'
+      - 'worker/src/router.js'
+      - 'worker/tests/module-pin*.test.mjs'
+      - '.github/workflows/module-pin-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar scripts e regras de acesso
+        run: |
+          node --check worker/src/services/module-pin.js
+          node --check worker/src/controllers/module-pin.js
+          node --check worker/src/controllers/employees.js
+          node --check worker/src/controllers/fleet.js
+          node --check worker/src/controllers/portal-gateway.js
+          node --check assets/js/module-pin.js
+          node --test worker/tests/module-pin.test.mjs worker/tests/module-pin-page.test.mjs

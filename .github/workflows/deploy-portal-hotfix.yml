@@ -80,6 +80,13 @@ jobs:
           node --check src/controllers/monitor-proof.js
           node --check src/controllers/super-admin-monitor-delete.js
           node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs tests/super-admin-monitor-delete.test.mjs
+      - name: Validar senha dos cards e autorização das APIs
+        working-directory: worker
+        run: |
+          node --check src/services/module-pin.js
+          node --check src/controllers/module-pin.js
+          node --check ../assets/js/module-pin.js
+          node --test tests/module-pin.test.mjs tests/module-pin-page.test.mjs
       - name: Preparar tabelas de Funcionários Nova Frota
         working-directory: worker
         env:

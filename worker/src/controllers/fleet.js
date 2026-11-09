@@ -1,5 +1,6 @@
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
+import { hasModulePin } from "../services/module-pin.js";
 import { errorResponse, success } from "../utils/response.js";
 
 const TYPES=new Set(['freight','expense','fuel','maintenance','commission']);
@@ -14,6 +15,7 @@ async function auth(request,env,write){
  const p=profile(session.perfil);
  if(!['ADMINISTRADOR','COMERCIAL'].includes(p))return {error:errorResponse('Perfil sem autorização para Gestão de Frota.',403)};
  if(write&&p!=='ADMINISTRADOR'&&p!=='COMERCIAL')return {error:errorResponse('Sem permissão de escrita.',403)};
+ if(!await hasModulePin(request,env,'custo-frota'))return {error:errorResponse('Informe a senha de Cálculo Frota para acessar este módulo.',403)};
  return {session};
 }
 const validDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d||''))&&!Number.isNaN(Date.parse(d+'T12:00:00Z'));

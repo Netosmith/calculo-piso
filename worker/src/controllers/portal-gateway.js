@@ -1,6 +1,7 @@
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { callAppsScript } from "../services/appscript.js";
 import { getSession, readSessionId } from "../services/session.js";
+import { hasModulePin } from "../services/module-pin.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
 import { getMaintenanceState, isAdministrator } from "../services/maintenance.js";
 import { readJson } from "../utils/validation.js";
@@ -606,6 +607,9 @@ export async function portalGatewayController(request, env, ctx) {
     });
     return errorResponse("Ação não autorizada para este perfil.", 403);
   }
+
+  if(moduleName==="custo-filial"&&!await hasModulePin(request,env,"custo-filial"))
+    return errorResponse("Informe a senha de Custo / Filial para acessar este módulo.",403);
 
   // Proteção crítica: versões antigas do frontend usavam DELETE para remover
   // anexos e o Apps Script interpretava isso como exclusão do embarque inteiro.

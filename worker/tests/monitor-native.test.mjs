@@ -55,7 +55,8 @@ test("GPS nativo aceita posição com instante de coleta e chave idempotente ape
   const received=db.calls.find(x=>x.sql.includes("INSERT OR IGNORE INTO monitor_native_positions"));
   assert.equal(received.params[0],fixId);
   assert.equal(received.params[1],id);
-  assert.equal(received.params[5],data().capturedAt.slice(0,0)||received.params[5]);
+  assert.ok(Number.isFinite(Date.parse(received.params[5])));
+  assert.equal(received.params[7],"android");
   const updated=db.calls.find(x=>x.sql.includes("UPDATE monitor_trips SET lat="));
   assert.ok(updated.sql.includes("last_position_at<?"),"Posição atrasada não pode substituir última mais nova");
 });

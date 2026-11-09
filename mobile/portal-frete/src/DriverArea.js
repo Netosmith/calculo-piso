@@ -3,7 +3,7 @@ import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,Tex
 import {palette as c} from "./theme";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
-  driverTrackingStatus,flushPendingFixes,revokeDriverTracking
+  driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking
 } from "./tracking";
 
 const BTN=({title,onPress,disabled=false,secondary=false})=>
@@ -27,7 +27,17 @@ export default function DriverArea({initialLink="",onBack}){
     if(state.trip)setTrip(state.trip);
     return state;
   }
-  useEffect(()=>{status().catch(()=>{});},[]);
+  useEffect(()=>{
+    let mounted=true;
+    restoreApprovedTracking().then(async saved=>{
+      if(!mounted)return;
+      if(saved.token&&!initialLink){
+        setLink("https://portalfrete.net.br/pages/monitorar-motorista.html#"+saved.token);
+      }
+      await status();
+    }).catch(()=>status().catch(()=>{}));
+    return()=>{mounted=false;};
+  },[]);
   useEffect(()=>{if(initialLink){setLink(initialLink);setTab("viagem");}},[initialLink]);
   useEffect(()=>{
     if(!active)return;

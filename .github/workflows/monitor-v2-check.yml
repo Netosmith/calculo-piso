@@ -9,6 +9,7 @@ on:
       - 'worker/src/controllers/monitor-proof.js'
       - 'worker/src/middleware/cors.js'
       - 'worker/migrations/0009_monitor_proof_review.sql'
+      - 'worker/migrations/0010_monitor_nf_cte.sql'
       - 'worker/tests/monitor-*.test.mjs'
       - 'worker/migrations/0008_monitor_v2.sql'
       - '.github/workflows/monitor-v2-check.yml'
@@ -27,4 +28,4 @@ jobs:
         run: |
           node --check worker/src/controllers/monitor.js
           node --check worker/src/controllers/monitor-proof.js
-          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs
+          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs

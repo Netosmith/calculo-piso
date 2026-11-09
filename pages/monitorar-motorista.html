@@ -406,7 +406,11 @@ function startGps({automatic=false}={}){
 }
 function recoverTracking(){
   if(!trackingAllowed()||document.hidden||locationDenied)return;
-  if(watch===null){if(retryTimer===null)startGps({automatic:true});return;}
+  if(watch===null){
+    if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
+    startGps({automatic:true});
+    return;
+  }
   // Alguns navegadores deixam o observador ativo mas param de entregar posições.
   // Solicita uma posição nova para detectar falhas silenciosas enquanto a página está ativa.
   const since=last||watchStartedAt;

@@ -3,7 +3,7 @@
     "name": "Portal Frete",
     "slug": "portal-frete-mobile",
     "scheme": "portalfrete",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -30,7 +30,7 @@
         "ACCESS_BACKGROUND_LOCATION"
       ],
       "edgeToEdgeEnabled": true,
-      "versionCode": 4
+      "versionCode": 5
     },
     "plugins": [
       [

@@ -43,5 +43,5 @@ test("motorista só ativa GPS depois de selfie e termo; fretes internos não sã
   assert.ok(ui.includes("isDriverTripReady"));
   assert.ok(ui.includes("startDriverTracking(token)"));
   assert.ok(ui.includes("revokeDriverTracking"));
-  assert.ok(ui.includes("não exibiremos os fretes operacionais restritos"));
+  assert.match(ui,/não exibiremos os fretes operacionais restritos/i);
 });

@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Portal Frete",
+    "slug": "portal-frete-mobile",
+    "scheme": "portalfrete",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.com.portalfrete.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "A câmera pode ser usada para anexar fotos e comprovantes dentro dos módulos do Portal Frete.",
+        "NSPhotoLibraryUsageDescription": "As fotos selecionadas são utilizadas para anexar documentos às viagens.",
+        "NSLocationWhenInUseUsageDescription": "A localização pode ser compartilhada durante uma viagem iniciada e autorizada pelo motorista."
+      }
+    },
+    "android": {
+      "package": "br.com.portalfrete.mobile",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": []
+  }
+}

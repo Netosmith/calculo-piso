@@ -1,0 +1,29 @@
+name: Portal Frete Mobile - Android e iOS
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile/portal-frete/**'
+      - '.github/workflows/mobile-portal-frete-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile/portal-frete
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependências Expo
+        run: npm install --no-audit --no-fund
+      - name: Testar rotas, convites e acesso seguro
+        run: npm run check
+      - name: Validar bundle JavaScript Android
+        run: CI=1 npx expo export --platform android --output-dir dist-android-check
+      - name: Validar bundle JavaScript iOS
+        run: CI=1 npx expo export --platform ios --output-dir dist-ios-check

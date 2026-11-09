@@ -108,19 +108,30 @@ export async function superAdminMonitorDeletion(request,env,actor){
   if(path===BASE&&method==="GET"){
     try{
       const q=url.searchParams.get("q")?.trim().slice(0,70)||"";
+      const rawOffset=Number(url.searchParams.get("offset")||0);
+      if(!Number.isInteger(rawOffset)||rawOffset<0||rawOffset>100000)
+        return errorResponse("Paginação inválida.",400);
+      const status=url.searchParams.get("status")||"all";
+      if(!["all","active","closed"].includes(status))return errorResponse("Filtro inválido.",400);
+      const like="%"+q.toUpperCase()+"%";
       const rows=await all(db,
         "SELECT t.id,t.plate,t.driver,t.origin,t.destination,t.created_at,t.updated_at,t.active,t.last_position_at, "+
         "COALESCE(e.branch,'') AS branch,COALESCE(d.nf,'') AS nf,COALESCE(d.cte,'') AS cte "+
         "FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id "+
         "LEFT JOIN monitor_trip_documents d ON d.trip_id=t.id "+
-        "ORDER BY t.created_at DESC LIMIT 500");
-      const matches=q.toUpperCase();
-      return success({trips:rows.filter(t=>!matches||
-        [t.plate,t.driver,t.branch,t.origin,t.destination,t.nf,t.cte].join(" ").toUpperCase().includes(matches))
-        .map(t=>({id:t.id,plate:t.plate,driver:t.driver,branch:t.branch,
+        "WHERE (?='all' OR (?='active' AND t.active=1) OR (?='closed' AND t.active=0)) AND "+
+        "(?='' OR UPPER(t.plate) LIKE ? OR UPPER(t.driver) LIKE ? OR "+
+        "UPPER(COALESCE(e.branch,'')) LIKE ? OR UPPER(t.origin) LIKE ? OR "+
+        "UPPER(t.destination) LIKE ? OR UPPER(COALESCE(d.nf,'')) LIKE ? OR "+
+        "UPPER(COALESCE(d.cte,'')) LIKE ?) "+
+        "ORDER BY t.created_at DESC,t.id DESC LIMIT 101 OFFSET ?",
+        status,status,status,q,like,like,like,like,like,like,like,rawOffset);
+      const page=rows.slice(0,100);
+      return success({trips:page.map(t=>({id:t.id,plate:t.plate,driver:t.driver,branch:t.branch,
           origin:t.origin,destination:t.destination,active:t.active===1,
           createdAt:t.created_at,lastPositionAt:t.last_position_at,nf:t.nf,cte:t.cte})),
-        limit:500});
+        nextOffset:rows.length>100?rawOffset+100:null,
+        limit:100});
     }catch(e){return respondDbError(e,"list");}
   }
   if(path===BASE+"/auditoria"&&method==="GET"){

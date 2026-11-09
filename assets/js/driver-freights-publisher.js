@@ -8,7 +8,11 @@
   const published={fretes:new Set(),fretes2:new Set()};
   const activeSource=value=>value==="fretes"||value==="fretes2";
   function enabled(source){
-    return activeSource(source)&&window.__PORTAL_TENANT_SESSION?.tenantMode!==true&&
+    // As empresas terceiras usam páginas compartilhadas: não mostrar controles
+    // da Nova Frota, mesmo antes de sua sessão ter sido carregada.
+    const otherCompany=/^\/pages\/[^/]+\/fretes(?:2)?\.html$/i.test(location.pathname);
+    return activeSource(source)&&!otherCompany&&
+      window.__PORTAL_TENANT_SESSION?.tenantMode!==true&&
       !window.__PORTAL_TENANT_EXPECTED;
   }
   function idOf(row){return String(row?.id||"").trim();}

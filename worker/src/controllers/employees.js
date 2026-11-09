@@ -1,5 +1,6 @@
 import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
 import {getSession,readSessionId} from "../services/session.js";
+import {hasModulePin} from "../services/module-pin.js";
 import {errorResponse,success} from "../utils/response.js";
 import {parseCommissionSetting,calculateCommission} from "../services/rh-commissions.js";
 
@@ -33,6 +34,8 @@ async function authorize(req,env){
     return {error:errorResponse("Recurso exclusivo da Nova Frota.",403)};
   if(String(session.perfil||"").trim().toUpperCase()!=="ADMINISTRADOR")
     return {error:errorResponse("Acesso restrito à administração da Nova Frota.",403)};
+  if(!await hasModulePin(req,env,"funcionarios"))
+    return {error:errorResponse("Informe a senha de Funcionários para liberar este módulo.",403)};
   return {session};
 }
 const toEmployee=e=>({

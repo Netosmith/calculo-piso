@@ -13,6 +13,18 @@ Primeiro marco da versão móvel do **Portal Frete**. Projeto em React Native + 
 
 **Estado atual:** base para testes. Ainda não é APK/IPA de produção nem versão aprovada pelas lojas.
 
+## APK Android instalável (v0.1.1)
+
+A primeira compilação `assembleDebug` exigia conexão com o servidor de desenvolvimento Metro e por isso exibia **Unable to load script** quando aberta diretamente no Galaxy S23.
+
+O workflow `.github/workflows/mobile-android-apk.yml` foi corrigido para executar **`:app:assembleRelease`**, embutindo o JavaScript no APK, e conferir a presença de `assets/index.android.bundle` no arquivo. A versão de teste usa **assinatura de desenvolvimento**, que não deve ser utilizada para distribuição nas lojas.
+
+Para obter a versão correta, abra **Actions → Portal Frete - Gerar APK Android instalável → execução bem-sucedida → Artifacts → Portal-Frete-Android-INSTALAVEL-TESTE**. Extraia `app-release.apk` do ZIP.
+
+Para evitar conflitos de assinatura entre as versões de teste, **desinstale a versão 0.1.0 antes** de instalar a versão 0.1.1. O Portal utiliza dados online, portanto desinstalar esse aplicativo de testes não apaga os dados registrados no servidor.
+
+A compilação release não depende de Metro. Ainda é necessário testar login, navegação e uploads em um aparelho físico.
+
 ## Preparação
 
 Requisitos: Node.js 22.13+ e Git. Android: Android Studio ou Expo Go, conforme compatibilidade do SDK. iOS: iPhone com Expo Go para testar a interface; builds de distribuição via EAS Build e assinatura Apple.

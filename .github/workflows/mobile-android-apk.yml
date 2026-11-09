@@ -1,6 +1,11 @@
-name: Portal Frete - Gerar APK Android de teste
+name: Portal Frete - Gerar APK Android instalável
 on:
   push:
+    branches: [main]
+    paths:
+      - 'mobile/portal-frete/**'
+      - '.github/workflows/mobile-android-apk.yml'
+  pull_request:
     branches: [main]
     paths:
       - 'mobile/portal-frete/**'
@@ -9,9 +14,9 @@ on:
 permissions:
   contents: read
 jobs:
-  android-debug-apk:
+  android-standalone-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: mobile/portal-frete
@@ -30,12 +35,27 @@ jobs:
         run: npm run check
       - name: Gerar projeto Android nativo (Expo Prebuild)
         run: CI=1 npx expo prebuild --platform android --clean --no-install
-      - name: Compilar APK de depuração
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
-      - name: Publicar APK de teste
+      - name: Assinatura de teste local (não usar nas lojas)
+        run: |
+          # Expo Prebuild pode gerar um release sem certificado configurado.
+          # Para esta versão interna, usar apenas a chave DEBUG do projeto.
+          sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/g' android/app/build.gradle
+          grep -n 'signingConfig signingConfigs' android/app/build.gradle
+      - name: Compilar APK instalável com JavaScript embutido
+        env:
+          CI: '1'
+          NODE_ENV: production
+        run: cd android && chmod +x gradlew && ./gradlew :app:assembleRelease --no-daemon
+      - name: Conferir APK e bundle JavaScript dentro do instalador
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          test -s "$APK"
+          unzip -l "$APK" | grep -E 'assets/index.android.bundle'
+          echo "APK instalável gerado com bundle JavaScript embutido."
+      - name: Publicar APK Android instalável para testes
         uses: actions/upload-artifact@v4
         with:
-          name: Portal-Frete-Android-DEBUG-NAO-PUBLICAR
-          path: mobile/portal-frete/android/app/build/outputs/apk/debug/app-debug.apk
+          name: Portal-Frete-Android-INSTALAVEL-TESTE
+          path: mobile/portal-frete/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14

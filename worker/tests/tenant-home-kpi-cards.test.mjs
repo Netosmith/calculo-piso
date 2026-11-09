@@ -139,3 +139,15 @@ test("Tenant styling is scoped and preserves Nova Frota's native KPI markup",()=
  assert.match(source,/id="homeFretesAtivos"/);
  assert.match(source,/body\.nf-profile-piso \.nf-stats/);
 });
+
+test("Tema claro das demais transportadoras mostra total de veículos com cor escura, sem alterar Nova Frota e tema escuro",()=>{
+ const css=get("assets/css/portal-preferences.css");
+ const home=get("pages/home.html");
+ const lightSelector='html[data-nf-home="1"][data-nf-theme="claro"] body.pf-tenant-mode .nf-stat-veiculos';
+ assert.match(css,/body\.pf-tenant-mode \.nf-stat-veiculos \.pf-tenant-base-total strong\s*\{\s*color:\s*#143b61\s*;/);
+ assert.ok(css.includes(lightSelector+" .pf-tenant-base-total strong"),"Seletor deve limitar correção ao tema claro das empresas");
+ assert.ok(css.includes(lightSelector+" .pf-tenant-vehicle-meta"),"Rótulos devem ter contraste no tema claro");
+ assert.ok(home.includes("portal-preferences.css?v=10"),"Nova versão deve invalidar o CSS em cache");
+ // Regra antiga do tema escuro continua intacta.
+ assert.match(home,/body\.pf-tenant-mode \.pf-tenant-base-total strong\s*\{[^}]*color:#fff;/);
+});

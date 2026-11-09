@@ -9,6 +9,7 @@ const ALLOWED_MODULES=new Set([
 export function normalizeTenantSlug(value){
   const slug=String(value??"").trim().toLowerCase();
   if(slug===""||slug==="nova-frota")return "";
+  if(["api","admin","super-admin","pages"].includes(slug))return null;
   if(!/^[a-z0-9][a-z0-9-]{1,39}$/.test(slug)||slug.includes("--"))return null;
   return slug;
 }
@@ -29,6 +30,7 @@ export function trustedNavigation(url){
   }catch{return false;}
 }
 export function slugFromInvite(url){
+  if(typeof url!=="string"||/\.\.|%2e/i.test(url))return null;
   try{
     const parsed=new URL(url);
     if(parsed.protocol==="portalfrete:" && parsed.hostname==="acesso"){

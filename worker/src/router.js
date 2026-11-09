@@ -1,4 +1,5 @@
 import { superAdminController } from "./controllers/super-admin.js";
+import { modulePinController } from "./controllers/module-pin.js";
 import { fleetController } from "./controllers/fleet.js";
 import { monitorController } from "./controllers/monitor.js";
 import { employeesController } from "./controllers/employees.js";
@@ -40,6 +41,7 @@ export async function routeRequest(request, env, ctx) {
      !["/v1/login","/v1/session","/v1/logout","/health"].includes(path))
     return errorResponse("Recurso exclusivo da operacao legada.",403);
 
+  if (path.startsWith("/v1/module-pin/")) return modulePinController(request, env);
   if (path.startsWith("/v1/super-admin/")) return superAdminController(request, env);
 
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);

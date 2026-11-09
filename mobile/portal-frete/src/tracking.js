@@ -190,6 +190,7 @@ export async function startDriverTracking(token){
         pausesUpdatesAutomatically:false,
         showsBackgroundLocationIndicator:true,
         foregroundService:{
+          killServiceOnDestroy:false,
           notificationTitle:"Portal Frete • Viagem em monitoramento",
           notificationBody:"Sua posição está sendo compartilhada durante a viagem autorizada.",
           notificationColor:"#0b3c5d"

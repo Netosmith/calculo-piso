@@ -253,6 +253,9 @@ button+button{margin-top:10px}
 const API="https://api.portalfrete.net.br",token=location.hash.slice(1),$=s=>document.querySelector(s);
 const fileSelfie=$("#selfieFile"),fileReceipt=$("#receiptFile"),fileReceiptCamera=$("#receiptCamera");
 let trip=null,watch=null,last=0,uploading=false,showSelfie=false,selectedReceiptFile=null,receiptObjectUrl=null,checkingReview=false;
+let watchStartedAt=0,retryTimer=null,retryCount=0,locationDenied=false,positionInFlight=false,probeInFlight=false;
+const trackingAllowed=()=>!!trip?.active&&!!trip?.gpsConsentAt&&!trip?.gpsFinishedAt&&
+  (!trip.selfieRequired||["pending","approved"].includes(trip.selfieStatus));
 const message=(m,bad=false)=>{$("#status").textContent=m;$("#status").className=bad?"err":"ok";};
 const statusName={missing:"Não enviado",pending:"Aguardando análise",approved:"Aprovado pela Nova Frota",rejected:"Rejeitado: envie outro arquivo"};
 async function post(path,body){
@@ -323,30 +326,107 @@ async function validate(){
     $("#trip").textContent=trip.plate+" • "+trip.driver;
     $("#route").textContent=(trip.origin||"—")+" → "+(trip.destination||"—");
     refreshUi();
-    message(trip.active?(trip.selfieStatus==="missing"?"Comece pela selfie. Depois aceite o termo e inicie a viagem.":trip.gpsConsentAt?"Viagem iniciada anteriormente. Toque RETOMAR VIAGEM para continuar enviando sua localização.":"Leia e aceite o termo para iniciar a viagem."):"Viagem já encerrada pela Nova Frota.");
+    if(trackingAllowed()){
+      // O consentimento é persistido no servidor: recarregar/reabrir não pede novo clique.
+      startGps({automatic:true});
+    }else{
+      message(trip.active?(trip.selfieStatus==="missing"?"Comece pela selfie. Depois aceite o termo e inicie a viagem.":"Leia e aceite o termo para iniciar a viagem."):"Viagem já encerrada pela Nova Frota.");
+    }
   }catch(e){$("#trip").textContent="Link indisponível";message(e.message,true);}
 }
-function stop(){
-  if(watch!==null)navigator.geolocation.clearWatch(watch);
-  watch=null;refreshUi();
+function clearWatchOnly(){
+  if(watch!==null)navigator.geolocation?.clearWatch(watch);
+  watch=null;watchStartedAt=0;
+  refreshUi();
 }
-function startGps(){
-  if(!trip?.active||!navigator.geolocation){message("Localização indisponível neste navegador.",true);return;}
+function stop(){
+  if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
+  clearWatchOnly();
+}
+function scheduleRecovery(){
+  if(!trackingAllowed()||locationDenied||retryTimer!==null)return;
+  const delay=Math.min(45000,5000*Math.pow(2,Math.min(retryCount++,3)));
+  retryTimer=setTimeout(()=>{
+    retryTimer=null;
+    if(trackingAllowed()&&!document.hidden)startGps({automatic:true});
+    else if(trackingAllowed())scheduleRecovery();
+  },delay);
+}
+async function sendPosition(pos){
+  if(!trackingAllowed()||positionInFlight||Date.now()-last<15000)return;
+  const coords=pos?.coords;
+  if(!coords||!Number.isFinite(coords.latitude)||!Number.isFinite(coords.longitude)||
+      !Number.isFinite(coords.accuracy))return;
+  positionInFlight=true;
+  try{
+    const d=await post("/v1/monitor/position",{
+      token,latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy
+    });
+    last=Date.now();retryCount=0;
+    message("Localização enviada às "+new Date(d.receivedAt).toLocaleTimeString("pt-BR"));
+  }catch(e){
+    message("Falha no envio da localização: "+e.message,true);
+    // Falha de rede é transitória e não representa o fim da viagem.
+    if(/encerrada|expirado|inválido|selfie|concluído/i.test(e.message))stop();
+  }finally{positionInFlight=false;}
+}
+function startGps({automatic=false}={}){
+  if(!trackingAllowed()){
+    if(!automatic)message("É necessário iniciar a viagem e aceitar o termo.",true);
+    return;
+  }
+  if(!navigator.geolocation){
+    message("Localização indisponível neste navegador.",true);
+    return;
+  }
   if(watch!==null)return;
-  if(trip.selfieRequired&&trip.selfieStatus==="missing"){message("Envie uma selfie antes de iniciar.",true);return;}
-  watch=navigator.geolocation.watchPosition(async pos=>{
-    if(Date.now()-last<15000)return;last=Date.now();
-    try{
-      const d=await post("/v1/monitor/position",{token,latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy});
-      message("Localização enviada às "+new Date(d.receivedAt).toLocaleTimeString("pt-BR"));
-    }catch(e){
-      message(e.message,true);
-      if(/encerrada|expirado|inválido|selfie/i.test(e.message))stop();
-    }
-  },err=>{message("Não foi possível obter a localização: "+err.message,true);stop();},{
-    enableHighAccuracy:true,maximumAge:10000,timeout:20000
-  });
-  refreshUi();message("Viagem iniciada. Aguardando primeira localização...");
+  if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
+  try{
+    watch=navigator.geolocation.watchPosition(sendPosition,err=>{
+      clearWatchOnly();
+      if(err.code===1){
+        locationDenied=true;
+        message("Permissão de localização bloqueada. Autorize o acesso no celular e toque em RETOMAR VIAGEM.",true);
+        return;
+      }
+      message("Localização temporariamente indisponível. Tentaremos novamente automaticamente.",true);
+      scheduleRecovery();
+    },{
+      enableHighAccuracy:true,maximumAge:10000,timeout:20000
+    });
+    watchStartedAt=Date.now();
+    refreshUi();
+    message(automatic?
+      "Viagem retomada automaticamente. Aguardando a primeira localização...":
+      "Viagem iniciada. Aguardando primeira localização...");
+  }catch(e){
+    message("Não foi possível iniciar a localização: "+e.message,true);
+    scheduleRecovery();
+  }
+}
+function recoverTracking(){
+  if(!trackingAllowed()||document.hidden||locationDenied)return;
+  if(watch===null){
+    if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
+    startGps({automatic:true});
+    return;
+  }
+  // Alguns navegadores deixam o observador ativo mas param de entregar posições.
+  // Solicita uma posição nova para detectar falhas silenciosas enquanto a página está ativa.
+  const since=last||watchStartedAt;
+  if(probeInFlight||Date.now()-since<60000||!navigator.geolocation?.getCurrentPosition)return;
+  probeInFlight=true;
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    probeInFlight=false;
+    await sendPosition(pos);
+  },err=>{
+    probeInFlight=false;
+    if(err.code===1){
+      locationDenied=true;
+      clearWatchOnly();
+      message("A localização foi desautorizada. Reative a permissão e toque em RETOMAR VIAGEM.",true);
+    }else message("Aguardando sinal do celular. A Central sinalizará a ausência de posições.",true);
+  },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 }
 async function cleanJpeg(file){
   const bitmap=await createImageBitmap(file);
@@ -401,6 +481,7 @@ $("#start").onclick=async()=>{
       const result=await post("/v1/monitor/consent",{token,accepted:true,version:"gps-viagem-v1"});
       trip.gpsConsentAt=result.consentAt||new Date().toISOString();
     }
+    locationDenied=false;
     startGps();
     refreshUi();
   }catch(e){
@@ -421,6 +502,7 @@ async function updateReview(){
     }
     const previous=trip?.receiptStatus;
     trip=data.trip;
+    if(trip.gpsFinishedAt)stop();
     refreshUi();
     if(previous!=="approved"&&trip.receiptStatus==="approved")
       message("Comprovante aprovado pela Nova Frota. A etapa de finalização da viagem está liberada.");
@@ -509,10 +591,13 @@ $("#sendReceipt").onclick=async()=>{
   finally{uploading=false;refreshUi();}
 };
 window.addEventListener("pagehide",stop);
+window.addEventListener("pageshow",event=>{if(event.persisted)validate();});
+window.addEventListener("online",()=>{if(!document.hidden)recoverTracking();});
 document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden)updateReview();
+  if(!document.hidden)updateReview().then(recoverTracking);
 });
 setInterval(()=>{if(!document.hidden)updateReview();},30000);
+setInterval(()=>{if(!document.hidden)recoverTracking();},30000);
 validate();
 })();
 </script></body></html>

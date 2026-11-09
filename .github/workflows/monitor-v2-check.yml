@@ -36,4 +36,4 @@ jobs:
           node --check worker/src/controllers/monitor-proof.js
           node --check worker/src/controllers/super-admin-monitor-delete.js
           node --check assets/js/super-admin-monitor-delete.js
-          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs worker/tests/super-admin-monitor-delete.test.mjs
+          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs worker/tests/monitor-auto-resume.test.mjs worker/tests/super-admin-monitor-delete.test.mjs

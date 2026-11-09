@@ -79,7 +79,7 @@ jobs:
           node --check src/controllers/monitor.js
           node --check src/controllers/monitor-proof.js
           node --check src/controllers/super-admin-monitor-delete.js
-          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs tests/super-admin-monitor-delete.test.mjs
+          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs tests/monitor-auto-resume.test.mjs tests/super-admin-monitor-delete.test.mjs
       - name: Validar senha dos cards e autorização das APIs
         working-directory: worker
         run: |

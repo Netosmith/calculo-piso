@@ -176,7 +176,7 @@ test("Cloudflare Access staging UI uses same-origin writes without a second toke
  assert.equal(response.status,200);
  assert.deepEqual((await response.json()).capabilities,{
   tenantCatalog:true,legacyUserRead:false,
-  tenantWrite:true,membershipWrite:true,brandWrite:true,credentialWrite:false,userWrite:false
+  tenantWrite:true,membershipWrite:true,brandWrite:true,credentialWrite:false,userWrite:false,monitorTripDelete:false
  });
 });
 test("staging Access owner can create and configure a real audited tenant",async()=>{

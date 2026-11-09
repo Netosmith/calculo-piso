@@ -5,6 +5,11 @@ on:
     paths:
       - 'mobile/portal-frete/**'
       - '.github/workflows/mobile-android-apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile/portal-frete/**'
+      - '.github/workflows/mobile-android-apk.yml'
   workflow_dispatch:
 permissions:
   contents: read

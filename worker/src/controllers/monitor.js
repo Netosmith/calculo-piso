@@ -136,6 +136,42 @@ export async function monitorController(request, env) {
       return success({recorded:true,tripActive:true,receiptRequired:Number(row.proof_required||0)===1});
     }catch(e){return dbError(e,"gps-stop-event");}
   }
+  // Posições do aplicativo nativo: timestamps originais, idempotência e
+  // atualização da última posição apenas se a coleta for mais recente.
+  if (path === "/v1/monitor/mobile/position" && method === "POST") {
+    const body = await parse(request);
+    const lat = body?.latitude, lng = body?.longitude, accuracy = body?.accuracy;
+    const id = body?.fixId, captured = body?.capturedAt, platform = body?.platform;
+    const stamp = typeof captured === "string" ? Date.parse(captured) : NaN;
+    const age = Date.now() - stamp;
+    if (typeof lat !== "number" || !Number.isFinite(lat) || lat < -90 || lat > 90 ||
+        typeof lng !== "number" || !Number.isFinite(lng) || lng < -180 || lng > 180 ||
+        typeof accuracy !== "number" || !Number.isFinite(accuracy) || accuracy < 0 || accuracy > 10000 ||
+        typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id) ||
+        !["android","ios"].includes(platform) || !Number.isFinite(stamp) ||
+        age < -120000 || age > 72 * 3600000)
+      return errorResponse("Posição nativa inválida ou fora da janela de sincronização.",400);
+    try {
+      const row = await tripForToken(db, body?.token);
+      if (!row) return errorResponse("Link inválido ou expirado.",404);
+      if (row.active !== 1 || row.gps_finished_at)
+        return errorResponse("Viagem encerrada ou acompanhamento finalizado.",409);
+      if (Number(row.proof_required||0)===1 && (!row.selfie_key || !row.gps_consent_at))
+        return errorResponse("Selfie e aceite do termo são necessários para iniciar.",409);
+      if (!row.gps_consent_at)
+        return errorResponse("Aceite o termo da viagem antes de transmitir.",409);
+      const capturedAt = new Date(stamp).toISOString(), receivedAt=now();
+      const updates=await db.batch([
+        db.prepare("INSERT OR IGNORE INTO monitor_native_positions "+
+          "(id,trip_id,lat,lng,accuracy,captured_at,received_at,platform) VALUES (?,?,?,?,?,?,?,?)")
+          .bind(id,row.id,lat,lng,accuracy,capturedAt,receivedAt,platform),
+        db.prepare("UPDATE monitor_trips SET lat=?,lng=?,accuracy=?,last_position_at=?,updated_at=? "+
+          "WHERE id=? AND active=1 AND (last_position_at IS NULL OR last_position_at<?)")
+          .bind(lat,lng,accuracy,capturedAt,receivedAt,row.id,capturedAt)
+      ]);
+      return success({receivedAt,accepted:true,duplicate:updates[0]?.meta?.changes===0});
+    }catch(e){return dbError(e,"mobile-position-write");}
+  }
   if (path === "/v1/monitor/position" && method === "POST") {
     const body = await parse(request);
     const lat = Number(body?.latitude), lng = Number(body?.longitude), accuracy = Number(body?.accuracy);
@@ -253,9 +289,11 @@ export async function monitorController(request, env) {
     try {
       const trip = await db.prepare("SELECT id FROM monitor_trips WHERE id=?").bind(parts[3]).first();
       if (!trip) return errorResponse("Viagem não encontrada.", 404);
+      const common = "SELECT lat,lng,accuracy,recorded_at AS at FROM monitor_positions WHERE trip_id=? "+
+        "UNION ALL SELECT lat,lng,accuracy,captured_at AS at FROM monitor_native_positions WHERE trip_id=?";
       const query = before
-        ? db.prepare("SELECT lat,lng,accuracy,recorded_at AS at FROM monitor_positions WHERE trip_id=? AND recorded_at<? ORDER BY recorded_at DESC,id DESC LIMIT ?").bind(parts[3], before, HISTORY_PAGE_SIZE + 1)
-        : db.prepare("SELECT lat,lng,accuracy,recorded_at AS at FROM monitor_positions WHERE trip_id=? ORDER BY recorded_at DESC,id DESC LIMIT ?").bind(parts[3], HISTORY_PAGE_SIZE + 1);
+        ? db.prepare("SELECT * FROM ("+common+") WHERE at<? ORDER BY at DESC LIMIT ?").bind(parts[3],parts[3], before, HISTORY_PAGE_SIZE + 1)
+        : db.prepare("SELECT * FROM ("+common+") ORDER BY at DESC LIMIT ?").bind(parts[3],parts[3], HISTORY_PAGE_SIZE + 1);
       const rows = (await query.all()).results || [];
       const hasMore = rows.length > HISTORY_PAGE_SIZE;
       const page = rows.slice(0, HISTORY_PAGE_SIZE);

@@ -25,6 +25,20 @@ Para evitar conflitos de assinatura entre as versões de teste, **desinstale a v
 
 A compilação release não depende de Metro. Ainda é necessário testar login, navegação e uploads em um aparelho físico.
 
+## Versão 0.3.0 | Fretes publicados para motoristas
+
+A aba **Sou Motorista → Fretes** agora consulta ofertas públicas da Nova Frota sem exigir o login de funcionário. Possui busca por cidade ou produto, atualização manual e compartilhamento de uma oferta.
+
+**Como abastecer:** na Home do Portal Web, abra **Fretes Operacional (GO)** ou **Fretes MT**, escolha um frete com status **LIBERADO** e clique em **📱 Publicar no app** na coluna Ações. Revise a confirmação antes de publicar. O botão muda para **📱 Retirar do app** enquanto estiver publicado. Fretes não são publicados automaticamente.
+
+**Campos públicos:** origem, destino, produto, volume e valor do motorista. O servidor nunca repassa cliente, valor da empresa, telefones internos, observações, documentos ou informações de outras transportadoras. Esta lista é mantida separadamente no banco D1.
+
+**Prazo:** cada publicação expira após 72 horas, evitando que fretes antigos continuem anunciados. É possível renovar pelo mesmo botão após o vencimento. Ao excluir um frete pelo painel, a publicação correspondente é retirada primeiro; falhas na retirada impedem a exclusão pela interface para evitar anúncios obsoletos. Mudanças de um frete já publicado atualizam a oferta no app quando realizadas pelas páginas Fretes/Fretes2.
+
+**Permissões:** só funcionários autorizados para editar aquela base e pertencentes à Nova Frota podem divulgar ou retirar anúncios. As outras transportadoras não têm botões de publicação na base Nova Frota. O motorista não acessa a tabela operacional nem as APIs privadas. Se nada foi publicado, o app exibirá "Nenhum frete divulgado neste momento".
+
+**Limitação:** a oferta é informativa. A contratação e o contato comercial continuarão pelos canais divulgados pela Nova Frota. Sem prometer reserva/aceite de carga no aplicativo. A localização em segundo plano continua sujeita aos testes reais da versão 0.2.
+
 ## Versão 0.2.0 | GPS nativo do motorista
 
 Esta etapa acrescenta a tela inicial **SOU MOTORISTA / SOU FUNCIONÁRIO** e um serviço de localização nativo (expo-location + expo-task-manager). O modo funcionário segue utilizando a Home original do Portal.

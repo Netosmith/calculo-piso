@@ -978,6 +978,8 @@ function formatDateTimeBR(value) {
 
       try {
         setStatus("🗑 Excluindo...");
+        if(window.NFDriverFreights?.enabled(freightModule))
+          await window.NFDriverFreights.beforeDelete(row,freightModule);
         await apiGet({ action: "fretes_delete", id: row.id });
         const deletedId = safeText(row.id);
         STATE.rows = STATE.rows.filter((item) => safeText(item.id) !== deletedId);
@@ -992,6 +994,32 @@ function formatDateTimeBR(value) {
       }
     });
 
+    if(window.NFDriverFreights?.enabled(freightModule)){
+      const btnApp=document.createElement("button");
+      btnApp.type="button";
+      btnApp.className="btnTiny ghost";
+      const updateLabel=()=>{
+        btnApp.textContent=window.NFDriverFreights.isPublished(row,freightModule)?
+          "📱 Retirar do app":"📱 Publicar no app";
+        btnApp.title="Divulgação para motoristas por até 72 horas";
+      };
+      updateLabel();
+      btnApp.addEventListener("click",async event=>{
+        event.stopPropagation();
+        btnApp.disabled=true;
+        try{
+          const done=await window.NFDriverFreights.toggle(row,freightModule);
+          if(done){
+            setStatus(window.NFDriverFreights.isPublished(row,freightModule)?
+              "📱 Frete divulgado para motoristas por 72 horas":
+              "✅ Frete retirado do aplicativo");
+            updateLabel();
+          }
+        }catch(error){alert(error.message||"Falha ao divulgar o frete.");}
+        finally{btnApp.disabled=false;}
+      });
+      wrap.appendChild(btnApp);
+    }
     wrap.appendChild(btnEdit);
     wrap.appendChild(btnDel);
 
@@ -2608,6 +2636,10 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         if (index >= 0) STATE.rows[index] = { ...STATE.rows[index], ...nextRow };
         else STATE.rows.unshift(nextRow);
 
+        if(window.NFDriverFreights?.enabled(freightModule)){
+          try{await window.NFDriverFreights.afterSave(nextRow,freightModule);}
+          catch(error){alert("Frete salvo, mas não foi possível atualizar a divulgação no app: "+error.message);}
+        }
         fillTopFilters(STATE.rows);
         applyFilters();
         renderPreview(nextRow);
@@ -3126,6 +3158,11 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
 
     setStatus("🔐 Validando sessão...");
     await waitForPortalReady();
+    if(window.NFDriverFreights?.enabled(freightModule)){
+      void window.NFDriverFreights.refresh(freightModule)
+        .then(()=>applyFilters())
+        .catch(error=>console.warn("[DRIVER FREIGHTS] publicação indisponível:",error.message));
+    }
 
     // A tabela é a informação principal da tela e deve começar primeiro.
     // Os cadastros começam vazios e são consultados na planilha em paralelo.

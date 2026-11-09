@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,Share,StyleSheet,Text,TextInput,View} from "react-native";
 import {palette as c} from "./theme";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
@@ -20,6 +20,46 @@ export default function DriverArea({initialLink="",onBack}){
   const [queued,setQueued]=useState(0);
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState("");
+  const [freightOffers,setFreightOffers]=useState([]);
+  const [freightLoading,setFreightLoading]=useState(false);
+  const [freightError,setFreightError]=useState("");
+  const [freightSearch,setFreightSearch]=useState("");
+
+  async function loadFreightOffers(){
+    if(freightLoading)return;
+    setFreightLoading(true);setFreightError("");
+    try{
+      const response=await fetch("https://api.portalfrete.net.br/v1/driver-freights",{
+        method:"GET",headers:{"Accept":"application/json"},cache:"no-store"
+      });
+      const data=await response.json().catch(()=>({ok:false}));
+      if(!response.ok||!data.ok||!Array.isArray(data.fretes))
+        throw Error(data.error||"Não foi possível carregar os fretes.");
+      // Nunca ler recursos do portal operacional: só ofertas já divulgadas.
+      setFreightOffers(data.fretes);
+    }catch(e){setFreightError(e.message||"Falha ao atualizar os fretes.");}
+    finally{setFreightLoading(false);}
+  }
+  useEffect(()=>{if(tab==="fretes")void loadFreightOffers();},[tab]);
+  const offerMatches=(offer)=>{
+    const needle=freightSearch.trim().toLocaleUpperCase("pt-BR");
+    if(!needle)return true;
+    return [offer.origem,offer.destino,offer.produto,offer.source].join(" ")
+      .toLocaleUpperCase("pt-BR").includes(needle);
+  };
+  async function shareOffer(offer){
+    try{
+      const text=[
+        "🚛 FRETE NOVA FROTA",
+        (offer.origem||"")+" → "+(offer.destino||""),
+        "Produto: "+(offer.produto||"A consultar"),
+        "Volume: "+(offer.volume||"A consultar"),
+        "Valor motorista: "+(offer.valorMotorista||"A consultar"),
+        "Oferta divulgada pelo Portal Frete."
+      ].join("\n");
+      await Share.share({message:text});
+    }catch(e){Alert.alert("Compartilhamento",e.message||"Não foi possível compartilhar.");}
+  }
   const token=extractDriverToken(link);
   async function status(){
     const state=await driverTrackingStatus();
@@ -96,10 +136,41 @@ export default function DriverArea({initialLink="",onBack}){
         <Text style={[styles.tabText,tab==="fretes"&&styles.tabTextSelected]}>🚛 Fretes</Text>
       </Pressable>
     </View>
-    {tab==="fretes"?<View style={styles.card}>
-      <Text style={styles.cardTitle}>Fretes disponíveis</Text>
-      <Text style={styles.info}>A consulta pública dos fretes da Nova Frota será integrada somente depois que a API de divulgação estiver separada dos dados internos. Não exibiremos os fretes operacionais restritos a funcionários.</Text>
-      <Text style={styles.small}>Próxima integração: lista de origem, destino, produto e ofertas liberadas para motoristas.</Text>
+    {tab==="fretes"?<View style={styles.freightsArea}>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Fretes disponíveis da Nova Frota</Text>
+        <Text style={styles.info}>Ofertas selecionadas para divulgação pela equipe Nova Frota. Os dados operacionais internos não são exibidos.</Text>
+        <TextInput accessibilityLabel="Buscar frete por cidade ou produto"
+          value={freightSearch} onChangeText={setFreightSearch}
+          autoCapitalize="characters" autoCorrect={false}
+          placeholder="Buscar origem, destino ou produto"
+          placeholderTextColor="#7890a3" style={styles.search}/>
+        <BTN title={freightLoading?"Atualizando...":"Atualizar fretes"}
+          onPress={loadFreightOffers} disabled={freightLoading} secondary/>
+        {freightLoading&&<ActivityIndicator color={c.blue} style={{marginTop:12}}/>}
+        {!!freightError&&<Text style={styles.error}>{freightError}</Text>}
+        {!freightLoading&&!freightError&&!freightOffers.filter(offerMatches).length&&
+          <View style={styles.emptyOffers}>
+            <Text style={styles.emptyTitle}>Nenhum frete divulgado neste momento</Text>
+            <Text style={styles.info}>Quando a equipe publicar um frete nos módulos operacionais, ele aparecerá aqui. Novas ofertas podem ser divulgadas a qualquer momento.</Text>
+          </View>}
+      </View>
+      {freightOffers.filter(offerMatches).map(offer=>
+        <View key={offer.source+":"+offer.sourceId} style={styles.offerCard}>
+          <View style={styles.offerTop}>
+            <Text style={styles.offerSource}>{offer.source==="fretes2"?"NOVA FROTA • MT":"NOVA FROTA • OPERACIONAL"}</Text>
+            <Text style={styles.offerStatus}>DISPONÍVEL</Text>
+          </View>
+          <Text style={styles.offerRoute}>{offer.origem} → {offer.destino}</Text>
+          <View style={styles.offerDetails}>
+            <Text style={styles.offerDetail}>Produto: <Text style={styles.offerValue}>{offer.produto}</Text></Text>
+            {!!offer.volume&&<Text style={styles.offerDetail}>Volume: <Text style={styles.offerValue}>{offer.volume}</Text></Text>}
+            <Text style={styles.offerDetail}>Frete motorista: <Text style={styles.offerValue}>{offer.valorMotorista||"A consultar"}</Text></Text>
+          </View>
+          <Text style={styles.offerExpiry}>Oferta divulgada até {new Date(offer.expiresAt).toLocaleString("pt-BR")}</Text>
+          <BTN title="Compartilhar frete" onPress={()=>shareOffer(offer)} secondary/>
+        </View>
+      )}
     </View>:<>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Vincular uma viagem</Text>
@@ -165,5 +236,20 @@ const styles=StyleSheet.create({
   small:{fontSize:11,color:c.muted,lineHeight:17,marginTop:4},
   buttons:{marginTop:12},
   notice:{backgroundColor:"#ecf3fc",borderRadius:10,padding:13,color:c.navy,fontSize:12,lineHeight:19,marginTop:8},
+  freightsArea:{gap:12},
+  search:{height:48,borderWidth:1,borderColor:"#b9d3e4",borderRadius:11,
+    paddingHorizontal:12,marginBottom:12,color:c.navy,backgroundColor:"#fff",fontSize:13},
+  error:{color:"#ae3044",fontWeight:"700",fontSize:12,marginTop:10,lineHeight:19},
+  emptyOffers:{paddingTop:18},
+  emptyTitle:{fontWeight:"900",fontSize:14,color:c.navy,marginBottom:7},
+  offerCard:{backgroundColor:"#fff",borderRadius:16,borderWidth:1,borderColor:c.line,padding:17},
+  offerTop:{flexDirection:"row",justifyContent:"space-between",alignItems:"center",marginBottom:13},
+  offerSource:{color:c.navy,fontSize:10,fontWeight:"900",letterSpacing:.5},
+  offerStatus:{color:c.green,fontSize:10,fontWeight:"900"},
+  offerRoute:{color:c.navy,fontSize:17,fontWeight:"900",lineHeight:25,marginBottom:13},
+  offerDetails:{backgroundColor:"#eff6fb",borderRadius:10,padding:13,gap:9},
+  offerDetail:{fontSize:12,color:c.muted,lineHeight:19},
+  offerValue:{fontWeight:"900",color:c.navy},
+  offerExpiry:{fontSize:10,color:c.muted,marginVertical:13},
   foot:{fontSize:11,color:c.muted,lineHeight:18,marginTop:10}
 });

@@ -60,6 +60,14 @@
   }
   throw lastError||new Error("Recurso temporariamente indisponível.");
  }
+ // Private transportadoras share the legacy Controle markup. Keep only the
+ // operational totals in the JPG/clipboard footer, never the Nova Frota brand.
+ function stripTenantControleFooter(root){
+  if(page!=="controle.html")return;
+  const footer=root.querySelector("#positionCapture .position-footer");
+  if(!footer)return;
+  Array.from(footer.children).slice(2).forEach(node=>node.remove());
+ }
  async function renderShared(html){
   const parsed=new DOMParser().parseFromString(html,"text/html");
   if(!parsed.head||!parsed.body||!parsed.documentElement)
@@ -72,6 +80,7 @@
    title.textContent=page.replace(/\.html$/,"").replace(/-/g," ")+" | "+name;
    parsed.head.append(title);
   }
+  stripTenantControleFooter(parsed);
   const base=parsed.createElement("base");
   base.href="/pages/";
   parsed.head.prepend(base);
@@ -173,6 +182,7 @@
    }
   }
   await Promise.resolve();
+  stripTenantControleFooter(document);
   document.documentElement.removeAttribute("data-pf-tenant-boot");
  }
  async function load(){

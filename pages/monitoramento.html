@@ -228,7 +228,16 @@ const request=async(path,method="GET",body)=>{
 function stateOf(t){
   if(!t.active)return "done";
   if(t.gpsStoppedAt&&(!t.lastPosition||Date.parse(t.gpsStoppedAt)>Date.parse(t.lastPosition.at)))return "paused";
-  if(!t.lastPosition)return "wait";
+  if(!t.lastPosition){
+    // Viagem iniciada e sem a primeira posição também precisa gerar alerta.
+    const started=Date.parse(t.startedAt);
+    if(Number.isFinite(started)){
+      const age=Date.now()-started;
+      if(age>FIFTEEN)return "lost";
+      if(age>FIVE)return "warn";
+    }
+    return "wait";
+  }
   const age=Date.now()-Date.parse(t.lastPosition.at);
   if(!Number.isFinite(age)||age>FIFTEEN)return "lost";
   if(age>FIVE)return "warn";
@@ -286,7 +295,7 @@ function renderKpis(){
     panel.classList.add("show");
     if(issues.length){
       panel.append(make("strong","⚠ "+issues.length+" viagem(ns) exigem atenção no GPS"));
-      panel.append(make("span",issues.slice(0,4).map(t=>t.plate+" · "+labels[stateOf(t)]+" · "+fmt(stateOf(t)==="paused"?t.gpsStoppedAt:t.lastPosition?.at)).join("  |  ")));
+      panel.append(make("span",issues.slice(0,4).map(t=>t.plate+" · "+labels[stateOf(t)]+" · "+fmt(stateOf(t)==="paused"?t.gpsStoppedAt:(t.lastPosition?.at||t.startedAt))).join("  |  ")));
       if(issues.length>4)panel.append(make("span","E mais "+(issues.length-4)+" viagem(ns) com sinal desatualizado."));
     }
     if(documents.length){

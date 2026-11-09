@@ -73,13 +73,19 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler d1 execute portal-frota --remote --file=migrations/0011_monitor_delete_audit.sql
+      - name: Preparar historico nativo Android e iOS
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 execute portal-frota --remote --file=migrations/0012_monitor_native_positions.sql
       - name: Validar sintaxe do monitoramento
         working-directory: worker
         run: |
           node --check src/controllers/monitor.js
           node --check src/controllers/monitor-proof.js
           node --check src/controllers/super-admin-monitor-delete.js
-          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs tests/monitor-auto-resume.test.mjs tests/super-admin-monitor-delete.test.mjs
+          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs tests/monitor-auto-resume.test.mjs tests/monitor-native.test.mjs tests/super-admin-monitor-delete.test.mjs
       - name: Validar senha dos cards e autorização das APIs
         working-directory: worker
         run: |

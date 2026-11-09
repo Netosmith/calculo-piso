@@ -25,6 +25,22 @@ Para evitar conflitos de assinatura entre as versões de teste, **desinstale a v
 
 A compilação release não depende de Metro. Ainda é necessário testar login, navegação e uploads em um aparelho físico.
 
+## Versão 0.2.0 | GPS nativo do motorista
+
+Esta etapa acrescenta a tela inicial **SOU MOTORISTA / SOU FUNCIONÁRIO** e um serviço de localização nativo (expo-location + expo-task-manager). O modo funcionário segue utilizando a Home original do Portal.
+
+**Motorista:** cole o link da viagem; abra a selfie e o termo no navegador; após concluir e aceitar, volte ao app, selecione "Conferir viagem" e toque **Ativar rastreamento nativo**. O Android exibe uma notificação persistente durante a transmissão. No iPhone, as permissões de localização em segundo plano são configuradas, mas a validação em aparelho físico ainda é necessária.
+
+**Permissões:** só são solicitadas na ativação explícita da viagem, após confirmar o aceite no Worker. O app pode continuar com a tela bloqueada ou em segundo plano, sujeito às restrições de Android/iOS. Não há garantia se o usuário força a parada, revoga permissão, desliga o celular ou se o sistema encerra o serviço.
+
+**Quando a rede falha:** as posições ficam em uma fila SQLite local cifrada em AES-256, com chave exclusiva no SecureStore. O app reenvia os registros quando possível; a API mantém o horário original da coleta e rejeita duplicatas pelo identificador da posição. O limite de reenvio é de 72 horas e o link da viagem atualmente vence em 7 dias. Viagens mais longas exigirão renovação do acesso.
+
+**Segurança:** o backend valida vínculo, selfie, aceite e status ativo. Não apresenta os fretes internos protegidos ao motorista. O card Fretes do motorista mostra a integração como pendente até criarmos uma API de divulgação pública e independente da operação.
+
+**Testes indispensáveis antes de usar com cargas reais:** instalar APK 0.2 no Galaxy S23, conceder localização precisa e "Permitir o tempo todo", configurar bateria para execução sem restrições, iniciar viagem de teste, bloquear tela, navegar em WhatsApp, desconectar internet e validar horários originais das posições na Central. Repetir em iOS com assinatura e TestFlight, incluindo parada forçada e perda de GPS. Não considerar o monitoramento homologado apenas pelos testes automatizados.
+
+**Disponibilidade:** o APK Android de teste sai pelo workflow do GitHub. A chave local de teste pode exigir desinstalar o APK anterior. No iOS, o bundle é validado, mas falta build assinado.
+
 ## Preparação
 
 Requisitos: Node.js 22.13+ e Git. Android: Android Studio ou Expo Go, conforme compatibilidade do SDK. iOS: iPhone com Expo Go para testar a interface; builds de distribuição via EAS Build e assinatura Apple.

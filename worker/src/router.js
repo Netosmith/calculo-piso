@@ -2,6 +2,7 @@ import { superAdminController } from "./controllers/super-admin.js";
 import { modulePinController } from "./controllers/module-pin.js";
 import { fleetController } from "./controllers/fleet.js";
 import { monitorController } from "./controllers/monitor.js";
+import {driverFreightsController} from "./controllers/driver-freights.js";
 import { employeesController } from "./controllers/employees.js";
 import {gamesController} from "../../games/server/api.js";
 import { healthController } from "./controllers/health.js";
@@ -29,6 +30,9 @@ export async function routeRequest(request, env, ctx) {
   if(path==="/v1/tenant/context")return tenantContextController(request,env);
   if(path.startsWith("/v1/tenant/"))return tenantApiController(request,env);
 
+  // A consulta lê somente ofertas publicadas deliberadamente. Nenhum dado interno de tenant.
+  if(path==="/v1/driver-freights"&&request.method==="GET")return driverFreightsController(request,env);
+
   // Never route a tenant browser context into Nova Frota legacy APIs,
   // even if another signed cookie remains present.
   // Client brand images are intentionally common to all transportadoras.
@@ -46,6 +50,7 @@ export async function routeRequest(request, env, ctx) {
 
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);
   if (path.startsWith("/v1/monitor/")) return monitorController(request, env);
+  if (path.startsWith("/v1/driver-freights/")) return driverFreightsController(request,env);
   if (path === "/v1/funcionarios" || path.startsWith("/v1/funcionarios/")) return employeesController(request, env);
 
   if (path === "/v1/pingo" || path.startsWith("/v1/pingo/")) return pingoController(request, env);

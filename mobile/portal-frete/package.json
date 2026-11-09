@@ -1,20 +1,25 @@
 {
   "name": "portal-frete-mobile",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "check": "node --test tests/routes.test.mjs"
+    "check": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "expo": "~57.0.0",
     "react": "19.2.3",
     "react-native": "0.86.0",
     "react-native-webview": "13.16.1",
-    "react-native-safe-area-context": "~5.11.1"
+    "react-native-safe-area-context": "~5.11.1",
+    "expo-location": "~57.0.23",
+    "expo-task-manager": "~57.0.22",
+    "expo-sqlite": "~57.0.4",
+    "expo-secure-store": "~57.0.4",
+    "expo-crypto": "~57.0.4"
   },
   "devDependencies": {
     "babel-preset-expo": "~57.0.0"

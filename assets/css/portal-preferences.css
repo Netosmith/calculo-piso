@@ -148,6 +148,20 @@ html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-sta
 html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status b{
   color:#173a61!important;
 }
+/* Apenas Homes empresariais no tema claro: o total por base é montado
+   por tenant-workspace.js e tinha número branco sobre o cartão claro.
+   Mantém intactos o tema escuro e a Home original da Nova Frota. */
+html[data-nf-home="1"][data-nf-theme="claro"] body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-vehicle-meta,
+html[data-nf-home="1"][data-nf-theme="claro"] body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-base-total,
+html[data-nf-home="1"][data-nf-theme="claro"] body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-base-name{
+  color:#345675;
+}
+html[data-nf-home="1"][data-nf-theme="claro"] body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-base-total strong{
+  color:#143b61;
+}
+html[data-nf-home="1"][data-nf-theme="claro"] body.pf-tenant-mode .nf-stat-veiculos .pf-tenant-vehicle-divider{
+  background:rgba(41,93,144,.18);
+}
 html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status.porta i{background:#20b774}
 html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-veiculos .nf-veiculos-status.transito i{background:#438cf5}
 html[data-nf-home="1"][data-nf-theme="claro"] .nf-stat-update{color:#617a96}

@@ -54,3 +54,15 @@ test("motorista tem quatro etapas, aceite do termo e finalizacao depois da desca
   assert.doesNotMatch(html,/id="stop"/);
   assert.match(html,/setInterval\(\(\)=>\{if\(!document.hidden\)updateReview\(\);\},30000\)/);
 });
+
+test("central libera editar NF e CT-e apos iniciar viagem, sem pedir no cadastro inicial",()=>{
+  const html=assertScriptsCompile(page);
+  for(const id of ["fiscalEditor","fiscalForm","fiscalNf","fiscalCte","saveFiscal","cancelFiscal"])
+    assert.ok(html.includes('id="'+id+'"'),"Campo nao encontrado: "+id);
+  assert.match(html,/Editar viagem · NF \/ CT-e/);
+  assert.match(html,/\/v1\/monitor\/trips\/.*\/documents/);
+  assert.match(html,/t\.startedAt\|\|t\.lastPosition/);
+  const createForm=html.split('<form id="newTrip">')[1]?.split('</form>')[0];
+  assert.ok(createForm);
+  assert.doesNotMatch(createForm,/name="nf"|name="cte"/);
+});

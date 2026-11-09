@@ -74,6 +74,16 @@ main input::placeholder{color:#9aaec0}
 .proofbuttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 main button.approve{background:#e1f6e9;color:#167d4d}
 main button.reject{background:#ffedf0;color:#a82f45}
+.fiscal-editor{margin-top:12px;padding:15px;border:1px solid #b8dbf3;border-radius:12px;background:#eff8ff}
+.fiscal-editor h3{font-size:15px;color:#0b4f80;margin:0 0 7px}
+.fiscal-editor p{font-size:12px;color:#54748f;line-height:1.45;margin:0 0 12px}
+.fiscal-editor .fiscal-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fiscal-editor .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fiscal-editor input{font-size:14px}
+.doc-summary{padding:10px 12px;background:#fff;border:1px solid #e3ecf5;border-radius:10px;margin:10px 0}
+.doc-summary strong{font-size:12px;display:block;margin-bottom:5px}
+.doc-summary small{display:block;color:#607d96;margin:3px 0;overflow-wrap:anywhere}
+@media(max-width:500px){.fiscal-editor .fiscal-fields{grid-template-columns:1fr}}
 .history{margin-top:14px;border-top:1px solid #e3eaf2;padding-top:13px}
 .history h3{font-size:14px;margin-bottom:6px;color:#183c62}
 .history-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -166,6 +176,24 @@ main button.reject{background:#ffedf0;color:#a82f45}
       <span class="mapbadge" id="mapCount">0 veículos no mapa</span></div>
     <div id="map" aria-label="Mapa de posições GPS dos veículos"></div>
     <div class="detail" id="details">Selecione uma viagem para acompanhar a posição e visualizar o trajeto recebido.</div>
+    <section class="fiscal-editor" id="fiscalEditor" hidden>
+      <h3>Editar dados fiscais da viagem</h3>
+      <p>Inclua a NF e o CT-e após o início da viagem. Os dados ficam salvos e podem ser atualizados pela equipe autorizada.</p>
+      <form id="fiscalForm">
+        <div class="fiscal-fields">
+          <label>NF (número ou chave)
+            <input name="nf" id="fiscalNf" type="text" maxlength="200" placeholder="Número(s) da nota fiscal" autocomplete="off">
+          </label>
+          <label>CT-e (número ou chave)
+            <input name="cte" id="fiscalCte" type="text" maxlength="200" placeholder="Número(s) do CT-e" autocomplete="off">
+          </label>
+        </div>
+        <div class="actions">
+          <button type="submit" id="saveFiscal">Salvar NF e CT-e</button>
+          <button type="button" class="ghost" id="cancelFiscal">Cancelar</button>
+        </div>
+      </form>
+    </section>
     <section class="history" aria-labelledby="historyTitle">
       <div class="history-row"><div><h3 id="historyTitle">Histórico de percurso</h3><span class="muted" id="historySummary">Selecione um veículo para carregar o trajeto.</span></div>
         <button class="ghost" id="morePositions" type="button" hidden>Carregar posições anteriores</button></div>
@@ -186,7 +214,7 @@ main button.reject{background:#ffedf0;color:#a82f45}
 const $=s=>document.querySelector(s),API="https://api.portalfrete.net.br";
 const FIVE=5*60*1000,FIFTEEN=15*60*1000;
 let trips=[],selected=null,map=null,line=null,markers=new Map(),viewportInitialized=false;
-let canReview=false,canEmergency=false;
+let canReview=false,canEmergency=false,editingTripId=null;
 let history=[],historyBefore=null,historyMore=false,historyRequest=0,refreshing=false;
 const fmt=at=>at?new Date(at).toLocaleString("pt-BR"):"Ainda não recebida";
 const status=(m,bad=false)=>{const el=$("#feedback");el.textContent=m;el.style.color=bad?"#b3263e":"#53768f";};
@@ -223,7 +251,7 @@ function filtered(){
     if(st==="active"&&!t.active)return false;
     if(st!=="active"&&st!=="all"&&st!==state)return false;
     if(br&&(t.branch||"")!==br)return false;
-    return !q||[t.plate,t.driver,t.origin,t.destination,t.branch].join(" ").toLocaleLowerCase("pt-BR").includes(q);
+    return !q||[t.plate,t.driver,t.origin,t.destination,t.branch,t.nf,t.cte].join(" ").toLocaleLowerCase("pt-BR").includes(q);
   });
 }
 function make(tag,text,cls){
@@ -372,6 +400,19 @@ function addProofReview(t,area){
   }
   area.append(p);
 }
+function openFiscalEditor(t){
+  if(!t?.active||!(t.startedAt||t.lastPosition)){
+    status("Inicie a viagem para habilitar a edição de NF e CT-e.",true);return;
+  }
+  editingTripId=t.id;
+  $("#fiscalNf").value=t.nf||"";
+  $("#fiscalCte").value=t.cte||"";
+  $("#fiscalEditor").hidden=false;
+  $("#fiscalEditor").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function closeFiscalEditor(){
+  editingTripId=null;$("#fiscalEditor").hidden=true;
+}
 function showDetails(t){
   const area=$("#details");area.replaceChildren();
   if(!t){area.textContent="Selecione uma viagem para acompanhar a posição e visualizar o trajeto recebido.";return;}
@@ -381,6 +422,12 @@ function showDetails(t){
   meta.append(make("span","Filial: "+(t.branch||"Não informada")));
   meta.append(make("span","Situação: "+labels[stateOf(t)]));
   area.append(meta);
+  const fiscal=make("section",null,"doc-summary");
+  fiscal.append(make("strong","Documentos fiscais"));
+  fiscal.append(make("small","NF: "+(t.nf||"Não informada")));
+  fiscal.append(make("small","CT-e: "+(t.cte||"Não informado")));
+  if(t.documentsUpdatedAt)fiscal.append(make("small","Última edição: "+fmt(t.documentsUpdatedAt)));
+  area.append(fiscal);
   area.append(make("p",t.lastPosition?
     "Último GPS: "+fmt(t.lastPosition.at)+" · Precisão aproximada: "+Math.round(Number(t.lastPosition.accuracy)||0)+" m":
     "O motorista ainda não enviou posição GPS."));
@@ -390,6 +437,13 @@ function showDetails(t){
   if(t.lastPosition){
     const focus=make("button","Centralizar veículo","ghost");
     focus.type="button";focus.onclick=()=>focusVehicle(t);actions.append(focus);
+  }
+  if(t.active&&(t.startedAt||t.lastPosition)){
+    const edit=make("button","Editar viagem · NF / CT-e","ghost");
+    edit.type="button";edit.onclick=()=>openFiscalEditor(t);
+    actions.append(edit);
+  }else if(t.active){
+    area.append(make("p","Os campos NF e CT-e serão liberados para edição após iniciar a viagem.","muted"));
   }
   addProofReview(t,area);
   if(t.active){
@@ -460,7 +514,9 @@ async function loadHistory(id,appendOlder=false){
   }catch(e){if(seq===historyRequest){$("#historySummary").textContent="Histórico indisponível: "+e.message;status(e.message,true);}}
 }
 function selectTrip(id){
-  const changed=selected!==id;selected=id;
+  const changed=selected!==id;
+  if(changed)closeFiscalEditor();
+  selected=id;
   const t=trips.find(x=>x.id===id);
   renderList();showDetails(t);
   if(t)focusVehicle(t);
@@ -469,7 +525,7 @@ function selectTrip(id){
 function renderAll(){
   renderKpis();renderList();syncMarkers();
   const t=trips.find(x=>x.id===selected);
-  if(t)showDetails(t);else if(selected){selected=null;history=[];renderHistory();showDetails(null);}
+  if(t)showDetails(t);else if(selected){selected=null;closeFiscalEditor();history=[];renderHistory();showDetails(null);}
 }
 async function refresh(){
   if(refreshing)return;
@@ -485,6 +541,25 @@ async function refresh(){
   }catch(e){status(e.message,true);$("#lastUpdate").textContent="Não foi possível atualizar";}
   finally{refreshing=false;$("#refresh").disabled=false;}
 }
+$("#cancelFiscal").onclick=closeFiscalEditor;
+$("#fiscalForm").onsubmit=async e=>{
+  e.preventDefault();
+  const id=editingTripId,t=trips.find(x=>x.id===id);
+  if(!id||!t?.active||!(t.startedAt||t.lastPosition)){
+    status("Selecione uma viagem iniciada e ativa.",true);closeFiscalEditor();return;
+  }
+  const button=$("#saveFiscal");button.disabled=true;
+  try{
+    await request("/v1/monitor/trips/"+encodeURIComponent(id)+"/documents","PUT",{
+      nf:$("#fiscalNf").value,
+      cte:$("#fiscalCte").value
+    });
+    closeFiscalEditor();
+    await refresh();
+    status("NF e CT-e salvos com sucesso nesta viagem.");
+  }catch(err){status("Não foi possível salvar: "+err.message,true);}
+  finally{button.disabled=false;}
+};
 $("#refresh").onclick=refresh;
 $("#morePositions").onclick=()=>{if(selected&&historyMore)loadHistory(selected,true);};
 for(const id of ["#search","#filterStatus","#filterBranch"]){

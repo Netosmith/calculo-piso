@@ -36,6 +36,9 @@ async function manager(req, env) {
 const toTrip = row => ({
   id: row.id, plate: row.plate, driver: row.driver, branch: row.branch || "",
   origin: row.origin, destination: row.destination,
+  nf: row.nf || "", cte: row.cte || "",
+  documentsUpdatedAt:row.documents_updated_at || null,
+  startedAt:row.started_at || row.gps_consent_at || row.last_position_at || null,
   active: row.active === 1, createdAt: row.created_at, updatedAt: row.updated_at,
   linkExpiresAt: row.token_expires_at,
   selfieRequired: Number(row.proof_required||0)===1,
@@ -168,7 +171,12 @@ export async function monitorController(request, env) {
   if (path === "/v1/monitor/trips" && method === "GET") {
     try {
       const result = await db.prepare(
-        "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at,(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='stopped' ORDER BY a.id DESC LIMIT 1) AS gps_stopped_at FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
+        "SELECT t.*, COALESCE(e.branch,'') AS branch,COALESCE(p.proof_required,0) AS proof_required,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at, "+
+        "COALESCE(d.nf,'') AS nf,COALESCE(d.cte,'') AS cte,d.updated_at AS documents_updated_at, "+
+        "(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='consent' ORDER BY a.id DESC LIMIT 1) AS started_at, "+
+        "(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='stopped' ORDER BY a.id DESC LIMIT 1) AS gps_stopped_at "+
+        "FROM monitor_trips t LEFT JOIN monitor_trip_extras e ON e.trip_id=t.id LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id "+
+        "LEFT JOIN monitor_trip_documents d ON d.trip_id=t.id ORDER BY t.active DESC,t.created_at DESC LIMIT 300"
       ).all();
       return success({ trips: (result.results || []).map(toTrip), complete: true,
         canReview:["ADMINISTRADOR","OPERACIONAL"].includes(clean(auth.session.perfil).toUpperCase()), canEmergency:clean(auth.session.perfil).toUpperCase()==="ADMINISTRADOR" });
@@ -197,6 +205,41 @@ export async function monitorController(request, env) {
     } catch (e) { return dbError(e, "trip-create"); }
   }
   const parts = path.split("/").filter(Boolean);
+  // Documentos fiscais são editados pelo operacional, somente depois da abertura da viagem.
+  // O link do motorista nunca acessa esta rota: ela está depois da validação da sessão interna.
+  if(parts.length===5&&parts[0]==="v1"&&parts[1]==="monitor"&&parts[2]==="trips"&&
+     parts[4]==="documents"&&method==="PUT"){
+    if(!validId(parts[3]))return errorResponse("Identificador da viagem inválido.",400);
+    const body=await parse(request);
+    if(!body||typeof body.nf!=="string"||typeof body.cte!=="string"||
+       body.nf.length>200||body.cte.length>200||
+       /[\x00-\x1f\x7f]/.test(body.nf)||/[\x00-\x1f\x7f]/.test(body.cte))
+      return errorResponse("Informe NF e CT-e válidos (até 200 caracteres por campo).",400);
+    const nf=body.nf.trim(),cte=body.cte.trim(),id=parts[3];
+    try{
+      const trip=await db.prepare("SELECT id,active,last_position_at FROM monitor_trips WHERE id=?").bind(id).first();
+      if(!trip)return errorResponse("Viagem não encontrada.",404);
+      if(trip.active!==1)return errorResponse("Uma viagem encerrada não pode ser editada.",409);
+      const start=await db.prepare(
+        "SELECT created_at FROM monitor_proof_audit WHERE trip_id=? AND proof_kind='gps' AND action='consent' ORDER BY id DESC LIMIT 1"
+      ).bind(id).first();
+      if(!start?.created_at&&!trip.last_position_at)
+        return errorResponse("Inicie a viagem antes de editar NF e CT-e.",409);
+      const previous=await db.prepare("SELECT nf,cte FROM monitor_trip_documents WHERE trip_id=?").bind(id).first();
+      if((previous?.nf||"")===nf&&(previous?.cte||"")===cte)
+        return success({nf,cte,unchanged:true});
+      const time=now(),actor=clean(auth.session.usuario);
+      await db.batch([
+        db.prepare("INSERT INTO monitor_trip_documents (trip_id,nf,cte,updated_at,updated_by) VALUES (?,?,?,?,?) "+
+          "ON CONFLICT(trip_id) DO UPDATE SET nf=excluded.nf,cte=excluded.cte,updated_at=excluded.updated_at,updated_by=excluded.updated_by")
+          .bind(id,nf,cte,time,actor),
+        db.prepare("INSERT INTO monitor_trip_documents_audit (trip_id,nf_before,nf_after,cte_before,cte_after,changed_by,changed_at) VALUES (?,?,?,?,?,?,?)")
+          .bind(id,previous?.nf||"",nf,previous?.cte||"",cte,actor,time)
+      ]);
+      return success({nf,cte,documentsUpdatedAt:time});
+    }catch(e){return dbError(e,"trip-documents-edit");}
+  }
+
   if(parts.length===7&&parts[0]==="v1"&&parts[1]==="monitor"&&parts[2]==="trips"&&
     parts[4]==="proofs"&&["selfie","receipt"].includes(parts[5])&&
     ((parts[6]==="download"&&method==="GET")||(parts[6]==="review"&&method==="POST")))

@@ -24,6 +24,8 @@ test("tarefa é registrada no nível global e não transmite sem aceite prévio"
   assert.ok(src.includes("aesEncryptAsync")&&src.includes("aesDecryptAsync"));
   assert.ok(src.includes("SecureStore.setItemAsync"));
   assert.ok(src.includes("foregroundService"));
+  assert.ok(src.includes("killServiceOnDestroy:false"));
+  assert.ok(src.includes("restoreApprovedTracking"));
   assert.ok(src.includes("stopLocationUpdatesAsync"));
 });
 test("APK exige permissões nativas e distingue motorista de funcionário",()=>{
@@ -31,6 +33,8 @@ test("APK exige permissões nativas e distingue motorista de funcionário",()=>{
   const shell=read("App.js");
   assert.equal(app.version,"0.2.0");
   assert.equal(app.android.versionCode,3);
+  assert.ok(app.android.permissions.includes("RECEIVE_BOOT_COMPLETED"));
+  assert.ok(app.android.permissions.includes("FOREGROUND_SERVICE_LOCATION"));
   assert.ok(app.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&
     x[1].isIosBackgroundLocationEnabled&&x[1].isAndroidBackgroundLocationEnabled));
   assert.ok(shell.includes("SOU MOTORISTA"));

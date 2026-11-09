@@ -79,6 +79,31 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 @media(max-width:600px){.brand-asset-grid{grid-template-columns:1fr}}
 /* Nova Frota uses a light-colored logo: keep gallery background contrasting. */
 .company-card-visual:has(img[data-company-logo="nova-frota"]){background:linear-gradient(135deg,#0b2845,#133a58)!important}
+
+/* Exclusão de viagens Nova Frota, disponível apenas dentro do Super Admin. */
+.monitor-delete-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.monitor-delete-filters{display:grid;grid-template-columns:minmax(220px,1fr) 180px auto;gap:9px;margin:15px 0}
+.monitor-delete-filters input,.monitor-delete-filters select,.monitor-delete-reason{
+  min-width:0;width:100%;background:#071b2e;color:#e7f4ff;border:1px solid #4a7799;
+  border-radius:9px;padding:11px 12px;font:inherit
+}
+.monitor-delete-list{display:grid;gap:9px;max-height:540px;overflow:auto;margin-top:10px}
+.monitor-delete-row{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;
+  background:#16334c;border:1px solid #365b7b;border-radius:11px;cursor:pointer}
+.monitor-delete-row input{width:19px;height:19px;accent-color:#ed5365;margin-top:3px;flex:0 0 19px}
+.monitor-delete-row strong{display:block;color:#f2f8ff}
+.monitor-delete-row small{display:block;color:#bad0e2;margin-top:5px;line-height:1.45}
+.monitor-delete-warning{border:1px solid #a87845;background:#382b25;color:#ffe4c3;padding:14px;border-radius:12px;margin:17px 0;line-height:1.5}
+.monitor-delete-confirm{margin-top:18px;padding:17px;border:1px solid #805465;border-radius:12px;background:#2d2431}
+.monitor-delete-confirm label{display:grid;gap:7px;font-weight:700;font-size:12px;margin-bottom:12px}
+.monitor-delete-confirm .confirm-box{display:flex;align-items:center;gap:10px;font-size:13px}
+.monitor-delete-confirm .confirm-box input{width:18px;height:18px;accent-color:#e4546a}
+#monitorDeleteAction{background:#ad2f49;border-color:#ee6578;font-weight:900}
+.monitor-delete-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.monitor-delete-audit{display:grid;gap:10px;margin-top:13px}
+.monitor-delete-audit article{background:#102d46;border:1px solid #335574;border-radius:11px;padding:13px;line-height:1.5}
+.monitor-delete-audit small{display:block;color:#b6cedf}
+@media(max-width:700px){.monitor-delete-filters{grid-template-columns:1fr}.monitor-delete-row{padding:10px}}
 </style>
 </head>
 <body class="super-admin-shell">
@@ -104,7 +129,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 <div class="layout" id="transportadorasView" hidden>
 <aside class="panel" id="galleryPanel"><div class="gallery-tools"><div><h2>Transportadoras</h2><span class="gallery-counter" id="companyCount">0 cadastradas</span></div><input id="companySearch" type="search" placeholder="Pesquisar transportadora" aria-label="Buscar transportadora"></div><div class="row"><h2 style="display:none">Transportadoras</h2><button id="newCompany" disabled>+ Nova</button></div><div id="companies" class="company-gallery empty">Nenhuma transportadora carregada.</div></aside>
 <section class="panel" id="companyDetail" hidden><div class="row"><button id="galleryBack" type="button" class="ghost">← Todas as transportadoras</button><a id="tenantHomeButton" href="/pages/home.html" hidden title="Abrir Home da transportadora selecionada">⌂ HOME</a><div><h2 id="companyName">Selecione uma transportadora</h2><span id="companyStatus" class="status">Sem seleção</span></div><button id="renameCompany" disabled>Renomear</button><button id="toggleCompany" disabled>Ativar / desativar</button></div>
-<div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button></div>
+<div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button><button id="monitorDeleteTab" data-tab="monitorDelete" hidden>🗑 Viagens Nova Frota</button></div>
 <div id="modules" class="tab"><p class="muted" id="freightBaseVersion">Painel atualizado · 27 bases estaduais · 04/11/2026</p><p>Escolha <strong>Fretes Operacional (unificado)</strong> para uma planilha única ou libere as bases estaduais abaixo. <strong>Fretes2 (MT interno)</strong> é exclusivo da Nova Frota.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
 <div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Nas novas empresas, o novo cadastro cria usuário ativo e senha. Para usuários antigos, use "Definir senha e ativar". A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo usuário</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
 <div id="brand" class="tab" hidden>
@@ -146,6 +171,35 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 <p class="muted">PNG, JPG e WebP. Limite de 2 MB para logos e 6 MB para imagens hero. Cada imagem pode ser substituída individualmente.</p>
 </div>
 <div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. Cores, marca d’água, tamanho e posição da logo são independentes por empresa e modelo. Ajuste os controles e clique em Salvar.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artResetMulti" type="button" class="ghost">Restaurar logos 4A / 4B / 4C</button><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
+<div id="monitorDelete" class="tab" hidden>
+ <div class="monitor-delete-head"><div><h2>Excluir viagens do Monitoramento Nova Frota</h2><p class="muted">Somente a conta Super Admin pode remover viagens, inclusive ativas e já encerradas. Não é possível excluir viagens de outras transportadoras.</p></div><button type="button" id="monitorDeleteReload" class="ghost">Atualizar viagens</button></div>
+ <div class="monitor-delete-warning"><strong>Exclusão de dados operacionais.</strong> O registro sai do monitoramento, o link do motorista é invalidado, posições e documentos deixam de aparecer na operação. Antes da remoção, uma cópia privada é arquivada e a ação fica registrada na auditoria. Verifique obrigações de guarda de evidências e documentos antes de excluir uma viagem real.</div>
+ <div class="monitor-delete-filters">
+  <input id="monitorDeleteSearch" type="search" placeholder="Buscar placa, motorista, filial, NF ou CT-e" autocomplete="off" aria-label="Pesquisar viagens">
+  <select id="monitorDeleteFilter" aria-label="Filtrar situação"><option value="all">Todas as viagens</option><option value="active">Somente ativas</option><option value="closed">Somente encerradas</option></select>
+  <button type="button" id="monitorDeleteSearchButton">Buscar</button>
+ </div>
+ <div class="row"><div><strong id="monitorDeleteCount">0 selecionadas</strong> <span class="muted">Lote máximo: 10 viagens por confirmação.</span></div><button type="button" class="ghost" id="monitorDeleteSelectPage">Selecionar página (até 10)</button></div>
+ <div id="monitorDeleteList" class="monitor-delete-list" aria-live="polite">Selecione a aba para carregar as viagens.</div>
+ <div class="monitor-delete-actions"><button type="button" class="ghost" id="monitorDeleteMore" hidden>Carregar mais viagens</button><button type="button" class="ghost" id="monitorDeleteClear">Limpar seleção</button></div>
+ <section class="monitor-delete-confirm">
+  <h3 style="margin:0 0 8px">Confirmar exclusão</h3>
+  <label>Justificativa obrigatória (mínimo 12 caracteres)
+   <input id="monitorDeleteReason" class="monitor-delete-reason" maxlength="300" placeholder="Ex.: Exclusão autorizada de viagem duplicada" autocomplete="off">
+  </label>
+  <label>Digite EXCLUIR para confirmar
+   <input id="monitorDeletePhrase" class="monitor-delete-reason" autocomplete="off" maxlength="7" placeholder="EXCLUIR">
+  </label>
+  <label class="confirm-box"><input type="checkbox" id="monitorDeleteBackup"> Confirmo que os registros selecionados serão removidos da operação e que o backup privado será preservado.</label>
+  <button type="button" id="monitorDeleteAction" disabled>EXCLUIR VIAGENS SELECIONADAS</button>
+  <p class="muted" id="monitorDeleteStatus" role="status">Nenhuma viagem será excluída sem sua confirmação.</p>
+ </section>
+ <section style="margin-top:25px">
+  <div class="row"><div><h3 style="margin:0">Auditoria de exclusões</h3><p class="muted">Histórico independente dos registros removidos, com backup privado para recuperação.</p></div><button type="button" id="monitorDeleteAuditRefresh" class="ghost">Atualizar auditoria</button></div>
+  <div id="monitorDeleteAudit" class="monitor-delete-audit" aria-live="polite"></div>
+ </section>
+</div>
+
 </section></div></div>
 </main>
 <script src="../assets/js/super-admin-home.js?release=c15e630"></script>
@@ -392,6 +446,10 @@ function render(){
  document.querySelectorAll('[data-visual-file],[data-visual-save]').forEach(control=>{
    control.disabled=!canEditBrand();
  });
+ $('monitorDeleteTab').hidden=selected?.id!=='nova-frota';
+ if(selected?.id!=='nova-frota'&&$('monitorDeleteTab').classList.contains('active'))
+   document.querySelector('[data-tab="modules"]')?.click();
+ window.dispatchEvent(new CustomEvent('superadmin-monitor-company',{detail:{tenantId:selected?.id||''}}));
  renderModules();renderUsers();$('integrationSave').disabled=!canEdit();
 }
 async function writeRequest(path,method,data,contentType='application/json'){
@@ -668,6 +726,7 @@ $('refreshAudit').addEventListener('click',loadAudit);
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));
  document.querySelectorAll('.tab').forEach(panel=>panel.hidden=panel.id!==button.dataset.tab);
+ if(button.id==='monitorDeleteTab')window.dispatchEvent(new Event('superadmin-monitor-open'));
 }));
 // The shared portal navigation already provides Home; no duplicate title bar.
 (async()=>{
@@ -676,6 +735,7 @@ document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener(
  const auth=await request('/v1/super-admin/me');
  if(auth?.superAdmin!==true)throw new Error('Sua sessão não possui autorização de Super Admin.');
  const capabilities=auth.capabilities||{};
+ window.superAdminCanDeleteMonitor=Boolean(capabilities.monitorTripDelete);
  writeReady=Boolean(capabilities.tenantWrite);membershipReady=Boolean(capabilities.membershipWrite);brandReady=Boolean(capabilities.brandWrite);credentialReady=Boolean(capabilities.credentialWrite);credentialProblem=Array.isArray(capabilities.credentialMissing)&&capabilities.credentialMissing.length?'Definir senha indisponível: estrutura D1 incompleta ('+capabilities.credentialMissing.join(', ')+').':'';$('adminAuth').hidden=true;
  const result=await request('/v1/super-admin/transportadoras');
  companies=Array.isArray(result?.transportadoras)?result.transportadoras:[];
@@ -911,6 +971,7 @@ addEventListener('pagehide',()=>{
 </script>
 <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
 <script src="../assets/js/super-admin-real-preview.js?v=9" defer></script>
+<script src="../assets/js/super-admin-monitor-delete.js?v=1" defer></script>
 <script src="../assets/js/portal-preferences.js?v=9" defer></script>
 <script src="../assets/js/portal-preferences-advanced.js?v=7" defer></script>
 </body></html>

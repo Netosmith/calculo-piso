@@ -12,6 +12,7 @@ import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-module
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
+import { superAdminMonitorDeletion } from "./super-admin-monitor-delete.js";
 
 async function catalogReady(env) {
   if(!env.TENANTS_DB)return false;
@@ -48,6 +49,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
         return success({elevated:true,tenantWrite:env.SUPER_ADMIN_TENANT_WRITES==="enabled",
           membershipWrite:env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled",
           brandWrite:env.SUPER_ADMIN_BRAND_WRITES==="enabled"});
+      if(path.startsWith("/v1/super-admin/monitor/viagens"))
+        return superAdminMonitorDeletion(request,env,ownerId);
       return writeTenantCatalog(request, env, ownerId);
     }
     let oidc=env.SUPER_ADMIN_OIDC;
@@ -69,6 +72,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
       return errorResponse("Sessao sem permissao de administracao global.",403);
     if(path==="/v1/super-admin/authorize" && request.method==="POST")
       return success({elevated:true,tenantWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(env.TENANTS_DB&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"),brandWrite:Boolean(env.TENANTS_DB&&env.TENANT_BRANDS&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_BRAND_WRITES==="enabled")});
+    if(path.startsWith("/v1/super-admin/monitor/viagens"))
+      return superAdminMonitorDeletion(request,env,ownerId);
     return writeTenantCatalog(request,env,verified.subject);
   }
   if (path === "/v1/super-admin/me") {
@@ -78,6 +83,9 @@ export async function superAdminController(request, env, verifiedStagingSession 
     const credentials=credentialsRequested && ready ?
       await credentialSchemaStatus(env.TENANTS_DB) : {ok:false,missing:[]};
     const capabilities={tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),userWrite:false};
+    // A interface atual usa a autorização já habilitada para escritas do proprietário.
+    // O fluxo OIDC alternativo permanece protegido no backend, sem exibir botão inoperante.
+    capabilities.monitorTripDelete=Boolean(env.FLEET_DB&&env.FLEET_FILES&&ownerPortalEnabled);
     if(credentialsRequested){
       capabilities.credentialWrite=Boolean(ready&&ownerPortalEnabled&&
         env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&credentials.ok);
@@ -85,6 +93,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
     }
     return success({superAdmin:true,usuario:session.usuario,capabilities});
   }
+  if(path.startsWith("/v1/super-admin/monitor/viagens")&&request.method==="GET")
+    return superAdminMonitorDeletion(request,env,ownerId);
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.

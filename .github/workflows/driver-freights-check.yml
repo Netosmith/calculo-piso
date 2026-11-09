@@ -6,6 +6,7 @@ on:
       - 'worker/src/controllers/driver-freights.js'
       - 'worker/src/router.js'
       - 'worker/migrations/0013_driver_public_freights.sql'
+      - 'worker/migrations/0014_driver_public_freights_whatsapp.sql'
       - 'worker/tests/driver-freights.test.mjs'
       - 'worker/tests/driver-freights-publisher.test.mjs'
       - 'assets/js/driver-freights-publisher.js'

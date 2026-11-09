@@ -14,17 +14,24 @@ const clean=(value,limit)=>{
 };
 const sourceId=value=>clean(value,150);
 const safeSource=value=>typeof value==="string"&&SOURCES.has(value);
+const validWhatsapp=value=>{
+  const raw=String(value??"").trim();
+  if(!/^[+\d()\s-]+$/.test(raw))return null;
+  const digits=raw.replace(/\D/g,"");
+  return /^55\d{10,11}$/.test(digits)?digits:null;
+};
 const validPublicRow=(body)=>{
   if(!body||typeof body!=="object"||Array.isArray(body))return null;
   if(!safeSource(body.source))return null;
   const id=sourceId(body.sourceId),origem=clean(body.origem,130),
     destino=clean(body.destino,130),produto=clean(body.produto,100),
-    volume=clean(body.volume??"",55),valor=clean(body.valorMotorista??"",55);
-  if(!id||!origem||!destino||!produto||volume===null||valor===null)return null;
+    volume=clean(body.volume??"",55),valor=clean(body.valorMotorista??"",55),
+    whatsappEmbarcador=validWhatsapp(body.whatsappEmbarcador);
+  if(!id||!origem||!destino||!produto||volume===null||valor===null||!whatsappEmbarcador)return null;
   if(String(body.status||"").toUpperCase()!=="LIBERADO")return null;
   // Conserva apenas os campos autorizados, nunca JSON original da planilha.
   return {source:body.source,sourceId:id,origem,destino,produto,volume,
-    valorMotorista:valor};
+    valorMotorista:valor,whatsappEmbarcador};
 };
 async function operator(request,env,source){
   const session=await getSession(env,readSessionId(request));
@@ -45,7 +52,8 @@ export async function driverFreightsController(request,env){
     try{
       const result=await db.prepare(
         "SELECT source,source_id AS sourceId,origem,destino,produto,volume,"+
-        "valor_motorista AS valorMotorista,published_at AS publishedAt,expires_at AS expiresAt "+
+        "valor_motorista AS valorMotorista,whatsapp_embarcador AS whatsappEmbarcador,"+
+        "published_at AS publishedAt,expires_at AS expiresAt "+
         "FROM driver_public_freights WHERE expires_at>? "+
         "ORDER BY published_at DESC LIMIT ?"
       ).bind(new Date().toISOString(),LIMIT).all();
@@ -100,13 +108,15 @@ export async function driverFreightsController(request,env){
   try{
     await db.prepare(
       "INSERT INTO driver_public_freights "+
-      "(source,source_id,origem,destino,produto,volume,valor_motorista,published_by,published_at,expires_at) "+
-      "VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source,source_id) DO UPDATE SET "+
+      "(source,source_id,origem,destino,produto,volume,valor_motorista,whatsapp_embarcador,published_by,published_at,expires_at) "+
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source,source_id) DO UPDATE SET "+
       "origem=excluded.origem,destino=excluded.destino,produto=excluded.produto,"+
       "volume=excluded.volume,valor_motorista=excluded.valor_motorista,"+
+      "whatsapp_embarcador=excluded.whatsapp_embarcador,"+
       "published_by=excluded.published_by,published_at=excluded.published_at,expires_at=excluded.expires_at"
     ).bind(row.source,row.sourceId,row.origem,row.destino,row.produto,row.volume,
-      row.valorMotorista,String(auth.session.usuario||"").slice(0,100),publishedAt,expiresAt).run();
+      row.valorMotorista,row.whatsappEmbarcador,
+      String(auth.session.usuario||"").slice(0,100),publishedAt,expiresAt).run();
     return success({published:true,expiresAt});
   }catch(e){
     console.error("[DRIVER FREIGHTS] publish",String(e?.message||e));

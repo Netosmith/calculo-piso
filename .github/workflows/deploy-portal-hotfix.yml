@@ -67,12 +67,19 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler d1 execute portal-frota --remote --file=migrations/0010_monitor_nf_cte.sql
+      - name: Preparar auditoria de exclusao do Monitoramento
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 execute portal-frota --remote --file=migrations/0011_monitor_delete_audit.sql
       - name: Validar sintaxe do monitoramento
         working-directory: worker
         run: |
           node --check src/controllers/monitor.js
           node --check src/controllers/monitor-proof.js
-          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs
+          node --check src/controllers/super-admin-monitor-delete.js
+          node --test tests/monitor-v2.test.mjs tests/monitor-proof.test.mjs tests/monitor-page.test.mjs tests/monitor-documents.test.mjs tests/super-admin-monitor-delete.test.mjs
       - name: Preparar tabelas de Funcionários Nova Frota
         working-directory: worker
         env:

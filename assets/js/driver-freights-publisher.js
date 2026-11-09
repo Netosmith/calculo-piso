@@ -32,21 +32,56 @@
     const result=await request("/manage?source="+encodeURIComponent(source));
     published[source]=new Set((result.published||[]).map(row=>String(row.sourceId||"")));
   }
+  // Planilhas legadas podem devolver cabeçalhos de diferentes formas
+  // (ORIGEM, Origem, cidade_origem); a divulgação não depende da caixa
+  // de seleção nem do campo visual do preview, que pode ter valores padrão.
+  function field(row,aliases){
+    if(!row||typeof row!=="object")return "";
+    const normalize=key=>String(key||"").normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]/g,"").toLowerCase();
+    const keys=Object.keys(row);
+    for(const alias of aliases){
+      const matched=keys.find(key=>normalize(key)===normalize(alias));
+      if(matched){
+        const value=String(row[matched]??"").trim();
+        if(value)return value;
+      }
+    }
+    return "";
+  }
   function snapshot(row,source){
     return {
-      source,sourceId:idOf(row),status:String(row.status||"").trim().toUpperCase(),
-      origem:String(row.origem||"").trim(),
-      destino:String(row.destino||"").trim(),
-      produto:String(row.produto||"").trim(),
-      volume:String(row.volume||"").trim(),
-      valorMotorista:String(row.valorMotorista||"").trim()
+      source,sourceId:idOf(row),
+      status:field(row,["status","situação","situacao"]).toUpperCase(),
+      origem:field(row,["origem","cidadeOrigem","cidade de origem","municipioOrigem"]),
+      destino:field(row,["destino","cidadeDestino","cidade de destino","municipioDestino"]),
+      produto:field(row,["produto","mercadoria","tipoProduto"]),
+      volume:field(row,["volume","cadencia"]),
+      valorMotorista:field(row,["valorMotorista","vlrMotorista","valor motorista","freteMotorista"])
     };
+  }
+  function fillMissingForPublication(data,{silent=false}={}){
+    const labels={origem:"ORIGEM (cidade/UF)",destino:"DESTINO (cidade/UF)",produto:"PRODUTO"};
+    const missing=Object.keys(labels).filter(key=>!data[key]);
+    if(!missing.length)return data;
+    if(silent)throw Error("Não foi possível atualizar o anúncio: faltam "+missing.map(key=>labels[key]).join(", ")+".");
+    // Pede somente o que estiver faltando; a informação vale para este
+    // anúncio e não altera o frete cadastrado no Google Sheets.
+    for(const key of missing){
+      const value=window.prompt("O frete selecionado não trouxe o campo "+labels[key]+
+        " para a divulgação no app.\n\nInforme "+labels[key]+
+        ":\n(Este preenchimento não altera o cadastro original.)","");
+      if(value===null)return null;
+      data[key]=String(value).trim();
+      if(!data[key])throw Error("Informe "+labels[key]+" para continuar.");
+    }
+    return data;
   }
   async function publish(row,source,{silent=false}={}){
     if(!enabled(source)||!idOf(row))throw Error("Frete não autorizado.");
     const data=snapshot(row,source);
     if(data.status!=="LIBERADO")throw Error("Somente fretes LIBERADOS podem ser publicados.");
-    if(!data.origem||!data.destino||!data.produto)throw Error("Informe origem, destino e produto antes da divulgação.");
+    if(!fillMissingForPublication(data,{silent}))return false;
     if(!silent){
       const summary=[
         data.origem+" → "+data.destino, "Produto: "+data.produto,

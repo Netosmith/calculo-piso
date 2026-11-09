@@ -83,8 +83,9 @@ export async function superAdminController(request, env, verifiedStagingSession 
     const credentials=credentialsRequested && ready ?
       await credentialSchemaStatus(env.TENANTS_DB) : {ok:false,missing:[]};
     const capabilities={tenantCatalog:ready,legacyUserRead:env.SUPER_ADMIN_LEGACY_USERS_READ==="enabled",tenantWrite:Boolean(ready&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"),membershipWrite:Boolean(ready&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&env.SUPER_ADMIN_MEMBERSHIP_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),brandWrite:Boolean(ready&&env.TENANT_BRANDS&&env.SUPER_ADMIN_BRAND_WRITES==="enabled"&&env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&(ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT))),userWrite:false};
-    capabilities.monitorTripDelete=Boolean(env.FLEET_DB&&env.FLEET_FILES&&
-      (ownerPortalEnabled||(env.SUPER_ADMIN_OIDC&&env.SUPER_ADMIN_SUBJECT)));
+    // A interface atual usa a autorização já habilitada para escritas do proprietário.
+    // O fluxo OIDC alternativo permanece protegido no backend, sem exibir botão inoperante.
+    capabilities.monitorTripDelete=Boolean(env.FLEET_DB&&env.FLEET_FILES&&ownerPortalEnabled);
     if(credentialsRequested){
       capabilities.credentialWrite=Boolean(ready&&ownerPortalEnabled&&
         env.SUPER_ADMIN_TENANT_WRITES==="enabled"&&credentials.ok);

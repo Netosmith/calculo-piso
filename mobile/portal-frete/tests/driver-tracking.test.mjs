@@ -49,3 +49,15 @@ test("motorista só ativa GPS depois de selfie e termo; fretes internos não sã
   assert.ok(ui.includes("revokeDriverTracking"));
   assert.match(ui,/não exibiremos os fretes operacionais restritos/i);
 });
+
+test("versão 0.3 exibe fretes públicos sem abrir o módulo operacional",()=>{
+  const app=JSON.parse(read("app.json")).expo;
+  assert.equal(app.version,"0.3.0");
+  assert.equal(app.android.versionCode,4);
+  const area=read("src/DriverArea.js");
+  assert.match(area,/\/v1\/driver-freights/);
+  assert.match(area,/Buscar origem, destino ou produto/);
+  assert.match(area,/Compartilhar frete/);
+  assert.match(area,/Nenhum frete divulgado neste momento/);
+  assert.doesNotMatch(area,/portalPage\("fretes"/);
+});

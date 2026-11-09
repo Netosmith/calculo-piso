@@ -7,6 +7,7 @@ on:
       - 'worker/src/router.js'
       - 'worker/migrations/0013_driver_public_freights.sql'
       - 'worker/tests/driver-freights.test.mjs'
+      - 'worker/tests/driver-freights-publisher.test.mjs'
       - 'assets/js/driver-freights-publisher.js'
       - 'assets/js/fretes.js'
       - 'assets/js/fretes2.js'
@@ -31,4 +32,4 @@ jobs:
           node --check assets/js/driver-freights-publisher.js
           node --check assets/js/fretes.js
           node --check assets/js/fretes2.js
-          node --test worker/tests/driver-freights.test.mjs
+          node --test worker/tests/driver-freights.test.mjs worker/tests/driver-freights-publisher.test.mjs

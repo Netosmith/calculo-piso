@@ -11,6 +11,7 @@ on:
       - 'worker/migrations/0009_monitor_proof_review.sql'
       - 'worker/migrations/0010_monitor_nf_cte.sql'
       - 'worker/migrations/0011_monitor_delete_audit.sql'
+      - 'worker/migrations/0012_monitor_native_positions.sql'
       - 'worker/src/controllers/super-admin-monitor-delete.js'
       - 'worker/src/controllers/super-admin.js'
       - 'pages/super-admin.html'
@@ -36,4 +37,4 @@ jobs:
           node --check worker/src/controllers/monitor-proof.js
           node --check worker/src/controllers/super-admin-monitor-delete.js
           node --check assets/js/super-admin-monitor-delete.js
-          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs worker/tests/monitor-auto-resume.test.mjs worker/tests/super-admin-monitor-delete.test.mjs
+          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs worker/tests/monitor-auto-resume.test.mjs worker/tests/monitor-native.test.mjs worker/tests/super-admin-monitor-delete.test.mjs

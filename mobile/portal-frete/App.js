@@ -7,6 +7,8 @@ import {SafeAreaProvider,SafeAreaView} from "react-native-safe-area-context";
 import {WebView} from "react-native-webview";
 import {normalizeTenantSlug,portalPage,slugFromInvite,trustedNavigation} from "./src/routes";
 import {palette as c} from "./src/theme";
+import DriverArea from "./src/DriverArea";
+import {extractDriverToken} from "./src/tracking";
 
 const MODULES=[
   {key:"home",icon:"⌂",title:"Portal completo",description:"Acesse todos os módulos permitidos para o seu usuário."},
@@ -110,7 +112,8 @@ function AppContent(){
   const browser=useRef(null),canBack=useRef(false);
   const [tenant,setTenant]=useState("");
   const [tenantInput,setTenantInput]=useState("");
-  const [screen,setScreen]=useState("inicio");
+  const [screen,setScreen]=useState("escolha");
+  const [driverInvite,setDriverInvite]=useState("");
   const [currentRoute,setCurrentRoute]=useState(portalPage("login"));
   const [error,setError]=useState("");
   const [onlineError,setOnlineError]=useState("");
@@ -133,6 +136,8 @@ function AppContent(){
   },[tenantInput,navigate]);
 
   const handleInvite=useCallback(url=>{
+    const driverToken=extractDriverToken(url);
+    if(driverToken){setDriverInvite(url);setScreen("driver");return true;}
     const slug=slugFromInvite(url);
     if(slug===null)return false;
     setTenant(slug);setTenantInput(slug);setError("");
@@ -153,6 +158,7 @@ function AppContent(){
       setScreen("inicio");return true;
     }
     if(screen==="mais"){setScreen("inicio");return true;}
+    if(screen==="driver"||screen==="inicio"){setScreen("escolha");return true;}
     return false;
   },[screen]);
   useEffect(()=>{
@@ -196,6 +202,33 @@ function AppContent(){
         </View>
         <View style={styles.topbarDot}/>
       </View>}
+    {screen==="escolha"&&<View style={styles.choice}>
+      <View style={styles.choiceIntro}>
+        <Text style={styles.choiceEyebrow}>PORTAL FRETE · NOVA FROTA</Text>
+        <Text style={styles.choiceTitle}>Como você quer acessar?</Text>
+        <Text style={styles.choiceDesc}>Um aplicativo. Duas experiências para necessidades diferentes.</Text>
+      </View>
+      <Pressable accessibilityRole="button" style={styles.choiceCard}
+        onPress={()=>setScreen("driver")}>
+        <Text style={styles.choiceIcon}>🚛</Text>
+        <View style={styles.choiceCardText}>
+          <Text style={styles.choiceCardTitle}>SOU MOTORISTA</Text>
+          <Text style={styles.choiceCardDesc}>Fretes disponíveis e acompanhamento da minha viagem com GPS nativo.</Text>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" style={styles.choiceCard}
+        onPress={()=>setScreen("inicio")}>
+        <Text style={styles.choiceIcon}>💼</Text>
+        <View style={styles.choiceCardText}>
+          <Text style={styles.choiceCardTitle}>SOU FUNCIONÁRIO</Text>
+          <Text style={styles.choiceCardDesc}>Acesso aos módulos e permissões do Portal Frete Web.</Text>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
+      <Text style={styles.choiceFoot}>A localização do motorista só será solicitada após vincular uma viagem e aceitar o termo.</Text>
+    </View>}
+    {screen==="driver"&&<DriverArea initialLink={driverInvite} onBack={()=>setScreen("escolha")}/>}
     {screen==="inicio"&&
       <Landing tenant={tenantInput} onCompanyChange={setTenantInput} onOpen={navigate}
         onActivate={activate} error={error}/>}
@@ -211,7 +244,7 @@ function AppContent(){
         </View>
         <Text style={styles.warning}>O aplicativo usa a autenticação e as permissões do servidor; nenhum atalho concede acesso adicional.</Text>
       </View>}
-    <View style={[styles.browser,{display:screen==="web"?"flex":"none"}]}>
+    {screen==="web"&&<View style={styles.browser}>
       <View style={styles.webToolbar}>
         <Pressable accessibilityRole="button" accessibilityLabel="Voltar"
           onPress={()=>goBack()} style={styles.toolbarButton}>
@@ -253,8 +286,9 @@ function AppContent(){
           </Pressable>
         </View>}
       {loading&&<View style={styles.webProgress}/>}
-    </View>
-    <BottomTabs active={screen==="web"?"portal":screen} onTab={tab} tenant={tenant}/>
+    </View>}
+    {["inicio","mais","web"].includes(screen)&&
+      <BottomTabs active={screen==="web"?"portal":screen} onTab={tab} tenant={tenant}/>}
   </SafeAreaView>;
 }
 export default function App(){
@@ -262,6 +296,17 @@ export default function App(){
 }
 const styles=StyleSheet.create({
   flex:{flex:1},safe:{flex:1,backgroundColor:c.white},
+  choice:{flex:1,padding:20,backgroundColor:"#f6fafd"},
+  choiceIntro:{marginTop:26,marginBottom:28},
+  choiceEyebrow:{color:c.green,fontSize:11,fontWeight:"900",letterSpacing:1.2},
+  choiceTitle:{fontSize:27,fontWeight:"900",color:c.navy,marginTop:10},
+  choiceDesc:{fontSize:13,lineHeight:20,color:c.muted,marginTop:7},
+  choiceCard:{borderRadius:18,backgroundColor:"#fff",borderWidth:1,borderColor:c.line,
+    padding:18,marginBottom:15,flexDirection:"row",alignItems:"center",minHeight:124},
+  choiceIcon:{fontSize:28,marginRight:15},
+  choiceCardText:{flex:1},choiceCardTitle:{fontSize:16,fontWeight:"900",color:c.navy},
+  choiceCardDesc:{fontSize:12,lineHeight:18,color:c.muted,marginTop:7},
+  choiceFoot:{fontSize:12,lineHeight:19,color:c.muted,marginTop:17,textAlign:"center"},
   pressed:{opacity:.78},
   topbar:{height:65,backgroundColor:c.white,paddingHorizontal:20,flexDirection:"row",alignItems:"center",borderBottomWidth:1,borderBottomColor:c.line},
   logo:{width:38,height:38,backgroundColor:c.navy,borderRadius:12,alignItems:"center",justifyContent:"center",marginRight:12},

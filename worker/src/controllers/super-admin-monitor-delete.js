@@ -36,7 +36,9 @@ async function tripSnapshot(db,id) {
     if(page.length<PAGE_SIZE)break;
     cursor=page[page.length-1].id;
   }
-  return {trip,branch:extras?.branch||"",proof,document,notes,revisions,positions};
+  const nativePositions=await all(db,
+    "SELECT id,lat,lng,accuracy,captured_at,received_at,platform FROM monitor_native_positions WHERE trip_id=? ORDER BY captured_at ASC",id);
+  return {trip,branch:extras?.branch||"",proof,document,notes,revisions,positions,nativePositions};
 }
 async function copyProofs(store,snapshot,prefix){
   const files={};
@@ -79,8 +81,9 @@ async function archiveAndDelete(env,id,actor,reason){
       "(id,trip_id,plate,driver,was_active,actor,reason,backup_key,positions_count,deleted_at) "+
       "SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM monitor_trips WHERE id=?)")
       .bind(auditId,id,snapshot.trip.plate,snapshot.trip.driver,
-        snapshot.trip.active===1?1:0,actor,reason,archiveKey,snapshot.positions.length,time,id),
+        snapshot.trip.active===1?1:0,actor,reason,archiveKey,(snapshot.positions.length+snapshot.nativePositions.length),time,id),
     db.prepare("DELETE FROM monitor_positions WHERE trip_id=?").bind(id),
+    db.prepare("DELETE FROM monitor_native_positions WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_proof_audit WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_trip_documents_audit WHERE trip_id=?").bind(id),
     db.prepare("DELETE FROM monitor_trip_documents WHERE trip_id=?").bind(id),
@@ -98,7 +101,7 @@ async function archiveAndDelete(env,id,actor,reason){
       console.error("[SUPER-ADMIN-MONITOR] Falha ao limpar origem",String(e?.message||e));}
   }
   return {id,plate:snapshot.trip.plate,archiveId:auditId,backupKey:archiveKey,
-    positionsCount:snapshot.positions.length,
+    positionsCount:snapshot.positions.length+snapshot.nativePositions.length,
     warning:cleanFailures.length?"Cópia de origem não removida; backup privado foi preservado.":null};
 }
 

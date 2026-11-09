@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,Share,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import {palette as c} from "./theme";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
@@ -47,18 +47,29 @@ export default function DriverArea({initialLink="",onBack}){
     return [offer.origem,offer.destino,offer.produto,offer.source].join(" ")
       .toLocaleUpperCase("pt-BR").includes(needle);
   };
-  async function shareOffer(offer){
+  function whatsappForOffer(offer){
+    const phone=String(offer?.whatsappEmbarcador||"").replace(/\D/g,"");
+    return /^55\d{10,11}$/.test(phone)?phone:"";
+  }
+  async function contactEmbarcador(offer){
+    const phone=whatsappForOffer(offer);
+    if(!phone){
+      Alert.alert("WhatsApp indisponível","Este frete ainda não tem um contato de embarcador autorizado. Peça à Nova Frota para republicar a oferta.");
+      return;
+    }
+    const message=[
+      "Olá! Vi este frete no aplicativo Portal Frete e gostaria de mais informações:",
+      (offer.origem||"")+" → "+(offer.destino||""),
+      "Produto: "+(offer.produto||"A consultar"),
+      "Volume: "+(offer.volume||"A consultar"),
+      "Frete motorista: "+(offer.valorMotorista||"A consultar")
+    ].join("\n");
+    const url="https://wa.me/"+phone+"?text="+encodeURIComponent(message);
     try{
-      const text=[
-        "🚛 FRETE NOVA FROTA",
-        (offer.origem||"")+" → "+(offer.destino||""),
-        "Produto: "+(offer.produto||"A consultar"),
-        "Volume: "+(offer.volume||"A consultar"),
-        "Valor motorista: "+(offer.valorMotorista||"A consultar"),
-        "Oferta divulgada pelo Portal Frete."
-      ].join("\n");
-      await Share.share({message:text});
-    }catch(e){Alert.alert("Compartilhamento",e.message||"Não foi possível compartilhar.");}
+      await Linking.openURL(url);
+    }catch(e){
+      Alert.alert("Não foi possível abrir o WhatsApp",e?.message||"Confira se o WhatsApp está instalado.");
+    }
   }
   const token=extractDriverToken(link);
   async function status(){
@@ -168,7 +179,8 @@ export default function DriverArea({initialLink="",onBack}){
             <Text style={styles.offerDetail}>Frete motorista: <Text style={styles.offerValue}>{offer.valorMotorista||"A consultar"}</Text></Text>
           </View>
           <Text style={styles.offerExpiry}>Oferta divulgada até {new Date(offer.expiresAt).toLocaleString("pt-BR")}</Text>
-          <BTN title="Compartilhar frete" onPress={()=>shareOffer(offer)} secondary/>
+          <BTN title={whatsappForOffer(offer)?"🟢 Falar com o embarcador no WhatsApp":"WhatsApp do embarcador indisponível"}
+            onPress={()=>contactEmbarcador(offer)} disabled={!whatsappForOffer(offer)}/>
         </View>
       )}
     </View>:<>

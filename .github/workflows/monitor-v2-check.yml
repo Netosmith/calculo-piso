@@ -10,6 +10,12 @@ on:
       - 'worker/src/middleware/cors.js'
       - 'worker/migrations/0009_monitor_proof_review.sql'
       - 'worker/migrations/0010_monitor_nf_cte.sql'
+      - 'worker/migrations/0011_monitor_delete_audit.sql'
+      - 'worker/src/controllers/super-admin-monitor-delete.js'
+      - 'worker/src/controllers/super-admin.js'
+      - 'pages/super-admin.html'
+      - 'assets/js/super-admin-monitor-delete.js'
+      - 'worker/tests/super-admin-monitor-delete.test.mjs'
       - 'worker/tests/monitor-*.test.mjs'
       - 'worker/migrations/0008_monitor_v2.sql'
       - '.github/workflows/monitor-v2-check.yml'
@@ -28,4 +34,6 @@ jobs:
         run: |
           node --check worker/src/controllers/monitor.js
           node --check worker/src/controllers/monitor-proof.js
-          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs
+          node --check worker/src/controllers/super-admin-monitor-delete.js
+          node --check assets/js/super-admin-monitor-delete.js
+          node --test worker/tests/monitor-v2.test.mjs worker/tests/monitor-proof.test.mjs worker/tests/monitor-page.test.mjs worker/tests/monitor-documents.test.mjs worker/tests/super-admin-monitor-delete.test.mjs

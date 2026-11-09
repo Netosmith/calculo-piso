@@ -49,7 +49,14 @@
     }
     return "";
   }
-  function snapshot(row,source){
+  function normalizeWhatsapp(value){
+    const raw=String(value??"").trim();
+    if(!raw||!/^[+\d()\s-]+$/.test(raw))return "";
+    const digits=raw.replace(/\D/g,"");
+    if(digits.length===10||digits.length===11)return "55"+digits;
+    return /^55\d{10,11}$/.test(digits)?digits:"";
+  }
+  function snapshot(row,source,{whatsappEmbarcador=""}={}){
     return {
       source,sourceId:idOf(row),
       status:field(row,["status","situação","situacao"]).toUpperCase(),
@@ -57,11 +64,13 @@
       destino:field(row,["destino","cidadeDestino","cidade de destino","municipioDestino"]),
       produto:field(row,["produto","mercadoria","tipoProduto"]),
       volume:field(row,["volume","cadencia"]),
-      valorMotorista:field(row,["valorMotorista","vlrMotorista","valor motorista","freteMotorista"])
+      valorMotorista:field(row,["valorMotorista","vlrMotorista","valor motorista","freteMotorista"]),
+      whatsappEmbarcador:normalizeWhatsapp(whatsappEmbarcador)
     };
   }
   function fillMissingForPublication(data,{silent=false}={}){
-    const labels={origem:"ORIGEM (cidade/UF)",destino:"DESTINO (cidade/UF)",produto:"PRODUTO"};
+    const labels={origem:"ORIGEM (cidade/UF)",destino:"DESTINO (cidade/UF)",produto:"PRODUTO",
+      whatsappEmbarcador:"WHATSAPP DO EMBARCADOR (DDD + número)"};
     const missing=Object.keys(labels).filter(key=>!data[key]);
     if(!missing.length)return data;
     if(silent)throw Error("Não foi possível atualizar o anúncio: faltam "+missing.map(key=>labels[key]).join(", ")+".");
@@ -72,20 +81,21 @@
         " para a divulgação no app.\n\nInforme "+labels[key]+
         ":\n(Este preenchimento não altera o cadastro original.)","");
       if(value===null)return null;
-      data[key]=String(value).trim();
-      if(!data[key])throw Error("Informe "+labels[key]+" para continuar.");
+      data[key]=key==="whatsappEmbarcador"?normalizeWhatsapp(value):String(value).trim();
+      if(!data[key])throw Error("Informe um "+labels[key]+" válido para continuar.");
     }
     return data;
   }
-  async function publish(row,source,{silent=false}={}){
+  async function publish(row,source,{silent=false,whatsappEmbarcador=""}={}){
     if(!enabled(source)||!idOf(row))throw Error("Frete não autorizado.");
-    const data=snapshot(row,source);
+    const data=snapshot(row,source,{whatsappEmbarcador});
     if(data.status!=="LIBERADO")throw Error("Somente fretes LIBERADOS podem ser publicados.");
     if(!fillMissingForPublication(data,{silent}))return false;
     if(!silent){
       const summary=[
         data.origem+" → "+data.destino, "Produto: "+data.produto,
-        "Volume: "+(data.volume||"A consultar"),"Valor do motorista: "+(data.valorMotorista||"A consultar")
+        "Volume: "+(data.volume||"A consultar"),"Valor do motorista: "+(data.valorMotorista||"A consultar"),
+        "WhatsApp do embarcador: +"+data.whatsappEmbarcador+" (visível publicamente no app)"
       ].join("\n");
       if(!confirm("Divulgar este frete para TODOS os motoristas que usam o aplicativo?\n\n"+
         summary+"\n\nCliente, valor empresa e observações internas não serão publicados."))return false;
@@ -101,19 +111,19 @@
     published[source].delete(idOf(row));
     return true;
   }
-  async function toggle(row,source){
-    return isPublished(row,source)?unpublish(row,source):publish(row,source);
+  async function toggle(row,source,options={}){
+    return isPublished(row,source)?unpublish(row,source):publish(row,source,options);
   }
   async function beforeDelete(row,source){
     if(!enabled(source))return;
     // Falha fechada: nunca remove da operação mantendo divulgação obsoleta.
     await unpublish(row,source,{silent:true});
   }
-  async function afterSave(row,source){
+  async function afterSave(row,source,{whatsappEmbarcador=""}={}){
     if(!enabled(source)||!isPublished(row,source))return;
-    const data=snapshot(row,source);
-    if(data.status==="LIBERADO"&&data.origem&&data.destino&&data.produto)
-      await publish(row,source,{silent:true});
+    const data=snapshot(row,source,{whatsappEmbarcador});
+    if(data.status==="LIBERADO"&&data.origem&&data.destino&&data.produto&&data.whatsappEmbarcador)
+      await publish(row,source,{silent:true,whatsappEmbarcador});
     else await unpublish(row,source,{silent:true});
   }
   window.NFDriverFreights={enabled,isPublished,refresh,toggle,beforeDelete,afterSave};

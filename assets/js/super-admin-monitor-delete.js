@@ -160,11 +160,11 @@ async function deleteSelected(){
     el("monitorDeleteBackup").checked=false;
     if(successes.length)el("monitorDeleteReason").value="";
     const warning=successes.filter(x=>x.warning).length;
+    await loadTrips(false);await loadAudit();
     status(successes.length+" viagem(ns) removidas e arquivadas. "+
       (warning?"Aviso: verifique a limpeza dos arquivos originais. ":"")+
       (data.partial?"Operação parcial: "+(data.failed?.message||"verifique a auditoria."):""),
       Boolean(data.partial||warning));
-    await loadTrips(false);await loadAudit();
   }catch(e){status("Nenhuma exclusão confirmada nesta tela: "+e.message,true);}
   finally{processing=false;updateControls();}
 }

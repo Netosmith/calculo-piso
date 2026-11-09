@@ -809,6 +809,23 @@ function formatDateTimeBR(value) {
     return p.startsWith("55") ? p : "55" + p;
   }
 
+  // O embarcador precisa corresponder ao contato do frete e à filial,
+  // nunca a outro contato com o mesmo nome em uma filial diferente.
+  function whatsappForDriverFreight(row) {
+    const contato = upper(row?.contato);
+    const filial = upper(row?.filial);
+    const registro = Object.entries(DIRECTORY.contatosPorFilial || {})
+      .find(([nomeFilial]) => upper(nomeFilial) === filial)?.[1]
+      ?.find((item) => upper(item?.nome) === contato);
+    let telefone = safeText(registro?.fone);
+    if (!telefone && /^[+\d()\s-]+$/.test(safeText(row?.contato))) {
+      telefone = safeText(row?.contato);
+    }
+    const digitos = telefone.replace(/\D/g, "");
+    if (digitos.length === 10 || digitos.length === 11) return "55" + digitos;
+    return /^55\d{10,11}$/.test(digitos) ? digitos : "";
+  }
+
   function whatsappLinkFromContato(contato) {
     const phone = extractPhoneBR(contato);
     return phone ? "https://wa.me/" + phone : "";
@@ -1122,7 +1139,7 @@ function formatDateTimeBR(value) {
         event.stopPropagation();
         btnApp.disabled=true;
         try{
-          const done=await window.NFDriverFreights.toggle(row,freightModule);
+          const done=await window.NFDriverFreights.toggle(row,freightModule,{whatsappEmbarcador:whatsappForDriverFreight(row)});
           if(done){
             setStatus(window.NFDriverFreights.isPublished(row,freightModule)?
               "📱 Frete divulgado para motoristas por 72 horas":
@@ -2748,7 +2765,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         else STATE.rows.unshift(nextRow);
 
         if(window.NFDriverFreights?.enabled(freightModule)){
-          try{await window.NFDriverFreights.afterSave(nextRow,freightModule);}
+          try{await window.NFDriverFreights.afterSave(nextRow,freightModule,{whatsappEmbarcador:whatsappForDriverFreight(nextRow)});}
           catch(error){alert("Frete salvo, mas não foi possível atualizar a divulgação no app: "+error.message);}
         }
         fillTopFilters(STATE.rows);

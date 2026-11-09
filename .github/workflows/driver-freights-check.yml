@@ -1,0 +1,34 @@
+name: Validar Fretes Publicos do App
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'worker/src/controllers/driver-freights.js'
+      - 'worker/src/router.js'
+      - 'worker/migrations/0013_driver_public_freights.sql'
+      - 'worker/tests/driver-freights.test.mjs'
+      - 'assets/js/driver-freights-publisher.js'
+      - 'assets/js/fretes.js'
+      - 'assets/js/fretes2.js'
+      - 'pages/fretes.html'
+      - 'pages/fretes2.html'
+      - 'mobile/portal-frete/**'
+      - '.github/workflows/driver-freights-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar API e scripts
+        run: |
+          node --check worker/src/controllers/driver-freights.js
+          node --check assets/js/driver-freights-publisher.js
+          node --check assets/js/fretes.js
+          node --check assets/js/fretes2.js
+          node --test worker/tests/driver-freights.test.mjs

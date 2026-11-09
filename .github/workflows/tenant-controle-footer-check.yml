@@ -7,7 +7,7 @@ on:
       - 'pages/gnova/controle.html'
       - 'pages/transvale/controle.html'
       - 'pages/modelo01/controle.html'
-      - 'worker/tests/tenant-shared-catalog.test.mjs'
+      - 'worker/tests/tenant-controle-footer.test.mjs'
       - '.github/workflows/tenant-controle-footer-check.yml'
   workflow_dispatch:
 permissions:
@@ -23,4 +23,4 @@ jobs:
       - name: Validar scripts e rodapé empresarial
         run: |
           node --check assets/js/tenant-page.js
-          node --test worker/tests/tenant-shared-catalog.test.mjs
+          node --test worker/tests/tenant-controle-footer.test.mjs

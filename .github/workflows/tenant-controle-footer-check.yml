@@ -1,0 +1,26 @@
+name: Validar rodapé da posição de embarque das transportadoras
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/tenant-page.js'
+      - 'pages/gnova/controle.html'
+      - 'pages/transvale/controle.html'
+      - 'pages/modelo01/controle.html'
+      - 'worker/tests/tenant-shared-catalog.test.mjs'
+      - '.github/workflows/tenant-controle-footer-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar scripts e rodapé empresarial
+        run: |
+          node --check assets/js/tenant-page.js
+          node --test worker/tests/tenant-shared-catalog.test.mjs

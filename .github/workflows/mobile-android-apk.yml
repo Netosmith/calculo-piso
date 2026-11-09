@@ -30,6 +30,12 @@ jobs:
         run: npm run check
       - name: Gerar projeto Android nativo (Expo Prebuild)
         run: CI=1 npx expo prebuild --platform android --clean --no-install
+      - name: Assinatura de teste local (não usar nas lojas)
+        run: |
+          # Expo Prebuild pode gerar um release sem certificado configurado.
+          # Para esta versão interna, usar apenas a chave DEBUG do projeto.
+          sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/g' android/app/build.gradle
+          grep -n 'signingConfig signingConfigs' android/app/build.gradle
       - name: Compilar APK instalável com JavaScript embutido
         env:
           CI: '1'

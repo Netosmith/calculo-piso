@@ -32,7 +32,7 @@ async function operator(request,env,source){
   if(session.tenantMode===true||tenantIdForLegacySession(session)!==LEGACY_NOVA_FROTA.id)
     return {error:errorResponse("Divulgação exclusiva Nova Frota.",403)};
   const role=String(session.perfil||"").trim().toUpperCase();
-  if(!["ADMINISTRADOR","COMERCIAL","OPERACIONAL"].includes(role)||
+  if(!["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GO","MT"].includes(role)||
      !canRunGatewayAction(session,source,"update"))
     return {error:errorResponse("Sem permissão para divulgar este frete.",403)};
   return {session};

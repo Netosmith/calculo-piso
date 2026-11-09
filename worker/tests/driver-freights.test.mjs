@@ -11,6 +11,7 @@ const offer={
   source:"fretes",sourceId:"frete-go-0001",status:"LIBERADO",
   origem:"RIO VERDE-GO",destino:"SANTOS-SP",produto:"MILHO",
   valorMotorista:"R$ 290,00/t",volume:"150 t",
+  whatsappEmbarcador:"5564999887766",
   cliente:"SEGREDO COMERCIAL",valorEmpresa:"R$ 400,00/t",
   obs:"DADO INTERNO DE RISCO"
 };
@@ -49,6 +50,7 @@ async function request(path,{method="GET",body,role="ADMINISTRADOR",tenant="nova
 test("catálogo público somente retorna oferta selecionada, jamais o registro operacional completo",async()=>{
  const db=mockDB([{source:"fretes",sourceId:"id1",origem:"RIO VERDE-GO",
   destino:"SANTOS-SP",produto:"MILHO",volume:"150 t",valorMotorista:"R$ 290/t",
+  whatsappEmbarcador:"5564999887766",
   publishedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60000).toISOString()}]);
  const response=await driverFreightsController(await request("/v1/driver-freights",{authenticated:false}),{
   ...envBase,FLEET_DB:db
@@ -57,6 +59,7 @@ test("catálogo público somente retorna oferta selecionada, jamais o registro o
  const data=await response.json();
  assert.equal(data.fretes.length,1);
  assert.equal(data.fretes[0].origem,"RIO VERDE-GO");
+ assert.equal(data.fretes[0].whatsappEmbarcador,"5564999887766");
  assert.ok(db.calls.some(c=>c.sql.includes("expires_at>?")));
  assert.ok(db.calls.every(c=>!c.sql.includes("valor_empresa")&&!c.sql.includes("cliente")));
 });
@@ -71,9 +74,11 @@ test("publicação é opt-in, com campos permitidos e expiração de 72 horas",a
  assert.ok(stmt);
  assert.ok(stmt.params.includes(offer.origem));
  assert.ok(stmt.params.includes(offer.valorMotorista));
+ assert.ok(stmt.params.includes(offer.whatsappEmbarcador));
  assert.ok(!stmt.params.includes(offer.cliente));
  assert.ok(!stmt.params.includes(offer.valorEmpresa));
  assert.ok(!stmt.params.includes(offer.obs));
+ assert.ok(stmt.sql.includes("whatsapp_embarcador"));
  assert.ok(Math.abs(Date.parse(result.expiresAt)-Date.now()-72*3600000)<5000);
 });
 test("não publica sem status LIBERADO ou sem origem/destino/produto",async()=>{
@@ -83,6 +88,9 @@ test("não publica sem status LIBERADO ou sem origem/destino/produto",async()=>{
   {...offer,status:""},
   {...offer,origem:""},
   {...offer,produto:""},
+  {...offer,whatsappEmbarcador:""},
+  {...offer,whatsappEmbarcador:"11111"},
+  {...offer,whatsappEmbarcador:"https://evil.test"},
   {...offer,valorMotorista:"<script>alert(1)</script>"}
  ]){
   const db=mockDB();

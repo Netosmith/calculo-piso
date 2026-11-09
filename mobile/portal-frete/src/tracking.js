@@ -84,7 +84,14 @@ async function stopNative({clearCredentials=false}={}){
   if(await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK)){
     await Location.stopLocationUpdatesAsync(LOCATION_TASK);
   }
-  if(clearCredentials)await SecureStore.deleteItemAsync(TOKEN_KEY);
+  if(clearCredentials){
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    // Ao revogar ou encerrar, não conservar coordenadas privadas inutilizáveis.
+    const db=await database();
+    await db.runAsync("DELETE FROM fixes");
+    await SecureStore.deleteItemAsync(CRYPTO_KEY);
+    keyPromise=null;
+  }
 }
 export async function getDriverTrip(token){
   if(!safeToken(token))throw Error("Link da viagem inválido.");
@@ -104,6 +111,9 @@ async function flushInternal(){
   const token=await currentToken();
   if(!safeToken(token))return {sent:0};
   const db=await database();
+  // Corrige backlog fora da janela aceita pelo Worker; evita travar a fila.
+  await db.runAsync("DELETE FROM fixes WHERE created_at<?",
+    new Date(Date.now()-72*3600000).toISOString());
   let sent=0;
   for(let n=0;n<100;n++){
     const row=await db.getFirstAsync("SELECT id,sealed FROM fixes ORDER BY created_at,id LIMIT 1");

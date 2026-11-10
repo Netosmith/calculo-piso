@@ -4,7 +4,7 @@
   "main": "src/index.js",
   "compatibility_date": "2026-08-01",
   "workers_dev": true,
-  "vars": {"TENANT_PORTAL_ENABLED": "enabled", "SUPER_ADMIN_OWNER_PORTAL_WRITES": "enabled", "SUPER_ADMIN_TENANT_WRITES": "enabled", "SUPER_ADMIN_MEMBERSHIP_WRITES": "enabled", "SUPER_ADMIN_BRAND_WRITES": "enabled", "SUPER_ADMIN_CREDENTIAL_WRITES": "enabled"},
+  "vars": {"TENANT_PORTAL_ENABLED": "enabled", "SUPER_ADMIN_OWNER_PORTAL_WRITES": "enabled", "SUPER_ADMIN_TENANT_WRITES": "enabled", "SUPER_ADMIN_MEMBERSHIP_WRITES": "enabled", "SUPER_ADMIN_BRAND_WRITES": "enabled", "SUPER_ADMIN_CREDENTIAL_WRITES": "enabled", "SUPER_ADMIN_PIN_REQUIRED": "enabled"},
   "observability": {
     "enabled": true
   },

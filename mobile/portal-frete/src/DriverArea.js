@@ -1,10 +1,17 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,Image,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import {palette as c} from "./theme";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
-  driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking
+  driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking,
+  stopAfterApprovedDriverStage
 } from "./tracking";
+import {
+  rememberDriverJourney,restoreDriverJourney,forgetDriverJourney,
+  acceptDriverTripTerm,finishDriverJourneyStage,
+  takeDriverSelfie,takeDriverReceiptPhoto,chooseDriverReceiptPhoto,
+  chooseDriverReceiptDocument,uploadDriverEvidence
+} from "./driver-evidence";
 
 const formatDriverFreight=value=>{
   const raw=String(value??"").trim();
@@ -45,6 +52,10 @@ export default function DriverArea({initialLink="",onBack}){
   const [freightLoading,setFreightLoading]=useState(false);
   const [freightError,setFreightError]=useState("");
   const [freightSearch,setFreightSearch]=useState("");
+  const [selfieAsset,setSelfieAsset]=useState(null);
+  const [receiptAsset,setReceiptAsset]=useState(null);
+  const [photoNotice,setPhotoNotice]=useState(false);
+  const [termConsent,setTermConsent]=useState(false);
 
   async function loadFreightOffers(){
     if(freightLoading)return;
@@ -103,16 +114,24 @@ export default function DriverArea({initialLink="",onBack}){
   }
   useEffect(()=>{
     let mounted=true;
-    restoreApprovedTracking().then(async saved=>{
+    (async()=>{
+      const saved=await restoreApprovedTracking().catch(()=>({token:null}));
+      const evidence=await restoreDriverJourney().catch(()=>null);
       if(!mounted)return;
-      if(saved.token&&!initialLink){
-        setLink("https://portalfrete.net.br/pages/monitorar-motorista.html#"+saved.token);
+      const recovered=initialLink||saved.token||evidence;
+      if(recovered&&!initialLink){
+        setLink("https://portalfrete.net.br/pages/monitorar-motorista.html#"+
+          (extractDriverToken(recovered)||recovered));
+      }
+      if(recovered){
+        const recoveredTrip=await getDriverTrip(extractDriverToken(recovered)).catch(()=>null);
+        if(mounted&&recoveredTrip)setTrip(recoveredTrip);
       }
       await status();
-    }).catch(()=>status().catch(()=>{}));
+    })().catch(()=>status().catch(()=>{}));
     return()=>{mounted=false;};
   },[]);
-  useEffect(()=>{if(initialLink){setLink(initialLink);setTab("viagem");}},[initialLink]);
+  useEffect(()=>{if(initialLink){setLink(initialLink);setTab("viagem");setTrip(null);}},[initialLink]);
   useEffect(()=>{
     if(!active)return;
     const id=setInterval(()=>status().catch(()=>{}),30000);
@@ -129,6 +148,7 @@ export default function DriverArea({initialLink="",onBack}){
     if(!token)throw Error("Cole o link completo da viagem enviado pela Nova Frota.");
     const data=await getDriverTrip(token);
     setTrip(data);
+    await rememberDriverJourney(token);
     const message=!data.active?"Viagem encerrada pela Central da Nova Frota.":
       data.receiptStatus==="approved"?"Comprovante aprovado pela Nova Frota. Confira a finalização na página da viagem.":
       data.receiptStatus==="rejected"?"Comprovante rejeitado. Abra a viagem e anexe um novo comprovante.":
@@ -137,14 +157,53 @@ export default function DriverArea({initialLink="",onBack}){
       "Antes de ativar o monitoramento, envie a selfie e aceite o termo da viagem.";
     setNotice(message);
   });
-  const openEvidence=()=>job(async()=>{
-    if(!token)throw Error("Cole o link da viagem para abrir as etapas.");
-    const url="https://portalfrete.net.br/pages/monitorar-motorista.html#"+token;
-    await Linking.openURL(url);
+  const chooseSelfie=()=>job(async()=>{
+    const item=await takeDriverSelfie();
+    if(item){setSelfieAsset(item);setPhotoNotice(false);setNotice("Confira a foto do seu rosto antes de enviar.");}
   });
+  const chooseReceipt=(source)=>job(async()=>{
+    const item=source==="camera"?await takeDriverReceiptPhoto():
+      source==="gallery"?await chooseDriverReceiptPhoto():await chooseDriverReceiptDocument();
+    if(item){setReceiptAsset(item);setNotice("Confira o comprovante selecionado antes de enviar.");}
+  });
+  const uploadSelfie=()=>job(async()=>{
+    if(!token||!selfieAsset||!photoNotice)throw Error("Selecione a selfie e confirme o aviso sobre a foto.");
+    await uploadDriverEvidence(token,"selfie",selfieAsset);
+    await rememberDriverJourney(token);
+    setSelfieAsset(null);setPhotoNotice(false);
+    setTrip(await getDriverTrip(token));
+    setNotice("Selfie enviada com segurança. A Nova Frota fará a conferência.");
+  });
+  const uploadReceipt=()=>job(async()=>{
+    if(!token||!receiptAsset)throw Error("Selecione um comprovante antes do envio.");
+    await uploadDriverEvidence(token,"receipt",receiptAsset);
+    await rememberDriverJourney(token);
+    setReceiptAsset(null);
+    setTrip(await getDriverTrip(token));
+    setNotice("Comprovante enviado. A viagem continua aberta até a conferência da Nova Frota.");
+  });
+  const acceptTerm=()=>job(async()=>{
+    if(!token||!termConsent)throw Error("Leia e aceite o termo da viagem.");
+    await acceptDriverTripTerm(token);
+    await rememberDriverJourney(token);
+    setTrip(await getDriverTrip(token));
+    setTermConsent(false);
+    setNotice("Aceite registrado. Você pode ativar o rastreamento nativo da viagem.");
+  });
+  const finishStage=()=>Alert.alert("Finalizar etapa da viagem?",
+    "A Nova Frota aprovou os documentos. A finalização interrompe o GPS desta viagem; o encerramento operacional será confirmado pela Central.",
+    [{text:"Cancelar",style:"cancel"},{text:"Confirmar",onPress:()=>job(async()=>{
+      if(!token)throw Error("Viagem não vinculada.");
+      await finishDriverJourneyStage(token);
+      await stopAfterApprovedDriverStage(token);
+      setTrip(await getDriverTrip(token));
+      await status();
+      setNotice("Etapa finalizada após aprovação. A Central confirmará o encerramento operacional.");
+    })}]);
   const begin=()=>job(async()=>{
     if(!token)throw Error("Informe o link da sua viagem.");
     const data=await startDriverTracking(token);
+    await rememberDriverJourney(token);
     setTrip(data);await status();
     setNotice("Monitoramento nativo iniciado. Pode bloquear a tela ou usar outros aplicativos. Mantenha o GPS e os dados móveis ligados.");
   });
@@ -266,13 +325,57 @@ export default function DriverArea({initialLink="",onBack}){
           <Text style={styles.info}>{trip.origin||"Origem não informada"} → {trip.destination||"Destino não informado"}</Text>
           <Text style={styles.small}>Selfie: {trip.selfieStatus||"não enviada"} · Aceite: {trip.gpsConsentAt?"registrado":"pendente"}</Text>
         </View>}
-        <BTN title="1. Abrir selfie e termo da viagem" onPress={openEvidence} disabled={busy||!token} secondary/>
-        <View style={{height:10}}/>
-        <BTN title={active?"Monitoramento já ativo":"2. Ativar rastreamento nativo"} onPress={begin}
-          disabled={busy||!token||active}/>
+        <Text style={styles.small}>As etapas abaixo são realizadas dentro do aplicativo, sem abrir o navegador.</Text>
       </View>
       {trip&&<View style={styles.receiptCard}>
-        <Text style={styles.cardTitle}>📄 Comprovante de descarga</Text>
+        <Text style={styles.cardTitle}>1. Selfie de identificação</Text>
+        <Text style={styles.receiptText}>Foto do rosto para conferência manual da identidade. Não há reconhecimento facial automático.</Text>
+        <Text style={[styles.receiptStatus,
+          trip.selfieStatus==="approved"?styles.receiptApproved:
+          trip.selfieStatus==="rejected"?styles.receiptRejected:styles.receiptPending]}>
+          {trip.selfieStatus==="approved"?"✓ Selfie aprovada":
+           trip.selfieStatus==="pending"?"⌛ Selfie enviada: aguardando conferência":
+           trip.selfieStatus==="rejected"?"✕ Selfie rejeitada: tire uma nova foto":
+           "Selfie ainda não enviada"}
+        </Text>
+        {trip.active&&trip.selfieRequired&&["missing","rejected"].includes(trip.selfieStatus)&&<>
+          <BTN title="📷 Tirar selfie com câmera frontal" onPress={chooseSelfie} disabled={busy} secondary/>
+          {selfieAsset&&<View style={styles.previewBox}>
+            <Image source={{uri:selfieAsset.uri}} style={styles.photoPreview} resizeMode="contain"/>
+            <Text style={styles.small}>Prévia: {selfieAsset.name}. Verifique se o rosto está nítido.</Text>
+          </View>}
+          <Pressable onPress={()=>setPhotoNotice(!photoNotice)} style={styles.consentRow}
+            accessibilityRole="checkbox" accessibilityState={{checked:photoNotice}}>
+            <Text style={styles.consentMark}>{photoNotice?"☑":"□"}</Text>
+            <Text style={styles.consentText}>Li o aviso sobre o uso da minha foto para conferência de identidade nesta viagem.</Text>
+          </Pressable>
+          <BTN title="Enviar selfie com segurança" onPress={uploadSelfie}
+            disabled={busy||!selfieAsset||!photoNotice}/>
+        </>}
+      </View>}
+      {trip&&<View style={styles.receiptCard}>
+        <Text style={styles.cardTitle}>2. Termo e início da viagem</Text>
+        <Text style={styles.receiptText}>Estou ciente de que, ao iniciar a viagem, a Nova Frota acompanhará as posições que meu celular enviar durante o transporte, para segurança da viagem, até a entrega e a conferência dos documentos.</Text>
+        <Text style={styles.receiptText}>A finalização só será liberada após o envio e a aprovação da selfie (quando exigida) e do comprovante de descarga pela Nova Frota. Posso revogar o compartilhamento de localização a qualquer momento, sem encerrar a viagem.</Text>
+        {trip.gpsConsentAt?
+          <Text style={[styles.receiptStatus,styles.receiptApproved]}>✓ Termo aceito e registrado no servidor</Text>:
+          trip.active&&(!trip.selfieRequired||["pending","approved"].includes(trip.selfieStatus))?<>
+            <Pressable onPress={()=>setTermConsent(!termConsent)} style={styles.consentRow}
+              accessibilityRole="checkbox" accessibilityState={{checked:termConsent}}>
+              <Text style={styles.consentMark}>{termConsent?"☑":"□"}</Text>
+              <Text style={styles.consentText}>Li e aceito o termo desta viagem e autorizo o envio das posições durante o percurso.</Text>
+            </Pressable>
+            <BTN title="Aceitar termo de monitoramento" onPress={acceptTerm}
+              disabled={busy||!termConsent}/>
+          </>:
+          <Text style={styles.receiptText}>Envie a selfie antes de aceitar o termo.</Text>}
+        {trip.active&&!trip.gpsFinishedAt&&<BTN
+          title={active?"Rastreamento já ativo":"Ativar rastreamento nativo"}
+          onPress={begin} disabled={busy||active||!trip.gpsConsentAt||
+            (trip.selfieRequired&&!["pending","approved"].includes(trip.selfieStatus))} secondary/>}
+      </View>}
+      {trip&&<View style={styles.receiptCard}>
+        <Text style={styles.cardTitle}>3. Comprovante de descarga</Text>
         <Text style={[styles.receiptStatus,
           trip.receiptStatus==="approved"?styles.receiptApproved:
           trip.receiptStatus==="rejected"?styles.receiptRejected:styles.receiptPending]}>
@@ -281,16 +384,37 @@ export default function DriverArea({initialLink="",onBack}){
            trip.receiptStatus==="rejected"?"✕ Rejeitado: envie outro comprovante":
            "Pendente: comprovante não enviado"}
         </Text>
-        <Text style={styles.receiptText}>{trip.receiptStatus==="approved" &&
-            (!trip.selfieRequired||trip.selfieStatus==="approved")
-          ?"Documentos aprovados. A etapa de finalização está liberada no portal; o encerramento operacional continua com a Central."
-          :"Para finalizar a viagem, anexe o comprovante e aguarde a conferência da Nova Frota. Apenas enviar a foto não libera a finalização."}</Text>
-        {trip.active&&<BTN title={trip.receiptStatus==="rejected"||trip.receiptStatus==="missing"
-          ?"Anexar comprovante de descarga":"Abrir comprovante e finalização"}
-          onPress={openEvidence} disabled={busy||!token} secondary/>}
-        <View style={{height:8}}/>
+        <Text style={styles.receiptText}>Ao terminar a descarga, envie uma foto legível ou um PDF. A equipe da Nova Frota deverá conferir e aprovar antes de finalizar.</Text>
+        {trip.active&&["missing","rejected"].includes(trip.receiptStatus)&&
+          (!trip.selfieRequired||["pending","approved"].includes(trip.selfieStatus))&&<>
+          <View style={styles.choiceRow}>
+            <View style={styles.choiceHalf}><BTN title="📷 Câmera" onPress={()=>chooseReceipt("camera")} disabled={busy} secondary/></View>
+            <View style={styles.choiceHalf}><BTN title="🖼 Galeria" onPress={()=>chooseReceipt("gallery")} disabled={busy} secondary/></View>
+          </View>
+          <BTN title="📄 Escolher PDF ou imagem do celular" onPress={()=>chooseReceipt("document")} disabled={busy} secondary/>
+          {receiptAsset&&<View style={styles.previewBox}>
+            {receiptAsset.isImage&&<Image source={{uri:receiptAsset.uri}}
+              style={styles.photoPreview} resizeMode="contain"/>}
+            <Text style={styles.small}>Arquivo escolhido: {receiptAsset.name}</Text>
+            <Text style={styles.small}>Confira o documento antes de confirmar o envio.</Text>
+          </View>}
+          <BTN title="Enviar comprovante de descarga" onPress={uploadReceipt}
+            disabled={busy||!receiptAsset}/>
+        </>}
         <BTN title="Atualizar status da conferência" secondary
           onPress={verify} disabled={busy||!token}/>
+      </View>}
+      {trip&&<View style={styles.receiptCard}>
+        <Text style={styles.cardTitle}>4. Finalização da viagem</Text>
+        {trip.gpsFinishedAt?
+          <Text style={[styles.receiptStatus,styles.receiptApproved]}>✓ Etapa de finalização concluída. A Central confirma o encerramento operacional.</Text>:
+          <Text style={styles.receiptText}>Para finalizar, o comprovante precisa estar anexado e aprovado. A interrupção voluntária do GPS não encerra esta viagem.</Text>}
+        {trip.active&&!trip.gpsFinishedAt&&
+          <BTN title={trip.receiptStatus==="approved"&&
+              (!trip.selfieRequired||trip.selfieStatus==="approved")
+              ?"Finalizar etapa da viagem":"🔒 Aguardando aprovação do comprovante"}
+            onPress={finishStage} disabled={busy||trip.receiptStatus!=="approved"||
+              (trip.selfieRequired&&trip.selfieStatus!=="approved")}/>}
       </View>}
       <View style={[styles.card,active&&styles.active]}>
         <Text style={styles.cardTitle}>{active?"● GPS nativo ativo":"GPS nativo desligado"}</Text>
@@ -313,6 +437,15 @@ export default function DriverArea({initialLink="",onBack}){
 }
 const styles=StyleSheet.create({
   container:{flex:1,backgroundColor:"#f6fafd"},
+  choiceRow:{flexDirection:"row",gap:9,marginVertical:3},
+  choiceHalf:{flex:1},
+  previewBox:{borderWidth:1,borderColor:"#c8dbe9",borderRadius:12,
+    padding:10,backgroundColor:"#fff",marginVertical:8,gap:5},
+  photoPreview:{height:230,width:"100%",borderRadius:9,backgroundColor:"#edf5fa"},
+  consentRow:{flexDirection:"row",alignItems:"flex-start",gap:9,paddingVertical:12},
+  consentMark:{fontSize:24,color:"#168a4b",lineHeight:28},
+  consentText:{flex:1,fontSize:12.5,color:"#244565",lineHeight:20},
+
   receiptCard:{backgroundColor:"#f6faff",borderWidth:1,borderColor:"#bfd5ea",
     borderRadius:16,padding:16,marginTop:14,gap:7},
   receiptStatus:{fontSize:12,fontWeight:"900",paddingVertical:9,paddingHorizontal:10,

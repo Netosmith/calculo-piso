@@ -72,3 +72,11 @@ test("central libera editar NF e CT-e apos iniciar viagem, sem pedir no cadastro
   assert.ok(createForm);
   assert.doesNotMatch(createForm,/name="nf"|name="cte"/);
 });
+
+test("Central alerta se GPS é interrompido antes do comprovante aprovado",()=>{
+  const html=assertScriptsCompile(page);
+  assert.match(html,/const pendingStop=active\.filter/);
+  assert.match(html,/GPS interrompido e descarga pendente/);
+  assert.match(html,/Descarga pendente/);
+  assert.match(html,/t.receiptStatus!=="approved"/);
+});

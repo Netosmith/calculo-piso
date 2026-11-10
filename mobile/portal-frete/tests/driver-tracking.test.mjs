@@ -31,8 +31,8 @@ test("tarefa é registrada no nível global e não transmite sem aceite prévio"
 test("APK exige permissões nativas e distingue motorista de funcionário",()=>{
   const app=JSON.parse(read("app.json")).expo;
   const shell=read("App.js");
-  assert.equal(app.version,"0.3.5");
-  assert.equal(app.android.versionCode,9);
+  assert.equal(app.version,"0.3.6");
+  assert.equal(app.android.versionCode,10);
   assert.ok(app.android.permissions.includes("RECEIVE_BOOT_COMPLETED"));
   assert.ok(app.android.permissions.includes("FOREGROUND_SERVICE_LOCATION"));
   assert.ok(app.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&
@@ -63,8 +63,8 @@ test("documento de descarga aparece com estado de análise sem concluir a viagem
 });
 test("versão 0.3.3 exibe locais, valor e etiquetas S/N dos eixos",()=>{
   const app=JSON.parse(read("app.json")).expo;
-  assert.equal(app.version,"0.3.5");
-  assert.equal(app.android.versionCode,9);
+  assert.equal(app.version,"0.3.6");
+  assert.equal(app.android.versionCode,10);
   const area=read("src/DriverArea.js");
   assert.match(area,/\/v1\/driver-freights/);
   assert.match(area,/Buscar origem, destino ou produto/);
@@ -85,4 +85,35 @@ test("versão 0.3.3 exibe locais, valor e etiquetas S/N dos eixos",()=>{
   assert.doesNotMatch(area,/Share.share/);
   assert.match(area,/Nenhum frete divulgado neste momento/);
   assert.doesNotMatch(area,/portalPage\("fretes"/);
+});
+
+test("selfie, termo, comprovante e finalização são feitos dentro do aplicativo",()=>{
+  const ui=read("src/DriverArea.js");
+  const evidence=read("src/driver-evidence.js");
+  const cfg=JSON.parse(read("package.json"));
+  assert.doesNotMatch(ui,/openEvidence|Linking\.openURL\(.*monitorar-motorista/);
+  assert.match(ui,/takeDriverSelfie/);
+  assert.match(ui,/takeDriverReceiptPhoto/);
+  assert.match(ui,/chooseDriverReceiptPhoto/);
+  assert.match(ui,/chooseDriverReceiptDocument/);
+  assert.match(ui,/uploadDriverEvidence\(token,"selfie",selfieAsset\)/);
+  assert.match(ui,/uploadDriverEvidence\(token,"receipt",receiptAsset\)/);
+  assert.match(ui,/acceptDriverTripTerm/);
+  assert.match(ui,/finishDriverJourneyStage/);
+  assert.match(ui,/trip.receiptStatus!=="approved"/);
+  assert.match(ui,/Termo e início da viagem/);
+  assert.match(evidence,/ImagePicker\.launchCameraAsync/);
+  assert.match(evidence,/ImagePicker\.launchImageLibraryAsync/);
+  assert.match(evidence,/DocumentPicker\.getDocumentAsync/);
+  assert.match(evidence,/new File\(item.uri\)/);
+  assert.match(evidence,/body:file/);
+  assert.match(evidence,/"X-Monitor-Token":token/);
+  assert.match(evidence,/file.size/);
+  assert.match(evidence,/3\*1024\*1024/);
+  assert.match(evidence,/8\*1024\*1024/);
+  assert.match(evidence,/SecureStore\.setItemAsync/);
+  assert.match(evidence,/SecureStore\.getItemAsync/);
+  assert.equal(cfg.dependencies["expo-image-picker"],"~57.0.21");
+  assert.equal(cfg.dependencies["expo-document-picker"],"~57.0.3");
+  assert.ok(cfg.dependencies["expo-file-system"]);
 });

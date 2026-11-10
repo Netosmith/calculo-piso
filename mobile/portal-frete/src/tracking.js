@@ -240,11 +240,17 @@ export async function driverTrackingStatus(){
   }
   return {running:true,queued,trip};
 }
+// Finalização documental NÃO é revogação voluntária de GPS.
+export async function stopAfterApprovedDriverStage(token){
+  if(!safeToken(token))return;
+  if((await currentToken())===token)
+    await stopNative({clearCredentials:true});
+}
 export async function revokeDriverTracking(){
   const token=await currentToken();
   await stopNative({clearCredentials:true});
   if(token){
-    try{await post("/v1/monitor/gps-event",{token,action:"stopped"});}
+    try{await post("/v1/monitor/gps-event",{token,action:"stopped",platform:Platform.OS});}
     catch{/* Central marcará perda de sinal se a revogação ocorrer offline. */}
   }
 }

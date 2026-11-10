@@ -171,6 +171,10 @@ test("interrupcao voluntaria de GPS gera alerta auditavel sem encerrar a viagem"
   assert.equal(data.recorded,true);
   assert.equal(data.tripActive,true);
   assert.equal(data.receiptRequired,true);
+  assert.equal(data.completionBlocked,true);
+  assert.ok(database.calls.some(x=>x.sql.includes("'stopped'")&&
+    x.values.some(value=>typeof value==="string"&&value.includes("Comprovante de descarga pendente"))));
+ 
   assert.ok(database.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")&&x.values[0]===id));
   assert.equal(database.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET active=0")),false);
 });

@@ -53,7 +53,7 @@ const toTrip = row => ({
 });
 async function tripForToken(db, value) {
   if (!validToken(value)) return null;
-  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_status,p.selfie_at,p.receipt_at, "+
+  return db.prepare("SELECT t.*,COALESCE(p.proof_required,0) AS proof_required,p.selfie_key,p.selfie_status,p.receipt_key,p.receipt_status,p.selfie_at,p.receipt_at, "+
     "(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='consent' ORDER BY a.id DESC LIMIT 1) AS gps_consent_at, "+
     "(SELECT a.created_at FROM monitor_proof_audit a WHERE a.trip_id=t.id AND a.proof_kind='gps' AND a.action='finished' ORDER BY a.id DESC LIMIT 1) AS gps_finished_at "+
     "FROM monitor_trips t LEFT JOIN monitor_trip_proofs p ON p.trip_id=t.id WHERE t.token_hash=? AND t.token_expires_at>?")
@@ -120,10 +120,12 @@ export async function monitorController(request, env) {
       if(!row)return errorResponse("Link inválido ou expirado.",404);
       if(row.active!==1)return errorResponse("Viagem já encerrada.",409);
       if(body.action==="finished"){
-        // Encerramento normal de GPS segue a mesma validação documental do fim da viagem.
-        if(Number(row.proof_required||0)===1&&
-           !(row.selfie_status==="approved"&&row.receipt_status==="approved"))
-          return errorResponse("Aguarde a aprovação da selfie e do comprovante pela Nova Frota.",409);
+        // TODAS as viagens, inclusive antigas, exigem comprovante anexado
+        // e aprovado antes da conclusão normal desta etapa.
+        const receiptApproved=Boolean(row.receipt_key)&&row.receipt_status==="approved";
+        const selfieApproved=Number(row.proof_required||0)!==1||row.selfie_status==="approved";
+        if(!receiptApproved||!selfieApproved)
+          return errorResponse("Finalize a descarga, anexe o comprovante e aguarde a conferência da Nova Frota antes de concluir a viagem.",409);
         await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (?,'gps','finished','MOTORISTA','Finalização do compartilhamento após aprovação documental',?)").bind(row.id,now()).run();
         return success({recorded:true,tripActive:true,documentsApproved:true});
       }
@@ -308,15 +310,20 @@ export async function monitorController(request, env) {
       parts[2] === "trips" && parts[4] === "stop" && method === "POST") {
     if (!validId(parts[3])) return errorResponse("Identificador inválido.", 400);
     try {
-      const doc=await db.prepare("SELECT proof_required,selfie_status,receipt_status FROM monitor_trip_proofs WHERE trip_id=?").bind(parts[3]).first();
-      const complete=doc?.selfie_status==="approved"&&doc?.receipt_status==="approved";
+      const doc=await db.prepare("SELECT proof_required,selfie_status,receipt_key,receipt_status FROM monitor_trip_proofs WHERE trip_id=?").bind(parts[3]).first();
+      // Não permitir o encerramento normal sem comprovante real e conferido.
+      // Para viagens novas, a selfie também precisa estar aprovada.
+      const complete=Boolean(doc?.receipt_key)&&doc.receipt_status==="approved"&&
+        (Number(doc.proof_required||0)!==1||doc.selfie_status==="approved");
       const body=await parse(request);
       const actorRole=clean(auth.session.perfil).toUpperCase();
       const reason=clean(body?.reason,500);
-      const emergency=Number(doc?.proof_required||0)===1&&!complete&&
-        actorRole==="ADMINISTRADOR"&&body?.emergency===true&&reason.length>=15;
-      if(Number(doc?.proof_required||0)===1&&!complete&&!emergency)
-        return errorResponse("Encerramento exige aprovação da selfie e do comprovante. Em emergência, um administrador pode registrar justificativa.",409);
+      // Encerramento excepcional continua exclusivo de ADMINISTRADOR e auditado,
+      // nunca é uma alternativa de finalização para o motorista.
+      const emergency=!complete&&actorRole==="ADMINISTRADOR"&&
+        body?.emergency===true&&reason.length>=15;
+      if(!complete&&!emergency)
+        return errorResponse("Encerramento exige comprovante de descarga anexado e aprovado pela Nova Frota. Para viagens novas, selfie aprovada também. Apenas o administrador pode registrar emergência justificada.",409);
       const time=now();
       const update=db.prepare("UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1")
         .bind(time,parts[3]);

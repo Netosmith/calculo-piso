@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from "react";
 import {ActivityIndicator,Alert,Image,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import {palette as c} from "./theme";
+import {availableOriginStates,availableDestinationCities,filterFreightOffers} from "./freight-filters";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
   driverTrackingStatus,flushPendingFixes,restoreApprovedTracking,
@@ -52,6 +53,9 @@ export default function DriverArea({initialLink="",onBack}){
   const [freightLoading,setFreightLoading]=useState(false);
   const [freightError,setFreightError]=useState("");
   const [freightSearch,setFreightSearch]=useState("");
+  const [freightOriginUF,setFreightOriginUF]=useState("");
+  const [freightDestination,setFreightDestination]=useState("");
+  const [openFreightFilter,setOpenFreightFilter]=useState("");
   const [selfieAsset,setSelfieAsset]=useState(null);
   const [receiptAsset,setReceiptAsset]=useState(null);
   const [photoNotice,setPhotoNotice]=useState(false);
@@ -73,11 +77,23 @@ export default function DriverArea({initialLink="",onBack}){
     finally{setFreightLoading(false);}
   }
   useEffect(()=>{if(tab==="fretes")void loadFreightOffers();},[tab]);
-  const offerMatches=(offer)=>{
-    const needle=freightSearch.trim().toLocaleUpperCase("pt-BR");
-    if(!needle)return true;
-    return [offer.origem,offer.destino,offer.coleta,offer.descarga,offer.produto,offer.source].join(" ")
-      .toLocaleUpperCase("pt-BR").includes(needle);
+  const originStates=availableOriginStates(freightOffers);
+  const destinationCities=availableDestinationCities(freightOffers,freightOriginUF);
+  const visibleFreights=filterFreightOffers(freightOffers,{
+    originUF:freightOriginUF,destination:freightDestination,search:freightSearch
+  });
+  const hasFreightFilters=Boolean(freightOriginUF||freightDestination||freightSearch.trim());
+  const resetFreightFilters=()=>{
+    setFreightOriginUF("");setFreightDestination("");setFreightSearch("");setOpenFreightFilter("");
+  };
+  const selectFreightState=uf=>{
+    setFreightOriginUF(uf);
+    setFreightDestination("");
+    setOpenFreightFilter("");
+  };
+  const selectFreightDestination=city=>{
+    setFreightDestination(city);
+    setOpenFreightFilter("");
   };
   function whatsappForOffer(offer){
     const phone=String(offer?.whatsappEmbarcador||"").replace(/\D/g,"");
@@ -232,22 +248,85 @@ export default function DriverArea({initialLink="",onBack}){
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Fretes disponíveis da Nova Frota</Text>
         <Text style={styles.info}>Ofertas selecionadas para divulgação pela equipe Nova Frota. Os dados operacionais internos não são exibidos.</Text>
-        <TextInput accessibilityLabel="Buscar frete por cidade ou produto"
-          value={freightSearch} onChangeText={setFreightSearch}
-          autoCapitalize="characters" autoCorrect={false}
-          placeholder="Buscar origem, destino ou produto"
-          placeholderTextColor="#7890a3" style={styles.search}/>
+        <View style={styles.freightFilters}>
+          <Text style={styles.filterHeading}>Filtrar fretes</Text>
+          <View style={styles.filterControls}>
+            <View style={styles.filterColumn}>
+              <Text style={styles.filterLabel}>Estado de origem</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Filtrar por estado de origem"
+                accessibilityState={{expanded:openFreightFilter==="originUF"}}
+                onPress={()=>setOpenFreightFilter(openFreightFilter==="originUF"?"":"originUF")}
+                style={styles.filterSelect}>
+                <Text numberOfLines={1} style={styles.filterSelectText}>
+                  {freightOriginUF||"Todas as UFs"}
+                </Text>
+                <Text style={styles.filterChevron}>⌄</Text>
+              </Pressable>
+            </View>
+            <View style={styles.filterColumn}>
+              <Text style={styles.filterLabel}>Cidade de destino</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Filtrar por cidade de destino"
+                accessibilityState={{expanded:openFreightFilter==="destination"}}
+                onPress={()=>setOpenFreightFilter(openFreightFilter==="destination"?"":"destination")}
+                style={styles.filterSelect}>
+                <Text numberOfLines={1} style={styles.filterSelectText}>
+                  {freightDestination||"Todos os destinos"}
+                </Text>
+                <Text style={styles.filterChevron}>⌄</Text>
+              </Pressable>
+            </View>
+          </View>
+          {!!openFreightFilter&&<View style={styles.filterOptionsBox}>
+            <Text style={styles.filterOptionsTitle}>{openFreightFilter==="originUF"
+              ?"Escolha a UF de origem":"Escolha a cidade de destino"}</Text>
+            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="always"
+              style={styles.filterOptionsScroll}>
+              {(openFreightFilter==="originUF"?["",...originStates]:["",...destinationCities]).map(option=>{
+                const selected=openFreightFilter==="originUF"
+                  ?freightOriginUF===option:freightDestination===option;
+                const label=option||(openFreightFilter==="originUF"
+                  ?"Todas as UFs":"Todos os destinos");
+                return <Pressable key={option||"__all"} accessibilityRole="button"
+                  accessibilityState={{selected}}
+                  onPress={()=>openFreightFilter==="originUF"
+                    ?selectFreightState(option):selectFreightDestination(option)}
+                  style={[styles.filterOption,selected&&styles.filterOptionSelected]}>
+                  <Text style={[styles.filterOptionText,selected&&styles.filterOptionTextSelected]}>
+                    {label}
+                  </Text>
+                  {selected&&<Text style={styles.filterCheck}>✓</Text>}
+                </Pressable>;
+              })}
+            </ScrollView>
+          </View>}
+          <TextInput accessibilityLabel="Buscar frete por cidade ou produto"
+            value={freightSearch} onChangeText={setFreightSearch}
+            autoCapitalize="characters" autoCorrect={false}
+            placeholder="Buscar origem, destino ou produto"
+            placeholderTextColor="#7890a3" style={styles.search}/>
+          <View style={styles.filterFooter}>
+            <Text style={styles.filterCount}>{visibleFreights.length} frete(s) encontrado(s)</Text>
+            {hasFreightFilters&&<Pressable accessibilityRole="button"
+              accessibilityLabel="Limpar filtros" onPress={resetFreightFilters}>
+              <Text style={styles.filterClear}>Limpar filtros</Text>
+            </Pressable>}
+          </View>
+        </View>
         <BTN title={freightLoading?"Atualizando...":"Atualizar fretes"}
           onPress={loadFreightOffers} disabled={freightLoading} secondary/>
         {freightLoading&&<ActivityIndicator color={c.blue} style={{marginTop:12}}/>}
         {!!freightError&&<Text style={styles.error}>{freightError}</Text>}
-        {!freightLoading&&!freightError&&!freightOffers.filter(offerMatches).length&&
+        {!freightLoading&&!freightError&&!visibleFreights.length&&
           <View style={styles.emptyOffers}>
-            <Text style={styles.emptyTitle}>Nenhum frete divulgado neste momento</Text>
-            <Text style={styles.info}>Quando a equipe publicar um frete nos módulos operacionais, ele aparecerá aqui. Novas ofertas podem ser divulgadas a qualquer momento.</Text>
+            <Text style={styles.emptyTitle}>{hasFreightFilters
+              ?"Nenhum frete encontrado para estes filtros"
+              :"Nenhum frete divulgado neste momento"}</Text>
+            <Text style={styles.info}>{hasFreightFilters
+              ?"Experimente selecionar outra UF ou destino, ou toque em Limpar filtros."
+              :"Quando a equipe publicar um frete nos módulos operacionais, ele aparecerá aqui. Novas ofertas podem ser divulgadas a qualquer momento."}</Text>
           </View>}
       </View>
-      {freightOffers.filter(offerMatches).map(offer=>
+      {visibleFreights.map(offer=>
         <View key={offer.source+":"+offer.sourceId} style={styles.offerCard}>
           <View style={styles.offerTop}>
             <Text style={styles.offerSource}>{offer.source==="fretes2"?"NOVA FROTA • MT":"NOVA FROTA • OPERACIONAL"}</Text>
@@ -471,8 +550,32 @@ const styles=StyleSheet.create({
   buttons:{marginTop:12},
   notice:{backgroundColor:"#ecf3fc",borderRadius:10,padding:13,color:c.navy,fontSize:12,lineHeight:19,marginTop:8},
   freightsArea:{gap:12},
-  search:{height:48,borderWidth:1,borderColor:"#b9d3e4",borderRadius:11,
-    paddingHorizontal:12,marginBottom:12,color:c.navy,backgroundColor:"#fff",fontSize:13},
+  search:{height:45,borderWidth:1,borderColor:"#b9d3e4",borderRadius:10,
+    paddingHorizontal:12,marginBottom:8,color:c.navy,backgroundColor:"#fff",fontSize:13},
+  freightFilters:{backgroundColor:"#f3f8fd",borderWidth:1,borderColor:"#d7e6f2",
+    borderRadius:14,padding:12,marginBottom:12},
+  filterHeading:{color:"#082957",fontSize:14,fontWeight:"900",marginBottom:11},
+  filterControls:{flexDirection:"row",gap:9,marginBottom:12},
+  filterColumn:{flex:1,minWidth:0},
+  filterLabel:{fontSize:11,color:"#345774",fontWeight:"800",marginBottom:6},
+  filterSelect:{backgroundColor:"#fff",borderRadius:10,borderWidth:1,borderColor:"#bfd2e5",
+    minHeight:44,paddingHorizontal:10,flexDirection:"row",alignItems:"center",justifyContent:"space-between"},
+  filterSelectText:{flex:1,color:"#123b68",fontSize:12,fontWeight:"800"},
+  filterChevron:{fontSize:18,color:"#447092",marginLeft:5},
+  filterOptionsBox:{backgroundColor:"#fff",borderRadius:10,borderWidth:1,
+    borderColor:"#c5d9e8",padding:9,marginBottom:12},
+  filterOptionsTitle:{fontSize:11,color:"#496b89",fontWeight:"800",marginBottom:4},
+  filterOptionsScroll:{maxHeight:185},
+  filterOption:{minHeight:41,paddingHorizontal:10,paddingVertical:8,
+    borderBottomWidth:1,borderBottomColor:"#eef3f8",flexDirection:"row",
+    alignItems:"center",justifyContent:"space-between"},
+  filterOptionSelected:{backgroundColor:"#e6f3ff",borderRadius:7},
+  filterOptionText:{color:"#193b60",fontSize:12,fontWeight:"700",flexShrink:1},
+  filterOptionTextSelected:{color:"#0e5a9e",fontWeight:"900"},
+  filterCheck:{color:"#128a4b",fontWeight:"900",fontSize:15},
+  filterFooter:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8},
+  filterCount:{fontSize:11,color:"#45657f",fontWeight:"800",flexShrink:1},
+  filterClear:{fontSize:11,color:"#0e6aa3",fontWeight:"900",padding:5},
   error:{color:"#ae3044",fontWeight:"700",fontSize:12,marginTop:10,lineHeight:19},
   emptyOffers:{paddingTop:18},
   emptyTitle:{fontWeight:"900",fontSize:14,color:c.navy,marginBottom:7},

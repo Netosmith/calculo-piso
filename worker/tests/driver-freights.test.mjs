@@ -97,7 +97,7 @@ test("não publica sem status LIBERADO ou sem origem/destino/produto",async()=>{
   {...offer,origem:""},
   {...offer,produto:""},
   {...offer,coleta:"<script>hi</script>"},
-  {...offer,descarga:"\ninvalid"},
+  {...offer,descarga:"ARMAZÉM\nINVALID"},
   {...offer,whatsappEmbarcador:""},
   {...offer,whatsappEmbarcador:"11111"},
   {...offer,whatsappEmbarcador:"https://evil.test"},

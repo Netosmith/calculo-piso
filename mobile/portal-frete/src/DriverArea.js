@@ -1,10 +1,17 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,Image,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import {palette as c} from "./theme";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
-  driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking
+  driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking,
+  stopAfterApprovedDriverStage
 } from "./tracking";
+import {
+  rememberDriverJourney,restoreDriverJourney,forgetDriverJourney,
+  acceptDriverTripTerm,finishDriverJourneyStage,
+  takeDriverSelfie,takeDriverReceiptPhoto,chooseDriverReceiptPhoto,
+  chooseDriverReceiptDocument,uploadDriverEvidence
+} from "./driver-evidence";
 
 const formatDriverFreight=value=>{
   const raw=String(value??"").trim();
@@ -45,6 +52,10 @@ export default function DriverArea({initialLink="",onBack}){
   const [freightLoading,setFreightLoading]=useState(false);
   const [freightError,setFreightError]=useState("");
   const [freightSearch,setFreightSearch]=useState("");
+  const [selfieAsset,setSelfieAsset]=useState(null);
+  const [receiptAsset,setReceiptAsset]=useState(null);
+  const [photoNotice,setPhotoNotice]=useState(false);
+  const [termConsent,setTermConsent]=useState(false);
 
   async function loadFreightOffers(){
     if(freightLoading)return;
@@ -103,16 +114,24 @@ export default function DriverArea({initialLink="",onBack}){
   }
   useEffect(()=>{
     let mounted=true;
-    restoreApprovedTracking().then(async saved=>{
+    (async()=>{
+      const saved=await restoreApprovedTracking().catch(()=>({token:null}));
+      const evidence=await restoreDriverJourney().catch(()=>null);
       if(!mounted)return;
-      if(saved.token&&!initialLink){
-        setLink("https://portalfrete.net.br/pages/monitorar-motorista.html#"+saved.token);
+      const recovered=initialLink||saved.token||evidence;
+      if(recovered&&!initialLink){
+        setLink("https://portalfrete.net.br/pages/monitorar-motorista.html#"+
+          (extractDriverToken(recovered)||recovered));
+      }
+      if(recovered){
+        const recoveredTrip=await getDriverTrip(extractDriverToken(recovered)).catch(()=>null);
+        if(mounted&&recoveredTrip)setTrip(recoveredTrip);
       }
       await status();
-    }).catch(()=>status().catch(()=>{}));
+    })().catch(()=>status().catch(()=>{}));
     return()=>{mounted=false;};
   },[]);
-  useEffect(()=>{if(initialLink){setLink(initialLink);setTab("viagem");}},[initialLink]);
+  useEffect(()=>{if(initialLink){setLink(initialLink);setTab("viagem");setTrip(null);}},[initialLink]);
   useEffect(()=>{
     if(!active)return;
     const id=setInterval(()=>status().catch(()=>{}),30000);
@@ -129,6 +148,7 @@ export default function DriverArea({initialLink="",onBack}){
     if(!token)throw Error("Cole o link completo da viagem enviado pela Nova Frota.");
     const data=await getDriverTrip(token);
     setTrip(data);
+    await rememberDriverJourney(token);
     const message=!data.active?"Viagem encerrada pela Central da Nova Frota.":
       data.receiptStatus==="approved"?"Comprovante aprovado pela Nova Frota. Confira a finalização na página da viagem.":
       data.receiptStatus==="rejected"?"Comprovante rejeitado. Abra a viagem e anexe um novo comprovante.":
@@ -137,14 +157,53 @@ export default function DriverArea({initialLink="",onBack}){
       "Antes de ativar o monitoramento, envie a selfie e aceite o termo da viagem.";
     setNotice(message);
   });
-  const openEvidence=()=>job(async()=>{
-    if(!token)throw Error("Cole o link da viagem para abrir as etapas.");
-    const url="https://portalfrete.net.br/pages/monitorar-motorista.html#"+token;
-    await Linking.openURL(url);
+  const chooseSelfie=()=>job(async()=>{
+    const item=await takeDriverSelfie();
+    if(item){setSelfieAsset(item);setPhotoNotice(false);setNotice("Confira a foto do seu rosto antes de enviar.");}
   });
+  const chooseReceipt=(source)=>job(async()=>{
+    const item=source==="camera"?await takeDriverReceiptPhoto():
+      source==="gallery"?await chooseDriverReceiptPhoto():await chooseDriverReceiptDocument();
+    if(item){setReceiptAsset(item);setNotice("Confira o comprovante selecionado antes de enviar.");}
+  });
+  const uploadSelfie=()=>job(async()=>{
+    if(!token||!selfieAsset||!photoNotice)throw Error("Selecione a selfie e confirme o aviso sobre a foto.");
+    await uploadDriverEvidence(token,"selfie",selfieAsset);
+    await rememberDriverJourney(token);
+    setSelfieAsset(null);setPhotoNotice(false);
+    setTrip(await getDriverTrip(token));
+    setNotice("Selfie enviada com segurança. A Nova Frota fará a conferência.");
+  });
+  const uploadReceipt=()=>job(async()=>{
+    if(!token||!receiptAsset)throw Error("Selecione um comprovante antes do envio.");
+    await uploadDriverEvidence(token,"receipt",receiptAsset);
+    await rememberDriverJourney(token);
+    setReceiptAsset(null);
+    setTrip(await getDriverTrip(token));
+    setNotice("Comprovante enviado. A viagem continua aberta até a conferência da Nova Frota.");
+  });
+  const acceptTerm=()=>job(async()=>{
+    if(!token||!termConsent)throw Error("Leia e aceite o termo da viagem.");
+    await acceptDriverTripTerm(token);
+    await rememberDriverJourney(token);
+    setTrip(await getDriverTrip(token));
+    setTermConsent(false);
+    setNotice("Aceite registrado. Você pode ativar o rastreamento nativo da viagem.");
+  });
+  const finishStage=()=>Alert.alert("Finalizar etapa da viagem?",
+    "A Nova Frota aprovou os documentos. A finalização interrompe o GPS desta viagem; o encerramento operacional será confirmado pela Central.",
+    [{text:"Cancelar",style:"cancel"},{text:"Confirmar",onPress:()=>job(async()=>{
+      if(!token)throw Error("Viagem não vinculada.");
+      await finishDriverJourneyStage(token);
+      await stopAfterApprovedDriverStage(token);
+      setTrip(await getDriverTrip(token));
+      await status();
+      setNotice("Etapa finalizada após aprovação. A Central confirmará o encerramento operacional.");
+    })}]);
   const begin=()=>job(async()=>{
     if(!token)throw Error("Informe o link da sua viagem.");
     const data=await startDriverTracking(token);
+    await rememberDriverJourney(token);
     setTrip(data);await status();
     setNotice("Monitoramento nativo iniciado. Pode bloquear a tela ou usar outros aplicativos. Mantenha o GPS e os dados móveis ligados.");
   });

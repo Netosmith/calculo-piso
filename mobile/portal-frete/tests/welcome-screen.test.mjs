@@ -33,6 +33,6 @@ test("permissão de localização não é pedida na escolha de perfil",()=>{
   assert.match(ui,/após vincular uma viagem e aceitar o termo/);
   assert.doesNotMatch(ui,/requestForegroundPermissionsAsync|requestBackgroundPermissionsAsync/);
   const app=JSON.parse(read("app.json")).expo;
-  assert.equal(app.version,"0.3.9");
-  assert.equal(app.android.versionCode,13);
+  assert.equal(app.version,"0.3.10");
+  assert.equal(app.android.versionCode,14);
 });

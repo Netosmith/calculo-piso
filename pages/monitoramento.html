@@ -289,14 +289,20 @@ function renderKpis(){
     return rank[stateOf(a)]-rank[stateOf(b)];
   });
   const panel=$("#alerts");panel.replaceChildren();
-  const documents=active.filter(t=>t.selfieRequired&&
-    (["pending","rejected"].includes(t.selfieStatus)||["pending","rejected"].includes(t.receiptStatus)));
-  if(issues.length||documents.length){
+  const documents=active.filter(t=>
+    ["pending","rejected"].includes(t.selfieStatus)||["pending","rejected"].includes(t.receiptStatus));
+  const pendingStop=active.filter(t=>stateOf(t)==="paused"&&t.receiptStatus!=="approved");
+  if(issues.length||documents.length||pendingStop.length){
     panel.classList.add("show");
     if(issues.length){
       panel.append(make("strong","⚠ "+issues.length+" viagem(ns) exigem atenção no GPS"));
       panel.append(make("span",issues.slice(0,4).map(t=>t.plate+" · "+labels[stateOf(t)]+" · "+fmt(stateOf(t)==="paused"?t.gpsStoppedAt:(t.lastPosition?.at||t.startedAt))).join("  |  ")));
       if(issues.length>4)panel.append(make("span","E mais "+(issues.length-4)+" viagem(ns) com sinal desatualizado."));
+    }
+    if(pendingStop.length){
+      panel.append(make("strong","⛔ "+pendingStop.length+" viagem(ns) com GPS interrompido e descarga pendente"));
+      panel.append(make("span",pendingStop.slice(0,6).map(t=>t.plate+" · "+t.driver+
+        " · comprovante: "+(proofLabels[t.receiptStatus]||"não enviado")).join("  |  ")));
     }
     if(documents.length){
       panel.append(make("strong","📄 "+documents.length+" viagem(ns) com documentos para conferir"));
@@ -317,6 +323,8 @@ function renderList(){
     item.append(make("div",(t.origin||"Origem não informada")+" → "+(t.destination||"Destino não informado"),"route"));
     const foot=make("div",null,"foot");
     foot.append(make("span",labels[stateOf(t)],"tag "+stateOf(t)));
+    if(stateOf(t)==="paused"&&t.receiptStatus!=="approved")
+      foot.append(make("small","⚠ Descarga pendente"));
     foot.append(make("small",t.branch||"Sem filial"));
     item.append(foot);item.onclick=()=>selectTrip(t.id);
     box.append(item);

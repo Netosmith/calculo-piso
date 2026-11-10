@@ -31,8 +31,8 @@ test("tarefa é registrada no nível global e não transmite sem aceite prévio"
 test("APK exige permissões nativas e distingue motorista de funcionário",()=>{
   const app=JSON.parse(read("app.json")).expo;
   const shell=read("App.js");
-  assert.equal(app.version,"0.3.7");
-  assert.equal(app.android.versionCode,11);
+  assert.equal(app.version,"0.3.8");
+  assert.equal(app.android.versionCode,12);
   assert.ok(app.android.permissions.includes("RECEIVE_BOOT_COMPLETED"));
   assert.ok(app.android.permissions.includes("FOREGROUND_SERVICE_LOCATION"));
   assert.ok(app.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&
@@ -67,8 +67,8 @@ test("documento de descarga aparece com estado de análise sem concluir a viagem
 });
 test("versão 0.3.3 exibe locais, valor e etiquetas S/N dos eixos",()=>{
   const app=JSON.parse(read("app.json")).expo;
-  assert.equal(app.version,"0.3.7");
-  assert.equal(app.android.versionCode,11);
+  assert.equal(app.version,"0.3.8");
+  assert.equal(app.android.versionCode,12);
   const area=read("src/DriverArea.js");
   assert.match(area,/\/v1\/driver-freights/);
   assert.match(area,/Buscar origem, destino ou produto/);

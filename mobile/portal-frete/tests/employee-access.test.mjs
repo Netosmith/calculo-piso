@@ -69,6 +69,7 @@ test("rejeita atalhos forjados e não cria módulo por perfil",()=>{
   assert.equal(FEATURE_META.piso2.page,"calculo-antt");
 });
 test("ponte consulta canAccessFeature só após sessão assinada e nunca lê senhas",()=>{
+  assert.doesNotThrow(()=>new Function(EMPLOYEE_HOME_BRIDGE));
   assert.match(EMPLOYEE_HOME_BRIDGE,/portalAuthReady/);
   assert.match(EMPLOYEE_HOME_BRIDGE,/canAccessFeature/);
   assert.match(EMPLOYEE_HOME_BRIDGE,/ReactNativeWebView\.postMessage/);

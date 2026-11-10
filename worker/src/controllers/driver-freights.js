@@ -20,6 +20,10 @@ const validWhatsapp=value=>{
   const digits=raw.replace(/\D/g,"");
   return /^55\d{10,11}$/.test(digits)?digits:null;
 };
+const validEixo=value=>{
+  const text=String(value??"").trim().toUpperCase();
+  return text===""||text==="S"||text==="N"?text:null;
+};
 const validPublicRow=(body)=>{
   if(!body||typeof body!=="object"||Array.isArray(body))return null;
   if(!safeSource(body.source))return null;
@@ -27,13 +31,16 @@ const validPublicRow=(body)=>{
     destino=clean(body.destino,130),produto=clean(body.produto,100),
     coleta=clean(body.coleta??"",130),descarga=clean(body.descarga??"",130),
     volume=clean(body.volume??"",55),valor=clean(body.valorMotorista??"",55),
-    whatsappEmbarcador=validWhatsapp(body.whatsappEmbarcador);
-  if(!id||!origem||!destino||!produto||coleta===null||descarga===null||
-     volume===null||valor===null||!whatsappEmbarcador)return null;
+    whatsappEmbarcador=validWhatsapp(body.whatsappEmbarcador),
+    e5=validEixo(body.e5),e6=validEixo(body.e6),e7=validEixo(body.e7),
+    e4=validEixo(body.e4),e9=validEixo(body.e9);
+  if(!id||!origem||!destino||!coleta||!descarga||!produto||
+     volume===null||valor===null||!whatsappEmbarcador||
+     [e5,e6,e7,e4,e9].some(value=>value===null))return null;
   if(String(body.status||"").toUpperCase()!=="LIBERADO")return null;
   // Conserva apenas os campos autorizados, nunca JSON original da planilha.
   return {source:body.source,sourceId:id,origem,destino,coleta,descarga,produto,volume,
-    valorMotorista:valor,whatsappEmbarcador};
+    valorMotorista:valor,whatsappEmbarcador,e5,e6,e7,e4,e9};
 };
 async function operator(request,env,source){
   const session=await getSession(env,readSessionId(request));
@@ -54,6 +61,7 @@ export async function driverFreightsController(request,env){
     try{
       const result=await db.prepare(
         "SELECT source,source_id AS sourceId,origem,destino,coleta,descarga,produto,volume,"+
+        "e5,e6,e7,e4,e9,"+
         "valor_motorista AS valorMotorista,whatsapp_embarcador AS whatsappEmbarcador,"+
         "published_at AS publishedAt,expires_at AS expiresAt "+
         "FROM driver_public_freights WHERE expires_at>? "+
@@ -110,16 +118,18 @@ export async function driverFreightsController(request,env){
   try{
     await db.prepare(
       "INSERT INTO driver_public_freights "+
-      "(source,source_id,origem,destino,coleta,descarga,produto,volume,valor_motorista,whatsapp_embarcador,published_by,published_at,expires_at) "+
-      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source,source_id) DO UPDATE SET "+
+      "(source,source_id,origem,destino,coleta,descarga,produto,volume,valor_motorista,whatsapp_embarcador,e5,e6,e7,e4,e9,published_by,published_at,expires_at) "+
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source,source_id) DO UPDATE SET "+
       "origem=excluded.origem,destino=excluded.destino,coleta=excluded.coleta,"+
       "descarga=excluded.descarga,produto=excluded.produto,"+
       "volume=excluded.volume,valor_motorista=excluded.valor_motorista,"+
       "whatsapp_embarcador=excluded.whatsapp_embarcador,"+
+      "e5=excluded.e5,e6=excluded.e6,e7=excluded.e7,e4=excluded.e4,e9=excluded.e9,"+
       "published_by=excluded.published_by,published_at=excluded.published_at,expires_at=excluded.expires_at"
     ).bind(row.source,row.sourceId,row.origem,row.destino,row.coleta,row.descarga,
       row.produto,row.volume,
       row.valorMotorista,row.whatsappEmbarcador,
+      row.e5,row.e6,row.e7,row.e4,row.e9,
       String(auth.session.usuario||"").slice(0,100),publishedAt,expiresAt).run();
     return success({published:true,expiresAt});
   }catch(e){

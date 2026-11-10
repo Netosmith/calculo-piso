@@ -3,7 +3,7 @@ import {ActivityIndicator,Alert,Image,Linking,Pressable,ScrollView,StyleSheet,Te
 import {palette as c} from "./theme";
 import {
   extractDriverToken,getDriverTrip,isDriverTripReady,startDriverTracking,
-  driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking,
+  driverTrackingStatus,flushPendingFixes,restoreApprovedTracking,
   stopAfterApprovedDriverStage
 } from "./tracking";
 import {
@@ -212,13 +212,6 @@ export default function DriverArea({initialLink="",onBack}){
     await status();
     setNotice(result.error?"Aguardando rede: "+result.error:result.sent+" posição(ões) sincronizada(s).");
   });
-  const revoke=()=>Alert.alert("Interromper somente o GPS?",
-    "Isso desativa o envio de localização, mas NÃO finaliza a viagem. O comprovante de descarga ainda deve ser anexado e aprovado pela Nova Frota.",
-    [{text:"Manter monitoramento",style:"cancel"},
-     {text:"Desativar",style:"destructive",onPress:()=>job(async()=>{
-       await revokeDriverTracking();await status();
-       setNotice("GPS desligado. Viagem aberta: envie o comprovante de descarga e aguarde a aprovação da Nova Frota.");
-     })}]);
   return <ScrollView style={styles.container} contentContainerStyle={styles.content}
     keyboardShouldPersistTaps="handled">
     <Pressable onPress={onBack} accessibilityRole="button"><Text style={styles.back}>‹ Voltar</Text></Pressable>
@@ -356,7 +349,7 @@ export default function DriverArea({initialLink="",onBack}){
       {trip&&<View style={styles.receiptCard}>
         <Text style={styles.cardTitle}>2. Termo e início da viagem</Text>
         <Text style={styles.receiptText}>Estou ciente de que, ao iniciar a viagem, a Nova Frota acompanhará as posições que meu celular enviar durante o transporte, para segurança da viagem, até a entrega e a conferência dos documentos.</Text>
-        <Text style={styles.receiptText}>A finalização só será liberada após o envio e a aprovação da selfie (quando exigida) e do comprovante de descarga pela Nova Frota. Posso revogar o compartilhamento de localização a qualquer momento, sem encerrar a viagem.</Text>
+        <Text style={styles.receiptText}>A finalização só será liberada após o envio e a aprovação da selfie (quando exigida) e do comprovante de descarga pela Nova Frota. Posso alterar a permissão de localização a qualquer momento nas configurações do celular, sem encerrar a viagem.</Text>
         {trip.gpsConsentAt?
           <Text style={[styles.receiptStatus,styles.receiptApproved]}>✓ Termo aceito e registrado no servidor</Text>:
           trip.active&&(!trip.selfieRequired||["pending","approved"].includes(trip.selfieStatus))?<>
@@ -408,7 +401,7 @@ export default function DriverArea({initialLink="",onBack}){
         <Text style={styles.cardTitle}>4. Finalização da viagem</Text>
         {trip.gpsFinishedAt?
           <Text style={[styles.receiptStatus,styles.receiptApproved]}>✓ Etapa de finalização concluída. A Central confirma o encerramento operacional.</Text>:
-          <Text style={styles.receiptText}>Para finalizar, o comprovante precisa estar anexado e aprovado. A interrupção voluntária do GPS não encerra esta viagem.</Text>}
+          <Text style={styles.receiptText}>Para finalizar, o comprovante precisa estar anexado e aprovado. Desligar o GPS ou revogar a permissão no celular não encerra esta viagem.</Text>}
         {trip.active&&!trip.gpsFinishedAt&&
           <BTN title={trip.receiptStatus==="approved"&&
               (!trip.selfieRequired||trip.selfieStatus==="approved")
@@ -422,11 +415,9 @@ export default function DriverArea({initialLink="",onBack}){
           "O aplicativo está configurado para enviar localização com a tela bloqueada e em segundo plano, conforme permissões do sistema.":
           "O compartilhamento nativo só começa após sua autorização e início da viagem."}</Text>
         <Text style={styles.small}>Posições aguardando envio: {queued}</Text>
-        <Text style={styles.small}>Internet ou GPS indisponíveis podem interromper o recebimento pela Central. O sistema não impede a revogação das permissões.</Text>
+        <Text style={styles.small}>Internet ou GPS indisponíveis podem interromper o recebimento pela Central. Para revogar a localização, altere a permissão do Portal Frete nas configurações do celular. A viagem continua aberta e o comprovante segue obrigatório.</Text>
         {active&&<View style={styles.buttons}>
           <BTN title="Sincronizar agora" secondary onPress={sync} disabled={busy}/>
-          <View style={{height:8}}/>
-          <BTN title="Desativar compartilhamento" secondary onPress={revoke} disabled={busy}/>
         </View>}
       </View>
     </>}

@@ -31,6 +31,7 @@ const row={
   id:"F-001",status:"LIBERADO",origem:"RIO VERDE-GO",destino:"SANTOS-SP",
   produto:"SOJA",volume:"200 t",valorMotorista:"R$ 240/t",
   coleta:"FAZENDA BOA VISTA",descarga:"ARMAZÉM PORTUÁRIO",
+  e5:"S",e6:"N",e7:"S",e4:"N",e9:"S",
   valorEmpresa:"R$ 320/t",cliente:"CLIENTE INTERNO",obs:"SEGREDO"
 };
 function requestBody(h){return JSON.parse(h.requests.find(r=>r.init.method==="POST").init.body)}
@@ -45,6 +46,9 @@ test("frete totalmente preenchido publica sem pedir origem, destino ou produto n
   assert.equal(body.produto,row.produto);
   assert.equal(body.coleta,row.coleta);
   assert.equal(body.descarga,row.descarga);
+  assert.equal(body.e5,"S");
+  assert.equal(body.e6,"N");
+  assert.equal(body.e7,"S");
   assert.equal(body.valorMotorista,row.valorMotorista);
   assert.equal(body.whatsappEmbarcador,"5564999887766");
   assert.equal(body.cliente,undefined);
@@ -52,6 +56,7 @@ test("frete totalmente preenchido publica sem pedir origem, destino ou produto n
   assert.equal(body.obs,undefined);
   assert.match(h.confirmations[0],/Local de coleta: FAZENDA BOA VISTA/);
   assert.match(h.confirmations[0],/Local de descarga: ARMAZÉM PORTUÁRIO/);
+  assert.match(h.confirmations[0],/5E: S.*6E: N.*7E: S/);
 });
 test("aceita cabeçalhos alternativos devolvidos pelo Google Sheets, em qualquer capitalização",async()=>{
   const h=harness();
@@ -69,6 +74,8 @@ test("aceita cabeçalhos alternativos devolvidos pelo Google Sheets, em qualquer
   assert.equal(body.volume,"50 t");
   assert.equal(body.coleta,"SILO 3");
   assert.equal(body.descarga,"ARMAZÉM A");
+  assert.equal(body.e5,"");
+  assert.equal(body.e9,"");
   assert.equal(body.valorMotorista,"R$ 270/t");
   assert.equal(body.whatsappEmbarcador,"5564999887766");
 });
@@ -84,6 +91,16 @@ test("cancelar um preenchimento ausente não publica frete nem consulta dados in
   assert.equal(await h.app.toggle({...row,origem:""},"fretes",{whatsappEmbarcador:"5564999887766"}),false);
   assert.equal(h.requests.length,0);
   assert.equal(h.prompts.length,1);
+});
+test("coleta e descarga ausentes são solicitadas somente para a divulgação",async()=>{
+  const h=harness({promptAnswer:(message)=>message.includes("COLETA")?"SILO FAZENDA 1":"INDÚSTRIA A"});
+  assert.equal(await h.app.toggle({...row,coleta:"",descarga:""},"fretes",
+    {whatsappEmbarcador:"5564999887766"}),true);
+  assert.equal(h.prompts.length,2);
+  assert.match(h.prompts[0].message,/LOCAL DE COLETA/);
+  assert.match(h.prompts[1].message,/LOCAL DE DESCARGA/);
+  assert.equal(requestBody(h).coleta,"SILO FAZENDA 1");
+  assert.equal(requestBody(h).descarga,"INDÚSTRIA A");
 });
 test("solicita WhatsApp ausente e exige telefone brasileiro válido",async()=>{
   const h=harness({promptAnswer:"(64) 99988-7766"});
@@ -113,7 +130,8 @@ test("o controle em Fretes GO e MT usa a mesma leitura dos campos, com versão d
   for(const module of ["fretes","fretes2"]){
     const script=readFileSync(new URL("assets/js/"+module+".js",root),"utf8");
     const html=readFileSync(new URL("pages/"+module+".html",root),"utf8");
-    assert.match(script,/NFDriverFreights\.toggle\(row,freightModule,\{whatsappEmbarcador:/);
-    assert.match(html,/driver-freights-publisher\.js\?v=4/);
+    assert.match(script,/NFDriverFreights\.toggle\(applyPisoSN\(\[row\]\)\[0\],freightModule,\{whatsappEmbarcador:/);
+    assert.match(script,/NFDriverFreights\.afterSave\(applyPisoSN\(\[nextRow\]\)\[0\],freightModule/);
+    assert.match(html,/driver-freights-publisher\.js\?v=5/);
   }
 });

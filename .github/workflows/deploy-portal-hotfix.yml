@@ -107,6 +107,19 @@ jobs:
           else
             npx wrangler d1 execute portal-frota --remote --file=migrations/0015_driver_public_freights_locations.sql
           fi
+      - name: Preparar tipos de eixos no catalogo publico
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          for axle in e5 e6 e7 e4 e9; do
+            if npx wrangler d1 execute portal-frota --remote --command "SELECT $axle FROM driver_public_freights LIMIT 0;" >/dev/null 2>&1; then
+              echo "Coluna $axle ja existe."
+            else
+              npx wrangler d1 execute portal-frota --remote --command "ALTER TABLE driver_public_freights ADD COLUMN $axle TEXT NOT NULL DEFAULT '';"
+            fi
+          done
       - name: Validar catalogo publico sem dados internos
         working-directory: worker
         run: |

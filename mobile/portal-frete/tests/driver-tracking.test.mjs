@@ -31,8 +31,8 @@ test("tarefa é registrada no nível global e não transmite sem aceite prévio"
 test("APK exige permissões nativas e distingue motorista de funcionário",()=>{
   const app=JSON.parse(read("app.json")).expo;
   const shell=read("App.js");
-  assert.equal(app.version,"0.3.2");
-  assert.equal(app.android.versionCode,6);
+  assert.equal(app.version,"0.3.3");
+  assert.equal(app.android.versionCode,7);
   assert.ok(app.android.permissions.includes("RECEIVE_BOOT_COMPLETED"));
   assert.ok(app.android.permissions.includes("FOREGROUND_SERVICE_LOCATION"));
   assert.ok(app.plugins.some(x=>Array.isArray(x)&&x[0]==="expo-location"&&
@@ -50,10 +50,10 @@ test("motorista só ativa GPS depois de selfie e termo; fretes internos não sã
   assert.match(ui,/Os dados operacionais internos não são exibidos/i);
 });
 
-test("versão 0.3.2 exibe locais e frete do motorista em azul-escuro",()=>{
+test("versão 0.3.3 exibe locais, valor e etiquetas S/N dos eixos",()=>{
   const app=JSON.parse(read("app.json")).expo;
-  assert.equal(app.version,"0.3.2");
-  assert.equal(app.android.versionCode,6);
+  assert.equal(app.version,"0.3.3");
+  assert.equal(app.android.versionCode,7);
   const area=read("src/DriverArea.js");
   assert.match(area,/\/v1\/driver-freights/);
   assert.match(area,/Buscar origem, destino ou produto/);
@@ -64,6 +64,11 @@ test("versão 0.3.2 exibe locais e frete do motorista em azul-escuro",()=>{
   assert.match(area,/formatDriverFreight\(offer\.valorMotorista\)/);
   assert.match(area,/currency:"BRL"/);
   assert.match(area,/Local não informado/);
+  assert.match(area,/Veículos aceitos:/);
+  assert.match(area,/AXLE_TYPES\.map/);
+  assert.match(area,/status==="S"\?styles\.offerAxleYes/);
+  assert.match(area,/status==="N"\?styles\.offerAxleNo/);
+  assert.match(area,/offerAxleUnknown/);
   assert.match(area,/Linking.openURL\(url\)/);
   assert.match(area,/whatsappForOffer\(offer\)/);
   assert.doesNotMatch(area,/Share.share/);

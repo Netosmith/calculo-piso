@@ -62,17 +62,27 @@
       status:field(row,["status","situação","situacao"]).toUpperCase(),
       origem:field(row,["origem","cidadeOrigem","cidade de origem","municipioOrigem"]),
       destino:field(row,["destino","cidadeDestino","cidade de destino","municipioDestino"]),
-      coleta:field(row,["coleta","localColeta","local de coleta","localizacaoColetaDescricao"]),
-      descarga:field(row,["descarga","localDescarga","local de descarga","localizacaoDescargaDescricao"]),
+      // Coleta/Descarga são os nomes dos locais (fazenda, armazém, unidade).
+      // URLs de mapas e cidade de origem/destino não são substitutos.
+      coleta:field(row,["coleta","localColeta","local de coleta","localizacaoColetaDescricao","localCarregamento"]),
+      descarga:field(row,["descarga","localDescarga","local de descarga","localizacaoDescargaDescricao","localDescarregamento"]),
       produto:field(row,["produto","mercadoria","tipoProduto"]),
       volume:field(row,["volume","cadencia"]),
       valorMotorista:field(row,["valorMotorista","vlrMotorista","valor motorista","freteMotorista"]),
+      // Mesma classificação S/N já calculada pela tabela operacional.
+      e5:field(row,["e5","5E"]).toUpperCase(),
+      e6:field(row,["e6","6E"]).toUpperCase(),
+      e7:field(row,["e7","7E"]).toUpperCase(),
+      e4:field(row,["e4","4E"]).toUpperCase(),
+      e9:field(row,["e9","9E"]).toUpperCase(),
       whatsappEmbarcador:normalizeWhatsapp(whatsappEmbarcador)
     };
   }
   function fillMissingForPublication(data,{silent=false}={}){
-    const labels={origem:"ORIGEM (cidade/UF)",destino:"DESTINO (cidade/UF)",produto:"PRODUTO",
-      whatsappEmbarcador:"WHATSAPP DO EMBARCADOR (DDD + número)"};
+    const labels={origem:"ORIGEM (cidade/UF)",destino:"DESTINO (cidade/UF)",
+      coleta:"LOCAL DE COLETA (fazenda, armazém ou unidade)",
+      descarga:"LOCAL DE DESCARGA (armazém, indústria ou unidade)",
+      produto:"PRODUTO",whatsappEmbarcador:"WHATSAPP DO EMBARCADOR (DDD + número)"};
     const missing=Object.keys(labels).filter(key=>!data[key]);
     if(!missing.length)return data;
     if(silent)throw Error("Não foi possível atualizar o anúncio: faltam "+missing.map(key=>labels[key]).join(", ")+".");
@@ -100,6 +110,8 @@
         "Local de descarga: "+(data.descarga||"Não informado"),
         "Produto: "+data.produto,
         "Volume: "+(data.volume||"A consultar"),"Valor do motorista: "+(data.valorMotorista||"A consultar"),
+        "5E: "+(data.e5||"?")+" | 6E: "+(data.e6||"?")+" | 7E: "+(data.e7||"?")+
+        " | 4E: "+(data.e4||"?")+" | 9E: "+(data.e9||"?"),
         "WhatsApp do embarcador: +"+data.whatsappEmbarcador+" (visível publicamente no app)"
       ].join("\n");
       if(!confirm("Divulgar este frete para TODOS os motoristas que usam o aplicativo?\n\n"+
@@ -127,7 +139,8 @@
   async function afterSave(row,source,{whatsappEmbarcador=""}={}){
     if(!enabled(source)||!isPublished(row,source))return;
     const data=snapshot(row,source,{whatsappEmbarcador});
-    if(data.status==="LIBERADO"&&data.origem&&data.destino&&data.produto&&data.whatsappEmbarcador)
+    if(data.status==="LIBERADO"&&data.origem&&data.destino&&data.coleta&&data.descarga&&
+      data.produto&&data.whatsappEmbarcador)
       await publish(row,source,{silent:true,whatsappEmbarcador});
     else await unpublish(row,source,{silent:true});
   }

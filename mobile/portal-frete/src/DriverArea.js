@@ -23,6 +23,10 @@ const formatDriverFreight=value=>{
   }).format(numeric)+(match[2]||"").replace(/\s+/g,"");
 };
 
+const AXLE_TYPES=[
+  {key:"e5",label:"5E"},{key:"e6",label:"6E"},{key:"e7",label:"7E"},
+  {key:"e4",label:"4E"},{key:"e9",label:"9E"}
+];
 const BTN=({title,onPress,disabled=false,secondary=false})=>
   <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
     style={[styles.button,secondary&&styles.secondary,disabled&&{opacity:.5}]}>
@@ -215,6 +219,22 @@ export default function DriverArea({initialLink="",onBack}){
               <Text style={styles.offerDetail}>🌱 Produto: <Text style={styles.offerValue}>{offer.produto}</Text></Text>
               <View style={styles.offerDivider}/>
               <Text style={styles.offerDetail}>📦 Volume: <Text style={styles.offerValue}>{offer.volume||"A consultar"}</Text></Text>
+              <View style={styles.offerDivider}/>
+              <Text style={styles.offerAxleTitle}>🚛 Veículos aceitos:</Text>
+              <View style={styles.offerAxleList}>
+                {AXLE_TYPES.map(type=>{
+                  const raw=String(offer[type.key]??"").trim().toUpperCase();
+                  const status=raw==="S"?"S":raw==="N"?"N":"?";
+                  return <View key={type.key} style={styles.offerAxleChip}>
+                    <Text style={styles.offerAxleChipTitle}>{type.label}</Text>
+                    <Text style={[styles.offerAxleStatus,
+                      status==="S"?styles.offerAxleYes:
+                      status==="N"?styles.offerAxleNo:styles.offerAxleUnknown]}>
+                      {status}
+                    </Text>
+                  </View>;
+                })}
+              </View>
             </View>
             <View style={styles.offerAmountCard}>
               <Text style={styles.offerAmountLabel}>Frete motorista</Text>
@@ -317,6 +337,17 @@ const styles=StyleSheet.create({
   offerDetails:{flex:1,backgroundColor:"#eff6fb",borderRadius:12,padding:12,justifyContent:"center",gap:8},
   offerDivider:{height:1,backgroundColor:"#d5e2ed"},
   offerDetail:{fontSize:11.5,color:"#536b86",lineHeight:18},
+  offerAxleTitle:{fontSize:11.2,fontWeight:"900",color:"#082957",lineHeight:17},
+  offerAxleList:{flexDirection:"row",flexWrap:"wrap",gap:4},
+  offerAxleChip:{minWidth:26,flexGrow:1,maxWidth:36,backgroundColor:"#fff",
+    borderRadius:7,borderWidth:1,borderColor:"#dae5f0",overflow:"hidden",alignItems:"center"},
+  offerAxleChipTitle:{backgroundColor:"#113966",color:"#fff",fontSize:10,
+    fontWeight:"900",textAlign:"center",width:"100%",paddingVertical:4},
+  offerAxleStatus:{fontSize:10,fontWeight:"900",textAlign:"center",
+    marginVertical:4,overflow:"hidden",borderRadius:10,paddingHorizontal:6},
+  offerAxleYes:{color:"#087d3b",backgroundColor:"#d9f7e5"},
+  offerAxleNo:{color:"#b42336",backgroundColor:"#fee5e9"},
+  offerAxleUnknown:{color:"#65758b",backgroundColor:"#edf1f5"},
   offerValue:{fontWeight:"900",color:"#082957"},
   offerAmountCard:{flex:1.1,backgroundColor:"#e7f0fc",borderRadius:12,paddingHorizontal:9,
     paddingVertical:14,alignItems:"center",justifyContent:"center",minHeight:100},

@@ -40,7 +40,7 @@ export async function modulePinController(request,env){
   }
   if(typeof module!=="string"||!isPinModule(module))
     return errorResponse("Módulo inválido.",400);
-  if(!canUsePinModule(session,module))
+  if(!canUsePinModule(session,module,env))
     return errorResponse("Módulo não autorizado para este perfil ou transportadora.",403);
   if(method==="GET"){
     return success({module,unlocked:await hasModulePin(request,env,module)});

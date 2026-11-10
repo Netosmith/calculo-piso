@@ -96,6 +96,17 @@ jobs:
           else
             npx wrangler d1 execute portal-frota --remote --file=migrations/0014_driver_public_freights_whatsapp.sql
           fi
+      - name: Preparar locais publicados de coleta e descarga
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if npx wrangler d1 execute portal-frota --remote --command "SELECT coleta,descarga FROM driver_public_freights LIMIT 0;" >/dev/null 2>&1; then
+            echo "Campos de coleta e descarga ja existem."
+          else
+            npx wrangler d1 execute portal-frota --remote --file=migrations/0015_driver_public_freights_locations.sql
+          fi
       - name: Validar catalogo publico sem dados internos
         working-directory: worker
         run: |

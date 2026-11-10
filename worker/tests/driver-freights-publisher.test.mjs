@@ -30,6 +30,7 @@ function harness({promptAnswer="",confirmation=true,path="/pages/fretes.html"}={
 const row={
   id:"F-001",status:"LIBERADO",origem:"RIO VERDE-GO",destino:"SANTOS-SP",
   produto:"SOJA",volume:"200 t",valorMotorista:"R$ 240/t",
+  coleta:"FAZENDA BOA VISTA",descarga:"ARMAZÉM PORTUÁRIO",
   valorEmpresa:"R$ 320/t",cliente:"CLIENTE INTERNO",obs:"SEGREDO"
 };
 function requestBody(h){return JSON.parse(h.requests.find(r=>r.init.method==="POST").init.body)}
@@ -42,17 +43,22 @@ test("frete totalmente preenchido publica sem pedir origem, destino ou produto n
   assert.equal(body.origem,row.origem);
   assert.equal(body.destino,row.destino);
   assert.equal(body.produto,row.produto);
+  assert.equal(body.coleta,row.coleta);
+  assert.equal(body.descarga,row.descarga);
   assert.equal(body.valorMotorista,row.valorMotorista);
   assert.equal(body.whatsappEmbarcador,"5564999887766");
   assert.equal(body.cliente,undefined);
   assert.equal(body.valorEmpresa,undefined);
   assert.equal(body.obs,undefined);
+  assert.match(h.confirmations[0],/Local de coleta: FAZENDA BOA VISTA/);
+  assert.match(h.confirmations[0],/Local de descarga: ARMAZÉM PORTUÁRIO/);
 });
 test("aceita cabeçalhos alternativos devolvidos pelo Google Sheets, em qualquer capitalização",async()=>{
   const h=harness();
   const sourceRow={
     id:"F-002",STATUS:"LIBERADO",ORIGEM:"JATAÍ-GO",DESTINO:"CUIABÁ-MT",
-    PRODUTO:"MILHO","Cadência":"50 t","Valor Motorista":"R$ 270/t"
+    PRODUTO:"MILHO",COLETA:"SILO 3",DESCARGA:"ARMAZÉM A",
+    "Cadência":"50 t","Valor Motorista":"R$ 270/t"
   };
   assert.equal(await h.app.toggle(sourceRow,"fretes2",{whatsappEmbarcador:"5564999887766"}),true);
   assert.equal(h.prompts.length,0);
@@ -61,6 +67,8 @@ test("aceita cabeçalhos alternativos devolvidos pelo Google Sheets, em qualquer
   assert.equal(body.destino,"CUIABÁ-MT");
   assert.equal(body.produto,"MILHO");
   assert.equal(body.volume,"50 t");
+  assert.equal(body.coleta,"SILO 3");
+  assert.equal(body.descarga,"ARMAZÉM A");
   assert.equal(body.valorMotorista,"R$ 270/t");
   assert.equal(body.whatsappEmbarcador,"5564999887766");
 });
@@ -106,6 +114,6 @@ test("o controle em Fretes GO e MT usa a mesma leitura dos campos, com versão d
     const script=readFileSync(new URL("assets/js/"+module+".js",root),"utf8");
     const html=readFileSync(new URL("pages/"+module+".html",root),"utf8");
     assert.match(script,/NFDriverFreights\.toggle\(row,freightModule,\{whatsappEmbarcador:/);
-    assert.match(html,/driver-freights-publisher\.js\?v=3/);
+    assert.match(html,/driver-freights-publisher\.js\?v=4/);
   }
 });

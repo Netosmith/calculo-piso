@@ -62,6 +62,8 @@
       status:field(row,["status","situação","situacao"]).toUpperCase(),
       origem:field(row,["origem","cidadeOrigem","cidade de origem","municipioOrigem"]),
       destino:field(row,["destino","cidadeDestino","cidade de destino","municipioDestino"]),
+      coleta:field(row,["coleta","localColeta","local de coleta","localizacaoColetaDescricao"]),
+      descarga:field(row,["descarga","localDescarga","local de descarga","localizacaoDescargaDescricao"]),
       produto:field(row,["produto","mercadoria","tipoProduto"]),
       volume:field(row,["volume","cadencia"]),
       valorMotorista:field(row,["valorMotorista","vlrMotorista","valor motorista","freteMotorista"]),
@@ -93,7 +95,10 @@
     if(!fillMissingForPublication(data,{silent}))return false;
     if(!silent){
       const summary=[
-        data.origem+" → "+data.destino, "Produto: "+data.produto,
+        data.origem+" → "+data.destino,
+        "Local de coleta: "+(data.coleta||"Não informado"),
+        "Local de descarga: "+(data.descarga||"Não informado"),
+        "Produto: "+data.produto,
         "Volume: "+(data.volume||"A consultar"),"Valor do motorista: "+(data.valorMotorista||"A consultar"),
         "WhatsApp do embarcador: +"+data.whatsappEmbarcador+" (visível publicamente no app)"
       ].join("\n");

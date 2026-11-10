@@ -25,12 +25,14 @@ const validPublicRow=(body)=>{
   if(!safeSource(body.source))return null;
   const id=sourceId(body.sourceId),origem=clean(body.origem,130),
     destino=clean(body.destino,130),produto=clean(body.produto,100),
+    coleta=clean(body.coleta??"",130),descarga=clean(body.descarga??"",130),
     volume=clean(body.volume??"",55),valor=clean(body.valorMotorista??"",55),
     whatsappEmbarcador=validWhatsapp(body.whatsappEmbarcador);
-  if(!id||!origem||!destino||!produto||volume===null||valor===null||!whatsappEmbarcador)return null;
+  if(!id||!origem||!destino||!produto||coleta===null||descarga===null||
+     volume===null||valor===null||!whatsappEmbarcador)return null;
   if(String(body.status||"").toUpperCase()!=="LIBERADO")return null;
   // Conserva apenas os campos autorizados, nunca JSON original da planilha.
-  return {source:body.source,sourceId:id,origem,destino,produto,volume,
+  return {source:body.source,sourceId:id,origem,destino,coleta,descarga,produto,volume,
     valorMotorista:valor,whatsappEmbarcador};
 };
 async function operator(request,env,source){
@@ -51,7 +53,7 @@ export async function driverFreightsController(request,env){
   if(path==="/v1/driver-freights"&&method==="GET"){
     try{
       const result=await db.prepare(
-        "SELECT source,source_id AS sourceId,origem,destino,produto,volume,"+
+        "SELECT source,source_id AS sourceId,origem,destino,coleta,descarga,produto,volume,"+
         "valor_motorista AS valorMotorista,whatsapp_embarcador AS whatsappEmbarcador,"+
         "published_at AS publishedAt,expires_at AS expiresAt "+
         "FROM driver_public_freights WHERE expires_at>? "+
@@ -108,13 +110,15 @@ export async function driverFreightsController(request,env){
   try{
     await db.prepare(
       "INSERT INTO driver_public_freights "+
-      "(source,source_id,origem,destino,produto,volume,valor_motorista,whatsapp_embarcador,published_by,published_at,expires_at) "+
-      "VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source,source_id) DO UPDATE SET "+
-      "origem=excluded.origem,destino=excluded.destino,produto=excluded.produto,"+
+      "(source,source_id,origem,destino,coleta,descarga,produto,volume,valor_motorista,whatsapp_embarcador,published_by,published_at,expires_at) "+
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source,source_id) DO UPDATE SET "+
+      "origem=excluded.origem,destino=excluded.destino,coleta=excluded.coleta,"+
+      "descarga=excluded.descarga,produto=excluded.produto,"+
       "volume=excluded.volume,valor_motorista=excluded.valor_motorista,"+
       "whatsapp_embarcador=excluded.whatsapp_embarcador,"+
       "published_by=excluded.published_by,published_at=excluded.published_at,expires_at=excluded.expires_at"
-    ).bind(row.source,row.sourceId,row.origem,row.destino,row.produto,row.volume,
+    ).bind(row.source,row.sourceId,row.origem,row.destino,row.coleta,row.descarga,
+      row.produto,row.volume,
       row.valorMotorista,row.whatsappEmbarcador,
       String(auth.session.usuario||"").slice(0,100),publishedAt,expiresAt).run();
     return success({published:true,expiresAt});

@@ -6,6 +6,23 @@ import {
   driverTrackingStatus,flushPendingFixes,revokeDriverTracking,restoreApprovedTracking
 } from "./tracking";
 
+const formatDriverFreight=value=>{
+  const raw=String(value??"").trim();
+  if(!raw)return "A consultar";
+  const withoutCurrency=raw.replace(/^R\$\s*/i,"");
+  const match=withoutCurrency.match(/^(\d[\d.,]*)(\s*\/\s*[a-zÀ-ÿ]+)?$/i);
+  if(!match)return raw;
+  const token=match[1];
+  const numberText=token.includes(",")
+    ?token.replace(/\./g,"").replace(",",".")
+    :/^\d{1,3}(?:\.\d{3})+$/.test(token)?token.replace(/\./g,""):token;
+  const numeric=Number(numberText);
+  if(!Number.isFinite(numeric))return raw;
+  return new Intl.NumberFormat("pt-BR",{
+    style:"currency",currency:"BRL",minimumFractionDigits:2,maximumFractionDigits:2
+  }).format(numeric)+(match[2]||"").replace(/\s+/g,"");
+};
+
 const BTN=({title,onPress,disabled=false,secondary=false})=>
   <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
     style={[styles.button,secondary&&styles.secondary,disabled&&{opacity:.5}]}>
@@ -44,7 +61,7 @@ export default function DriverArea({initialLink="",onBack}){
   const offerMatches=(offer)=>{
     const needle=freightSearch.trim().toLocaleUpperCase("pt-BR");
     if(!needle)return true;
-    return [offer.origem,offer.destino,offer.produto,offer.source].join(" ")
+    return [offer.origem,offer.destino,offer.coleta,offer.descarga,offer.produto,offer.source].join(" ")
       .toLocaleUpperCase("pt-BR").includes(needle);
   };
   function whatsappForOffer(offer){
@@ -60,6 +77,8 @@ export default function DriverArea({initialLink="",onBack}){
     const message=[
       "Olá! Vi este frete no aplicativo Portal Frete e gostaria de mais informações:",
       (offer.origem||"")+" → "+(offer.destino||""),
+      ...(offer.coleta?["Coleta: "+offer.coleta]:[]),
+      ...(offer.descarga?["Descarga: "+offer.descarga]:[]),
       "Produto: "+(offer.produto||"A consultar"),
       "Volume: "+(offer.volume||"A consultar"),
       "Frete motorista: "+(offer.valorMotorista||"A consultar")
@@ -137,8 +156,10 @@ export default function DriverArea({initialLink="",onBack}){
     keyboardShouldPersistTaps="handled">
     <Pressable onPress={onBack} accessibilityRole="button"><Text style={styles.back}>‹ Voltar</Text></Pressable>
     <Text style={styles.eyebrow}>PORTAL FRETE · MOTORISTA</Text>
-    <Text style={styles.title}>Sua rota, com segurança.</Text>
-    <Text style={styles.subtitle}>Nesta área você encontra os fretes divulgados e acompanha sua viagem.</Text>
+    <Text style={styles.title}>{tab==="fretes"?"Ofertas de Frete":"Sua rota, com segurança."}</Text>
+    <Text style={styles.subtitle}>{tab==="fretes"
+      ?"Confira as cargas disponíveis para você."
+      :"Nesta área você encontra os fretes divulgados e acompanha sua viagem."}</Text>
     <View style={styles.tabs}>
       <Pressable style={[styles.tab,tab==="viagem"&&styles.selected]} onPress={()=>setTab("viagem")}>
         <Text style={[styles.tabText,tab==="viagem"&&styles.tabTextSelected]}>📍 Minha viagem</Text>
@@ -173,12 +194,36 @@ export default function DriverArea({initialLink="",onBack}){
             <Text style={styles.offerStatus}>DISPONÍVEL</Text>
           </View>
           <Text style={styles.offerRoute}>{offer.origem} → {offer.destino}</Text>
-          <View style={styles.offerDetails}>
-            <Text style={styles.offerDetail}>Produto: <Text style={styles.offerValue}>{offer.produto}</Text></Text>
-            {!!offer.volume&&<Text style={styles.offerDetail}>Volume: <Text style={styles.offerValue}>{offer.volume}</Text></Text>}
-            <Text style={styles.offerDetail}>Frete motorista: <Text style={styles.offerValue}>{offer.valorMotorista||"A consultar"}</Text></Text>
+          <View style={styles.offerLocations}>
+            <View style={styles.offerLocationRow}>
+              <Text style={styles.offerLocationIcon}>📍</Text>
+              <Text style={styles.offerLocationText}>
+                <Text style={styles.offerLocationLabel}>Coleta: </Text>
+                {offer.coleta||"Local não informado"}
+              </Text>
+            </View>
+            <View style={styles.offerLocationRow}>
+              <Text style={styles.offerLocationIcon}>🏁</Text>
+              <Text style={styles.offerLocationText}>
+                <Text style={styles.offerLocationLabel}>Descarga: </Text>
+                {offer.descarga||"Local não informado"}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.offerExpiry}>Oferta divulgada até {new Date(offer.expiresAt).toLocaleString("pt-BR")}</Text>
+          <View style={styles.offerDetailsRow}>
+            <View style={styles.offerDetails}>
+              <Text style={styles.offerDetail}>🌱 Produto: <Text style={styles.offerValue}>{offer.produto}</Text></Text>
+              <View style={styles.offerDivider}/>
+              <Text style={styles.offerDetail}>📦 Volume: <Text style={styles.offerValue}>{offer.volume||"A consultar"}</Text></Text>
+            </View>
+            <View style={styles.offerAmountCard}>
+              <Text style={styles.offerAmountLabel}>Frete motorista</Text>
+              <Text style={styles.offerAmount} numberOfLines={2} adjustsFontSizeToFit>
+                {formatDriverFreight(offer.valorMotorista)}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.offerExpiry}>▣  Oferta divulgada até {new Date(offer.expiresAt).toLocaleString("pt-BR")}</Text>
           <BTN title={whatsappForOffer(offer)?"🟢 Falar com o embarcador no WhatsApp":"WhatsApp do embarcador indisponível"}
             onPress={()=>contactEmbarcador(offer)} disabled={!whatsappForOffer(offer)}/>
         </View>
@@ -254,14 +299,30 @@ const styles=StyleSheet.create({
   error:{color:"#ae3044",fontWeight:"700",fontSize:12,marginTop:10,lineHeight:19},
   emptyOffers:{paddingTop:18},
   emptyTitle:{fontWeight:"900",fontSize:14,color:c.navy,marginBottom:7},
-  offerCard:{backgroundColor:"#fff",borderRadius:16,borderWidth:1,borderColor:c.line,padding:17},
-  offerTop:{flexDirection:"row",justifyContent:"space-between",alignItems:"center",marginBottom:13},
-  offerSource:{color:c.navy,fontSize:10,fontWeight:"900",letterSpacing:.5},
-  offerStatus:{color:c.green,fontSize:10,fontWeight:"900"},
-  offerRoute:{color:c.navy,fontSize:17,fontWeight:"900",lineHeight:25,marginBottom:13},
-  offerDetails:{backgroundColor:"#eff6fb",borderRadius:10,padding:13,gap:9},
-  offerDetail:{fontSize:12,color:c.muted,lineHeight:19},
-  offerValue:{fontWeight:"900",color:c.navy},
-  offerExpiry:{fontSize:10,color:c.muted,marginVertical:13},
+  offerCard:{backgroundColor:"#fff",borderRadius:20,borderWidth:1,borderColor:"#d8e4ef",padding:16,
+    shadowColor:"#16375c",shadowOffset:{width:0,height:3},shadowOpacity:.08,shadowRadius:10,elevation:3},
+  offerTop:{flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:6,
+    backgroundColor:"#eaf2fc",borderRadius:12,paddingHorizontal:10,paddingVertical:10,marginBottom:13},
+  offerSource:{color:"#082957",fontSize:10,fontWeight:"900",letterSpacing:.3,flexShrink:1},
+  offerStatus:{color:"#176c38",backgroundColor:"#dcf7e4",overflow:"hidden",
+    borderRadius:8,paddingHorizontal:7,paddingVertical:5,fontSize:10,fontWeight:"900"},
+  offerRoute:{color:"#082957",fontSize:18,fontWeight:"900",lineHeight:25,marginBottom:10},
+  offerLocations:{borderTopWidth:1,borderTopColor:"#dbe4ee",paddingTop:11,
+    paddingBottom:14,gap:9},
+  offerLocationRow:{flexDirection:"row",alignItems:"flex-start",gap:9},
+  offerLocationIcon:{fontSize:15,width:20,textAlign:"center"},
+  offerLocationText:{flex:1,color:"#1b3558",fontSize:12.5,lineHeight:19},
+  offerLocationLabel:{color:"#082957",fontWeight:"900"},
+  offerDetailsRow:{flexDirection:"row",gap:10,alignItems:"stretch"},
+  offerDetails:{flex:1,backgroundColor:"#eff6fb",borderRadius:12,padding:12,justifyContent:"center",gap:8},
+  offerDivider:{height:1,backgroundColor:"#d5e2ed"},
+  offerDetail:{fontSize:11.5,color:"#536b86",lineHeight:18},
+  offerValue:{fontWeight:"900",color:"#082957"},
+  offerAmountCard:{flex:1.1,backgroundColor:"#e7f0fc",borderRadius:12,paddingHorizontal:9,
+    paddingVertical:14,alignItems:"center",justifyContent:"center",minHeight:100},
+  offerAmountLabel:{fontSize:11,color:"#082957",fontWeight:"900",textAlign:"center",marginBottom:8},
+  offerAmount:{color:"#082957",fontSize:26,fontWeight:"900",letterSpacing:-.8,
+    textAlign:"center",lineHeight:32},
+  offerExpiry:{fontSize:10.5,color:c.muted,marginVertical:15,lineHeight:16},
   foot:{fontSize:11,color:c.muted,lineHeight:18,marginTop:10}
 });

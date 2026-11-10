@@ -381,10 +381,14 @@ async function reviewProof(t,kind,decision){
   }catch(e){status(e.message,true);}
 }
 function addProofReview(t,area){
-  if(!t.selfieRequired && t.selfieStatus==="missing" && t.receiptStatus==="missing")return;
+  // Exibir também para viagens anteriores: o comprovante agora é obrigatório
+  // antes do encerramento normal, independentemente da data de abertura.
+  if(!t.active && !t.selfieRequired && t.selfieStatus==="missing" &&
+     t.receiptStatus==="missing")return;
   const p=make("section",null,"proofs");
   p.append(make("h3","Conferência documental Nova Frota"));
   for(const [kind,label] of [["selfie","Selfie do motorista"],["receipt","Comprovante de descarga"]]){
+    if(kind==="selfie"&&!t.selfieRequired&&t.selfieStatus==="missing")continue;
     const st=t[kind+"Status"]||"missing";
     const block=make("div",null,"proofrow");
     block.append(make("strong",label));
@@ -405,7 +409,7 @@ function addProofReview(t,area){
     p.append(block);
   }
   if(t.active&&t.selfieRequired) {
-    p.append(make("p","O encerramento exige selfie e comprovante aprovados. O motorista pode interromper voluntariamente o GPS a qualquer momento.","muted"));
+    p.append(make("p","O encerramento normal exige comprovante de descarga enviado e aprovado pela Nova Frota. Viagens novas também exigem selfie aprovada. Interromper o GPS não encerra a viagem.","muted"));
   }
   area.append(p);
 }
@@ -456,11 +460,11 @@ function showDetails(t){
   }
   addProofReview(t,area);
   if(t.active){
-    const docsOk=!t.selfieRequired||(t.selfieStatus==="approved"&&t.receiptStatus==="approved");
-    const stop=make("button",docsOk?"Encerrar viagem aprovada":"Aguardando aprovação dos documentos","danger");
+    const docsOk=t.receiptStatus==="approved"&&(!t.selfieRequired||t.selfieStatus==="approved");
+    const stop=make("button",docsOk?"Encerrar viagem aprovada":"⏳ Aguardando comprovante aprovado","danger");
     stop.disabled=!docsOk;
     stop.type="button";stop.onclick=async()=>{
-      if(!confirm("Encerrar a viagem de "+t.plate+"? O link será revogado e o GPS não poderá enviar novas posições."))return;
+      if(!confirm("Comprovante de descarga conferido e aprovado. Encerrar a viagem de "+t.plate+"? O link será revogado e o GPS não poderá enviar novas posições."))return;
       stop.disabled=true;
       try{await request("/v1/monitor/trips/"+t.id+"/stop","POST");await refresh();status("Viagem encerrada. O acesso do motorista foi revogado.");}
       catch(e){stop.disabled=false;status(e.message,true);}

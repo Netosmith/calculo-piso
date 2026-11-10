@@ -20,6 +20,9 @@ function db({trip={id,active:1,proof_required:1,selfie_status:"missing",selfie_k
         async first(){
           if(sql.includes("WHERE t.token_hash="))return trip;
           if(sql.includes("FROM monitor_trip_proofs WHERE trip_id="))return proof;
+          // Simula o SELECT final da viagem já encerrada, com JOIN dos documentos.
+          if(sql.includes("FROM monitor_trips t LEFT JOIN monitor_trip_extras e")&&
+             sql.includes("WHERE t.id=?"))return {...trip,...proof};
           return null;
         },
         async all(){return {results:[]};},
@@ -105,7 +108,7 @@ test("new trips refuse GPS without a submitted selfie",async()=>{
   assert.equal(response.status,409);
   assert.match((await response.json()).error,/selfie/i);
 });
-test("pending documents block operational completion while old journeys remain compatible",async()=>{
+test("documentos pendentes impedem encerramento operacional",async()=>{
   const database=db({proof:{proof_required:1,selfie_status:"pending",receipt_status:"pending"}});
   const req=await managerReq("/v1/monitor/trips/"+id+"/stop",{body:{}});
   // managerReq with empty body supplies GET; explicitly POST for stop.
@@ -117,6 +120,46 @@ test("pending documents block operational completion while old journeys remain c
   assert.equal(denied.status,403);
 });
 
+test("viagens antigas também exigem comprovante anexo e conferido para encerramento",async()=>{
+  const route="/v1/monitor/trips/"+id+"/stop";
+  async function stop(database,role="OPERACIONAL",body={}){
+    const request=await managerReq(route,{role,body:{...body}});
+    return monitorController(request,{FLEET_DB:database,PORTAL_KEY:secret});
+  }
+  const oldDb=db({proof:null});
+  const missing=await stop(oldDb);
+  assert.equal(missing.status,409);
+  assert.match((await missing.json()).error,/comprovante/i);
+  assert.equal(oldDb.calls.some(x=>x.sql.startsWith("UPDATE monitor_trips SET active=0")),false);
+
+  const withoutFile=db({proof:{proof_required:0,receipt_status:"approved",receipt_key:null}});
+  assert.equal((await stop(withoutFile)).status,409);
+
+  const pendingDb=db({proof:{proof_required:0,receipt_status:"pending",receipt_key:"private/receipt"}});
+  assert.equal((await stop(pendingDb)).status,409);
+
+  const reviewedDb=db({proof:{proof_required:0,receipt_status:"approved",receipt_key:"private/receipt"}});
+  const approved=await stop(reviewedDb);
+  assert.equal(approved.status,200);
+  assert.ok(reviewedDb.calls.some(x=>x.sql.startsWith("UPDATE monitor_trips SET active=0")&&
+    x.sql.includes("p.receipt_key IS NOT NULL")&&x.sql.includes("p.receipt_status='approved'")));
+});
+test("emergência só encerra com administrador e justificativa auditada",async()=>{
+  const route="/v1/monitor/trips/"+id+"/stop";
+  const proof={proof_required:1,selfie_status:"pending",receipt_status:"missing"};
+  const req=async(role,body)=>{
+    const original=await managerReq(route,{role,body});
+    return monitorController(original,{FLEET_DB:db({proof}),PORTAL_KEY:secret});
+  };
+  assert.equal((await req("OPERACIONAL",{emergency:true,reason:"Carga roubada, emergência policial"})).status,409);
+  assert.equal((await req("ADMINISTRADOR",{emergency:true,reason:"curta"})).status,409);
+  const database=db({proof});
+  const input=await managerReq(route,{role:"ADMINISTRADOR",
+    body:{emergency:true,reason:"Situação crítica documentada pela Central"}});
+  const approved=await monitorController(input,{FLEET_DB:database,PORTAL_KEY:secret});
+  assert.equal(approved.status,200);
+  assert.ok(database.calls.some(x=>x.sql.includes("'emergency_stop'")));
+});
 test("interrupcao voluntaria de GPS gera alerta auditavel sem encerrar a viagem",async()=>{
   const database=db({trip:{id,active:1,proof_required:1,selfie_status:"pending",selfie_key:"foto",receipt_status:"missing",last_position_at:"2026-11-08T20:10:00.000Z"}});
   const response=await monitorController(new Request("https://api.portalfrete.net.br/v1/monitor/gps-event",{
@@ -155,7 +198,7 @@ test("conclusao normal do GPS exige selfie e comprovante aprovados no servidor",
   assert.equal(pending.status,409);
   assert.match((await pending.json()).error,/aprova/i);
   assert.equal(pendingDb.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")),false);
-  const approvedDb=db({trip:{id,active:1,proof_required:1,selfie_status:"approved",receipt_status:"approved"}});
+  const approvedDb=db({trip:{id,active:1,proof_required:1,selfie_status:"approved",receipt_status:"approved",receipt_key:"private/receipt"}});
   const approved=await monitorController(makeReq(),{FLEET_DB:approvedDb});
   assert.equal(approved.status,200);
   assert.equal((await approved.json()).documentsApproved,true);
@@ -163,6 +206,21 @@ test("conclusao normal do GPS exige selfie e comprovante aprovados no servidor",
   assert.equal(approvedDb.calls.some(x=>x.sql.includes("UPDATE monitor_trips SET active=0")),false);
 });
 
+test("GPS não conclui viagens antigas sem comprovante de descarga aprovado",async()=>{
+  const makeReq=()=>new Request("https://api.portalfrete.net.br/v1/monitor/gps-event",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token,action:"finished"})
+  });
+  const missingDb=db({trip:{id,active:1,proof_required:0,receipt_status:"missing",receipt_key:null}});
+  const denied=await monitorController(makeReq(),{FLEET_DB:missingDb});
+  assert.equal(denied.status,409);
+  assert.equal(missingDb.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")&&
+    x.sql.includes("'finished'")),false);
+  const reviewedDb=db({trip:{id,active:1,proof_required:0,receipt_status:"approved",receipt_key:"private/receipt"}});
+  const approved=await monitorController(makeReq(),{FLEET_DB:reviewedDb});
+  assert.equal(approved.status,200);
+  assert.equal((await approved.json()).documentsApproved,true);
+});
 test("termo deve ser aceito apos selfie, com versao registrada em auditoria",async()=>{
   const req=()=>new Request("https://api.portalfrete.net.br/v1/monitor/consent",{
     method:"POST",headers:{"Content-Type":"application/json"},

@@ -129,9 +129,13 @@ export default function DriverArea({initialLink="",onBack}){
     if(!token)throw Error("Cole o link completo da viagem enviado pela Nova Frota.");
     const data=await getDriverTrip(token);
     setTrip(data);
-    setNotice(isDriverTripReady(data)?
-      "Viagem autorizada. Ative o rastreamento nativo para continuar com a tela bloqueada.":
-      "Antes de ativar o monitoramento, envie a selfie e aceite o termo da viagem.");
+    const message=!data.active?"Viagem encerrada pela Central da Nova Frota.":
+      data.receiptStatus==="approved"?"Comprovante aprovado pela Nova Frota. Confira a finalização na página da viagem.":
+      data.receiptStatus==="rejected"?"Comprovante rejeitado. Abra a viagem e anexe um novo comprovante.":
+      data.receiptStatus==="pending"?"Comprovante recebido. Aguardando conferência pela equipe da Nova Frota.":
+      isDriverTripReady(data)?"Viagem ativa. O comprovante de descarga ainda precisa ser enviado.":
+      "Antes de ativar o monitoramento, envie a selfie e aceite o termo da viagem.";
+    setNotice(message);
   });
   const openEvidence=()=>job(async()=>{
     if(!token)throw Error("Cole o link da viagem para abrir as etapas.");
@@ -149,12 +153,12 @@ export default function DriverArea({initialLink="",onBack}){
     await status();
     setNotice(result.error?"Aguardando rede: "+result.error:result.sent+" posição(ões) sincronizada(s).");
   });
-  const revoke=()=>Alert.alert("Desativar compartilhamento",
-    "A Central da Nova Frota poderá identificar a ausência de posições. A viagem não será finalizada.",
+  const revoke=()=>Alert.alert("Interromper somente o GPS?",
+    "Isso desativa o envio de localização, mas NÃO finaliza a viagem. O comprovante de descarga ainda deve ser anexado e aprovado pela Nova Frota.",
     [{text:"Manter monitoramento",style:"cancel"},
      {text:"Desativar",style:"destructive",onPress:()=>job(async()=>{
        await revokeDriverTracking();await status();
-       setNotice("O compartilhamento deste dispositivo foi desativado. A viagem permanece aberta.");
+       setNotice("GPS desligado. Viagem aberta: envie o comprovante de descarga e aguarde a aprovação da Nova Frota.");
      })}]);
   return <ScrollView style={styles.container} contentContainerStyle={styles.content}
     keyboardShouldPersistTaps="handled">
@@ -262,11 +266,32 @@ export default function DriverArea({initialLink="",onBack}){
           <Text style={styles.info}>{trip.origin||"Origem não informada"} → {trip.destination||"Destino não informado"}</Text>
           <Text style={styles.small}>Selfie: {trip.selfieStatus||"não enviada"} · Aceite: {trip.gpsConsentAt?"registrado":"pendente"}</Text>
         </View>}
-        <BTN title="1. Abrir selfie, termo e comprovante" onPress={openEvidence} disabled={busy||!token} secondary/>
+        <BTN title="1. Abrir selfie e termo da viagem" onPress={openEvidence} disabled={busy||!token} secondary/>
         <View style={{height:10}}/>
         <BTN title={active?"Monitoramento já ativo":"2. Ativar rastreamento nativo"} onPress={begin}
           disabled={busy||!token||active}/>
       </View>
+      {trip&&<View style={styles.receiptCard}>
+        <Text style={styles.cardTitle}>📄 Comprovante de descarga</Text>
+        <Text style={[styles.receiptStatus,
+          trip.receiptStatus==="approved"?styles.receiptApproved:
+          trip.receiptStatus==="rejected"?styles.receiptRejected:styles.receiptPending]}>
+          {trip.receiptStatus==="approved"?"✓ Aprovado pela Nova Frota":
+           trip.receiptStatus==="pending"?"⌛ Enviado: aguardando conferência":
+           trip.receiptStatus==="rejected"?"✕ Rejeitado: envie outro comprovante":
+           "Pendente: comprovante não enviado"}
+        </Text>
+        <Text style={styles.receiptText}>{trip.receiptStatus==="approved" &&
+            (!trip.selfieRequired||trip.selfieStatus==="approved")
+          ?"Documentos aprovados. A etapa de finalização está liberada no portal; o encerramento operacional continua com a Central."
+          :"Para finalizar a viagem, anexe o comprovante e aguarde a conferência da Nova Frota. Apenas enviar a foto não libera a finalização."}</Text>
+        {trip.active&&<BTN title={trip.receiptStatus==="rejected"||trip.receiptStatus==="missing"
+          ?"Anexar comprovante de descarga":"Abrir comprovante e finalização"}
+          onPress={openEvidence} disabled={busy||!token} secondary/>}
+        <View style={{height:8}}/>
+        <BTN title="Atualizar status da conferência" secondary
+          onPress={verify} disabled={busy||!token}/>
+      </View>}
       <View style={[styles.card,active&&styles.active]}>
         <Text style={styles.cardTitle}>{active?"● GPS nativo ativo":"GPS nativo desligado"}</Text>
         <Text style={styles.info}>{active?
@@ -288,6 +313,14 @@ export default function DriverArea({initialLink="",onBack}){
 }
 const styles=StyleSheet.create({
   container:{flex:1,backgroundColor:"#f6fafd"},
+  receiptCard:{backgroundColor:"#f6faff",borderWidth:1,borderColor:"#bfd5ea",
+    borderRadius:16,padding:16,marginTop:14,gap:7},
+  receiptStatus:{fontSize:12,fontWeight:"900",paddingVertical:9,paddingHorizontal:10,
+    overflow:"hidden",borderRadius:9,alignSelf:"stretch"},
+  receiptApproved:{backgroundColor:"#e5f8eb",color:"#136b36"},
+  receiptRejected:{backgroundColor:"#fff0f1",color:"#aa2845"},
+  receiptPending:{backgroundColor:"#eaf1fb",color:"#284e79"},
+  receiptText:{fontSize:12,color:"#405d7a",lineHeight:19,marginBottom:7},
   content:{padding:18,paddingBottom:35},
   back:{color:c.blue,fontSize:15,fontWeight:"800",marginBottom:20},
   eyebrow:{color:c.green,fontSize:11,fontWeight:"900",letterSpacing:1},

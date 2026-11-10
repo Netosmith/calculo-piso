@@ -38,6 +38,12 @@ test("comprovante usa apenas botoes de camera e biblioteca na pagina",()=>{
   assert.match(html,/\/v1\/monitor\/receipt/);
 });
 
+test("Central não permite encerrar sem comprovante aprovado em viagens antigas",()=>{
+  const html=read("pages/monitoramento.html");
+  assert.match(html,/const docsOk=t.receiptStatus==="approved"&&/);
+  assert.match(html,/Aguardando comprovante aprovado/);
+  assert.match(html,/Interromper o GPS não encerra a viagem/);
+});
 test("motorista tem quatro etapas, aceite do termo e finalizacao depois da descarga",()=>{
   const html=assertScriptsCompile(driver);
   for(const id of ["stageSelfie","stageGps","stageReceipt","stageFinish","gpsConsent","travelTerm",

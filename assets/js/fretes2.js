@@ -1128,11 +1128,14 @@ function formatDateTimeBR(value) {
     if(window.NFDriverFreights?.enabled(freightModule)){
       const btnApp=document.createElement("button");
       btnApp.type="button";
-      btnApp.className="btnTiny ghost";
+      btnApp.className="btnTiny nfAppPublishBtn";
       const updateLabel=()=>{
-        btnApp.textContent=window.NFDriverFreights.isPublished(row,freightModule)?
-          "📱 Retirar do app":"📱 Publicar no app";
-        btnApp.title="Divulgação para motoristas por até 72 horas";
+        const published=window.NFDriverFreights.isPublished(row,freightModule);
+        btnApp.textContent=published?"📱 Retirar":"📱 Publicar";
+        btnApp.title=published
+          ?"Retirar este frete do aplicativo"
+          :"Publicar este frete no aplicativo por até 72 horas";
+        btnApp.classList.toggle("is-published",published);
       };
       updateLabel();
       btnApp.addEventListener("click",async event=>{

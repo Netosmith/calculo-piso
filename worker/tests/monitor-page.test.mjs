@@ -39,7 +39,7 @@ test("comprovante usa apenas botoes de camera e biblioteca na pagina",()=>{
 });
 
 test("Central não permite encerrar sem comprovante aprovado em viagens antigas",()=>{
-  const html=read("pages/monitoramento.html");
+  const html=assertScriptsCompile(page);
   assert.match(html,/const docsOk=t.receiptStatus==="approved"&&/);
   assert.match(html,/Aguardando comprovante aprovado/);
   assert.match(html,/Interromper o GPS não encerra a viagem/);

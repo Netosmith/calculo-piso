@@ -20,6 +20,9 @@ function db({trip={id,active:1,proof_required:1,selfie_status:"missing",selfie_k
         async first(){
           if(sql.includes("WHERE t.token_hash="))return trip;
           if(sql.includes("FROM monitor_trip_proofs WHERE trip_id="))return proof;
+          // Simula o SELECT final da viagem já encerrada, com JOIN dos documentos.
+          if(sql.includes("FROM monitor_trips t LEFT JOIN monitor_trip_extras e")&&
+             sql.includes("WHERE t.id=?"))return {...trip,...proof};
           return null;
         },
         async all(){return {results:[]};},
@@ -211,7 +214,8 @@ test("GPS não conclui viagens antigas sem comprovante de descarga aprovado",asy
   const missingDb=db({trip:{id,active:1,proof_required:0,receipt_status:"missing",receipt_key:null}});
   const denied=await monitorController(makeReq(),{FLEET_DB:missingDb});
   assert.equal(denied.status,409);
-  assert.equal(missingDb.calls.some(x=>x.sql.includes("'finished'")),false);
+  assert.equal(missingDb.calls.some(x=>x.sql.includes("INSERT INTO monitor_proof_audit")&&
+    x.sql.includes("'finished'")),false);
   const reviewedDb=db({trip:{id,active:1,proof_required:0,receipt_status:"approved",receipt_key:"private/receipt"}});
   const approved=await monitorController(makeReq(),{FLEET_DB:reviewedDb});
   assert.equal(approved.status,200);

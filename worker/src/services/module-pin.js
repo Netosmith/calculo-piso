@@ -1,4 +1,4 @@
-// PIN adicional para três módulos da Nova Frota.
+// PIN complementar para módulos internos e para o Super Admin da Nova Frota.
 // Não substitui o login nem as permissões existentes do Portal Frete.
 // A senha é validada somente no Worker, nunca no JavaScript público.
 import { readSessionId } from "./session.js";
@@ -10,7 +10,8 @@ const PIN_DIGEST="34ff3bb3732ca5436824c18fc789ff0507ae31807ca3f782b7d7740235d5d7
 const MODULE_ROLES={
   funcionarios:new Set(["ADMINISTRADOR"]),
   "custo-filial":new Set(["ADMINISTRADOR"]),
-  "custo-frota":new Set(["ADMINISTRADOR","COMERCIAL"])
+  "custo-frota":new Set(["ADMINISTRADOR","COMERCIAL"]),
+  "super-admin":new Set()
 };
 const encoder=new TextEncoder();
 const toHex=bytes=>[...bytes].map(x=>x.toString(16).padStart(2,"0")).join("");
@@ -40,10 +41,14 @@ function cookies(request){
   return found;
 }
 export function isPinModule(module){return Object.hasOwn(MODULE_ROLES,module);}
-export function canUsePinModule(session,module){
-  return isPinModule(module)&&session?.tenantMode!==true&&
-    tenantIdForLegacySession(session)===LEGACY_NOVA_FROTA.id&&
-    MODULE_ROLES[module].has(String(session?.perfil||"").trim().toUpperCase());
+export function canUsePinModule(session,module,env={}){
+  if(!isPinModule(module)||session?.tenantMode===true||
+    tenantIdForLegacySession(session)!==LEGACY_NOVA_FROTA.id)return false;
+  if(module==="super-admin"){
+    const owner=String(env.SUPER_ADMIN_USER||"").trim().toUpperCase();
+    return Boolean(owner)&&String(session?.usuario||"").trim().toUpperCase()===owner;
+  }
+  return MODULE_ROLES[module].has(String(session?.perfil||"").trim().toUpperCase());
 }
 export const pinCookieName=module=>"__Host-pf-pin-"+module;
 export async function verifyModulePinValue(value){

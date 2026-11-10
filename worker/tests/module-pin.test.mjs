@@ -7,6 +7,7 @@ import {hasModulePin,canUsePinModule} from "../src/services/module-pin.js";
 import {employeesController} from "../src/controllers/employees.js";
 import {fleetController} from "../src/controllers/fleet.js";
 import {portalGatewayController} from "../src/controllers/portal-gateway.js";
+import {superAdminController} from "../src/controllers/super-admin.js";
 
 globalThis.crypto??=webcrypto;
 const API="https://api.portalfrete.net.br";
@@ -91,4 +92,25 @@ test("dados de Funcionários, Cálculo Frota e Custo Filial exigem PIN também v
   const granted=request("/v1/funcionarios",tok,{cookie:unlocked.headers.get("Set-Cookie").split(";")[0]});
   const withGrant=await employeesController(granted,env);
   assert.notEqual(withGrant.status,403);
+});
+
+test("Super Admin requer PIN também na API, mantendo /me para mostrar o card ao proprietário",async()=>{
+  const env={...secret,SESSIONS:kv(),SUPER_ADMIN_USER:"LUZIANO",
+    SUPER_ADMIN_PIN_REQUIRED:"enabled"};
+  const owner=await session({user:"LUZIANO"});
+  const endpoint="/v1/super-admin/transportadoras";
+  const locked=await superAdminController(request(endpoint,owner),env);
+  assert.equal(locked.status,403);
+  const me=await superAdminController(request("/v1/super-admin/me",owner),env);
+  assert.equal(me.status,200);
+  const wrongUser=await session({user:"OUTRO"});
+  assert.equal((await authorize("super-admin",wrongUser,env)).status,403);
+  const bad=await authorize("super-admin",owner,env,"0000");
+  assert.equal(bad.status,403);
+  const granted=await authorize("super-admin",owner,env);
+  assert.equal(granted.status,200);
+  const cookie=granted.headers.get("Set-Cookie").split(";")[0];
+  assert.equal((await superAdminController(request(endpoint,owner,{cookie}),env)).status,200);
+  assert.equal((await superAdminController(request(endpoint,wrongUser,{cookie}),env)).status,403);
+  assert.equal(await hasModulePin(request(endpoint,owner,{cookie}),env,"funcionarios"),false);
 });

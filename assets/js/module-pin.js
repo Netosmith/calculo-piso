@@ -3,7 +3,7 @@
 (()=>{
 "use strict";
 const API="https://api.portalfrete.net.br/v1/module-pin";
-const MODULES={funcionarios:"Funcionários","custo-filial":"Custo / Filial","custo-frota":"Cálculo Frota"};
+const MODULES={funcionarios:"Funcionários","custo-filial":"Custo / Filial","custo-frota":"Cálculo Frota","super-admin":"Super Admin"};
 let modal=null,busy=false;
 const css=document.createElement("style");
 css.textContent=[
@@ -124,12 +124,12 @@ function guardPage(module){
   else run();
 }
 function bindHomeCards(){
-  document.querySelectorAll('a.nf-tool[data-feature="funcionarios"],a.nf-tool[data-feature="custo-filial"],a.nf-tool[data-feature="custo-frota"]')
+  document.querySelectorAll('a.nf-tool[data-feature="funcionarios"],a.nf-tool[data-feature="custo-filial"],a.nf-tool[data-feature="custo-frota"],a#superAdminHomeCard')
   .forEach(card=>card.addEventListener("click",async event=>{
     if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return;
     event.preventDefault();
-    const module=card.dataset.feature;
-    if(typeof canAccessFeature==="function"&&!canAccessFeature(module)){
+    const module=card.dataset.feature||"super-admin";
+    if(module!=="super-admin"&&typeof canAccessFeature==="function"&&!canAccessFeature(module)){
       alert("Módulo não disponível para seu perfil.");return;
     }
     const permitted=await authorize(module).catch(err=>{alert(err.message);return false;});

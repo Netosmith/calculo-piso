@@ -133,9 +133,16 @@ export async function monitorController(request, env) {
       const last=await db.prepare("SELECT created_at FROM monitor_proof_audit WHERE trip_id=? AND proof_kind='gps' AND action='stopped' ORDER BY id DESC LIMIT 1").bind(row.id).first();
       // Evita eventos repetidos se o motorista tocar várias vezes sem novas coordenadas.
       if(!last?.created_at||(row.last_position_at&&Date.parse(row.last_position_at)>Date.parse(last.created_at))){
-        await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (?,'gps','stopped','MOTORISTA','Interrompido pelo motorista no navegador',?)").bind(row.id,now()).run();
+        const source=body.platform==="android"?"aplicativo Android":
+          body.platform==="ios"?"aplicativo iOS":"navegador";
+        const pending=row.receipt_status==="approved"?"Comprovante aprovado":
+          "Comprovante de descarga pendente de conferência";
+        await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) "+
+          "VALUES (?,'gps','stopped','MOTORISTA',?,?)")
+          .bind(row.id,"Localização interrompida voluntariamente no "+source+". "+pending+".",now()).run();
       }
-      return success({recorded:true,tripActive:true,receiptRequired:Number(row.proof_required||0)===1});
+      return success({recorded:true,tripActive:true,receiptRequired:row.receipt_status!=="approved",
+        completionBlocked:row.receipt_status!=="approved"});
     }catch(e){return dbError(e,"gps-stop-event");}
   }
   // Posições do aplicativo nativo: timestamps originais, idempotência e

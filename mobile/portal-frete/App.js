@@ -9,6 +9,7 @@ import {normalizeTenantSlug,portalPage,slugFromInvite,trustedNavigation} from ".
 import {palette as c} from "./src/theme";
 import DriverArea from "./src/DriverArea";
 import EmployeeDashboard from "./src/EmployeeDashboard";
+import WelcomeScreen from "./src/WelcomeScreen";
 import {EMPLOYEE_HOME_BRIDGE,parseEmployeeSessionMessage,validEmployeeHomeUrl} from "./src/employee-access";
 import {extractDriverToken} from "./src/tracking";
 
@@ -138,7 +139,7 @@ function AppContent(){
 
   return <SafeAreaView style={styles.safe} edges={["top","bottom","left","right"]}>
     <StatusBar barStyle="dark-content" backgroundColor={c.white}/>
-    {screen!=="web"&&screen!=="inicio"&&screen!=="mais"&&
+    {screen==="driver"&&
       <View style={styles.topbar}>
         <View style={styles.logo}><Text style={styles.logoText}>PF</Text></View>
         <View style={styles.topbarHeading}>
@@ -147,32 +148,9 @@ function AppContent(){
         </View>
         <View style={styles.topbarDot}/>
       </View>}
-    {screen==="escolha"&&<View style={styles.choice}>
-      <View style={styles.choiceIntro}>
-        <Text style={styles.choiceEyebrow}>PORTAL FRETE · NOVA FROTA</Text>
-        <Text style={styles.choiceTitle}>Como você quer acessar?</Text>
-        <Text style={styles.choiceDesc}>Um aplicativo. Duas experiências para necessidades diferentes.</Text>
-      </View>
-      <Pressable accessibilityRole="button" style={styles.choiceCard}
-        onPress={()=>setScreen("driver")}>
-        <Text style={styles.choiceIcon}>🚛</Text>
-        <View style={styles.choiceCardText}>
-          <Text style={styles.choiceCardTitle}>SOU MOTORISTA</Text>
-          <Text style={styles.choiceCardDesc}>Fretes disponíveis e acompanhamento da minha viagem com GPS nativo.</Text>
-        </View>
-        <Text style={styles.chevron}>›</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" style={styles.choiceCard}
-        onPress={()=>{setEmployee(null);setScreen("inicio");}}>
-        <Text style={styles.choiceIcon}>💼</Text>
-        <View style={styles.choiceCardText}>
-          <Text style={styles.choiceCardTitle}>SOU FUNCIONÁRIO</Text>
-          <Text style={styles.choiceCardDesc}>Acesso aos módulos e permissões do Portal Frete Web.</Text>
-        </View>
-        <Text style={styles.chevron}>›</Text>
-      </Pressable>
-      <Text style={styles.choiceFoot}>A localização do motorista só será solicitada após vincular uma viagem e aceitar o termo.</Text>
-    </View>}
+    {screen==="escolha"&&
+      <WelcomeScreen onDriver={()=>setScreen("driver")}
+        onEmployee={()=>{setEmployee(null);setScreen("inicio");}}/>}
     {screen==="driver"&&<DriverArea initialLink={driverInvite} onBack={()=>setScreen("escolha")}/>}
     {(screen==="inicio"||screen==="mais")&&
       <EmployeeDashboard employee={employee} tenant={tenant} tenantInput={tenantInput}

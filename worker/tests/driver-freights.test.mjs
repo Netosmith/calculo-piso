@@ -12,7 +12,7 @@ const offer={
   origem:"RIO VERDE-GO",destino:"SANTOS-SP",
   coleta:"ARMAZÉM RIO VERDE",descarga:"TERMINAL SANTOS",produto:"MILHO",
   valorMotorista:"R$ 290,00/t",volume:"150 t",
-  whatsappEmbarcador:"5564999887766",
+  whatsappEmbarcador:"5564999887766",e5:"S",e6:"S",e7:"N",e4:"S",e9:"N",
   cliente:"SEGREDO COMERCIAL",valorEmpresa:"R$ 400,00/t",
   obs:"DADO INTERNO DE RISCO"
 };
@@ -52,7 +52,7 @@ test("catálogo público somente retorna oferta selecionada, jamais o registro o
  const db=mockDB([{source:"fretes",sourceId:"id1",origem:"RIO VERDE-GO",
   destino:"SANTOS-SP",coleta:"ARMAZÉM RIO VERDE",descarga:"TERMINAL SANTOS",
   produto:"MILHO",volume:"150 t",valorMotorista:"R$ 290/t",
-  whatsappEmbarcador:"5564999887766",
+  whatsappEmbarcador:"5564999887766",e5:"S",e6:"S",e7:"N",e4:"S",e9:"N",
   publishedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60000).toISOString()}]);
  const response=await driverFreightsController(await request("/v1/driver-freights",{authenticated:false}),{
   ...envBase,FLEET_DB:db
@@ -64,6 +64,9 @@ test("catálogo público somente retorna oferta selecionada, jamais o registro o
  assert.equal(data.fretes[0].coleta,"ARMAZÉM RIO VERDE");
  assert.equal(data.fretes[0].descarga,"TERMINAL SANTOS");
  assert.equal(data.fretes[0].whatsappEmbarcador,"5564999887766");
+ assert.equal(data.fretes[0].e5,"S");
+ assert.equal(data.fretes[0].e7,"N");
+ assert.ok(db.calls.some(c=>/e5,e6,e7,e4,e9/.test(c.sql)));
  assert.ok(db.calls.some(c=>c.sql.includes("expires_at>?")));
  assert.ok(db.calls.every(c=>!c.sql.includes("valor_empresa")&&!c.sql.includes("cliente")));
 });
@@ -81,12 +84,15 @@ test("publicação é opt-in, com campos permitidos e expiração de 72 horas",a
  assert.ok(stmt.params.includes(offer.descarga));
  assert.ok(stmt.params.includes(offer.valorMotorista));
  assert.ok(stmt.params.includes(offer.whatsappEmbarcador));
+ assert.deepEqual(stmt.params.slice(10,15),["S","S","N","S","N"]);
  assert.ok(!stmt.params.includes(offer.cliente));
  assert.ok(!stmt.params.includes(offer.valorEmpresa));
  assert.ok(!stmt.params.includes(offer.obs));
  assert.ok(stmt.sql.includes("whatsapp_embarcador"));
  assert.ok(stmt.sql.includes("coleta=excluded.coleta"));
  assert.ok(stmt.sql.includes("descarga=excluded.descarga"));
+ assert.ok(stmt.sql.includes("e5=excluded.e5"));
+ assert.ok(stmt.sql.includes("e9=excluded.e9"));
  assert.ok(Math.abs(Date.parse(result.expiresAt)-Date.now()-72*3600000)<5000);
 });
 test("não publica sem status LIBERADO ou sem origem/destino/produto",async()=>{
@@ -96,6 +102,10 @@ test("não publica sem status LIBERADO ou sem origem/destino/produto",async()=>{
   {...offer,status:""},
   {...offer,origem:""},
   {...offer,produto:""},
+  {...offer,coleta:""},
+  {...offer,descarga:""},
+  {...offer,e5:"SIM"},
+  {...offer,e7:"<script>"},
   {...offer,coleta:"<script>hi</script>"},
   {...offer,descarga:"ARMAZÉM\nINVALID"},
   {...offer,whatsappEmbarcador:""},

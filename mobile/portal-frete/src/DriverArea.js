@@ -129,9 +129,13 @@ export default function DriverArea({initialLink="",onBack}){
     if(!token)throw Error("Cole o link completo da viagem enviado pela Nova Frota.");
     const data=await getDriverTrip(token);
     setTrip(data);
-    setNotice(isDriverTripReady(data)?
-      "Viagem autorizada. Ative o rastreamento nativo para continuar com a tela bloqueada.":
-      "Antes de ativar o monitoramento, envie a selfie e aceite o termo da viagem.");
+    const message=!data.active?"Viagem encerrada pela Central da Nova Frota.":
+      data.receiptStatus==="approved"?"Comprovante aprovado pela Nova Frota. Confira a finalização na página da viagem.":
+      data.receiptStatus==="rejected"?"Comprovante rejeitado. Abra a viagem e anexe um novo comprovante.":
+      data.receiptStatus==="pending"?"Comprovante recebido. Aguardando conferência pela equipe da Nova Frota.":
+      isDriverTripReady(data)?"Viagem ativa. O comprovante de descarga ainda precisa ser enviado.":
+      "Antes de ativar o monitoramento, envie a selfie e aceite o termo da viagem.";
+    setNotice(message);
   });
   const openEvidence=()=>job(async()=>{
     if(!token)throw Error("Cole o link da viagem para abrir as etapas.");

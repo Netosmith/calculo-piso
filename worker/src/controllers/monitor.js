@@ -325,8 +325,15 @@ export async function monitorController(request, env) {
       if(!complete&&!emergency)
         return errorResponse("Encerramento exige comprovante de descarga anexado e aprovado pela Nova Frota. Para viagens novas, selfie aprovada também. Apenas o administrador pode registrar emergência justificada.",409);
       const time=now();
-      const update=db.prepare("UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1")
-        .bind(time,parts[3]);
+      // Confirmação final em consulta atômica: não encerra se a aprovação
+      // documental for revogada entre a leitura e a escrita.
+      const normalSql="UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1 "+
+        "AND EXISTS (SELECT 1 FROM monitor_trip_proofs p WHERE p.trip_id=monitor_trips.id "+
+        "AND p.receipt_key IS NOT NULL AND p.receipt_key<>'' AND p.receipt_status='approved' "+
+        "AND (COALESCE(p.proof_required,0)<>1 OR p.selfie_status='approved'))";
+      const update=db.prepare(emergency
+        ?"UPDATE monitor_trips SET active=0,updated_at=? WHERE id=? AND active=1"
+        :normalSql).bind(time,parts[3]);
       let result;
       if(emergency){
         const audit=db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) "+

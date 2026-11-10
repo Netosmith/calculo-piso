@@ -53,7 +53,7 @@ test("a tela oferece filtros dinâmicos e mantém proteção do catálogo públi
   assert.match(ui,/filterFreightOffers\(freightOffers/);
   assert.match(ui,/Estado de origem/);
   assert.match(ui,/Cidade de destino/);
-  assert.match(ui,/setFreightDestination\(" "\.trim\(\)\)/); // replaced below
+  assert.match(ui,/setFreightDestination\(""\)/);
   assert.match(ui,/Limpar filtros/);
   assert.match(ui,/visibleFreights\.map/);
   assert.match(ui,/\/v1\/driver-freights/);

@@ -11,6 +11,7 @@ import { canManageTenants } from "../config/super-admin-identity.js";
 import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-modules.js";
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
+import { hasModulePin } from "../services/module-pin.js";
 import { errorResponse, success } from "../utils/response.js";
 import { superAdminMonitorDeletion } from "./super-admin-monitor-delete.js";
 
@@ -37,6 +38,11 @@ export async function superAdminController(request, env, verifiedStagingSession 
     && tenantIdForLegacySession(session) === LEGACY_NOVA_FROTA.id;
   if (!isOwner) return errorResponse("Acesso exclusivo do Super Admin.",403);
   const path = new URL(request.url).pathname;
+  // A Home consulta /me para mostrar o card somente ao dono. Todo o restante
+  // da API exige o PIN do Super Admin, inclusive leituras e alterações.
+  if(env.SUPER_ADMIN_PIN_REQUIRED==="enabled" && path!=="/v1/super-admin/me" &&
+     !await hasModulePin(request,env,"super-admin"))
+    return errorResponse("Informe a senha do Super Admin para continuar.",403);
   // Sessão assinada do único proprietário; origem e cabeçalho personalizado
   // impedem requisições cross-site de formulário e escritas por outros perfis.
   const portalOwnerWrite = !verifiedStagingSession &&

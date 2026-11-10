@@ -125,7 +125,7 @@ export async function monitorController(request, env) {
         const receiptApproved=Boolean(row.receipt_key)&&row.receipt_status==="approved";
         const selfieApproved=Number(row.proof_required||0)!==1||row.selfie_status==="approved";
         if(!receiptApproved||!selfieApproved)
-          return errorResponse("Finalize a descarga, anexe o comprovante e aguarde a conferência da Nova Frota antes de concluir a viagem.",409);
+          return errorResponse("Finalize a descarga, anexe o comprovante e aguarde a conferência e aprovação pela Nova Frota antes de concluir a viagem.",409);
         await db.prepare("INSERT INTO monitor_proof_audit (trip_id,proof_kind,action,actor,note,created_at) VALUES (?,'gps','finished','MOTORISTA','Finalização do compartilhamento após aprovação documental',?)").bind(row.id,now()).run();
         return success({recorded:true,tripActive:true,documentsApproved:true});
       }

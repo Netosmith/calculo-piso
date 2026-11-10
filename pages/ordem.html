@@ -914,7 +914,7 @@
 <div class="flex flex-col items-center">
 <div class="w-full border-t border-on-surface-variant mt-8"></div>
 <span class="mt-2 font-label-caps text-label-caps text-on-surface-variant">EMBARCADOR RESPONSÁVEL</span>
-<input id="embarcadorResponsavel" class="w-full border-none text-center font-bold text-primary focus:ring-0 uppercase" type="text" value="NOVA FROTA LOGÍSTICA">
+<input id="embarcadorResponsavel" class="w-full border-none text-center font-bold text-primary focus:ring-0 uppercase" type="text" value="" readonly aria-label="Transportadora responsável pelo embarque">
 </div>
 </div>
 </div>
@@ -1094,12 +1094,23 @@
     return !texto || texto.toUpperCase() === "PREENCHER" ? "" : texto;
   }
 
+  // A mesma transportadora exibida no título deve constar na assinatura,
+  // inclusive nas vias de impressão, sem cadastrar nomes separados por tenant.
+  function sincronizarEmbarcadorResponsavel(){
+    const titulo=document.getElementById("empresaNome");
+    const campo=document.getElementById("embarcadorResponsavel");
+    if(!campo)return;
+    campo.value=String(titulo?.textContent?.trim() || ordemEmpresaNome)
+      .trim().toLocaleUpperCase("pt-BR");
+  }
+
   function preencherDadosEmpresa(uf){
     const dados = EMPRESAS_POR_ESTADO[uf];
     const nomeEl = document.getElementById("empresaNome");
     const filialEl = document.getElementById("empresaFilial");
     if(nomeEl) nomeEl.textContent = dados?.nome || ordemEmpresaNome;
     if(filialEl) filialEl.textContent = dados?.filial || "SELECIONE UM ESTADO";
+    sincronizarEmbarcadorResponsavel();
 
     const campos = [
       ["endereco", "empresaEndereco", "Informe o endereço"],
@@ -1308,6 +1319,7 @@
   let modoImpressao = "duas";
   function prepararViasParaImpressao(){
     sincronizarNomeMotorista();
+    sincronizarEmbarcadorResponsavel();
     const folha = document.getElementById("printSheet");
     if(!folha) return;
     folha.innerHTML = montarViaImpressao("1ª VIA • MOTORISTA") +

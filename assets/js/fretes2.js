@@ -1142,7 +1142,7 @@ function formatDateTimeBR(value) {
         event.stopPropagation();
         btnApp.disabled=true;
         try{
-          const done=await window.NFDriverFreights.toggle(row,freightModule,{whatsappEmbarcador:whatsappForDriverFreight(row)});
+          const done=await window.NFDriverFreights.toggle(applyPisoSN([row])[0],freightModule,{whatsappEmbarcador:whatsappForDriverFreight(row)});
           if(done){
             setStatus(window.NFDriverFreights.isPublished(row,freightModule)?
               "📱 Frete divulgado para motoristas por 72 horas":
@@ -2768,7 +2768,7 @@ tbody tr:nth-child(even){ background:#f8f8f8; }
         else STATE.rows.unshift(nextRow);
 
         if(window.NFDriverFreights?.enabled(freightModule)){
-          try{await window.NFDriverFreights.afterSave(nextRow,freightModule,{whatsappEmbarcador:whatsappForDriverFreight(nextRow)});}
+          try{await window.NFDriverFreights.afterSave(applyPisoSN([nextRow])[0],freightModule,{whatsappEmbarcador:whatsappForDriverFreight(nextRow)});}
           catch(error){alert("Frete salvo, mas não foi possível atualizar a divulgação no app: "+error.message);}
         }
         fillTopFilters(STATE.rows);

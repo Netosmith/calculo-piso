@@ -43,6 +43,21 @@ test("tenant separado só recebe os módulos presentes na HOME permitida",()=>{
   assert.deepEqual(parsed.modules.map(x=>x.key),["fretes","bi"]);
   assert.equal(parseEmployeeSessionMessage(data,"gnova",nova),null);
 });
+test("Super Admin só aparece com confirmação independente do Worker",()=>{
+  const alone=parseEmployeeSessionMessage(packet({modules:[
+    {feature:"super-admin",page:"super-admin"}
+  ]}),"",nova);
+  assert.deepEqual(alone.modules,[]);
+  const verified=parseEmployeeSessionMessage(packet({ownerVerified:true,modules:[
+    {feature:"super-admin",page:"super-admin"}
+  ]}),"",nova);
+  assert.deepEqual(verified.modules.map(m=>m.key),["super-admin"]);
+  const tenant=parseEmployeeSessionMessage(packet({
+    tenantMode:true,transportadoraId:"gnova",ownerVerified:true,
+    modules:[{feature:"super-admin",page:"super-admin"}]
+  }),"gnova",gnova);
+  assert.deepEqual(tenant.modules,[]);
+});
 test("rejeita atalhos forjados e não cria módulo por perfil",()=>{
   const parsed=parseEmployeeSessionMessage(packet({modules:[
     {feature:"fretes",page:"super-admin"},

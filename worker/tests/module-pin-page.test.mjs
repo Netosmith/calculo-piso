@@ -33,3 +33,17 @@ test("Custo Filial valida no servidor antes de carregar módulo, sem PIN hardcod
   assert.match(html,/id="cfProtectedContent" hidden/);
   assert.doesNotMatch(html,/PIN_HASH=/);
 });
+
+test("Super Admin exige PIN na HOME, URL direta e WebView do aplicativo",()=>{
+  const home=read("pages/home.html");
+  const panel=read("pages/super-admin.html");
+  const script=read("assets/js/module-pin.js");
+  assert.match(home,/id="superAdminHomeCard"/);
+  assert.match(script,/a#superAdminHomeCard/);
+  assert.match(script,/guardPage/);
+  assert.match(panel,/PortalModulePin\.guardPage\("super-admin"\)/);
+  assert.match(panel,/PortalModulePin\.unlocked\('super-admin'\)/);
+  assert.doesNotMatch(panel,/5522/);
+  const mobile=read("mobile/portal-frete/src/routes.js");
+  assert.match(mobile,/"super-admin"/);
+});

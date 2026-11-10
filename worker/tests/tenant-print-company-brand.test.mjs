@@ -48,3 +48,29 @@ test("new transportadoras get their own clean empty order preset",()=>{
  assert.match(template,/cnpj:"",ie:"",endereco:"",email:""/);
  assert.doesNotMatch(template,/GNOVA|teste-01/);
 });
+
+
+test("embarcador responsável segue o título da transportadora em todas as ordens",()=>{
+ const html=read("pages/ordem.html");
+ const field=html.match(/<input[^>]*id="embarcadorResponsavel"[^>]*>/)?.[0]||"";
+ assert.match(field,/readonly/);
+ assert.match(field,/value=""/);
+ assert.doesNotMatch(field,/NOVA FROTA LOGÍSTICA/);
+ assert.match(html,/function preencherDadosEmpresa\(uf\)\{[\s\S]*?sincronizarEmbarcadorResponsavel\(\);/);
+ assert.match(html,/function prepararViasParaImpressao\(\)\{[\s\S]*?sincronizarEmbarcadorResponsavel\(\);/);
+ assert.match(html,/function limparOrdem\(\)\{[\s\S]*?preencherDadosEmpresa\(/);
+ assert.match(html,/function montarViaImpressao\(nomeVia\)\{/);
+ assert.match(html,/valorDoCampo\("embarcadorResponsavel"\)/);
+ const match=html.match(/  function sincronizarEmbarcadorResponsavel\(\)\{[\s\S]*?\n  \}/);
+ assert.ok(match,"função de sincronização presente");
+ for(const nome of ["GNOVA TRANSPORTES","NOVA FROTA TRANSPORTES","TRANSVALE LOGÍSTICA"]){
+   const titulo={textContent:nome},campo={value:"NOVA FROTA LOGÍSTICA"};
+   const document={getElementById(id){return id==="empresaNome"?titulo:id==="embarcadorResponsavel"?campo:null;}};
+   const sync=new Function("document","ordemEmpresaNome",match[0]+"\nreturn sincronizarEmbarcadorResponsavel;")(document,"TRANSPORTADORA");
+   sync();
+   assert.equal(campo.value,nome);
+   titulo.textContent="OUTRA TRANSPORTADORA";
+   sync();
+   assert.equal(campo.value,"OUTRA TRANSPORTADORA");
+ }
+});

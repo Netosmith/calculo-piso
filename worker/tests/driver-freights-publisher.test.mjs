@@ -114,6 +114,6 @@ test("o controle em Fretes GO e MT usa a mesma leitura dos campos, com versão d
     const script=readFileSync(new URL("assets/js/"+module+".js",root),"utf8");
     const html=readFileSync(new URL("pages/"+module+".html",root),"utf8");
     assert.match(script,/NFDriverFreights\.toggle\(row,freightModule,\{whatsappEmbarcador:/);
-    assert.match(html,/driver-freights-publisher\.js\?v=3/);
+    assert.match(html,/driver-freights-publisher\.js\?v=4/);
   }
 });

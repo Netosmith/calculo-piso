@@ -3,6 +3,7 @@
 import {portalPage} from "./routes.js";
 
 export const FEATURE_META={
+  "super-admin":{page:"super-admin",title:"Super Admin",icon:"🛡️",description:"Gestão global do Portal"},
   fretes:{page:"fretes",title:"Fretes (Operacional)",icon:"🚛",description:"Cargas e operação diária"},
   fretes2:{page:"fretes2",title:"Fretes (MT)",icon:"🚚",description:"Operação da base MT"},
   bi:{page:"bi",title:"B.I. Operacional",icon:"📊",description:"Indicadores e resultados"},
@@ -24,7 +25,7 @@ export const FEATURE_META={
   relatorio:{page:"relatorio",title:"Relatório",icon:"📑",description:"Análises e consultas"}
 };
 const BOARD_ORDER=[
-  "fretes","fretes2","bi","monitoramento","piso2","piso",
+  "super-admin","fretes","fretes2","bi","monitoramento","piso2","piso",
   "funcionarios","administrativo","chamados","fretes-mercado",
   "controle","share","custo-filial","custo-frota","divulgacao",
   "embarques","cadastros","estadias","relatorio"
@@ -55,12 +56,12 @@ export function parseEmployeeSessionMessage(text,tenant="",sourceUrl=""){
   const allowed=new Set();
   for(const item of payload.modules){
     const meta=FEATURE_META[item?.feature];
-    if(meta&&meta.page===item.page&&item.feature!== "super-admin")allowed.add(item.feature);
+    if(meta&&meta.page===item.page)allowed.add(item.feature);
   }
   // PISO nunca herda um atalho operacional, mesmo em caso de interface divergente.
   if(profile==="PISO")for(const key of allowed)if(key!=="piso2")allowed.delete(key);
   if(tenant){
-    for(const key of ["fretes2","monitoramento","funcionarios"])allowed.delete(key);
+    for(const key of ["super-admin","fretes2","monitoramento","funcionarios"])allowed.delete(key);
   }
   const metrics=profile==="PISO"?{}:(payload.metrics||{});
   return {
@@ -81,7 +82,7 @@ export const EMPLOYEE_HOME_BRIDGE=`(function(){
   if(window.__nfEmployeeBridgeStarted)return true;
   window.__nfEmployeeBridgeStarted=true;
   var publish=function(){
-    Promise.resolve(window.portalAuthReady).then(function(session){
+    Promise.resolve(window.portalAuthReady).then(async function(session){
       if(!session||typeof window.canAccessFeature!=="function")return;
       var cards=Array.prototype.slice.call(document.querySelectorAll(".nf-tool[data-feature]"))
         .filter(function(card){return window.canAccessFeature(card.getAttribute("data-feature"),"navigation");})
@@ -97,6 +98,23 @@ export const EMPLOYEE_HOME_BRIDGE=`(function(){
           }catch(e){return null;}
           return {feature:feature,page:page};
         }).filter(Boolean);
+      // Super Admin tem autorização própria no Worker, diferente do
+      // perfil ADMINISTRADOR comum. Não inferir pelo login ou pelo nome.
+      if(session.tenantMode!==true&&session.transportadoraId==="nova-frota"){
+        try{
+          var resp=await fetch("https://api.portalfrete.net.br/v1/super-admin/me",{
+            credentials:"include",cache:"no-store",headers:{"Accept":"application/json"}
+          });
+          if(resp.ok){
+            var account=await resp.json();
+            if(account.superAdmin===true &&
+               String(account.usuario||"").trim().toUpperCase()===
+               String(session.usuario||"").trim().toUpperCase()){
+              cards.push({feature:"super-admin",page:"super-admin"});
+            }
+          }
+        }catch(e){}
+      }
       var profile=String(session.perfil||"").toUpperCase();
       function metric(id,updated){
         if(profile==="PISO"||session.tenantMode===true)return null;

@@ -3,7 +3,7 @@
     "name": "Portal Frete",
     "slug": "portal-frete-mobile",
     "scheme": "portalfrete",
-    "version": "0.3.9",
+    "version": "0.3.10",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -18,6 +18,11 @@
       }
     },
     "android": {
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
       "package": "br.com.portalfrete.mobile",
       "permissions": [
         "CAMERA",
@@ -30,7 +35,7 @@
         "ACCESS_BACKGROUND_LOCATION"
       ],
       "edgeToEdgeEnabled": true,
-      "versionCode": 13
+      "versionCode": 14
     },
     "plugins": [
       ["expo-image-picker",{"microphonePermission":false,"photosPermission":"As fotos selecionadas serão usadas apenas para anexar comprovantes à sua viagem."}],

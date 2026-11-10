@@ -1,6 +1,6 @@
 // O aplicativo apenas espelha permissões confirmadas pela HOME autenticada.
 // O Worker continua sendo a autoridade para acessar cada módulo.
-import {portalPage} from "./routes";
+import {portalPage} from "./routes.js";
 
 export const FEATURE_META={
   fretes:{page:"fretes",title:"Fretes (Operacional)",icon:"🚛",description:"Cargas e operação diária"},

@@ -3,8 +3,10 @@
 export const PORTAL_ORIGIN="https://portalfrete.net.br";
 const ALLOWED_MODULES=new Set([
   "login","home","fretes","fretes2","monitoramento","bi",
-  "calculo-piso2","calculo-antt","funcionarios","custo-frota-pesada",
-  "chamados","divulgacao","super-admin"
+  "calculo-piso2","calculo-piso","calculo-antt","funcionarios","custo-frota-pesada",
+  "chamados","divulgacao","super-admin","fretes-mercado","controle",
+  "share-clientes","custo-filial","administrativo","embarques",
+  "cadastros","estadias","relatorio"
 ]);
 export function normalizeTenantSlug(value){
   const slug=String(value??"").trim().toLowerCase();

@@ -8,95 +8,17 @@ import {WebView} from "react-native-webview";
 import {normalizeTenantSlug,portalPage,slugFromInvite,trustedNavigation} from "./src/routes";
 import {palette as c} from "./src/theme";
 import DriverArea from "./src/DriverArea";
+import EmployeeDashboard from "./src/EmployeeDashboard";
+import {EMPLOYEE_HOME_BRIDGE,parseEmployeeSessionMessage,validEmployeeHomeUrl} from "./src/employee-access";
 import {extractDriverToken} from "./src/tracking";
 
-const MODULES=[
-  {key:"home",icon:"⌂",title:"Portal completo",description:"Acesse todos os módulos permitidos para o seu usuário."},
-  {key:"fretes",icon:"🚛",title:"Fretes",description:"Consulte as operações de transporte disponíveis."},
-  {key:"bi",icon:"▥",title:"B.I. Operacional",description:"Indicadores e resultados da operação."},
-  {key:"calculo-piso2",icon:"▤",title:"Piso ANTT",description:"Ferramentas e cálculos de frete."},
-  {key:"chamados",icon:"✉",title:"Chamados",description:"Solicitações e comunicação da equipe."}
-];
-function Shortcut({item,onPress}){
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({pressed})=>[styles.shortcut,pressed&&styles.pressed]}
-    >
-      <View style={styles.shortcutIcon}><Text style={styles.shortcutEmoji}>{item.icon}</Text></View>
-      <View style={styles.shortcutText}>
-        <Text style={styles.shortcutTitle}>{item.title}</Text>
-        <Text style={styles.shortcutDescription}>{item.description}</Text>
-      </View>
-      <Text style={styles.chevron}>›</Text>
-    </Pressable>
-  );
-}
-function Landing({tenant,onCompanyChange,onOpen,onActivate,error}){
-  const isNova=!tenant;
-  return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==="ios"?"padding":undefined}>
-      <ScrollView style={styles.flex} contentContainerStyle={styles.landing} keyboardShouldPersistTaps="handled">
-        <View style={styles.hero}>
-          <View style={styles.heroMark}><Text style={styles.heroMarkText}>PF</Text></View>
-          <Text style={styles.eyebrow}>PORTAL FRETE</Text>
-          <Text style={styles.heroTitle}>Sua operação,{"\n"}na palma da mão.</Text>
-          <Text style={styles.heroBody}>
-            Acompanhe seus módulos com as permissões e os dados do portal online.
-          </Text>
-          <Pressable accessibilityRole="button"
-            style={({pressed})=>[styles.heroButton,pressed&&styles.pressed]}
-            onPress={()=>onOpen("login")}>
-            <Text style={styles.heroButtonText}>Entrar no Portal Frete</Text>
-            <Text style={styles.heroButtonArrow}>→</Text>
-          </Pressable>
-          <Text style={styles.heroHint}>
-            {isNova?"Acesso Nova Frota":"Acesso individual da sua transportadora"} · Senhas e dados continuam protegidos no servidor.
-          </Text>
-        </View>
-        <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Acesso rápido</Text>
-          <Text style={styles.sectionSub}>Os módulos seguem as permissões do seu perfil.</Text>
-        </View>
-        <View style={styles.shortcutGroup}>
-          {MODULES.map(item=><Shortcut key={item.key} item={item} onPress={()=>onOpen(item.key)}/>)}
-          {isNova&&
-            <Shortcut item={{key:"monitoramento",icon:"📍",title:"Central de Monitoramento",
-              description:"Viagens, posições e conferência operacional."}}
-              onPress={()=>onOpen("monitoramento")}/>}
-        </View>
-        <View style={styles.activation}>
-          <Text style={styles.activationTitle}>Acesso empresarial</Text>
-          <Text style={styles.activationDesc}>
-            Cada transportadora tem seu próprio link, base de dados e usuários. Informe somente o código recebido da sua empresa.
-          </Text>
-          <View style={styles.activationForm}>
-            <TextInput style={styles.activationInput} value={tenant}
-              onChangeText={onCompanyChange} placeholder="Código da transportadora"
-              autoCapitalize="none" autoCorrect={false} maxLength={40}
-              placeholderTextColor="#7390a6"
-              accessibilityLabel="Código da transportadora"/>
-            <Pressable style={styles.activationButton} onPress={onActivate} accessibilityRole="button">
-              <Text style={styles.activationButtonText}>Acessar</Text>
-            </Pressable>
-          </View>
-          {!!error&&<Text style={styles.error}>{error}</Text>}
-          <Text style={styles.activationHint}>
-            Para a Nova Frota, deixe o campo vazio. O aplicativo não exibe a lista de outras empresas.
-          </Text>
-        </View>
-        <Text style={styles.footer}>PORTAL FRETE · VERSÃO DE DESENVOLVIMENTO 0.1</Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
-function BottomTabs({active,onTab,tenant}){
+function BottomTabs({active,onTab,employee}){
+  const has=key=>employee?.modules?.some(item=>item.key===key);
   const tabs=[
     {key:"inicio",text:"Início",icon:"⌂"},
     {key:"portal",text:"Portal",icon:"▦"},
-    {key:"fretes",text:"Fretes",icon:"🚛"},
-    ...(tenant?[]:[{key:"viagens",text:"Viagens",icon:"📍"}]),
+    ...(has("fretes")||has("fretes2")?[{key:"fretes",text:"Fretes",icon:"🚛"}]:[]),
+    ...(has("monitoramento")?[{key:"viagens",text:"Viagens",icon:"📍"}]:[]),
     {key:"mais",text:"Mais",icon:"☰"}
   ];
   return <View style={styles.tabbar}>
@@ -110,6 +32,8 @@ function BottomTabs({active,onTab,tenant}){
 }
 function AppContent(){
   const browser=useRef(null),canBack=useRef(false);
+  const expectEmployeeHome=useRef(false);
+  const [employee,setEmployee]=useState(null);
   const [tenant,setTenant]=useState("");
   const [tenantInput,setTenantInput]=useState("");
   const [screen,setScreen]=useState("escolha");
@@ -122,6 +46,8 @@ function AppContent(){
   const navigate=useCallback((page,company=tenant)=>{
     try{
       const url=portalPage(page,company);
+      // Só a tela de login pode redirecionar automaticamente ao painel nativo.
+      expectEmployeeHome.current=page==="login";
       setOnlineError("");
       setCurrentRoute(url);
       setScreen("web");
@@ -132,7 +58,7 @@ function AppContent(){
   const activate=useCallback(()=>{
     const slug=normalizeTenantSlug(tenantInput);
     if(slug===null){setError("Confira o código. Use apenas letras, números e hífen.");return;}
-    setError("");setTenant(slug);navigate("login",slug);
+    setError("");setTenant(slug);setEmployee(null);navigate("login",slug);
   },[tenantInput,navigate]);
 
   const handleInvite=useCallback(url=>{
@@ -140,7 +66,7 @@ function AppContent(){
     if(driverToken){setDriverInvite(url);setScreen("driver");return true;}
     const slug=slugFromInvite(url);
     if(slug===null)return false;
-    setTenant(slug);setTenantInput(slug);setError("");
+    setTenant(slug);setTenantInput(slug);setError("");setEmployee(null);
     navigate("login",slug);
     return true;
   },[navigate]);
@@ -180,10 +106,29 @@ function AppContent(){
 
   const tab=key=>{
     if(key==="inicio"||key==="mais"){setScreen(key);return;}
+    if(!employee){navigate("login");return;}
     if(key==="portal")navigate("home");
-    if(key==="fretes")navigate("fretes");
-    if(key==="viagens")navigate("monitoramento");
+    if(key==="fretes"){
+      const available=employee.modules.find(item=>item.key==="fretes"||item.key==="fretes2");
+      if(available)navigate(available.page);
+    }
+    if(key==="viagens"&&employee.modules.some(item=>item.key==="monitoramento"))
+      navigate("monitoramento");
   };
+  const onPortalMessage=useCallback(event=>{
+    const url=event.nativeEvent.url||"";
+    const next=parseEmployeeSessionMessage(event.nativeEvent.data,tenant,url);
+    if(!next)return;
+    setEmployee(next);
+    if(expectEmployeeHome.current){
+      expectEmployeeHome.current=false;
+      setScreen("inicio");
+    }
+  },[tenant]);
+  const onPortalLoadEnd=useCallback(event=>{
+    const url=event.nativeEvent.url||"";
+    if(validEmployeeHomeUrl(url,tenant))browser.current?.injectJavaScript(EMPLOYEE_HOME_BRIDGE);
+  },[tenant]);
   const toolbarTitle=(()=>{
     if(currentRoute.includes("/login.html"))return "Entrar no Portal";
     if(currentRoute.includes("/monitoramento.html"))return "Monitoramento";
@@ -193,7 +138,7 @@ function AppContent(){
 
   return <SafeAreaView style={styles.safe} edges={["top","bottom","left","right"]}>
     <StatusBar barStyle="dark-content" backgroundColor={c.white}/>
-    {screen!=="web"&&
+    {screen!=="web"&&screen!=="inicio"&&screen!=="mais"&&
       <View style={styles.topbar}>
         <View style={styles.logo}><Text style={styles.logoText}>PF</Text></View>
         <View style={styles.topbarHeading}>
@@ -218,7 +163,7 @@ function AppContent(){
         <Text style={styles.chevron}>›</Text>
       </Pressable>
       <Pressable accessibilityRole="button" style={styles.choiceCard}
-        onPress={()=>setScreen("inicio")}>
+        onPress={()=>{setEmployee(null);setScreen("inicio");}}>
         <Text style={styles.choiceIcon}>💼</Text>
         <View style={styles.choiceCardText}>
           <Text style={styles.choiceCardTitle}>SOU FUNCIONÁRIO</Text>
@@ -229,21 +174,12 @@ function AppContent(){
       <Text style={styles.choiceFoot}>A localização do motorista só será solicitada após vincular uma viagem e aceitar o termo.</Text>
     </View>}
     {screen==="driver"&&<DriverArea initialLink={driverInvite} onBack={()=>setScreen("escolha")}/>}
-    {screen==="inicio"&&
-      <Landing tenant={tenantInput} onCompanyChange={setTenantInput} onOpen={navigate}
-        onActivate={activate} error={error}/>}
-    {screen==="mais"&&
-      <View style={styles.more}>
-        <Text style={styles.sectionTitle}>Ferramentas</Text>
-        <Text style={styles.sectionSub}>Acesso direto a módulos e serviços do Portal.</Text>
-        <View style={styles.shortcutGroup}>
-          {MODULES.map(item=><Shortcut key={item.key} item={item} onPress={()=>navigate(item.key)}/>)}
-          {!tenant&&<Shortcut
-            item={{icon:"⚙",title:"Super Admin",description:"Disponível apenas à conta proprietária autorizada."}}
-            onPress={()=>navigate("super-admin")}/>}
-        </View>
-        <Text style={styles.warning}>O aplicativo usa a autenticação e as permissões do servidor; nenhum atalho concede acesso adicional.</Text>
-      </View>}
+    {(screen==="inicio"||screen==="mais")&&
+      <EmployeeDashboard employee={employee} tenant={tenant} tenantInput={tenantInput}
+        onCompanyChange={setTenantInput} onActivate={activate}
+        onOpen={page=>navigate(page)}
+        onExit={()=>setScreen("escolha")} error={error}/>}
+
     {screen==="web"&&<View style={styles.browser}>
       <View style={styles.webToolbar}>
         <Pressable accessibilityRole="button" accessibilityLabel="Voltar"
@@ -262,7 +198,19 @@ function AppContent(){
         originWhitelist={["https://*"]}
         onShouldStartLoadWithRequest={mayNavigate}
         onOpenWindow={event=>openExternal(event.nativeEvent.targetUrl)}
-        onNavigationStateChange={nav=>{canBack.current=nav.canGoBack;setLoading(nav.loading);}}
+        onNavigationStateChange={nav=>{
+          canBack.current=nav.canGoBack;setLoading(nav.loading);
+          try{
+            const current=new URL(nav.url);
+            if(current.origin==="https://portalfrete.net.br" &&
+               current.pathname===new URL(portalPage("login",tenant)).pathname){
+              // Login novamente ou logout: nunca conservar cartões antigos.
+              setEmployee(null);
+            }
+          }catch{}
+        }}
+        onLoadEnd={onPortalLoadEnd}
+        onMessage={onPortalMessage}
         onError={event=>setOnlineError(event.nativeEvent.description||"Falha de conexão")}
         onHttpError={event=>{
           if(event.nativeEvent.statusCode>=500)
@@ -287,8 +235,8 @@ function AppContent(){
         </View>}
       {loading&&<View style={styles.webProgress}/>}
     </View>}
-    {["inicio","mais","web"].includes(screen)&&
-      <BottomTabs active={screen==="web"?"portal":screen} onTab={tab} tenant={tenant}/>}
+    {employee&&["inicio","mais","web"].includes(screen)&&
+      <BottomTabs active={screen==="web"?"portal":screen} onTab={tab} employee={employee}/>}
   </SafeAreaView>;
 }
 export default function App(){

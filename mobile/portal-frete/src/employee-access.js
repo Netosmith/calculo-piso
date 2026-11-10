@@ -56,7 +56,8 @@ export function parseEmployeeSessionMessage(text,tenant="",sourceUrl=""){
   const allowed=new Set();
   for(const item of payload.modules){
     const meta=FEATURE_META[item?.feature];
-    if(meta&&meta.page===item.page)allowed.add(item.feature);
+    if(meta&&meta.page===item.page &&
+       (item.feature!=="super-admin"||payload.ownerVerified===true))allowed.add(item.feature);
   }
   // PISO nunca herda um atalho operacional, mesmo em caso de interface divergente.
   if(profile==="PISO")for(const key of allowed)if(key!=="piso2")allowed.delete(key);
@@ -100,6 +101,7 @@ export const EMPLOYEE_HOME_BRIDGE=`(function(){
         }).filter(Boolean);
       // Super Admin tem autorização própria no Worker, diferente do
       // perfil ADMINISTRADOR comum. Não inferir pelo login ou pelo nome.
+      var ownerVerified=false;
       if(session.tenantMode!==true&&session.transportadoraId==="nova-frota"){
         try{
           var resp=await fetch("https://api.portalfrete.net.br/v1/super-admin/me",{
@@ -110,6 +112,7 @@ export const EMPLOYEE_HOME_BRIDGE=`(function(){
             if(account.superAdmin===true &&
                String(account.usuario||"").trim().toUpperCase()===
                String(session.usuario||"").trim().toUpperCase()){
+              ownerVerified=true;
               cards.push({feature:"super-admin",page:"super-admin"});
             }
           }
@@ -130,7 +133,7 @@ export const EMPLOYEE_HOME_BRIDGE=`(function(){
       var solicitacoes=window.canAccessFeature("administrativo")?
         metric("homeSolicStat","homeSolicAtualizacao"):null;
       var message={
-        type:"portal-employee-v1",verified:true,
+        type:"portal-employee-v1",verified:true,ownerVerified:ownerVerified,
         usuario:session.usuario,nome:session.nome,perfil:session.perfil,
         tenantMode:session.tenantMode===true,
         transportadoraId:session.transportadoraId||"nova-frota",

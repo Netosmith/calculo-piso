@@ -95,6 +95,11 @@ async function principalFor(request,env){
 function isExecutor(p,conf){
  return isAdmin(p.role)||(conf?.executores||[]).includes(String(p.user).toUpperCase());
 }
+// Leitura tem escopos distintos. A tela de solicitações nunca recebe a fila geral,
+// mesmo quando o usuário também é executor.
+export function cadastroCanReadTicket(view,executor,isOwner){
+ return view==="execucao" ? executor===true : isOwner===true;
+}
 async function drive(conf,tenantId,op,data={}){
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),95000);
@@ -130,17 +135,22 @@ export async function cadastroController(request,env){
  if(!p)return err("Sessão inválida.",401);
  const conf=await configFor(env,p.tenantId);
  const executor=isExecutor(p,conf),db=env.TENANTS_DB;
- const path=new URL(request.url).pathname.slice("/v1/cadastro-solicitacoes".length);
+ const url=new URL(request.url);
+ const path=url.pathname.slice("/v1/cadastro-solicitacoes".length);
+ const view=url.searchParams.get("visao")||"solicitante";
+ const executionView=view==="execucao";
  const method=request.method;
+ if(!["solicitante","execucao"].includes(view))return err("Visão de cadastro inválida.",400);
  if(method!=="GET"&&!safeWrite(request))return err("Origem não autorizada.",403);
+ if(method==="GET"&&executionView&&!executor)return err("Acesso exclusivo da equipe de execução.",403);
  try{
   if(path==="/config"&&method==="GET")
     return success({empresa:p.tenantId,executor,armazenamento:publicConfig(conf)});
   if((path===""||path==="/")&&method==="GET"){
-   const rows=await (executor?
-    db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND status<>'RASCUNHO' ORDER BY criado_em DESC LIMIT 250").bind(p.tenantId):
+   const rows=await (executionView?
+    db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND status<>'RASCUNHO' ORDER BY CASE status WHEN 'FILA' THEN 0 WHEN 'PENDENTE' THEN 1 WHEN 'ANDAMENTO' THEN 2 ELSE 3 END, criado_em ASC LIMIT 250").bind(p.tenantId):
     db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND solicitante_id=? ORDER BY criado_em DESC LIMIT 250").bind(p.tenantId,p.user)).all();
-   return success({chamados:(rows.results||[]).map(formatTicket),executor,armazenamento:publicConfig(conf)});
+   return success({chamados:(rows.results||[]).map(formatTicket),executor,visao:view,armazenamento:publicConfig(conf)});
   }
   if((path===""||path==="/")&&method==="POST"){
    if(!conf)return err("Google Drive desta transportadora não configurado. Acione o Super Admin.",503);
@@ -164,8 +174,11 @@ export async function cadastroController(request,env){
   const id=m[1],action=m[2]||"";
   const row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
-  if(!executor&&row.solicitante_id!==p.user)return err("Chamado não autorizado.",403);
-  if(row.status==="RASCUNHO"&&row.solicitante_id!==p.user)return err("Rascunho privado do solicitante.",403);
+  const isOwner=row.solicitante_id===p.user;
+  if(method==="GET"&&!cadastroCanReadTicket(view,executor,isOwner))
+   return err("Chamado não autorizado nesta visão.",403);
+  if(method!=="GET"&&!executor&&!isOwner)return err("Chamado não autorizado.",403);
+  if(row.status==="RASCUNHO"&&!isOwner)return err("Rascunho privado do solicitante.",403);
   if(action===""&&method==="GET"){
    const [docs,mensagens,historico]=await Promise.all([
     db.prepare("SELECT id,slot,nome,mime,bytes,criado_em FROM portal_cadastro_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.tenantId,id).all(),

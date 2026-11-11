@@ -5,6 +5,7 @@ import {readTenantVisual} from "../services/tenant-visual-assets.js";
 import {credentialSchemaStatus} from "../services/super-admin-tenant-credentials.js";
 import {readTenantArtThemes} from "../services/tenant-art-themes.js";
 import {adminReadTenantIntegration,adminTestTenantIntegration} from "../services/tenant-integration.js";
+import {cadastroAdminRead} from "./cadastro-solicitacoes.js";
 import { projectLegacyUsers } from "../services/legacy-user-projection.js";
 import { verifySuperAdminIdentity } from "../services/oidc-admin-auth.js";
 import { canManageTenants } from "../config/super-admin-identity.js";
@@ -125,6 +126,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
   }
   // Cloudflare Access / owner session gate is evaluated above this route.
   // Each freight base has its own private Apps Script and spreadsheet.
+  const cadastroDriveRoute=path.match(/^\/v1\/super-admin\/transportadoras\/([a-z0-9-]+)\/cadastro-drive$/);
+  if(cadastroDriveRoute&&request.method==="GET")return cadastroAdminRead(env,cadastroDriveRoute[1]);
   const baseRoute=path.match(/^\/v1\/super-admin\/transportadoras\/([a-z0-9-]+)\/bases\/(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA|AC|AL|AP|AM|CE|DF|ES|MG|PA|PB|PE|PI|RJ|RN|RS|RR|SE)\/integracao(\/testar)?$/);
   if(baseRoute){
     return baseRoute[3]

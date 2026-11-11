@@ -9,7 +9,7 @@
  if(!/^\/pages\/[a-z][a-z0-9-]{2,63}\/$/.test(prefix)||!tenant)return;
  const modules=new Set([
   "home.html","fretes.html","fretes-GO.html","fretes-MT.html","fretes-SP.html","fretes-MS.html","fretes-BA.html","fretes-PR.html","fretes-SC.html","fretes-RO.html","fretes-TO.html","fretes-MA.html","fretes-AC.html","fretes-AL.html","fretes-AP.html","fretes-AM.html","fretes-CE.html","fretes-DF.html","fretes-ES.html","fretes-MG.html","fretes-PA.html","fretes-PB.html","fretes-PE.html","fretes-PI.html","fretes-RJ.html","fretes-RN.html","fretes-RS.html","fretes-RR.html","fretes-SE.html","bi.html","divulgacao.html",
-  "share-clientes.html","controle.html","administrativo.html","cadastros.html",
+  "share-clientes.html","controle.html","administrativo.html","cadastros.html","cadastro-solicitacoes.html",
   "estadias.html","fretes-mercado.html","embarques.html","chamados.html",
   "patrimonio-br.html","relatorio.html","custo-filial.html",
   "custo-frota-pesada.html","monitoramento.html","calculo-piso.html",

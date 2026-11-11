@@ -5,6 +5,7 @@ import {writeTenantVisual} from "./tenant-visual-assets.js";
 import {writeTenantArtThemes} from "./tenant-art-themes.js";
 import {setTenantCredentials} from "./super-admin-tenant-credentials.js";
 import {adminWriteTenantIntegration} from "./tenant-integration.js";
+import {cadastroAdminSave} from "../controllers/cadastro-solicitacoes.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
@@ -51,6 +52,11 @@ export async function writeTenantCatalog(request,env,actor) {
   const path=new URL(request.url).pathname;
   const action=path.slice(BASE.length);
   try {
+    const cadastroDriveRoute=action.match(/^\/([a-z0-9-]+)\/cadastro-drive$/);
+    if(cadastroDriveRoute){
+      if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
+      return cadastroAdminSave(request,env,cadastroDriveRoute[1]);
+    }
     if(path===BASE && request.method==="POST") {
       const body=await jsonBody(request,["id","name"]);
       const id=body.id,name=body.name;

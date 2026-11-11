@@ -78,15 +78,15 @@ export async function cadastroAdminSave(request,env,id){
 }
 async function principalFor(request,env){
  // Cookie de empresa, mesmo expirado, nunca concede acesso à empresa legada.
- if(hasTenantSessionCookie(request)){
-  const s=await tenantSession(env.TENANTS_DB,request);
-  return s?{tenantId:s.tenant_id,user:s.user_id,role:s.role}:null;
- }
  const scope=request.headers.get("X-Portal-Support-Tenant");
  if(scope){
   if(!ID.test(scope)||scope===LEGACY_NOVA_FROTA.id)return null;
   const o=await ownerSupportPrincipal(request,env,scope);
   return o?{tenantId:o.tenant_id,user:o.user_id,role:o.role,ownerSupport:true}:null;
+ }
+ if(hasTenantSessionCookie(request)){
+  const s=await tenantSession(env.TENANTS_DB,request);
+  return s?{tenantId:s.tenant_id,user:s.user_id,role:s.role}:null;
  }
  const s=await getSession(env,readSessionId(request));
  return s&&tenantIdForLegacySession(s)===LEGACY_NOVA_FROTA.id?
@@ -165,6 +165,7 @@ export async function cadastroController(request,env){
   const row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
   if(!executor&&row.solicitante_id!==p.user)return err("Chamado não autorizado.",403);
+  if(row.status==="RASCUNHO"&&row.solicitante_id!==p.user)return err("Rascunho privado do solicitante.",403);
   if(action===""&&method==="GET"){
    const [docs,mensagens,historico]=await Promise.all([
     db.prepare("SELECT id,slot,nome,mime,bytes,criado_em FROM portal_cadastro_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.tenantId,id).all(),

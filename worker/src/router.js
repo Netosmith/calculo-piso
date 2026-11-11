@@ -21,6 +21,7 @@ import { pingoController } from "./controllers/pingochic.js";
 import {publicTenantsController,tenantApiController,tenantContextController} from "./controllers/tenant-unified.js";
 import {hasTenantSessionCookie} from "./services/tenant-auth.js";
 import {errorResponse} from "./utils/response.js";
+import {cadastroController} from "./controllers/cadastro-solicitacoes.js";
 
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
@@ -29,6 +30,7 @@ export async function routeRequest(request, env, ctx) {
   if(path==="/v1/transportadoras/public")return publicTenantsController(request,env);
   if(path==="/v1/tenant/context")return tenantContextController(request,env);
   if(path.startsWith("/v1/tenant/"))return tenantApiController(request,env);
+  if(path==="/v1/cadastro-solicitacoes"||path.startsWith("/v1/cadastro-solicitacoes/"))return cadastroController(request,env);
 
   // A consulta lê somente ofertas publicadas deliberadamente. Nenhum dado interno de tenant.
   if(path==="/v1/driver-freights"&&request.method==="GET")return driverFreightsController(request,env);

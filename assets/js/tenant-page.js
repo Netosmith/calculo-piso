@@ -18,7 +18,7 @@
  const login="/pages/"+slug+"/login.html";
  const allowed=new Set([
   "home.html","fretes.html","bi.html","divulgacao.html",
-  "share-clientes.html","controle.html","administrativo.html","cadastros.html",
+  "share-clientes.html","controle.html","administrativo.html","cadastros.html","cadastro-solicitacoes.html",
   "estadias.html","fretes-mercado.html","embarques.html","chamados.html",
   "patrimonio-br.html","relatorio.html","custo-filial.html",
   "custo-frota-pesada.html","monitoramento.html","calculo-piso.html",

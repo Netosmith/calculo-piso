@@ -132,7 +132,7 @@ async function openDetail(id){
   const exec=$("cadExecucao");exec.hidden=!executor;
   $("cadAssumir").hidden=!executor||selected.status!=="FILA";
   $("cadStatusForm").hidden=!executor||selected.status==="FILA"||selected.status==="RASCUNHO"||
-   !!(selected.executor&&selected.executor!==String(window.__PORTAL_TENANT_SESSION?.usuario||getUser?.()||""));
+   !!(selected.executor&&selected.executor!==String(window.__PORTAL_TENANT_SESSION?.usuario||(typeof getUser==="function"?getUser():"")));
   $("cadStatusForm").elements.status.value=selected.status==="RASCUNHO"?"ANDAMENTO":selected.status;
   $("cadStatusForm").elements.etapa.value=selected.etapa;
   $("cadChatForm").hidden=selected.status==="RASCUNHO";

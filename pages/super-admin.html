@@ -170,7 +170,27 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 </div>
 <p class="muted">PNG, JPG e WebP. Limite de 2 MB para logos e 6 MB para imagens hero. Cada imagem pode ser substituída individualmente.</p>
 </div>
-<div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. Cores, marca d’água, tamanho e posição da logo são independentes por empresa e modelo. Ajuste os controles e clique em Salvar.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artResetMulti" type="button" class="ghost">Restaurar logos 4A / 4B / 4C</button><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section><h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
+<div id="artes" class="tab" hidden><section id="artThemePanel"><h3>Artes de divulgação · Visualização real</h3><p class="muted">As quatro prévias utilizam a estrutura real das artes do Portal Frete. Cores, marca d’água, tamanho e posição da logo são independentes por empresa e modelo. Ajuste os controles e clique em Salvar.</p><div class="art-model-grid" id="artModelGrid"></div><div class="art-actions"><span id="artStatus">Selecione uma empresa.</span><button id="artResetMulti" type="button" class="ghost">Restaurar logos 4A / 4B / 4C</button><button id="artSave" type="button" disabled>Salvar os quatro modelos</button></div></section></div><div id="settings" class="tab" hidden><section class="panel" id="integrationPanel" style="margin-bottom:22px"><h2>Planilha individual da transportadora</h2><p class="muted">O link e a chave ficam exclusivamente no armazenamento privado do Worker, não nos assets públicos. A Nova Frota permanece intacta.</p><p class="muted" id="integrationStatus">Selecione uma empresa.</p><label>Base para configurar <select id="integrationBase" style="display:block;width:100%;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option value="">Geral / estrutura atual</option><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label>ID da planilha Google Sheets<input id="integrationSheetId" autocomplete="off" placeholder="ID da cópia no Sheets" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Implantação do Apps Script (somente quando alterar)<input id="integrationUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><label>Chave exclusiva do Apps Script (somente quando alterar)<input id="integrationKey" type="password" autocomplete="off" placeholder="No mínimo 24 caracteres" style="display:block;width:100%;margin:7px 0 12px;padding:10px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></label><p><button type="button" id="integrationGenerate">Gerar chave nova</button> <button type="button" id="integrationCopy" class="ghost">Copiar chave digitada</button></p><label>UF inicial <select id="integrationUf" style="display:block;padding:9px;background:#071525;color:#fff;margin:7px 0 12px"><option>GO</option><option>MT</option><option>SP</option><option>MS</option><option>BA</option><option>PR</option><option>SC</option><option>RO</option><option>TO</option><option>MA</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>CE</option><option>DF</option><option>ES</option><option>MG</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RR</option><option>SE</option></select></label><label><input id="integrationEnabled" type="checkbox"> Ativar integração após verificar que o Apps Script copiado utiliza a planilha correta</label><p><button type="button" id="integrationSave">Salvar integração privada</button> <button type="button" id="integrationTest" class="ghost">Testar conexão (somente leitura)</button></p><p class="muted">Primeiro salve desativada, confirme a planilha no Apps Script e configure a chave correspondente em Propriedades do script. Depois marque Ativar.</p></section>
+<section class="panel" id="cadDrivePanel" style="margin-bottom:22px">
+  <h2>Google Drive: Solicitações de Cadastro</h2>
+  <p class="muted">Cada transportadora utiliza sua própria pasta, chave e implantação Apps Script. As credenciais permanecem no Worker. Nova Frota também pode configurar este módulo.</p>
+  <p class="muted" id="cadDriveStatus">Selecione uma transportadora.</p>
+  <label>URL do Apps Script (Drive)
+    <input id="cadDriveUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" style="display:block;width:100%;padding:10px;margin:7px 0 12px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px">
+  </label>
+  <label>ID da pasta privada do Google Drive
+    <input id="cadDriveFolder" autocomplete="off" placeholder="ID da pasta da transportadora" style="display:block;width:100%;padding:10px;margin:7px 0 12px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px">
+  </label>
+  <label>Chave da integração (mínimo 24 caracteres)
+    <input id="cadDriveKey" type="password" autocomplete="new-password" placeholder="Vazio = manter chave anterior" style="display:block;width:100%;padding:10px;margin:7px 0 12px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px">
+  </label>
+  <label>Usuários com acesso de execução adicionais (separados por vírgula)
+    <textarea id="cadDriveExecutors" rows="3" autocomplete="off" placeholder="usuario1, usuario2" style="display:block;width:100%;padding:10px;margin:7px 0 12px;background:#071525;color:#fff;border:1px solid #55718a;border-radius:8px"></textarea>
+  </label>
+  <p><button type="button" id="cadDriveSave" disabled>Salvar Google Drive e executores</button></p>
+  <p class="muted">No Apps Script, configure CADASTRO_GATEWAY_KEY, CADASTRO_TENANT_ID e CADASTRO_DRIVE_FOLDER_ID. A chave nunca é devolvida pelo servidor após salvar.</p>
+</section>
+<h2>Histórico de auditoria</h2><p>Últimas 50 alterações registradas para a transportadora selecionada.</p><p><button id="refreshAudit" type="button">Atualizar histórico</button></p><div id="auditList" class="empty">Selecione uma transportadora para visualizar o histórico.</div></div>
 <div id="monitorDelete" class="tab" hidden>
  <div class="monitor-delete-head"><div><h2>Excluir viagens do Monitoramento Nova Frota</h2><p class="muted">Somente a conta Super Admin pode remover viagens, inclusive ativas e já encerradas. Não é possível excluir viagens de outras transportadoras.</p></div><button type="button" id="monitorDeleteReload" class="ghost">Atualizar viagens</button></div>
  <div class="monitor-delete-warning"><strong>Exclusão de dados operacionais.</strong> O registro sai do monitoramento, o link do motorista é invalidado, posições e documentos deixam de aparecer na operação. Antes da remoção, uma cópia privada é arquivada e a ação fica registrada na auditoria. Verifique obrigações de guarda de evidências e documentos antes de excluir uma viagem real.</div>
@@ -953,7 +973,7 @@ renderCompanies=function(){
   button.append(imageBox,body,open);
   button.onclick=()=>{
    selected=company;rememberSelectedCompany(company.id);
-   render();loadUsers();loadAudit();loadBrand();loadIntegration();loadArtThemes();
+   render();loadUsers();loadAudit();loadBrand();loadIntegration();loadCadastroDrive();loadArtThemes();
    showGalleryDetail(true);
   };
   root.append(button);galleryLogoImage(company,image,initials);
@@ -967,6 +987,47 @@ addEventListener('pagehide',()=>{
  for(const url of galleryLogoUrls.values())URL.revokeObjectURL(url);
  galleryLogoUrls.clear();
 });
+
+
+let cadDriveSequence=0;
+async function loadCadastroDrive(){
+ const company=selected?.id,n=++cadDriveSequence;
+ $('cadDriveSave').disabled=true;
+ $('cadDriveKey').value='';
+ $('cadDriveUrl').value='';
+ $('cadDriveFolder').value='';
+ $('cadDriveExecutors').value='';
+ $('cadDriveStatus').textContent=company?'Consultando integração privada...':'Selecione uma transportadora.';
+ if(!company)return;
+ try{
+  const c=await request('/v1/super-admin/transportadoras/'+encodeURIComponent(company)+'/cadastro-drive');
+  if(n!==cadDriveSequence||selected?.id!==company)return;
+  $('cadDriveFolder').value=c.pasta||'';
+  $('cadDriveExecutors').value=(c.executoresUsuarios||[]).join(', ');
+  $('cadDriveStatus').textContent=c.configurado?
+   'Google Drive configurado. '+c.executores+' executores adicionais. Chave guardada no backend.':
+   'Não configurado. Informe URL da implantação, pasta e chave.';
+  $('cadDriveSave').disabled=!writeReady;
+ }catch(e){if(n===cadDriveSequence)$('cadDriveStatus').textContent=e.message;}
+}
+$('cadDriveSave').onclick=async()=>{
+ if(!selected?.id||!writeReady)return;
+ const id=selected.id,button=$('cadDriveSave');
+ button.disabled=true;$('cadDriveStatus').textContent='Gravando integração privada...';
+ try{
+  await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/cadastro-drive','PUT',{
+   url:$('cadDriveUrl').value.trim(),
+   pasta:$('cadDriveFolder').value.trim(),
+   chave:$('cadDriveKey').value,
+   executores:$('cadDriveExecutors').value.split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean)
+  });
+  if(selected?.id!==id)return;
+  $('cadDriveKey').value='';$('cadDriveUrl').value='';
+  await loadCadastroDrive();
+ }catch(e){$('cadDriveStatus').textContent=e.message;}
+ finally{button.disabled=!writeReady;}
+};
+document.querySelector('[data-tab="settings"]')?.addEventListener('click',loadCadastroDrive);
 
 </script>
 <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>

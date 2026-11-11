@@ -1,3 +1,4 @@
+[hidden]{display:none!important}
 :root{--cad-navy:#081a30;--cad-blue:#235caa;--cad-green:#138e62;--cad-ink:#14273e;--cad-muted:#71839a;--cad-border:#dce6f0;--cad-surface:#fff}
 *{box-sizing:border-box}
 body.cadastro-app{margin:0;background:#f2f6fb;color:var(--cad-ink);font-family:Inter,system-ui,sans-serif}

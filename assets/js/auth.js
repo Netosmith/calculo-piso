@@ -163,7 +163,7 @@ function enforcePisoPageScope(session){
   // Signed PISO sessions may navigate only Home and ANTT Piso 2.
   // API permissions independently block every other data endpoint.
   const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
-  if(["login.html","home.html","calculo-antt.html"].includes(file))return true;
+  if(["login.html","home.html","calculo-antt.html","cadastro-solicitacoes.html"].includes(file))return true;
   window.location.href=window.portalTenantHref?.("home.html") || "./home.html";
   return false;
 }
@@ -456,6 +456,7 @@ function canAccessFeature(featureKey, context=""){
     if(feature==="super-admin"||feature==="fretes2")return false;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
     const role=String(tenantSession.perfil||"").trim().toUpperCase();
+    if(feature==="cadastro-solicitacoes")return true;
     // PISO only gets the empty Home entrypoint and an enabled Piso 2.
     if(role==="PISO")return feature==="home" ||
       (feature==="piso2" && modules.includes("piso2"));
@@ -470,6 +471,7 @@ function canAccessFeature(featureKey, context=""){
     return featuresForProfile(role).includes(feature);
   }
 
+  if(feature==="cadastro-solicitacoes")return isAuthedHome();
   // PISO cannot inherit global support, Piso 1 or other modules.
   if(profile==="PISO")return isAuthedHome() && feature==="piso2";
 
@@ -734,6 +736,15 @@ const PORTAL_NAV_ITEMS = [
     feature:"administrativo",
     href:"./administrativo.html",
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7-.7-1.7.9-1.9-2.1-2.1-1.9.9-1.7-.7L10.5 2h-3l-.7 2-1.7.7-1.9-.9L1.1 5.9l.9 1.9-.7 1.7-2 .7v3l2 .7.7 1.7-.9 1.9 2.1 2.1 1.9-.9 1.7.7.7 2h3l.7-2 1.7-.7 1.9.9 2.1-2.1-.9-1.9.7-1.7 2-.7Z" transform="translate(1.5 0) scale(.85)"/></svg>'
+  },
+  {
+    key:"cadastro-solicitacoes",
+    label:"Solic. Cadastros",
+    feature:"cadastro-solicitacoes",
+    href:"./cadastro-solicitacoes.html",
+    paths:["cadastro-solicitacoes.html"],
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 9h8M8 13h8M8 17h4"/></svg>'
   },
   {
     key:"cadastros",

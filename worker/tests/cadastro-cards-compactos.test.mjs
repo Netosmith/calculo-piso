@@ -37,6 +37,6 @@ test("Produto obrigatório em novos cadastros e editável pelo executor respons�
  for(const name of ["cadastro-solicitacoes","execucao-cadastros"]){
   const html=read("pages/"+name+".html");
   assert.match(html,/cadastro-solicitacoes[.]css[?]v=8-quadro-unico/);
-  assert.match(html,/cadastro-solicitacoes[.]js[?]v=8-quadro-unico/);
+  assert.match(html,/cadastro-solicitacoes[.]js[?]v=9-minha-execucao/);
  }
 });

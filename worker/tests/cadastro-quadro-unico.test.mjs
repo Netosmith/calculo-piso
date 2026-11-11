@@ -24,5 +24,6 @@ test("Rascunhos continuam acessíveis; execução mantém seu painel separado",(
  assert.match(js,/draftTrayOpen=!draftTrayOpen/);
  assert.match(execution,/id="cadTickets"/);
  assert.match(execution,/id="cadListaTitulo"/);
+ assert.match(execution,/Meus cadastros em execução/);
  assert.doesNotThrow(()=>new Script(js));
 });

@@ -115,15 +115,23 @@ function renderDrafts(){
   list.append(button);
  }
 }
+// O painel inferior é uma carteira pessoal, não uma segunda cópia da fila geral.
+// O campo executor é o ID atribuído pelo backend no momento de assumir o chamado.
+const STATUS_EM_EXECUCAO=new Set(["ANDAMENTO","AGUARDANDO APROVACAO","PENDENTE"]);
+function pertenceMinhaExecucao(ticket,usuario){
+ const responsavel=String(ticket?.executor||"").trim().toUpperCase();
+ const logado=String(usuario||"").trim().toUpperCase();
+ return Boolean(logado&&responsavel===logado&&STATUS_EM_EXECUCAO.has(ticket.status));
+}
 function render(){
  renderBoard();
  renderDrafts();
  // Não renderizar uma segunda lista no ambiente de solicitações.
  if(!$("cadTickets"))return;
  const query=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
- const rows=all.filter(x=>(!filter||x.status===filter)&&matchesCadastro(x,query));
+ const rows=all.filter(x=>pertenceMinhaExecucao(x,userId)&&(!filter||x.status===filter)&&matchesCadastro(x,query));
  const grid=$("cadTickets");grid.replaceChildren();
- if(!rows.length){grid.append(el("div","Nenhuma solicitação encontrada.","cad-empty"));return;}
+ if(!rows.length){grid.append(el("div","Nenhum cadastro em execução atribuído a você.","cad-empty"));return;}
  for(const c of rows){
   const b=el(executionView?"article":"button","","cad-ticket");if(!executionView)b.type="button";
   const head=el("div","","cad-ticket-head");
@@ -147,8 +155,8 @@ async function refresh(){
  const d=await api();
  if(executionView&&!d.executor)throw Error("Acesso restrito aos executores autorizados.");
  all=d.chamados||[];executor=!!d.executor;storage=!!d.armazenamento?.configurado;
- if($("cadListaTitulo"))$("cadListaTitulo").textContent="Todos os protocolos recebidos";
- if($("cadListaSub"))$("cadListaSub").textContent="Controle da fila geral e dos processos da transportadora.";
+ if($("cadListaTitulo"))$("cadListaTitulo").textContent="Meus cadastros em execução";
+ if($("cadListaSub"))$("cadListaSub").textContent="Somente os chamados assumidos por você e ainda não finalizados.";
  const create=$("cadNovo");
  if(create){create.disabled=!storage;create.title=storage?"Abrir solicitação":"Configure o Google Drive no Super Admin";}
  render();

@@ -10,6 +10,14 @@ let all=[],executor=false,storage=false,selected=null,draftId="",busy=false,user
 let previewBlobUrl=null,previewSequence=0,checklistBusy=false;
 const CHECK_LABELS={criminal:"Consulta criminal",cnh:"Validação CNH",documentos:"Documentos",biometria:"Biometria",referencia1:"Referência 1",referencia2:"Referência 2",referencia3:"Referência 3",telefone_proprietario:"Telefone proprietário",telefone_motorista:"Telefone motorista"};
 const CHECK_STATUS={OK:"Conferido",PENDENTE:"Pendente",REVISAR:"Revisar"};
+function smallProgress(done){
+ const value=Math.max(0,Math.min(9,Number(done)||0));
+ const holder=el("div","","cad-mini-progress");
+ const label=el("small",value+"/9 conferências");
+ const track=el("div","","cad-mini-progress-track");
+ const bar=el("span","","cad-mini-progress-fill");bar.style.width=(value*100/9)+"%";
+ track.append(bar);holder.append(label,track);return holder;
+}
 
 const iso=d=>{if(!d)return"";const value=new Date(String(d).replace(" ","T")+"Z");return isNaN(value)?String(d):value.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
 const titleStatus=s=>({RASCUNHO:"Rascunho",FILA:"Na fila",ANDAMENTO:"Em andamento","AGUARDANDO APROVACAO":"Aguardando aprovação",PENDENTE:"Pendente",REPROVADO:"Reprovado",APROVADO:"Aprovado"}[s]||s);
@@ -56,7 +64,8 @@ function renderBoard(){
    const meta=el("div","","cad-lane-ticket-meta");
    meta.append(el("span",ticket.protocolo),el("span",iso(ticket.criadoEm)));
    b.append(meta,el("strong",ticket.motorista),el("span",ticket.placas),
-     el("small",ticket.executor?"Executor: "+ticket.executor:"Aguardando responsável"));
+     el("small",ticket.executor?"Executor: "+ticket.executor:"Aguardando responsável"),
+     smallProgress(ticket.conferidos));
    if(ticket.status==="FILA")b.append(el("em","Clique para assumir →"));
    b.onclick=()=>openDetail(ticket.id);list.append(b);
   }
@@ -77,7 +86,7 @@ function render(){
  for(const c of rows){
   const b=el(executionView?"article":"button","","cad-ticket");if(!executionView)b.type="button";
   const head=el("div","","cad-ticket-head");head.append(el("strong",c.protocolo),statusChip(c.status));b.append(head);
-  b.append(el("h3",c.motorista),el("p",c.placas));
+  b.append(el("h3",c.motorista),el("p",c.placas),smallProgress(c.conferidos));
   if(!executionView)b.append(el("div",c.executor?"Responsável: "+c.executor:"Aguardando responsável","cad-ticket-assignee"));
   const foot=el("div","","cad-ticket-foot");foot.append(el("span",iso(c.criadoEm)),el("span",c.status==="RASCUNHO"?"Completar anexos":c.executor?"Executor: "+c.executor:"Abrir detalhes"));b.append(foot);
   if(executionView){

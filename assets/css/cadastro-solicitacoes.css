@@ -155,3 +155,9 @@ body.cadastro-app .cad-preview-footer{display:flex;justify-content:flex-end;gap:
  body.cadastro-app .cad-file-actions{width:100%}
  body.cadastro-app .cad-preview-body{max-height:68vh}
 }
+
+/* Progresso persistente resumido diretamente nos cards */
+body.cadastro-app .cad-mini-progress{display:grid;gap:5px;width:100%;margin-top:7px}
+body.cadastro-app .cad-mini-progress small{font-size:10px;color:#557d95}
+body.cadastro-app .cad-mini-progress-track{height:5px;border-radius:8px;background:#e1e9ee;overflow:hidden}
+body.cadastro-app .cad-mini-progress-fill{display:block;height:100%;background:linear-gradient(90deg,#177fd0,#11a978);border-radius:8px;transition:width .2s}

@@ -138,7 +138,7 @@ const formatTicket=r=>({
  proprietario:r.proprietario,contatoProprietario:r.contato_proprietario,placas:r.placas,
  referencias:JSON.parse(r.referencias_json||"[]"),observacoes:r.observacoes,
  status:r.status,etapa:r.etapa,solicitante:r.solicitante_id,executor:r.executor_id,
- criadoEm:r.criado_em,atualizadoEm:r.atualizado_em,enviadoEm:r.enviado_em
+ criadoEm:r.criado_em,atualizadoEm:r.atualizado_em,enviadoEm:r.enviado_em,conferidos:Math.min(9,Number(r.conferidos||0))
 });
 async function ticket(db,p,id){return db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND id=?").bind(p.tenantId,id).first();}
 async function history(db,p,id,status,etapa,motivo=""){
@@ -173,8 +173,8 @@ export async function cadastroController(request,env){
  try{
   if((path===""||path==="/")&&method==="GET"){
    const rows=await (executionView?
-    db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND status<>'RASCUNHO' ORDER BY CASE status WHEN 'FILA' THEN 0 WHEN 'PENDENTE' THEN 1 WHEN 'ANDAMENTO' THEN 2 ELSE 3 END, criado_em ASC LIMIT 250").bind(p.tenantId):
-    db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND solicitante_id=? ORDER BY criado_em DESC LIMIT 250").bind(p.tenantId,p.user)).all();
+    db.prepare("SELECT *, (SELECT COUNT(1) FROM portal_cadastro_checklist AS cc WHERE cc.tenant_id=portal_cadastro_tickets.tenant_id AND cc.ticket_id=portal_cadastro_tickets.id AND cc.estado='OK') AS conferidos FROM portal_cadastro_tickets WHERE tenant_id=? AND status<>'RASCUNHO' ORDER BY CASE status WHEN 'FILA' THEN 0 WHEN 'PENDENTE' THEN 1 WHEN 'ANDAMENTO' THEN 2 ELSE 3 END, criado_em ASC LIMIT 250").bind(p.tenantId):
+    db.prepare("SELECT *, (SELECT COUNT(1) FROM portal_cadastro_checklist AS cc WHERE cc.tenant_id=portal_cadastro_tickets.tenant_id AND cc.ticket_id=portal_cadastro_tickets.id AND cc.estado='OK') AS conferidos FROM portal_cadastro_tickets WHERE tenant_id=? AND solicitante_id=? ORDER BY criado_em DESC LIMIT 250").bind(p.tenantId,p.user)).all();
    return success({chamados:(rows.results||[]).map(formatTicket),executor,visao:view,armazenamento:publicConfig(conf)});
   }
   if((path===""||path==="/")&&method==="POST"){

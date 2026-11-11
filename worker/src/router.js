@@ -25,6 +25,8 @@ import {cadastroController} from "./controllers/cadastro-solicitacoes.js";
 import {trocaNotasController} from "./controllers/troca-notas.js";
 import {aberturaPedidosController} from "./controllers/abertura-pedidos.js";
 import {novaFrotaModulesController} from "./controllers/nova-frota-modules.js";
+import {isNovaFrotaModuleEnabled} from "./services/nova-frota-modules.js";
+import {getSession,readSessionId} from "./services/session.js";
 
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
@@ -56,6 +58,24 @@ export async function routeRequest(request, env, ctx) {
   if (path.startsWith("/v1/module-pin/")) return modulePinController(request, env);
   if (path.startsWith("/v1/super-admin/")) return superAdminController(request, env);
 
+  // A rota externa protege módulos privados antes de invocar os controladores.
+  // Chamadas públicas por token do motorista continuam válidas para viagens já iniciadas.
+  const monitorPublic=new Set([
+   "/v1/monitor/health","/v1/monitor/selfie","/v1/monitor/receipt",
+   "/v1/monitor/driver","/v1/monitor/consent","/v1/monitor/gps-event",
+   "/v1/monitor/mobile/position","/v1/monitor/position"
+  ]);
+  const managedModule=path.startsWith("/v1/fleet/")?"custo-frota":
+   (path==="/v1/funcionarios"||path.startsWith("/v1/funcionarios/"))?"funcionarios":
+   (path.startsWith("/v1/monitor/")&&!monitorPublic.has(path))?"monitoramento":null;
+  if(managedModule){
+   const session=await getSession(env,readSessionId(request));
+   if(!session)return errorResponse("Sessão inválida ou expirada.",401);
+   try{
+    if(!await isNovaFrotaModuleEnabled(env,managedModule))
+     return errorResponse("Módulo desativado pelo Super Admin.",403);
+   }catch{return errorResponse("Não foi possível validar a liberação do módulo.",503);}
+  }
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);
   if (path.startsWith("/v1/monitor/")) return monitorController(request, env);
   if (path.startsWith("/v1/driver-freights/")) return driverFreightsController(request,env);

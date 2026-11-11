@@ -20,9 +20,8 @@ test("Carteira própria inclui somente processos ativos atribuídos ao usuário"
  const js=load("assets/js/cadastro-solicitacoes.js");
  const fn=js.match(/const STATUS_EM_EXECUCAO=new Set\([\s\S]*?\n}\n(?=function render\()/);
  assert.ok(fn,"Função de filtro não encontrada");
- const {runInNewContext}=requireVm();
  const sandbox={};
- runInNewContext(fn[0]+";globalThis.check=pertenceMinhaExecucao",sandbox);
+ new Script(fn[0]+";globalThis.check=pertenceMinhaExecucao").runInNewContext(sandbox);
  const matches=sandbox.check;
  for(const status of ["ANDAMENTO","AGUARDANDO APROVACAO","PENDENTE"]){
   assert.equal(matches({status,executor:"LUZIANO"},"luziano"),true,status);
@@ -32,5 +31,3 @@ test("Carteira própria inclui somente processos ativos atribuídos ao usuário"
   assert.equal(matches({status,executor:"LUZIANO"},"LUZIANO"),false,status);
  assert.equal(matches({status:"ANDAMENTO",executor:""},"LUZIANO"),false);
 });
-function requireVm(){return {runInNewContext:runScript};}
-function runScript(source,sandbox){const vm=new Script(source);return vm.runInNewContext(sandbox);}

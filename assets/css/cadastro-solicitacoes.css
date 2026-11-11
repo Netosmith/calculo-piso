@@ -182,3 +182,70 @@ body.cadastro-app .cad-ticket .cad-list-plate{
  font-size:20px;letter-spacing:.045em;margin:13px 0 6px;color:#163b59;
 }
 body.cadastro-app .cad-ticket .cad-card-driver{font-size:12px;color:#607a8f;line-height:1.45;}
+
+/* Cards compactos: número, produto, placa, executor e data/hora. */
+body.cadastro-app .cad-kanban{
+ gap:7px;
+ padding:8px;
+ grid-template-columns:repeat(6,minmax(200px,1fr));
+}
+body.cadastro-app .cad-lane{padding:7px;gap:7px}
+body.cadastro-app .cad-lane-items{gap:4px;max-height:min(74vh,900px);overflow-y:auto}
+body.cadastro-app .cad-lane-ticket{
+ display:flex;flex-direction:column;width:100%;min-height:0;
+ padding:7px 8px 7px 9px;gap:4px;border-radius:7px;
+ border-left:3px solid var(--cad-lane-color,#2a73ac);
+ box-shadow:none;line-height:1.1;overflow:hidden;
+}
+body.cadastro-app .cad-lane-ticket-meta{
+ display:flex;justify-content:space-between;align-items:center;
+ min-width:0;gap:8px;
+}
+body.cadastro-app .cad-lane-ticket .cad-short-number{font-size:10px;font-weight:800;flex:none;line-height:1.2}
+body.cadastro-app .cad-card-product{
+ display:block;min-width:0;max-width:63%;
+ color:#24384c;font-size:9px;font-weight:750;
+ text-align:right;text-transform:uppercase;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis;
+}
+body.cadastro-app .cad-lane-ticket .cad-card-plate{
+ font-size:13px;color:#172e45;line-height:1.12;
+ letter-spacing:.02em;margin:0;
+}
+body.cadastro-app .cad-lane-ticket-bottom{
+ display:flex;align-items:center;justify-content:space-between;
+ min-width:0;gap:6px;padding-top:3px;border-top:1px solid #edf1f5;
+}
+body.cadastro-app .cad-lane-ticket .cad-card-executor,
+body.cadastro-app .cad-lane-ticket .cad-card-date{
+ display:block;min-width:0;color:#75879a;
+ font-size:9px;font-weight:500;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis;
+}
+body.cadastro-app .cad-lane-ticket .cad-card-executor{flex:1}
+body.cadastro-app .cad-lane-ticket .cad-card-date{flex:none;text-align:right;font-variant-numeric:tabular-nums}
+body.cadastro-app .cad-grid{
+ grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;
+}
+body.cadastro-app .cad-ticket{min-height:0!important;padding:10px 11px;display:flex;flex-direction:column;gap:5px}
+body.cadastro-app .cad-ticket .cad-list-plate{font-size:15px;letter-spacing:.03em;margin:2px 0}
+body.cadastro-app .cad-ticket-foot{
+ display:flex;justify-content:space-between;align-items:center;
+ gap:8px;margin-top:1px;padding-top:6px;
+}
+body.cadastro-app .cad-ticket .cad-card-executor,
+body.cadastro-app .cad-ticket .cad-card-date{
+ font-size:10px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body.cadastro-app .cad-ticket-actions{margin-top:3px;padding-top:3px}
+body.cadastro-app .cad-product-editor{
+ display:grid;gap:9px;padding:12px 0;border-bottom:1px solid #d8e5ef;
+}
+body.cadastro-app .cad-product-editor input{
+ width:100%;padding:9px 10px;background:#fff;color:#183750;
+ border:1px solid #c8d9e8;border-radius:8px;font-size:12px;
+}
+body.cadastro-app .cad-product-editor button{font-size:11px;padding:9px 12px}
+@media(max-width:650px){
+ body.cadastro-app .cad-kanban{grid-template-columns:repeat(6,minmax(200px,1fr))}
+}

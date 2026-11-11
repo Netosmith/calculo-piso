@@ -7,7 +7,7 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="../assets/css/app.css">
- <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=6-numero-placa">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=7-cards-compactos">
 </head>
 <body class="cadastro-app" data-cadastro-visao="solicitante">
 <main class="cad-shell">
@@ -39,6 +39,12 @@
      <label>Nome do proprietário <input required name="proprietario" maxlength="150"></label>
      <label>Telefone do proprietário <input required name="contatoProprietario" type="tel" maxlength="30" placeholder="(00) 00000-0000"></label>
      <label class="wide">Placas do cavalo e das carretas <input required name="placas" maxlength="120" placeholder="Ex.: ABC1D23 / DEF4G56 / HIJ7K89"></label>
+     <label class="wide">Produto transportado <input required name="produto" maxlength="80" list="cadProdutoOpcoes" placeholder="Soja, Milho, Sorgo, Calcário..." autocomplete="off"></label>
+     <datalist id="cadProdutoOpcoes">
+      <option value="Soja"></option><option value="Milho"></option><option value="Soja/Milho"></option><option value="Sorgo"></option>
+      <option value="Farelo"></option><option value="Açúcar"></option><option value="Fertilizantes"></option>
+      <option value="Calcário"></option><option value="Sementes"></option><option value="Outros"></option>
+     </datalist>
     </div>
     <h3>02. Referências de outras transportadoras</h3>
     <div class="cad-fields">
@@ -131,5 +137,5 @@
  </dialog>
  <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
  <script src="../assets/js/auth.js?v=3-ambientes"></script>
- <script src="../assets/js/cadastro-solicitacoes.js?v=6-numero-placa"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=7-cards-compactos"></script>
 </body></html>

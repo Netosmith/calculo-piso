@@ -7,18 +7,18 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="../assets/css/app.css">
- <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=1">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=3">
 </head>
-<body class="cadastro-app">
+<body class="cadastro-app" data-cadastro-visao="solicitante">
  <header class="cad-topbar">
    <a class="cad-home" href="./home.html" aria-label="Voltar para Home">⌂</a>
-   <div class="cad-topbar-title"><strong id="cadCompany">PORTAL FRETE</strong><small>Central de solicitações de cadastro</small></div>
+   <div class="cad-topbar-title"><strong id="cadCompany">PORTAL FRETE</strong><small>Solicitação e acompanhamento</small></div>
    <div class="cad-topbar-actions"><span id="cadProfile" class="cad-profile">USUÁRIO</span><a href="./home.html" class="cad-back">Home</a><button data-logout type="button">Sair</button></div>
  </header>
  <main class="cad-shell">
   <section class="cad-hero">
-   <div><span class="eyebrow"><span class="pulse"></span> OPERAÇÃO DE CADASTROS</span><h1>Cadastros, do pedido à aprovação.</h1><p>Um só lugar para enviar os documentos, acompanhar cada etapa e conversar com a equipe responsável.</p></div>
-   <button type="button" class="primary hero-action" id="cadNovo">+ Nova solicitação</button>
+   <div><span class="eyebrow"><span class="pulse"></span> SOLICITAÇÃO E ACOMPANHAMENTO</span><h1>Solicite cadastros e acompanhe cada etapa.</h1><p>Envie documentos, acompanhe seus protocolos e converse com a equipe responsável.</p></div>
+   <div class="cad-hero-actions"><a class="primary hero-action" id="cadSwitchLink" href="./execucao-cadastros.html" hidden>Central de Execução →</a><button type="button" class="primary hero-action" id="cadNovo">+ Nova solicitação</button></div>
   </section>
   <div id="cadAlert" class="cad-alert" role="status" aria-live="polite" hidden></div>
   <section class="cad-summary" aria-label="Resumo de chamados">
@@ -78,16 +78,7 @@
      <h3>Histórico e atualizações</h3><div id="cadHistorico" class="cad-history"></div>
    </div>
    <aside class="cad-chat-panel">
-    <div id="cadExecucao" hidden>
-     <h3>Execução do cadastro</h3>
-     <button id="cadAssumir" type="button" class="primary" hidden>Assumir chamado</button>
-     <form id="cadStatusForm" hidden>
-      <label>Situação<select name="status"><option>ANDAMENTO</option><option>AGUARDANDO APROVACAO</option><option>PENDENTE</option><option>REPROVADO</option><option>APROVADO</option></select></label>
-      <label>Etapa<select name="etapa"><option>RECEBIMENTO</option><option>CONFERENCIA DOCUMENTAL</option><option>CONSULTA REFERENCIAS</option><option>CADASTRO SISTEMA TERCEIRO</option><option>REVISAO</option><option>CONCLUIDO</option></select></label>
-      <label>Motivo / atualização<textarea name="motivo" rows="3" maxlength="1800" placeholder="Obrigatório em pendente ou reprovado"></textarea></label>
-      <button class="primary" type="submit">Salvar andamento</button>
-     </form>
-    </div>
+    
     <form id="cadPendenciaForm" hidden>
       <h3>Enviar documentação complementar</h3>
       <p class="cad-tip">Quando o chamado estiver pendente, anexe o documento corrigido. A equipe será avisada pelo chat.</p>
@@ -117,5 +108,5 @@
  </dialog>
  <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
  <script src="../assets/js/auth.js?v=cadastro-solicitacoes-1"></script>
- <script src="../assets/js/cadastro-solicitacoes.js?v=1"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=3"></script>
 </body></html>

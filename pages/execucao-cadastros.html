@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>Central de Execução de Cadastros | Portal Frete</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="../assets/css/app.css">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=3">
+</head>
+<body class="cadastro-app" data-cadastro-visao="execucao">
+ <header class="cad-topbar">
+   <a class="cad-home" href="./home.html" aria-label="Voltar para Home">⌂</a>
+   <div class="cad-topbar-title"><strong id="cadCompany">PORTAL FRETE</strong><small>Recebimento, análise e execução</small></div>
+   <div class="cad-topbar-actions"><span id="cadProfile" class="cad-profile">USUÁRIO</span><a href="./home.html" class="cad-back">Home</a><button data-logout type="button">Sair</button></div>
+ </header>
+ <main class="cad-shell">
+  <section class="cad-hero">
+   <div><span class="eyebrow"><span class="pulse"></span> CENTRAL DE EXECUÇÃO</span><h1>Central de Execução de Cadastros</h1><p>Receba as solicitações da equipe, assuma protocolos e acompanhe as etapas até a aprovação.</p></div>
+   <a class="primary hero-action" href="./cadastro-solicitacoes.html">← Minhas solicitações</a>
+  </section>
+  <div id="cadAlert" class="cad-alert" role="status" aria-live="polite" hidden></div>
+  <section class="cad-summary" aria-label="Resumo de chamados">
+   <div class="cad-metric"><span>Na fila</span><strong id="cadFila">0</strong><small>Aguardando responsável</small></div>
+   <div class="cad-metric blue"><span>Em andamento</span><strong id="cadAndamento">0</strong><small>Em análise</small></div>
+   <div class="cad-metric amber"><span>Pendentes</span><strong id="cadPendente">0</strong><small>Precisam de atenção</small></div>
+   <div class="cad-metric green"><span>Aprovados</span><strong id="cadAprovados">0</strong><small>Concluídos</small></div>
+  </section>
+  <section class="cad-workboard">
+<div class="cad-workboard-head"><div><span class="eyebrow">FILA DE EXECUTORES</span><h2>Recebimento e execução</h2><p>Selecione um protocolo para assumir, analisar e registrar a situação.</p></div><span class="cad-private-marker">Acesso exclusivo dos executores</span></div>
+<div id="cadKanban" class="cad-kanban" aria-live="polite"></div>
+</section>
+<section class="cad-panel">
+   <div class="cad-panel-head"><div><span class="eyebrow">OPERAÇÃO</span><h2 id="cadListaTitulo">Todos os protocolos recebidos</h2><p id="cadListaSub">Acompanhe a fila geral de trabalho da transportadora.</p></div><div class="cad-tools"><select id="cadFiltro" aria-label="Filtrar situação"><option value="">Todos os status</option><option>FILA</option><option>ANDAMENTO</option><option>AGUARDANDO APROVACAO</option><option>PENDENTE</option><option>REPROVADO</option><option>APROVADO</option><option>RASCUNHO</option></select><input id="cadBusca" type="search" placeholder="Protocolo, motorista, placa..." aria-label="Pesquisar solicitações"><button id="cadAtualizar" class="secondary" type="button">Atualizar</button></div></div>
+   <div id="cadTickets" class="cad-grid" aria-live="polite"><div class="cad-empty">Carregando solicitações...</div></div>
+  </section>
+ </main>
+ <dialog id="cadDetailDialog" class="cad-dialog detail">
+  <div class="cad-dialog-head"><div><span class="eyebrow" id="cadDetailProtocolo">CHAMADO</span><h2 id="cadDetailTitle">Detalhes do cadastro</h2><p id="cadDetailMeta"></p></div><button type="button" class="cad-close" data-close="cadDetailDialog" aria-label="Fechar">✕</button></div>
+  <div class="cad-detail-body">
+   <div class="cad-detail-main">
+     <div id="cadDetailInfo" class="cad-detail-info"></div>
+     <h3>Etapas do processo</h3><div id="cadEtapas" class="cad-timeline"></div>
+     <h3>Documentos anexados</h3><div id="cadAnexos" class="cad-files"></div>
+     <h3>Histórico e atualizações</h3><div id="cadHistorico" class="cad-history"></div>
+   </div>
+   <aside class="cad-chat-panel">
+    <div id="cadExecucao" hidden>
+     <h3>Execução do cadastro</h3>
+     <button id="cadAssumir" type="button" class="primary" hidden>Assumir chamado</button>
+     <form id="cadStatusForm" hidden>
+      <label>Situação<select name="status"><option>ANDAMENTO</option><option>AGUARDANDO APROVACAO</option><option>PENDENTE</option><option>REPROVADO</option><option>APROVADO</option></select></label>
+      <label>Etapa<select name="etapa"><option>RECEBIMENTO</option><option>CONFERENCIA DOCUMENTAL</option><option>CONSULTA REFERENCIAS</option><option>CADASTRO SISTEMA TERCEIRO</option><option>REVISAO</option><option>CONCLUIDO</option></select></label>
+      <label>Motivo / atualização<textarea name="motivo" rows="3" maxlength="1800" placeholder="Obrigatório em pendente ou reprovado"></textarea></label>
+      <button class="primary" type="submit">Salvar andamento</button>
+     </form>
+    </div>
+    <h3>Conversa sobre o chamado</h3><p class="cad-tip">Em caso de pendência ou reprovação, informe o motivo e esclareça dúvidas aqui.</p>
+    <div id="cadMensagens" class="cad-messages"></div>
+    <form id="cadChatForm"><textarea name="texto" required maxlength="1800" rows="3" placeholder="Escreva uma mensagem..."></textarea><button class="secondary" type="submit">Enviar mensagem</button></form>
+   </aside>
+  </div>
+ </dialog>
+ <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
+ <script src="../assets/js/auth.js?v=cadastro-solicitacoes-1"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=3"></script>
+</body></html>

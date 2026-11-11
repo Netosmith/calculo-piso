@@ -19,8 +19,10 @@ function placaPrincipal(placas){
  const match=value.match(/\b[A-Z]{3}[-\s]?[0-9][A-Z0-9][0-9]{2}\b/);
  return match?match[0].replace(/[-\s]/g,""):(value.split(/[\s,;/|]+/).find(Boolean)||"Placa não informada");
 }
+function produtoCadastro(ticket){return String(ticket?.produto||"").trim()||"Não informado";}
+function dataCompacta(value){return iso(value).replace(/^(\d{2}\/\d{2})\/\d{4},?\s+/,"$1 ");}
 function matchesCadastro(ticket,search){
- return [ticket.protocolo,numeroCadastro(ticket),String(ticket.numeroCurto||""),ticket.placas,ticket.motorista,ticket.solicitante]
+ return [ticket.protocolo,numeroCadastro(ticket),String(ticket.numeroCurto||""),ticket.placas,ticket.produto,ticket.motorista,ticket.solicitante]
   .some(value=>String(value||"").toUpperCase().includes(search));
 }
 function smallProgress(done){
@@ -74,13 +76,15 @@ function renderBoard(){
   for(const ticket of items.slice(0,30)){
    const b=el("button","","cad-lane-ticket");b.type="button";
    const meta=el("div","","cad-lane-ticket-meta");
-   meta.append(el("span",numeroCadastro(ticket),"cad-short-number"),el("span",iso(ticket.criadoEm)));
-   b.append(meta,el("strong",placaPrincipal(ticket.placas),"cad-card-plate"),
-     el("span",ticket.motorista,"cad-card-driver"),
-     el("small",ticket.executor?"Executor: "+ticket.executor:"Aguardando responsável"),
-     smallProgress(ticket.conferidos));
-    b.title="Cadastro "+numeroCadastro(ticket)+" · Placa "+placaPrincipal(ticket.placas)+" · "+ticket.motorista;
-   if(ticket.status==="FILA")b.append(el("em",executionView?"Clique para assumir →":"Aguardando execução · Ver detalhes →"));
+   const prod=el("span",produtoCadastro(ticket),"cad-card-product");prod.title="Produto: "+produtoCadastro(ticket);
+   meta.append(el("span",numeroCadastro(ticket),"cad-short-number"),prod);
+   const footer=el("div","","cad-lane-ticket-bottom");
+   const actor=el("span",ticket.executor?"Executor: "+ticket.executor:"Sem executor","cad-card-executor");
+   const time=el("time",dataCompacta(ticket.criadoEm),"cad-card-date");
+   time.title=iso(ticket.criadoEm);
+   footer.append(actor,time);
+   b.append(meta,el("strong",placaPrincipal(ticket.placas),"cad-card-plate"),footer);
+   b.title="Cadastro "+numeroCadastro(ticket)+" · "+produtoCadastro(ticket)+" · Placa "+placaPrincipal(ticket.placas)+" · Motorista: "+ticket.motorista;
    b.onclick=()=>ticket.status==="RASCUNHO"&&!executionView?resume(ticket):openDetail(ticket.id);list.append(b);
   }
   lane.append(list);board.append(lane);
@@ -99,10 +103,14 @@ function render(){
  if(!rows.length){grid.append(el("div","Nenhuma solicitação encontrada.","cad-empty"));return;}
  for(const c of rows){
   const b=el(executionView?"article":"button","","cad-ticket");if(!executionView)b.type="button";
-  const head=el("div","","cad-ticket-head");head.append(el("strong",numeroCadastro(c),"cad-short-number"),statusChip(c.status));b.append(head);
-  b.append(el("h3",placaPrincipal(c.placas),"cad-list-plate"),el("p",c.motorista,"cad-card-driver"),smallProgress(c.conferidos));
-  if(!executionView)b.append(el("div",c.executor?"Responsável: "+c.executor:"Aguardando responsável","cad-ticket-assignee"));
-  const foot=el("div","","cad-ticket-foot");foot.append(el("span",iso(c.criadoEm)),el("span",c.status==="RASCUNHO"?"Completar anexos":c.executor?"Executor: "+c.executor:"Abrir detalhes"));b.append(foot);
+  const head=el("div","","cad-ticket-head");
+  const product=el("span",produtoCadastro(c),"cad-card-product");product.title="Produto: "+produtoCadastro(c);
+  head.append(el("strong",numeroCadastro(c),"cad-short-number"),product);b.append(head);
+  b.append(el("strong",placaPrincipal(c.placas),"cad-list-plate"));
+  const foot=el("div","","cad-ticket-foot");
+  foot.append(el("span",c.executor?"Executor: "+c.executor:"Sem executor","cad-card-executor"),
+    el("time",dataCompacta(c.criadoEm),"cad-card-date"));
+  b.append(foot);
   if(executionView){
    const actions=el("div","","cad-ticket-actions"),details=el("button","Abrir análise","secondary");
    details.type="button";details.onclick=()=>openDetail(c.id);actions.append(details);
@@ -125,7 +133,7 @@ async function refresh(){
 function resume(row){
  draftId=row.id;
  const form=$("cadForm");form.reset();
- for(const key of ["motorista","contatoMotorista","proprietario","contatoProprietario","placas","observacoes"])form.elements[key].value=row[key]||"";
+ for(const key of ["motorista","contatoMotorista","proprietario","contatoProprietario","placas","produto","observacoes"])form.elements[key].value=row[key]||"";
  (row.referencias||[]).forEach((ref,i)=>{form.elements["ref"+(i+1)+"nome"].value=ref.nome;form.elements["ref"+(i+1)+"telefone"].value=ref.telefone});
  $("cadFormTitle").textContent="Complementar cadastro "+numeroCadastro(row);
  $("cadFormProgress").textContent="Selecione os documentos faltantes. Os anexos já enviados permanecem salvos.";
@@ -156,6 +164,9 @@ async function sendForm(event){
  try{
   const chosen=filesSelected();validateFiles(chosen);
   busy=true;btn.disabled=true;
+  if(draftId){
+   await api("/"+draftId+"/produto","POST",{produto:String(form.elements.produto.value||"").trim()});
+  }
   if(!draftId){
    const payload=Object.fromEntries(new FormData(form).entries());
    payload.referencias=[1,2,3].map(n=>({nome:payload["ref"+n+"nome"],telefone:payload["ref"+n+"telefone"]}));
@@ -186,7 +197,7 @@ async function openDetail(id){
   const info=$("cadDetailInfo");info.replaceChildren();
   [["Motorista",selected.motorista],["Telefone do motorista",selected.contatoMotorista],
    ["Proprietário",selected.proprietario],["Telefone do proprietário",selected.contatoProprietario],
-   ["Placas",selected.placas],["Solicitante",selected.solicitante]].forEach(values=>info.append(itemInfo(...values)));
+   ["Placas",selected.placas],["Produto",produtoCadastro(selected)],["Solicitante",selected.solicitante]].forEach(values=>info.append(itemInfo(...values)));
   (selected.referencias||[]).forEach((ref,i)=>info.append(itemInfo("Referência "+(i+1),String(ref.nome||"")+" · "+String(ref.telefone||""))));
   if(selected.observacoes)info.append(itemInfo("Observações",selected.observacoes));
   const checklist=$("cadChecklist");checklist.replaceChildren();
@@ -261,6 +272,10 @@ async function openDetail(id){
    box.append(el("small",m.autor_id+" · "+iso(m.criado_em)),el("div",m.texto));chat.append(box);
   }
   const exec=$("cadExecucao");
+  if($("cadProdutoForm")){
+   $("cadProdutoForm").hidden=!executionView||!executor||selected.executor!==userId;
+   $("cadProdutoForm").elements.produto.value=selected.produto||"";
+  }
   if(exec){
    exec.hidden=!executionView||!executor;
    $("cadAssumir").hidden=!executor||selected.status!=="FILA";
@@ -358,6 +373,11 @@ if($("cadForm"))$("cadForm").addEventListener("submit",sendForm);
 $("cadAtualizar").onclick=()=>refresh().catch(e=>alertMsg(e.message,true));
 $("cadBusca").addEventListener("input",render);$("cadFiltro").addEventListener("change",render);
 if($("cadAssumir"))$("cadAssumir").onclick=()=>assumeTicket(selected.id);
+if($("cadProdutoForm"))$("cadProdutoForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ const produto=String(event.currentTarget.elements.produto.value||"").trim();
+ if(produto)await mutate("/produto",{produto});
+});
 if($("cadStatusForm"))$("cadStatusForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;await mutate("/situacao",{status:f.elements.status.value,etapa:f.elements.etapa.value,motivo:f.elements.motivo.value});});
 $("cadChatForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;const texto=f.elements.texto.value.trim();if(!texto)return;await mutate("/mensagens",{texto});f.reset();});
 if($("cadPendenciaForm"))$("cadPendenciaForm").addEventListener("submit",async event=>{

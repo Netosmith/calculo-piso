@@ -139,7 +139,7 @@ export async function aberturaPedidosController(req,env){
     await hist(db,p,id,"RASCUNHO","Abertura de pedido criada").run();
     return success({chamado:ticketView(row)},201);
    }
-   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|enviar|assumir|situacao|mensagens))?$/);
+   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|situacao|mensagens))?$/);
   if(!match)return err("Rota de Abertura de Pedidos inexistente.",404);
   const id=match[1],action=match[2]||"",row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
@@ -154,7 +154,19 @@ export async function aberturaPedidosController(req,env){
    ]);
    return success({chamado:ticketView(row),anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[],executor});
   }
-  if(action==="anexos"&&req.method==="POST"){
+  if(action==="dados"&&req.method==="POST"){
+    if(execView||!owner||row.status!=="RASCUNHO")
+     return err("Somente o autor pode editar o rascunho de um pedido.",403);
+    const b=await bodyJson(req,12000),values=normalizedFields(b);
+    const columns=Object.values(COLUMNS),keys=Object.keys(COLUMNS);
+    const changed=await db.prepare("UPDATE portal_pedidos_tickets SET "+
+      columns.map(c=>c+"=?").join(",")+
+      ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'")
+     .bind(...keys.map(k=>values[k]),id,p.id,p.user).run();
+    if(changed.meta?.changes!==1)return err("Não foi possível atualizar o rascunho.",409);
+    return success({atualizado:true});
+   }
+   if(action==="anexos"&&req.method==="POST"){
    if(!conf)return err("Google Drive desta transportadora não configurado.",503);
    const b=await bodyJson(req,8500000);
    if(!SLOTS.has(b.slot)||!MIME.has(b.mime)||!clean(b.nome,160)||typeof b.base64!=="string"||

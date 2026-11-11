@@ -173,7 +173,7 @@ jobs:
         run: |
           node --check src/controllers/cadastro-solicitacoes.js
           node --check ../assets/js/cadastro-solicitacoes.js
-          node --test tests/cadastro-solicitacoes.test.mjs tests/cadastro-solicitacoes-modos.test.mjs tests/cadastro-ambientes.test.mjs
+          node --test tests/cadastro-solicitacoes.test.mjs tests/cadastro-solicitacoes-modos.test.mjs tests/cadastro-ambientes.test.mjs tests/cadastro-detalhes.test.mjs
 
       - name: Criar tabelas privadas de Solicitações de Cadastro no D1 TENANTS_DB
         working-directory: worker

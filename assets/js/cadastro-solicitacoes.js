@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const root="https://api.portalfrete.net.br/v1/cadastro-solicitacoes";
 const SLOTS=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao"];
 const STEPS=["RECEBIMENTO","CONFERENCIA DOCUMENTAL","CONSULTA REFERENCIAS","CADASTRO SISTEMA TERCEIRO","REVISAO","CONCLUIDO"];
-let all=[],executor=false,storage=false,selected=null,draftId="",busy=false;
+let all=[],executor=false,storage=false,selected=null,draftId="",busy=false,userId="";
 const iso=d=>{if(!d)return"";const value=new Date(String(d).replace(" ","T")+"Z");return isNaN(value)?String(d):value.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
 const titleStatus=s=>({RASCUNHO:"Rascunho",FILA:"Na fila",ANDAMENTO:"Em andamento","AGUARDANDO APROVACAO":"Aguardando aprovação",PENDENTE:"Pendente",REPROVADO:"Reprovado",APROVADO:"Aprovado"}[s]||s);
 const el=(tag,txt="",cls="")=>{const node=document.createElement(tag);if(cls)node.className=cls;node.textContent=txt;return node;};
@@ -108,6 +108,8 @@ async function openDetail(id){
   $("cadDetailMeta").textContent=titleStatus(selected.status)+" · Aberto em "+iso(selected.criadoEm)+" · Solicitante: "+selected.solicitante;
   const info=$("cadDetailInfo");info.replaceChildren();
   [["Contato do motorista",selected.contatoMotorista],["Proprietário",selected.proprietario],["Contato do proprietário",selected.contatoProprietario],["Placas",selected.placas],["Executor",selected.executor||"Não assumido"],["Situação",titleStatus(selected.status)]].forEach(x=>info.append(itemInfo(...x)));
+  (selected.referencias||[]).forEach((ref,i)=>info.append(itemInfo("Referência "+(i+1),String(ref.nome||"")+" · "+String(ref.telefone||""))));
+  if(selected.observacoes)info.append(itemInfo("Observações",selected.observacoes));
   const steps=$("cadEtapas");steps.replaceChildren();const current=STEPS.indexOf(selected.etapa);
   STEPS.forEach((name,i)=>steps.append(el("div",(i+1)+". "+name,"cad-step"+(i<=current?" done":""))));
   const docs=$("cadAnexos");docs.replaceChildren();
@@ -136,6 +138,7 @@ async function openDetail(id){
   $("cadStatusForm").elements.status.value=selected.status==="RASCUNHO"?"ANDAMENTO":selected.status;
   $("cadStatusForm").elements.etapa.value=selected.etapa;
   $("cadChatForm").hidden=selected.status==="RASCUNHO";
+  $("cadPendenciaForm").hidden=selected.status!=="PENDENTE"||selected.solicitante!==userId;
   showDialog("cadDetailDialog");
  }catch(error){alertMsg(error.message,true);}
 }
@@ -157,6 +160,7 @@ async function boot(){
   const result=await fetch("https://api.portalfrete.net.br/v1/session",{credentials:"include",cache:"no-store"}).then(r=>r.json());
   const s=window.__PORTAL_TENANT_SESSION||result.session;
   if(!s?.usuario)throw Error("Sessão não autenticada.");
+  userId=String(s.usuario||"");
   $("cadCompany").textContent=s.transportadoraNome||"NOVA FROTA";
   $("cadProfile").textContent=s.perfil||"USUÁRIO";
   if(typeof bindLogoutButton==="function")bindLogoutButton();
@@ -171,5 +175,20 @@ $("cadBusca").addEventListener("input",render);$("cadFiltro").addEventListener("
 $("cadAssumir").onclick=()=>mutate("/assumir",{});
 $("cadStatusForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;await mutate("/situacao",{status:f.elements.status.value,etapa:f.elements.etapa.value,motivo:f.elements.motivo.value});});
 $("cadChatForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;const texto=f.elements.texto.value.trim();if(!texto)return;await mutate("/mensagens",{texto});f.reset();});
+$("cadPendenciaForm").addEventListener("submit",async event=>{
+ event.preventDefault();if(!selected||busy)return;
+ const f=event.currentTarget,slot=f.elements.slot.value,file=f.elements.arquivo.files?.[0],status=$("cadPendenciaProgress");
+ if(!file)return;
+ try{
+  validateFiles([{slot,file}]);
+  busy=true;f.querySelector('button[type="submit"]').disabled=true;
+  status.textContent="Enviando documentação complementar...";
+  await api("/"+selected.id+"/anexos","POST",{slot,nome:file.name,mime:file.type,base64:await base64(file)});
+  await api("/"+selected.id+"/mensagens","POST",{texto:"Enviei documentação complementar: "+file.name});
+  status.textContent="Documento recebido. Aguarde a revisão da equipe.";
+  f.reset();await openDetail(selected.id);await refresh();
+ }catch(error){status.textContent="Falha no complemento: "+error.message;}
+ finally{busy=false;f.querySelector('button[type="submit"]').disabled=false;}
+});
 boot();
 })();

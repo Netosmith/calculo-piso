@@ -88,6 +88,27 @@
       <button class="primary" type="submit">Salvar andamento</button>
      </form>
     </div>
+    <form id="cadPendenciaForm" hidden>
+      <h3>Enviar documentação complementar</h3>
+      <p class="cad-tip">Quando o chamado estiver pendente, anexe o documento corrigido. A equipe será avisada pelo chat.</p>
+      <label>Tipo do documento
+        <select name="slot" required>
+          <option value="cavalo">Documento do cavalo</option>
+          <option value="carreta">Documento das carretas</option>
+          <option value="antt">ANTT</option>
+          <option value="cnh">CNH</option>
+          <option value="endereco">Comprovante de endereço</option>
+          <option value="motorista">Foto do motorista</option>
+          <option value="caminhao">Foto do caminhão</option>
+          <option value="motorista_caminhao">Motorista na frente do caminhão</option>
+        </select>
+      </label>
+      <label>Documento complementar
+        <input name="arquivo" type="file" required accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+      </label>
+      <button class="secondary" type="submit">Enviar complemento</button>
+      <small id="cadPendenciaProgress" role="status"></small>
+    </form>
     <h3>Conversa sobre o chamado</h3><p class="cad-tip">Em caso de pendência ou reprovação, informe o motivo e esclareça dúvidas aqui.</p>
     <div id="cadMensagens" class="cad-messages"></div>
     <form id="cadChatForm"><textarea name="texto" required maxlength="1800" rows="3" placeholder="Escreva uma mensagem..."></textarea><button class="secondary" type="submit">Enviar mensagem</button></form>

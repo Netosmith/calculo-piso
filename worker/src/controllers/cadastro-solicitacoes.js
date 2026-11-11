@@ -175,7 +175,7 @@ export async function cadastroController(request,env){
    return success({chamado:formatTicket(row),anexos:docs.results||[],mensagens:mensagens.results||[],historico:historico.results||[],executor});
   }
   if(action==="anexos"&&method==="POST"){
-   if(row.solicitante_id!==p.user||row.status!=="RASCUNHO")return err("Anexo permitido apenas no rascunho do solicitante.",403);
+   if(row.solicitante_id!==p.user||!["RASCUNHO","PENDENTE"].includes(row.status))return err("Anexo permitido somente no rascunho ou na pendência do próprio solicitante.",403);
    if(!conf)return err("Google Drive não configurado.",503);
    const b=await json(request,8500000);
    if(!SLOTS.has(b.slot)||!MIME.has(b.mime)||!clean(b.nome,160)||

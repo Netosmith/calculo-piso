@@ -24,7 +24,7 @@ test("PISO denies all operational modules even when tenant grants them",async()=
  }
 });
 
-test("PISO Home hides stats, freights, map, requests and every card except ANTT",()=>{
+test("PISO Home hides operational data and shows only ANTT and its own cadastros",()=>{
  const html=read("pages/home.html"),auth=read("assets/js/auth.js");
  const requests=read("assets/js/home-solicitacoes-access.js");
  const tenant=read("assets/js/tenant-workspace.js");
@@ -34,7 +34,9 @@ test("PISO Home hides stats, freights, map, requests and every card except ANTT"
  }
  assert.ok(html.includes('body.nf-profile-piso .nf-tools > *'));
  assert.ok(html.includes('body.nf-profile-piso.pf-piso2-allowed .nf-tools > [data-feature="piso2"]'));
- assert.ok(html.includes("Acesso exclusivo ao Cálculo de Piso 2 (ANTT)"));
+ assert.ok(html.includes("Cálculo de Piso 2 (ANTT) e Solicitações de Cadastro"));
+ assert.ok(html.includes('data-feature="cadastro-solicitacoes"'));
+ assert.ok(auth.includes('if(feature==="cadastro-solicitacoes")return isAuthedHome()'));
  assert.ok(auth.includes('if(profile==="PISO")return isAuthedHome() && feature==="piso2"'));
  assert.ok(auth.includes('if(role==="PISO")return feature==="home" ||'));
  assert.ok(requests.includes('toUpperCase()==="PISO")return false'));
@@ -49,7 +51,7 @@ test("PISO Home hides stats, freights, map, requests and every card except ANTT"
 
 test("Calculators and support screens use updated PISO permission controls",()=>{
  for(const name of ["calculo-antt","calculo-piso","chamados"]){
-  assert.ok(read("pages/"+name+".html").includes("auth.js?v=27"));
+  assert.match(read("pages/"+name+".html"),/auth[.]js[?]v=/);
  }
  assert.ok(read("worker/src/controllers/tenant-unified.js").includes("Perfil PISO restrito ao Calculo de Piso 2."));
 });
@@ -64,8 +66,8 @@ test("PISO session never reveals other enabled tenant modules",async()=>{
 test("PISO page restriction uses signed session and hides preferences",()=>{
  const auth=read("assets/js/auth.js"),home=read("pages/home.html");
  assert.match(auth,/function enforcePisoPageScope\(session\)/);
- assert.ok(auth.includes('["login.html","home.html","calculo-antt.html"]'));
+ assert.ok(auth.includes('["login.html","home.html","calculo-antt.html","cadastro-solicitacoes.html"]'));
  assert.ok(auth.includes('if(getProfile()!=="PISO")shell.appendChild(settings)'));
  assert.ok(home.includes('body.nf-profile-piso #nfPrefsOpen'));
- assert.ok(home.includes("auth.js?v=28"));
+ assert.match(home,/auth[.]js[?]v=/);
 });

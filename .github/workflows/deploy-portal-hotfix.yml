@@ -171,6 +171,9 @@ jobs:
       - name: Validar nova central de cadastros
         working-directory: worker
         run: |
+          node --check src/controllers/nova-frota-modules.js
+          node --check src/services/nova-frota-modules.js
+          node --test tests/nova-frota-modules.test.mjs
           node --check src/controllers/cadastro-solicitacoes.js
           node --check src/controllers/troca-notas.js
           node --check ../assets/js/troca-notas.js

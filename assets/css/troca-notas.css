@@ -1,0 +1,46 @@
+body.troca-app .cad-hero{background:radial-gradient(circle at 90% 5%,#237c67 0,transparent 35%),linear-gradient(115deg,#0a2846,#143b5d 70%,#17675b)}
+body.troca-app .cad-workboard{margin-top:14px}
+body.troca-app .cad-kanban{grid-template-columns:repeat(4,minmax(210px,1fr));overflow-x:auto;gap:8px;padding:10px}
+body.troca-app .cad-lane{min-height:240px;padding:8px;gap:7px}
+body.troca-app .cad-lane-items{max-height:75vh;gap:5px}
+body.troca-app .cad-lane-ticket{min-height:0;padding:8px 10px;gap:5px;display:grid}
+body.troca-app .cad-lane-ticket-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+body.troca-app .cad-lane-ticket-meta span{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.troca-app .cad-lane-ticket .tn-client{font-size:12px;font-weight:750;color:#193b55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.troca-app .cad-lane-ticket .tn-branch{font-size:11px;color:#4e7690;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.troca-app .tn-card-bottom{display:flex;justify-content:space-between;gap:6px;border-top:1px solid #e7edf4;padding-top:5px}
+body.troca-app .tn-card-bottom small{font-size:9px;color:#778a9d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.troca-app .cad-workboard-head{flex-wrap:wrap;gap:10px}
+body.troca-app .cad-workboard-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+body.troca-app .cad-tools{display:flex;gap:7px}
+body.troca-app .cad-tools select,body.troca-app .cad-tools input{padding:8px;font-size:11px;min-width:150px}
+body.troca-app .cad-tools button,body.troca-app .tn-drafts button{padding:8px 10px;font-size:11px}
+body.troca-app .tn-drafts{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid #e3edf3}
+body.troca-app .tn-draft{padding:10px;border:1px solid #c4d5e7;border-radius:8px;background:#f3f8fb;font-size:11px;color:#214c6d}
+body.troca-app .cad-status[data-state="TROCADA"]{background:#dcf8e9;color:#047947}
+body.troca-app .cad-status[data-state="PENDENTE"]{background:#fff0d8;color:#996112}
+body.troca-app .tn-mine .cad-ticket{min-height:0!important}
+body.troca-app .tn-mine{margin-top:14px}
+body.troca-app .tn-files{display:grid;gap:8px}
+body.troca-app .tn-file{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid #dfebf1;border-radius:9px;padding:9px 12px;background:#f7fbfe}
+body.troca-app .tn-file strong{font-size:11px;overflow-wrap:anywhere}
+body.troca-app .tn-file button{padding:7px 10px;font-size:10px}
+body.troca-app .cad-detail-section{padding:15px 0;border-bottom:1px solid #e5edf3}
+body.troca-app #tnPendingUpload{padding:12px;background:#fff8e8;border-radius:10px;margin-top:10px}
+body.troca-app #tnPendingUpload label{display:grid;gap:7px;font-size:11px}
+body.troca-app #tnPendingUpload input,body.troca-app #tnPendingUpload select{max-width:100%;margin:6px 0;padding:8px;border:1px solid #cbdbe7;border-radius:8px}
+body.troca-app #tnPendingUpload button{padding:9px 12px}
+body.troca-app #tnExecution{padding:10px;background:#e9f4fc;border-radius:12px}
+body.troca-app #tnStatusForm{display:grid;gap:9px}
+body.troca-app #tnStatusForm select,body.troca-app #tnStatusForm textarea{width:100%;padding:9px;border:1px solid #c9d9e5;border-radius:8px;background:#fff}
+body.troca-app .cad-preview-image{max-width:100%;max-height:70vh;object-fit:contain}
+body.troca-app .cad-preview-pdf{width:100%;height:65vh;border:0}
+body.troca-app .cad-preview-body{max-height:72vh;overflow:auto;padding:16px;background:#f1f6fa}
+body.troca-app .cad-preview-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px}
+body.troca-app .cad-dialog-footer span{max-width:70%}
+body.troca-app [hidden]{display:none!important}
+@media(max-width:750px){
+ body.troca-app .cad-kanban{grid-template-columns:repeat(4,minmax(230px,1fr))}
+ body.troca-app .cad-tools{flex-wrap:wrap}
+ body.troca-app .cad-fields,.troca-app .cad-doc-grid{grid-template-columns:1fr}
+}

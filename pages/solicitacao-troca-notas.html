@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Troca de Notas | Portal Frete</title>
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=10-autosave-checklist">
+<link rel="stylesheet" href="../assets/css/troca-notas.css?v=1"></head><body class="cadastro-app troca-app" data-troca-visao="solicitante">
+<main class="cad-shell">
+<section class="cad-hero"><div><span class="eyebrow"><span class="pulse"></span> TROCA DE NOTAS · SOLICITAÇÕES</span>
+<h1>Solicite a troca e acompanhe cada etapa.</h1><p>Notas de origem, laudos, pesagem e ordens em um único chamado.</p></div>
+<div class="cad-hero-actions"><a id="tnSwitch" class="primary hero-action" href="./execucao-troca-notas.html" hidden>Central de Execução →</a>
+<button id="tnNew" class="primary hero-action" type="button">+ Nova solicitação</button></div></section>
+<p id="tnAlert" class="cad-alert" role="status" hidden></p>
+<section class="cad-workboard"><div class="cad-workboard-head cad-workboard-head--solicitante">
+<div><span class="eyebrow">MEUS PROTOCOLOS</span><h2>Acompanhamento de Troca de Notas</h2><p>Somente as solicitações abertas por você.</p></div>
+<div class="cad-workboard-tools"><div class="cad-tools">
+ <select id="tnFilter" aria-label="Filtrar situação"><option value="">Todos os status</option><option value="FILA">Fila</option>
+ <option value="ANDAMENTO">Em andamento</option><option value="PENDENTE">Pendente</option><option value="TROCADA">Trocada</option></select>
+ <input id="tnSearch" type="search" placeholder="Número, cliente, filial..." aria-label="Pesquisar chamados">
+ <button id="tnRefresh" type="button" class="secondary">Atualizar</button></div>
+ <button id="tnDraftButton" type="button" class="secondary" hidden>Rascunhos</button></div></div><div id="tnBoard" class="cad-kanban" aria-live="polite"></div><div id="tnDrafts" class="tn-drafts" hidden></div></section></main><dialog id="tnFormDialog" class="cad-dialog">
+ <div class="cad-dialog-head"><div><span class="eyebrow">NOVA TROCA DE NOTAS</span><h2 id="tnFormTitle">Solicitar troca de notas</h2>
+ <p>Escolha cliente e filial cadastrados, informe o percurso e anexe os quatro documentos.</p></div>
+ <button type="button" class="cad-close" data-close="tnFormDialog" aria-label="Fechar">✕</button></div>
+ <form id="tnForm">
+  <div class="cad-form-body"><div class="cad-fields">
+   <label>Cliente <select name="cliente" id="tnCliente" required><option value="">Carregando clientes...</option></select></label>
+   <label>Filial <select name="filial" id="tnFilial" required><option value="">Carregando filiais...</option></select></label>
+   <label>Origem <input name="origem" maxlength="160" required placeholder="Cidade / UF de origem"></label>
+   <label>Local de coleta <input name="localColeta" maxlength="200" required placeholder="Fazenda, armazém, endereço..."></label>
+   <label>Destino <input name="destino" maxlength="160" required placeholder="Cidade / UF de destino"></label>
+   <label>Local de descarga <input name="localDescarga" maxlength="200" required placeholder="Indústria, unidade, endereço..."></label>
+  </div>
+  <h3>Documentos obrigatórios</h3>
+  <div class="cad-doc-grid">
+   <label>Nota de origem <input type="file" data-slot="nota_origem" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+   <label>Laudo <input type="file" data-slot="laudo" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+   <label>Ticket de pesagem <input type="file" data-slot="ticket_pesagem" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+   <label>Ordem <input type="file" data-slot="ordem" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+  </div>
+  <p class="cad-privacy">Os documentos são privados e ficam na pasta Google Drive da transportadora. Até 6 MB por arquivo.</p>
+  </div>
+  <div class="cad-dialog-footer"><span id="tnFormProgress" role="status">Preencha os campos e anexe quatro documentos.</span><button id="tnEnviar" type="submit" class="primary">Enviar solicitação</button></div>
+ </form>
+</dialog><dialog id="tnDetailDialog" class="cad-dialog detail">
+ <div class="cad-dialog-head"><div><span class="eyebrow" id="tnDetailProtocol">TROCA DE NOTAS</span>
+ <h2 id="tnDetailTitle">Detalhes da solicitação</h2><p id="tnDetailMeta"></p></div>
+ <button type="button" data-close="tnDetailDialog" class="cad-close" aria-label="Fechar">✕</button></div>
+ <div class="cad-detail-summary"><span id="tnDetailStatus" class="cad-status">Na fila</span><span id="tnDetailOwner" class="cad-detail-owner"></span></div>
+ <div class="cad-detail-body">
+  <div class="cad-detail-main">
+   <section class="cad-detail-section"><h3>Dados da solicitação</h3><div class="cad-detail-info" id="tnDetailInfo"></div></section>
+   <section class="cad-detail-section"><h3>Documentos anexados</h3><div class="cad-files" id="tnDetailDocs"></div>
+   <div id="tnPendingUpload" hidden>
+    <p class="cad-tip">A solicitação está pendente. Você pode acrescentar documentos de origem.</p>
+    <label>Complementar documento <select id="tnAdditionalSlot"><option value="nota_origem">Nota origem</option><option value="laudo">Laudo</option><option value="ticket_pesagem">Ticket pesagem</option><option value="ordem">Ordem</option></select></label>
+    <input type="file" id="tnAdditionalFile" accept=".pdf,.jpg,.jpeg,.png,.webp">
+    <button type="button" class="secondary" id="tnAdditionalSend">Enviar documento</button>
+   </div></section>
+   <section class="cad-detail-section"><h3>Histórico de movimentações</h3><div class="cad-history" id="tnHistory"></div></section>
+  </div>
+  <aside class="cad-chat-panel">
+   <div id="tnExecution" hidden><h3>Execução da troca</h3>
+    <button id="tnAssumir" type="button" class="primary" hidden>Assumir solicitação</button>
+    <form id="tnStatusForm" hidden>
+     <label>Situação <select name="status" required>
+      <option value="ANDAMENTO">EM ANDAMENTO</option><option value="PENDENTE">PENDENTE</option><option value="TROCADA">TROCADA</option>
+     </select></label>
+     <label>Motivo / atualização <textarea name="motivo" maxlength="1800" rows="3" placeholder="Obrigatório na pendência"></textarea></label>
+     <p class="cad-tip">Para finalizar como TROCADA, anexe primeiro a nota fiscal trocada.</p>
+     <label>NF trocada <input type="file" id="tnFinalFile" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+     <button type="button" id="tnFinalUpload" class="secondary">Anexar NF trocada</button>
+     <button type="submit" class="primary">Atualizar situação</button>
+    </form>
+   </div>
+   <h3>Comentários e pendências</h3><div id="tnMessages" class="cad-messages"></div>
+   <form id="tnChatForm"><label>Nova mensagem <textarea name="texto" rows="3" maxlength="1800" required placeholder="Escreva a dúvida ou explique a pendência..."></textarea></label>
+   <button type="submit" class="secondary">Enviar comentário</button></form>
+  </aside>
+ </div>
+</dialog>
+<dialog id="tnPreviewDialog" class="cad-dialog cad-preview-dialog">
+ <div class="cad-dialog-head"><h2 id="tnPreviewTitle">Documento</h2><button data-close="tnPreviewDialog" class="cad-close">✕</button></div>
+ <div class="cad-preview-body" id="tnPreviewBody"></div>
+ <div class="cad-preview-footer"><button type="button" id="tnDownload" class="secondary">Baixar documento</button><button data-close="tnPreviewDialog" class="secondary">Fechar</button></div>
+</dialog>
+<script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
+<script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+<script src="../assets/js/troca-notas.js?v=1"></script></body></html>

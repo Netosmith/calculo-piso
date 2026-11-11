@@ -9,7 +9,7 @@ test("As duas páginas mostram apenas a navegação global, com cabeçalho compa
  for(const name of ["cadastro-solicitacoes","execucao-cadastros"]){
   const html=load("pages/"+name+".html");
   assert.doesNotMatch(html,/<header class="cad-topbar">/);
-  assert.match(html,/cadastro-solicitacoes[.]css[?]v=6-numero-placa/);
+  assert.match(html,/cadastro-solicitacoes[.]css[?]v=7-cards-compactos/);
   for(const id of ["cadProgressBar","cadProgressTrack","cadChecklist","cadAnexos","cadHistorico","cadPreviewDialog"])
    assert.ok(html.includes('id="'+id+'"'),id+" / "+name);
  }
@@ -23,7 +23,7 @@ test("Quadro por status, prévia de documentos e progresso dos cards não expõe
  for(const status of ["FILA","ANDAMENTO","AGUARDANDO APROVACAO","PENDENTE","REPROVADO","APROVADO"]){
   assert.ok(js.includes('"'+status+'"'),status);
  }
- for(const mark of ["smallProgress(ticket.conferidos)","smallProgress(c.conferidos)","cadPreviewDialog","fetchPrivateDoc","cadChecklistCount","cadProgressBar","cadDetailStatus"]){
+ for(const mark of ["cadPreviewDialog","fetchPrivateDoc","cadChecklistCount","cadProgressBar","cadDetailStatus"]){
   assert.ok(js.includes(mark),mark);
  }
  assert.match(js,/credentials:"include"/);

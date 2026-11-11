@@ -28,10 +28,10 @@ test("Número #00001 e placa principal aparecem nas duas telas",()=>{
  assert.match(js,/function placaPrincipal\(placas\)/);
  assert.match(js,/el\("strong",placaPrincipal\(ticket\.placas\),"cad-card-plate"\)/);
  assert.match(js,/el\("span",numeroCadastro\(ticket\),"cad-short-number"\)/);
- assert.match(js,/el\("h3",placaPrincipal\(c\.placas\),"cad-list-plate"\)/);
+ assert.match(js,/el\("strong",placaPrincipal\(c\.placas\),"cad-list-plate"\)/);
  assert.match(js,/Protocolo interno:/);
  assert.doesNotThrow(()=>new Script(js));
  for(const page of ["cadastro-solicitacoes","execucao-cadastros"]){
-  assert.match(read("pages/"+page+".html"),/cadastro-solicitacoes[.]js[?]v=6-numero-placa/);
+  assert.match(read("pages/"+page+".html"),/cadastro-solicitacoes[.]js[?]v=7-cards-compactos/);
  }
 });

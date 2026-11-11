@@ -16,7 +16,7 @@ function doPost(e) {
     if(!/^[a-f0-9-]{36}$/.test(p.ticketId||""))return result_({ok:false,error:"Protocolo inválido."});
     var folder=DriveApp.getFolderById(root);
     if(p.action==="upload"){
-      var slots=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao","nota_origem","laudo","ticket_pesagem","ordem","nf_trocada"];
+      var slots=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao","nota_origem","laudo","ticket_pesagem","ordem","nf_trocada","nota","nota_coleta","liberacao","rota_pedagio","tabela_antt"];
       var mimes=["application/pdf","image/jpeg","image/png","image/webp"];
       if(slots.indexOf(p.slot)<0||mimes.indexOf(p.mime)<0||
          !/^[A-Za-z0-9+/]+={0,2}$/.test(p.base64||"")||
@@ -27,7 +27,7 @@ function doPost(e) {
       var subfolder=getTicketFolder_(folder,p.ticketId,true);
       var blob=Utilities.newBlob(content,p.mime,filename);
       var file=subfolder.createFile(blob);
-      file.setDescription("Cadastro "+tenant+" / "+p.ticketId+" / "+p.slot);
+      file.setDescription("Portal Frete "+tenant+" / "+p.ticketId+" / "+p.slot);
       // Google Drive mantém o arquivo PRIVADO. Não chamar setSharing.
       return result_({ok:true,fileId:file.getId()});
     }

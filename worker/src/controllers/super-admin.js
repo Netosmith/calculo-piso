@@ -102,7 +102,7 @@ export async function superAdminController(request, env, verifiedStagingSession 
     const extraModules=await (async()=>{
       try{
        const obj=await env.TENANT_BRANDS?.get("tenant/nova-frota/private/optional-modules-v1.json");
-       const data=obj?await obj.json():{},allowed=new Set(["solicitacao-troca-notas","execucao-troca-notas"]);
+       const data=obj?await obj.json():{},allowed=new Set(["solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"]);
        return Array.isArray(data.modules)?data.modules.filter(k=>allowed.has(k)):[];
       }catch{return [];}
     })();

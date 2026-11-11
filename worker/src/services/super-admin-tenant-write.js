@@ -113,7 +113,7 @@ export async function writeTenantCatalog(request,env,actor) {
      if(!env.TENANT_BRANDS)return errorResponse("Armazenamento indisponível.",503);
      const body=await jsonBody(request,["modules"]),list=body.modules;
      if(!Array.isArray(list)||list.length>TENANT_MODULES.length||list.some(k=>typeof k!=="string"||!TENANT_MODULES.includes(k)))return errorResponse("Módulos inválidos.",400);
-     const enabled=["solicitacao-troca-notas","execucao-troca-notas"].filter(k=>list.includes(k));
+     const enabled=["solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"].filter(k=>list.includes(k));
      await env.TENANT_BRANDS.put("tenant/nova-frota/private/optional-modules-v1.json",
       JSON.stringify({version:1,modules:enabled,actor,at:new Date().toISOString()}),{httpMetadata:{contentType:"application/json"}});
      return success({tenantId,modules:enabled});

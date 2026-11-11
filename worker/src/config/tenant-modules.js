@@ -3,7 +3,7 @@
 // tenant, status e permissão em cada requisição antes de disponibilizar dados.
 export const TENANT_MODULES = Object.freeze([
   "piso", "piso2", "fretes", "fretes-go", "fretes-mt", "fretes-sp", "fretes-ms", "fretes-ba", "fretes-pr", "fretes-sc", "fretes-ro", "fretes-to", "fretes-ma", "fretes-ac", "fretes-al", "fretes-ap", "fretes-am", "fretes-ce", "fretes-df", "fretes-es", "fretes-mg", "fretes-pa", "fretes-pb", "fretes-pe", "fretes-pi", "fretes-rj", "fretes-rn", "fretes-rs", "fretes-rr", "fretes-se", "bi", "divulgacao", "controle",
-  "share", "ordem", "cadastros", "cadastro-solicitacoes", "execucao-cadastros", "solicitacao-troca-notas", "execucao-troca-notas", "estadias", "custo-frota",
+  "share", "ordem", "cadastros", "cadastro-solicitacoes", "execucao-cadastros", "solicitacao-troca-notas", "execucao-troca-notas", "solicitacao-pedidos", "execucao-pedidos", "estadias", "custo-frota",
   "administrativo", "monitoramento",
 "fretes-mercado", "custo-filial", "patrimonio", "embarques", "chamados"
 ]);

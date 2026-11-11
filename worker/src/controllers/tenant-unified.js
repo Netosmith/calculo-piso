@@ -78,7 +78,7 @@ export function tenantPublicSession(principal,modules=[]){
   transportadoraNome:principal.tenant_name,
   // Never disclose other enabled tenant modules in a PISO session.
   modules:String(principal.role||"").trim().toUpperCase()==="PISO"
-    ? modules.filter(module=>module==="piso2") : modules,
+    ? modules.filter(module=>["piso2","cadastro-solicitacoes"].includes(module)) : modules,
   tenantMode:true,
   ...(principal.owner_support===true ? {ownerSupport:true} : {})
  };

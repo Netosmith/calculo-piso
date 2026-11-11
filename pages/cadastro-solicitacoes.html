@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>Solicitações de Cadastro | Portal Frete</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="../assets/css/app.css">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=1">
+</head>
+<body class="cadastro-app">
+ <header class="cad-topbar">
+   <a class="cad-home" href="./home.html" aria-label="Voltar para Home">⌂</a>
+   <div class="cad-topbar-title"><strong id="cadCompany">PORTAL FRETE</strong><small>Central de solicitações de cadastro</small></div>
+   <div class="cad-topbar-actions"><span id="cadProfile" class="cad-profile">USUÁRIO</span><a href="./home.html" class="cad-back">Home</a><button data-logout type="button">Sair</button></div>
+ </header>
+ <main class="cad-shell">
+  <section class="cad-hero">
+   <div><span class="eyebrow"><span class="pulse"></span> OPERAÇÃO DE CADASTROS</span><h1>Cadastros, do pedido à aprovação.</h1><p>Um só lugar para enviar os documentos, acompanhar cada etapa e conversar com a equipe responsável.</p></div>
+   <button type="button" class="primary hero-action" id="cadNovo">+ Nova solicitação</button>
+  </section>
+  <div id="cadAlert" class="cad-alert" role="status" aria-live="polite" hidden></div>
+  <section class="cad-summary" aria-label="Resumo de chamados">
+   <div class="cad-metric"><span>Na fila</span><strong id="cadFila">0</strong><small>Aguardando responsável</small></div>
+   <div class="cad-metric blue"><span>Em andamento</span><strong id="cadAndamento">0</strong><small>Em análise</small></div>
+   <div class="cad-metric amber"><span>Pendentes</span><strong id="cadPendente">0</strong><small>Precisam de atenção</small></div>
+   <div class="cad-metric green"><span>Aprovados</span><strong id="cadAprovados">0</strong><small>Concluídos</small></div>
+  </section>
+  <section class="cad-panel">
+   <div class="cad-panel-head"><div><span class="eyebrow">ACOMPANHAMENTO</span><h2 id="cadListaTitulo">Minhas solicitações</h2><p id="cadListaSub">Consulte o protocolo e o andamento de cada cadastro.</p></div><div class="cad-tools"><select id="cadFiltro" aria-label="Filtrar situação"><option value="">Todos os status</option><option>FILA</option><option>ANDAMENTO</option><option>AGUARDANDO APROVACAO</option><option>PENDENTE</option><option>REPROVADO</option><option>APROVADO</option><option>RASCUNHO</option></select><input id="cadBusca" type="search" placeholder="Protocolo, motorista, placa..." aria-label="Pesquisar solicitações"><button id="cadAtualizar" class="secondary" type="button">Atualizar</button></div></div>
+   <div id="cadTickets" class="cad-grid" aria-live="polite"><div class="cad-empty">Carregando solicitações...</div></div>
+  </section>
+ </main>
+ <dialog id="cadFormDialog" class="cad-dialog">
+  <div class="cad-dialog-head"><div><span class="eyebrow">NOVO PROCESSO</span><h2 id="cadFormTitle">Solicitação de cadastro</h2><p>Os dados serão encaminhados à equipe responsável. O cadastro final é realizado em outro sistema.</p></div><button type="button" class="cad-close" data-close="cadFormDialog" aria-label="Fechar">✕</button></div>
+  <form id="cadForm">
+   <div class="cad-form-body">
+    <h3>01. Motorista e proprietário</h3>
+    <div class="cad-fields">
+     <label>Nome completo do motorista <input required name="motorista" maxlength="150" autocomplete="name"></label>
+     <label>Telefone do motorista <input required name="contatoMotorista" type="tel" maxlength="30" placeholder="(00) 00000-0000"></label>
+     <label>Nome do proprietário <input required name="proprietario" maxlength="150"></label>
+     <label>Telefone do proprietário <input required name="contatoProprietario" type="tel" maxlength="30" placeholder="(00) 00000-0000"></label>
+     <label class="wide">Placas do cavalo e das carretas <input required name="placas" maxlength="120" placeholder="Ex.: ABC1D23 / DEF4G56 / HIJ7K89"></label>
+    </div>
+    <h3>02. Referências de outras transportadoras</h3>
+    <div class="cad-fields">
+      <label>Transportadora 1 <input required name="ref1nome" maxlength="150"></label><label>Telefone 1 <input required name="ref1telefone" type="tel" maxlength="30"></label>
+      <label>Transportadora 2 <input required name="ref2nome" maxlength="150"></label><label>Telefone 2 <input required name="ref2telefone" type="tel" maxlength="30"></label>
+      <label>Transportadora 3 <input required name="ref3nome" maxlength="150"></label><label>Telefone 3 <input required name="ref3telefone" type="tel" maxlength="30"></label>
+      <label class="wide">Informações adicionais <textarea name="observacoes" maxlength="1500" rows="3" placeholder="Observações importantes para a análise..."></textarea></label>
+    </div>
+    <h3>03. Documentação e fotografias</h3>
+    <p class="cad-tip">Envie PDF, JPG, PNG ou WebP, até 6 MB por arquivo. No caso das carretas, selecione todos os documentos de uma vez.</p>
+    <div class="cad-doc-grid">
+      <label>Documento do cavalo <input type="file" data-slot="cavalo" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"></label>
+      <label>Documento das carretas <input type="file" data-slot="carreta" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"></label>
+      <label>Documento ANTT <input type="file" data-slot="antt" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"></label>
+      <label>CNH <input type="file" data-slot="cnh" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"></label>
+      <label>Comprovante de endereço <input type="file" data-slot="endereco" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"></label>
+      <label>Foto do motorista <input type="file" data-slot="motorista" accept="image/jpeg,image/png,image/webp"></label>
+      <label>Foto do caminhão <input type="file" data-slot="caminhao" accept="image/jpeg,image/png,image/webp"></label>
+      <label>Motorista na frente do caminhão <input type="file" data-slot="motorista_caminhao" accept="image/jpeg,image/png,image/webp"></label>
+    </div>
+    <div class="cad-privacy">Os documentos serão armazenados no Google Drive privado da transportadora. Não compartilhe links públicos.</div>
+   </div>
+   <div class="cad-dialog-footer"><span id="cadFormProgress" role="status">Preencha todos os dados e anexe os documentos.</span><button type="submit" class="primary" id="cadEnviar">Enviar solicitação</button></div>
+  </form>
+ </dialog>
+ <dialog id="cadDetailDialog" class="cad-dialog detail">
+  <div class="cad-dialog-head"><div><span class="eyebrow" id="cadDetailProtocolo">CHAMADO</span><h2 id="cadDetailTitle">Detalhes do cadastro</h2><p id="cadDetailMeta"></p></div><button type="button" class="cad-close" data-close="cadDetailDialog" aria-label="Fechar">✕</button></div>
+  <div class="cad-detail-body">
+   <div class="cad-detail-main">
+     <div id="cadDetailInfo" class="cad-detail-info"></div>
+     <h3>Etapas do processo</h3><div id="cadEtapas" class="cad-timeline"></div>
+     <h3>Documentos anexados</h3><div id="cadAnexos" class="cad-files"></div>
+     <h3>Histórico e atualizações</h3><div id="cadHistorico" class="cad-history"></div>
+   </div>
+   <aside class="cad-chat-panel">
+    <div id="cadExecucao" hidden>
+     <h3>Execução do cadastro</h3>
+     <button id="cadAssumir" type="button" class="primary" hidden>Assumir chamado</button>
+     <form id="cadStatusForm" hidden>
+      <label>Situação<select name="status"><option>ANDAMENTO</option><option>AGUARDANDO APROVACAO</option><option>PENDENTE</option><option>REPROVADO</option><option>APROVADO</option></select></label>
+      <label>Etapa<select name="etapa"><option>RECEBIMENTO</option><option>CONFERENCIA DOCUMENTAL</option><option>CONSULTA REFERENCIAS</option><option>CADASTRO SISTEMA TERCEIRO</option><option>REVISAO</option><option>CONCLUIDO</option></select></label>
+      <label>Motivo / atualização<textarea name="motivo" rows="3" maxlength="1800" placeholder="Obrigatório em pendente ou reprovado"></textarea></label>
+      <button class="primary" type="submit">Salvar andamento</button>
+     </form>
+    </div>
+    <h3>Conversa sobre o chamado</h3><p class="cad-tip">Em caso de pendência ou reprovação, informe o motivo e esclareça dúvidas aqui.</p>
+    <div id="cadMensagens" class="cad-messages"></div>
+    <form id="cadChatForm"><textarea name="texto" required maxlength="1800" rows="3" placeholder="Escreva uma mensagem..."></textarea><button class="secondary" type="submit">Enviar mensagem</button></form>
+   </aside>
+  </div>
+ </dialog>
+ <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
+ <script src="../assets/js/auth.js?v=cadastro-solicitacoes-1"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=1"></script>
+</body></html>

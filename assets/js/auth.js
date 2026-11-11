@@ -163,7 +163,7 @@ function enforcePisoPageScope(session){
   // Signed PISO sessions may navigate only Home and ANTT Piso 2.
   // API permissions independently block every other data endpoint.
   const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
-  if(["login.html","home.html","calculo-antt.html","cadastro-solicitacoes.html"].includes(file))return true;
+  if(["login.html","home.html","calculo-antt.html","cadastro-solicitacoes.html","solicitacao-pedidos.html"].includes(file))return true;
   window.location.href=window.portalTenantHref?.("home.html") || "./home.html";
   return false;
 }
@@ -462,6 +462,9 @@ function canAccessFeature(featureKey, context=""){
     if(feature==="solicitacao-troca-notas")return modules.includes(feature);
     if(feature==="execucao-troca-notas")return modules.includes(feature)&&
       (["ADMINISTRADOR","GOADM"].includes(role)||window.__PORTAL_TROCA_EXECUTOR===true);
+    if(feature==="solicitacao-pedidos")return modules.includes(feature);
+    if(feature==="execucao-pedidos")return modules.includes(feature)&&
+      (["ADMINISTRADOR","GOADM"].includes(role)||window.__PORTAL_PEDIDOS_EXECUTOR===true);
     // PISO only gets the empty Home entrypoint and an enabled Piso 2.
     if(role==="PISO")return feature==="home" ||
       (feature==="piso2" && modules.includes("piso2"));
@@ -481,6 +484,8 @@ function canAccessFeature(featureKey, context=""){
     (["ADMINISTRADOR","GOADM"].includes(profile)||window.__PORTAL_CADASTRO_EXECUTOR===true);
   if(feature==="solicitacao-troca-notas"||feature==="execucao-troca-notas")
     return isAuthedHome()&&window.__PORTAL_TROCA_MODULES_CONFIRMED?.[feature]===true;
+  if(feature==="solicitacao-pedidos"||feature==="execucao-pedidos")
+    return isAuthedHome()&&window.__PORTAL_PEDIDOS_MODULES_CONFIRMED?.[feature]===true;
   // PISO cannot inherit global support, Piso 1 or other modules.
   if(profile==="PISO")return isAuthedHome() && feature==="piso2";
 
@@ -781,6 +786,24 @@ const PORTAL_NAV_ITEMS = [
     paths:["execucao-troca-notas.html"],
     secondary:true,
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 10l2 2 4-4M8 16h8"/></svg>'
+  },
+  {
+    key:"solicitacao-pedidos",
+    label:"Solic. Pedidos",
+    feature:"solicitacao-pedidos",
+    href:"./solicitacao-pedidos.html",
+    paths:["solicitacao-pedidos.html"],
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM8 9h9M8 13h9M8 17h6"/></svg>'
+  },
+  {
+    key:"execucao-pedidos",
+    label:"Exec. Pedidos",
+    feature:"execucao-pedidos",
+    href:"./execucao-pedidos.html",
+    paths:["execucao-pedidos.html"],
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM8 10l2 2 4-4M8 17h9"/></svg>'
   },
   {
     key:"cadastros",

@@ -9,7 +9,7 @@ test("As duas páginas mostram apenas a navegação global, com cabeçalho compa
  for(const name of ["cadastro-solicitacoes","execucao-cadastros"]){
   const html=load("pages/"+name+".html");
   assert.doesNotMatch(html,/<header class="cad-topbar">/);
-  assert.match(html,/cadastro-solicitacoes[.]css[?]v=4-checklist/);
+  assert.match(html,/cadastro-solicitacoes[.]css[?]v=5-quadros/);
   for(const id of ["cadProgressBar","cadProgressTrack","cadChecklist","cadAnexos","cadHistorico","cadPreviewDialog"])
    assert.ok(html.includes('id="'+id+'"'),id+" / "+name);
  }

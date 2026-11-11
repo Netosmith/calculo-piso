@@ -238,7 +238,11 @@ export async function aberturaPedidosController(req,env){
   return err("Operação não permitida.",405);
  }catch(error){
   console.warn("[ABERTURA PEDIDOS] Falha operacional",{type:error?.name||"Error"});
-  return err(["Envie JSON.","Dados inválidos."].includes(error?.message)?error.message:
-    "Não foi possível concluir a operação. "+(error?.message?.includes("Apps Script")?"Verifique o Apps Script.":"Verifique a integração e tente novamente."),503);
+  const message=String(error?.message||"");
+  if(message==="Envie JSON."||message==="Dados inválidos."||message==="E-mail inválido."||
+     message.startsWith("Campo obrigatório:")||message.startsWith("Campo inválido:"))
+   return err(message,400);
+  return err("Não foi possível concluir a operação. "+
+    (message.includes("Apps Script")?"Verifique o Apps Script.":"Verifique a integração e tente novamente."),503);
  }
 }

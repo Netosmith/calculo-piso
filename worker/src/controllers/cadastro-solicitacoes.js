@@ -135,7 +135,7 @@ async function drive(conf,tenantId,op,data={}){
 }
 const formatTicket=r=>({
  id:r.id,protocolo:r.protocolo,numeroCurto:Number(r.numero_curto)||null,motorista:r.motorista,contatoMotorista:r.contato_motorista,
- proprietario:r.proprietario,contatoProprietario:r.contato_proprietario,placas:r.placas,
+ proprietario:r.proprietario,contatoProprietario:r.contato_proprietario,placas:r.placas,produto:r.produto||"",
  referencias:JSON.parse(r.referencias_json||"[]"),observacoes:r.observacoes,
  status:r.status,etapa:r.etapa,solicitante:r.solicitante_id,executor:r.executor_id,
  criadoEm:r.criado_em,atualizadoEm:r.atualizado_em,enviadoEm:r.enviado_em,conferidos:Math.min(9,Number(r.conferidos||0))
@@ -182,15 +182,16 @@ export async function cadastroController(request,env){
    const b=await json(request);
    const motorista=clean(b.motorista),contato=clean(b.contatoMotorista,30);
    const proprietario=clean(b.proprietario),contatoProprietario=clean(b.contatoProprietario,30);
-   const placas=clean(b.placas,120),observacoes=typeof b.observacoes==="string"&&b.observacoes.length<=1500?b.observacoes.trim():"";
-   if(!motorista||!contato||!proprietario||!contatoProprietario||!placas||
+   const placas=clean(b.placas,120),produto=clean(b.produto,80);
+    const observacoes=typeof b.observacoes==="string"&&b.observacoes.length<=1500?b.observacoes.trim():"";
+   if(!motorista||!contato||!proprietario||!contatoProprietario||!placas||!produto||
       !Array.isArray(b.referencias)||b.referencias.length!==3||
       b.referencias.some(r=>!clean(r?.nome)||!clean(r?.telefone,30)))
-      return err("Preencha motorista, proprietário, contatos, placas e as três referências.");
+      return err("Preencha motorista, proprietário, contatos, placa, produto e as três referências.");
    const id=crypto.randomUUID(),today=new Date().toISOString().slice(0,10).replaceAll("-","");
    const protocolo="CAD-"+today+"-"+id.slice(0,8).toUpperCase();
-   await db.prepare("INSERT INTO portal_cadastro_tickets(id,tenant_id,protocolo,solicitante_id,motorista,contato_motorista,proprietario,contato_proprietario,placas,referencias_json,observacoes) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(id,p.tenantId,protocolo,p.user,motorista,contato,proprietario,contatoProprietario,placas,JSON.stringify(b.referencias.map(x=>({nome:x.nome.trim(),telefone:x.telefone.trim()}))),observacoes).run();
+   await db.prepare("INSERT INTO portal_cadastro_tickets(id,tenant_id,protocolo,solicitante_id,motorista,contato_motorista,proprietario,contato_proprietario,placas,produto,referencias_json,observacoes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)")
+    .bind(id,p.tenantId,protocolo,p.user,motorista,contato,proprietario,contatoProprietario,placas,produto,JSON.stringify(b.referencias.map(x=>({nome:x.nome.trim(),telefone:x.telefone.trim()}))),observacoes).run();
    // O trigger do D1 aloca o próximo número na mesma transação do INSERT.
    const allocated=await db.prepare("SELECT numero_curto FROM portal_cadastro_tickets WHERE id=? AND tenant_id=?")
     .bind(id,p.tenantId).first();
@@ -199,7 +200,7 @@ export async function cadastroController(request,env){
    await history(db,p,id,"RASCUNHO","RECEBIMENTO");
    return success({chamado:{id,protocolo,numeroCurto:allocated.numero_curto,status:"RASCUNHO"}},201);
   }
-  const m=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|enviar|assumir|situacao|mensagens|checklist))?$/);
+  const m=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|enviar|assumir|situacao|mensagens|checklist|produto))?$/);
   if(!m)return err("Rota inexistente.",404);
   const id=m[1],action=m[2]||"";
   const row=await ticket(db,p,id);
@@ -251,6 +252,18 @@ export async function cadastroController(request,env){
    if(changed.meta?.changes!==1)return err("Este chamado já foi assumido.",409);
    await history(db,p,id,"ANDAMENTO","CONFERENCIA DOCUMENTAL");
    return success({status:"ANDAMENTO"});
+  }
+  if(action==="produto"&&method==="POST"){
+   const ownerDraft=view==="solicitante"&&isOwner&&row.status==="RASCUNHO";
+   const assignedExecutor=executionView&&executor&&row.executor_id===p.user;
+   if(!ownerDraft&&!assignedExecutor)return err("Apenas o solicitante no rascunho ou o executor responsável pode alterar o produto.",403);
+   const body=await json(request,600),produtoNovo=clean(body.produto,80);
+   if(!produtoNovo)return err("Informe o produto (até 80 caracteres).");
+   if(produtoNovo===row.produto)return success({produto:produtoNovo,inalterado:true});
+   await db.prepare("UPDATE portal_cadastro_tickets SET produto=?,atualizado_em=CURRENT_TIMESTAMP WHERE tenant_id=? AND id=?")
+      .bind(produtoNovo,p.tenantId,id).run();
+   await history(db,p,id,row.status,row.etapa,"Produto: "+(row.produto||"Não informado")+" → "+produtoNovo);
+   return success({produto:produtoNovo});
   }
   if(action==="checklist"&&method==="POST"){
    if(!executor||row.executor_id!==p.user)return err("Checklist restrito ao executor responsável.",403);

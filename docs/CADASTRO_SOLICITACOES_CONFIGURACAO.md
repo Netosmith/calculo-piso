@@ -76,3 +76,7 @@ A migração `0004_cadastro_checklist.sql` adiciona nove verificações por cham
 ## Protocolo curto por transportadora
 
 A migração `0005_cadastro_numero_curto.sql` atribui números sequenciais por transportadora, a partir de `00001`. Os cadastros anteriores recebem números na ordem de criação. O novo número é gerado dentro do banco (trigger atômico). O protocolo interno antigo, o UUID, o histórico e os documentos permanecem intactos. Não reinicie o contador apagando dados.
+
+## Produto no cartão compacto de cadastro
+
+O produto é informado na abertura da solicitação e armazenado exclusivamente no banco D1 da transportadora. Para cadastros anteriores à migração `0006_cadastro_produto.sql`, o campo permanece vazio, sem atribuição fictícia. O executor responsável pode corrigir o produto pelo detalhamento e a ação fica registrada no histórico. A migração é aplicada antes da publicação do Worker.

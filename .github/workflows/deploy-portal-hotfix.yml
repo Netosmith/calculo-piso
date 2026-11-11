@@ -189,6 +189,12 @@ jobs:
           else
             npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations/super-admin/0005_cadastro_numero_curto.sql
           fi
+          # Só executar ALTER TABLE uma vez por ambiente.
+          if npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "SELECT produto FROM portal_cadastro_tickets LIMIT 0;" >/dev/null 2>&1; then
+            echo "Campo produto já está disponível."
+          else
+            npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations/super-admin/0006_cadastro_produto.sql
+          fi
 
       - name: Publicar Worker
         working-directory: worker

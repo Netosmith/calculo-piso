@@ -7,7 +7,7 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="../assets/css/app.css">
- <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=7-cards-compactos">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=8-quadro-unico">
 </head>
 <body class="cadastro-app" data-cadastro-visao="solicitante">
 <main class="cad-shell">
@@ -17,17 +17,23 @@
   </section>
   <div id="cadAlert" class="cad-alert" role="status" aria-live="polite" hidden></div>
   <section class="cad-workboard" aria-label="Acompanhamento dos meus cadastros por situação">
-  <div class="cad-workboard-head">
-   <div><span class="eyebrow">MEUS CADASTROS</span><h2>Acompanhamento dos chamados</h2><p>Visualize seus protocolos nas seis situações do cadastro.</p></div>
-   <span class="cad-private-marker">Somente minhas solicitações</span>
+  <div class="cad-workboard-head cad-workboard-head--solicitante">
+   <div class="cad-workboard-heading"><span class="eyebrow">MEUS CADASTROS</span><h2>Acompanhamento dos chamados</h2><p>Visualize seus protocolos nas seis situações do cadastro.</p></div>
+   <div class="cad-workboard-tools">
+    <div class="cad-tools" role="search" aria-label="Filtrar meus cadastros">
+     <select id="cadFiltro" aria-label="Filtrar situação"><option value="">Todos os status</option><option value="FILA">Fila</option><option value="ANDAMENTO">Em andamento</option><option value="AGUARDANDO APROVACAO">Aguardando aprovação</option><option value="PENDENTE">Pendente</option><option value="REPROVADO">Reprovado</option><option value="APROVADO">Aprovado</option></select>
+     <input id="cadBusca" type="search" placeholder="Número, placa, produto..." aria-label="Pesquisar solicitações">
+     <button id="cadAtualizar" type="button" class="secondary">Atualizar</button>
+    </div>
+    <button id="cadRascunhosBtn" type="button" class="secondary cad-drafts-toggle" hidden aria-controls="cadRascunhos" aria-expanded="false">Rascunhos (0)</button>
+   </div>
   </div>
   <div id="cadKanban" class="cad-kanban" aria-live="polite"></div>
- </section>
- <section class="cad-panel">
-   <div class="cad-panel-head"><div><span class="eyebrow">ACOMPANHAMENTO</span><h2 id="cadListaTitulo">Minhas solicitações</h2><p id="cadListaSub">Consulte o protocolo e o andamento de cada cadastro.</p></div><div class="cad-tools"><select id="cadFiltro" aria-label="Filtrar situação"><option value="">Todos os status</option><option>FILA</option><option>ANDAMENTO</option><option>AGUARDANDO APROVACAO</option><option>PENDENTE</option><option>REPROVADO</option><option>APROVADO</option><option>RASCUNHO</option></select><input id="cadBusca" type="search" placeholder="Protocolo, motorista, placa..." aria-label="Pesquisar solicitações"><button id="cadAtualizar" class="secondary" type="button">Atualizar</button></div></div>
-   <div id="cadTickets" class="cad-grid" aria-live="polite"><div class="cad-empty">Carregando solicitações...</div></div>
+  <section id="cadRascunhos" class="cad-drafts" hidden aria-label="Rascunhos para continuar">
+   <strong>Rascunhos não enviados</strong>
+   <div id="cadRascunhosLista" class="cad-drafts-list"></div>
   </section>
- </main>
+ </section> </main>
  <dialog id="cadFormDialog" class="cad-dialog">
   <div class="cad-dialog-head"><div><span class="eyebrow">NOVO PROCESSO</span><h2 id="cadFormTitle">Solicitação de cadastro</h2><p>Os dados serão encaminhados à equipe responsável. O cadastro final é realizado em outro sistema.</p></div><button type="button" class="cad-close" data-close="cadFormDialog" aria-label="Fechar">✕</button></div>
   <form id="cadForm">
@@ -137,5 +143,5 @@
  </dialog>
  <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
  <script src="../assets/js/auth.js?v=3-ambientes"></script>
- <script src="../assets/js/cadastro-solicitacoes.js?v=7-cards-compactos"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=8-quadro-unico"></script>
 </body></html>

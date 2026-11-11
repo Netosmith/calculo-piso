@@ -249,3 +249,30 @@ body.cadastro-app .cad-product-editor button{font-size:11px;padding:9px 12px}
 @media(max-width:650px){
  body.cadastro-app .cad-kanban{grid-template-columns:repeat(6,minmax(200px,1fr))}
 }
+
+/* Solicitações: um único quadro; busca e filtros ficam no cabeçalho e rascunhos sob demanda. */
+body.cadastro-app[data-cadastro-visao="solicitante"] .cad-workboard{margin-bottom:0}
+body.cadastro-app .cad-workboard-head--solicitante{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:13px;padding:12px 16px}
+body.cadastro-app .cad-workboard-head--solicitante .cad-workboard-heading{min-width:240px;flex:1}
+body.cadastro-app .cad-workboard-head--solicitante h2{font-size:17px;margin:3px 0}
+body.cadastro-app .cad-workboard-head--solicitante p{font-size:11px}
+body.cadastro-app .cad-workboard-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+body.cadastro-app .cad-workboard-tools .cad-tools{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+body.cadastro-app .cad-workboard-tools select,body.cadastro-app .cad-workboard-tools input{padding:8px 9px;font-size:11px;min-width:0}
+body.cadastro-app .cad-workboard-tools select{width:160px}
+body.cadastro-app .cad-workboard-tools input{width:175px}
+body.cadastro-app .cad-workboard-tools button{padding:8px 11px;font-size:11px;border-radius:8px}
+body.cadastro-app .cad-drafts{border-top:1px solid #e5eef4;padding:12px 16px}
+body.cadastro-app .cad-drafts>strong{display:block;font-size:12px;color:#2b526e;margin-bottom:9px}
+body.cadastro-app .cad-drafts-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:7px}
+body.cadastro-app .cad-draft-ticket{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;padding:10px;border-radius:8px;border:1px solid #d9e6f0;background:#f8fbfd;color:#1c4968;text-align:left}
+body.cadastro-app .cad-draft-ticket strong{font-size:10px}
+body.cadastro-app .cad-draft-ticket span{font-weight:750;font-size:12px;text-align:right}
+body.cadastro-app .cad-draft-ticket small{grid-column:1/-1;color:#2b8b65;font-size:10px}
+body.cadastro-app .cad-draft-ticket:hover{border-color:#168e69;background:#f0faf5}
+@media(max-width:700px){
+ body.cadastro-app .cad-workboard-head--solicitante{align-items:stretch}
+ body.cadastro-app .cad-workboard-tools{justify-content:flex-start;width:100%}
+ body.cadastro-app .cad-workboard-tools .cad-tools{flex:1;width:100%}
+ body.cadastro-app .cad-workboard-tools select,body.cadastro-app .cad-workboard-tools input{flex:1;width:auto;min-width:130px}
+}

@@ -7,7 +7,7 @@ const root="https://api.portalfrete.net.br/v1/cadastro-solicitacoes";
 const SLOTS=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao"];
 const STEPS=["RECEBIMENTO","CONFERENCIA DOCUMENTAL","CONSULTA REFERENCIAS","CADASTRO SISTEMA TERCEIRO","REVISAO","CONCLUIDO"];
 let all=[],executor=false,storage=false,selected=null,draftId="",busy=false,userId="";
-let previewBlobUrl=null,previewSequence=0,checklistBusy=false;
+let previewBlobUrl=null,previewSequence=0,checklistBusy=false,draftTrayOpen=false;
 const CHECK_LABELS={criminal:"Consulta criminal",cnh:"Validação CNH",documentos:"Documentos",biometria:"Biometria",referencia1:"Referência 1",referencia2:"Referência 2",referencia3:"Referência 3",telefone_proprietario:"Telefone proprietário",telefone_motorista:"Telefone motorista"};
 const CHECK_STATUS={OK:"Conferido",PENDENTE:"Pendente",REVISAR:"Revisar"};
 function numeroCadastro(item){
@@ -95,8 +95,31 @@ async function assumeTicket(id){
  try{await api("/"+id+"/assumir","POST",{});await refresh();await openDetail(id);}
  catch(error){alertMsg(error.message,true);await refresh().catch(()=>{});}
 }
+function renderDrafts(){
+ const toggle=$("cadRascunhosBtn"),area=$("cadRascunhos"),list=$("cadRascunhosLista");
+ if(!toggle||!area||!list)return;
+ const query=$("cadBusca").value.trim().toUpperCase();
+ const drafts=all.filter(t=>t.status==="RASCUNHO"&&matchesCadastro(t,query));
+ toggle.textContent="Rascunhos ("+drafts.length+")";
+ toggle.hidden=drafts.length===0;
+ if(!drafts.length)draftTrayOpen=false;
+ toggle.setAttribute("aria-expanded",String(draftTrayOpen));
+ area.hidden=!draftTrayOpen;
+ list.replaceChildren();
+ if(!draftTrayOpen)return;
+ for(const item of drafts){
+  const button=el("button","","cad-draft-ticket");button.type="button";
+  button.append(el("strong",numeroCadastro(item)),el("span",placaPrincipal(item.placas)),el("small","Continuar envio"));
+  button.title="Continuar cadastro "+numeroCadastro(item);
+  button.onclick=()=>resume(item);
+  list.append(button);
+ }
+}
 function render(){
  renderBoard();
+ renderDrafts();
+ // Não renderizar uma segunda lista no ambiente de solicitações.
+ if(!$("cadTickets"))return;
  const query=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
  const rows=all.filter(x=>(!filter||x.status===filter)&&matchesCadastro(x,query));
  const grid=$("cadTickets");grid.replaceChildren();
@@ -124,8 +147,8 @@ async function refresh(){
  const d=await api();
  if(executionView&&!d.executor)throw Error("Acesso restrito aos executores autorizados.");
  all=d.chamados||[];executor=!!d.executor;storage=!!d.armazenamento?.configurado;
- $("cadListaTitulo").textContent=executionView?"Todos os protocolos recebidos":"Minhas solicitações";
- $("cadListaSub").textContent=executionView?"Controle da fila geral e dos processos da transportadora.":"Acompanhe apenas os protocolos que você abriu.";
+ if($("cadListaTitulo"))$("cadListaTitulo").textContent="Todos os protocolos recebidos";
+ if($("cadListaSub"))$("cadListaSub").textContent="Controle da fila geral e dos processos da transportadora.";
  const create=$("cadNovo");
  if(create){create.disabled=!storage;create.title=storage?"Abrir solicitação":"Configure o Google Drive no Super Admin";}
  render();
@@ -372,6 +395,10 @@ if($("cadNovo"))$("cadNovo").onclick=newTicket;
 if($("cadForm"))$("cadForm").addEventListener("submit",sendForm);
 $("cadAtualizar").onclick=()=>refresh().catch(e=>alertMsg(e.message,true));
 $("cadBusca").addEventListener("input",render);$("cadFiltro").addEventListener("change",render);
+if($("cadRascunhosBtn"))$("cadRascunhosBtn").addEventListener("click",()=>{
+ draftTrayOpen=!draftTrayOpen;
+ renderDrafts();
+});
 if($("cadAssumir"))$("cadAssumir").onclick=()=>assumeTicket(selected.id);
 if($("cadProdutoForm"))$("cadProdutoForm").addEventListener("submit",async event=>{
  event.preventDefault();

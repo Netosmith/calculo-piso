@@ -16,7 +16,7 @@ async function api(path="",method="GET",body){
  const support=window.__PORTAL_TENANT_SESSION?.ownerSupport===true?window.__PORTAL_TENANT_EXPECTED:"";
  if(support)headers["X-Portal-Support-Tenant"]=support;
  if(body!==undefined)headers["Content-Type"]="application/json";
- const resource=method==="GET"&&path!=="/config"?path+(path.includes("?")?"&":"?")+"visao="+view:path;
+ const resource=path!=="/config"?path+(path.includes("?")?"&":"?")+"visao="+view:path;
  const response=await fetch(root+resource,{method,credentials:"include",cache:"no-store",headers,body:body===undefined?undefined:JSON.stringify(body)});
  const data=await response.json().catch(()=>null);
  if(!response.ok)throw Error(data?.error||"Falha ao consultar o Portal (HTTP "+response.status+").");
@@ -204,6 +204,8 @@ async function boot(){
   const config=await api("/config");
   executor=!!config.executor;
   window.__PORTAL_CADASTRO_EXECUTOR=executor;
+  if(executionView&&!config.execucaoHabilitada)throw Error("Módulo de Execução desativado para esta transportadora.");
+  if(!executionView&&!config.solicitacoesHabilitadas)throw Error("Módulo de Solicitações desativado no Super Admin desta transportadora.");
   if(executionView&&!executor)throw Error("Central restrita aos executores autorizados.");
   if($("cadSwitchLink"))$("cadSwitchLink").hidden=!executor;
   if(typeof renderPortalGlobalNav==="function")renderPortalGlobalNav();

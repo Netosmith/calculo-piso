@@ -456,7 +456,9 @@ function canAccessFeature(featureKey, context=""){
     if(feature==="super-admin"||feature==="fretes2")return false;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
     const role=String(tenantSession.perfil||"").trim().toUpperCase();
-    if(feature==="cadastro-solicitacoes")return true;
+    if(feature==="cadastro-solicitacoes")return modules.includes("cadastro-solicitacoes");
+    if(feature==="execucao-cadastros")return modules.includes("execucao-cadastros")&&
+      (["ADMINISTRADOR","GOADM"].includes(role)||window.__PORTAL_CADASTRO_EXECUTOR===true);
     // PISO only gets the empty Home entrypoint and an enabled Piso 2.
     if(role==="PISO")return feature==="home" ||
       (feature==="piso2" && modules.includes("piso2"));
@@ -472,6 +474,8 @@ function canAccessFeature(featureKey, context=""){
   }
 
   if(feature==="cadastro-solicitacoes")return isAuthedHome();
+  if(feature==="execucao-cadastros")return isAuthedHome()&&
+    (["ADMINISTRADOR","GOADM"].includes(profile)||window.__PORTAL_CADASTRO_EXECUTOR===true);
   // PISO cannot inherit global support, Piso 1 or other modules.
   if(profile==="PISO")return isAuthedHome() && feature==="piso2";
 
@@ -745,6 +749,15 @@ const PORTAL_NAV_ITEMS = [
     paths:["cadastro-solicitacoes.html"],
     secondary:true,
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 9h8M8 13h8M8 17h4"/></svg>'
+  },
+  {
+    key:"execucao-cadastros",
+    label:"Exec. Cadastros",
+    feature:"execucao-cadastros",
+    href:"./execucao-cadastros.html",
+    paths:["execucao-cadastros.html"],
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM8 9l2 2 4-4M8 16h9M16 9h2"/></svg>'
   },
   {
     key:"cadastros",

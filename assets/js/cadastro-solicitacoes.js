@@ -7,7 +7,7 @@ const root="https://api.portalfrete.net.br/v1/cadastro-solicitacoes";
 const SLOTS=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao"];
 const STEPS=["RECEBIMENTO","CONFERENCIA DOCUMENTAL","CONSULTA REFERENCIAS","CADASTRO SISTEMA TERCEIRO","REVISAO","CONCLUIDO"];
 let all=[],executor=false,storage=false,selected=null,draftId="",busy=false,userId="";
-let previewBlobUrl=null,previewSequence=0,checklistBusy=false,draftTrayOpen=false;
+let previewBlobUrl=null,previewSequence=0,draftTrayOpen=false;
 const CHECK_LABELS={criminal:"Consulta criminal",cnh:"Validação CNH",documentos:"Documentos",biometria:"Biometria",referencia1:"Referência 1",referencia2:"Referência 2",referencia3:"Referência 3",telefone_proprietario:"Telefone proprietário",telefone_motorista:"Telefone motorista"};
 const CHECK_STATUS={OK:"Conferido",PENDENTE:"Pendente",REVISAR:"Revisar"};
 function numeroCadastro(item){
@@ -37,6 +37,33 @@ function smallProgress(done){
 const iso=d=>{if(!d)return"";const value=new Date(String(d).replace(" ","T")+"Z");return isNaN(value)?String(d):value.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
 const titleStatus=s=>({RASCUNHO:"Rascunho",FILA:"Na fila",ANDAMENTO:"Em andamento","AGUARDANDO APROVACAO":"Aguardando aprovação",PENDENTE:"Pendente",REPROVADO:"Reprovado",APROVADO:"Aprovado"}[s]||s);
 const el=(tag,txt="",cls="")=>{const node=document.createElement(tag);if(cls)node.className=cls;node.textContent=txt;return node;};
+// Cada conferência salva individualmente, sem recriar o modal e sem perder a rolagem.
+function paintCheckRow(row,icon,label,estado){
+ row.dataset.checkState=estado;
+ icon.textContent=estado==="OK"?"✓":estado==="REVISAR"?"!":"·";
+ label.textContent=CHECK_STATUS[estado]||"Pendente";
+}
+function updateChecklistCount(){
+ const rows=Array.from($("cadChecklist").querySelectorAll(".cad-check-row"));
+ const total=rows.length;
+ const done=rows.filter(row=>row.dataset.checkState==="OK").length;
+ $("cadChecklistCount").textContent=done+" / "+total+" conferidos";
+ $("cadProgressTrack").setAttribute("aria-valuemax",String(total||9));
+ $("cadProgressTrack").setAttribute("aria-valuenow",String(done));
+ $("cadProgressBar").style.width=(total?Math.round(100*done/total):0)+"%";
+ return {done,total};
+}
+function checklistFeedback(message,kind="ok"){
+ const target=$("cadChecklistSaveStatus");
+ if(target){target.textContent=message;target.dataset.state=kind;}
+}
+function appendCheckHistory(label,estado){
+ const box=el("div","","cad-history-item");
+ box.append(el("strong","Verificação atualizada"),
+   el("p","Checklist: "+label+" → "+estado),
+   el("small","Responsável: "+userId+" · "+new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})));
+ $("cadHistorico").append(box);
+}
 function alertMsg(text,error=false){const box=$("cadAlert");box.textContent=text;box.className="cad-alert"+(error?" error":"");box.hidden=false;box.scrollIntoView({block:"nearest",behavior:"smooth"});}
 async function api(path="",method="GET",body){
  const headers={"Accept":"application/json"};
@@ -233,16 +260,12 @@ async function openDetail(id){
   if(selected.observacoes)info.append(itemInfo("Observações",selected.observacoes));
   const checklist=$("cadChecklist");checklist.replaceChildren();
   const checks=Array.isArray(d.checklist)?d.checklist:[];
-  const done=checks.filter(item=>item.estado==="OK").length;
-  $("cadChecklistCount").textContent=done+" / "+checks.length+" conferidos";
-  const progress=$("cadProgressTrack");progress.setAttribute("aria-valuemax",String(checks.length||9));
-  progress.setAttribute("aria-valuenow",String(done));
-  $("cadProgressBar").style.width=(checks.length?Math.round(done*100/checks.length):0)+"%";
   const canMark=executionView&&executor&&selected.executor===userId&&
     !["FILA","RASCUNHO","APROVADO","REPROVADO"].includes(selected.status);
   $("cadChecklistHelp").textContent=canMark?
-    "Marque cada conferência. O histórico registra automaticamente o usuário, o horário e o resultado.":
-    "Acompanhe a análise da equipe. Cada mudança aparece no histórico do protocolo.";
+    "Ao selecionar Conferido, Pendente ou Revisar, o sistema salva automaticamente. O botão de andamento é apenas para situação e etapa.":
+    "Acompanhe as conferências da equipe em tempo real ao atualizar o protocolo.";
+  checklistFeedback(canMark?"Salvamento automático ativado.":"Conferências registradas.","ok");
   for(const check of checks){
    const line=el("div","","cad-check-row");
    line.dataset.checkState=check.estado;
@@ -259,20 +282,45 @@ async function openDetail(id){
      const option=document.createElement("option");option.value=key;option.textContent=label;
      options.append(option);
     }
-    options.value=check.estado;options.disabled=checklistBusy;
+    options.value=check.estado;
     options.onchange=async()=>{
-     if(checklistBusy)return;
-     checklistBusy=true;options.disabled=true;
+     const previous=line.dataset.checkState,next=options.value;
+     if(previous===next)return;
+     const ticketId=selected.id,checkLabel=check.label||CHECK_LABELS[check.key]||check.key;
+     // Atualização otimista: contador e barra reagem instantaneamente.
+     paintCheckRow(line,leading,result,next);
+     updateChecklistCount();
+     options.disabled=true;line.setAttribute("aria-busy","true");
+     checklistFeedback("Salvando "+checkLabel+"...","saving");
      try{
-      await api("/"+selected.id+"/checklist","POST",{item:check.key,estado:options.value});
-      const id=selected.id;await refresh();await openDetail(id);
-     }catch(error){alertMsg("Falha ao salvar conferência: "+error.message,true);options.value=check.estado;options.disabled=false;}
-     finally{checklistBusy=false;}
+      const response=await api("/"+ticketId+"/checklist","POST",{item:check.key,estado:next});
+      if(response?.estado!==next)throw Error("O servidor não confirmou a conferência.");
+      check.estado=next;
+      // O usuário pode ter aberto outro protocolo enquanto o POST estava em curso.
+      if(selected?.id===ticketId&&checklist.contains(line)){
+       let updated=txt.querySelector("small");
+       if(!updated){updated=el("small");txt.append(updated);}
+       updated.textContent="Atualizado por "+userId+" · "+new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+       appendCheckHistory(checkLabel,next);
+       const progress=updateChecklistCount();
+       checklistFeedback("Conferência salva automaticamente. "+progress.done+"/"+progress.total+" concluídas.","ok");
+      }
+     }catch(error){
+      if(selected?.id===ticketId&&checklist.contains(line)){
+       paintCheckRow(line,leading,result,previous);
+       options.value=previous;
+       updateChecklistCount();
+       checklistFeedback("Não foi possível salvar "+checkLabel+": "+error.message+" Selecione novamente para tentar.","error");
+      }
+     }finally{
+      options.disabled=false;line.removeAttribute("aria-busy");
+     }
     };
     line.append(options);
    }
    checklist.append(line);
   }
+  updateChecklistCount();
   const steps=$("cadEtapas");steps.replaceChildren();const current=STEPS.indexOf(selected.etapa);
   STEPS.forEach((name,i)=>steps.append(el("div",(i+1)+". "+name,"cad-step"+(i<=current?" done":""))));
   const docs=$("cadAnexos");docs.replaceChildren();

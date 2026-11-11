@@ -7,7 +7,7 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="../assets/css/app.css">
- <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=8-quadro-unico">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=10-autosave-checklist">
 </head>
 <body class="cadastro-app" data-cadastro-visao="solicitante">
 <main class="cad-shell">
@@ -92,6 +92,7 @@
      <div class="cad-section-heading"><h3>Checklist de conferência</h3><strong id="cadChecklistCount">0 / 9 conferidos</strong></div>
      <div id="cadProgressTrack" class="cad-progress-track" role="progressbar" aria-label="Progresso da conferência" aria-valuemin="0" aria-valuemax="9" aria-valuenow="0"><div id="cadProgressBar" class="cad-progress-bar"></div></div>
      <p class="cad-tip" id="cadChecklistHelp">A equipe atualiza cada conferência. As alterações ficam registradas no histórico.</p>
+     <div id="cadChecklistSaveStatus" class="cad-check-save-status" role="status" aria-live="polite">Conferências registradas.</div>
      <div id="cadChecklist" class="cad-checklist"></div>
     </section>
     <section class="cad-detail-section">
@@ -143,5 +144,5 @@
  </dialog>
  <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
  <script src="../assets/js/auth.js?v=3-ambientes"></script>
- <script src="../assets/js/cadastro-solicitacoes.js?v=9-minha-execucao"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=10-autosave-checklist"></script>
 </body></html>

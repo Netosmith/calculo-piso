@@ -32,6 +32,6 @@ test("Número #00001 e placa principal aparecem nas duas telas",()=>{
  assert.match(js,/Protocolo interno:/);
  assert.doesNotThrow(()=>new Script(js));
  for(const page of ["cadastro-solicitacoes","execucao-cadastros"]){
-  assert.match(read("pages/"+page+".html"),/cadastro-solicitacoes[.]js[?]v=9-minha-execucao/);
+  assert.match(read("pages/"+page+".html"),/cadastro-solicitacoes[.]js[?]v=10-autosave-checklist/);
  }
 });

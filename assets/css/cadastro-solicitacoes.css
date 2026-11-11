@@ -276,3 +276,26 @@ body.cadastro-app .cad-draft-ticket:hover{border-color:#168e69;background:#f0faf
  body.cadastro-app .cad-workboard-tools .cad-tools{flex:1;width:100%}
  body.cadastro-app .cad-workboard-tools select,body.cadastro-app .cad-workboard-tools input{flex:1;width:auto;min-width:130px}
 }
+
+/* Checklist: confirmação automática, contador instantâneo e salvamento por item. */
+body.cadastro-app .cad-check-save-status{
+ margin:8px 0 12px;
+ padding:8px 10px;
+ background:#eef8f4;
+ border:1px solid #cce9dd;
+ border-radius:8px;
+ color:#24775a;
+ font-size:11px;
+ line-height:1.45;
+}
+body.cadastro-app .cad-check-save-status[data-state="saving"]{
+ color:#245e91;background:#f0f7ff;border-color:#cddff2;
+}
+body.cadastro-app .cad-check-save-status[data-state="error"]{
+ color:#a52b29;background:#fff0ee;border-color:#f0c0bb;
+}
+body.cadastro-app .cad-check-row[aria-busy="true"]{
+ opacity:.78;outline:1px dashed #9bc8e3;outline-offset:-2px;
+}
+body.cadastro-app .cad-check-row[aria-busy="true"] .cad-check-select{cursor:progress}
+body.cadastro-app .cad-progress-bar{transition:width .16s ease-in-out}

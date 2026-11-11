@@ -7,6 +7,10 @@ const root="https://api.portalfrete.net.br/v1/cadastro-solicitacoes";
 const SLOTS=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao"];
 const STEPS=["RECEBIMENTO","CONFERENCIA DOCUMENTAL","CONSULTA REFERENCIAS","CADASTRO SISTEMA TERCEIRO","REVISAO","CONCLUIDO"];
 let all=[],executor=false,storage=false,selected=null,draftId="",busy=false,userId="";
+let previewBlobUrl=null,previewSequence=0,checklistBusy=false;
+const CHECK_LABELS={criminal:"Consulta criminal",cnh:"Validação CNH",documentos:"Documentos",biometria:"Biometria",referencia1:"Referência 1",referencia2:"Referência 2",referencia3:"Referência 3",telefone_proprietario:"Telefone proprietário",telefone_motorista:"Telefone motorista"};
+const CHECK_STATUS={OK:"Conferido",PENDENTE:"Pendente",REVISAR:"Revisar"};
+
 const iso=d=>{if(!d)return"";const value=new Date(String(d).replace(" ","T")+"Z");return isNaN(value)?String(d):value.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
 const titleStatus=s=>({RASCUNHO:"Rascunho",FILA:"Na fila",ANDAMENTO:"Em andamento","AGUARDANDO APROVACAO":"Aguardando aprovação",PENDENTE:"Pendente",REPROVADO:"Reprovado",APROVADO:"Aprovado"}[s]||s);
 const el=(tag,txt="",cls="")=>{const node=document.createElement(tag);if(cls)node.className=cls;node.textContent=txt;return node;};
@@ -29,24 +33,37 @@ function applyCounts(){for(const [id,statuses] of [["cadFila",["FILA"]],["cadAnd
 function renderBoard(){
  if(!executionView)return;
  const board=$("cadKanban");board.replaceChildren();
- for(const [label,sub,statuses] of [
-  ["01 · Na fila","Aguardando responsável",["FILA"]],
-  ["02 · Em andamento","Cadastros em análise",["ANDAMENTO"]],
-  ["03 · Aprovação","Validação final",["AGUARDANDO APROVACAO"]],
-  ["04 · Pendências","Aguardando correção",["PENDENTE"]]
- ]){
-  const lane=el("section","","cad-lane"),top=el("div","","cad-lane-head"),list=el("div","","cad-lane-items");
-  const items=all.filter(t=>statuses.includes(t.status));
-  top.append(el("strong",label),el("span",String(items.length),"cad-lane-count"));lane.append(top,el("small",sub));
-  if(!items.length)list.append(el("p","Nenhum cadastro nesta etapa.","cad-lane-empty"));
-  for(const t of items.slice(0,15)){
-   const button=el("button","","cad-lane-ticket");button.type="button";
-   button.append(el("small",t.protocolo),el("strong",t.motorista),el("span",t.placas),el("em",t.executor?"Responsável: "+t.executor:"Aguardando responsável"));
-   button.onclick=()=>openDetail(t.id);list.append(button);
+ const search=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
+ const base=all.filter(t=>(!filter||t.status===filter)&&
+   [t.protocolo,t.motorista,t.placas,t.solicitante].some(v=>String(v||"").toUpperCase().includes(search)));
+ const lanes=[
+  ["FILA","Fila","#1475da"],["ANDAMENTO","Em andamento","#1c9d68"],
+  ["AGUARDANDO APROVACAO","Aguardando aprovação","#6559d5"],
+  ["PENDENTE","Pendente","#e2a329"],["REPROVADO","Reprovado","#da5156"],
+  ["APROVADO","Aprovado","#16a46f"]
+ ];
+ for(const [status,label,color] of lanes){
+  const items=base.filter(t=>t.status===status);
+  const lane=el("section","","cad-lane");
+  lane.style.setProperty("--cad-lane-color",color);
+  const head=el("div","","cad-lane-head");
+  head.append(el("strong",label),el("span",String(items.length),"cad-lane-count"));
+  lane.append(head);
+  const list=el("div","","cad-lane-items");
+  if(!items.length)list.append(el("p","Sem chamados nesta etapa.","cad-lane-empty"));
+  for(const ticket of items.slice(0,30)){
+   const b=el("button","","cad-lane-ticket");b.type="button";
+   const meta=el("div","","cad-lane-ticket-meta");
+   meta.append(el("span",ticket.protocolo),el("span",iso(ticket.criadoEm)));
+   b.append(meta,el("strong",ticket.motorista),el("span",ticket.placas),
+     el("small",ticket.executor?"Executor: "+ticket.executor:"Aguardando responsável"));
+   if(ticket.status==="FILA")b.append(el("em","Clique para assumir →"));
+   b.onclick=()=>openDetail(ticket.id);list.append(b);
   }
   lane.append(list);board.append(lane);
  }
 }
+
 async function assumeTicket(id){
  try{await api("/"+id+"/assumir","POST",{});await refresh();await openDetail(id);}
  catch(error){alertMsg(error.message,true);await refresh().catch(()=>{});}
@@ -61,6 +78,7 @@ function render(){
   const b=el(executionView?"article":"button","","cad-ticket");if(!executionView)b.type="button";
   const head=el("div","","cad-ticket-head");head.append(el("strong",c.protocolo),statusChip(c.status));b.append(head);
   b.append(el("h3",c.motorista),el("p",c.placas));
+  if(!executionView)b.append(el("div",c.executor?"Responsável: "+c.executor:"Aguardando responsável","cad-ticket-assignee"));
   const foot=el("div","","cad-ticket-foot");foot.append(el("span",iso(c.criadoEm)),el("span",c.status==="RASCUNHO"?"Completar anexos":c.executor?"Executor: "+c.executor:"Abrir detalhes"));b.append(foot);
   if(executionView){
    const actions=el("div","","cad-ticket-actions"),details=el("button","Abrir análise","secondary");
@@ -140,24 +158,78 @@ async function openDetail(id){
   $("cadDetailProtocolo").textContent=selected.protocolo;
   $("cadDetailTitle").textContent=selected.motorista;
   $("cadDetailMeta").textContent=titleStatus(selected.status)+" · Aberto em "+iso(selected.criadoEm)+" · Solicitante: "+selected.solicitante;
+  const badge=$("cadDetailStatus");badge.textContent=titleStatus(selected.status);badge.dataset.state=selected.status;
+  $("cadDetailOwner").textContent=selected.executor?"Executor: "+selected.executor:"Aguardando responsável";
   const info=$("cadDetailInfo");info.replaceChildren();
-  [["Contato do motorista",selected.contatoMotorista],["Proprietário",selected.proprietario],["Contato do proprietário",selected.contatoProprietario],["Placas",selected.placas],["Executor",selected.executor||"Não assumido"],["Situação",titleStatus(selected.status)]].forEach(x=>info.append(itemInfo(...x)));
+  [["Motorista",selected.motorista],["Telefone do motorista",selected.contatoMotorista],
+   ["Proprietário",selected.proprietario],["Telefone do proprietário",selected.contatoProprietario],
+   ["Placas",selected.placas],["Solicitante",selected.solicitante]].forEach(values=>info.append(itemInfo(...values)));
   (selected.referencias||[]).forEach((ref,i)=>info.append(itemInfo("Referência "+(i+1),String(ref.nome||"")+" · "+String(ref.telefone||""))));
   if(selected.observacoes)info.append(itemInfo("Observações",selected.observacoes));
+  const checklist=$("cadChecklist");checklist.replaceChildren();
+  const checks=Array.isArray(d.checklist)?d.checklist:[];
+  const done=checks.filter(item=>item.estado==="OK").length;
+  $("cadChecklistCount").textContent=done+" / "+checks.length+" conferidos";
+  const progress=$("cadProgressTrack");progress.setAttribute("aria-valuemax",String(checks.length||9));
+  progress.setAttribute("aria-valuenow",String(done));
+  $("cadProgressBar").style.width=(checks.length?Math.round(done*100/checks.length):0)+"%";
+  const canMark=executionView&&executor&&selected.executor===userId&&
+    !["FILA","RASCUNHO","APROVADO","REPROVADO"].includes(selected.status);
+  $("cadChecklistHelp").textContent=canMark?
+    "Marque cada conferência. O histórico registra automaticamente o usuário, o horário e o resultado.":
+    "Acompanhe a análise da equipe. Cada mudança aparece no histórico do protocolo.";
+  for(const check of checks){
+   const line=el("div","","cad-check-row");
+   line.dataset.checkState=check.estado;
+   const leading=el("span",check.estado==="OK"?"✓":check.estado==="REVISAR"?"!":"·","cad-check-icon");
+   const txt=el("div","","cad-check-text");
+   txt.append(el("strong",check.label||CHECK_LABELS[check.key]||check.key));
+   if(check.atualizadoEm)txt.append(el("small","Atualizado por "+check.autor+" · "+iso(check.atualizadoEm)));
+   const result=el("span",CHECK_STATUS[check.estado]||"Pendente","cad-check-state");
+   line.append(leading,txt,result);
+   if(canMark){
+    const options=el("select","","cad-check-select");
+    options.setAttribute("aria-label","Resultado: "+(check.label||check.key));
+    for(const [key,label] of [["PENDENTE","Pendente"],["OK","Conferido"],["REVISAR","Revisar"]]){
+     const option=document.createElement("option");option.value=key;option.textContent=label;
+     options.append(option);
+    }
+    options.value=check.estado;options.disabled=checklistBusy;
+    options.onchange=async()=>{
+     if(checklistBusy)return;
+     checklistBusy=true;options.disabled=true;
+     try{
+      await api("/"+selected.id+"/checklist","POST",{item:check.key,estado:options.value});
+      const id=selected.id;await refresh();await openDetail(id);
+     }catch(error){alertMsg("Falha ao salvar conferência: "+error.message,true);options.value=check.estado;options.disabled=false;}
+     finally{checklistBusy=false;}
+    };
+    line.append(options);
+   }
+   checklist.append(line);
+  }
   const steps=$("cadEtapas");steps.replaceChildren();const current=STEPS.indexOf(selected.etapa);
   STEPS.forEach((name,i)=>steps.append(el("div",(i+1)+". "+name,"cad-step"+(i<=current?" done":""))));
   const docs=$("cadAnexos");docs.replaceChildren();
-  if(!(d.anexos||[]).length)docs.append(el("small","Nenhum anexo."));
+  if(!(d.anexos||[]).length)docs.append(el("p","Nenhum arquivo anexado ainda.","cad-tip"));
   for(const doc of d.anexos||[]){
-   const button=el("button",doc.slot.toUpperCase()+" · "+doc.nome);button.type="button";
-   button.onclick=()=>downloadDoc(id,doc);docs.append(button);
+   const row=el("div","","cad-file-item");
+   const icon=el("span",doc.mime==="application/pdf"?"PDF":"IMG","cad-file-icon");
+   const detail=el("div","","cad-file-details");
+   detail.append(el("strong",doc.nome),el("small",String(doc.slot||"").replaceAll("_"," ")+" · "+(Number(doc.bytes||0)/1048576).toFixed(1)+" MB"));
+   const actions=el("div","","cad-file-actions");
+   const viewButton=el("button","Visualizar","secondary");viewButton.type="button";
+   viewButton.onclick=()=>previewDoc(id,doc);
+   const download=el("button","Baixar","secondary");download.type="button";
+   download.onclick=()=>downloadDoc(id,doc);
+   actions.append(viewButton,download);row.append(icon,detail,actions);docs.append(row);
   }
   const hist=$("cadHistorico");hist.replaceChildren();
   for(const entry of d.historico||[]){
    const box=el("div","","cad-history-item");
-   box.append(el("strong",titleStatus(entry.status)+" · "+entry.etapa));
+   box.append(el("strong",entry.motivo?.startsWith("Checklist:")?"Verificação atualizada":titleStatus(entry.status)+" · "+entry.etapa));
    if(entry.motivo)box.append(el("p",entry.motivo));
-   box.append(el("small",(entry.autor_id||"")+" · "+iso(entry.criado_em)));hist.append(box);
+   box.append(el("small","Responsável: "+(entry.autor_id||"")+" · "+iso(entry.criado_em)));hist.append(box);
   }
   const chat=$("cadMensagens");chat.replaceChildren();
   if(!(d.mensagens||[]).length)chat.append(el("div","Nenhuma mensagem ainda.","cad-msg"));
@@ -179,6 +251,47 @@ async function openDetail(id){
   showDialog("cadDetailDialog");
  }catch(error){alertMsg(error.message,true);}
 }
+async function fetchPrivateDoc(id,doc){
+ const headers={"Accept":doc.mime||"application/octet-stream"};
+ const support=window.__PORTAL_TENANT_SESSION?.ownerSupport===true?window.__PORTAL_TENANT_EXPECTED:"";
+ if(support)headers["X-Portal-Support-Tenant"]=support;
+ const response=await fetch(root+"/"+id+"/anexos/"+doc.id+"?visao="+view,
+   {credentials:"include",cache:"no-store",headers});
+ if(!response.ok)throw Error("Não foi possível carregar este arquivo.");
+ const blob=await response.blob();
+ if(blob.size>6*1024*1024)throw Error("Arquivo excede o limite de visualização.");
+ return blob;
+}
+function resetPreview(){
+ previewSequence++;
+ if(previewBlobUrl)URL.revokeObjectURL(previewBlobUrl);
+ previewBlobUrl=null;
+ $("cadPreviewBody").replaceChildren();
+ $("cadPreviewDownload").onclick=null;
+}
+async function previewDoc(id,doc){
+ resetPreview();const seq=previewSequence;
+ const body=$("cadPreviewBody");body.append(el("p","Carregando visualização privada...","cad-tip"));
+ $("cadPreviewTitle").textContent=doc.nome;
+ $("cadPreviewDownload").onclick=()=>downloadDoc(id,doc);
+ showDialog("cadPreviewDialog");
+ try{
+  const blob=await fetchPrivateDoc(id,doc);
+  if(seq!==previewSequence)return;
+  previewBlobUrl=URL.createObjectURL(blob);body.replaceChildren();
+  if(doc.mime.startsWith("image/")){
+   const img=document.createElement("img");img.src=previewBlobUrl;img.alt="Visualização de "+doc.nome;
+   img.className="cad-preview-image";body.append(img);
+  }else if(doc.mime==="application/pdf"){
+   const frame=document.createElement("iframe");frame.src=previewBlobUrl;
+   frame.title="Visualização do PDF";frame.className="cad-preview-pdf";
+   frame.setAttribute("sandbox","allow-scripts");
+   body.append(frame,el("small","Caso o PDF não apareça no navegador, use Baixar documento.","cad-tip"));
+  }else body.append(el("p","Visualização indisponível para este formato. Use Baixar documento.","cad-tip"));
+ }catch(error){
+  if(seq===previewSequence){body.replaceChildren(el("p",error.message,"cad-tip"));}
+ }
+}
 async function downloadDoc(id,doc){
  try{
   const headers={},support=window.__PORTAL_TENANT_SESSION?.ownerSupport===true?window.__PORTAL_TENANT_EXPECTED:"";
@@ -198,8 +311,8 @@ async function boot(){
   const s=window.__PORTAL_TENANT_SESSION||result.session;
   if(!s?.usuario)throw Error("Sessão não autenticada.");
   userId=String(s.usuario||"");
-  $("cadCompany").textContent=s.transportadoraNome||"NOVA FROTA";
-  $("cadProfile").textContent=s.perfil||"USUÁRIO";
+  if($("cadCompany"))$("cadCompany").textContent=s.transportadoraNome||"NOVA FROTA";
+  if($("cadProfile"))$("cadProfile").textContent=s.perfil||"USUÁRIO";
   if(typeof bindLogoutButton==="function")bindLogoutButton();
   const config=await api("/config");
   executor=!!config.executor;
@@ -216,6 +329,7 @@ async function boot(){
  }catch(error){alertMsg("Não foi possível abrir o módulo: "+error.message,true);if($("cadNovo"))$("cadNovo").disabled=true;}
 }
 for(const close of document.querySelectorAll("[data-close]"))close.onclick=()=>closeDialog(close.dataset.close);
+$("cadPreviewDialog").addEventListener("close",resetPreview);
 if($("cadNovo"))$("cadNovo").onclick=newTicket;
 if($("cadForm"))$("cadForm").addEventListener("submit",sendForm);
 $("cadAtualizar").onclick=()=>refresh().catch(e=>alertMsg(e.message,true));

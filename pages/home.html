@@ -1379,7 +1379,7 @@
       if(description)description.textContent="Cálculo de Piso 2 (ANTT) e Solicitações de Cadastro";
       // Garante que nenhum outro link possa receber foco pelo teclado.
       document.querySelectorAll(".nf-tools > *").forEach(card=>{
-        if(!["piso2","cadastro-solicitacoes"].includes(card.getAttribute("data-feature"))){
+        if(!["piso2","cadastro-solicitacoes","solicitacao-troca-notas"].includes(card.getAttribute("data-feature"))){
           card.hidden=true;card.style.display="none";
         }
       });

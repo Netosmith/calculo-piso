@@ -166,3 +166,19 @@ body.cadastro-app .cad-mini-progress-fill{display:block;height:100%;background:l
 body.cadastro-app .cad-summary{display:none!important}
 body.cadastro-app .cad-workboard{margin-top:14px}
 body.cadastro-app[data-cadastro-visao="solicitante"] .cad-lane-ticket{cursor:pointer}
+
+/* Identificação visual concisa: número sequencial e placa do cavalo. */
+body.cadastro-app .cad-lane-ticket .cad-short-number,
+body.cadastro-app .cad-ticket-head .cad-short-number{
+ font-size:12px;font-weight:850;color:#1264aa;letter-spacing:.015em;white-space:nowrap;
+}
+body.cadastro-app .cad-lane-ticket .cad-card-plate{
+ color:#173d5b;font-weight:850;font-size:16px;line-height:1.15;letter-spacing:.035em;overflow-wrap:normal;
+}
+body.cadastro-app .cad-lane-ticket .cad-card-driver{
+ color:#506a80;font-size:11px;font-weight:550;line-height:1.3;overflow-wrap:anywhere;
+}
+body.cadastro-app .cad-ticket .cad-list-plate{
+ font-size:20px;letter-spacing:.045em;margin:13px 0 6px;color:#163b59;
+}
+body.cadastro-app .cad-ticket .cad-card-driver{font-size:12px;color:#607a8f;line-height:1.45;}

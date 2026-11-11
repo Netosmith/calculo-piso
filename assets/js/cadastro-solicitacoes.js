@@ -10,6 +10,19 @@ let all=[],executor=false,storage=false,selected=null,draftId="",busy=false,user
 let previewBlobUrl=null,previewSequence=0,checklistBusy=false;
 const CHECK_LABELS={criminal:"Consulta criminal",cnh:"Validação CNH",documentos:"Documentos",biometria:"Biometria",referencia1:"Referência 1",referencia2:"Referência 2",referencia3:"Referência 3",telefone_proprietario:"Telefone proprietário",telefone_motorista:"Telefone motorista"};
 const CHECK_STATUS={OK:"Conferido",PENDENTE:"Pendente",REVISAR:"Revisar"};
+function numeroCadastro(item){
+ const n=Number(item?.numeroCurto);
+ return Number.isSafeInteger(n)&&n>0 ? "#"+String(n).padStart(5,"0") : (item?.protocolo||"Sem número");
+}
+function placaPrincipal(placas){
+ const value=String(placas||"").trim().toUpperCase();
+ const match=value.match(/\b[A-Z]{3}[-\s]?[0-9][A-Z0-9][0-9]{2}\b/);
+ return match?match[0].replace(/[-\s]/g,""):(value.split(/[\s,;/|]+/).find(Boolean)||"Placa não informada");
+}
+function matchesCadastro(ticket,search){
+ return [ticket.protocolo,numeroCadastro(ticket),String(ticket.numeroCurto||""),ticket.placas,ticket.motorista,ticket.solicitante]
+  .some(value=>String(value||"").toUpperCase().includes(search));
+}
 function smallProgress(done){
  const value=Math.max(0,Math.min(9,Number(done)||0));
  const holder=el("div","","cad-mini-progress");
@@ -42,7 +55,7 @@ function renderBoard(){
  const board=$("cadKanban");board.replaceChildren();
  const search=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
  const base=all.filter(t=>(!filter||t.status===filter)&&
-   [t.protocolo,t.motorista,t.placas,t.solicitante].some(v=>String(v||"").toUpperCase().includes(search)));
+   matchesCadastro(t,search));
  const lanes=[
   ["FILA","Fila","#1475da"],["ANDAMENTO","Em andamento","#1c9d68"],
   ["AGUARDANDO APROVACAO","Aguardando aprovação","#6559d5"],
@@ -61,10 +74,12 @@ function renderBoard(){
   for(const ticket of items.slice(0,30)){
    const b=el("button","","cad-lane-ticket");b.type="button";
    const meta=el("div","","cad-lane-ticket-meta");
-   meta.append(el("span",ticket.protocolo),el("span",iso(ticket.criadoEm)));
-   b.append(meta,el("strong",ticket.motorista),el("span",ticket.placas),
+   meta.append(el("span",numeroCadastro(ticket),"cad-short-number"),el("span",iso(ticket.criadoEm)));
+   b.append(meta,el("strong",placaPrincipal(ticket.placas),"cad-card-plate"),
+     el("span",ticket.motorista,"cad-card-driver"),
      el("small",ticket.executor?"Executor: "+ticket.executor:"Aguardando responsável"),
      smallProgress(ticket.conferidos));
+    b.title="Cadastro "+numeroCadastro(ticket)+" · Placa "+placaPrincipal(ticket.placas)+" · "+ticket.motorista;
    if(ticket.status==="FILA")b.append(el("em",executionView?"Clique para assumir →":"Aguardando execução · Ver detalhes →"));
    b.onclick=()=>ticket.status==="RASCUNHO"&&!executionView?resume(ticket):openDetail(ticket.id);list.append(b);
   }
@@ -79,13 +94,13 @@ async function assumeTicket(id){
 function render(){
  renderBoard();
  const query=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
- const rows=all.filter(x=>(!filter||x.status===filter)&&[x.protocolo,x.motorista,x.placas,x.solicitante].some(v=>String(v||"").toUpperCase().includes(query)));
+ const rows=all.filter(x=>(!filter||x.status===filter)&&matchesCadastro(x,query));
  const grid=$("cadTickets");grid.replaceChildren();
  if(!rows.length){grid.append(el("div","Nenhuma solicitação encontrada.","cad-empty"));return;}
  for(const c of rows){
   const b=el(executionView?"article":"button","","cad-ticket");if(!executionView)b.type="button";
-  const head=el("div","","cad-ticket-head");head.append(el("strong",c.protocolo),statusChip(c.status));b.append(head);
-  b.append(el("h3",c.motorista),el("p",c.placas),smallProgress(c.conferidos));
+  const head=el("div","","cad-ticket-head");head.append(el("strong",numeroCadastro(c),"cad-short-number"),statusChip(c.status));b.append(head);
+  b.append(el("h3",placaPrincipal(c.placas),"cad-list-plate"),el("p",c.motorista,"cad-card-driver"),smallProgress(c.conferidos));
   if(!executionView)b.append(el("div",c.executor?"Responsável: "+c.executor:"Aguardando responsável","cad-ticket-assignee"));
   const foot=el("div","","cad-ticket-foot");foot.append(el("span",iso(c.criadoEm)),el("span",c.status==="RASCUNHO"?"Completar anexos":c.executor?"Executor: "+c.executor:"Abrir detalhes"));b.append(foot);
   if(executionView){
@@ -112,7 +127,7 @@ function resume(row){
  const form=$("cadForm");form.reset();
  for(const key of ["motorista","contatoMotorista","proprietario","contatoProprietario","placas","observacoes"])form.elements[key].value=row[key]||"";
  (row.referencias||[]).forEach((ref,i)=>{form.elements["ref"+(i+1)+"nome"].value=ref.nome;form.elements["ref"+(i+1)+"telefone"].value=ref.telefone});
- $("cadFormTitle").textContent="Complementar "+row.protocolo;
+ $("cadFormTitle").textContent="Complementar cadastro "+numeroCadastro(row);
  $("cadFormProgress").textContent="Selecione os documentos faltantes. Os anexos já enviados permanecem salvos.";
  showDialog("cadFormDialog");
 }
@@ -154,7 +169,7 @@ async function sendForm(event){
   }
   progress.textContent="Conferindo os anexos e encaminhando à fila...";
   const result=await api("/"+draftId+"/enviar","POST",{});
-  closeDialog("cadFormDialog");alertMsg("Solicitação "+result.protocolo+" enviada! Situação: FILA.");
+  closeDialog("cadFormDialog");alertMsg("Solicitação "+numeroCadastro(result)+" enviada! Situação: FILA.");
   draftId="";await refresh();
  }catch(error){progress.textContent="Envio incompleto. "+error.message+" O rascunho foi preservado.";await refresh().catch(()=>{});}
  finally{busy=false;btn.disabled=false;}
@@ -163,9 +178,9 @@ function itemInfo(label,value){const box=el("div");box.append(el("span",label),e
 async function openDetail(id){
  try{
   const d=await api("/"+id);selected=d.chamado;
-  $("cadDetailProtocolo").textContent=selected.protocolo;
+  $("cadDetailProtocolo").textContent="CADASTRO "+numeroCadastro(selected)+" · PLACA "+placaPrincipal(selected.placas);
   $("cadDetailTitle").textContent=selected.motorista;
-  $("cadDetailMeta").textContent=titleStatus(selected.status)+" · Aberto em "+iso(selected.criadoEm)+" · Solicitante: "+selected.solicitante;
+  $("cadDetailMeta").textContent=titleStatus(selected.status)+" · Aberto em "+iso(selected.criadoEm)+" · Solicitante: "+selected.solicitante+" · Protocolo interno: "+selected.protocolo;
   const badge=$("cadDetailStatus");badge.textContent=titleStatus(selected.status);badge.dataset.state=selected.status;
   $("cadDetailOwner").textContent=selected.executor?"Executor: "+selected.executor:"Aguardando responsável";
   const info=$("cadDetailInfo");info.replaceChildren();

@@ -1117,6 +1117,14 @@
           <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="m8 10 2 2 4-4M8 16h8"/></svg></span>
           <h2>Execução de Cadastros</h2><p>Fila geral de cadastros, análise e andamento das solicitações.</p><span class="nf-tool-arrow">→</span>
         </a>
+        <a class="nf-tool green" data-feature="solicitacao-troca-notas" href="./solicitacao-troca-notas.html" hidden style="display:none">
+          <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h12l3 3v15H5zM8 10h9M8 14h9M8 18h6"/></svg></span>
+          <h2>Solicitação de Troca de Notas</h2><p>Envie documentos e acompanhe cada troca solicitada.</p><span class="nf-tool-arrow">→</span>
+        </a>
+        <a class="nf-tool purple" data-feature="execucao-troca-notas" href="./execucao-troca-notas.html" hidden style="display:none">
+          <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16H5zM8 10l2 2 4-4M8 16h8"/></svg></span>
+          <h2>Execução de Troca de Notas</h2><p>Assuma a fila, resolva pendências e anexe a NF trocada.</p><span class="nf-tool-arrow">→</span>
+        </a>
         <a class="nf-tool green" data-feature="cadastros" href="./cadastros.html">
           <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 17c.5-2 1.5-3 3-3s2.5 1 3 3M14 9h4M14 13h4"/></svg></span><h2>Cadastros</h2><p>Cadastro geral do portal.</p><span class="nf-tool-arrow">→</span>
         </a>
@@ -1501,6 +1509,11 @@
 
         document.querySelectorAll("[data-feature]").forEach((card) => {
           const feature = card.getAttribute("data-feature");
+        if(feature==="solicitacao-troca-notas"||feature==="execucao-troca-notas"){
+          const allowed=window.__PORTAL_TROCA_MODULES_CONFIRMED?.[feature]===true;
+          card.hidden=!allowed;card.style.display=allowed?"":"none";
+          return;
+        }
         // Estes dois cards dependem exclusivamente da liberação vigente no backend.
         if(feature==="cadastro-solicitacoes" || feature==="execucao-cadastros"){
           const allowed=window.__PORTAL_CADASTRO_MODULES_CONFIRMED?.[feature]===true;
@@ -1575,6 +1588,11 @@
 
       document.querySelectorAll("[data-feature]").forEach((card) => {
         const feature = card.getAttribute("data-feature");
+        if(feature==="solicitacao-troca-notas"||feature==="execucao-troca-notas"){
+          const allowed=window.__PORTAL_TROCA_MODULES_CONFIRMED?.[feature]===true;
+          card.hidden=!allowed;card.style.display=allowed?"":"none";
+          return;
+        }
         // Estes dois cards dependem exclusivamente da liberação vigente no backend.
         if(feature==="cadastro-solicitacoes" || feature==="execucao-cadastros"){
           const allowed=window.__PORTAL_CADASTRO_MODULES_CONFIRMED?.[feature]===true;
@@ -1651,5 +1669,6 @@
   <script src="../assets/js/portal-preferences.js?v=20261106-art-default-off" defer></script>
   <script src="../assets/js/portal-preferences-advanced.js?v=7" defer></script>
   <script src="../assets/js/cadastro-exec-home.js?v=20261111-strict" defer></script>
+  <script src="../assets/js/troca-home.js?v=1" defer></script>
 </body>
 </html>

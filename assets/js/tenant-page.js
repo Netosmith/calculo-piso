@@ -18,7 +18,7 @@
  const login="/pages/"+slug+"/login.html";
  const allowed=new Set([
   "home.html","fretes.html","bi.html","divulgacao.html",
-  "share-clientes.html","controle.html","administrativo.html","cadastros.html","cadastro-solicitacoes.html","execucao-cadastros.html",
+  "share-clientes.html","controle.html","administrativo.html","cadastros.html","cadastro-solicitacoes.html","execucao-cadastros.html","solicitacao-troca-notas.html","execucao-troca-notas.html",
   "estadias.html","fretes-mercado.html","embarques.html","chamados.html",
   "patrimonio-br.html","relatorio.html","custo-filial.html",
   "custo-frota-pesada.html","monitoramento.html","calculo-piso.html",
@@ -221,7 +221,7 @@
      location.replace("./home.html");return;
    }
    // O link direto também depende do módulo estar ativo na sessão assinada.
-   if(["cadastro-solicitacoes.html","execucao-cadastros.html"].includes(page)){
+   if(["cadastro-solicitacoes.html","execucao-cadastros.html","solicitacao-troca-notas.html","execucao-troca-notas.html"].includes(page)){
     const key=page.slice(0,-5);
     if(!Array.isArray(session.modules)||!session.modules.includes(key)){
      location.replace("./home.html");return;

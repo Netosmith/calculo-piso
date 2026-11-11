@@ -22,6 +22,7 @@ import {publicTenantsController,tenantApiController,tenantContextController} fro
 import {hasTenantSessionCookie} from "./services/tenant-auth.js";
 import {errorResponse} from "./utils/response.js";
 import {cadastroController} from "./controllers/cadastro-solicitacoes.js";
+import {trocaNotasController} from "./controllers/troca-notas.js";
 
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
@@ -31,6 +32,7 @@ export async function routeRequest(request, env, ctx) {
   if(path==="/v1/tenant/context")return tenantContextController(request,env);
   if(path.startsWith("/v1/tenant/"))return tenantApiController(request,env);
   if(path==="/v1/cadastro-solicitacoes"||path.startsWith("/v1/cadastro-solicitacoes/"))return cadastroController(request,env);
+  if(path==="/v1/troca-notas"||path.startsWith("/v1/troca-notas/"))return trocaNotasController(request,env);
 
   // A consulta lê somente ofertas publicadas deliberadamente. Nenhum dado interno de tenant.
   if(path==="/v1/driver-freights"&&request.method==="GET")return driverFreightsController(request,env);

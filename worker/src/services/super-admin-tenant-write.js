@@ -106,8 +106,18 @@ export async function writeTenantCatalog(request,env,actor) {
       return writeTenantMembership(request,env,actor,membership[1],membership[2]||null);
     }
     const parts=action.match(/^\/([a-z0-9-]+)(\/modules)?$/);
-    if(!parts || !validId(parts[1])) return errorResponse("Rota de alteracao invalida.",404);
+    if(!parts || !(validId(parts[1])||parts[1]===LEGACY_NOVA_FROTA.id))return errorResponse("Rota de alteracao invalida.",404);
     const tenantId=parts[1];
+    if(tenantId===LEGACY_NOVA_FROTA.id){
+     if(parts[2]!=="/modules"||request.method!=="PUT")return errorResponse("Operação indisponível.",405);
+     if(!env.TENANT_BRANDS)return errorResponse("Armazenamento indisponível.",503);
+     const body=await jsonBody(request,["modules"]),list=body.modules;
+     if(!Array.isArray(list)||list.length>TENANT_MODULES.length||list.some(k=>typeof k!=="string"||!TENANT_MODULES.includes(k)))return errorResponse("Módulos inválidos.",400);
+     const enabled=["solicitacao-troca-notas","execucao-troca-notas"].filter(k=>list.includes(k));
+     await env.TENANT_BRANDS.put("tenant/nova-frota/private/optional-modules-v1.json",
+      JSON.stringify({version:1,modules:enabled,actor,at:new Date().toISOString()}),{httpMetadata:{contentType:"application/json"}});
+     return success({tenantId,modules:enabled});
+    }
     const existing=await findTenant(db,tenantId);
     if(!existing) return errorResponse("Transportadora nao encontrada.",404);
     if(!parts[2] && request.method==="PATCH") {

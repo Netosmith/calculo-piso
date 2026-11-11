@@ -231,12 +231,14 @@ const MODULES=[
  ['piso','Cálculo de Piso 1 (calculo-piso)'],['piso2','Cálculo de Piso 2 (calculo-antt)'],
  ['fretes','Fretes Operacional (unificado)'],
  ...FREIGHT_UFS.map(uf=>['fretes-'+uf.toLowerCase(),'Fretes-'+uf]),
- ['bi','BI'],['divulgacao','Divulgação'],['controle','Controle de Embarque'],['share','Share Clientes'],['ordem','Ordem de Carregamento'],['cadastros','Cadastros'],['cadastro-solicitacoes','Solicitações de Cadastro (todos os perfis)'],['execucao-cadastros','Execução de Cadastros (equipe autorizada)'],['estadias','Estadias'],['custo-frota','Custo de Frota'],['administrativo','Administrativo'],['monitoramento','Monitoramento'],
+ ['bi','BI'],['divulgacao','Divulgação'],['controle','Controle de Embarque'],['share','Share Clientes'],['ordem','Ordem de Carregamento'],['cadastros','Cadastros'],['cadastro-solicitacoes','Solicitações de Cadastro (todos os perfis)'],['execucao-cadastros','Execução de Cadastros (equipe autorizada)'],['solicitacao-troca-notas','Solicitação de Troca de Notas (todos os perfis)'],['execucao-troca-notas','Execução de Troca de Notas (equipe autorizada)'],['estadias','Estadias'],['custo-frota','Custo de Frota'],['administrativo','Administrativo'],['monitoramento','Monitoramento'],
  ['fretes-mercado','Fretes Mercado'],['custo-filial','Custo Filial'],['patrimonio','Patrimônio'],['embarques','Embarques'],['chamados','Suporte / Chamados']
 ];
 const $=id=>document.getElementById(id);
 let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,membershipReady=false,brandReady=false,mfaMembershipActive=false,mfaBrandActive=false,mfaToken="",mfaActive=false,logoObjectUrl=null,logoRequest=0;
 const canEdit=()=>Boolean(writeReady&&selected&&selected.id!=="nova-frota");
+const canEditModules=()=>Boolean(writeReady&&selected);
+const legacyOptionalNotes=new Set(["solicitacao-troca-notas","execucao-troca-notas"]);
 const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&selected?.id!=="nova-frota");
 const canEditBrand=()=>Boolean(canEdit()&&brandReady);
 let credentialReady=false,credentialProblem='';
@@ -259,7 +261,8 @@ function renderModules(){
  const tile=document.createElement('div');tile.className='tile';
  const wrapper=document.createElement('label');const check=document.createElement('input');check.type='checkbox';
  const novaFrotaDefault=selected?.id==="nova-frota"&&["cadastro-solicitacoes","execucao-cadastros"].includes(id);
- check.checked=novaFrotaDefault||Boolean(selected?.modules?.includes(id));check.disabled=!canEdit();
+ check.checked=novaFrotaDefault||Boolean(selected?.modules?.includes(id));
+ check.disabled=!canEdit()&&!(canEditModules()&&selected?.id==="nova-frota"&&legacyOptionalNotes.has(id));
  check.dataset.module=id;const text=document.createElement('span');text.textContent=novaFrotaDefault?label+" (ativo na Nova Frota)":label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
  }
 }
@@ -460,7 +463,7 @@ function render(){
  $('newCompany').disabled=!writeReady;
  $('renameCompany').disabled=!canEdit();
  $('toggleCompany').disabled=!canEdit();
- $('saveModules').disabled=!canEdit();
+ $('saveModules').disabled=!canEditModules();
  $('addMembership').disabled=!canEditMembership()||!credentialReady;
  $('brandFile').disabled=!canEditBrand();
  $('uploadLogo').disabled=!canEditBrand();
@@ -643,7 +646,7 @@ $('toggleCompany').onclick=async()=>{
  catch(error){writeError(error);}
 };
 $('saveModules').onclick=async()=>{
- if(!canEdit())return;
+ if(!canEditModules())return;
  const id=selected.id;
  const modules=[...$('moduleGrid').querySelectorAll('input[type=checkbox]')].filter(input=>input.checked).map((input,index)=>input.dataset.module);
  try{await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/modules','PUT',{modules});await refreshCompanies(id);notice('Módulos atualizados e registrados na auditoria.');}

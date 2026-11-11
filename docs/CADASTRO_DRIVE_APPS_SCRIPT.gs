@@ -16,7 +16,7 @@ function doPost(e) {
     if(!/^[a-f0-9-]{36}$/.test(p.ticketId||""))return result_({ok:false,error:"Protocolo inválido."});
     var folder=DriveApp.getFolderById(root);
     if(p.action==="upload"){
-      var slots=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao"];
+      var slots=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao","nota_origem","laudo","ticket_pesagem","ordem","nf_trocada"];
       var mimes=["application/pdf","image/jpeg","image/png","image/webp"];
       if(slots.indexOf(p.slot)<0||mimes.indexOf(p.mime)<0||
          !/^[A-Za-z0-9+/]+={0,2}$/.test(p.base64||"")||

@@ -99,7 +99,14 @@ export async function superAdminController(request, env, verifiedStagingSession 
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.
-    const legacy = {id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:[]};
+    const extraModules=await (async()=>{
+      try{
+       const obj=await env.TENANT_BRANDS?.get("tenant/nova-frota/private/optional-modules-v1.json");
+       const data=obj?await obj.json():{},allowed=new Set(["solicitacao-troca-notas","execucao-troca-notas"]);
+       return Array.isArray(data.modules)?data.modules.filter(k=>allowed.has(k)):[];
+      }catch{return [];}
+    })();
+    const legacy = {id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:extraModules};
     if (!env.TENANTS_DB) return success({transportadoras:[legacy],catalogo:"legado"});
     try {
       const result = await env.TENANTS_DB.prepare(

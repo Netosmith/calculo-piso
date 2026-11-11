@@ -37,9 +37,8 @@ async function api(path="",method="GET",body){
 function showDialog(id){const d=$(id);if(!d.open)d.showModal();}
 function closeDialog(id){$(id).close();}
 function statusChip(s){const span=el("span",titleStatus(s),"cad-status");span.dataset.state=s;return span;}
-function applyCounts(){for(const [id,statuses] of [["cadFila",["FILA"]],["cadAndamento",["ANDAMENTO","AGUARDANDO APROVACAO"]],["cadPendente",["PENDENTE","REPROVADO"]],["cadAprovados",["APROVADO"]]])$(id).textContent=all.filter(x=>statuses.includes(x.status)).length;}
 function renderBoard(){
- if(!executionView)return;
+ if(!$("cadKanban"))return;
  const board=$("cadKanban");board.replaceChildren();
  const search=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
  const base=all.filter(t=>(!filter||t.status===filter)&&
@@ -66,8 +65,8 @@ function renderBoard(){
    b.append(meta,el("strong",ticket.motorista),el("span",ticket.placas),
      el("small",ticket.executor?"Executor: "+ticket.executor:"Aguardando responsável"),
      smallProgress(ticket.conferidos));
-   if(ticket.status==="FILA")b.append(el("em","Clique para assumir →"));
-   b.onclick=()=>openDetail(ticket.id);list.append(b);
+   if(ticket.status==="FILA")b.append(el("em",executionView?"Clique para assumir →":"Aguardando execução · Ver detalhes →"));
+   b.onclick=()=>ticket.status==="RASCUNHO"&&!executionView?resume(ticket):openDetail(ticket.id);list.append(b);
   }
   lane.append(list);board.append(lane);
  }
@@ -78,7 +77,7 @@ async function assumeTicket(id){
  catch(error){alertMsg(error.message,true);await refresh().catch(()=>{});}
 }
 function render(){
- applyCounts();renderBoard();
+ renderBoard();
  const query=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
  const rows=all.filter(x=>(!filter||x.status===filter)&&[x.protocolo,x.motorista,x.placas,x.solicitante].some(v=>String(v||"").toUpperCase().includes(query)));
  const grid=$("cadTickets");grid.replaceChildren();

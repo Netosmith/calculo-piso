@@ -161,3 +161,8 @@ body.cadastro-app .cad-mini-progress{display:grid;gap:5px;width:100%;margin-top:
 body.cadastro-app .cad-mini-progress small{font-size:10px;color:#557d95}
 body.cadastro-app .cad-mini-progress-track{height:5px;border-radius:8px;background:#e1e9ee;overflow:hidden}
 body.cadastro-app .cad-mini-progress-fill{display:block;height:100%;background:linear-gradient(90deg,#177fd0,#11a978);border-radius:8px;transition:width .2s}
+
+/* O quadro de seis etapas substitui integralmente os antigos indicadores-resumo. */
+body.cadastro-app .cad-summary{display:none!important}
+body.cadastro-app .cad-workboard{margin-top:14px}
+body.cadastro-app[data-cadastro-visao="solicitante"] .cad-lane-ticket{cursor:pointer}

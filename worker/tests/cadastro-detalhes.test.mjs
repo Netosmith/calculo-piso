@@ -49,3 +49,17 @@ test("Checklist tem 9 conferências registradas por tenant e executor, sem aprov
  const workflow=load(".github/workflows/deploy-portal-hotfix.yml");
  assert.match(workflow,/run: \|\s+npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations\/super-admin\/0003_cadastro_solicitacoes\.sql\s+npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations\/super-admin\/0004_cadastro_checklist\.sql/);
 });
+
+test("Ambos os ambientes substituem indicadores duplicados pelo quadro de seis situações",()=>{
+ for(const name of ["cadastro-solicitacoes","execucao-cadastros"]){
+  const html=load("pages/"+name+".html");
+  assert.doesNotMatch(html,/class="cad-summary"/);
+  assert.match(html,/id="cadKanban"/);
+  assert.doesNotMatch(html,/id="cadFila"|id="cadAndamento"|id="cadPendente"|id="cadAprovados"/);
+ }
+ const js=load("assets/js/cadastro-solicitacoes.js");
+ assert.doesNotMatch(js,/applyCounts/);
+ assert.match(js,/if\(!\$\("cadKanban"\)\)return/);
+ assert.match(js,/executionView\?"Clique para assumir/);
+ assert.doesNotThrow(()=>new Script(js));
+});

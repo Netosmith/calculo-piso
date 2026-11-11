@@ -42,3 +42,116 @@ body[data-cadastro-visao="execucao"] .cad-hero{background:radial-gradient(circle
 body[data-cadastro-visao="execucao"] .cad-ticket{display:flex;flex-direction:column;min-height:195px}
 @media(max-width:1100px){.cad-kanban{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.cad-kanban{grid-template-columns:1fr}.cad-workboard-head{align-items:flex-start;flex-direction:column}.cad-hero-actions{flex-direction:column;align-items:stretch}}
+
+/* 2026-11-11: barra global única, painel compacto e detalhes no padrão do quadro de cadastros */
+body.cadastro-app .cad-topbar{display:none!important}
+body.cadastro-app .cad-shell{max-width:1600px;padding:14px clamp(12px,2vw,26px) 40px}
+body.cadastro-app .cad-hero{min-height:0;gap:22px;padding:19px 26px;border-radius:15px;box-shadow:0 9px 23px #163b5b12}
+body.cadastro-app .cad-hero h1{font-size:clamp(20px,2.3vw,28px);line-height:1.2;margin:7px 0 7px;letter-spacing:-.03em}
+body.cadastro-app .cad-hero p{font-size:12.5px;line-height:1.45;max-width:760px}
+body.cadastro-app .cad-hero .eyebrow{font-size:10px}
+body.cadastro-app .hero-action{padding:10px 15px;font-size:12px;border-radius:9px}
+body.cadastro-app .cad-summary{gap:12px;margin:14px 0}
+body.cadastro-app .cad-metric{padding:14px 17px;border-radius:11px;gap:3px}
+body.cadastro-app .cad-metric strong{font-size:25px}
+body.cadastro-app .cad-metric span,body.cadastro-app .cad-metric small{font-size:11px}
+body.cadastro-app .cad-alert{margin:12px 0;padding:11px 15px}
+body.cadastro-app .cad-workboard{margin-bottom:16px;border-radius:14px}
+body.cadastro-app .cad-workboard-head{padding:16px 20px}
+body.cadastro-app .cad-workboard-head h2{font-size:18px;margin:4px 0 5px}
+body.cadastro-app .cad-kanban{grid-template-columns:repeat(6,minmax(218px,1fr));overflow-x:auto;gap:9px;padding:12px;scrollbar-width:thin;align-items:start}
+body.cadastro-app .cad-lane{min-height:215px;gap:10px;padding:11px;background:#f5f7fb;border-top:4px solid var(--cad-lane-color,#1d80b5);border-radius:10px}
+body.cadastro-app .cad-lane-head strong{font-size:11px;text-transform:uppercase;letter-spacing:.015em}
+body.cadastro-app .cad-lane-count{background:#fff;color:var(--cad-lane-color,#24628a);border:1px solid #d9e5ee}
+body.cadastro-app .cad-lane-items{max-height:630px}
+body.cadastro-app .cad-lane-ticket{border-left:3px solid var(--cad-lane-color,#2a73ac);gap:7px;box-shadow:0 2px 9px #2343680c}
+body.cadastro-app .cad-lane-ticket-meta{display:flex;justify-content:space-between;gap:8px;color:#8190a0;font-size:10px}
+body.cadastro-app .cad-lane-ticket-meta span:first-child{color:#286995;font-weight:800}
+body.cadastro-app .cad-lane-ticket strong{font-size:12.5px}
+body.cadastro-app .cad-lane-ticket em{color:#177c57;font-size:10px;font-style:normal}
+body.cadastro-app .cad-panel{border-radius:14px}
+body.cadastro-app .cad-panel-head{padding:16px 20px}
+body.cadastro-app .cad-grid{gap:11px;padding:15px}
+body.cadastro-app .cad-ticket{border-radius:10px;padding:14px}
+body.cadastro-app .cad-ticket h3{margin:11px 0 5px}
+body.cadastro-app .cad-ticket-assignee{font-size:11px;margin-top:10px;color:#617e92}
+body.cadastro-app .cad-ticket-foot{margin-top:12px;padding-top:10px}
+body.cadastro-app .cad-dialog.detail{width:min(1220px,97vw);max-height:94vh;border-radius:15px}
+body.cadastro-app .cad-dialog.detail .cad-dialog-head{position:sticky;top:0;z-index:5;background:#fff;padding:17px 24px;box-shadow:0 4px 12px #17355708}
+body.cadastro-app .cad-dialog.detail .cad-dialog-head h2{font-size:21px;margin:4px 0}
+body.cadastro-app .cad-dialog.detail .cad-dialog-head p{font-size:11px}
+body.cadastro-app .cad-detail-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 24px;border-bottom:1px solid #e6edf3;background:#f8fbfe}
+body.cadastro-app .cad-detail-owner{font-size:11px;color:#57718a}
+body.cadastro-app .cad-detail-body{grid-template-columns:minmax(0,1.42fr) minmax(285px,.58fr)}
+body.cadastro-app .cad-detail-main{max-height:71vh;padding:18px 22px}
+body.cadastro-app .cad-detail-section{padding:14px 0 17px;border-bottom:1px solid #e6eef5}
+body.cadastro-app .cad-detail-section:first-child{padding-top:2px}
+body.cadastro-app .cad-detail-section h3{margin:0 0 13px;color:#193d58;font-size:14px}
+body.cadastro-app .cad-detail-info{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+body.cadastro-app .cad-detail-info div{min-width:0;overflow-wrap:anywhere;padding:11px;border-radius:9px}
+body.cadastro-app .cad-detail-info strong{font-size:12px;font-weight:700}
+body.cadastro-app .cad-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+body.cadastro-app .cad-section-heading h3{margin:0}
+body.cadastro-app #cadChecklistCount{color:#168b63;font-size:12px;white-space:nowrap}
+body.cadastro-app .cad-section-note{font-size:10px;color:#7992aa}
+body.cadastro-app .cad-progress-track{height:10px;background:#e1e9f0;border-radius:50px;overflow:hidden;box-shadow:inset 0 1px 3px #133d5711}
+body.cadastro-app .cad-progress-bar{width:0;height:100%;background:linear-gradient(90deg,#1776c9,#10a56d);border-radius:50px;transition:width .2s ease}
+body.cadastro-app .cad-check-section>.cad-tip{margin:8px 0 12px}
+body.cadastro-app .cad-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+body.cadastro-app .cad-check-row{display:flex;gap:9px;align-items:center;min-width:0;padding:11px;border:1px solid #dde7ef;border-radius:10px;background:#f9fbfd}
+body.cadastro-app .cad-check-row[data-check-state="OK"]{background:#effbf4;border-color:#bfe6d1}
+body.cadastro-app .cad-check-row[data-check-state="REVISAR"]{background:#fff3f1;border-color:#efcdc8}
+body.cadastro-app .cad-check-icon{flex:0 0 23px;width:23px;height:23px;display:grid;place-items:center;border-radius:100%;background:#d9e1e8;color:#728398;font-size:15px;font-weight:900}
+body.cadastro-app .cad-check-row[data-check-state="OK"] .cad-check-icon{background:#19a466;color:#fff}
+body.cadastro-app .cad-check-row[data-check-state="REVISAR"] .cad-check-icon{background:#db695d;color:#fff}
+body.cadastro-app .cad-check-text{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+body.cadastro-app .cad-check-text strong{font-size:11px;overflow-wrap:anywhere}
+body.cadastro-app .cad-check-text small{font-size:9px;color:#70869b;line-height:1.3}
+body.cadastro-app .cad-check-state{font-size:10px;color:#8093a3;white-space:nowrap}
+body.cadastro-app .cad-check-row[data-check-state="OK"] .cad-check-state{color:#16895d}
+body.cadastro-app .cad-check-row[data-check-state="REVISAR"] .cad-check-state{color:#bb5148}
+body.cadastro-app .cad-check-select{font:inherit;font-size:10px;max-width:105px;padding:7px 4px;border:1px solid #cbdae7;border-radius:7px;background:#fff;color:#173d57}
+body.cadastro-app .cad-timeline{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+body.cadastro-app .cad-step{font-size:10px;padding:10px}
+body.cadastro-app .cad-files{display:grid;gap:8px}
+body.cadastro-app .cad-file-item{display:flex;gap:11px;align-items:center;min-width:0;padding:10px;border:1px solid #e1e9f1;border-radius:9px;background:#fbfdff}
+body.cadastro-app .cad-file-icon{flex:none;width:38px;height:38px;display:grid;place-items:center;border-radius:8px;font-size:10px;font-weight:800;color:#24658e;background:#e6f3ff}
+body.cadastro-app .cad-file-details{display:grid;flex:1;min-width:0;gap:3px}
+body.cadastro-app .cad-file-details strong{font-size:11px;overflow-wrap:anywhere}
+body.cadastro-app .cad-file-details small{font-size:10px;color:#8596a9}
+body.cadastro-app .cad-file-actions{display:flex;gap:6px}
+body.cadastro-app .cad-file-actions button{font-size:10px;padding:8px 10px;white-space:nowrap}
+body.cadastro-app .cad-history{gap:8px}
+body.cadastro-app .cad-history-item{background:#f8fafc;border:1px solid #e1eaf2;border-left:3px solid #61a6d2;padding:11px 13px;border-radius:8px;font-size:11px;overflow-wrap:anywhere}
+body.cadastro-app .cad-history-item strong{font-size:11px}
+body.cadastro-app .cad-history-item p{margin:7px 0 0;line-height:1.55}
+body.cadastro-app .cad-history-item small{font-size:10px;color:#8598a6}
+body.cadastro-app .cad-chat-panel{padding:18px;max-height:71vh;overflow-y:auto;align-content:start}
+body.cadastro-app .cad-chat-panel h3{margin:5px 0 10px}
+body.cadastro-app .cad-messages{max-height:420px}
+body.cadastro-app .cad-preview-dialog{width:min(1050px,95vw);max-height:93vh}
+body.cadastro-app .cad-preview-body{padding:16px;max-height:75vh;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:12px;background:#f0f4f7}
+body.cadastro-app .cad-preview-image{max-width:100%;height:auto;max-height:70vh;object-fit:contain;box-shadow:0 5px 20px #12294420}
+body.cadastro-app .cad-preview-pdf{display:block;width:100%;height:min(68vh,780px);min-height:300px;border:0;background:#fff}
+body.cadastro-app .cad-preview-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #dce5eb;background:#fff}
+@media(max-width:970px){
+ body.cadastro-app .cad-detail-body{grid-template-columns:1fr}
+ body.cadastro-app .cad-detail-main,body.cadastro-app .cad-chat-panel{max-height:none}
+ body.cadastro-app .cad-detail-info{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.cadastro-app .cad-checklist{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ body.cadastro-app .cad-shell{padding:10px 10px 25px}
+ body.cadastro-app .cad-hero{padding:15px;gap:15px;border-radius:12px}
+ body.cadastro-app .cad-hero h1{font-size:21px}
+ body.cadastro-app .cad-hero-actions{gap:7px}
+ body.cadastro-app .cad-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body.cadastro-app .cad-kanban{grid-template-columns:repeat(6,minmax(222px,1fr));padding:10px}
+ body.cadastro-app .cad-detail-info{grid-template-columns:1fr}
+ body.cadastro-app .cad-dialog.detail .cad-dialog-head{padding:14px}
+ body.cadastro-app .cad-detail-summary{padding:11px 14px}
+ body.cadastro-app .cad-detail-main,body.cadastro-app .cad-chat-panel{padding:14px}
+ body.cadastro-app .cad-file-item{align-items:flex-start;flex-wrap:wrap}
+ body.cadastro-app .cad-file-actions{width:100%}
+ body.cadastro-app .cad-preview-body{max-height:68vh}
+}

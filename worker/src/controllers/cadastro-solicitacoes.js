@@ -93,6 +93,7 @@ async function principalFor(request,env){
   {tenantId:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil}:null;
 }
 function isExecutor(p,conf){
+ if(String(p.role||"").toUpperCase()==="PISO")return false;
  return isAdmin(p.role)||(conf?.executores||[]).includes(String(p.user).toUpperCase());
 }
 async function modulesForCadastros(env,tenantId){

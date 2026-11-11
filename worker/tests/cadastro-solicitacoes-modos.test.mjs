@@ -18,9 +18,10 @@ test("Visão execução é negada a solicitante e liberada somente para executor
 });
 test("API separa fila por empresa e visão mesmo para usuários administradores",()=>{
  const code=read("worker/src/controllers/cadastro-solicitacoes.js");
- assert.match(code,/if\(method==="GET"&&executionView&&!executor\)/);
+ assert.match(code,/if\(executionView&&\(!access\.executar\|\|!executor\)\)/);
  assert.match(code,/executionView\?\s*db\.prepare/);
  assert.match(code,/tenant_id=\? AND solicitante_id=\?/);
  assert.match(code,/tenant_id=\? AND status<>/);
  assert.match(code,/cadastroCanReadTicket\(view,executor,isOwner\)/);
+ assert.match(code,/modulesForCadastros\(env,p\.tenantId\)/);
 });

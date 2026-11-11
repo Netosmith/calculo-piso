@@ -72,3 +72,7 @@ CNH, fotos, telefone, endereço e referências são dados pessoais. Defina polí
 ## Checklist de execução
 
 A migração `0004_cadastro_checklist.sql` adiciona nove verificações por chamado e transportadora. Só o executor responsável pode marcar uma como **PENDENTE**, **REVISAR** ou **OK**. As alterações são auditadas no histórico. Para aprovar, todas as nove verificações devem estar OK. O workflow faz a migração antes do deploy.
+
+## Protocolo curto por transportadora
+
+A migração `0005_cadastro_numero_curto.sql` atribui números sequenciais por transportadora, a partir de `00001`. Os cadastros anteriores recebem números na ordem de criação. O novo número é gerado dentro do banco (trigger atômico). O protocolo interno antigo, o UUID, o histórico e os documentos permanecem intactos. Não reinicie o contador apagando dados.

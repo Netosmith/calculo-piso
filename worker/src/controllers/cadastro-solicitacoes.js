@@ -134,7 +134,7 @@ async function drive(conf,tenantId,op,data={}){
  }finally{clearTimeout(timer);}
 }
 const formatTicket=r=>({
- id:r.id,protocolo:r.protocolo,motorista:r.motorista,contatoMotorista:r.contato_motorista,
+ id:r.id,protocolo:r.protocolo,numeroCurto:Number(r.numero_curto)||null,motorista:r.motorista,contatoMotorista:r.contato_motorista,
  proprietario:r.proprietario,contatoProprietario:r.contato_proprietario,placas:r.placas,
  referencias:JSON.parse(r.referencias_json||"[]"),observacoes:r.observacoes,
  status:r.status,etapa:r.etapa,solicitante:r.solicitante_id,executor:r.executor_id,
@@ -191,8 +191,13 @@ export async function cadastroController(request,env){
    const protocolo="CAD-"+today+"-"+id.slice(0,8).toUpperCase();
    await db.prepare("INSERT INTO portal_cadastro_tickets(id,tenant_id,protocolo,solicitante_id,motorista,contato_motorista,proprietario,contato_proprietario,placas,referencias_json,observacoes) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
     .bind(id,p.tenantId,protocolo,p.user,motorista,contato,proprietario,contatoProprietario,placas,JSON.stringify(b.referencias.map(x=>({nome:x.nome.trim(),telefone:x.telefone.trim()}))),observacoes).run();
+   // O trigger do D1 aloca o próximo número na mesma transação do INSERT.
+   const allocated=await db.prepare("SELECT numero_curto FROM portal_cadastro_tickets WHERE id=? AND tenant_id=?")
+    .bind(id,p.tenantId).first();
+   if(!Number.isSafeInteger(allocated?.numero_curto)||allocated.numero_curto<1)
+    throw Error("Numeração curta indisponível. Verifique a migração do D1.");
    await history(db,p,id,"RASCUNHO","RECEBIMENTO");
-   return success({chamado:{id,protocolo,status:"RASCUNHO"}},201);
+   return success({chamado:{id,protocolo,numeroCurto:allocated.numero_curto,status:"RASCUNHO"}},201);
   }
   const m=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|enviar|assumir|situacao|mensagens|checklist))?$/);
   if(!m)return err("Rota inexistente.",404);
@@ -238,7 +243,7 @@ export async function cadastroController(request,env){
    const changed=await db.prepare("UPDATE portal_cadastro_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status='RASCUNHO'").bind(id,p.tenantId).run();
    if(changed.meta?.changes!==1)return err("Chamado já enviado.",409);
    await history(db,p,id,"FILA","RECEBIMENTO");
-   return success({protocolo:row.protocolo,status:"FILA"});
+   return success({protocolo:row.protocolo,numeroCurto:row.numero_curto,status:"FILA"});
   }
   if(action==="assumir"&&method==="POST"){
    if(!executor)return err("Acesso exclusivo da execução.",403);

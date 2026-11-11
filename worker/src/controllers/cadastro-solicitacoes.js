@@ -95,6 +95,14 @@ async function principalFor(request,env){
 function isExecutor(p,conf){
  return isAdmin(p.role)||(conf?.executores||[]).includes(String(p.user).toUpperCase());
 }
+async function modulesForCadastros(env,tenantId){
+ if(tenantId===LEGACY_NOVA_FROTA.id)return {solicitar:true,executar:true};
+ const rows=await env.TENANTS_DB.prepare(
+  "SELECT module_key FROM portal_tenant_modules WHERE tenant_id=? AND enabled=1 AND module_key IN ('cadastro-solicitacoes','execucao-cadastros')"
+ ).bind(tenantId).all();
+ const items=new Set((rows.results||[]).map(row=>row.module_key));
+ return {solicitar:items.has("cadastro-solicitacoes"),executar:items.has("execucao-cadastros")};
+}
 // Leitura tem escopos distintos. A tela de solicitações nunca recebe a fila geral,
 // mesmo quando o usuário também é executor.
 export function cadastroCanReadTicket(view,executor,isOwner){
@@ -133,8 +141,10 @@ export async function cadastroController(request,env){
  if(!env.TENANTS_DB)return err("Banco de chamados ainda não provisionado.",503);
  const p=await principalFor(request,env);
  if(!p)return err("Sessão inválida.",401);
+ const db=env.TENANTS_DB;
+ const access=await modulesForCadastros(env,p.tenantId);
  const conf=await configFor(env,p.tenantId);
- const executor=isExecutor(p,conf),db=env.TENANTS_DB;
+ const executor=access.executar&&isExecutor(p,conf);
  const url=new URL(request.url);
  const path=url.pathname.slice("/v1/cadastro-solicitacoes".length);
  const view=url.searchParams.get("visao")||"solicitante";
@@ -142,10 +152,17 @@ export async function cadastroController(request,env){
  const method=request.method;
  if(!["solicitante","execucao"].includes(view))return err("Visão de cadastro inválida.",400);
  if(method!=="GET"&&!safeWrite(request))return err("Origem não autorizada.",403);
- if(method==="GET"&&executionView&&!executor)return err("Acesso exclusivo da equipe de execução.",403);
+ if(path==="/config"&&method==="GET")
+  return success({empresa:p.tenantId,executor,solicitacoesHabilitadas:access.solicitar,execucaoHabilitada:access.executar,armazenamento:publicConfig(conf)});
+ if(executionView&&(!access.executar||!executor))
+  return err("Execução de cadastros não habilitada para este perfil ou transportadora.",403);
+ if(!executionView&&!access.solicitar)
+  return err("Solicitações de cadastro não habilitadas para esta transportadora.",403);
+ if((path.endsWith("/assumir")||path.endsWith("/situacao"))&&!executionView)
+  return err("Operação exclusiva da visão Execução de Cadastros.",403);
+ if((path===""||path==="/")&&method==="POST"&&executionView)
+  return err("Abra uma nova solicitação no painel do solicitante.",403);
  try{
-  if(path==="/config"&&method==="GET")
-    return success({empresa:p.tenantId,executor,armazenamento:publicConfig(conf)});
   if((path===""||path==="/")&&method==="GET"){
    const rows=await (executionView?
     db.prepare("SELECT * FROM portal_cadastro_tickets WHERE tenant_id=? AND status<>'RASCUNHO' ORDER BY CASE status WHEN 'FILA' THEN 0 WHEN 'PENDENTE' THEN 1 WHEN 'ANDAMENTO' THEN 2 ELSE 3 END, criado_em ASC LIMIT 250").bind(p.tenantId):
@@ -175,9 +192,8 @@ export async function cadastroController(request,env){
   const row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
   const isOwner=row.solicitante_id===p.user;
-  if(method==="GET"&&!cadastroCanReadTicket(view,executor,isOwner))
+  if(!cadastroCanReadTicket(view,executor,isOwner))
    return err("Chamado não autorizado nesta visão.",403);
-  if(method!=="GET"&&!executor&&!isOwner)return err("Chamado não autorizado.",403);
   if(row.status==="RASCUNHO"&&!isOwner)return err("Rascunho privado do solicitante.",403);
   if(action===""&&method==="GET"){
    const [docs,mensagens,historico]=await Promise.all([

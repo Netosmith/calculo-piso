@@ -238,7 +238,7 @@ const $=id=>document.getElementById(id);
 let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,membershipReady=false,brandReady=false,mfaMembershipActive=false,mfaBrandActive=false,mfaToken="",mfaActive=false,logoObjectUrl=null,logoRequest=0;
 const canEdit=()=>Boolean(writeReady&&selected&&selected.id!=="nova-frota");
 const canEditModules=()=>Boolean(writeReady&&selected);
-const legacyOptionalNotes=new Set(["solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"]);
+const legacyManageable=new Set(["piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros","cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo","monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados","solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"]);
 const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&selected?.id!=="nova-frota");
 const canEditBrand=()=>Boolean(canEdit()&&brandReady);
 let credentialReady=false,credentialProblem='';
@@ -260,10 +260,11 @@ function renderModules(){
   }
  const tile=document.createElement('div');tile.className='tile';
  const wrapper=document.createElement('label');const check=document.createElement('input');check.type='checkbox';
- const novaFrotaDefault=selected?.id==="nova-frota"&&["cadastro-solicitacoes","execucao-cadastros"].includes(id);
- check.checked=novaFrotaDefault||Boolean(selected?.modules?.includes(id));
- check.disabled=!canEdit()&&!(canEditModules()&&selected?.id==="nova-frota"&&legacyOptionalNotes.has(id));
- check.dataset.module=id;const text=document.createElement('span');text.textContent=novaFrotaDefault?label+" (ativo na Nova Frota)":label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
+ const isNovaFrota=selected?.id==="nova-frota";
+ check.checked=Boolean(selected?.modules?.includes(id));
+ check.disabled=isNovaFrota?!legacyManageable.has(id)||!canEditModules():!canEdit();
+ check.dataset.module=id;const text=document.createElement('span');
+ text.textContent=label+(isNovaFrota&&!legacyManageable.has(id)?" (não utilizado nesta base)":"");wrapper.append(check,text);tile.append(wrapper);root.append(tile);
  }
 }
 function renderUsers(){
@@ -648,7 +649,8 @@ $('toggleCompany').onclick=async()=>{
 $('saveModules').onclick=async()=>{
  if(!canEditModules())return;
  const id=selected.id;
- const modules=[...$('moduleGrid').querySelectorAll('input[type=checkbox]')].filter(input=>input.checked).map((input,index)=>input.dataset.module);
+ const modules=[...$('moduleGrid').querySelectorAll('input[type=checkbox]')]
+  .filter(input=>input.checked&&!input.disabled).map(input=>input.dataset.module);
  try{await writeRequest('/v1/super-admin/transportadoras/'+encodeURIComponent(id)+'/modules','PUT',{modules});await refreshCompanies(id);notice('Módulos atualizados e registrados na auditoria.');}
  catch(error){writeError(error);}
 };

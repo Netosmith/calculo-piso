@@ -429,6 +429,65 @@ function isStateAllowedForUser(uf){
   return userAllowedStates().includes(normalizeUpper(uf));
 }
 
+
+// Liberações globais da Nova Frota, validadas no Worker.
+// Não substituem nem ampliam os perfis GO, MT, PISO, COMERCIAL etc.
+const NOVA_MANAGED_FEATURES=new Set([
+ "piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros",
+ "cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo",
+ "monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados",
+ "solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"
+]);
+let novaFrotaEnabledModules=new Set();
+let novaFrotaModulesConfirmed=false;
+async function refreshNovaFrotaModuleGrants(session){
+ novaFrotaEnabledModules=new Set();
+ novaFrotaModulesConfirmed=false;
+ if(!session || session.tenantMode===true||session.transportadoraId!=="nova-frota")return;
+ try{
+  const response=await fetch("https://api.portalfrete.net.br/v1/nova-frota/modules",{
+   method:"GET",credentials:"include",cache:"no-store",headers:{Accept:"application/json"}
+  });
+  if(!response.ok)throw new Error("Permissões globais indisponíveis.");
+  const data=await response.json();
+  if(data?.ok!==true||data.empresa!=="nova-frota"||!Array.isArray(data.modules))
+   throw new Error("Resposta de permissões inválida.");
+  novaFrotaEnabledModules=new Set(data.modules.filter(m=>NOVA_MANAGED_FEATURES.has(m)));
+  novaFrotaModulesConfirmed=true;
+ }catch(error){
+  // Falhar fechado: jamais interpretar falha de rede como autorização.
+  console.warn("[AUTH] Não foi possível confirmar os módulos da Nova Frota.",error?.message||error);
+ }
+}
+function novaFrotaModuleGranted(feature){
+ return !NOVA_MANAGED_FEATURES.has(feature) ||
+  (novaFrotaModulesConfirmed&&novaFrotaEnabledModules.has(feature));
+}
+function enforceNovaFrotaPageGrant(session){
+ if(!session||session.tenantMode===true||session.transportadoraId!=="nova-frota")return true;
+ const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
+ const filenames={
+  "calculo-piso.html":"piso","calculo-antt.html":"piso2",
+  "fretes.html":"fretes","bi.html":"bi","divulgacao.html":"divulgacao",
+  "controle.html":"controle","share-clientes.html":"share",
+  "cadastros.html":"cadastros","cadastro-solicitacoes.html":"cadastro-solicitacoes",
+  "execucao-cadastros.html":"execucao-cadastros","estadias.html":"estadias",
+  "custo-frota-pesada.html":"custo-frota","administrativo.html":"administrativo",
+  "monitoramento.html":"monitoramento","fretes-mercado.html":"fretes-mercado",
+  "custo-filial.html":"custo-filial","patrimonio-br.html":"patrimonio",
+  "embarques.html":"embarques","chamados.html":"chamados",
+  "solicitacao-troca-notas.html":"solicitacao-troca-notas",
+  "execucao-troca-notas.html":"execucao-troca-notas",
+  "solicitacao-pedidos.html":"solicitacao-pedidos","execucao-pedidos.html":"execucao-pedidos"
+ };
+ const feature=filenames[file];
+ if(feature&&!novaFrotaModuleGranted(feature)){
+  window.location.replace("./home.html");
+  return false;
+ }
+ return true;
+}
+
 function featuresForProfile(profile){
   return STATE_FEATURES[normalizeUpper(profile)] || [];
 }
@@ -479,6 +538,7 @@ function canAccessFeature(featureKey, context=""){
     return featuresForProfile(role).includes(feature);
   }
 
+  if(!novaFrotaModuleGranted(feature))return false;
   if(feature==="cadastro-solicitacoes")return isAuthedHome();
   if(feature==="execucao-cadastros")return isAuthedHome()&&
     (["ADMINISTRADOR","GOADM"].includes(profile)||window.__PORTAL_CADASTRO_EXECUTOR===true);
@@ -487,7 +547,7 @@ function canAccessFeature(featureKey, context=""){
   if(feature==="solicitacao-pedidos"||feature==="execucao-pedidos")
     return isAuthedHome()&&window.__PORTAL_PEDIDOS_MODULES_CONFIRMED?.[feature]===true;
   // PISO cannot inherit global support, Piso 1 or other modules.
-  if(profile==="PISO")return isAuthedHome() && feature==="piso2";
+  if(profile==="PISO")return isAuthedHome() && feature==="piso2" && novaFrotaModuleGranted(feature);
 
   // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.
   // Assim, novos módulos não precisam ser adicionados manualmente ao array ADMINISTRADOR.
@@ -1767,7 +1827,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 window.portalAuthReady = refreshPortalSession()
-  .then(session => {
+  .then(async session => {
+    await refreshNovaFrotaModuleGrants(session);
+    if(!enforceNovaFrotaPageGrant(session))return session;
     window.dispatchEvent(new CustomEvent("portal:session", { detail:session }));
     return session;
   })

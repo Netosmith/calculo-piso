@@ -60,6 +60,6 @@ test("Ambos os ambientes substituem indicadores duplicados pelo quadro de seis s
  const js=load("assets/js/cadastro-solicitacoes.js");
  assert.doesNotMatch(js,/applyCounts/);
  assert.match(js,/if\(!\$\("cadKanban"\)\)return/);
- assert.match(js,/executionView\?"Clique para assumir/);
+ assert.match(js,/cad-lane-ticket-bottom/);
  assert.doesNotThrow(()=>new Script(js));
 });

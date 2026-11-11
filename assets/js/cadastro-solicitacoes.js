@@ -1,6 +1,8 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
+const executionView=document.body.dataset.cadastroVisao==="execucao";
+const view=executionView?"execucao":"solicitante";
 const root="https://api.portalfrete.net.br/v1/cadastro-solicitacoes";
 const SLOTS=["cavalo","carreta","antt","cnh","endereco","motorista","caminhao","motorista_caminhao"];
 const STEPS=["RECEBIMENTO","CONFERENCIA DOCUMENTAL","CONSULTA REFERENCIAS","CADASTRO SISTEMA TERCEIRO","REVISAO","CONCLUIDO"];
@@ -14,7 +16,8 @@ async function api(path="",method="GET",body){
  const support=window.__PORTAL_TENANT_SESSION?.ownerSupport===true?window.__PORTAL_TENANT_EXPECTED:"";
  if(support)headers["X-Portal-Support-Tenant"]=support;
  if(body!==undefined)headers["Content-Type"]="application/json";
- const response=await fetch(root+path,{method,credentials:"include",cache:"no-store",headers,body:body===undefined?undefined:JSON.stringify(body)});
+ const resource=method==="GET"&&path!=="/config"?path+(path.includes("?")?"&":"?")+"visao="+view:path;
+ const response=await fetch(root+resource,{method,credentials:"include",cache:"no-store",headers,body:body===undefined?undefined:JSON.stringify(body)});
  const data=await response.json().catch(()=>null);
  if(!response.ok)throw Error(data?.error||"Falha ao consultar o Portal (HTTP "+response.status+").");
  return data;
@@ -23,28 +26,59 @@ function showDialog(id){const d=$(id);if(!d.open)d.showModal();}
 function closeDialog(id){$(id).close();}
 function statusChip(s){const span=el("span",titleStatus(s),"cad-status");span.dataset.state=s;return span;}
 function applyCounts(){for(const [id,statuses] of [["cadFila",["FILA"]],["cadAndamento",["ANDAMENTO","AGUARDANDO APROVACAO"]],["cadPendente",["PENDENTE","REPROVADO"]],["cadAprovados",["APROVADO"]]])$(id).textContent=all.filter(x=>statuses.includes(x.status)).length;}
+function renderBoard(){
+ if(!executionView)return;
+ const board=$("cadKanban");board.replaceChildren();
+ for(const [label,sub,statuses] of [
+  ["01 · Na fila","Aguardando responsável",["FILA"]],
+  ["02 · Em andamento","Cadastros em análise",["ANDAMENTO"]],
+  ["03 · Aprovação","Validação final",["AGUARDANDO APROVACAO"]],
+  ["04 · Pendências","Aguardando correção",["PENDENTE"]]
+ ]){
+  const lane=el("section","","cad-lane"),top=el("div","","cad-lane-head"),list=el("div","","cad-lane-items");
+  const items=all.filter(t=>statuses.includes(t.status));
+  top.append(el("strong",label),el("span",String(items.length),"cad-lane-count"));lane.append(top,el("small",sub));
+  if(!items.length)list.append(el("p","Nenhum cadastro nesta etapa.","cad-lane-empty"));
+  for(const t of items.slice(0,15)){
+   const button=el("button","","cad-lane-ticket");button.type="button";
+   button.append(el("small",t.protocolo),el("strong",t.motorista),el("span",t.placas),el("em",t.executor?"Responsável: "+t.executor:"Aguardando responsável"));
+   button.onclick=()=>openDetail(t.id);list.append(button);
+  }
+  lane.append(list);board.append(lane);
+ }
+}
+async function assumeTicket(id){
+ try{await api("/"+id+"/assumir","POST",{});await refresh();await openDetail(id);}
+ catch(error){alertMsg(error.message,true);await refresh().catch(()=>{});}
+}
 function render(){
- applyCounts();
+ applyCounts();renderBoard();
  const query=$("cadBusca").value.trim().toUpperCase(),filter=$("cadFiltro").value;
  const rows=all.filter(x=>(!filter||x.status===filter)&&[x.protocolo,x.motorista,x.placas,x.solicitante].some(v=>String(v||"").toUpperCase().includes(query)));
  const grid=$("cadTickets");grid.replaceChildren();
  if(!rows.length){grid.append(el("div","Nenhuma solicitação encontrada.","cad-empty"));return;}
  for(const c of rows){
-  const b=el("button","","cad-ticket");b.type="button";
+  const b=el(executionView?"article":"button","","cad-ticket");if(!executionView)b.type="button";
   const head=el("div","","cad-ticket-head");head.append(el("strong",c.protocolo),statusChip(c.status));b.append(head);
   b.append(el("h3",c.motorista),el("p",c.placas));
   const foot=el("div","","cad-ticket-foot");foot.append(el("span",iso(c.criadoEm)),el("span",c.status==="RASCUNHO"?"Completar anexos":c.executor?"Executor: "+c.executor:"Abrir detalhes"));b.append(foot);
-  b.onclick=()=>c.status==="RASCUNHO"?resume(c):openDetail(c.id);
+  if(executionView){
+   const actions=el("div","","cad-ticket-actions"),details=el("button","Abrir análise","secondary");
+   details.type="button";details.onclick=()=>openDetail(c.id);actions.append(details);
+   if(c.status==="FILA"){const take=el("button","Assumir chamado","primary");take.type="button";take.onclick=()=>assumeTicket(c.id);actions.prepend(take);}
+   b.append(actions);
+  }else b.onclick=()=>c.status==="RASCUNHO"?resume(c):openDetail(c.id);
   grid.append(b);
  }
 }
 async function refresh(){
  const d=await api();
+ if(executionView&&!d.executor)throw Error("Acesso restrito aos executores autorizados.");
  all=d.chamados||[];executor=!!d.executor;storage=!!d.armazenamento?.configurado;
- $("cadListaTitulo").textContent=executor?"Fila e execução de cadastros":"Minhas solicitações";
- $("cadListaSub").textContent=executor?"Assuma os chamados na fila e acompanhe os processos da transportadora.":"Acompanhe todos os cadastros que você solicitou.";
- $("cadNovo").disabled=!storage;
- $("cadNovo").title=storage?"Abrir nova solicitação":"Configure o Google Drive no Super Admin antes de enviar documentos";
+ $("cadListaTitulo").textContent=executionView?"Todos os protocolos recebidos":"Minhas solicitações";
+ $("cadListaSub").textContent=executionView?"Controle da fila geral e dos processos da transportadora.":"Acompanhe apenas os protocolos que você abriu.";
+ const create=$("cadNovo");
+ if(create){create.disabled=!storage;create.title=storage?"Abrir solicitação":"Configure o Google Drive no Super Admin";}
  render();
 }
 function resume(row){
@@ -131,14 +165,17 @@ async function openDetail(id){
    const box=el("div","","cad-msg"+(m.autor_id===selected.solicitante?" mine":""));
    box.append(el("small",m.autor_id+" · "+iso(m.criado_em)),el("div",m.texto));chat.append(box);
   }
-  const exec=$("cadExecucao");exec.hidden=!executor;
-  $("cadAssumir").hidden=!executor||selected.status!=="FILA";
-  $("cadStatusForm").hidden=!executor||selected.status==="FILA"||selected.status==="RASCUNHO"||
-   !!(selected.executor&&selected.executor!==String(window.__PORTAL_TENANT_SESSION?.usuario||(typeof getUser==="function"?getUser():"")));
-  $("cadStatusForm").elements.status.value=selected.status==="RASCUNHO"?"ANDAMENTO":selected.status;
-  $("cadStatusForm").elements.etapa.value=selected.etapa;
+  const exec=$("cadExecucao");
+  if(exec){
+   exec.hidden=!executionView||!executor;
+   $("cadAssumir").hidden=!executor||selected.status!=="FILA";
+   $("cadStatusForm").hidden=!executor||["FILA","RASCUNHO"].includes(selected.status)||
+     Boolean(selected.executor&&selected.executor!==userId);
+   $("cadStatusForm").elements.status.value=["RASCUNHO","FILA"].includes(selected.status)?"ANDAMENTO":selected.status;
+   $("cadStatusForm").elements.etapa.value=selected.etapa;
+  }
   $("cadChatForm").hidden=selected.status==="RASCUNHO";
-  $("cadPendenciaForm").hidden=selected.status!=="PENDENTE"||selected.solicitante!==userId;
+  if($("cadPendenciaForm"))$("cadPendenciaForm").hidden=selected.status!=="PENDENTE"||selected.solicitante!==userId;
   showDialog("cadDetailDialog");
  }catch(error){alertMsg(error.message,true);}
 }
@@ -146,7 +183,7 @@ async function downloadDoc(id,doc){
  try{
   const headers={},support=window.__PORTAL_TENANT_SESSION?.ownerSupport===true?window.__PORTAL_TENANT_EXPECTED:"";
   if(support)headers["X-Portal-Support-Tenant"]=support;
-  const resp=await fetch(root+"/"+id+"/anexos/"+doc.id,{credentials:"include",cache:"no-store",headers});
+  const resp=await fetch(root+"/"+id+"/anexos/"+doc.id+"?visao="+view,{credentials:"include",cache:"no-store",headers});
   if(!resp.ok)throw Error("Não foi possível acessar este documento.");
   const blob=await resp.blob(),url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=doc.nome;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
  }catch(error){alertMsg(error.message,true);}
@@ -164,18 +201,27 @@ async function boot(){
   $("cadCompany").textContent=s.transportadoraNome||"NOVA FROTA";
   $("cadProfile").textContent=s.perfil||"USUÁRIO";
   if(typeof bindLogoutButton==="function")bindLogoutButton();
+  const config=await api("/config");
+  executor=!!config.executor;
+  window.__PORTAL_CADASTRO_EXECUTOR=executor;
+  if(executionView&&!executor)throw Error("Central restrita aos executores autorizados.");
+  if($("cadSwitchLink"))$("cadSwitchLink").hidden=!executor;
+  if(typeof renderPortalGlobalNav==="function")renderPortalGlobalNav();
   await refresh();
-  if(!storage)alertMsg("O formulário está pronto, mas a pasta e a chave do Google Drive precisam ser configuradas no Super Admin desta transportadora.",true);
- }catch(error){alertMsg("Não foi possível abrir o módulo: "+error.message,true);$("cadNovo").disabled=true;}
+  if(!storage)alertMsg(executionView?
+    "A pasta Google Drive desta transportadora ainda precisa ser configurada.":
+    "O formulário está pronto, mas a pasta e a chave Google Drive precisam ser configuradas no Super Admin desta transportadora.",true);
+ }catch(error){alertMsg("Não foi possível abrir o módulo: "+error.message,true);if($("cadNovo"))$("cadNovo").disabled=true;}
 }
 for(const close of document.querySelectorAll("[data-close]"))close.onclick=()=>closeDialog(close.dataset.close);
-$("cadNovo").onclick=newTicket;$("cadForm").addEventListener("submit",sendForm);
+if($("cadNovo"))$("cadNovo").onclick=newTicket;
+if($("cadForm"))$("cadForm").addEventListener("submit",sendForm);
 $("cadAtualizar").onclick=()=>refresh().catch(e=>alertMsg(e.message,true));
 $("cadBusca").addEventListener("input",render);$("cadFiltro").addEventListener("change",render);
-$("cadAssumir").onclick=()=>mutate("/assumir",{});
-$("cadStatusForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;await mutate("/situacao",{status:f.elements.status.value,etapa:f.elements.etapa.value,motivo:f.elements.motivo.value});});
+if($("cadAssumir"))$("cadAssumir").onclick=()=>assumeTicket(selected.id);
+if($("cadStatusForm"))$("cadStatusForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;await mutate("/situacao",{status:f.elements.status.value,etapa:f.elements.etapa.value,motivo:f.elements.motivo.value});});
 $("cadChatForm").addEventListener("submit",async event=>{event.preventDefault();const f=event.currentTarget;const texto=f.elements.texto.value.trim();if(!texto)return;await mutate("/mensagens",{texto});f.reset();});
-$("cadPendenciaForm").addEventListener("submit",async event=>{
+if($("cadPendenciaForm"))$("cadPendenciaForm").addEventListener("submit",async event=>{
  event.preventDefault();if(!selected||busy)return;
  const f=event.currentTarget,slot=f.elements.slot.value,file=f.elements.arquivo.files?.[0],status=$("cadPendenciaProgress");
  if(!file)return;

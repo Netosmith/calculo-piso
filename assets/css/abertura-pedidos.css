@@ -1,0 +1,14 @@
+body.pedidos-app .cad-hero{background:radial-gradient(circle at 93% 0%,#258b68,transparent 39%),linear-gradient(110deg,#0a2948,#123a60 70%,#166f60)}
+body.pedidos-app .cad-workboard{margin-top:16px}body.pedidos-app .cad-kanban{grid-template-columns:repeat(4,minmax(220px,1fr))}
+body.pedidos-app .pedido-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+body.pedidos-app .pedido-fields input,body.pedidos-app .pedido-fields textarea{min-width:0;width:100%;border:1px solid #cad9e8;border-radius:9px;padding:10px 12px;font-size:13px;color:#173a55;background:#fff}
+body.pedidos-app .pedido-fields input:focus,body.pedidos-app .pedido-fields textarea:focus{border-color:#148ec1;outline:2px solid #d5eefb}
+body.pedidos-app .pedido-fields label>span{font-weight:800;font-size:11px;color:#36566e}body.pedidos-app .required-star{color:#cd314e}
+body.pedidos-app .pedido-fields label.wide{grid-column:1/-1}body.pedidos-app .pedido-form-dialog{width:min(940px,96vw)}
+body.pedidos-app .pedido-system-number{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#e9f8ef;border:1px solid #b6dfca;padding:14px 22px}
+body.pedidos-app .pedido-system-number div{display:grid;gap:4px}body.pedidos-app .pedido-system-number strong{font-size:23px;color:#0b5b46;overflow-wrap:anywhere}
+body.pedidos-app .pedido-system-number small{font-size:10px;font-weight:900;letter-spacing:.06em;color:#147956}
+body.pedidos-app .pedido-system-number span{font-size:12px;color:#488671}body.pedidos-app .cad-status[data-state="FINALIZADO"]{background:#e3f9ee;color:#138559}
+body.pedidos-app #pedSystemNumberInputWrap input{width:100%;border:1px solid #bdd2e2;padding:10px;border-radius:9px}
+body.pedidos-app [hidden]{display:none!important}
+@media(max-width:750px){body.pedidos-app .pedido-fields{grid-template-columns:1fr}body.pedidos-app .cad-kanban{grid-template-columns:repeat(4,minmax(230px,1fr))}body.pedidos-app .pedido-system-number{flex-direction:column;align-items:flex-start}}

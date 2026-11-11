@@ -7,15 +7,10 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="../assets/css/app.css">
- <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=3">
+ <link rel="stylesheet" href="../assets/css/cadastro-solicitacoes.css?v=4-checklist">
 </head>
 <body class="cadastro-app" data-cadastro-visao="execucao">
- <header class="cad-topbar">
-   <a class="cad-home" href="./home.html" aria-label="Voltar para Home">⌂</a>
-   <div class="cad-topbar-title"><strong id="cadCompany">PORTAL FRETE</strong><small>Recebimento, análise e execução</small></div>
-   <div class="cad-topbar-actions"><span id="cadProfile" class="cad-profile">USUÁRIO</span><a href="./home.html" class="cad-back">Home</a><button data-logout type="button">Sair</button></div>
- </header>
- <main class="cad-shell">
+<main class="cad-shell">
   <section class="cad-hero">
    <div><span class="eyebrow"><span class="pulse"></span> CENTRAL DE EXECUÇÃO</span><h1>Central de Execução de Cadastros</h1><p>Receba as solicitações da equipe, assuma protocolos e acompanhe as etapas até a aprovação.</p></div>
    <a class="primary hero-action" href="./cadastro-solicitacoes.html">← Minhas solicitações</a>
@@ -38,12 +33,34 @@
  </main>
  <dialog id="cadDetailDialog" class="cad-dialog detail">
   <div class="cad-dialog-head"><div><span class="eyebrow" id="cadDetailProtocolo">CHAMADO</span><h2 id="cadDetailTitle">Detalhes do cadastro</h2><p id="cadDetailMeta"></p></div><button type="button" class="cad-close" data-close="cadDetailDialog" aria-label="Fechar">✕</button></div>
+  <div class="cad-detail-summary">
+   <span id="cadDetailStatus" class="cad-status">Na fila</span>
+   <span id="cadDetailOwner" class="cad-detail-owner">Responsável ainda não atribuído</span>
+  </div>
   <div class="cad-detail-body">
    <div class="cad-detail-main">
+    <section class="cad-detail-section">
+     <h3>Informações da solicitação</h3>
      <div id="cadDetailInfo" class="cad-detail-info"></div>
-     <h3>Etapas do processo</h3><div id="cadEtapas" class="cad-timeline"></div>
-     <h3>Documentos anexados</h3><div id="cadAnexos" class="cad-files"></div>
-     <h3>Histórico e atualizações</h3><div id="cadHistorico" class="cad-history"></div>
+    </section>
+    <section class="cad-detail-section cad-check-section">
+     <div class="cad-section-heading"><h3>Checklist de conferência</h3><strong id="cadChecklistCount">0 / 9 conferidos</strong></div>
+     <div id="cadProgressTrack" class="cad-progress-track" role="progressbar" aria-label="Progresso da conferência" aria-valuemin="0" aria-valuemax="9" aria-valuenow="0"><div id="cadProgressBar" class="cad-progress-bar"></div></div>
+     <p class="cad-tip" id="cadChecklistHelp">A equipe atualiza cada conferência. As alterações ficam registradas no histórico.</p>
+     <div id="cadChecklist" class="cad-checklist"></div>
+    </section>
+    <section class="cad-detail-section">
+     <h3>Etapas do processo</h3>
+     <div id="cadEtapas" class="cad-timeline"></div>
+    </section>
+    <section class="cad-detail-section">
+     <div class="cad-section-heading"><h3>Arquivos e fotografias</h3><span class="cad-section-note">Visualização privada</span></div>
+     <div id="cadAnexos" class="cad-files"></div>
+    </section>
+    <section class="cad-detail-section">
+     <h3>Histórico das movimentações</h3>
+     <div id="cadHistorico" class="cad-history"></div>
+    </section>
    </div>
    <aside class="cad-chat-panel">
     <div id="cadExecucao" hidden>
@@ -62,7 +79,12 @@
    </aside>
   </div>
  </dialog>
+ <dialog id="cadPreviewDialog" class="cad-dialog cad-preview-dialog" aria-label="Visualizar documento">
+   <div class="cad-dialog-head"><div><span class="eyebrow">ARQUIVO PRIVADO</span><h2 id="cadPreviewTitle">Visualizar documento</h2><p>Somente usuários autorizados podem acessar este arquivo.</p></div><button type="button" class="cad-close" data-close="cadPreviewDialog" aria-label="Fechar visualização">✕</button></div>
+   <div id="cadPreviewBody" class="cad-preview-body"></div>
+   <div class="cad-preview-footer"><button id="cadPreviewDownload" class="secondary" type="button">Baixar documento</button><button data-close="cadPreviewDialog" class="secondary" type="button">Fechar</button></div>
+ </dialog>
  <script src="../assets/js/api.js?v=20261107-client-logo-1"></script>
  <script src="../assets/js/auth.js?v=3-ambientes"></script>
- <script src="../assets/js/cadastro-solicitacoes.js?v=3"></script>
+ <script src="../assets/js/cadastro-solicitacoes.js?v=4-checklist"></script>
 </body></html>

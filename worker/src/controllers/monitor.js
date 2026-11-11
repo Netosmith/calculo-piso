@@ -1,5 +1,6 @@
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
+import {isNovaFrotaModuleEnabled} from "../services/nova-frota-modules.js";
 import { errorResponse, success } from "../utils/response.js";
 import { monitorDriverUpload, monitorManagerProof } from "./monitor-proof.js";
 
@@ -212,6 +213,12 @@ export async function monitorController(request, env) {
   let auth;
   try { auth = await manager(request, env); } catch (e) { return dbError(e, "session"); }
   if (auth.error) return auth.error;
+  // Rotas com token dos motoristas permanecem operacionais nas viagens ativas.
+  // A gestão interna exige a liberação do módulo Monitoramento.
+  try{
+   if(!await isNovaFrotaModuleEnabled(env,"monitoramento"))
+    return errorResponse("Monitoramento desativado pelo Super Admin.",403);
+  }catch{return errorResponse("Permissão global indisponível.",503);}
 
   if (path === "/v1/monitor/trips" && method === "GET") {
     try {

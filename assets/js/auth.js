@@ -436,6 +436,7 @@ const NOVA_MANAGED_FEATURES=new Set([
  "piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros",
  "cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo",
  "monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados",
+ "fretes2","funcionarios","relatorio",
  "solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"
 ]);
 let novaFrotaEnabledModules=new Set();
@@ -468,7 +469,8 @@ function enforceNovaFrotaPageGrant(session){
  const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
  const filenames={
   "calculo-piso.html":"piso","calculo-antt.html":"piso2",
-  "fretes.html":"fretes","bi.html":"bi","divulgacao.html":"divulgacao",
+  "fretes.html":"fretes","fretes2.html":"fretes2","funcionarios.html":"funcionarios","relatorio.html":"relatorio",
+  "bi.html":"bi","divulgacao.html":"divulgacao",
   "controle.html":"controle","share-clientes.html":"share",
   "cadastros.html":"cadastros","cadastro-solicitacoes.html":"cadastro-solicitacoes",
   "execucao-cadastros.html":"execucao-cadastros","estadias.html":"estadias",
@@ -1453,7 +1455,7 @@ function portalNavAllowed(item){
   // RH é exclusivo da Nova Frota; não expor links quebrados às outras empresas.
   if(item.key==="funcionarios"){
     return window.__PORTAL_TENANT_SESSION?.tenantMode!==true &&
-      isAuthedHome() && getProfile()==="ADMINISTRADOR";
+      isAuthedHome() && getProfile()==="ADMINISTRADOR" && novaFrotaModuleGranted("funcionarios");
   }
   const features = Array.isArray(item.feature) ? item.feature : [item.feature];
   return features.filter(Boolean).some(feature => canAccessFeature(feature,"navigation"));

@@ -3,7 +3,8 @@
 export const NOVA_FROTA_LEGACY_DEFAULTS=Object.freeze([
  "piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros",
  "cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo",
- "monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados"
+ "monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados",
+ "fretes2","funcionarios","relatorio"
 ]);
 export const NOVA_FROTA_NEW_MODULES=Object.freeze([
  "solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"

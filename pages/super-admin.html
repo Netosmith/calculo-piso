@@ -238,7 +238,7 @@ const $=id=>document.getElementById(id);
 let companies=[],selected=null,users=[],usersRequest=0,auditRequest=0,writeReady=false,membershipReady=false,brandReady=false,mfaMembershipActive=false,mfaBrandActive=false,mfaToken="",mfaActive=false,logoObjectUrl=null,logoRequest=0;
 const canEdit=()=>Boolean(writeReady&&selected&&selected.id!=="nova-frota");
 const canEditModules=()=>Boolean(writeReady&&selected);
-const legacyManageable=new Set(["piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros","cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo","monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados","solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"]);
+const legacyManageable=new Set(["fretes2","funcionarios","relatorio","piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros","cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo","monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados","solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"]);
 const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&selected?.id!=="nova-frota");
 const canEditBrand=()=>Boolean(canEdit()&&brandReady);
 let credentialReady=false,credentialProblem='';
@@ -252,7 +252,12 @@ async function request(path,options={}){
 }
 function renderModules(){
  const root=$('moduleGrid');root.replaceChildren();
- for(const [id,label] of MODULES){
+ const choices=selected?.id==="nova-frota"
+  ? [...MODULES,["fretes2","Fretes MT (exclusivo Nova Frota)"],
+     ["funcionarios","Funcionários (exclusivo Nova Frota)"],
+     ["relatorio","Relatório (exclusivo Nova Frota)"]]
+  : MODULES;
+ for(const [id,label] of choices){
   if(id==='fretes'||id==='fretes-ac'||id==='bi'){
    const heading=document.createElement('h3');heading.className='module-heading';
    heading.textContent=id==='fretes'?'Fretes Operacional':id==='fretes-ac'?'Fretes por estado (27 bases disponíveis)':'Demais módulos';

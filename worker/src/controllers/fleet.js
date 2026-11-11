@@ -1,6 +1,7 @@
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { hasModulePin } from "../services/module-pin.js";
+import {isNovaFrotaModuleEnabled} from "../services/nova-frota-modules.js";
 import { errorResponse, success } from "../utils/response.js";
 
 const TYPES=new Set(['freight','expense','fuel','maintenance','commission']);
@@ -34,6 +35,10 @@ export async function fleetController(request,env){
  const section=part[0],id=part[1],method=request.method;
  const authorization=await auth(request,env,method!=='GET');
  if(authorization.error)return authorization.error;
+ try{
+  if(!await isNovaFrotaModuleEnabled(env,"custo-frota"))
+   return errorResponse("Cálculo de Frota desativado pelo Super Admin.",403);
+ }catch{return errorResponse("Permissão global indisponível.",503);}
  if(!env.FLEET_DB)return errorResponse('Banco D1 da frota ainda não configurado.',503);
  if(!['records','sets','documents','import'].includes(section))return errorResponse('Recurso inexistente.',404);
  const db=env.FLEET_DB,actor=String(authorization.session.usuario||'').slice(0,100);

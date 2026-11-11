@@ -7,7 +7,7 @@ import {setTenantCredentials} from "./super-admin-tenant-credentials.js";
 import {adminWriteTenantIntegration} from "./tenant-integration.js";
 import {cadastroAdminSave} from "../controllers/cadastro-solicitacoes.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
-import {saveNovaFrotaModules} from "./nova-frota-modules.js";
+import {saveNovaFrotaModules,NOVA_FROTA_MANAGED_MODULES} from "./nova-frota-modules.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 const BASE="/v1/super-admin/transportadoras";
@@ -113,8 +113,8 @@ export async function writeTenantCatalog(request,env,actor) {
      if(parts[2]!=="/modules"||request.method!=="PUT")
       return errorResponse("Operação indisponível.",405);
      const body=await jsonBody(request,["modules"]);
-     if(!Array.isArray(body.modules)||body.modules.length>TENANT_MODULES.length||
-        body.modules.some(key=>!TENANT_MODULES.includes(key)))
+     if(!Array.isArray(body.modules)||body.modules.length>NOVA_FROTA_MANAGED_MODULES.length||
+        body.modules.some(key=>!NOVA_FROTA_MANAGED_MODULES.includes(key)))
       return errorResponse("Módulos inválidos.",400);
      try{
       const enabled=await saveNovaFrotaModules(env,body.modules,actor);

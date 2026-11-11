@@ -1,6 +1,7 @@
 import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
 import {getSession,readSessionId} from "../services/session.js";
 import {hasModulePin} from "../services/module-pin.js";
+import {isNovaFrotaModuleEnabled} from "../services/nova-frota-modules.js";
 import {errorResponse,success} from "../utils/response.js";
 import {parseCommissionSetting,calculateCommission} from "../services/rh-commissions.js";
 
@@ -64,6 +65,10 @@ const toCommission=c=>({
 export async function employeesController(req,env){
   const access=await authorize(req,env);
   if(access.error)return access.error;
+  try{
+   if(!await isNovaFrotaModuleEnabled(env,"funcionarios"))
+    return errorResponse("Funcionários desativado pelo Super Admin.",403);
+  }catch{return errorResponse("Permissão global indisponível.",503);}
   const db=env.FLEET_DB;
   if(!db)return errorResponse("Banco privado de funcionários indisponível.",503);
   const url=new URL(req.url);

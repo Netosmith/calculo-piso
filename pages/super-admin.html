@@ -258,8 +258,9 @@ function renderModules(){
   }
  const tile=document.createElement('div');tile.className='tile';
  const wrapper=document.createElement('label');const check=document.createElement('input');check.type='checkbox';
- check.checked=Boolean(selected?.modules?.includes(id));check.disabled=!canEdit();
- check.dataset.module=id;const text=document.createElement('span');text.textContent=label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
+ const novaFrotaDefault=selected?.id==="nova-frota"&&["cadastro-solicitacoes","execucao-cadastros"].includes(id);
+ check.checked=novaFrotaDefault||Boolean(selected?.modules?.includes(id));check.disabled=!canEdit();
+ check.dataset.module=id;const text=document.createElement('span');text.textContent=novaFrotaDefault?label+" (ativo na Nova Frota)":label;wrapper.append(check,text);tile.append(wrapper);root.append(tile);
  }
 }
 function renderUsers(){

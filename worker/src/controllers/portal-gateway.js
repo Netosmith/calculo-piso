@@ -587,12 +587,6 @@ export async function portalGatewayController(request, env, ctx) {
     return errorResponse("Informe módulo e ação.", 400);
   }
 
-  // Liberação da transportadora E autorização histórica do perfil são independentes.
-  try{
-   if(!["home","home-map"].includes(moduleName)&&
-      !await isNovaFrotaModuleEnabled(env,moduleName))
-    return errorResponse("Módulo desativado pelo Super Admin da Nova Frota.",403);
-  }catch{return errorResponse("Não foi possível validar as permissões da Nova Frota.",503);}
   if (!MODULE_ACTIONS[moduleName]) {
     console.warn("[GATEWAY] Módulo recusado", {
       usuario: session.usuario,
@@ -617,6 +611,13 @@ export async function portalGatewayController(request, env, ctx) {
 
   if(moduleName==="custo-filial"&&!await hasModulePin(request,env,"custo-filial"))
     return errorResponse("Informe a senha de Custo / Filial para acessar este módulo.",403);
+
+  // Liberação da transportadora E autorização histórica do perfil são independentes.
+  try{
+   if(!["home","home-map"].includes(moduleName)&&
+      !await isNovaFrotaModuleEnabled(env,moduleName))
+    return errorResponse("Módulo desativado pelo Super Admin da Nova Frota.",403);
+  }catch{return errorResponse("Não foi possível validar as permissões da Nova Frota.",503);}
 
   // Proteção crítica: versões antigas do frontend usavam DELETE para remover
   // anexos e o Apps Script interpretava isso como exclusão do embarque inteiro.

@@ -220,6 +220,13 @@
       !Array.isArray(session.modules) || !session.modules.includes("cadastros"))){
      location.replace("./home.html");return;
    }
+   // O link direto também depende do módulo estar ativo na sessão assinada.
+   if(["cadastro-solicitacoes.html","execucao-cadastros.html"].includes(page)){
+    const key=page.slice(0,-5);
+    if(!Array.isArray(session.modules)||!session.modules.includes(key)){
+     location.replace("./home.html");return;
+    }
+   }
    stage="HTML compartilhado";
    const htmlResponse=await get("/pages/"+page,{credentials:"same-origin"});
    if(!htmlResponse.ok)throw new Error("Página compartilhada retornou HTTP "+htmlResponse.status);

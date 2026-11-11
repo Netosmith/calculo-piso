@@ -35,3 +35,18 @@ test("Solicitante e executor usam telas distintas, com script compartilhado sint
   assert.match(page,/(data-shared-page="execucao-cadastros[.]html"|pages\/gnova\/execucao-cadastros[.]html)/);
  }
 });
+
+test("Liberação de Solicitações e Execução depende do Super Admin e do Worker",()=>{
+ const home=read("pages/home.html");
+ const gate=read("assets/js/cadastro-exec-home.js");
+ const tenant=read("assets/js/tenant-page.js");
+ assert.match(home,/data-feature="cadastro-solicitacoes"[^>]*hidden style="display:none"/);
+ assert.match(home,/data-feature="execucao-cadastros"[^>]*hidden style="display:none"/);
+ assert.match(home,/__PORTAL_CADASTRO_MODULES_CONFIRMED/);
+ assert.match(gate,/result[.]solicitacoesHabilitadas===true/);
+ assert.match(gate,/result[.]execucaoHabilitada===true&&result[.]executor===true/);
+ assert.match(gate,/ctx[.]modules[.]includes[(]feature[)]/);
+ assert.match(gate,/result[.]empresa!==[(]expected[|][|]"nova-frota"[)]/);
+ assert.match(tenant,/session[.]modules[.]includes[(]key[)]/);
+ assert.doesNotThrow(()=>new Script(gate));
+});

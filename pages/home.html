@@ -877,7 +877,8 @@
       margin:24px auto;
     }
     body.nf-profile-piso .nf-tools > *{display:none!important}
-    body.nf-profile-piso .nf-tools > [data-feature="cadastro-solicitacoes"]{display:flex!important;visibility:visible!important}
+    body.nf-profile-piso .nf-tools > [data-feature="cadastro-solicitacoes"]:not([hidden]){display:flex!important;visibility:visible!important}
+    body.nf-profile-piso .nf-tools > [data-feature="cadastro-solicitacoes"][hidden]{display:none!important}
     body.nf-profile-piso.pf-piso2-allowed .nf-tools > [data-feature="piso2"]{
       display:flex!important;visibility:visible!important
     }
@@ -1108,7 +1109,7 @@
         <a class="nf-tool purple" id="superAdminHomeCard" href="./super-admin.html" hidden style="display:none" aria-label="Painel Super Admin">
           <span class="nf-tool-icon">🛡️</span><h2>Super Admin</h2><p>Transportadoras, módulos e visão global.</p><span class="nf-tool-arrow">→</span>
         </a>
-        <a class="nf-tool green" data-feature="cadastro-solicitacoes" href="./cadastro-solicitacoes.html">
+        <a class="nf-tool green" data-feature="cadastro-solicitacoes" href="./cadastro-solicitacoes.html" hidden style="display:none">
           <span class="nf-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h6M8 16h6"/><circle cx="18" cy="17" r="3"/><path d="M18 15.5v3M16.5 17h3"/></svg></span>
           <h2>Solicitações de Cadastro</h2><p>Envie documentos, acompanhe chamados e execute processos.</p><span class="nf-tool-arrow">→</span>
         </a>
@@ -1500,6 +1501,14 @@
 
         document.querySelectorAll("[data-feature]").forEach((card) => {
           const feature = card.getAttribute("data-feature");
+        // Estes dois cards dependem exclusivamente da liberação vigente no backend.
+        if(feature==="cadastro-solicitacoes" || feature==="execucao-cadastros"){
+          const allowed=window.__PORTAL_CADASTRO_MODULES_CONFIRMED?.[feature]===true;
+          card.hidden=!allowed;
+          if(allowed)card.style.removeProperty("display");
+          else card.style.display="none";
+          return;
+        }
 
           if (typeof canAccessFeature !== "function") {
             card.style.removeProperty("display");
@@ -1566,6 +1575,14 @@
 
       document.querySelectorAll("[data-feature]").forEach((card) => {
         const feature = card.getAttribute("data-feature");
+        // Estes dois cards dependem exclusivamente da liberação vigente no backend.
+        if(feature==="cadastro-solicitacoes" || feature==="execucao-cadastros"){
+          const allowed=window.__PORTAL_CADASTRO_MODULES_CONFIRMED?.[feature]===true;
+          card.hidden=!allowed;
+          if(allowed)card.style.removeProperty("display");
+          else card.style.display="none";
+          return;
+        }
 
         if (typeof canAccessFeature !== "function") {
           card.style.removeProperty("display");
@@ -1633,6 +1650,6 @@
   </script>
   <script src="../assets/js/portal-preferences.js?v=20261106-art-default-off" defer></script>
   <script src="../assets/js/portal-preferences-advanced.js?v=7" defer></script>
-  <script src="../assets/js/cadastro-exec-home.js?v=3" defer></script>
+  <script src="../assets/js/cadastro-exec-home.js?v=20261111-strict" defer></script>
 </body>
 </html>

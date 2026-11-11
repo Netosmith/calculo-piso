@@ -68,3 +68,7 @@ Confirme que os bindings `TENANTS_DB` e `TENANT_BRANDS` no Worker publicado apon
 ## Privacidade e retenção
 
 CNH, fotos, telefone, endereço e referências são dados pessoais. Defina política de retenção e exclusão antes de operação real, informe a finalidade ao motorista, garanta acesso somente aos envolvidos e faça cópias/backup conforme a política da empresa e a LGPD. O código atual **não contém rotina automática de descarte**.
+
+## Checklist de execução
+
+A migração `0004_cadastro_checklist.sql` adiciona nove verificações por chamado e transportadora. Só o executor responsável pode marcar uma como **PENDENTE**, **REVISAR** ou **OK**. As alterações são auditadas no histórico. Para aprovar, todas as nove verificações devem estar OK. O workflow faz a migração antes do deploy.

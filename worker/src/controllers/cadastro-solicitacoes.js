@@ -13,6 +13,13 @@ const SLOTS=new Set(["cavalo","carreta","antt","cnh","endereco","motorista","cam
 const REQUIRED=[...SLOTS];
 const STATUSES=new Set(["FILA","ANDAMENTO","AGUARDANDO APROVACAO","PENDENTE","REPROVADO","APROVADO"]);
 const ETAPAS=new Set(["RECEBIMENTO","CONFERENCIA DOCUMENTAL","CONSULTA REFERENCIAS","CADASTRO SISTEMA TERCEIRO","REVISAO","CONCLUIDO"]);
+export const CADASTRO_CHECKLIST=Object.freeze([
+ ["criminal","Consulta criminal"],["cnh","Validação CNH"],["documentos","Documentação cavalo e carretas"],
+ ["biometria","Biometria / identificação"],["referencia1","Referência 1"],["referencia2","Referência 2"],
+ ["referencia3","Referência 3"],["telefone_proprietario","Telefone do proprietário"],["telefone_motorista","Telefone do motorista"]
+]);
+const CADASTRO_CHECK_LABELS=new Map(CADASTRO_CHECKLIST);
+const CHECK_STATES=new Set(["OK","PENDENTE","REVISAR"]);
 const MIME=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 const MAX_FILE=6*1024*1024;
 const clean=(v,n=150)=>typeof v==="string"&&v.trim().length>0&&v.trim().length<=n&&!/[\u0000-\u001f\u007f]/.test(v)?v.trim():null;
@@ -187,7 +194,7 @@ export async function cadastroController(request,env){
    await history(db,p,id,"RASCUNHO","RECEBIMENTO");
    return success({chamado:{id,protocolo,status:"RASCUNHO"}},201);
   }
-  const m=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|enviar|assumir|situacao|mensagens))?$/);
+  const m=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|enviar|assumir|situacao|mensagens|checklist))?$/);
   if(!m)return err("Rota inexistente.",404);
   const id=m[1],action=m[2]||"";
   const row=await ticket(db,p,id);
@@ -197,12 +204,15 @@ export async function cadastroController(request,env){
    return err("Chamado não autorizado nesta visão.",403);
   if(row.status==="RASCUNHO"&&!isOwner)return err("Rascunho privado do solicitante.",403);
   if(action===""&&method==="GET"){
-   const [docs,mensagens,historico]=await Promise.all([
+   const [docs,mensagens,historico,checks]=await Promise.all([
     db.prepare("SELECT id,slot,nome,mime,bytes,criado_em FROM portal_cadastro_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.tenantId,id).all(),
     db.prepare("SELECT autor_id,autor_perfil,texto,criado_em FROM portal_cadastro_messages WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id LIMIT 500").bind(p.tenantId,id).all(),
-    db.prepare("SELECT autor_id,status,etapa,motivo,criado_em FROM portal_cadastro_history WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.tenantId,id).all()
+    db.prepare("SELECT autor_id,status,etapa,motivo,criado_em FROM portal_cadastro_history WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.tenantId,id).all(),
+    db.prepare("SELECT item_key,estado,autor_id,atualizado_em FROM portal_cadastro_checklist WHERE tenant_id=? AND ticket_id=?").bind(p.tenantId,id).all()
    ]);
-   return success({chamado:formatTicket(row),anexos:docs.results||[],mensagens:mensagens.results||[],historico:historico.results||[],executor});
+   const checkMap=new Map((checks.results||[]).map(i=>[i.item_key,i]));
+   const checklist=CADASTRO_CHECKLIST.map(([key,label])=>({key,label,estado:checkMap.get(key)?.estado||"PENDENTE",autor:checkMap.get(key)?.autor_id||null,atualizadoEm:checkMap.get(key)?.atualizado_em||null}));
+   return success({chamado:formatTicket(row),anexos:docs.results||[],mensagens:mensagens.results||[],historico:historico.results||[],checklist,executor});
   }
   if(action==="anexos"&&method==="POST"){
    if(row.solicitante_id!==p.user||!["RASCUNHO","PENDENTE"].includes(row.status))return err("Anexo permitido somente no rascunho ou na pendência do próprio solicitante.",403);
@@ -237,6 +247,27 @@ export async function cadastroController(request,env){
    await history(db,p,id,"ANDAMENTO","CONFERENCIA DOCUMENTAL");
    return success({status:"ANDAMENTO"});
   }
+  if(action==="checklist"&&method==="POST"){
+   if(!executor||row.executor_id!==p.user)return err("Checklist restrito ao executor responsável.",403);
+   if(["RASCUNHO","FILA","APROVADO","REPROVADO"].includes(row.status))
+    return err("Não é possível alterar o checklist neste status.",409);
+   const body=await json(request,1400);
+   if(Object.keys(body).some(key=>!["item","estado"].includes(key))||
+      !CADASTRO_CHECK_LABELS.has(body.item)||!CHECK_STATES.has(body.estado))
+    return err("Item ou estado inválido.");
+   const old=await db.prepare("SELECT estado FROM portal_cadastro_checklist WHERE tenant_id=? AND ticket_id=? AND item_key=?")
+    .bind(p.tenantId,id,body.item).first();
+   if((old?.estado||"PENDENTE")===body.estado)return success({inalterado:true,item:body.item,estado:body.estado});
+   await db.batch([
+    db.prepare("INSERT INTO portal_cadastro_checklist(tenant_id,ticket_id,item_key,estado,autor_id) VALUES(?,?,?,?,?) ON CONFLICT(tenant_id,ticket_id,item_key) DO UPDATE SET estado=excluded.estado,autor_id=excluded.autor_id,atualizado_em=CURRENT_TIMESTAMP")
+      .bind(p.tenantId,id,body.item,body.estado,p.user),
+    db.prepare("INSERT INTO portal_cadastro_history(id,tenant_id,ticket_id,autor_id,status,etapa,motivo) VALUES(?,?,?,?,?,?,?)")
+      .bind(crypto.randomUUID(),p.tenantId,id,p.user,row.status,row.etapa,"Checklist: "+CADASTRO_CHECK_LABELS.get(body.item)+" → "+body.estado),
+    db.prepare("UPDATE portal_cadastro_tickets SET atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND executor_id=?")
+      .bind(id,p.tenantId,p.user)
+   ]);
+   return success({item:body.item,estado:body.estado});
+  }
   if(action==="situacao"&&method==="POST"){
    if(!executor)return err("Acesso exclusivo da execução.",403);
    if(row.status==="RASCUNHO"||row.status==="FILA")return err("Primeiro assuma o chamado.",409);
@@ -246,6 +277,11 @@ export async function cadastroController(request,env){
    const motivo=String(b.motivo||"").trim();
    if(motivo.length>1800||(["PENDENTE","REPROVADO"].includes(b.status)&&motivo.length<8))
     return err("Informe um motivo detalhado para pendência ou reprovação.");
+   if(b.status==="APROVADO"){
+    const counts=await db.prepare("SELECT COUNT(*) AS total FROM portal_cadastro_checklist WHERE tenant_id=? AND ticket_id=? AND estado='OK'").bind(p.tenantId,id).first();
+    if(Number(counts?.total||0)!==CADASTRO_CHECKLIST.length)
+     return err("Conclua os nove itens do checklist antes de aprovar.",409);
+   }
    await db.prepare("UPDATE portal_cadastro_tickets SET status=?,etapa=?,atualizado_em=CURRENT_TIMESTAMP WHERE tenant_id=? AND id=? AND executor_id=?")
     .bind(b.status,b.etapa,p.tenantId,id,p.user).run();
    await history(db,p,id,b.status,b.etapa,motivo);

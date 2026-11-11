@@ -4,6 +4,7 @@ import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
 import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
 import {getSession,readSessionId} from "../services/session.js";
 import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
+import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
 
 const ID=/^[a-z][a-z0-9-]{2,63}$/;
 const DRIVE_URL=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{30,250}\/exec$/;
@@ -104,7 +105,10 @@ function isExecutor(p,conf){
  return isAdmin(p.role)||(conf?.executores||[]).includes(String(p.user).toUpperCase());
 }
 async function modulesForCadastros(env,tenantId){
- if(tenantId===LEGACY_NOVA_FROTA.id)return {solicitar:true,executar:true};
+ if(tenantId===LEGACY_NOVA_FROTA.id){
+  const flags=new Set((await readNovaFrotaModules(env)).modules);
+  return {solicitar:flags.has("cadastro-solicitacoes"),executar:flags.has("execucao-cadastros")};
+ }
  const rows=await env.TENANTS_DB.prepare(
   "SELECT module_key FROM portal_tenant_modules WHERE tenant_id=? AND enabled=1 AND module_key IN ('cadastro-solicitacoes','execucao-cadastros')"
  ).bind(tenantId).all();

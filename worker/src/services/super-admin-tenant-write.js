@@ -7,6 +7,7 @@ import {setTenantCredentials} from "./super-admin-tenant-credentials.js";
 import {adminWriteTenantIntegration} from "./tenant-integration.js";
 import {cadastroAdminSave} from "../controllers/cadastro-solicitacoes.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
+import {saveNovaFrotaModules} from "./nova-frota-modules.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 const BASE="/v1/super-admin/transportadoras";
@@ -109,14 +110,17 @@ export async function writeTenantCatalog(request,env,actor) {
     if(!parts || !(validId(parts[1])||parts[1]===LEGACY_NOVA_FROTA.id))return errorResponse("Rota de alteracao invalida.",404);
     const tenantId=parts[1];
     if(tenantId===LEGACY_NOVA_FROTA.id){
-     if(parts[2]!=="/modules"||request.method!=="PUT")return errorResponse("Operação indisponível.",405);
-     if(!env.TENANT_BRANDS)return errorResponse("Armazenamento indisponível.",503);
-     const body=await jsonBody(request,["modules"]),list=body.modules;
-     if(!Array.isArray(list)||list.length>TENANT_MODULES.length||list.some(k=>typeof k!=="string"||!TENANT_MODULES.includes(k)))return errorResponse("Módulos inválidos.",400);
-     const enabled=["solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"].filter(k=>list.includes(k));
-     await env.TENANT_BRANDS.put("tenant/nova-frota/private/optional-modules-v1.json",
-      JSON.stringify({version:1,modules:enabled,actor,at:new Date().toISOString()}),{httpMetadata:{contentType:"application/json"}});
-     return success({tenantId,modules:enabled});
+     if(parts[2]!=="/modules"||request.method!=="PUT")
+      return errorResponse("Operação indisponível.",405);
+     const body=await jsonBody(request,["modules"]);
+     if(!Array.isArray(body.modules)||body.modules.length>TENANT_MODULES.length||
+        body.modules.some(key=>!TENANT_MODULES.includes(key)))
+      return errorResponse("Módulos inválidos.",400);
+     try{
+      const enabled=await saveNovaFrotaModules(env,body.modules,actor);
+      return success({tenantId,modules:enabled});
+     }catch(error){return errorResponse(error?.message==="Lista de módulos inválida."?
+        "Lista de módulos inválida.":"Não foi possível salvar permissões da Nova Frota.",400);}
     }
     const existing=await findTenant(db,tenantId);
     if(!existing) return errorResponse("Transportadora nao encontrada.",404);

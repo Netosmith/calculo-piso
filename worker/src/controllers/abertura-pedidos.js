@@ -4,6 +4,7 @@ import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
 import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
 import {getSession,readSessionId} from "../services/session.js";
 import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
+import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
 
 const SLUG=/^[a-z][a-z0-9-]{2,63}$/;
 const FILEID=/^[A-Za-z0-9_-]{15,160}$/;
@@ -44,9 +45,7 @@ async function principalFor(req,env){
 }
 async function flagsFor(env,id){
  if(id===LEGACY_NOVA_FROTA.id){
-  const stored=await env.TENANT_BRANDS?.get(nfFlagsKey);
-  const v=stored?await stored.json():{};
-  const enabled=new Set(Array.isArray(v.modules)?v.modules:[]);
+  const enabled=new Set((await readNovaFrotaModules(env)).modules);
   return {solicitar:enabled.has("solicitacao-pedidos"),executar:enabled.has("execucao-pedidos")};
  }
  const r=await env.TENANTS_DB.prepare("SELECT module_key FROM portal_tenant_modules WHERE tenant_id=? AND enabled=1 AND module_key IN ('solicitacao-pedidos','execucao-pedidos')").bind(id).all();

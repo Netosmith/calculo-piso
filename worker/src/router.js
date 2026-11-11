@@ -24,6 +24,7 @@ import {errorResponse} from "./utils/response.js";
 import {cadastroController} from "./controllers/cadastro-solicitacoes.js";
 import {trocaNotasController} from "./controllers/troca-notas.js";
 import {aberturaPedidosController} from "./controllers/abertura-pedidos.js";
+import {novaFrotaModulesController} from "./controllers/nova-frota-modules.js";
 
 export async function routeRequest(request, env, ctx) {
   const url = new URL(request.url);
@@ -51,6 +52,7 @@ export async function routeRequest(request, env, ctx) {
      !["/v1/login","/v1/session","/v1/logout","/health"].includes(path))
     return errorResponse("Recurso exclusivo da operacao legada.",403);
 
+  if (path==="/v1/nova-frota/modules")return novaFrotaModulesController(request,env);
   if (path.startsWith("/v1/module-pin/")) return modulePinController(request, env);
   if (path.startsWith("/v1/super-admin/")) return superAdminController(request, env);
 

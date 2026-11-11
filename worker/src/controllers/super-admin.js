@@ -13,6 +13,7 @@ import { TENANT_MODULES, enabledModulesForTenant } from "../config/tenant-module
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
+import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
 import { superAdminMonitorDeletion } from "./super-admin-monitor-delete.js";
 
 async function catalogReady(env) {
@@ -99,14 +100,11 @@ export async function superAdminController(request, env, verifiedStagingSession 
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.
-    const extraModules=await (async()=>{
-      try{
-       const obj=await env.TENANT_BRANDS?.get("tenant/nova-frota/private/optional-modules-v1.json");
-       const data=obj?await obj.json():{},allowed=new Set(["solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"]);
-       return Array.isArray(data.modules)?data.modules.filter(k=>allowed.has(k)):[];
-      }catch{return [];}
-    })();
-    const legacy = {id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,modules:extraModules};
+    let legacyModules;
+    try{legacyModules=await readNovaFrotaModules(env);}
+    catch{return errorResponse("Não foi possível consultar módulos da Nova Frota.",503);}
+    const legacy = {id:LEGACY_NOVA_FROTA.id,name:LEGACY_NOVA_FROTA.nome,active:true,
+      modules:legacyModules.modules,modulesConfigured:legacyModules.configured};
     if (!env.TENANTS_DB) return success({transportadoras:[legacy],catalogo:"legado"});
     try {
       const result = await env.TENANTS_DB.prepare(

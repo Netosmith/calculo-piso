@@ -3,6 +3,7 @@ import { callAppsScript } from "../services/appscript.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { hasModulePin } from "../services/module-pin.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
+import {isNovaFrotaModuleEnabled} from "../services/nova-frota-modules.js";
 import { getMaintenanceState, isAdministrator } from "../services/maintenance.js";
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
@@ -586,6 +587,12 @@ export async function portalGatewayController(request, env, ctx) {
     return errorResponse("Informe módulo e ação.", 400);
   }
 
+  // Liberação da transportadora E autorização histórica do perfil são independentes.
+  try{
+   if(!["home","home-map"].includes(moduleName)&&
+      !await isNovaFrotaModuleEnabled(env,moduleName))
+    return errorResponse("Módulo desativado pelo Super Admin da Nova Frota.",403);
+  }catch{return errorResponse("Não foi possível validar as permissões da Nova Frota.",503);}
   if (!MODULE_ACTIONS[moduleName]) {
     console.warn("[GATEWAY] Módulo recusado", {
       usuario: session.usuario,

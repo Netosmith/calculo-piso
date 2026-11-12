@@ -1070,14 +1070,17 @@
     style="display:none"
   />
 
-  <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+  <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
   <script src="../assets/js/administrativo.js?v=6"></script>
 
   <script>
     // Entrada no painel exclusivo de GOADM e ADMINISTRADOR;
     // criar Solicitações na Home não libera as demais funções deste app.
-    requireFeatureAuth("administrativo");
-    bindLogoutButton();
+    (async()=>{
+      if(await awaitPortalFeatureAuth("administrativo","Administrativo não liberado para este perfil.")){
+        bindLogoutButton();
+      }
+    })();
   </script>
   <script src="../assets/js/portal-preferences.js?v=7" defer></script>
   <script src="../assets/js/portal-preferences-advanced.js?v=6" defer></script>

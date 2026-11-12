@@ -396,5 +396,10 @@ function bind(){
   $("porPagina").addEventListener("change",()=>{paginaAtual=1;renderTable();renderPagination()});
   ["dataHoraChegada","dataHoraSaida","tempoRetroativo","valorHora","pesoDestino"].forEach(id=>{$(id)?.addEventListener("input",updateCalculationPreview);$(id)?.addEventListener("change",updateCalculationPreview)});
 }
-window.addEventListener("DOMContentLoaded",()=>{if(typeof requireEstadiasAuth==="function"&&requireEstadiasAuth()!==true)return;bind();const restored=restoreEstadiasCache();loadData({silent:restored})});
+window.addEventListener("DOMContentLoaded",async()=>{
+ const session=window.portalAuthReady?await window.portalAuthReady:null;
+ if(!session)return;
+ if(typeof requireEstadiasAuth==="function"&&requireEstadiasAuth()!==true)return;
+ bind();const restored=restoreEstadiasCache();loadData({silent:restored});
+});
 })();

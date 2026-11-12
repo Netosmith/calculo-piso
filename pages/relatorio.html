@@ -724,12 +724,13 @@
 </head>
 
 <body>
-  <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+  <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
   <script>
-    if(typeof requireFeatureAuth === "function"){
-      requireFeatureAuth("relatorio","Relatório não liberado para este perfil.");
-    }
-    if(typeof bindLogoutButton === "function") bindLogoutButton();
+    (async()=>{
+      if(await awaitPortalFeatureAuth("relatorio","Relatório não liberado para este perfil.")){
+        if(typeof bindLogoutButton==="function")bindLogoutButton();
+      }
+    })();
   </script>
   <main class="app">
     <header class="hero">

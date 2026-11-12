@@ -1,3 +1,4 @@
+import {profileAllowsModule} from "../services/profile-access.js";
 import {ALLOWED_ORIGINS} from "../config.js";
 import {errorResponse,success} from "../utils/response.js";
 import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
@@ -155,6 +156,8 @@ export async function cadastroController(request,env){
  if(!p)return err("Sessão inválida.",401);
  const db=env.TENANTS_DB;
  const access=await modulesForCadastros(env,p.tenantId);
+ access.solicitar=access.solicitar&&await profileAllowsModule(env,p.tenantId,p.role,"cadastro-solicitacoes",p.ownerSupport===true);
+ access.executar=access.executar&&await profileAllowsModule(env,p.tenantId,p.role,"execucao-cadastros",p.ownerSupport===true);
  const conf=await configFor(env,p.tenantId);
  const executor=access.executar&&isExecutor(p,conf);
  const url=new URL(request.url);

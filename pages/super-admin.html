@@ -105,6 +105,21 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 .monitor-delete-audit small{display:block;color:#b6cedf}
 @media(max-width:700px){.monitor-delete-filters{grid-template-columns:1fr}.monitor-delete-row{padding:10px}}
 </style>
+<style>
+.profile-access-head{display:flex;align-items:end;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:18px 0}
+.profile-access-head label{display:grid;gap:8px;font-weight:800;min-width:220px}
+.profile-access-head select{background:#091b30;color:#f0f8ff;border:1px solid #537899;border-radius:10px;padding:11px}
+.profile-access-head>div{display:flex;gap:8px;flex-wrap:wrap}
+.profile-access-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px;margin:16px 0 22px}
+.profile-access-item{display:flex;gap:11px;align-items:start;padding:12px;border:1px solid #33536c;background:#0d263c;border-radius:12px;cursor:pointer}
+.profile-access-item input{width:18px;height:18px;accent-color:#23b875;flex:none;margin-top:2px}
+.profile-access-item-title{font-weight:750;font-size:13px;line-height:1.5}
+.profile-access-item small{display:block;font-weight:500;margin-top:3px}
+.profile-access-enabled{color:#8ee4bd}.profile-access-disabled{color:#a9b8c7}
+.profile-access-item:has(input:disabled){opacity:.72;cursor:default}
+.profile-access-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:16px}
+.profile-access-footer p{margin:0;color:#c1e2f5}
+</style>
 </head>
 <body class="super-admin-shell">
 
@@ -129,8 +144,35 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 <div class="layout" id="transportadorasView" hidden>
 <aside class="panel" id="galleryPanel"><div class="gallery-tools"><div><h2>Transportadoras</h2><span class="gallery-counter" id="companyCount">0 cadastradas</span></div><input id="companySearch" type="search" placeholder="Pesquisar transportadora" aria-label="Buscar transportadora"></div><div class="row"><h2 style="display:none">Transportadoras</h2><button id="newCompany" disabled>+ Nova</button></div><div id="companies" class="company-gallery empty">Nenhuma transportadora carregada.</div></aside>
 <section class="panel" id="companyDetail" hidden><div class="row"><button id="galleryBack" type="button" class="ghost">← Todas as transportadoras</button><a id="tenantHomeButton" href="/pages/home.html" hidden title="Abrir Home da transportadora selecionada">⌂ HOME</a><div><h2 id="companyName">Selecione uma transportadora</h2><span id="companyStatus" class="status">Sem seleção</span></div><button id="renameCompany" disabled>Renomear</button><button id="toggleCompany" disabled>Ativar / desativar</button></div>
-<div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button><button id="monitorDeleteTab" data-tab="monitorDelete" hidden>🗑 Viagens Nova Frota</button></div>
+<div class="tabs"><button data-tab="modules" class="active">Cards e módulos</button><button data-tab="profiles">🔐 Perfis e Acessos</button><button data-tab="users">Usuários</button><button data-tab="brand">Identidade visual</button><button data-tab="artes">🎨 Artes</button><button data-tab="settings">Configurações</button><button id="monitorDeleteTab" data-tab="monitorDelete" hidden>🗑 Viagens Nova Frota</button></div>
 <div id="modules" class="tab"><p class="muted" id="freightBaseVersion">Painel atualizado · 27 bases estaduais · 04/11/2026</p><p id="novaFrotaModuleExplanation" class="muted" hidden>Nova Frota: os módulos antigos já utilizados aparecem marcados para preservar os acessos atuais. Os módulos novos começam desativados. Desmarque os módulos que deseja ocultar e clique em <strong>Salvar módulos</strong>. A liberação da transportadora nunca substitui as permissões do perfil.</p><p>Escolha <strong>Fretes Operacional (unificado)</strong> para uma planilha única ou libere as bases estaduais abaixo. <strong>Fretes2 (MT interno)</strong> é exclusivo da Nova Frota.</p><div id="moduleGrid" class="grid"></div><p><button id="saveModules" type="button" disabled>Salvar módulos</button></p><p class="muted">Alterações exigem validação e gravação no backend, nunca apenas no navegador.</p></div>
+<div id="profiles" class="tab" hidden>
+ <h2>Perfis e Acessos</h2>
+ <p class="muted">Configure o que cada perfil pode visualizar nesta transportadora. Primeiro habilite o módulo em <strong>Cards e módulos</strong>; depois permita o acesso do perfil aqui. As duas liberações são necessárias. SUPER-ADMIN é exclusivo da conta proprietária LUZIANO e não pode ser atribuído a outros usuários.</p>
+ <div class="profile-access-head">
+  <label for="profileRole">Perfil a configurar
+   <select id="profileRole">
+    <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+    <option value="COMERCIAL">COMERCIAL</option>
+    <option value="OPERACIONAL" selected>OPERACIONAL</option>
+    <option value="GOADM">GOADM</option>
+    <option value="PISO">PISO</option>
+   </select>
+  </label>
+  <div>
+   <button type="button" id="resetProfileAccess" class="ghost" disabled>Restaurar padrão do perfil</button>
+   <button type="button" id="allowProfileAll" class="ghost" disabled>Marcar todos</button>
+   <button type="button" id="denyProfileAll" class="ghost" disabled>Desmarcar todos</button>
+  </div>
+ </div>
+ <p class="muted" id="profileRoleHelp">Selecione um perfil para configurar os módulos.</p>
+ <div class="profile-access-grid" id="profileModuleGrid"></div>
+ <div class="profile-access-footer">
+  <p id="profileAccessStatus" role="status">Selecione uma transportadora para carregar a matriz.</p>
+  <button id="saveProfileAccess" type="button" disabled>Salvar perfis e acessos</button>
+ </div>
+ <p class="muted">Ao salvar, a regra passa a ser usada pelo Worker e pelo Portal. PISO continua sem acesso aos dados operacionais da Home. Alguns recursos de execução de solicitações exigem, além deste módulo, a autorização de executor.</p>
+</div>
 <div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Nas novas empresas, o novo cadastro cria usuário ativo e senha. Para usuários antigos, use "Definir senha e ativar". A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo usuário</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
 <div id="brand" class="tab" hidden>
 <h2>Identidade visual</h2><p class="muted">Quatro arquivos independentes por transportadora, sem modificar as imagens da Nova Frota.</p>
@@ -482,6 +524,7 @@ function render(){
  window.dispatchEvent(new CustomEvent('superadmin-monitor-company',{detail:{tenantId:selected?.id||''}}));
  $('novaFrotaModuleExplanation').hidden=selected?.id!=='nova-frota';
  renderModules();renderUsers();$('integrationSave').disabled=!canEdit();
+ window.dispatchEvent(new Event('superadmin:company-changed'));
 }
 async function writeRequest(path,method,data,contentType='application/json'){
  return request(path,{method,headers:{'Content-Type':contentType,'X-Portal-Super-Admin-Action':'owner-panel'},body:contentType==='application/json'?JSON.stringify(data):data});
@@ -1043,6 +1086,7 @@ document.querySelector('[data-tab="settings"]')?.addEventListener('click',loadCa
 
 </script>
 <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
+<script src="../assets/js/super-admin-profile-access.js?v=20261112-1"></script>
 <script src="../assets/js/super-admin-real-preview.js?v=9" defer></script>
 <script src="../assets/js/super-admin-monitor-delete.js?v=1" defer></script>
 <script src="../assets/js/portal-preferences.js?v=9" defer></script>

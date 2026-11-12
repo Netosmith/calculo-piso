@@ -8,8 +8,8 @@ const VERSION="v1";
 const TTL_SECONDS=30*60;
 const PIN_DIGEST="34ff3bb3732ca5436824c18fc789ff0507ae31807ca3f782b7d7740235d5d719";
 const MODULE_ROLES={
-  funcionarios:new Set(["ADMINISTRADOR"]),
-  "custo-filial":new Set(["ADMINISTRADOR"]),
+  funcionarios:new Set(["ADMINISTRADOR","COMERCIAL"]),
+  "custo-filial":new Set(["ADMINISTRADOR","COMERCIAL"]),
   "custo-frota":new Set(["ADMINISTRADOR","COMERCIAL"])
 };
 const encoder=new TextEncoder();

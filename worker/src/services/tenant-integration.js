@@ -163,7 +163,7 @@ export async function callTenantAppScript(env,principal,modules,payload){
  if(module==="fretes2") return errorResponse("Fretes2 e exclusivo da Nova Frota. Use Fretes Operacional ou Fretes-UF.",403);
  const allowed=modules.includes(module) ||
   (module==="home" && action==="read" && role!=="PISO" && modules.length>0);
- const permissionSession={perfil:role};
+ const permissionSession={perfil:role,allowedModules:modules};
  // Never alias legacy Piso 1 into Piso 2 for a PISO account.
  if(role==="PISO"&&module!=="piso2")
   return errorResponse("Perfil PISO autorizado apenas no Calculo de Piso 2.",403);

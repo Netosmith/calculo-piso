@@ -24,6 +24,6 @@ test("Tenant module switch blocks requests before any integration when disabled"
   assert.equal((await callTenantAppScript(env,principal,["administrativo"],request)).status,role==="PISO"?403:503,role);
   assert.equal((await callTenantAppScript(env,principal,["administrativo"],{
     module:"administrativo",action:"read",params:{resource:"solicitacoes"}
-  })).status,["GOADM","ADMINISTRADOR"].includes(role)?503:403,role);
+  })).status,role==="PISO"?403:503,role);
  }
 });

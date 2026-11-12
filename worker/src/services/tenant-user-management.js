@@ -2,7 +2,7 @@ import {errorResponse,success} from "../utils/response.js";
 import {makePasswordRecord,normalizeTenantUser,validTenantPassword} from "./tenant-auth.js";
 import {credentialSchemaStatus} from "./super-admin-tenant-credentials.js";
 
-const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"]);
+const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM"]);
 const MAX_USERS=500;
 const error=(message,status=400)=>errorResponse(message,status);
 const tenantUser=(value)=>normalizeTenantUser(value);

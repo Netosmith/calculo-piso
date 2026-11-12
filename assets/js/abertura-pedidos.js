@@ -117,6 +117,7 @@ function setKind(kind,{syncPicker=true}={}){
  if(selector){
   if(syncPicker)selector.value=formKind;
   selector.dataset.kind=formKind;
+  selector.closest(".pedido-kind-picker")?.setAttribute("data-kind",formKind);
  }
  const form=$("tnForm");if(!form)return;
  form.elements.tipoSolicitacao.value=formKind;

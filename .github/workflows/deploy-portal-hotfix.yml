@@ -207,6 +207,12 @@ jobs:
           fi
           npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations/super-admin/0007_troca_notas.sql
           npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations/super-admin/0008_abertura_pedidos.sql
+          # ALTER TABLE roda uma única vez; o histórico dos pedidos é preservado.
+          if npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "SELECT tipo_solicitacao,dados_especificos_json FROM portal_pedidos_tickets LIMIT 0;" >/dev/null 2>&1; then
+            echo "Tipos de solicitações já instalados."
+          else
+            npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations/super-admin/0009_pedidos_tipos_solicitacao.sql
+          fi
 
       - name: Publicar Worker
         working-directory: worker

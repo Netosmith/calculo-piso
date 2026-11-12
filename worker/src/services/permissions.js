@@ -77,6 +77,13 @@ function normalize(value) {
 
 export function hasFeature(session, moduleName) {
   const profile = normalize(session?.perfil);
+  // A API calcula a lista efetiva usando tenant + perfil antes de chegar aqui.
+  // Ela substitui a tabela histórica, sem confiar em permissões do navegador.
+  if(Array.isArray(session?.allowedModules)){
+    return moduleName==="home" ||
+      (moduleName==="home-map" && session.allowedModules.some(x=>x==="fretes"||x.startsWith("fretes-"))) ||
+      session.allowedModules.includes(moduleName);
+  }
 
   // Administrador tem acesso a todos os módulos registrados no gateway.
   if (ADMIN_PROFILES.has(profile)) return true;
@@ -107,7 +114,8 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
     moduleName === "home-map" &&
     actionName === "read"
   ) {
-    return profile !== "PISO";
+    return profile !== "PISO" && (Array.isArray(session?.allowedModules)
+      ? hasFeature(session,"home-map") : profile!=="GOADM");
   }
 
   // O perfil PISO usa a Home, mas não pode consultar indicadores operacionais.

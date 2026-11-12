@@ -99,7 +99,10 @@ async function principalFor(request,env){
  }
  const s=await getSession(env,readSessionId(request));
  return s&&tenantIdForLegacySession(s)===LEGACY_NOVA_FROTA.id?
-  {tenantId:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil}:null;
+  {tenantId:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil,
+   ownerSupport:Boolean(env.SUPER_ADMIN_USER)&&
+    String(s.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase()
+  }:null;
 }
 function isExecutor(p,conf){
  if(String(p.role||"").toUpperCase()==="PISO")return false;

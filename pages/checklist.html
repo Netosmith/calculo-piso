@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Carimbo</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --bg: #f3f5f8; --card: #ffffff; --ink: #1b2430; --muted: #5a6677; --line: #d5dce5;
+    --accent: #1d4ed8; --accent-ink: #ffffff; --accent-soft: #e6eefc;
+    --danger: #b42318; --danger-soft: #fdecea; --ok: #067647; --fixed: #eef2f7;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11161c; --card: #1a212b; --ink: #e8edf4; --muted: #9eabbd; --line: #2f3a49;
+      --accent: #6c9bff; --accent-ink: #0b1220; --accent-soft: #1f2d4a;
+      --danger: #ff8a7d; --danger-soft: #3a1f1c; --ok: #55d39a; --fixed: #222c39;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  .topo { max-width: 1280px; margin: 0 auto; padding: 24px 16px 8px; }
+  .topo h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+  .topo p { margin: 4px 0 0; color: var(--muted); }
+
+  .layout {
+    max-width: 1280px; margin: 0 auto; padding: 16px 16px 40px;
+    display: grid; grid-template-columns: minmax(340px, 520px) 1fr; gap: 24px; align-items: start;
+  }
+  @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+
+  .campo { margin-bottom: 12px; }
+  .campo:last-child { margin-bottom: 0; }
+  label, .rotulo { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+  .opc { font-weight: 400; color: var(--muted); }
+  input[type=text] {
+    width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); color: var(--ink); font: inherit; text-transform: uppercase;
+  }
+  input[type=text]::placeholder { color: var(--muted); opacity: .7; text-transform: none; }
+  input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+  input[type=text]:disabled { background: var(--fixed); color: var(--muted); }
+  input.invalid { border-color: var(--danger); background: var(--danger-soft); }
+  .erro { color: var(--danger); font-size: 13px; margin-top: 4px; min-height: 0; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 520px) { .row2, .row3 { grid-template-columns: 1fr; } }
+
+  /* cargas */
+  .grade { display: grid; grid-template-columns: 112px 1fr 1fr; gap: 8px; align-items: center; }
+  .grade .cab { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .grade .lin { font-size: 14px; font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { margin: 0; padding: 7px 14px; font-weight: 500; cursor: pointer; border-right: 1px solid var(--line); font-size: 14px; }
+  .seg label:last-of-type { border-right: 0; }
+  .seg input:checked + label { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* tipo de veículo (botões de escolha) */
+  .chips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips label {
+    margin: 0; padding: 11px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+    text-align: center; font-weight: 600; font-size: 14px; background: var(--card);
+  }
+  .chips label:hover { border-color: var(--accent); }
+  .chips input:checked + label { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .chips input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chips.invalid label { border-color: var(--danger); }
+  @media (max-width: 420px) { .chips { grid-template-columns: 1fr; } }
+
+  /* link para os outros computadores */
+  .linkbox { display: flex; gap: 8px; }
+  .linkbox input[type=text] { flex: 1; text-transform: none; font-weight: 600; }
+  .linkbox button { height: 40px; }
+  .aviso { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--danger-soft); color: var(--danger); font-size: 14px; }
+
+  /* fixos */
+  dl.fixos { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+  dl.fixos dt { color: var(--muted); font-size: 13px; }
+  dl.fixos dd { margin: 0; font-weight: 600; font-size: 14px; word-break: break-word; }
+  .nota { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+  /* acoes */
+  .acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; height: 44px; padding: 0 18px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.principal { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; flex: 1 1 200px; }
+  button.principal:hover { filter: brightness(1.08); }
+  button[disabled] { opacity: .65; cursor: progress; }
+  button.mini { height: 30px; padding: 0 10px; font-size: 13px; }
+  .lembrar { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-weight: 400; color: var(--muted); font-size: 14px; }
+  .lembrar input { width: 16px; height: 16px; }
+  #msg { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; display: none; }
+  #msg.erro-geral { display: block; background: var(--danger-soft); color: var(--danger); }
+  #msg.ok { display: block; background: var(--accent-soft); color: var(--ok); }
+  #msg.info { display: block; background: var(--accent-soft); color: var(--accent); }
+
+  /* previa */
+  .previa { position: sticky; top: 16px; margin-bottom: 0; padding: 0; overflow: hidden; }
+  .previa-topo { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .previa-topo .nome { flex: 1 1 200px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .previa-corpo { height: calc(100vh - 120px); min-height: 520px; background: var(--fixed); display: grid; place-items: center; }
+  .previa-corpo iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  .vazio { text-align: center; color: var(--muted); padding: 24px; max-width: 320px; }
+  .vazio strong { display: block; color: var(--ink); margin-bottom: 4px; }
+
+  /* cadastros */
+  details summary { cursor: pointer; font-weight: 600; }
+  .lista { list-style: none; margin: 10px 0 0; padding: 0; }
+  .lista li { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .lista small { color: var(--muted); display: block; }
+  .sub { margin: 14px 0 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <h1>Gerador de Carimbo</h1>
+  <p>Check list de carregamento — preencha só o que muda, o PDF sai pronto.</p>
+</header>
+
+<main class="layout">
+  <div>
+    <section class="card" id="card-rede" hidden aria-live="polite">
+      <h2>Para os outros computadores</h2>
+      <div id="rede-ok" hidden>
+        <p class="nota" style="margin-top:0">Peça para a equipe abrir este endereço no navegador:</p>
+        <div class="linkbox">
+          <input type="text" id="link-rede" readonly aria-label="Endereço para os outros computadores">
+          <button type="button" id="btn-copiar">Copiar</button>
+        </div>
+        <p class="nota" id="rede-extra"></p>
+      </div>
+      <div id="rede-off" hidden>
+        <p class="aviso">Ainda não está liberado para os outros computadores. Feche a janela preta, abra o <b>Iniciar.bat</b> de novo e clique em <b>Sim</b> quando o Windows pedir permissão.</p>
+      </div>
+    </section>
+
+    <form id="form" novalidate autocomplete="off">
+
+      <section class="card" aria-labelledby="t-mot">
+        <h2 id="t-mot">Motorista</h2>
+        <div class="campo">
+          <label for="motorista">Nome do motorista</label>
+          <input type="text" id="motorista" list="dl-motoristas" placeholder="Digite o nome completo">
+          <div class="erro" id="e-motorista"></div>
+        </div>
+        <div class="campo">
+          <label for="cpf">CPF</label>
+          <input type="text" id="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+          <div class="erro" id="e-cpf"></div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="t-vei">
+        <h2 id="t-vei">Veículo</h2>
+        <div class="row3">
+          <div class="campo">
+            <label for="cavalo">Cavalo <span class="opc">(caminhão)</span></label>
+            <input type="text" id="cavalo" list="dl-cavalos" maxlength="8" placeholder="ABC-1D23">
+            <div class="erro" id="e-cavalo"></div>
+          </div>
+          <div class="campo">
+            <label for="carreta">Carreta</label>
+            <input type="text" id="carreta" maxlength="8" placeholder="ABC-1D23">
+            <div class="erro" id="e-carreta"></div>
+          </div>
+          <div class="campo">
+            <label for="reboque">Reboque <span class="opc">(opcional)</span></label>
+            <input type="text" id="reboque" maxlength="8" placeholder="ABC-1D23">
+          </div>
+        </div>
+        <div class="campo">
+          <div class="rotulo" id="r-tv">Tipo de veículo</div>
+          <div class="chips" role="radiogroup" aria-labelledby="r-tv">
+            <input type="radio" name="tipoVeiculo" id="tv-0" value="RODOTREM"><label for="tv-0">RODOTREM</label>
+            <input type="radio" name="tipoVeiculo" id="tv-1" value="RODOCAÇAMBA"><label for="tv-1">RODOCAÇAMBA</label>
+            <input type="radio" name="tipoVeiculo" id="tv-2" value="4 EIXO GRANELEIRO"><label for="tv-2">4 EIXO GRANELEIRO</label>
+            <input type="radio" name="tipoVeiculo" id="tv-3" value="4 EIXO CAÇAMBA"><label for="tv-3">4 EIXO CAÇAMBA</label>
+          </div>
+          <div class="erro" id="e-tipoVeiculo"></div>
+        </div>
+        <div class="campo">
+          <label for="tipoCompartimento">Tipo de compartimento <span class="opc">(opcional)</span></label>
+          <input type="text" id="tipoCompartimento" list="dl-tc" placeholder="Ex.: GRANELEIRO">
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="t-car">
+        <h2 id="t-car">Últimas cargas transportadas</h2>
+        <div class="rotulo">Compartimento 2</div>
+        <div class="seg" role="radiogroup" aria-label="Compartimento 2">
+          <input type="radio" name="comp2" id="m-igual" value="igual" checked><label for="m-igual">Igual ao 1</label>
+          <input type="radio" name="comp2" id="m-dif" value="diferente"><label for="m-dif">Diferente</label>
+          <input type="radio" name="comp2" id="m-nao" value="nao"><label for="m-nao">Não tem</label>
+        </div>
+        <div class="grade">
+          <span></span><span class="cab">Compartimento 1</span><span class="cab">Compartimento 2</span>
+          <span class="lin">Última</span>
+          <input type="text" id="c1-0" list="dl-cargas" placeholder="SOJA" aria-label="Última carga, compartimento 1">
+          <input type="text" id="c2-0" list="dl-cargas" placeholder="SOJA" aria-label="Última carga, compartimento 2">
+          <span class="lin">Penúltima</span>
+          <input type="text" id="c1-1" list="dl-cargas" placeholder="MILHO" aria-label="Penúltima carga, compartimento 1">
+          <input type="text" id="c2-1" list="dl-cargas" placeholder="MILHO" aria-label="Penúltima carga, compartimento 2">
+          <span class="lin">Antepenúltima</span>
+          <input type="text" id="c1-2" list="dl-cargas" placeholder="SORGO" aria-label="Antepenúltima carga, compartimento 1">
+          <input type="text" id="c2-2" list="dl-cargas" placeholder="SORGO" aria-label="Antepenúltima carga, compartimento 2">
+        </div>
+        <p class="nota" id="nota-cargas">O Nº IDTF e a limpeza entram sozinhos.</p>
+      </section>
+
+      <section class="card" aria-labelledby="t-fix">
+        <h2 id="t-fix">Já preenchido automaticamente</h2>
+        <dl class="fixos" id="fixos"><dt>Carregando…</dt><dd></dd></dl>
+        <p class="nota">Estes dados já saem sozinhos no PDF.</p>
+      </section>
+
+      <section class="card">
+        <div class="acoes">
+          <button type="submit" class="principal" id="btn-gerar">Gerar PDF</button>
+          <button type="button" id="btn-limpar">Limpar</button>
+        </div>
+        <label class="lembrar"><input type="checkbox" id="salvar" checked> Lembrar este motorista e este veículo para a próxima vez</label>
+        <div id="msg" role="status" aria-live="polite"></div>
+      </section>
+    </form>
+
+    <section class="card">
+      <details>
+        <summary>Cadastros salvos</summary>
+        <div class="sub">Motoristas</div>
+        <ul class="lista" id="lista-mot"></ul>
+        <div class="sub">Veículos</div>
+        <ul class="lista" id="lista-vei"></ul>
+      </details>
+    </section>
+  </div>
+
+  <aside class="card previa" aria-label="Pré-visualização do PDF">
+    <div class="previa-topo">
+      <span class="nome" id="previa-nome">Nenhum PDF gerado ainda</span>
+      <button type="button" class="mini" id="btn-baixar" hidden>Baixar de novo</button>
+      <button type="button" class="mini" id="btn-pasta">Abrir pasta dos PDFs</button>
+    </div>
+    <div class="previa-corpo" id="previa-corpo">
+      <div class="vazio"><strong>O PDF aparece aqui.</strong>Preencha os dados ao lado e clique em “Gerar PDF”. O download começa sozinho.</div>
+    </div>
+  </aside>
+</main>
+
+<datalist id="dl-motoristas"></datalist>
+<datalist id="dl-cavalos"></datalist>
+<datalist id="dl-tc"></datalist>
+<datalist id="dl-cargas"><option value="SOJA"><option value="MILHO"><option value="SORGO"></datalist>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const campos = ['motorista', 'cpf', 'cavalo', 'carreta', 'reboque', 'tipoCompartimento'];
+  const tipoVeiculoSel = () => { const r = document.querySelector('input[name=tipoVeiculo]:checked'); return r ? r.value : ''; };
+  const cargaIds = (n) => [0, 1, 2].map((i) => $('#c' + n + '-' + i));
+  let estado = { fixos: {}, motoristas: [], veiculos: [] };
+  let urlPdf = null, nomePdf = null;
+
+  /* ---------- utilidades ---------- */
+  const soDigitos = (s) => String(s || '').replace(/\D/g, '');
+  const normPlaca = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const maskCpf = (v) => {
+    const d = soDigitos(v).slice(0, 11);
+    return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  };
+  function cpfValido(d) {
+    if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+    for (const n of [9, 10]) {
+      let soma = 0;
+      for (let i = 0; i < n; i++) soma += Number(d[i]) * (n + 1 - i);
+      let dv = (soma * 10) % 11; if (dv === 10) dv = 0;
+      if (dv !== Number(d[n])) return false;
+    }
+    return true;
+  }
+  function manterCursor(el, novo) {
+    const pos = el.selectionStart, antes = el.value.length;
+    el.value = novo;
+    const p = Math.max(0, pos + (novo.length - antes));
+    try { el.setSelectionRange(p, p); } catch (_) {}
+  }
+  function mostrarMsg(texto, tipo) {
+    const m = $('#msg');
+    m.className = texto ? tipo : '';
+    m.textContent = texto || '';
+  }
+  function limparErros() {
+    document.querySelectorAll('.invalid').forEach((e) => { e.classList.remove('invalid'); e.removeAttribute('aria-invalid'); });
+    document.querySelectorAll('.erro').forEach((e) => { e.textContent = ''; });
+    mostrarMsg('');
+  }
+  function invalido(el, texto, idErro) {
+    el.classList.add('invalid'); el.setAttribute('aria-invalid', 'true');
+    if (idErro && $('#' + idErro)) $('#' + idErro).textContent = texto;
+    return el;
+  }
+
+  /* ---------- digitação ---------- */
+  ['motorista', 'tipoCompartimento'].forEach((id) =>
+    $('#' + id).addEventListener('input', (e) => manterCursor(e.target, e.target.value.toUpperCase())));
+  ['cavalo', 'carreta', 'reboque'].forEach((id) =>
+    $('#' + id).addEventListener('input', (e) => manterCursor(e.target, e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))));
+  [...cargaIds(1), ...cargaIds(2)].forEach((el) =>
+    el.addEventListener('input', (e) => manterCursor(e.target, e.target.value.toUpperCase())));
+  $('#cpf').addEventListener('input', (e) => manterCursor(e.target, maskCpf(e.target.value)));
+
+  /* motorista salvo -> preenche CPF (e o contrário) */
+  function aoMudarMotorista() {
+    const nome = $('#motorista').value.trim();
+    const achou = estado.motoristas.find((m) => m.nome === nome);
+    if (achou) $('#cpf').value = achou.cpf;
+  }
+  $('#motorista').addEventListener('change', aoMudarMotorista);
+  $('#motorista').addEventListener('input', (e) => { if (e.inputType === 'insertReplacementText' || !e.inputType) aoMudarMotorista(); });
+  $('#cpf').addEventListener('input', () => {
+    const d = soDigitos($('#cpf').value);
+    if (d.length !== 11) return;
+    const achou = estado.motoristas.find((m) => soDigitos(m.cpf) === d);
+    if (achou) $('#motorista').value = achou.nome;
+  });
+
+  /* veículo salvo -> preenche o resto */
+  function aoMudarCavalo() {
+    const p = normPlaca($('#cavalo').value);
+    if (p.length < 7) return;
+    const achou = estado.veiculos.find((v) => normPlaca(v.cavalo) === p);
+    if (!achou) return;
+    $('#carreta').value = achou.carreta || '';
+    $('#reboque').value = achou.reboque || '';
+    document.querySelectorAll('input[name=tipoVeiculo]').forEach((r) => { r.checked = r.value === achou.tipoVeiculo; });
+    $('#tipoCompartimento').value = achou.tipoCompartimento || '';
+  }
+  $('#cavalo').addEventListener('input', aoMudarCavalo);
+  $('#cavalo').addEventListener('change', aoMudarCavalo);
+
+  /* compartimento 2: igual / diferente / não tem */
+  const modo = () => document.querySelector('input[name=comp2]:checked').value;
+  function aplicaModo() {
+    const m = modo(), c1 = cargaIds(1), c2 = cargaIds(2);
+    c2.forEach((el, i) => {
+      el.disabled = m !== 'diferente';
+      if (m === 'igual') el.value = c1[i].value;
+      if (m === 'nao') el.value = '';
+    });
+  }
+  document.querySelectorAll('input[name=comp2]').forEach((r) => r.addEventListener('change', aplicaModo));
+  cargaIds(1).forEach((el) => el.addEventListener('input', () => { if (modo() === 'igual') aplicaModo(); }));
+
+  /* ---------- dados do servidor ---------- */
+  const headers = { 'Content-Type': 'application/json', 'X-Carimbo': '1' };
+  const post = (rota, corpo) => fetch(rota, { method: 'POST', headers, body: JSON.stringify(corpo || {}) });
+
+  function preencheDatalist(id, valores) {
+    const dl = $('#' + id);
+    dl.replaceChildren(...[...new Set(valores.filter(Boolean))].map((v) => { const o = document.createElement('option'); o.value = v; return o; }));
+  }
+  function desenhaCadastros() {
+    preencheDatalist('dl-motoristas', estado.motoristas.map((m) => m.nome));
+    preencheDatalist('dl-cavalos', estado.veiculos.map((v) => v.cavalo));
+    preencheDatalist('dl-tc', estado.veiculos.map((v) => v.tipoCompartimento));
+
+    const lm = $('#lista-mot'), lv = $('#lista-vei');
+    const item = (titulo, sub, tipo, chave) => {
+      const li = document.createElement('li');
+      const div = document.createElement('div');
+      div.textContent = titulo;
+      const s = document.createElement('small'); s.textContent = sub; div.appendChild(s);
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'mini'; b.textContent = 'Remover';
+      b.addEventListener('click', async () => {
+        if (!confirm('Remover "' + titulo + '" dos cadastros salvos?')) return;
+        await removerCad(tipo, chave);
+        await carregar();
+      });
+      li.append(div, b);
+      return li;
+    };
+    lm.replaceChildren(...(estado.motoristas.length
+      ? estado.motoristas.map((m) => item(m.nome, 'CPF ' + m.cpf, 'motorista', m.cpf))
+      : [Object.assign(document.createElement('li'), { textContent: 'Nenhum motorista salvo ainda.' })]));
+    lv.replaceChildren(...(estado.veiculos.length
+      ? estado.veiculos.map((v) => item(v.cavalo, [v.carreta, v.reboque].filter(Boolean).join(' · '), 'veiculo', v.cavalo))
+      : [Object.assign(document.createElement('li'), { textContent: 'Nenhum veículo salvo ainda.' })]));
+  }
+  function desenhaFixos() {
+    const f = estado.fixos, dl = $('#fixos');
+    const linhas = [['Transportador', f.transportador], ['Produto', f.produto], ['Nº IDTF', f.idtf], ['Tipo de limpeza', f.limpeza]];
+    dl.replaceChildren(...linhas.flatMap(([k, v]) => {
+      const dt = document.createElement('dt'); dt.textContent = k;
+      const dd = document.createElement('dd'); dd.textContent = v || '—';
+      return [dt, dd];
+    }));
+    $('#nota-cargas').textContent = 'O Nº IDTF (' + (f.idtf || '—') + ') e a limpeza (' + (f.limpeza || '—') + ') entram sozinhos.';
+  }
+  function desenhaRede() {
+    const card = $('#card-rede');
+    if (!estado.local) { card.hidden = true; return; }   // só o computador principal mostra isto
+    card.hidden = false;
+    const r = estado.rede || {};
+    const ok = !!(r.ativa && r.enderecos && r.enderecos.length);
+    $('#rede-ok').hidden = !ok; $('#rede-off').hidden = ok;
+    if (ok) {
+      $('#link-rede').value = r.enderecos[0];
+      $('#rede-extra').textContent = r.enderecos.length > 1 ? 'Se esse não abrir, tente: ' + r.enderecos.slice(1).join('   ou   ') : '';
+    }
+  }
+  $('#btn-copiar').addEventListener('click', async () => {
+    const el = $('#link-rede'); el.select();
+    try { await navigator.clipboard.writeText(el.value); } catch (_) { document.execCommand('copy'); }
+    const b = $('#btn-copiar'), t = b.textContent;
+    b.textContent = 'Copiado!'; setTimeout(() => { b.textContent = t; }, 1500);
+  });
+  /* ===== modo sem servidor (Netlify / arquivo): o PDF é gerado no próprio navegador ===== */
+  let modoLocal = false;
+  const FIXOS = { transportador: 'NOVA FROTA TRANSPORTES E LOGISTICA LTDA - CNPJ 21.984.393/0002-76', produto: 'FARELO DE SOJA', idtf: '40341', limpeza: 'A' };
+  const lerCad = () => {
+    try { const c = JSON.parse(localStorage.getItem('carimbo.cadastro')); if (c && c.motoristas && c.veiculos) return c; } catch (_) {}
+    return { motoristas: [], veiculos: [] };
+  };
+  const gravaCad = (c) => { try { localStorage.setItem('carimbo.cadastro', JSON.stringify(c)); } catch (_) {} };
+  async function dadosRemotos() {
+    try { const r = await fetch('/api/dados'); const j = await r.json(); if (j && j.fixos) { modoLocal = false; return j; } } catch (_) {}
+    modoLocal = true;
+    const c = lerCad();
+    return {
+      fixos: FIXOS, local: false, rede: {},
+      motoristas: c.motoristas.slice().sort((a, b) => a.nome.localeCompare(b.nome)),
+      veiculos: c.veiculos.slice().sort((a, b) => a.cavalo.localeCompare(b.cavalo)),
+    };
+  }
+  async function removerCad(tipo, chave) {
+    if (!modoLocal) { await post('/api/cadastro/remover', { tipo, chave }); return; }
+    const c = lerCad();
+    if (tipo === 'motorista') c.motoristas = c.motoristas.filter((m) => m.cpf !== chave);
+    else c.veiculos = c.veiculos.filter((v) => v.cavalo !== chave);
+    gravaCad(c);
+  }
+  const placaFmt = (s) => { const p = String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return /^[A-Z]{3}\d{4}$/.test(p) ? p.slice(0, 3) + '-' + p.slice(3) : p; };
+
+  function montarPdf(v) {
+    const W = 595.28, H = 841.89, X0 = 85.05, LH = 11.5, PAD = 5.4;
+    const ctx = document.createElement('canvas').getContext('2d');
+    const medir = (t, b, sz) => { ctx.font = (b ? 'bold ' : '') + sz + 'px Arial, Helvetica, sans-serif'; return ctx.measureText(t).width; };
+    const quebrar = (t, w, b, sz) => {
+      const out = []; let cur = '';
+      for (const pal of String(t || '').split(/\s+/).filter(Boolean)) {
+        const teste = cur ? cur + ' ' + pal : pal;
+        if (medir(teste, b, sz) <= w) { cur = teste; continue; }
+        if (cur) out.push(cur);
+        cur = pal;
+        while (medir(cur, b, sz) > w && cur.length > 1) {
+          let i = cur.length - 1; while (i > 1 && medir(cur.slice(0, i), b, sz) > w) i--;
+          out.push(cur.slice(0, i)); cur = cur.slice(i);
+        }
+      }
+      if (cur) out.push(cur);
+      return out;
+    };
+    const ops = ['0.5 w 0 G 0 g'];
+    const f2 = (n) => n.toFixed(2);
+    const esc = (s) => {
+      let r = '';
+      for (const ch of s) {
+        let c = ch.charCodeAt(0);
+        if (ch === '’') c = 0x92; else if (ch === '‘') c = 0x91; else if (ch === '–') c = 0x96; else if (c > 255) c = 63;
+        const x = String.fromCharCode(c);
+        r += (x === '\\' || x === '(' || x === ')') ? '\\' + x : x;
+      }
+      return r;
+    };
+    const texto = (x, y, t, b, sz) => ops.push('BT /F' + (b ? 2 : 1) + ' ' + sz + ' Tf ' + f2(x) + ' ' + f2(H - y) + ' Td (' + esc(t) + ') Tj ET');
+    const caixa = (x, y, w, h) => ops.push(f2(x) + ' ' + f2(H - y - h) + ' ' + f2(w) + ' ' + f2(h) + ' re S');
+
+    // tabela: cols em pt; linhas = [[{a,e,t|p,bold,al,rs,minH}]]; devolve o y do fim
+    function tabela(cols, linhas, y0) {
+      const cx = [0]; cols.forEach((w) => cx.push(cx[cx.length - 1] + w));
+      const cel = [];
+      linhas.forEach((l, r) => l.forEach((c) => {
+        const w = cx[c.e + 1] - cx[c.a];
+        const ls = [];
+        (c.p || [{ t: c.t }]).forEach((p) => { const sz = p.sz || 10; quebrar(p.t, w - 2 * PAD + 4.6, c.bold, sz).forEach((s) => ls.push({ s, sz })); });
+        const alt = Math.max(c.minH || 0, LH, ls.reduce((a, q) => a + LH * q.sz / 10, 0)) + 0.5;
+        cel.push(Object.assign({}, c, { r, w, x: cx[c.a], ls, alt, rs: c.rs || 1 }));
+      }));
+      const hs = linhas.map(() => 0);
+      cel.filter((c) => c.rs === 1).forEach((c) => { hs[c.r] = Math.max(hs[c.r], c.alt); });
+      hs.forEach((h, i) => { if (!h) hs[i] = LH + 0.5; });
+      cel.filter((c) => c.rs > 1).forEach((c) => {
+        const soma = hs.slice(c.r, c.r + c.rs).reduce((a, b) => a + b, 0);
+        if (c.alt > soma) hs[c.r + c.rs - 1] += c.alt - soma;
+      });
+      const ys = [y0]; hs.forEach((h) => ys.push(ys[ys.length - 1] + h));
+      cel.forEach((c) => {
+        const y = ys[c.r], h = ys[c.r + c.rs] - y;
+        caixa(X0 + c.x, y, c.w, h);
+        let yy = y;
+        c.ls.forEach((q) => {
+          const tw = medir(q.s, c.bold, q.sz);
+          const x = c.al === 'c' ? X0 + c.x + (c.w - tw) / 2 : X0 + c.x + PAD;
+          texto(x, yy + 1.05 + 0.905 * q.sz, q.s, c.bold, q.sz);
+          yy += LH * q.sz / 10;
+        });
+      });
+      return ys[ys.length - 1];
+    }
+    const C = (a, e, t, o) => Object.assign({ a, e, t }, o || {});
+    const cab = (t) => C(0, 7, t, { bold: true, al: 'c' });
+
+    const titulo = 'MODELO DE CARIMBO (OU CHECK LIST), PARA USO NAS AUTORIZAÇÕES DE CARREGAMENTO (TRANPORTADORAS – PESSOA JURÍDICA).';
+    const tl = quebrar(titulo, 425.2, false, 11);
+    tl.forEach((s, i) => texto(X0, 70.85 + 9.8 + i * 13.65, s, false, 11));
+    let y = 70.85 + tl.length * 13.65 + 8;
+
+    const cargas = ['Última Carga', 'Penúltima Carga', 'Antepenúltima Carga'];
+    const L1 = [
+      [cab('IDENTIFICAÇÃO')],
+      [{ a: 0, e: 0, rs: 2, p: [{ t: 'Placas:' }, { t: v.cavalo, sz: 9 }] }, C(1, 1, 'Carreta:'), C(2, 3, v.carreta), C(4, 4, 'Transportador:', { rs: 2 }), C(5, 7, v.transp, { rs: 2 })],
+      [C(1, 1, 'Reboque'), C(2, 3, v.reboque)],
+      [C(0, 1, 'Nome do Motorista:'), C(2, 3, v.mot), C(4, 4, 'CPF nº'), C(5, 7, v.cpf)],
+      [cab('TIPO DE VEÍCULO/COMPARTIMENTO DE CARGA')],
+      [C(0, 1, 'TIPO DE VEÍCULO'), C(2, 3, v.tipoV), C(4, 4, 'TIPO DE COMPARTIMENTO'), C(5, 7, v.tipoC)],
+      [C(0, 1, 'Produto:'), C(2, 3, v.produto), C(4, 4, 'Nº ITDF:'), C(5, 7, v.idtf)],
+      [cab('ÚLTIMAS CARGAS TRANSPORTADAS C/ NÚMERO IDTF')],
+      [C(0, 3, 'Compartimento 1 / Nº IDTF', { bold: true, al: 'c' }), C(4, 7, 'Compartimento / Nº IDTF', { bold: true, al: 'c' })],
+    ];
+    cargas.forEach((n, i) => L1.push([C(0, 1, n), C(2, 2, v.c1[i]), C(3, 3, v.c1[i] ? v.idtf : ''), C(4, 5, n), C(6, 6, v.c2[i]), C(7, 7, v.c2[i] ? v.idtf : '')]));
+    L1.push([cab('TIPO DE LIMPEZA REALIZADA POR COMPARTIMENTO DE CARGA')]);
+    L1.push([C(0, 3, 'Compartimento 1 / Tipo de Limpeza', { bold: true, al: 'c' }), C(4, 7, 'Compartimento 2 / Tipo de Limpeza', { bold: true, al: 'c' })]);
+    cargas.forEach((n, i) => L1.push([C(0, 1, n + ':'), C(2, 3, v.c1[i] ? v.limpeza : '', { al: 'c' }), C(4, 5, n + ':'), C(6, 7, v.c2[i] ? v.limpeza : '', { al: 'c' })]));
+    y = tabela([1143, 1028, 1171, 1171, 1994, 151, 918, 918].map((t) => t / 20), L1, y);
+
+    y += 6;
+    const tipos = ['TIPOS DE LIMPEZA', 'A - Varredura', 'A - Sopro com ar Comprimido', 'B – Lavagem com água', 'C – Vaporização (com vapor d’água)', 'C – Lavagem com água e agente de limpeza (Detergente)', 'D – Lavagem com água e agente de desinfecção (Sanitizantes)'];
+    y = tabela([424.7], tipos.map((t) => [C(0, 0, t, { al: 'c' })]), y);
+
+    y += 21.65;
+    tabela([212.35, 212.35], [[C(0, 0, 'Assinatura do Responsável pelas Informações (Transportadora):'), C(1, 1, 'Assinatura do Motorista:')], [C(0, 0, '', { minH: 27 }), C(1, 1, '', { minH: 27 })]], y);
+
+    const stream = ops.join('\n');
+    const objs = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+      '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream',
+    ];
+    let pdf = '%PDF-1.4\n'; const offs = [];
+    objs.forEach((o, i) => { offs.push(pdf.length); pdf += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; });
+    const xref = pdf.length;
+    pdf += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n' + offs.map((o) => String(o).padStart(10, '0') + ' 00000 n \n').join('');
+    pdf += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+    const bytes = new Uint8Array(pdf.length);
+    for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 255;
+    return new Blob([bytes], { type: 'application/pdf' });
+  }
+
+  async function gerarLocal(d) {
+    const up = (s) => String(s || '').trim().toUpperCase();
+    const c1 = d.c1.map(up);
+    const c2 = d.comp2 === 'igual' ? c1 : d.comp2 === 'nao' ? ['', '', ''] : d.c2.map(up);
+    const f = estado.fixos;
+    const v = { cavalo: placaFmt(d.cavalo), carreta: placaFmt(d.carreta), reboque: placaFmt(d.reboque), transp: f.transportador, mot: up(d.motorista), cpf: maskCpf(d.cpf), tipoV: up(d.tipoVeiculo), tipoC: up(d.tipoCompartimento), produto: f.produto, idtf: f.idtf, c1, c2, limpeza: f.limpeza };
+    const blob = montarPdf(v);
+    const dt = new Date(), p2 = (n) => String(n).padStart(2, '0');
+    const nome = ('CARIMBO - ' + v.mot.slice(0, 30) + ' - ' + v.cavalo + ' - ' + dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()) + ' ' + p2(dt.getHours()) + '-' + p2(dt.getMinutes()) + '-' + p2(dt.getSeconds()) + '.pdf').replace(/[\\/:*?"<>|]/g, '-');
+    if (d.salvar) {
+      const c = lerCad();
+      c.motoristas = c.motoristas.filter((m) => soDigitos(m.cpf) !== soDigitos(d.cpf)).concat([{ nome: v.mot, cpf: v.cpf }]);
+      c.veiculos = c.veiculos.filter((x) => x.cavalo !== v.cavalo).concat([{ cavalo: v.cavalo, carreta: v.carreta, reboque: v.reboque, tipoVeiculo: v.tipoV, tipoCompartimento: v.tipoC }]);
+      gravaCad(c);
+    }
+    window.__ultimoPdf = blob;
+    mostrarPdf(blob, nome); baixar();
+    mostrarMsg('PDF pronto! O download começou.', 'ok');
+    if (d.salvar) await carregar();
+  }
+
+  async function carregar() {
+    try {
+      estado = await dadosRemotos();
+      $('#btn-pasta').hidden = !estado.local;   // abrir a pasta só faz sentido no computador onde o programa roda
+      desenhaFixos(); desenhaCadastros(); desenhaRede();
+    } catch (_) {
+      mostrarMsg('Não consegui falar com o programa. Ele ainda está aberto (janela preta)?', 'erro-geral');
+    }
+  }
+
+  /* ---------- gerar ---------- */
+  function coletar() {
+    const d = {};
+    campos.forEach((id) => { d[id] = $('#' + id).value.trim(); });
+    d.tipoVeiculo = tipoVeiculoSel();
+    d.comp2 = modo();
+    d.c1 = cargaIds(1).map((e) => e.value.trim());
+    d.c2 = cargaIds(2).map((e) => e.value.trim());
+    d.salvar = $('#salvar').checked;
+    return d;
+  }
+  function validar(d) {
+    const erros = [];
+    if (!d.motorista) erros.push(invalido($('#motorista'), 'Informe o nome do motorista.', 'e-motorista'));
+    if (!cpfValido(soDigitos(d.cpf))) erros.push(invalido($('#cpf'), 'CPF inválido. Confira os números.', 'e-cpf'));
+    if (!d.cavalo) erros.push(invalido($('#cavalo'), 'Informe a placa.', 'e-cavalo'));
+    if (!d.carreta) erros.push(invalido($('#carreta'), 'Informe a placa.', 'e-carreta'));
+    if (!d.tipoVeiculo) {
+      erros.push(invalido(document.querySelector('input[name=tipoVeiculo]'), 'Escolha o tipo de veículo.', 'e-tipoVeiculo'));
+    }
+    let faltaCarga = false;
+    cargaIds(1).forEach((el, i) => { if (!d.c1[i]) { invalido(el); faltaCarga = true; } });
+    if (d.comp2 === 'diferente') cargaIds(2).forEach((el, i) => { if (!d.c2[i]) { invalido(el); faltaCarga = true; } });
+    if (faltaCarga) mostrarMsg('Preencha as 3 últimas cargas (ex.: SOJA, MILHO, SORGO).', 'erro-geral');
+    return { ok: !erros.length && !faltaCarga, primeiro: erros[0] || document.querySelector('.invalid') };
+  }
+  function baixar() {
+    if (!urlPdf) return;
+    const a = document.createElement('a');
+    a.href = urlPdf; a.download = nomePdf; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function mostrarPdf(blob, nome) {
+    if (urlPdf) URL.revokeObjectURL(urlPdf);
+    urlPdf = URL.createObjectURL(blob); nomePdf = nome;
+    $('#previa-nome').textContent = nome;
+    $('#btn-baixar').hidden = false;
+    const f = document.createElement('iframe');
+    f.title = 'PDF gerado'; f.src = urlPdf + '#toolbar=0&navpanes=0';
+    $('#previa-corpo').replaceChildren(f);
+  }
+  $('#form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    limparErros();
+    const d = coletar();
+    const v = validar(d);
+    if (!v.ok) { if (v.primeiro) v.primeiro.focus(); return; }
+    const btn = $('#btn-gerar');
+    btn.disabled = true; btn.textContent = 'Gerando PDF… (alguns segundos)';
+    mostrarMsg('Montando o PDF. Aguarde…', 'info');
+    try {
+      if (modoLocal) { await gerarLocal(d); return; }
+      const r = await post('/api/gerar', d);
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        mostrarMsg(j.erro || 'Não foi possível gerar o PDF.', 'erro-geral');
+        return;
+      }
+      const nome = decodeURIComponent(r.headers.get('X-Nome-Arquivo') || 'carimbo.pdf');
+      const blob = await r.blob();
+      mostrarPdf(blob, nome);
+      baixar();
+      mostrarMsg(r.headers.get('X-Copia-Na-Pasta') === '0'
+        ? 'PDF pronto! O download começou. (A cópia na pasta PDFs não pôde ser guardada — veja a janela preta.)'
+        : 'PDF pronto! O download começou e uma cópia ficou na pasta PDFs.', 'ok');
+      if (d.salvar) await carregar();
+    } catch (_) {
+      mostrarMsg('Não consegui falar com o programa. Ele ainda está aberto (janela preta)?', 'erro-geral');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Gerar PDF';
+    }
+  });
+
+  $('#btn-baixar').addEventListener('click', baixar);
+  $('#btn-pasta').addEventListener('click', () => post('/api/abrir-pasta'));
+  $('#btn-limpar').addEventListener('click', () => {
+    $('#form').reset(); limparErros(); aplicaModo(); $('#motorista').focus();
+  });
+
+  carregar().then(() => { aplicaModo(); $('#motorista').focus(); });
+})();
+</script>
+</body>
+</html>

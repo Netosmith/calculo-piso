@@ -165,8 +165,7 @@ async function voidRecord(id){
 async function init(){
  const sess=window.portalAuthReady?await window.portalAuthReady:null;
  if(!sess||!requireFeatureAuth("funcionarios"))return;
- if(sess.tenantMode===true||sess.transportadoraId!=="nova-frota"||
-    String(sess.perfil||"").toUpperCase()!=="ADMINISTRADOR"){
+ if(sess.tenantMode===true||sess.transportadoraId!=="nova-frota"){
   location.replace("./home.html");return;
  }
  if($("rhUser"))$("rhUser").textContent=sess.nome||sess.usuario||"Administração";

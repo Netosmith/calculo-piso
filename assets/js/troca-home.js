@@ -33,6 +33,7 @@
    window.__PORTAL_TROCA_MODULES_CONFIRMED={"solicitacao-troca-notas":requester,"execucao-troca-notas":executor};
    window.__PORTAL_TROCA_EXECUTOR=executor;
    KEYS.forEach(x=>show(x,window.__PORTAL_TROCA_MODULES_CONFIRMED[x]===true));
+   window.dispatchEvent(new CustomEvent("portal:modules-confirmed",{detail:{group:"troca-notas"}}));
   }catch(_){KEYS.forEach(x=>show(x,false));}
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",load,{once:true});else void load();

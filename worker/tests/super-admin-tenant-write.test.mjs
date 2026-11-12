@@ -202,8 +202,8 @@ test("membership routes refuse Nova Frota, unknown tenant, and invalid data",asy
 test("duplicate memberships and invalid mutations never modify the catalog",async()=>{
  const db=database(),opts={SUPER_ADMIN_MEMBERSHIP_WRITES:"enabled"};
  await call(db,"","POST",{id:"tenant-a",name:"Tenant A"});
- assert.equal((await call(db,"/tenant-a/usuarios","POST",{usuario:"USER1",perfil:"MT"},opts)).status,201);
- assert.equal((await call(db,"/tenant-a/usuarios","POST",{usuario:"USER1",perfil:"PR"},opts)).status,409);
+ assert.equal((await call(db,"/tenant-a/usuarios","POST",{usuario:"USER1",perfil:"OPERACIONAL"},opts)).status,201);
+ assert.equal((await call(db,"/tenant-a/usuarios","POST",{usuario:"USER1",perfil:"PISO"},opts)).status,409);
  for(const body of [{ativo:"SIM"},{perfil:"SUPER_ADMIN"},{}, {perfil:"PR",Senha:"secret"}]) {
   assert.equal((await call(db,"/tenant-a/usuarios/USER1","PATCH",body,opts)).status,400);
  }

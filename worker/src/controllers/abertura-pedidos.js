@@ -235,7 +235,7 @@ export async function aberturaPedidosController(req,env){
    // A descrição da correção já chega como primeira mensagem do chat.
    if(row.tipo_solicitacao==="CORRECAO_PEDIDO"){
     let extras={};try{extras=JSON.parse(row.dados_especificos_json||"{}");}catch{}
-    const message=clean(extras.textoCorrecao,1800);
+    const message=cleanMultiline(extras.textoCorrecao,1800);
     if(message)await db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
      .bind(crypto.randomUUID(),p.id,id,p.user,message).run();
    }

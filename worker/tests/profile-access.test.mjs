@@ -74,6 +74,10 @@ test("Salvar na R2 por empresa, preservando bloqueios imutáveis",async()=>{
    ["piso2","piso","cadastros"]),["piso2"]);
  assert.deepEqual(await modulesForProfile(storage,"nova-frota","ADMINISTRADOR",
    ["piso2","cadastros","funcionarios"]),["piso2","cadastros"]);
+ // SUPER-ADMIN autenticado pelo Worker ignora desmarcações do perfil ADMINISTRADOR
+ // sem estender essa exceção aos demais usuários da transportadora.
+ assert.deepEqual(await modulesForProfile(storage,"nova-frota","ADMINISTRADOR",
+   ["piso2","cadastros","funcionarios"],true),["piso2","cadastros","funcionarios"]);
  assert.deepEqual(await modulesForProfile(storage,"nova-frota","COMERCIAL",
    ["cadastros","funcionarios","bi","controle"]),["cadastros","funcionarios","bi"]);
 });

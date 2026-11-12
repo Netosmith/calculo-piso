@@ -33,6 +33,7 @@
    window.__PORTAL_PEDIDOS_MODULES_CONFIRMED={"solicitacao-pedidos":requester,"execucao-pedidos":executor};
    window.__PORTAL_PEDIDOS_EXECUTOR=executor;
    KEYS.forEach(x=>show(x,window.__PORTAL_PEDIDOS_MODULES_CONFIRMED[x]===true));
+   window.dispatchEvent(new CustomEvent("portal:modules-confirmed",{detail:{group:"pedidos"}}));
   }catch(_){KEYS.forEach(x=>show(x,false));}
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",load,{once:true});else void load();

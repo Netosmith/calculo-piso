@@ -56,7 +56,7 @@ test("Finalizar requer numero de pedido no sistema e impedir finalizacao sem o c
  const c=load("worker/src/controllers/abertura-pedidos.js");
  const page=load("pages/execucao-pedidos.html");
  const js=load("assets/js/abertura-pedidos.js");
- assert.ok(c.includes('status==="FINALIZADO"&&!numeroPedidoSistema'));
+ assert.ok(c.includes('(row.tipo_solicitacao||"PEDIDO")==="PEDIDO"&&!numeroPedidoSistema'));
  assert.ok(c.includes("numero_pedido_sistema=CASE WHEN ?='FINALIZADO'"));
  assert.ok(c.includes('status IN (\'ANDAMENTO\',\'PENDENTE\')'));
  assert.ok(page.includes('name="numeroPedidoSistema"'));

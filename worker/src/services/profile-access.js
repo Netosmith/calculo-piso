@@ -21,14 +21,16 @@ function availableForCompany(id){
 function normalizeModules(id,role,values){
  if(!Array.isArray(values))return [];
  const allowed=new Set(values);
+ // O padrão do COMERCIAL continua sem Cadastros/Funcionários, mas o
+ // proprietário pode autorizá-los explicitamente no Super Admin.
+ // PISO mantém sua restrição estrutural exclusiva ao Piso 2.
  return availableForCompany(id).filter(module=>allowed.has(module)&&
-   !(role==="PISO"&&module!=="piso2")&&
-   !(role==="COMERCIAL"&&["cadastros","funcionarios"].includes(module)));
+   !(role==="PISO"&&module!=="piso2"));
 }
 export function defaultProfileModules(id,role){
  const all=availableForCompany(id);
  if(role==="ADMINISTRADOR")return all;
- if(role==="COMERCIAL")return normalizeModules(id,role,all);
+ if(role==="COMERCIAL")return all.filter(x=>!["cadastros","funcionarios"].includes(x));
  if(role==="GOADM")return all.filter(x=>x==="administrativo");
  if(role==="PISO")return all.filter(x=>x==="piso2");
  if(role==="OPERACIONAL")return all.filter(x=>
@@ -57,8 +59,9 @@ export async function readProfileAccess(env,id){
   if(list.length>PROFILE_MODULES.length||
     list.some(key=>typeof key!=="string"||!KEYS.has(key))||
     new Set(list).size!==list.length)throw new Error("Configuração de perfis inválida.");
-  // ADMINISTRADOR é sempre pleno dentro dos módulos ativos; PISO jamais recebe outros.
-  profiles[role]=role==="ADMINISTRADOR"?defaults.ADMINISTRADOR:normalizeModules(id,role,list);
+  // ADMINISTRADOR e COMERCIAL podem ter todos os módulos ajustados.
+  // A regra de PISO continua restrita ao Piso 2.
+  profiles[role]=normalizeModules(id,role,list);
  }
  return {profiles,configured:true,updatedAt:saved.updatedAt||null};
 }
@@ -122,9 +125,7 @@ export async function adminWriteProfileAccess(request,env,actor,id){
  }catch{return errorResponse("Matriz de perfis inválida.",400);}
  const profiles={};
  for(const role of PROFILE_ROLES){
-  profiles[role]=role==="ADMINISTRADOR"
-    ?defaultProfileModules(id,role)
-    :normalizeModules(id,role,data.profiles[role]);
+  profiles[role]=normalizeModules(id,role,data.profiles[role]);
  }
  const updatedAt=new Date().toISOString();
  try{

@@ -643,6 +643,13 @@ function requireFeatureAuth(featureKey, deniedMessage){
     return false;
   }
 
+  const key=String(featureKey||"").trim().toLowerCase();
+  if(window.__PORTAL_TENANT_SESSION?.tenantMode!==true&&
+     NOVA_MANAGED_FEATURES.has(key)&&!novaFrotaModulesConfirmed){
+    alert("Não foi possível confirmar as liberações do Portal. Atualize a página e tente novamente.");
+    window.location.href=window.portalTenantHref?.("home.html")||"../pages/home.html";
+    return false;
+  }
   if(!canAccessFeature(featureKey)){
     alert(deniedMessage || "Esta funcionalidade não está liberada para este perfil.");
     window.location.href = window.portalTenantHref?.("home.html") || "../pages/home.html";

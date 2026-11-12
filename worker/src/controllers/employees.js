@@ -1,6 +1,8 @@
 import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
 import {getSession,readSessionId} from "../services/session.js";
 import {hasModulePin} from "../services/module-pin.js";
+import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
+import {modulesForProfile} from "../services/profile-access.js";
 import {errorResponse,success} from "../utils/response.js";
 import {parseCommissionSetting,calculateCommission} from "../services/rh-commissions.js";
 
@@ -32,8 +34,17 @@ async function authorize(req,env){
   if(!session)return {error:errorResponse("Faça login no Portal Frete.",401)};
   if(session.tenantMode===true||tenantIdForLegacySession(session)!==LEGACY_NOVA_FROTA.id)
     return {error:errorResponse("Recurso exclusivo da Nova Frota.",403)};
-  if(String(session.perfil||"").trim().toUpperCase()!=="ADMINISTRADOR")
-    return {error:errorResponse("Acesso restrito à administração da Nova Frota.",403)};
+  // Permissão de RH decidida pelo Super Admin, inclusive quando
+  // ele libera expressamente Funcionários para um perfil COMERCIAL.
+  let allowed=false;
+  try{
+    const global=await readNovaFrotaModules(env);
+    const owner=Boolean(env.SUPER_ADMIN_USER)&&
+      String(session.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase();
+    const modules=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,session.perfil,global.modules,owner);
+    allowed=modules.includes("funcionarios");
+  }catch{return {error:errorResponse("Não foi possível validar o acesso a Funcionários.",503)};}
+  if(!allowed)return {error:errorResponse("Funcionários não liberado para este perfil.",403)};
   if(!await hasModulePin(req,env,"funcionarios"))
     return {error:errorResponse("Informe a senha de Funcionários para liberar este módulo.",403)};
   return {session};

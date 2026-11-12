@@ -1,6 +1,9 @@
 import { getSession,readSessionId } from "../services/session.js";
 import { canUsePinModule,isPinModule,verifyModulePinValue,hasModulePin,issueModulePin,failedPinKey } from "../services/module-pin.js";
 import { errorResponse,success } from "../utils/response.js";
+import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
+import {modulesForProfile} from "../services/profile-access.js";
+import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
 
 const LIMIT=5,WINDOW=10*60;
 async function failedAttempts(env,key){
@@ -40,8 +43,18 @@ export async function modulePinController(request,env){
   }
   if(typeof module!=="string"||!isPinModule(module))
     return errorResponse("Módulo inválido.",400);
-  if(!canUsePinModule(session,module))
+  if(!canUsePinModule(session,module)||
+    tenantIdForLegacySession(session)!==LEGACY_NOVA_FROTA.id)
     return errorResponse("Módulo não autorizado para este perfil ou transportadora.",403);
+  try{
+    const state=await readNovaFrotaModules(env);
+    const owner=Boolean(env.SUPER_ADMIN_USER)&&
+      String(session.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase();
+    const effective=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,
+      session.perfil,state.modules,owner);
+    if(!effective.includes(module))
+      return errorResponse("Módulo desativado para este perfil.",403);
+  }catch{return errorResponse("Não foi possível verificar a permissão do módulo.",503);}
   if(method==="GET"){
     return success({module,unlocked:await hasModulePin(request,env,module)});
   }

@@ -34,7 +34,7 @@ test("PISO Home hides operational data and shows only ANTT and its own cadastros
  }
  assert.ok(html.includes('body.nf-profile-piso .nf-tools > *'));
  assert.ok(html.includes('body.nf-profile-piso.pf-piso2-allowed .nf-tools > [data-feature="piso2"]'));
- assert.ok(html.includes("Cálculo de Piso 2 (ANTT) e Solicitações de Cadastro"));
+ assert.ok(html.includes("Acesso restrito: Cálculo de Piso 2 (ANTT)"));
  assert.ok(html.includes('data-feature="cadastro-solicitacoes"'));
  assert.ok(auth.includes('if(feature==="cadastro-solicitacoes")return isAuthedHome()'));
  assert.ok(auth.includes('if(profile==="PISO")return isAuthedHome() && feature==="piso2"'));
@@ -66,7 +66,7 @@ test("PISO session never reveals other enabled tenant modules",async()=>{
 test("PISO page restriction uses signed session and hides preferences",()=>{
  const auth=read("assets/js/auth.js"),home=read("pages/home.html");
  assert.match(auth,/function enforcePisoPageScope\(session\)/);
- assert.ok(auth.includes('["login.html","home.html","calculo-antt.html","cadastro-solicitacoes.html"]'));
+ assert.ok(auth.includes('["login.html","home.html","calculo-antt.html"]'));
  assert.ok(auth.includes('if(getProfile()!=="PISO")shell.appendChild(settings)'));
  assert.ok(home.includes('body.nf-profile-piso #nfPrefsOpen'));
  assert.match(home,/auth[.]js[?]v=/);

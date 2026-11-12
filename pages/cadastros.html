@@ -282,8 +282,8 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=20261112-editable-profiles-2"></script>
-  <script src="../assets/js/cadastros.js?v=20261112-editable-profiles-2"></script>
+  <script src="../assets/js/auth.js?v=20261112-cadastros-owner-3"></script>
+  <script src="../assets/js/cadastros.js?v=20261112-cadastros-owner-3"></script>
   <script>
   (async function(){
     try {
@@ -295,8 +295,13 @@
   })();
   </script>
   <script>
-    requireHomeAuth();
-    bindLogoutButton();
+    // Não decidir acesso durante o carregamento da sessão assinada.
+    // O módulo valida sua permissão após portalAuthReady.
+    (async () => {
+      const session=window.portalAuthReady?await window.portalAuthReady:null;
+      if(session&&typeof requireHomeAuth==="function")requireHomeAuth();
+      if(typeof bindLogoutButton==="function")bindLogoutButton();
+    })();
   </script>
 
   <script>

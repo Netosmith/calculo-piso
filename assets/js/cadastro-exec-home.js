@@ -38,6 +38,7 @@
    };
    window.__PORTAL_CADASTRO_EXECUTOR=executionEnabled;
    MODULES.forEach(key=>show(key,window.__PORTAL_CADASTRO_MODULES_CONFIRMED[key]===true));
+   window.dispatchEvent(new CustomEvent("portal:modules-confirmed",{detail:{group:"cadastros"}}));
   }catch(_){denyAll();}
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});

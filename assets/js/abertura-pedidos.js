@@ -134,7 +134,11 @@ function setKind(kind,{syncPicker=true}={}){
   group.hidden=!active;
   for(const input of group.querySelectorAll("input,textarea,select"))input.disabled=!active;
  }
- for(const input of $("pedidoComplementDoc").querySelectorAll("input"))input.disabled=!complement;
+ for(const input of $("pedidoComplementDoc").querySelectorAll("input")){
+  input.disabled=!complement;
+  // Rascunho pode conter anexo salvo no Drive. O Worker verifica a presença.
+  input.required=complement&&!draft;
+ }
  $("tnFormTitle").textContent="Nova solicitação: "+KINDS[formKind].title;
  $("pedFormTypeBadge").textContent=KINDS[formKind].title.toUpperCase();
  $("pedFormHint").textContent=KINDS[formKind].hint;
@@ -256,11 +260,11 @@ async function preview(id,doc){
   }
  }catch(e){if(current===previewSequence)$("tnPreviewBody").replaceChildren(element("p",e.message));}
 }
-function renderDocs(id,docs){
+function renderDocs(id,docs,kind="PEDIDO"){
  const target=$("tnDetailDocs");target.replaceChildren();
  if(!docs.length)target.append(element("p","Nenhum documento anexado.","cad-tip"));
  for(const doc of docs){
-  const row=element("div","","tn-file"),title=element("strong",(SLOTS[doc.slot]||doc.slot)+": "+doc.nome);
+  const row=element("div","","tn-file"),title=element("strong",(kind==="CTE_COMPLEMENTAR"&&doc.slot==="liberacao"?"Liberação do cliente":SLOTS[doc.slot]||doc.slot)+": "+doc.nome);
   const buttons=element("div"),pv=element("button","Visualizar","secondary"),dl=element("button","Baixar","secondary");
   pv.type=dl.type="button";pv.onclick=()=>preview(id,doc);dl.onclick=()=>download(id,doc);
   buttons.append(pv,dl);row.append(title,buttons);target.append(row);
@@ -312,7 +316,7 @@ async function openDetail(id){
    for(const name of EXTRA_FIELDS[kind]||[])
     info.append(detailItem(EXTRA_LABELS[name],extras[name]));
   }
-  renderDocs(id,data.anexos||[]);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
+  renderDocs(id,data.anexos||[],kind);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
   const isMine=execution&&executor&&row.executor===user;
   const canMove=isMine&&["ANDAMENTO","PENDENTE"].includes(row.status);
   $("tnExecution").hidden=!execution;

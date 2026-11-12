@@ -61,3 +61,18 @@ test("Páginas principais usam versão nova do script de autenticação",()=>{
    assert.match(s,/auth[.]js[?]v=/,name);
  }
 });
+
+test("Cadastro aguarda confirmação da matriz antes de validar ADMINISTRADOR ou Super Admin",()=>{
+ const script=read("assets/js/cadastros.js");
+ const page=read("pages/cadastros.html");
+ const modules=read("worker/src/controllers/nova-frota-modules.js");
+ const start=script.indexOf("async function init(){");
+ const wait=script.indexOf("session=await window.portalAuthReady",start);
+ const guard=script.indexOf('!canAccessFeature("cadastros")',start);
+ assert.ok(start>=0 && wait>start && guard>wait,
+  "Validação de Cadastro não pode acontecer antes das permissões do servidor");
+ assert.ok(page.includes("const session=window.portalAuthReady?await window.portalAuthReady:null"));
+ assert.ok(page.includes("cadastros.js?v=20261112-cadastros-owner-3"));
+ assert.match(modules,/modulesForProfile\(env,LEGACY_NOVA_FROTA\.id,session\.perfil,state\.modules,isOwner\)/);
+ assert.match(modules,/env\.SUPER_ADMIN_USER/);
+});

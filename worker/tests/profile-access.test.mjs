@@ -50,7 +50,7 @@ test("Salvar na R2 por empresa, preservando bloqueios imutáveis",async()=>{
   COMERCIAL:["cadastros","funcionarios","piso2","bi"],
   OPERACIONAL:["piso2","fretes-go","monitoramento"],
   GOADM:["administrativo","ordem"],
-  ADMINISTRADOR:[]
+  ADMINISTRADOR:["piso2","cadastros"]
  };
  const request=new Request("https://api.portalfrete.net.br/v1/super-admin/transportadoras/nova-frota/profile-access",{
   method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({profiles:all})
@@ -60,8 +60,12 @@ test("Salvar na R2 por empresa, preservando bloqueios imutáveis",async()=>{
  const state=await readProfileAccess(storage,"nova-frota");
  assert.equal(state.configured,true);
  assert.deepEqual(state.profiles.PISO,["piso2"]);
- assert.deepEqual(state.profiles.COMERCIAL,["piso2","bi"]);
- assert.ok(state.profiles.ADMINISTRADOR.includes("cadastros"));
+ assert.ok(state.profiles.COMERCIAL.includes("cadastros"));
+ assert.ok(state.profiles.COMERCIAL.includes("funcionarios"));
+ assert.ok(state.profiles.COMERCIAL.includes("piso2"));
+ assert.ok(state.profiles.COMERCIAL.includes("bi"));
+ assert.deepEqual(state.profiles.ADMINISTRADOR,["piso2","cadastros"]);
+ assert.ok(!state.profiles.ADMINISTRADOR.includes("funcionarios"));
  assert.equal(await profileAllowsModule(storage,"nova-frota","GOADM","ordem"),true);
  assert.equal(await profileAllowsModule(storage,"nova-frota","OPERACIONAL","bi"),false);
  assert.deepEqual(await modulesForProfile(storage,"nova-frota","OPERACIONAL",
@@ -69,9 +73,24 @@ test("Salvar na R2 por empresa, preservando bloqueios imutáveis",async()=>{
  assert.deepEqual(await modulesForProfile(storage,"nova-frota","PISO",
    ["piso2","piso","cadastros"]),["piso2"]);
  assert.deepEqual(await modulesForProfile(storage,"nova-frota","ADMINISTRADOR",
-   ["piso2","cadastros"]),["piso2","cadastros"]);
+   ["piso2","cadastros","funcionarios"]),["piso2","cadastros"]);
+ assert.deepEqual(await modulesForProfile(storage,"nova-frota","COMERCIAL",
+   ["cadastros","funcionarios","bi","controle"]),["cadastros","funcionarios","bi"]);
 });
 
+test("ADMINISTRADOR pode ficar sem módulos e COMERCIAL pode ativar Cadastros e Funcionários",async()=>{
+ const storage=env();
+ const defaults=(await readProfileAccess(storage,"nova-frota")).profiles;
+ const profiles={...defaults,ADMINISTRADOR:[],COMERCIAL:["cadastros","funcionarios"]};
+ const request=new Request("https://api.portalfrete.net.br/v1/super-admin/transportadoras/nova-frota/profile-access",{
+  method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({profiles})
+ });
+ assert.equal((await adminWriteProfileAccess(request,storage,"LUZIANO","nova-frota")).status,200);
+ assert.deepEqual(await modulesForProfile(storage,"nova-frota","ADMINISTRADOR",
+   ["piso2","cadastros","funcionarios"]),[]);
+ assert.deepEqual(await modulesForProfile(storage,"nova-frota","COMERCIAL",
+   ["cadastros","funcionarios","piso2"]),["cadastros","funcionarios"]);
+});
 test("API recusa ação de módulo que o perfil não tem, mesmo pelo link direto",()=>{
  assert.equal(canRunGatewayAction({perfil:"OPERACIONAL",allowedModules:["fretes","piso2"]},"bi","read"),false);
  assert.equal(canRunGatewayAction({perfil:"OPERACIONAL",allowedModules:["bi"]},"bi","read"),true);
@@ -92,6 +111,8 @@ test("Interface apresenta a aba e o carregador protege links e PISO",()=>{
  assert.ok(panel.includes('id="saveProfileAccess"'));
  assert.ok(panel.includes('super-admin-profile-access.js?v='));
  assert.ok(ui.includes("/profile-access"));
+ assert.ok(ui.includes('return !(currentRole==="PISO"&&key!=="piso2");'));
+ assert.ok(!ui.includes('currentRole!=="ADMINISTRADOR"'));
  assert.ok(guard.includes("routeFeature"));
  assert.ok(guard.includes("session.modules.includes(routeFeature)"));
  assert.ok(auth.includes('if(feature==="super-admin")return false'));

@@ -16,22 +16,156 @@ body.pedidos-app [hidden]{display:none!important}
 
 /* Identificação por tipo: verde (pedido), laranja (correção),
    azul (CT-e complementar) e violeta (carta de correção). */
+/* Cabeçalho: área de ações horizontal, sem cartões empilhados. */
+body.pedidos-app[data-pedidos-visao="solicitante"] .cad-hero{
+ gap:24px;
+ min-height:140px;
+}
+body.pedidos-app[data-pedidos-visao="solicitante"] .cad-hero>div:first-child{
+ flex:1 1 450px;
+ min-width:0;
+}
+body.pedidos-app .cad-hero-actions{
+ display:flex;
+ align-items:center;
+ justify-content:flex-end;
+ flex:0 1 auto;
+ gap:12px;
+ flex-wrap:nowrap;
+ min-width:0;
+}
+body.pedidos-app .pedido-compose-bar{
+ display:flex;
+ align-items:flex-end;
+ gap:12px;
+ padding:10px 12px;
+ border:1px solid rgba(210,240,236,.22);
+ border-radius:16px;
+ background:rgba(7,35,52,.35);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+ max-width:100%;
+}
 body.pedidos-app .pedido-kind-picker{
- display:grid;gap:6px;min-width:min(260px,100%);padding:10px 12px;
- border:1px solid rgba(255,255,255,.24);border-radius:14px;
- background:rgba(5,24,42,.28);color:#dff2fa;
+ --pedido-kind-accent:#25d19a;
+ display:grid;
+ grid-template-columns:12px minmax(0,1fr);
+ grid-template-rows:auto 46px;
+ align-items:center;
+ gap:5px 8px;
+ min-width:260px;
+ width:285px;
+ flex:0 1 285px;
+ padding:0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+ color:#d8f1ed;
+ position:relative;
 }
-body.pedidos-app .pedido-kind-picker>span{font-size:10px;letter-spacing:.09em;font-weight:900}
+body.pedidos-app .pedido-kind-picker[data-kind="CORRECAO_PEDIDO"]{--pedido-kind-accent:#ffa24a}
+body.pedidos-app .pedido-kind-picker[data-kind="CTE_COMPLEMENTAR"]{--pedido-kind-accent:#65baff}
+body.pedidos-app .pedido-kind-picker[data-kind="CARTA_CORRECAO"]{--pedido-kind-accent:#d9a0ff}
+body.pedidos-app .pedido-kind-picker>span{
+ grid-column:1/-1;
+ font-size:10px;
+ letter-spacing:.11em;
+ line-height:1.4;
+ font-weight:850;
+}
+body.pedidos-app .pedido-kind-indicator{
+ grid-column:1;
+ grid-row:2;
+ width:10px;
+ height:10px;
+ margin-left:1px;
+ border-radius:50%;
+ background:var(--pedido-kind-accent);
+ box-shadow:0 0 0 4px rgba(255,255,255,.07);
+ pointer-events:none;
+}
 body.pedidos-app #tnKindSelect{
- display:block;width:100%;border:1px solid rgba(255,255,255,.38);
- padding:11px 12px;border-radius:10px;font-size:13px;font-weight:850;
- background:#117554;color:#fff;cursor:pointer;
+ grid-column:2;
+ grid-row:2;
+ min-width:0;
+ width:100%;
+ height:46px;
+ box-sizing:border-box;
+ border:1px solid rgba(205,229,236,.95);
+ border-radius:10px;
+ padding:0 32px 0 13px;
+ font-size:13px;
+ font-weight:750;
+ line-height:1.3;
+ background:#f9fcfe;
+ color:#123751;
+ cursor:pointer;
+ box-shadow:0 2px 6px rgba(2,18,33,.10);
+ color-scheme:light;
 }
-body.pedidos-app #tnKindSelect[data-kind="CORRECAO_PEDIDO"]{background:#aa5a15}
-body.pedidos-app #tnKindSelect[data-kind="CTE_COMPLEMENTAR"]{background:#145d9e}
-body.pedidos-app #tnKindSelect[data-kind="CARTA_CORRECAO"]{background:#7544a6}
-body.pedidos-app #tnKindSelect option{background:#102e4a;color:#fff}
-body.pedidos-app .cad-hero-actions{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+body.pedidos-app #tnKindSelect option{background:#fff;color:#123751}
+body.pedidos-app #tnKindSelect:focus-visible{
+ outline:3px solid #8be5c7;
+ outline-offset:2px;
+}
+body.pedidos-app #tnNew.hero-action{
+ flex:0 0 auto;
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ height:46px;
+ min-width:172px;
+ box-sizing:border-box;
+ margin:0;
+ padding:0 17px;
+ border:1px solid rgba(206,255,231,.42);
+ border-radius:10px;
+ background:linear-gradient(115deg,#12a873,#0b9568);
+ color:#fff;
+ font-size:12px;
+ font-weight:850;
+ letter-spacing:.01em;
+ white-space:nowrap;
+ box-shadow:0 6px 16px rgba(0,41,32,.17);
+}
+body.pedidos-app #tnNew.hero-action:hover:not(:disabled){
+ background:linear-gradient(115deg,#19b780,#087a58);
+ box-shadow:0 7px 18px rgba(0,39,31,.27);
+}
+body.pedidos-app #tnNew.hero-action:focus-visible{
+ outline:3px solid #b6f4dd;
+ outline-offset:3px;
+}
+body.pedidos-app #tnNew.hero-action:disabled{opacity:.65}
+@media(max-width:1120px){
+ body.pedidos-app[data-pedidos-visao="solicitante"] .cad-hero{
+  flex-direction:column;
+  align-items:stretch;
+ }
+ body.pedidos-app[data-pedidos-visao="solicitante"] .cad-hero>div:first-child{flex:auto}
+ body.pedidos-app .cad-hero-actions{justify-content:flex-start;flex-wrap:wrap}
+}
+@media(max-width:590px){
+ body.pedidos-app .cad-hero-actions{width:100%;align-items:stretch}
+ body.pedidos-app .pedido-compose-bar{
+  width:100%;
+  flex-wrap:wrap;
+  align-items:stretch;
+  gap:10px;
+  padding:10px;
+ }
+ body.pedidos-app .pedido-kind-picker{
+  width:100%;
+  min-width:0;
+  flex:1 1 100%;
+ }
+ body.pedidos-app #tnNew.hero-action{
+  min-width:0;
+  width:100%;
+  flex:1 1 100%;
+  height:46px;
+ }
+ body.pedidos-app .cad-hero-actions .hero-action{width:100%}
+}
 body.pedidos-app .pedido-extra-fields{margin:0 0 18px}
 body.pedidos-app .pedido-extra-fields .pedido-fields{margin:0}
 body.pedidos-app .pedido-fields select{
@@ -71,8 +205,3 @@ body.pedidos-app .pedido-category-ticket .tn-client{overflow-wrap:anywhere}
 body.pedidos-app .pedido-form-dialog[data-kind="CORRECAO_PEDIDO"] .cad-dialog-head{border-top:5px solid #df7e23}
 body.pedidos-app .pedido-form-dialog[data-kind="CTE_COMPLEMENTAR"] .cad-dialog-head{border-top:5px solid #267dcc}
 body.pedidos-app .pedido-form-dialog[data-kind="CARTA_CORRECAO"] .cad-dialog-head{border-top:5px solid #9250c5}
-@media(max-width:750px){
- body.pedidos-app .pedido-kind-picker{min-width:100%}
- body.pedidos-app .cad-hero-actions{width:100%}
- body.pedidos-app .cad-hero-actions .hero-action{width:100%;text-align:center}
-}

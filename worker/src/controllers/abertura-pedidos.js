@@ -227,6 +227,13 @@ export async function aberturaPedidosController(req,env){
    const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status='RASCUNHO'").bind(id,p.id).run();
    if(update.meta?.changes!==1)return err("Chamado já enviado.",409);
    await hist(db,p,id,"FILA","Enviado para a fila de execução").run();
+   // A descrição da correção já chega como primeira mensagem do chat.
+   if(row.tipo_solicitacao==="CORRECAO_PEDIDO"){
+    let extras={};try{extras=JSON.parse(row.dados_especificos_json||"{}");}catch{}
+    const message=clean(extras.textoCorrecao,1800);
+    if(message)await db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
+     .bind(crypto.randomUUID(),p.id,id,p.user,message).run();
+   }
    return success({numero:row.numero,status:"FILA"});
   }
   if(action==="assumir"&&req.method==="POST"){

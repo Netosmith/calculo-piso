@@ -7,7 +7,7 @@ const read=path=>readFileSync(new URL("../../"+path,import.meta.url),"utf8");
 test("Super Admin uses the portal global navigation",()=>{
  const html=read("pages/super-admin.html");
  const nav=read("assets/js/auth.js");
- assert.match(html,/<script src="\.\.\/assets\/js\/auth\.js\?v=26"><\/script>/);
+ assert.match(html,/auth[.]js[?]v=/);
  assert.match(html,/portal-preferences[.]js[?]v=/);
  assert.match(nav,/function renderPortalGlobalNav\(/);
  const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];

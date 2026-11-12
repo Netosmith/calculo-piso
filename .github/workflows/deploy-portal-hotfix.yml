@@ -180,7 +180,7 @@ jobs:
           node --check ../assets/js/troca-notas.js
           node --check src/controllers/abertura-pedidos.js
           node --check ../assets/js/abertura-pedidos.js
-          node --test tests/abertura-pedidos.test.mjs tests/pedidos-tipos.test.mjs
+          node --test tests/abertura-pedidos.test.mjs tests/pedidos-tipos.test.mjs tests/home-profile-modules.test.mjs
           node --test tests/troca-notas.test.mjs
           node --check ../assets/js/cadastro-solicitacoes.js
           node --test tests/cadastro-solicitacoes.test.mjs tests/cadastro-solicitacoes-modos.test.mjs tests/cadastro-ambientes.test.mjs tests/cadastro-detalhes.test.mjs tests/cadastro-numero-curto.test.mjs tests/cadastro-cards-compactos.test.mjs tests/cadastro-quadro-unico.test.mjs tests/cadastro-minha-execucao.test.mjs tests/cadastro-autosave-checklist.test.mjs

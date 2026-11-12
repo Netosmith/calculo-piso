@@ -163,7 +163,7 @@ function enforcePisoPageScope(session){
   // Signed PISO sessions may navigate only Home and ANTT Piso 2.
   // API permissions independently block every other data endpoint.
   const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
-  if(["login.html","home.html","calculo-antt.html","cadastro-solicitacoes.html","solicitacao-pedidos.html"].includes(file))return true;
+  if(["login.html","home.html","calculo-antt.html"].includes(file))return true;
   window.location.href=window.portalTenantHref?.("home.html") || "./home.html";
   return false;
 }
@@ -468,8 +468,8 @@ function enforceNovaFrotaPageGrant(session){
  if(!session||session.tenantMode===true||session.transportadoraId!=="nova-frota")return true;
  const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
  const filenames={
-  "calculo-piso.html":"piso","calculo-antt.html":"piso2",
-  "fretes.html":"fretes","fretes2.html":"fretes2","funcionarios.html":"funcionarios","relatorio.html":"relatorio",
+  "calculo-piso.html":"piso","calculo-antt.html":"piso2","calculo-antt2.html":"piso2","ordem.html":"ordem",
+  "fretes.html":"fretes","fretes2.html":"fretes2","funcionarios.html":"funcionarios","funcionarios-cadastro.html":"funcionarios","funcionarios-lancamentos.html":"funcionarios","funcionarios-tabela.html":"funcionarios","funcionarios-comissoes.html":"funcionarios","relatorio.html":"relatorio",
   "bi.html":"bi","divulgacao.html":"divulgacao",
   "controle.html":"controle","share-clientes.html":"share",
   "cadastros.html":"cadastros","cadastro-solicitacoes.html":"cadastro-solicitacoes",
@@ -497,6 +497,8 @@ function featuresForProfile(profile){
 function canAccessFeature(featureKey, context=""){
   let feature = String(featureKey || "").trim().toLowerCase();
   const profile = getProfile();
+  // Super Admin nunca é concedido por perfil local ou módulo liberado.
+  if(feature==="super-admin")return false;
 
   // Compatibilidade da tela Fretes MT:
   // o fretes2.js ainda valida "fretes" na inicialização, mas nesta página
@@ -533,11 +535,9 @@ function canAccessFeature(featureKey, context=""){
     // Piso 1 and Piso 2 are independently granted by the Super Admin.
     // Never map piso2 to piso: that exposed both calculators with one checkbox.
     if(!modules.includes(feature))return false;
-    if(/^fretes-(go|mt|sp|ms|ba|pr|sc|ro|to|ma|ac|al|ap|am|ce|df|es|mg|pa|pb|pe|pi|rj|rn|rs|rr|se)$/.test(feature)){
-      return ["ADMINISTRADOR","COMERCIAL","OPERACIONAL"].includes(role);
-    }
-    if(role==="ADMINISTRADOR")return true;
-    return featuresForProfile(role).includes(feature);
+    // O Worker já reduziu session.modules ao cruzamento com a matriz do perfil.
+    // Nenhum segundo array local pode ocultar um card autorizado no Super Admin.
+    return true;
   }
 
   if(!novaFrotaModuleGranted(feature))return false;
@@ -562,6 +562,9 @@ function canAccessFeature(featureKey, context=""){
     return isAuthedHome();
   }
 
+  if(novaFrotaModulesConfirmed && NOVA_MANAGED_FEATURES.has(feature)){
+    return isAuthedHome() && novaFrotaModuleGranted(feature);
+  }
   const features = featuresForProfile(profile)
     .map(item => String(item || "").trim().toLowerCase());
 

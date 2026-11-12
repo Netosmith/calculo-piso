@@ -186,6 +186,12 @@
   renderBaseCards();
   document.querySelectorAll(".nf-tools a.nf-tool[data-feature]").forEach(card=>{
    const feature=card.dataset.feature;
+   // A confirmação dos seis cartões de solicitações/execução pertence aos
+   // controladores especializados. Aqui não sobrescrever a decisão da API
+   // nem mostrar um executor antes de sua autorização.
+   if(["cadastro-solicitacoes","execucao-cadastros",
+       "solicitacao-troca-notas","execucao-troca-notas",
+       "solicitacao-pedidos","execucao-pedidos"].includes(feature))return;
    // Shortcut availability follows Super Admin grants. Regional assignments
    // control KPIs, not whether the operator may open and prepare that base.
    const allowed=typeof window.canAccessFeature==="function"&&

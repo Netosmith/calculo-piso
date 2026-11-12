@@ -26,6 +26,10 @@ const EXTRA_FIELDS=Object.freeze({
 
 
 const clean=(value,max=160)=>typeof value==="string"&&value.trim().length>0&&value.trim().length<=max&&!/[\u0000-\u001f\u007f]/.test(value)?value.trim():null;
+// Texto livre permite parágrafos mas recusa caracteres de controle inválidos.
+const cleanMultiline=(value,max)=>typeof value==="string"&&value.trim().length>0&&
+ value.trim().length<=max&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)
+ ? value.trim().replace(/\r\n?/g,"\n"):null;
 const err=(m,c=400)=>errorResponse(m,c);
 const driveConfigKey=id=>"tenant/"+id+"/private/cadastro-drive-v1.json";
 const nfFlagsKey="tenant/nova-frota/private/optional-modules-v1.json";
@@ -114,7 +118,8 @@ export function normalizedFields(b,requester=""){
   const extras=b.dadosEspecificos;
   if(!extras||typeof extras!=="object"||Array.isArray(extras))throw Error("Dados específicos da solicitação não informados.");
   for(const [key,max] of EXTRA_FIELDS[kind]){
-   const value=clean(extras[key],max);
+   const value=["textoCorrecao","descricaoComplemento","textoCarta"].includes(key)
+    ? cleanMultiline(extras[key],max) : clean(extras[key],max);
    if(!value)throw Error("Campo obrigatório ou inválido: "+key);
    result.dadosEspecificos[key]=value;
   }
@@ -287,7 +292,8 @@ export async function aberturaPedidosController(req,env){
   if(message==="Envie JSON."||message==="Dados inválidos."||message==="E-mail inválido."||
      message==="Tipo de solicitação inválido."||message==="Dados específicos da solicitação não informados."||
      message==="Selecione CT-e ou MDF-e."||
-     message.startsWith("Campo obrigatório:")||message.startsWith("Campo inválido:"))
+     message.startsWith("Campo obrigatório:")||message.startsWith("Campo inválido:")||
+     message.startsWith("Campo obrigatório ou inválido:"))
    return err(message,400);
   return err("Não foi possível concluir a operação. "+
     (message.includes("Apps Script")?"Verifique o Apps Script.":"Verifique a integração e tente novamente."),503);

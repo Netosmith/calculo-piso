@@ -147,8 +147,9 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
     actionName === "read" &&
     ["REGIONAIS", "FILIAIS"].includes(resource)
   ) {
-    const features = PROFILE_FEATURES[profile] || [];
-    return ADMIN_PROFILES.has(profile) || features.includes("bi");
+    return Array.isArray(session?.allowedModules)
+      ? (session.allowedModules.includes("cadastros")||session.allowedModules.includes("bi"))
+      : hasFeature(session,"cadastros")||hasFeature(session,"bi");
   }
 
   if (!hasFeature(session, moduleName)) return false;

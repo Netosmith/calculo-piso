@@ -453,7 +453,7 @@ function bindEvents() {
 async function iniciarFretesMercado() {
   setStatus("🔄 Validando acesso...");
 
-  const session = await verifyPortalSession({ requireState: true });
+  const session = window.portalAuthReady ? await window.portalAuthReady : await verifyPortalSession({ requireState: true });
   if (!session) return;
 
   if (!canAccessFeature("fretes-mercado")) {

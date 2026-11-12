@@ -710,7 +710,11 @@ function resetMine(){pesos={};localStorage.removeItem(pesoKey());renderPesos();r
 function resetAll(){if(user()!==ADMIN_USER&&!role().includes("ADMIN"))return alert("Apenas administrador.");for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.includes("pesos_custom"))localStorage.removeItem(k)}resetMine()}
 function debounce(fn,ms=600){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
 
-function init(){
+async function init(){
+ // A validação de módulos é assíncrona desde que o Super Admin passou a controlá-los.
+ // Não emitir alerta de falta de permissão enquanto a API ainda está respondendo.
+ const session=window.portalAuthReady?await window.portalAuthReady:null;
+ if(!session){if(typeof redirectToLogin==="function")redirectToLogin();return;}
  let acessoLiberado=false;
 
  try{

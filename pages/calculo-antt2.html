@@ -6,7 +6,7 @@
   <title>Cálculo Piso Mínimo de Frete - Nova Frota</title>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+  <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
 
   <style>
     :root{
@@ -735,7 +735,9 @@ function bind(){
   });
   document.querySelectorAll(".seg").forEach(seg=>seg.addEventListener("click",e=>{ if(e.target.tagName!=="BUTTON") return; flags[seg.dataset.toggle]=e.target.dataset.val; applyToggles(); renderAll(); }));
 }
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded",async()=>{
+  const session=window.portalAuthReady?await window.portalAuthReady:null;
+  if(!session){if(typeof redirectToLogin==="function")redirectToLogin();return;}
   if(enforcePiso2Auth() !== true) return;
   bind();
   applyToggles();

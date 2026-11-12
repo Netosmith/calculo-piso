@@ -652,6 +652,15 @@ function requireFeatureAuth(featureKey, deniedMessage){
   return true;
 }
 
+async function awaitPortalFeatureAuth(featureKey, deniedMessage){
+  // Aguarda a sessão assinada e as liberações do Super Admin antes de negar o acesso.
+  const session=window.portalAuthReady?await window.portalAuthReady:null;
+  if(!session){
+    redirectToLogin();
+    return false;
+  }
+  return requireFeatureAuth(featureKey,deniedMessage);
+}
 function requireEstadiasAuth(){
   if(requireFeatureAuth(
     "estadias",

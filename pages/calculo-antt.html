@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <!-- ✅ LOGIN DO PORTAL (HOME + ESTADO + PERMISSÕES DO PISO) -->
-  <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+  <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
 
   <style>
 :root{
@@ -593,7 +593,9 @@ function calc(opts={}){
 }
 
 /* ================== INIT ================== */
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded", async ()=>{
+  const session=window.portalAuthReady?await window.portalAuthReady:null;
+  if(!session){if(typeof redirectToLogin==="function")redirectToLogin();return;}
   const ok = enforcePisoAuth();
   if(!ok){
     return;

@@ -914,7 +914,7 @@
   <div class="cfLoading" id="loading"><div class="cfLoadingBox" id="loadingText">Carregando...</div></div>
   </div>
 
-  <script src="../assets/js/auth.js?v=nav-complete-20261108-1"></script>
+  <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
   <script src="../assets/js/module-pin.js?v=1"></script>
   <script>
     (() => {
@@ -944,10 +944,11 @@
         setTimeout(()=>input.focus(),50);
       }
       async function validatePortal(){
+        const sess=window.portalAuthReady?await window.portalAuthReady:null;
+        if(!sess)return false;
         if(typeof requireFeatureAuth==="function"){
           if(requireFeatureAuth("custo-filial","Custo / Filial não liberado para este perfil.")!==true)return false;
         }else if(typeof requireHomeAuth==="function"&&requireHomeAuth()!==true)return false;
-        const sess=window.portalAuthReady?await window.portalAuthReady:null;
         return Boolean(sess&&sess.tenantMode!==true);
       }
       form.addEventListener("submit",async event=>{

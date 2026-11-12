@@ -7,9 +7,29 @@ const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],[
 const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT"};
 const FIELDS=["email","nomeSolicitante","telefoneWhats","unidadeEmbarque","numeroPedidoOC","nfeManifestada","tomadorCnpj","coletaIe","entregaCnpj","entregaIe","freteEmpresa","freteMotorista","adiantamentoPct","icms","produto","especie","tag","obs","coordenadasColeta","coordenadasEntrega"];
 const LABELS=["E-mail","Nome do solicitante","Telefone / Whats","Unidade de embarque","Número do pedido OC","NF-e a manifestar","Tomador / CNPJ","Coleta / IE","Entrega / CNPJ","Entrega / IE","Frete empresa","Frete motorista","Adiantamento %","ICMS","Produto","Espécie","TAG","Observações","Coordenadas coleta","Coordenadas entrega"];
+const KINDS={
+ PEDIDO:{title:"Abertura de pedido",short:"Pedido",hint:"Preencha os dados do pedido e anexe os documentos disponíveis."},
+ CORRECAO_PEDIDO:{title:"Correção de pedido",short:"Correção",hint:"Informe o pedido e descreva o que deve ser corrigido. A mensagem abre o chat do chamado."},
+ CTE_COMPLEMENTAR:{title:"CT-e complementar",short:"CT-e complementar",hint:"Informe o CT-e, descreva o complemento e anexe a liberação do cliente."},
+ CARTA_CORRECAO:{title:"Carta de correção",short:"Carta de correção",hint:"Selecione CT-e ou MDF-e e escreva o texto da carta."}
+};
+const EXTRA_LABELS={
+ numeroPedidoCorrecao:"Número do pedido",textoCorrecao:"Solicitação de correção",
+ numeroCte:"Número do CT-e",descricaoComplemento:"Complemento solicitado",
+ documentoTipo:"Tipo de documento",numeroDocumento:"Número do documento",textoCarta:"Texto da carta"
+};
+const EXTRA_FIELDS={
+ CORRECAO_PEDIDO:["numeroPedidoCorrecao","textoCorrecao"],
+ CTE_COMPLEMENTAR:["numeroCte","descricaoComplemento"],
+ CARTA_CORRECAO:["documentoTipo","numeroDocumento","textoCarta"]
+};
+const kindOf=p=>Object.hasOwn(KINDS,p?.tipoSolicitacao)?p.tipoSolicitacao:"PEDIDO";
+const kindTitle=p=>KINDS[kindOf(p)].title;
+const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
+ p?.dadosEspecificos?.numeroCte||p?.dadosEspecificos?.numeroDocumento||p?.numeroPedidoOC||"";
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
-let user="",executor=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false;
+let user="",executor=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
 function time(value){
@@ -35,19 +55,25 @@ async function request(path="",method="GET",data){
  return result;
 }
 function matches(p,q){
- return !q||[number(p),p.protocolo,p.unidadeEmbarque,p.numeroPedidoOC,p.nomeSolicitante,p.nfeManifestada,p.produto,p.numeroPedidoSistema,p.executor]
+ return !q||[number(p),p.protocolo,kindTitle(p),kindRef(p),...Object.values(p.dadosEspecificos||{}),p.unidadeEmbarque,p.numeroPedidoOC,p.nomeSolicitante,p.nfeManifestada,p.produto,p.numeroPedidoSistema,p.executor]
   .some(v=>String(v||"").toUpperCase().includes(q));
 }
 function card(p){
- const b=element("button","","cad-lane-ticket");b.type="button";
+ const b=element("button","","cad-lane-ticket pedido-category-ticket");b.type="button";
+ b.dataset.kind=kindOf(p);
  const meta=element("div","","cad-lane-ticket-meta");
  meta.append(element("span",number(p),"cad-short-number"),element("span",time(p.criadoEm)));
+ const badge=element("span",kindTitle(p),"pedido-category-label");
  const foot=element("div","","tn-card-bottom");
  foot.append(element("small",p.executor?"Executor: "+p.executor:"Aguardando executor"),
-  element("small",p.status==="FINALIZADO"?"Sistema: "+(p.numeroPedidoSistema||""): "OC: "+p.numeroPedidoOC));
- b.append(meta,element("strong",p.unidadeEmbarque,"tn-client"),
-  element("span",p.nomeSolicitante+" · "+p.produto,"tn-branch"),foot);
- b.title=number(p)+" · OC "+p.numeroPedidoOC+" · "+p.unidadeEmbarque;
+  element("small",kindOf(p)==="PEDIDO"?(p.status==="FINALIZADO"?"Sistema: "+(p.numeroPedidoSistema||""):"OC: "+p.numeroPedidoOC):"Ref.: "+kindRef(p)));
+ const title=kindOf(p)==="PEDIDO"?(p.unidadeEmbarque||"Nova abertura"):kindRef(p);
+ const subtitle=kindOf(p)==="PEDIDO"?
+  [p.nomeSolicitante,p.produto].filter(Boolean).join(" · "):
+  [p.nomeSolicitante,p.solicitante].filter(Boolean).join(" · ");
+ b.append(meta,badge,element("strong",title||kindTitle(p),"tn-client"),
+  element("span",subtitle,"tn-branch"),foot);
+ b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"");
  b.onclick=()=>openDetail(p.id);return b;
 }
 function render(){
@@ -60,7 +86,7 @@ function render(){
   head.append(element("strong",label),element("span",String(rows.length),"cad-lane-count"));
   lane.append(head);
   const items=element("div","","cad-lane-items");
-  if(!rows.length)items.append(element("p","Nenhum pedido nesta etapa.","cad-lane-empty"));
+  if(!rows.length)items.append(element("p","Nenhuma solicitação nesta etapa.","cad-lane-empty"));
   for(const row of rows)items.append(card(row));
   lane.append(items);board.append(lane);
  }
@@ -68,7 +94,7 @@ function render(){
  if(mine){
   mine.replaceChildren();
   const rows=chamados.filter(x=>x.executor===user&&["ANDAMENTO","PENDENTE"].includes(x.status));
-  if(!rows.length)mine.append(element("p","Nenhum pedido sob sua responsabilidade.","cad-empty"));
+  if(!rows.length)mine.append(element("p","Nenhuma solicitação sob sua responsabilidade.","cad-empty"));
   for(const row of rows)mine.append(card(row));
  }
  const button=$("tnDraftButton"),tray=$("tnDrafts"),drafts=chamados.filter(x=>x.status==="RASCUNHO");
@@ -76,7 +102,7 @@ function render(){
  if(!drafts.length)draftsExpanded=false;
  tray.hidden=!draftsExpanded;tray.replaceChildren();
  if(draftsExpanded)for(const row of drafts){
-  const b=element("button",number(row)+" · OC "+row.numeroPedidoOC+" / "+row.unidadeEmbarque,"tn-draft");
+  const b=element("button",number(row)+" · "+kindTitle(row)+" / "+kindRef(row),"tn-draft");
   b.type="button";b.onclick=()=>resume(row);tray.append(b);
  }
 }
@@ -85,18 +111,56 @@ async function refresh(){
  chamados=Array.isArray(result.chamados)?result.chamados:[];
  render();
 }
+function setKind(kind,{syncPicker=true}={}){
+ formKind=Object.hasOwn(KINDS,kind)?kind:"PEDIDO";
+ const selector=$("tnKindSelect");
+ if(selector){
+  if(syncPicker)selector.value=formKind;
+  selector.dataset.kind=formKind;
+ }
+ const form=$("tnForm");if(!form)return;
+ form.elements.tipoSolicitacao.value=formKind;
+ $("pedidoOriginalFields").hidden=formKind!=="PEDIDO";
+ $("pedidoOriginalDocs").hidden=formKind!=="PEDIDO";
+ $("pedidoExtraFields").hidden=formKind==="PEDIDO";
+ const complement=formKind==="CTE_COMPLEMENTAR";
+ $("pedidoComplementDoc").hidden=!complement;
+ for(const input of $("pedidoOriginalFields").querySelectorAll("input,textarea,select"))
+  input.disabled=formKind!=="PEDIDO";
+ for(const input of $("pedidoOriginalDocs").querySelectorAll("input"))
+  input.disabled=formKind!=="PEDIDO";
+ for(const group of $("pedidoExtraFields").querySelectorAll("[data-kind-fields]")){
+  const active=group.dataset.kindFields===formKind;
+  group.hidden=!active;
+  for(const input of group.querySelectorAll("input,textarea,select"))input.disabled=!active;
+ }
+ for(const input of $("pedidoComplementDoc").querySelectorAll("input"))input.disabled=!complement;
+ $("tnFormTitle").textContent="Nova solicitação: "+KINDS[formKind].title;
+ $("pedFormTypeBadge").textContent=KINDS[formKind].title.toUpperCase();
+ $("pedFormHint").textContent=KINDS[formKind].hint;
+ $("pedDocumentsTitle").hidden=formKind!=="PEDIDO";
+ $("tnEnviar").textContent="Enviar "+(formKind==="PEDIDO"?"pedido":"solicitação");
+ $("tnFormDialog").dataset.kind=formKind;
+ if(selector){
+  $("tnNew").textContent="+ Nova solicitação";
+ }
+}
 function newForm(){
- if(!canCreate)return inform("Configure o Google Drive antes de solicitar a abertura de pedidos.",true);
+ if(!canCreate)return inform("Configure o Google Drive antes de solicitar documentos.",true);
  draft="";$("tnForm").reset();
- $("tnFormTitle").textContent="Nova abertura de pedido";
+ setKind($("tnKindSelect")?.value||"PEDIDO");
  $("tnFormProgress").textContent="Preencha os campos obrigatórios. Anexos podem ser enviados junto à solicitação.";
  showDialog("tnFormDialog");
 }
 async function resume(row){
  if(execution)return;
- draft=row.id;$("tnForm").reset();
+ draft=row.id;$("tnForm").reset();setKind(kindOf(row));
  for(const name of FIELDS)$("tnForm").elements[name].value=row[name]||"";
- $("tnFormTitle").textContent="Retomar pedido "+number(row);
+ for(const name of EXTRA_FIELDS[formKind]||[]){
+  const input=$("tnForm").elements[name];
+  if(input)input.value=row.dadosEspecificos?.[name]||"";
+ }
+ $("tnFormTitle").textContent="Retomar "+kindTitle(row)+" "+number(row);
  $("tnFormProgress").textContent="Dados editáveis. Os anexos já recebidos são preservados.";
  showDialog("tnFormDialog");
  try{
@@ -122,9 +186,16 @@ async function upload(id,slot,file){
 async function submitForm(e){
  e.preventDefault();if(busy)return;
  const form=$("tnForm"),button=$("tnEnviar"),progress=$("tnFormProgress");
- const payload={};for(const field of FIELDS)payload[field]=String(form.elements[field].value||"").trim();
- const documents=[...form.querySelectorAll("[data-slot]")].flatMap(input=>
+ const payload={tipoSolicitacao:formKind};
+ for(const field of FIELDS)payload[field]=String(form.elements[field].value||"").trim();
+ payload.dadosEspecificos={};
+ for(const name of EXTRA_FIELDS[formKind]||[])
+  payload.dadosEspecificos[name]=String(form.elements[name].value||"").trim();
+ const documents=[...form.querySelectorAll("[data-slot]:not([disabled])")].flatMap(input=>
   [...input.files].map(file=>({slot:input.dataset.slot,file})));
+ if(formKind==="CTE_COMPLEMENTAR"&&!draft&&!documents.some(x=>x.slot==="liberacao")){
+  progress.textContent="Anexe a liberação do cliente para solicitar um CT-e complementar.";return;
+ }
  busy=true;button.disabled=true;
  try{
   if(!draft){
@@ -138,10 +209,10 @@ async function submitForm(e){
    progress.textContent="Enviando anexo "+(i+1)+"/"+documents.length+": "+SLOTS[documents[i].slot];
    await upload(draft,documents[i].slot,documents[i].file);
   }
-  progress.textContent="Encaminhando o pedido para execução...";
+  progress.textContent="Encaminhando a solicitação para execução...";
   const result=await request("/"+draft+"/enviar","POST",{});
   hideDialog("tnFormDialog");draft="";
-  inform("Pedido "+(result.numero?"#"+String(result.numero).padStart(5,"0"):"")+" enviado para a fila.");
+  inform(KINDS[formKind].title+" "+(result.numero?"#"+String(result.numero).padStart(5,"0"):"")+" encaminhada para a fila.");
   await refresh();
  }catch(error){
   progress.textContent="Envio incompleto. "+error.message+" O rascunho foi preservado.";
@@ -215,22 +286,32 @@ const detailItem=(label,value)=>{
  const e=element("div");e.append(element("span",label),element("strong",value||"Não informado"));return e;
 };
 function updateSystemInput(){
- const form=$("tnStatusForm"),wrap=$("pedSystemNumberInputWrap"),final=form.elements.status.value==="FINALIZADO";
+ const form=$("tnStatusForm"),wrap=$("pedSystemNumberInputWrap"),final=form.elements.status.value==="FINALIZADO"&&kindOf(selected)==="PEDIDO";
  wrap.hidden=!final;form.elements.numeroPedidoSistema.required=final;
 }
 async function openDetail(id){
  try{
   const data=await request("/"+id),row=data.chamado;selected=row;
-  $("tnDetailProtocol").textContent="ABERTURA DE PEDIDO "+number(row);
-  $("tnDetailTitle").textContent="OC "+row.numeroPedidoOC+" · "+row.unidadeEmbarque;
-  $("tnDetailMeta").textContent="Solicitante: "+row.nomeSolicitante+" · "+time(row.criadoEm);
+  const kind=kindOf(row),extras=row.dadosEspecificos||{};
+  $("tnDetailProtocol").textContent=kindTitle(row).toUpperCase()+" "+number(row);
+  $("tnDetailTitle").textContent=kind==="PEDIDO"?
+   "OC "+row.numeroPedidoOC+" · "+row.unidadeEmbarque:
+   kindTitle(row)+" · "+kindRef(row);
+  $("tnDetailMeta").textContent="Solicitante: "+(row.nomeSolicitante||row.solicitante)+" · "+time(row.criadoEm);
+  $("tnDetailTipo").dataset.kind=kind;
+  $("tnDetailTipo").textContent=kindTitle(row);
   $("tnDetailStatus").dataset.state=row.status;
   $("tnDetailStatus").textContent=({FILA:"Na fila",ANDAMENTO:"Em andamento",PENDENTE:"Pendente",FINALIZADO:"Finalizado",RASCUNHO:"Rascunho"})[row.status]||row.status;
   $("tnDetailOwner").textContent=row.executor?"Executor: "+row.executor:"Aguardando executor";
-  $("pedSystemNumber").hidden=row.status!=="FINALIZADO"||!row.numeroPedidoSistema;
+  $("pedSystemNumber").hidden=kind!=="PEDIDO"||row.status!=="FINALIZADO"||!row.numeroPedidoSistema;
   $("pedSystemNumberValue").textContent=row.numeroPedidoSistema||"";
   const info=$("tnDetailInfo");info.replaceChildren();
-  for(let i=0;i<FIELDS.length;i++)info.append(detailItem(LABELS[i],row[FIELDS[i]]));
+  if(kind==="PEDIDO"){
+   for(let i=0;i<FIELDS.length;i++)info.append(detailItem(LABELS[i],row[FIELDS[i]]));
+  }else{
+   for(const name of EXTRA_FIELDS[kind]||[])
+    info.append(detailItem(EXTRA_LABELS[name],extras[name]));
+  }
   renderDocs(id,data.anexos||[]);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
   const isMine=execution&&executor&&row.executor===user;
   const canMove=isMine&&["ANDAMENTO","PENDENTE"].includes(row.status);
@@ -290,9 +371,13 @@ $("tnPreviewDialog").addEventListener("close",clearPreview);
 $("tnRefresh").onclick=()=>refresh().catch(e=>inform(e.message,true));
 $("tnFilter").onchange=render;$("tnSearch").oninput=render;
 $("tnDraftButton").onclick=()=>{draftsExpanded=!draftsExpanded;render();};
+if($("tnKindSelect")){
+ $("tnKindSelect").onchange=()=>setKind($("tnKindSelect").value,{syncPicker:false});
+ $("tnKindSelect").dataset.kind="PEDIDO";
+}
 if($("tnNew"))$("tnNew").onclick=newForm;
 if($("tnForm"))$("tnForm").onsubmit=submitForm;
-$("tnAssumir").onclick=()=>action("/assumir",{},"Pedido assumido.");
+$("tnAssumir").onclick=()=>action("/assumir",{},"Solicitação assumida.");
 $("tnStatusForm").elements.status.onchange=updateSystemInput;
 $("tnStatusForm").onsubmit=e=>{
  e.preventDefault();const f=e.currentTarget;

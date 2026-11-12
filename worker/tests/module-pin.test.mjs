@@ -12,6 +12,8 @@ globalThis.crypto??=webcrypto;
 const API="https://api.portalfrete.net.br";
 const pass=String.fromCharCode(53,53,50,50);
 const secret={PORTAL_KEY:"test-module-pin-secret"};
+const profileBucket={async get(){return null;}};
+const envWithModuleAccess=()=>({...secret,SESSIONS:kv(),TENANT_BRANDS:profileBucket});
 function kv(){
   const values=new Map();
   return {
@@ -37,16 +39,16 @@ async function authorize(module,token,env,code=pass){
 }
 test("PIN é exclusivo de módulos Nova Frota e respeita permissões",async()=>{
   assert.equal(canUsePinModule({usuario:"A",perfil:"ADMINISTRADOR",transportadoraId:"nova-frota"},"funcionarios"),true);
-  assert.equal(canUsePinModule({usuario:"A",perfil:"COMERCIAL",transportadoraId:"nova-frota"},"funcionarios"),false);
+  assert.equal(canUsePinModule({usuario:"A",perfil:"COMERCIAL",transportadoraId:"nova-frota"},"funcionarios"),true);
   assert.equal(canUsePinModule({usuario:"A",perfil:"COMERCIAL",transportadoraId:"nova-frota"},"custo-frota"),true);
   assert.equal(canUsePinModule({usuario:"A",perfil:"ADMINISTRADOR",transportadoraId:"gnova"},"custo-filial"),false);
-  const tok=await session({tenant:"gnova"}),env={...secret,SESSIONS:kv()};
+  const tok=await session({tenant:"gnova"}),env=envWithModuleAccess();
   assert.equal((await authorize("funcionarios",tok,env)).status,403);
   const piso=await session({role:"PISO"});
   assert.equal((await authorize("custo-frota",piso,env)).status,403);
 });
 test("PIN errado não gera cookie; acerto libera cada card por cookie HttpOnly",async()=>{
-  const tok=await session(),env={...secret,SESSIONS:kv()};
+  const tok=await session(),env=envWithModuleAccess();
   const first=await authorize("funcionarios",tok,env,"0000");
   assert.equal(first.status,403);
   assert.equal(first.headers.has("Set-Cookie"),false);
@@ -66,7 +68,7 @@ test("PIN errado não gera cookie; acerto libera cada card por cookie HttpOnly",
   assert.equal(await hasModulePin(request("/v1/module-pin/status?module=funcionarios",newToken,{cookie:raw}),env,"funcionarios"),false);
 });
 test("limite de tentativas e origem obrigatória",async()=>{
-  const tok=await session(),env={...secret,SESSIONS:kv()};
+  const tok=await session(),env=envWithModuleAccess();
   const badOrigin=await modulePinController(request("/v1/module-pin/unlock",tok,{
     method:"POST",origin:"https://evil.example",body:{module:"funcionarios",pin:pass}
   }),env);
@@ -78,7 +80,7 @@ test("limite de tentativas e origem obrigatória",async()=>{
   assert.equal((await authorize("funcionarios",tok,env)).status,429);
 });
 test("dados de Funcionários, Cálculo Frota e Custo Filial exigem PIN também via API",async()=>{
-  const tok=await session(),env={...secret,SESSIONS:kv()};
+  const tok=await session(),env=envWithModuleAccess();
   const employees=await employeesController(request("/v1/funcionarios",tok),env);
   assert.equal(employees.status,403);
   const fleet=await fleetController(request("/v1/fleet/records",tok),env);

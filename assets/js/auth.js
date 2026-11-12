@@ -551,11 +551,8 @@ function canAccessFeature(featureKey, context=""){
   // PISO cannot inherit global support, Piso 1 or other modules.
   if(profile==="PISO")return isAuthedHome() && feature==="piso2" && novaFrotaModuleGranted(feature);
 
-  // ADMINISTRADOR sempre possui acesso a todas as funcionalidades do frontend.
-  // Assim, novos módulos não precisam ser adicionados manualmente ao array ADMINISTRADOR.
-  if(profile === "ADMINISTRADOR"){
-    return isAuthedHome();
-  }
+  // A lista retornada pelo Worker já combina as liberações da empresa
+  // com as caixas selecionadas no Super Admin para cada perfil.
 
   // Central de Suporte é liberada para qualquer usuário autenticado.
   if(feature === "chamados"){
@@ -1471,10 +1468,11 @@ function portalNavAllowed(item){
   // itens residuais numa troca de sessão com a Home principal da Nova Frota.
   if(/^fretes-[a-z]{2}$/.test(item.key) &&
      window.__PORTAL_TENANT_SESSION?.tenantMode!==true)return false;
-  // RH é exclusivo da Nova Frota; não expor links quebrados às outras empresas.
+  // RH existe somente na Nova Frota; autorização individual vem da matriz
+  // do perfil, nunca de ADMINISTRADOR fixo.
   if(item.key==="funcionarios"){
     return window.__PORTAL_TENANT_SESSION?.tenantMode!==true &&
-      isAuthedHome() && getProfile()==="ADMINISTRADOR" && novaFrotaModuleGranted("funcionarios");
+      canAccessFeature("funcionarios","navigation");
   }
   const features = Array.isArray(item.feature) ? item.feature : [item.feature];
   return features.filter(Boolean).some(feature => canAccessFeature(feature,"navigation"));

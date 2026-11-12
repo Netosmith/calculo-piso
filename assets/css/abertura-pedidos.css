@@ -12,3 +12,67 @@ body.pedidos-app .pedido-system-number span{font-size:12px;color:#488671}body.pe
 body.pedidos-app #pedSystemNumberInputWrap input{width:100%;border:1px solid #bdd2e2;padding:10px;border-radius:9px}
 body.pedidos-app [hidden]{display:none!important}
 @media(max-width:750px){body.pedidos-app .pedido-fields{grid-template-columns:1fr}body.pedidos-app .cad-kanban{grid-template-columns:repeat(4,minmax(230px,1fr))}body.pedidos-app .pedido-system-number{flex-direction:column;align-items:flex-start}}
+
+
+/* Identificação por tipo: verde (pedido), laranja (correção),
+   azul (CT-e complementar) e violeta (carta de correção). */
+body.pedidos-app .pedido-kind-picker{
+ display:grid;gap:6px;min-width:min(260px,100%);padding:10px 12px;
+ border:1px solid rgba(255,255,255,.24);border-radius:14px;
+ background:rgba(5,24,42,.28);color:#dff2fa;
+}
+body.pedidos-app .pedido-kind-picker>span{font-size:10px;letter-spacing:.09em;font-weight:900}
+body.pedidos-app #tnKindSelect{
+ display:block;width:100%;border:1px solid rgba(255,255,255,.38);
+ padding:11px 12px;border-radius:10px;font-size:13px;font-weight:850;
+ background:#117554;color:#fff;cursor:pointer;
+}
+body.pedidos-app #tnKindSelect[data-kind="CORRECAO_PEDIDO"]{background:#aa5a15}
+body.pedidos-app #tnKindSelect[data-kind="CTE_COMPLEMENTAR"]{background:#145d9e}
+body.pedidos-app #tnKindSelect[data-kind="CARTA_CORRECAO"]{background:#7544a6}
+body.pedidos-app #tnKindSelect option{background:#102e4a;color:#fff}
+body.pedidos-app .cad-hero-actions{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+body.pedidos-app .pedido-extra-fields{margin:0 0 18px}
+body.pedidos-app .pedido-extra-fields .pedido-fields{margin:0}
+body.pedidos-app .pedido-fields select{
+ min-width:0;width:100%;border:1px solid #cad9e8;border-radius:9px;
+ padding:10px 12px;font-size:13px;color:#173a55;background:#fff;
+}
+body.pedidos-app .pedido-category-ticket{
+ --pedido-accent:#14a56b;--pedido-bg:#e3f8ed;
+ border-inline-start:5px solid var(--pedido-accent)!important;
+}
+body.pedidos-app .pedido-category-ticket[data-kind="CORRECAO_PEDIDO"]{
+ --pedido-accent:#df7e23;--pedido-bg:#fff1dd;
+}
+body.pedidos-app .pedido-category-ticket[data-kind="CTE_COMPLEMENTAR"]{
+ --pedido-accent:#267dcc;--pedido-bg:#e3f1ff;
+}
+body.pedidos-app .pedido-category-ticket[data-kind="CARTA_CORRECAO"]{
+ --pedido-accent:#9250c5;--pedido-bg:#f3eaff;
+}
+body.pedidos-app .pedido-category-label,
+body.pedidos-app .pedido-tipo-badge{
+ --pedido-accent:#148a60;--pedido-bg:#ddf7ea;
+ display:inline-flex;align-items:center;gap:6px;align-self:start;width:max-content;
+ max-width:100%;padding:5px 9px;border-radius:999px;
+ font-weight:900;font-size:10px;letter-spacing:.015em;
+ background:var(--pedido-bg);color:var(--pedido-accent);
+}
+body.pedidos-app .pedido-category-ticket .pedido-category-label{
+ --pedido-accent:inherit; --pedido-bg:inherit;
+ color:var(--pedido-accent);background:var(--pedido-bg);
+ border:1px solid currentColor;margin:4px 0 6px;
+}
+body.pedidos-app .pedido-tipo-badge[data-kind="CORRECAO_PEDIDO"]{--pedido-accent:#a25c18;--pedido-bg:#ffefd7}
+body.pedidos-app .pedido-tipo-badge[data-kind="CTE_COMPLEMENTAR"]{--pedido-accent:#1c66a7;--pedido-bg:#e3f1ff}
+body.pedidos-app .pedido-tipo-badge[data-kind="CARTA_CORRECAO"]{--pedido-accent:#7a3eae;--pedido-bg:#f1e7fb}
+body.pedidos-app .pedido-category-ticket .tn-client{overflow-wrap:anywhere}
+body.pedidos-app .pedido-form-dialog[data-kind="CORRECAO_PEDIDO"] .cad-dialog-head{border-top:5px solid #df7e23}
+body.pedidos-app .pedido-form-dialog[data-kind="CTE_COMPLEMENTAR"] .cad-dialog-head{border-top:5px solid #267dcc}
+body.pedidos-app .pedido-form-dialog[data-kind="CARTA_CORRECAO"] .cad-dialog-head{border-top:5px solid #9250c5}
+@media(max-width:750px){
+ body.pedidos-app .pedido-kind-picker{min-width:100%}
+ body.pedidos-app .cad-hero-actions{width:100%}
+ body.pedidos-app .cad-hero-actions .hero-action{width:100%;text-align:center}
+}

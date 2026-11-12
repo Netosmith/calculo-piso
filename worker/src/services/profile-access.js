@@ -91,7 +91,7 @@ export async function adminReadProfileAccess(env,id){
  try{
   const data=await readProfileAccess(env,id);
   return success({tenantId:id,roles:PROFILE_ROLES,modules:availableForCompany(id),
-    profiles:data.profiles,configured:data.configured,updatedAt:data.updatedAt||null});
+    profiles:data.profiles,defaults:defaultProfileAccess(id),configured:data.configured,updatedAt:data.updatedAt||null});
  }catch{
   return errorResponse("Não foi possível consultar os perfis.",503);
  }

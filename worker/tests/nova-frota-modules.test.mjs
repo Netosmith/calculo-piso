@@ -56,7 +56,7 @@ test("Frontend cruza liberação da transportadora com regras históricas de per
  assert.match(auth,/function novaFrotaModuleGranted\(/);
  assert.match(auth,/if\(!novaFrotaModuleGranted\(feature\)\)return false/);
  assert.match(auth,/if\(profile==="PISO"\)return isAuthedHome\(\) && feature==="piso2" && novaFrotaModuleGranted\(feature\)/);
- assert.match(auth,/if\(role==="ADMINISTRADOR"\)return true/);
+ assert.match(auth,/O Worker já reduziu session.modules/);
  assert.match(home,/if \(canAccessFeature\(feature\)\)/);
  assert.match(superAdmin,/check\.checked=Boolean\(selected\?\.modules\?\.includes\(id\)\)/);
  assert.match(superAdmin,/check\.disabled=isNovaFrota\?!legacyManageable\.has\(id\)\|\|!canEditModules\(\):!canEdit\(\)/);

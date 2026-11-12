@@ -227,6 +227,17 @@
      location.replace("./home.html");return;
     }
    }
+   // A sessão assinada já contém os módulos efetivos do perfil. Bloquear
+   // também o link direto, não só o card visível na Home.
+   const routeFeature={
+    "calculo-piso.html":"piso","calculo-antt.html":"piso2",
+    "calculo-antt2.html":"piso2","share-clientes.html":"share",
+    "custo-frota-pesada.html":"custo-frota","patrimonio-br.html":"patrimonio"
+   }[page]||page.slice(0,-5);
+   if(page!=="home.html"&&
+     (!Array.isArray(session.modules)||!session.modules.includes(routeFeature))){
+    location.replace("./home.html");return;
+   }
    stage="HTML compartilhado";
    const htmlResponse=await get("/pages/"+page,{credentials:"same-origin"});
    if(!htmlResponse.ok)throw new Error("Página compartilhada retornou HTTP "+htmlResponse.status);

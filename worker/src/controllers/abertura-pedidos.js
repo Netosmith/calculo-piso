@@ -1,3 +1,4 @@
+import {profileAllowsModule} from "../services/profile-access.js";
 import {ALLOWED_ORIGINS} from "../config.js";
 import {errorResponse,success} from "../utils/response.js";
 import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
@@ -114,6 +115,8 @@ export async function aberturaPedidosController(req,env){
  if(!["solicitante","execucao"].includes(view))return err("Visão inválida.");
  if(req.method!=="GET"&&!originAllowed(req))return err("Origem não autorizada.",403);
  const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
+ flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos");
+ flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos");
  const executor=flags.executar&&isExecutor(p,conf),execView=view==="execucao";
  if(path==="/config"&&req.method==="GET")
   return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,armazenamentoConfigurado:!!conf});

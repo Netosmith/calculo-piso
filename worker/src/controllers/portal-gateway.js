@@ -3,7 +3,8 @@ import { callAppsScript } from "../services/appscript.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { hasModulePin } from "../services/module-pin.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
-import {isNovaFrotaModuleEnabled} from "../services/nova-frota-modules.js";
+import {isNovaFrotaModuleEnabled,readNovaFrotaModules} from "../services/nova-frota-modules.js";
+import {modulesForProfile} from "../services/profile-access.js";
 import { getMaintenanceState, isAdministrator } from "../services/maintenance.js";
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
@@ -598,7 +599,19 @@ export async function portalGatewayController(request, env, ctx) {
     return errorResponse("Módulo não autorizado.", 403);
   }
 
-  if (!canRunGatewayAction(session, moduleName, actionName, params)) {
+
+  // Permissões configuráveis pelo proprietário, verificadas também no backend.
+  // Solicitações da Home são operações limitadas, não acesso ao painel Administrativo.
+  let profileModules;
+  try{
+    const global=await readNovaFrotaModules(env);
+    const owner=Boolean(env.SUPER_ADMIN_USER)&&
+      String(env.SUPER_ADMIN_USER).trim().toUpperCase()===String(session.usuario||"").trim().toUpperCase();
+    profileModules=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,session.perfil,global.modules,owner);
+  }catch{return errorResponse("Não foi possível verificar os acessos do perfil.",503);}
+  const requestOnly=moduleName==="administrativo"&&actionName==="create"&&
+    resourceName==="solicitacoes"&&String(session.perfil||"").toUpperCase()!=="PISO";
+  if (!requestOnly && !canRunGatewayAction({...session,allowedModules:profileModules}, moduleName, actionName, params)) {
     console.warn("[GATEWAY] Ação recusada", {
       usuario: session.usuario,
       perfil: session.perfil,

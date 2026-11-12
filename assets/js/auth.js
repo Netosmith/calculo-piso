@@ -798,6 +798,14 @@ const PORTAL_NAV_ITEMS = [
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7"/><path d="M3 20h18"/></svg>'
   },
   {
+    key:"ordem",
+    label:"Ordem Carregamento",
+    feature:"ordem",
+    href:"./ordem.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h10l3 3v15H6z"/><path d="M16 3v4h4M9 11h7M9 15h7M9 19h5"/></svg>'
+  },
+  {
     key:"share",
     label:"Share Clientes",
     feature:"share",

@@ -26,7 +26,8 @@
    if(!response.ok)return;
    const data=await response.json();
    if(data?.ok!==true||data.empresa!==expected)return;
-   const enabled=key=>!tenant||(Array.isArray(tenant.modules)&&tenant.modules.includes(key));
+   const enabled=key=>(typeof canAccessFeature==="function"&&canAccessFeature(key))&&
+     (!tenant||(Array.isArray(tenant.modules)&&tenant.modules.includes(key)));
    const requester=data.solicitacoesHabilitadas===true&&enabled("solicitacao-troca-notas");
    const executor=data.execucaoHabilitada===true&&data.executor===true&&enabled("execucao-troca-notas");
    window.__PORTAL_TROCA_MODULES_CONFIRMED={"solicitacao-troca-notas":requester,"execucao-troca-notas":executor};

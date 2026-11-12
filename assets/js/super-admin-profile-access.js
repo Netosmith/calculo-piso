@@ -22,17 +22,17 @@
  };
  function status(text){const el=$("profileAccessStatus");if(el)el.textContent=text;}
  function editable(key){
-  return currentRole!=="ADMINISTRADOR"&&
-   !(currentRole==="PISO"&&key!=="piso2")&&
-   !(currentRole==="COMERCIAL"&&["cadastros","funcionarios"].includes(key));
+  // Todos os cards são editáveis para COMERCIAL e ADMINISTRADOR.
+  // PISO continua exclusivamente no ANTT Piso 2.
+  return !(currentRole==="PISO"&&key!=="piso2");
  }
  function render(){
   const container=$("profileModuleGrid");if(!container)return;
   container.replaceChildren();
   $("profileRole").value=currentRole;
   $("profileRoleHelp").textContent={
-   ADMINISTRADOR:"Recebe automaticamente TODOS os módulos liberados para esta transportadora. Somente o Super Admin pode alterar a liberação global.",
-   COMERCIAL:"Por padrão acessa todos os módulos liberados, exceto Cadastro e Funcionários. Você pode desmarcar outros módulos.",
+   ADMINISTRADOR:"Começa com todos os módulos pré-selecionados. Marque ou desmarque qualquer card e salve os acessos deste perfil.",
+   COMERCIAL:"Começa com Cadastro e Funcionários desmarcados, mas você pode habilitar ou desabilitar qualquer card deste perfil.",
    OPERACIONAL:"Selecione os módulos usados na operação. Fretes por estado podem ser habilitados separadamente.",
    GOADM:"Por padrão, somente Administrativo. Outros cards só aparecem se forem selecionados explicitamente aqui.",
    PISO:"Restrição permanente: somente Piso 2 (ANTT). O restante da Home e os dados operacionais continuam ocultos."
@@ -69,9 +69,9 @@
  function updateButtons(){
   const working=!adminCanEdit()||!profiles||saving;
   $("saveProfileAccess").disabled=working||!dirty;
-  $("resetProfileAccess").disabled=working||currentRole==="ADMINISTRADOR";
-  $("allowProfileAll").disabled=working||currentRole==="ADMINISTRADOR";
-  $("denyProfileAll").disabled=working||currentRole==="ADMINISTRADOR";
+  $("resetProfileAccess").disabled=working;
+  $("allowProfileAll").disabled=working;
+  $("denyProfileAll").disabled=working;
  }
  function changeRole(){
   currentRole=$("profileRole").value;
@@ -108,8 +108,9 @@
  });
  function setRoleAll(allow){
   if(!profiles||!registry||!adminCanEdit())return;
-  profiles[currentRole]=rowNames().map(([key])=>key).filter(key=>
-   registry.has(key)&&editable(key)&&(allow||false));
+  profiles[currentRole]=allow
+   ? rowNames().map(([key])=>key).filter(key=>registry.has(key)&&editable(key))
+   : [];
   dirty=true;render();status("Seleção de "+currentRole+" alterada. Clique em Salvar para aplicar.");
  }
  $("allowProfileAll").addEventListener("click",()=>setRoleAll(true));

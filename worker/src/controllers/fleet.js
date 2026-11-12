@@ -1,6 +1,8 @@
 import { LEGACY_NOVA_FROTA, tenantIdForLegacySession } from "../config/transportadoras.js";
 import { getSession, readSessionId } from "../services/session.js";
 import { hasModulePin } from "../services/module-pin.js";
+import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
+import {modulesForProfile} from "../services/profile-access.js";
 import { errorResponse, success } from "../utils/response.js";
 
 const TYPES=new Set(['freight','expense','fuel','maintenance','commission']);
@@ -15,6 +17,15 @@ async function auth(request,env,write){
  const p=profile(session.perfil);
  if(!['ADMINISTRADOR','COMERCIAL'].includes(p))return {error:errorResponse('Perfil sem autorização para Gestão de Frota.',403)};
  if(write&&p!=='ADMINISTRADOR'&&p!=='COMERCIAL')return {error:errorResponse('Sem permissão de escrita.',403)};
+ let allowed=false;
+ try{
+  const state=await readNovaFrotaModules(env);
+  const owner=Boolean(env.SUPER_ADMIN_USER)&&
+    String(session.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase();
+  allowed=(await modulesForProfile(env,LEGACY_NOVA_FROTA.id,session.perfil,state.modules,owner))
+    .includes("custo-frota");
+ }catch{return {error:errorResponse('Permissões de Frota temporariamente indisponíveis.',503)};}
+ if(!allowed)return {error:errorResponse('Gestão de Frota desativada para este perfil.',403)};
  if(!await hasModulePin(request,env,'custo-frota'))return {error:errorResponse('Informe a senha de Cálculo Frota para acessar este módulo.',403)};
  return {session};
 }

@@ -2,7 +2,7 @@ import {errorResponse,success} from "../utils/response.js";
 import {makePasswordRecord,validTenantPassword} from "./tenant-auth.js";
 import {credentialSchemaStatus} from "./super-admin-tenant-credentials.js";
 
-const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"]);
+const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM"]);
 const USER_ID=/^[A-Z0-9][A-Z0-9._-]{1,79}$/;
 const allowed=(object,keys)=>object && typeof object==="object" &&
   !Array.isArray(object) && Object.keys(object).every(key=>keys.includes(key));

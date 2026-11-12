@@ -29,7 +29,8 @@
    if(!response.ok)return;
    const result=await response.json();
    if(result?.ok!==true||result.empresa!==(expected||"nova-frota"))return;
-   const allowed=feature=>!ctx||(Array.isArray(ctx.modules)&&ctx.modules.includes(feature));
+   const allowed=feature=>(typeof canAccessFeature==="function"&&canAccessFeature(feature))&&
+     (!ctx||(Array.isArray(ctx.modules)&&ctx.modules.includes(feature)));
    const requestEnabled=result.solicitacoesHabilitadas===true&&allowed("cadastro-solicitacoes");
    const executionEnabled=result.execucaoHabilitada===true&&result.executor===true&&allowed("execucao-cadastros");
    window.__PORTAL_CADASTRO_MODULES_CONFIRMED={

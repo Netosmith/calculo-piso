@@ -464,6 +464,47 @@ function novaFrotaModuleGranted(feature){
  return !NOVA_MANAGED_FEATURES.has(feature) ||
   (novaFrotaModulesConfirmed&&novaFrotaEnabledModules.has(feature));
 }
+// Navegação global: em páginas internas, os controladores da Home não são
+// carregados. Consultar a mesma API de status para renderizar corretamente os
+// módulos de solicitação e execução liberados ao usuário autenticado.
+async function refreshOptionalNavGrants(session){
+ if(!session||!isAuthedHome())return;
+ const id=session.transportadoraId;
+ if(!id)return;
+ if(window.__PORTAL_TENANT_EXPECTED&&id!==window.__PORTAL_TENANT_EXPECTED)return;
+ const specs=[
+  {endpoint:"cadastro-solicitacoes",varName:"__PORTAL_CADASTRO_MODULES_CONFIRMED",
+   request:"cadastro-solicitacoes",execution:"execucao-cadastros"},
+  {endpoint:"troca-notas",varName:"__PORTAL_TROCA_MODULES_CONFIRMED",
+   request:"solicitacao-troca-notas",execution:"execucao-troca-notas"},
+  {endpoint:"abertura-pedidos",varName:"__PORTAL_PEDIDOS_MODULES_CONFIRMED",
+   request:"solicitacao-pedidos",execution:"execucao-pedidos"}
+ ];
+ const headers={Accept:"application/json"};
+ if(session.tenantMode===true&&session.ownerSupport===true&&window.__PORTAL_TENANT_EXPECTED)
+  headers["X-Portal-Support-Tenant"]=window.__PORTAL_TENANT_EXPECTED;
+ await Promise.all(specs.map(async spec=>{
+  try{
+   const response=await fetch("https://api.portalfrete.net.br/v1/"+spec.endpoint+"/config",{
+    method:"GET",credentials:"include",cache:"no-store",headers
+   });
+   if(!response.ok)return;
+   const data=await response.json();
+   if(data?.ok!==true||data.empresa!==id)return;
+   window[spec.varName]={
+    [spec.request]:data.solicitacoesHabilitadas===true&&canAccessFeature(spec.request),
+    [spec.execution]:data.execucaoHabilitada===true&&data.executor===true&&
+      canAccessFeature(spec.execution)
+   };
+  }catch(error){
+   console.warn("[AUTH] Permissão de central indisponível:",spec.endpoint,error?.message||error);
+  }finally{
+   window.dispatchEvent(new CustomEvent("portal:modules-confirmed",{
+    detail:{group:spec.endpoint}
+   }));
+  }
+ }));
+}
 function enforceNovaFrotaPageGrant(session){
  if(!session||session.tenantMode===true||session.transportadoraId!=="nova-frota")return true;
  const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
@@ -1869,6 +1910,11 @@ window.portalAuthReady = refreshPortalSession()
     await refreshNovaFrotaModuleGrants(session);
     if(!enforceNovaFrotaPageGrant(session))return session;
     window.dispatchEvent(new CustomEvent("portal:session", { detail:session }));
+    // Na Home os controladores especializados já fazem a consulta. Nas
+    // páginas internas, atualizar a navegação sem atrasar a autenticação.
+    const currentFile=String(window.location.pathname||"").split("/").pop().toLowerCase();
+    if(!["home.html","login.html","super-admin.html"].includes(currentFile))
+      void refreshOptionalNavGrants(session);
     return session;
   })
   .catch(() => null);

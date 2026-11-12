@@ -107,6 +107,10 @@ export function canRunGatewayAction(session, moduleName, actionName, params = {}
   if(profile==="PISO")
     return moduleName==="piso2" && ["read","calculate"].includes(actionName);
 
+  // O OPERACIONAL consulta Estadias, sem criar, aprovar, editar ou excluir.
+  if(moduleName==="estadias" && profile==="OPERACIONAL" &&
+     !["read"].includes(actionName))return false;
+
   // O mapa de fretes da Home é uma visão colaborativa global e sanitizada.
   // Todos os perfis autenticados podem consultar, EXCETO o perfil PISO.
   // Isso não libera os módulos completos de Fretes/Fretes2.

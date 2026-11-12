@@ -284,7 +284,7 @@ const legacyManageable=new Set(["fretes2","funcionarios","relatorio","piso","pis
 const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&selected?.id!=="nova-frota");
 const canEditBrand=()=>Boolean(canEdit()&&brandReady);
 let credentialReady=false,credentialProblem='';
-const ROLES=["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","MT","PR"];
+const ROLES=["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM"];
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
  const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',...options,headers:{'Accept':'application/json',...(options.headers||{})}});

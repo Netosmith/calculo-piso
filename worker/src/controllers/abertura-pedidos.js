@@ -12,6 +12,17 @@ const FILEID=/^[A-Za-z0-9_-]{15,160}$/;
 const MIME=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 const MAX_FILE=6*1024*1024;
 const SLOTS=new Set(["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt"]);
+export const TIPOS_SOLICITACAO=Object.freeze({
+ PEDIDO:"Abertura de pedido",
+ CORRECAO_PEDIDO:"Correção de pedido",
+ CTE_COMPLEMENTAR:"CT-e complementar",
+ CARTA_CORRECAO:"Carta de correção"
+});
+const EXTRA_FIELDS=Object.freeze({
+ CORRECAO_PEDIDO:[["numeroPedidoCorrecao",120],["textoCorrecao",1800]],
+ CTE_COMPLEMENTAR:[["numeroCte",120],["descricaoComplemento",1800]],
+ CARTA_CORRECAO:[["documentoTipo",8],["numeroDocumento",120],["textoCarta",1800]]
+});
 
 
 const clean=(value,max=160)=>typeof value==="string"&&value.trim().length>0&&value.trim().length<=max&&!/[\u0000-\u001f\u007f]/.test(value)?value.trim():null;
@@ -85,19 +96,40 @@ async function drive(conf,tenantId,action,data){
 }
 const FIELDS=[["email",150,0],["nomeSolicitante",140,1],["telefoneWhats",65,1],["unidadeEmbarque",140,1],["numeroPedidoOC",120,1],["nfeManifestada",140,1],["tomadorCnpj",140,1],["coletaIe",140,1],["entregaCnpj",140,1],["entregaIe",140,1],["freteEmpresa",80,1],["freteMotorista",80,1],["adiantamentoPct",50,1],["icms",80,0],["produto",140,1],["especie",140,1],["tag",140,1],["obs",2200,0],["coordenadasColeta",160,0],["coordenadasEntrega",160,0]];
 const COLUMNS={"email":"email","nomeSolicitante":"nome_solicitante","telefoneWhats":"telefone_whats","unidadeEmbarque":"unidade_embarque","numeroPedidoOC":"numero_pedido_oc","nfeManifestada":"nfe_manifestada","tomadorCnpj":"tomador_cnpj","coletaIe":"coleta_ie","entregaCnpj":"entrega_cnpj","entregaIe":"entrega_ie","freteEmpresa":"frete_empresa","freteMotorista":"frete_motorista","adiantamentoPct":"adiantamento_pct","icms":"icms","produto":"produto","especie":"especie","tag":"tag","obs":"obs","coordenadasColeta":"coordenadas_coleta","coordenadasEntrega":"coordenadas_entrega"};
-function normalizedFields(b){
- const result={};
+export function normalizedFields(b,requester=""){
+ const kind=String(b.tipoSolicitacao||"PEDIDO").trim().toUpperCase();
+ if(!Object.hasOwn(TIPOS_SOLICITACAO,kind))throw Error("Tipo de solicitação inválido.");
+ const result={tipoSolicitacao:kind,dadosEspecificos:{}};
  for(const [name,max,required] of FIELDS){
   const input=b[name];
-  if(input===undefined||input===null||input===""){if(required)throw Error("Campo obrigatório: "+name);result[name]="";continue;}
+  if(input===undefined||input===null||input===""){
+   if(required&&kind==="PEDIDO")throw Error("Campo obrigatório: "+name);
+   result[name]="";continue;
+  }
   const value=clean(input,max);if(!value)throw Error("Campo inválido: "+name);
   result[name]=value;
  }
  if(result.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.email))throw Error("E-mail inválido.");
+ if(kind!=="PEDIDO"){
+  const extras=b.dadosEspecificos;
+  if(!extras||typeof extras!=="object"||Array.isArray(extras))throw Error("Dados específicos da solicitação não informados.");
+  for(const [key,max] of EXTRA_FIELDS[kind]){
+   const value=clean(extras[key],max);
+   if(!value)throw Error("Campo obrigatório ou inválido: "+key);
+   result.dadosEspecificos[key]=value;
+  }
+  if(kind==="CARTA_CORRECAO"&&!["CTE","MDFE"].includes(result.dadosEspecificos.documentoTipo))
+   throw Error("Selecione CT-e ou MDF-e.");
+  result.nomeSolicitante=result.nomeSolicitante||requester;
+  if(kind==="CORRECAO_PEDIDO")result.numeroPedidoOC=result.dadosEspecificos.numeroPedidoCorrecao;
+ }
  return result;
 }
 const ticketView=x=>{
+ let extras={};try{extras=JSON.parse(x.dados_especificos_json||"{}");}catch{extras={};}
+ const tipo=Object.hasOwn(TIPOS_SOLICITACAO,x.tipo_solicitacao)?x.tipo_solicitacao:"PEDIDO";
  const item={id:x.id,protocolo:x.protocolo,numero:x.numero,solicitante:x.solicitante_id,executor:x.executor_id,
+  tipoSolicitacao:tipo,dadosEspecificos:extras,
   status:x.status,motivo:x.motivo||"",numeroPedidoSistema:x.numero_pedido_sistema||"",
   criadoEm:x.criado_em,atualizadoEm:x.atualizado_em,enviadoEm:x.enviado_em};
  for(const [k,col] of Object.entries(COLUMNS))item[k]=x[col]||"";
@@ -131,14 +163,14 @@ export async function aberturaPedidosController(req,env){
   }
   if((path===""||path==="/")&&req.method==="POST"){
     if(execView)return err("Solicitação exclusiva do solicitante.",403);
-    const b=await bodyJson(req,12000),values=normalizedFields(b),id=crypto.randomUUID();
+    const b=await bodyJson(req,12000),values=normalizedFields(b,p.user),id=crypto.randomUUID();
     const protocolo="PED-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+id.slice(0,8).toUpperCase();
-    const columns=Object.values(COLUMNS),keys=Object.keys(COLUMNS);
-    const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k])];
+    const columns=[...Object.values(COLUMNS),"tipo_solicitacao","dados_especificos_json"],keys=Object.keys(COLUMNS);
+    const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k]),values.tipoSolicitacao,JSON.stringify(values.dadosEspecificos)];
     await db.prepare("INSERT INTO portal_pedidos_tickets(id,tenant_id,protocolo,solicitante_id,"+
       columns.join(",")+") VALUES("+params.map(()=>"?").join(",")+")").bind(...params).run();
     const row=await ticket(db,p,id);
-    await hist(db,p,id,"RASCUNHO","Abertura de pedido criada").run();
+    await hist(db,p,id,"RASCUNHO",TIPOS_SOLICITACAO[values.tipoSolicitacao]+" criada").run();
     return success({chamado:ticketView(row)},201);
    }
    const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|situacao|mensagens))?$/);
@@ -159,12 +191,12 @@ export async function aberturaPedidosController(req,env){
   if(action==="dados"&&req.method==="POST"){
     if(execView||!owner||row.status!=="RASCUNHO")
      return err("Somente o autor pode editar o rascunho de um pedido.",403);
-    const b=await bodyJson(req,12000),values=normalizedFields(b);
-    const columns=Object.values(COLUMNS),keys=Object.keys(COLUMNS);
+    const b=await bodyJson(req,12000),values=normalizedFields(b,p.user);
+    const columns=[...Object.values(COLUMNS),"tipo_solicitacao","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const changed=await db.prepare("UPDATE portal_pedidos_tickets SET "+
       columns.map(c=>c+"=?").join(",")+
       ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'")
-     .bind(...keys.map(k=>values[k]),id,p.id,p.user).run();
+     .bind(...keys.map(k=>values[k]),values.tipoSolicitacao,JSON.stringify(values.dadosEspecificos),id,p.id,p.user).run();
     if(changed.meta?.changes!==1)return err("Não foi possível atualizar o rascunho.",409);
     return success({atualizado:true});
    }
@@ -188,6 +220,10 @@ export async function aberturaPedidosController(req,env){
   }
   if(action==="enviar"&&req.method==="POST"){
    if(!owner||row.status!=="RASCUNHO")return err("Somente o solicitante pode enviar seu rascunho.",403);
+   if(row.tipo_solicitacao==="CTE_COMPLEMENTAR"){
+    const lib=await db.prepare("SELECT id FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND slot='liberacao' LIMIT 1").bind(p.id,id).first();
+    if(!lib)return err("Anexe a liberação do cliente antes de enviar o CT-e complementar.",409);
+   }
    const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status='RASCUNHO'").bind(id,p.id).run();
    if(update.meta?.changes!==1)return err("Chamado já enviado.",409);
    await hist(db,p,id,"FILA","Enviado para a fila de execução").run();
@@ -208,7 +244,7 @@ export async function aberturaPedidosController(req,env){
    if(!["ANDAMENTO","PENDENTE","FINALIZADO"].includes(status))return err("Situação inválida.");
    if(status==="PENDENTE"&&motivo.length<8)return err("Informe o motivo detalhado da pendência.");
    const numeroPedidoSistema=clean(b.numeroPedidoSistema,120);
-    if(status==="FINALIZADO"&&!numeroPedidoSistema)
+    if(status==="FINALIZADO"&&(row.tipo_solicitacao||"PEDIDO")==="PEDIDO"&&!numeroPedidoSistema)
      return err("Informe o número do pedido no sistema antes de finalizar.",409);
     const update=await db.prepare("UPDATE portal_pedidos_tickets SET status=?,motivo=?,numero_pedido_sistema=CASE WHEN ?='FINALIZADO' THEN ? ELSE numero_pedido_sistema END,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND executor_id=? AND status IN ('ANDAMENTO','PENDENTE')")
     .bind(status,motivo,status,status==="FINALIZADO"?numeroPedidoSistema:"",id,p.id,p.user).run();
@@ -242,6 +278,8 @@ export async function aberturaPedidosController(req,env){
   console.warn("[ABERTURA PEDIDOS] Falha operacional",{type:error?.name||"Error"});
   const message=String(error?.message||"");
   if(message==="Envie JSON."||message==="Dados inválidos."||message==="E-mail inválido."||
+     message==="Tipo de solicitação inválido."||message==="Dados específicos da solicitação não informados."||
+     message==="Selecione CT-e ou MDF-e."||
      message.startsWith("Campo obrigatório:")||message.startsWith("Campo inválido:"))
    return err(message,400);
   return err("Não foi possível concluir a operação. "+

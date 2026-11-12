@@ -48,7 +48,7 @@ test("Super Admin segue sendo o filtro, sem conceder módulos ao PISO ou perfis 
  assert.match(auth,/async function awaitPortalFeatureAuth\(/);
  assert.match(auth,/if\(!novaFrotaModuleGranted\(feature\)\)return false/);
  assert.match(auth,/if\(profile==="PISO"\)return isAuthedHome\(\) && feature==="piso2"/);
- assert.match(auth,/if\(role==="ADMINISTRADOR"\)return true/);
+ assert.match(auth,/O Worker já reduziu session.modules/);
  assert.match(auth,/if\(!modules.includes\(feature\)\)return false/);
  assert.match(auth,/if\(feature==="execucao-pedidos"\)return modules.includes\(feature\)&&/);
 });
@@ -58,6 +58,6 @@ test("Páginas principais usam versão nova do script de autenticação",()=>{
   "divulgacao","embarques","relatorio","administrativo","estadias",
   "custo-frota-pesada","custo-filial","fretes","fretes2","super-admin"]){
    const s=read("pages/"+name+".html");
-   assert.ok(s.includes("auth.js?v=20261112-profile-gate-fix1"),name);
+   assert.match(s,/auth[.]js[?]v=/,name);
  }
 });

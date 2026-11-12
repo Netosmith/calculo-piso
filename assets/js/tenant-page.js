@@ -213,11 +213,10 @@
      session=result?.ok===true?result.session:null;
      if(session?.tenantMode!==true||session.transportadoraId!==tenant){refuse();return;}
    }
-   // Only admins in a tenant with the Cadastros module enabled
-   // can reach self-service user management. The Worker enforces the same rule.
+   // A página Cadastro pode ser liberada para o COMERCIAL pelo proprietário;
+   // gerenciamento de credenciais de usuários mantém autorização separada no Worker.
    if(page==="cadastros.html" &&
-     (session.perfil!=="ADMINISTRADOR" ||
-      !Array.isArray(session.modules) || !session.modules.includes("cadastros"))){
+     (!Array.isArray(session.modules) || !session.modules.includes("cadastros"))){
      location.replace("./home.html");return;
    }
    // O link direto também depende do módulo estar ativo na sessão assinada.

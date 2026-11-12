@@ -690,6 +690,7 @@
   function bind(){
     $("#tabs")?.addEventListener("click",event=>{
       const button=event.target.closest("[data-tab]");if(!button)return;
+      if(button.hidden)return;
       STATE.tab=button.dataset.tab;STATE.rows=[];STATE.editing=null;STATE.loadToken++;STATE.loading=false;
       document.querySelectorAll(".tabBtn").forEach(btn=>btn.classList.toggle("active",btn===button));
       $("#buscaCadastro").value="";
@@ -723,8 +724,17 @@
     }
     if(!session){window.location.href=window.portalTenantHref?.("login.html") || "./login.html";return;}
     const perfil=upper(session.perfil||localStorage.getItem("nf_auth_profile"));
+    if(typeof canAccessFeature!=="function"||!canAccessFeature("cadastros")){
+      alert("Cadastro não liberado para este perfil.");window.location.href=window.portalTenantHref?.("home.html") || "./home.html";return;
+    }
+    // Gerenciamento de usuários continua exclusivo do ADMINISTRADOR.
+    // Outros perfis explicitamente habilitados podem abrir os demais cadastros.
     if(perfil!=="ADMINISTRADOR"){
-      alert("Acesso permitido somente ao administrador.");window.location.href=window.portalTenantHref?.("home.html") || "./home.html";return;
+      const userTab=document.querySelector('[data-tab="usuarios"]');
+      if(userTab)userTab.hidden=true;
+      const regionais=document.querySelector('[data-tab="regionais"]');
+      STATE.tab="regionais";
+      document.querySelectorAll(".tabBtn").forEach(btn=>btn.classList.toggle("active",btn===regionais));
     }
     if(session.tenantMode!==true)await loadMaintenanceStatus();
     else{const control=$("#maintenanceControl");if(control)control.hidden=true;}

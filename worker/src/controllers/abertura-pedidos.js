@@ -49,7 +49,7 @@ async function principalFor(req,env){
  if(supported){
   if(!SLUG.test(supported)||supported===LEGACY_NOVA_FROTA.id)return null;
   const s=await ownerSupportPrincipal(req,env,supported);
-  return s?{id:s.tenant_id,user:s.user_id,role:s.role}:null;
+  return s?{id:s.tenant_id,user:s.user_id,role:s.role,ownerSupport:true}:null;
  }
  if(hasTenantSessionCookie(req)){
   const s=await tenantSession(env.TENANTS_DB,req);
@@ -57,7 +57,10 @@ async function principalFor(req,env){
  }
  const s=await getSession(env,readSessionId(req));
  return s&&tenantIdForLegacySession(s)===LEGACY_NOVA_FROTA.id?
-   {id:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil}:null;
+   {id:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil,
+    ownerSupport:Boolean(env.SUPER_ADMIN_USER)&&
+      String(s.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase()
+   }:null;
 }
 async function flagsFor(env,id){
  if(id===LEGACY_NOVA_FROTA.id){
@@ -152,8 +155,8 @@ export async function aberturaPedidosController(req,env){
  if(!["solicitante","execucao"].includes(view))return err("Visão inválida.");
  if(req.method!=="GET"&&!originAllowed(req))return err("Origem não autorizada.",403);
  const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
- flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos");
- flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos");
+ flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true);
+ flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true);
  const executor=flags.executar&&isExecutor(p,conf),execView=view==="execucao";
  if(path==="/config"&&req.method==="GET")
   return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,armazenamentoConfigurado:!!conf});

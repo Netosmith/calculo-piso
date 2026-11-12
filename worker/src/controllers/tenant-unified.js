@@ -14,6 +14,7 @@ import {regionalUfController} from "../services/tenant-regional-ufs.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 import {tenantUsersController} from "../services/tenant-user-management.js";
 import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
+import {modulesForProfile} from "../services/profile-access.js";
 import {readTenantVisual} from "../services/tenant-visual-assets.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
@@ -54,7 +55,7 @@ export async function tenantLoginController(request,env,body){
   const tenant=await env.TENANTS_DB.prepare("SELECT name FROM portal_tenants WHERE id=?").bind(tenantId).first();
   const member=await env.TENANTS_DB.prepare("SELECT role FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")
     .bind(tenantId,usuario).first();
-  const modules=await enabledModules(env.TENANTS_DB,tenantId);
+  const modules=await modulesForProfile(env,tenantId,member?.role||"OPERACIONAL",await enabledModules(env.TENANTS_DB,tenantId));
   const session=tenantPublicSession({
    tenant_id:tenantId,tenant_name:tenant?.name||tenantId,user_id:usuario,role:member?.role||"OPERACIONAL"
   },modules);
@@ -90,7 +91,7 @@ export async function currentTenantPrincipal(request,env){
 export async function tenantSessionController(request,env){
  const principal=await currentTenantPrincipal(request,env);
  if(!principal)return tenantJsonError("Sessao da transportadora invalida ou expirada.",401);
- return success({session:tenantPublicSession(principal,await enabledModules(env.TENANTS_DB,principal.tenant_id))});
+ return success({session:tenantPublicSession(principal,await modulesForProfile(env,principal.tenant_id,principal.role,await enabledModules(env.TENANTS_DB,principal.tenant_id),principal.owner_support===true))});
 }
 export async function tenantLogoutController(request,env){
  if(env.TENANTS_DB){
@@ -112,11 +113,11 @@ export async function tenantContextController(request,env){
  try{
   const owner=await ownerSupportPrincipal(request,env,target);
   if(owner)return success({session:tenantPublicSession(owner,
-   await enabledModules(env.TENANTS_DB,target))});
+   await modulesForProfile(env,target,owner.role,await enabledModules(env.TENANTS_DB,target),true))});
   const current=await tenantSession(env.TENANTS_DB,request);
   if(!current||current.tenant_id!==target)return tenantJsonError("Sessao sem acesso a esta transportadora.",403);
   return success({session:tenantPublicSession(current,
-   await enabledModules(env.TENANTS_DB,target))});
+   await modulesForProfile(env,target,current.role,await enabledModules(env.TENANTS_DB,target)))});
  }catch(error){
   console.error("[TENANT CONTEXT] Unavailable",{type:error?.name||"Error"});
   return tenantJsonError("Nao foi possivel validar o acesso a transportadora.",503);
@@ -156,7 +157,8 @@ export async function tenantApiController(request,env){
     principal=await tenantSession(env.TENANTS_DB,request);
   }
   if(!principal)return tenantJsonError("Sessao invalida ou transportadora inativa.",401);
-  const modules=await enabledModules(env.TENANTS_DB,principal.tenant_id);
+  const modules=await modulesForProfile(env,principal.tenant_id,principal.role,
+    await enabledModules(env.TENANTS_DB,principal.tenant_id),principal.owner_support===true);
   if(path==="/v1/tenant/me"&&request.method==="GET")
    return success({session:tenantPublicSession(principal,modules)});
   // Except for its own identity and logo, PISO cannot access any tenant

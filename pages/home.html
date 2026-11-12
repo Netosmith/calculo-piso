@@ -877,10 +877,6 @@
       margin:24px auto;
     }
     body.nf-profile-piso .nf-tools > *{display:none!important}
-    body.nf-profile-piso .nf-tools > [data-feature="cadastro-solicitacoes"]:not([hidden]){display:flex!important;visibility:visible!important}
-    body.nf-profile-piso .nf-tools > [data-feature="cadastro-solicitacoes"][hidden]{display:none!important}
-    body.nf-profile-piso .nf-tools > [data-feature="solicitacao-pedidos"]:not([hidden]){display:flex!important;visibility:visible!important}
-    body.nf-profile-piso .nf-tools > [data-feature="solicitacao-pedidos"][hidden]{display:none!important}
     body.nf-profile-piso.pf-piso2-allowed .nf-tools > [data-feature="piso2"]{
       display:flex!important;visibility:visible!important
     }
@@ -1210,7 +1206,7 @@
     </div>
   </div>
 
-  <script src="../assets/js/auth.js?v=20261112-profile-gate-fix1"></script>
+  <script src="../assets/js/auth.js?v=20261112-profile-matrix-1"></script>
   <script src="../assets/js/module-pin.js?v=1"></script>
   <script>document.addEventListener("DOMContentLoaded",()=>window.PortalModulePin?.bindHomeCards());</script>
   <script src="../assets/js/home-solicitacoes-access.js?v=3"></script>
@@ -1386,10 +1382,10 @@
       document.body.classList.remove("pf-home-pending");
       if (!restrito) return false;
       const description=document.getElementById("homeSub");
-      if(description)description.textContent="Cálculo de Piso 2 (ANTT) e Solicitações de Cadastro";
+      if(description)description.textContent="Acesso restrito: Cálculo de Piso 2 (ANTT)";
       // Garante que nenhum outro link possa receber foco pelo teclado.
       document.querySelectorAll(".nf-tools > *").forEach(card=>{
-        if(!["piso2","cadastro-solicitacoes","solicitacao-troca-notas","solicitacao-pedidos"].includes(card.getAttribute("data-feature"))){
+        if(card.getAttribute("data-feature")!=="piso2"){
           card.hidden=true;card.style.display="none";
         }
       });

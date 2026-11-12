@@ -494,6 +494,21 @@ function featuresForProfile(profile){
   return STATE_FEATURES[normalizeUpper(profile)] || [];
 }
 
+// Estes módulos têm DUAS verificações: concessão da empresa/perfil e
+// confirmação operacional da API (incluindo executor autorizado).
+// O carregador NÃO pode depender de sua própria confirmação para iniciar.
+const PORTAL_OPTIONAL_FLAGS={
+ "cadastro-solicitacoes":"__PORTAL_CADASTRO_MODULES_CONFIRMED",
+ "execucao-cadastros":"__PORTAL_CADASTRO_MODULES_CONFIRMED",
+ "solicitacao-troca-notas":"__PORTAL_TROCA_MODULES_CONFIRMED",
+ "execucao-troca-notas":"__PORTAL_TROCA_MODULES_CONFIRMED",
+ "solicitacao-pedidos":"__PORTAL_PEDIDOS_MODULES_CONFIRMED",
+ "execucao-pedidos":"__PORTAL_PEDIDOS_MODULES_CONFIRMED"
+};
+function optionalModuleConfirmed(feature){
+ const store=PORTAL_OPTIONAL_FLAGS[feature];
+ return !store||window[store]?.[feature]===true;
+}
 function canAccessFeature(featureKey, context=""){
   let feature = String(featureKey || "").trim().toLowerCase();
   const profile = getProfile();
@@ -519,15 +534,12 @@ function canAccessFeature(featureKey, context=""){
     if(feature==="super-admin"||feature==="fretes2")return false;
     const modules=Array.isArray(tenantSession.modules)?tenantSession.modules:[];
     const role=String(tenantSession.perfil||"").trim().toUpperCase();
-    if(feature==="cadastro-solicitacoes")return modules.includes("cadastro-solicitacoes");
-    if(feature==="execucao-cadastros")return modules.includes("execucao-cadastros")&&
-      (["ADMINISTRADOR","GOADM"].includes(role)||window.__PORTAL_CADASTRO_EXECUTOR===true);
-    if(feature==="solicitacao-troca-notas")return modules.includes(feature);
-    if(feature==="execucao-troca-notas")return modules.includes(feature)&&
-      (["ADMINISTRADOR","GOADM"].includes(role)||window.__PORTAL_TROCA_EXECUTOR===true);
-    if(feature==="solicitacao-pedidos")return modules.includes(feature);
-    if(feature==="execucao-pedidos")return modules.includes(feature)&&
-      (["ADMINISTRADOR","GOADM"].includes(role)||window.__PORTAL_PEDIDOS_EXECUTOR===true);
+    // Primeiro validar a matriz do perfil. No menu, aguardar ainda a
+    // confirmação da API; não exigir essa confirmação DURANTE o próprio load.
+    if(PORTAL_OPTIONAL_FLAGS[feature]){
+      return modules.includes(feature) &&
+        (context!=="navigation"||optionalModuleConfirmed(feature));
+    }
     // PISO only gets the empty Home entrypoint and an enabled Piso 2.
     if(role==="PISO")return feature==="home" ||
       (feature==="piso2" && modules.includes("piso2"));
@@ -541,24 +553,17 @@ function canAccessFeature(featureKey, context=""){
   }
 
   if(!novaFrotaModuleGranted(feature))return false;
-  if(feature==="cadastro-solicitacoes")return isAuthedHome();
-  if(feature==="execucao-cadastros")return isAuthedHome()&&
-    (["ADMINISTRADOR","GOADM"].includes(profile)||window.__PORTAL_CADASTRO_EXECUTOR===true);
-  if(feature==="solicitacao-troca-notas"||feature==="execucao-troca-notas")
-    return isAuthedHome()&&window.__PORTAL_TROCA_MODULES_CONFIRMED?.[feature]===true;
-  if(feature==="solicitacao-pedidos"||feature==="execucao-pedidos")
-    return isAuthedHome()&&window.__PORTAL_PEDIDOS_MODULES_CONFIRMED?.[feature]===true;
+  if(PORTAL_OPTIONAL_FLAGS[feature]){
+    return isAuthedHome() &&
+      (context!=="navigation"||optionalModuleConfirmed(feature));
+  }
   // PISO cannot inherit global support, Piso 1 or other modules.
   if(profile==="PISO")return isAuthedHome() && feature==="piso2" && novaFrotaModuleGranted(feature);
 
   // A lista retornada pelo Worker já combina as liberações da empresa
   // com as caixas selecionadas no Super Admin para cada perfil.
 
-  // Central de Suporte é liberada para qualquer usuário autenticado.
-  if(feature === "chamados"){
-    return isAuthedHome();
-  }
-
+  // Suporte também obedece à matriz do perfil e à liberação da empresa.
   if(novaFrotaModulesConfirmed && NOVA_MANAGED_FEATURES.has(feature)){
     return isAuthedHome() && novaFrotaModuleGranted(feature);
   }
@@ -1837,6 +1842,12 @@ if(document.readyState === "loading"){
 window.addEventListener("portal:session", () => {
   if(portalNavCurrentFile() === "home.html") return;
   renderPortalGlobalNav();
+});
+// As três centrais confirmam os direitos de execução em chamadas separadas.
+// Quando retornarem, a barra de títulos precisa refletir o resultado.
+window.addEventListener("portal:modules-confirmed", () => {
+  if(portalNavCurrentFile() !== "home.html" && isAuthedHome())
+    renderPortalGlobalNav();
 });
 
 window.addEventListener("resize", schedulePortalNavOverflow, { passive:true });

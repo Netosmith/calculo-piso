@@ -714,8 +714,14 @@
     bind();
     let session=null;
     try{
-      if(typeof verifyPortalSession==="function")session=await verifyPortalSession({requireState:true,redirect:false});
-      else if(typeof ensurePortalApi==="function"){
+      // Aguarda a sessão autenticada E a matriz de módulos carregada pelo Worker.
+      // Uma consulta paralela a verifyPortalSession() terminava antes das liberações
+      // chegarem e bloqueava inclusive a conta proprietária Super Admin.
+      if(window.portalAuthReady){
+        session=await window.portalAuthReady;
+      }else if(typeof verifyPortalSession==="function"){
+        session=await verifyPortalSession({requireState:true,redirect:false});
+      }else if(typeof ensurePortalApi==="function"){
         const portalApi=await ensurePortalApi();
         session=(await portalApi.session()).session;
       }
@@ -723,9 +729,14 @@
       console.error("[cadastros] sessão:",error);
     }
     if(!session){window.location.href=window.portalTenantHref?.("login.html") || "./login.html";return;}
-    const perfil=upper(session.perfil||localStorage.getItem("nf_auth_profile"));
+    if(session.tenantMode!==true&&!session.estado){
+      window.location.href="./login.html";return;
+    }
+    const perfil=upper(session.perfil||"");
     if(typeof canAccessFeature!=="function"||!canAccessFeature("cadastros")){
-      alert("Cadastro não liberado para este perfil.");window.location.href=window.portalTenantHref?.("home.html") || "./home.html";return;
+      alert("Cadastro não está habilitado para esta sessão. Confira a liberação em Cards e módulos e em Perfis e Acessos no Super Admin.");
+      window.location.href=window.portalTenantHref?.("home.html") || "./home.html";
+      return;
     }
     // Gerenciamento de usuários continua exclusivo do ADMINISTRADOR.
     // Outros perfis explicitamente habilitados podem abrir os demais cadastros.

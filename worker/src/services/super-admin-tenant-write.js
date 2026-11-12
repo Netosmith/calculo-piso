@@ -8,6 +8,7 @@ import {adminWriteTenantIntegration} from "./tenant-integration.js";
 import {cadastroAdminSave} from "../controllers/cadastro-solicitacoes.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";
 import {saveNovaFrotaModules,NOVA_FROTA_MANAGED_MODULES} from "./nova-frota-modules.js";
+import {adminWriteProfileAccess} from "./profile-access.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 const BASE="/v1/super-admin/transportadoras";
@@ -53,6 +54,11 @@ export async function writeTenantCatalog(request,env,actor) {
   const path=new URL(request.url).pathname;
   const action=path.slice(BASE.length);
   try {
+    const profileAccessRoute=action.match(/^\/([a-z0-9-]+)\/profile-access$/);
+    if(profileAccessRoute){
+      if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
+      return adminWriteProfileAccess(request,env,actor,profileAccessRoute[1]);
+    }
     const cadastroDriveRoute=action.match(/^\/([a-z0-9-]+)\/cadastro-drive$/);
     if(cadastroDriveRoute){
       if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);

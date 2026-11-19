@@ -3,11 +3,12 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const MAX_BYTES=15*1024*1024,MAX_PAGES=8;
+const MAX_BYTES=15*1024*1024,MAX_PAGES=8,MAX_FILES=10;
 const TESSERACT="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js";
 const PDF_MODULE="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
 const PDF_WORKER="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs";
 let file=null,kind=null,previewUrl=null,pdfjs=null,ocrWorker=null;
+let entries=[],nextId=1,activeId=null;
 let busy=false,cancelled=false,rawText="",lastResult=null,lastPages=0,lastConf=null;
 const fieldsApi=window.PortalOCRFields;
 if(!fieldsApi){console.error("[OCR] O extrator de campos não foi carregado.");return;}
@@ -25,7 +26,7 @@ function setBusy(value){
  $("ocrStart").disabled=value||!file;
  $("ocrType").disabled=value;
  $("ocrFile").disabled=value;
- $("ocrRemove").disabled=value;
+ for(const button of $("ocrFilesList").querySelectorAll("button,select"))button.disabled=value;
  $("ocrCancel").hidden=!value;
  $("ocrDropzone").setAttribute("aria-disabled",String(value));
 }
@@ -42,47 +43,142 @@ function clearPreview(){
  const canvas=$("ocrPreviewPdf");
  canvas.width=1;canvas.height=1;
 }
+const getActive=()=>entries.find(x=>x.id===activeId)||null;
+const labelStatus=s=>({aguardando:"Aguardando",lendo:"Lendo…",ok:"Concluído",erro:"Falha",cancelado:"Cancelado"})[s]||"Aguardando";
+const displaySize=n=>(n/1024/1024).toFixed(2)+" MB";
+function updateControls(){
+ const remaining=entries.filter(x=>x.status!=="ok").length;
+ $("ocrStart").disabled=busy||remaining===0;
+ $("ocrStart").textContent=remaining?("🔎 Ler "+remaining+" documento"+(remaining===1?"":"s")):"✓ Todos os documentos lidos";
+ $("ocrFileCount").textContent=entries.length+" / "+MAX_FILES;
+ $("ocrCancel").hidden=!busy;
+}
+function updateResultSelector(){
+ const select=$("ocrResultFile");
+ select.replaceChildren();
+ for(const entry of entries.filter(x=>x.status==="ok")){
+  const option=document.createElement("option");
+  option.value=String(entry.id);option.textContent=entry.file.name;
+  select.append(option);
+ }
+ select.value=String(activeId||"");
+}
+function renderQueue(){
+ const list=$("ocrFilesList");list.replaceChildren();
+ for(const entry of entries){
+  const row=document.createElement("div");row.className="ocr-file-item";
+  if(entry.id===activeId)row.classList.add("active");
+  const main=document.createElement("button");main.type="button";main.className="ocr-file-main";
+  const name=document.createElement("strong");name.textContent=entry.file.name;
+  const info=document.createElement("small");info.textContent=displaySize(entry.file.size)+" · "+(entry.kind==="pdf"?"PDF":"Imagem");
+  const status=document.createElement("span");status.className="ocr-file-state";
+  status.dataset.status=entry.status;status.textContent=labelStatus(entry.status);
+  main.append(name,info,status);
+  main.disabled=busy;main.onclick=()=>activate(entry.id);
+  const type=document.createElement("select");type.className="ocr-file-type";
+  type.setAttribute("aria-label","Tipo do documento "+entry.file.name);
+  for(const [key,title] of [["auto","Detectar tipo"],["cnh","CNH"],["veiculo","CRLV / Veículo"],["endereco","Comprovante endereço"],["geral","Outros"]]){
+   const opt=document.createElement("option");opt.value=key;opt.textContent=title;type.append(opt);
+  }
+  type.value=entry.type;type.disabled=busy;
+  type.onchange=()=>{
+   entry.type=type.value;
+   if(entry.result){
+    entry.result=fieldsApi.extract(entry.raw,entry.type);
+    if(entry.id===activeId){lastResult=entry.result;present(false);}
+   }
+   if(entry.id===activeId)$("ocrType").value=entry.type;
+  };
+  const remove=document.createElement("button");remove.type="button";remove.className="ocr-file-remove";
+  remove.textContent="Remover";remove.disabled=busy;
+  remove.onclick=()=>removeEntry(entry.id);
+  row.append(main,type,remove);list.append(row);
+ }
+ updateControls();
+ updateResultSelector();
+}
 function clearAll(){
  if(busy)return;
- file=null;kind=null;
- $("ocrFile").value="";$("ocrFileRow").hidden=true;
- $("ocrStart").disabled=true;$("ocrProgressBox").hidden=true;
- clearPreview();resetOutput();say("Nenhum documento selecionado.");
+ entries=[];activeId=null;file=null;kind=null;
+ $("ocrFile").value="";
+ clearPreview();resetOutput();
+ $("ocrProgressBox").hidden=true;
+ renderQueue();
+ say("Adicione até 10 documentos para iniciar a leitura.");
+}
+function removeEntry(id){
+ if(busy)return;
+ entries=entries.filter(x=>x.id!==id);
+ if(activeId===id){
+  const replacement=entries[0]||null;
+  activeId=null;clearPreview();resetOutput();
+  if(replacement)activate(replacement.id);
+  else{file=null;kind=null;}
+ }
+ renderQueue();
+ if(!entries.length)say("Nenhum documento selecionado.");
+}
+function showPreview(entry){
+ clearPreview();
+ if(!entry)return;
+ if(entry.kind==="image"){
+  previewUrl=URL.createObjectURL(entry.file);
+  $("ocrPreviewImage").src=previewUrl;
+  $("ocrPreviewImage").hidden=false;
+  $("ocrEmptyPreview").hidden=true;
+ }else if(entry.previewData){
+  $("ocrPreviewImage").src=entry.previewData;
+  $("ocrPreviewImage").hidden=false;
+  $("ocrEmptyPreview").hidden=true;
+ }else{
+  $("ocrEmptyPreview").querySelector("strong").textContent="PDF selecionado";
+  $("ocrEmptyPreview").querySelector("small").textContent="Prévia disponível durante ou após a leitura.";
+ }
+}
+function activate(id){
+ if(busy)return;
+ const entry=entries.find(x=>x.id===id);
+ if(!entry)return;
+ activeId=id;file=entry.file;kind=entry.kind;
+ $("ocrType").value=entry.type;
+ rawText=entry.raw||"";lastResult=entry.result||null;lastPages=entry.pages||0;lastConf=entry.conf??null;
+ showPreview(entry);
+ if(entry.result)present(false);
+ else $("ocrResults").hidden=true;
+ renderQueue();
+ say(entry.status==="erro"?"Falha neste arquivo: "+entry.error:
+  entry.status==="ok"?"Documento lido. Confira os dados extraídos.":
+  "Arquivo selecionado. Clique em Ler documentos.",entry.status==="erro"?"error":"");
 }
 async function sniff(f){
- if(!f||f.size<4||f.size>MAX_BYTES)throw new Error("O arquivo deve ter entre 4 bytes e 15 MB.");
+ if(!f||f.size<4||f.size>MAX_BYTES)throw new Error("Cada arquivo deve ter entre 4 bytes e 15 MB.");
  const h=new Uint8Array(await f.slice(0,12).arrayBuffer());
  if(h[0]===0xFF&&h[1]===0xD8&&h[2]===0xFF)return "image";
  if(h[0]===0x89&&h[1]===0x50&&h[2]===0x4E&&h[3]===0x47)return "image";
  if(h[0]===0x25&&h[1]===0x50&&h[2]===0x44&&h[3]===0x46)return "pdf";
- throw new Error("Formato incompatível. Use somente JPG, PNG ou PDF válidos.");
+ throw new Error("Formato incompatível. Use JPG, PNG ou PDF válidos.");
 }
-async function selectFile(candidate){
- if(busy)return;
- if(!candidate){return;}
- resetOutput();clearPreview();
- try{
-  const detected=await sniff(candidate);
-  file=candidate;kind=detected;
-  $("ocrFileName").textContent=candidate.name;
-  $("ocrFileSize").textContent=(candidate.size/1024/1024).toFixed(2)+" MB · "+(detected==="pdf"?"PDF":"Imagem");
-  $("ocrFileRow").hidden=false;
-  $("ocrStart").disabled=false;
-  $("ocrProgressBox").hidden=true;
-  if(kind==="image"){
-   previewUrl=URL.createObjectURL(file);
-   $("ocrPreviewImage").src=previewUrl;
-   $("ocrPreviewImage").hidden=false;
-   $("ocrEmptyPreview").hidden=true;
-  }else{
-   $("ocrEmptyPreview").querySelector("strong").textContent="PDF selecionado";
-   $("ocrEmptyPreview").querySelector("small").textContent="A primeira página aparecerá durante a leitura.";
+async function selectFiles(selection){
+ if(busy||!selection?.length)return;
+ const rejected=[];
+ for(const candidate of Array.from(selection)){
+  if(entries.length>=MAX_FILES){rejected.push("Limite de 10 arquivos atingido.");break;}
+  if(entries.some(e=>e.file.name===candidate.name&&e.file.size===candidate.size&&e.file.lastModified===candidate.lastModified)){
+   rejected.push(candidate.name+" já está na lista.");continue;
   }
-  say("Documento pronto para leitura. Clique em Ler documento.");
- }catch(e){
-  clearAll();say(String(e.message||e),"error");
+  try{
+   const detected=await sniff(candidate);
+   entries.push({id:nextId++,file:candidate,kind:detected,
+    type:$("ocrType").value,status:"aguardando",result:null,raw:"",pages:0,conf:null,previewData:null,error:""});
+  }catch(e){rejected.push(candidate.name+": "+e.message);}
  }
+ $("ocrFile").value="";
+ if(activeId===null&&entries.length)activate(entries[0].id);
+ renderQueue();
+ if(rejected.length)say(rejected.join(" "),"error");
+ else say(entries.length+" documento(s) na lista. A leitura será feita em sequência.");
 }
+
 function loadScript(url){
  return new Promise((resolve,reject)=>{
   if(window.Tesseract)return resolve();

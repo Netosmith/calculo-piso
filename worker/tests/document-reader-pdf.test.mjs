@@ -49,8 +49,8 @@ test("PDF.js 6: sucesso na leitura não pode ser transformado em erro de pdf.des
  const result=await engine.__pdfOCRTest({name:"cnh-teste.pdf",arrayBuffer:async()=>new ArrayBuffer(8)});
  assert.match(result.text,/CARTEIRA NACIONAL DE HABILITACAO/);
  assert.equal(result.pages,1);
- assert.equal(engine.__cropped,1);
- assert.equal(engine.__recognized,1);
+ assert.equal(engine.__cropped,3);
+ assert.equal(engine.__recognized,3);
  assert.equal(closed,1);
 });
 test("CRLV híbrido: ler duas regiões OCR mesmo quando PDF já contém texto digital",async()=>{

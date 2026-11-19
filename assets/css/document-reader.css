@@ -99,3 +99,19 @@ body.pf-document-reader button,body.pf-document-reader input,body.pf-document-re
 .ocr-file-remove{grid-column:2;grid-row:1}
 .ocr-result-select{max-width:100%}
 }
+
+
+/* QR Code: status informativo, sem confundir detecção com validação oficial. */
+.ocr-qr-panel{
+ display:flex;align-items:flex-start;gap:12px;
+ margin:4px 0 18px;padding:13px 15px;
+ border:1px solid #b9dbe6;background:#f1f9fc;color:#1d526e;
+ border-radius:12px;
+}
+.ocr-qr-icon{
+ flex:0 0 auto;width:34px;height:34px;display:grid;place-items:center;
+ background:#d5eeef;border-radius:9px;font-size:23px;font-weight:850;color:#0e805d;
+}
+.ocr-qr-panel strong{font-size:12px;font-weight:900;color:#135578}
+.ocr-qr-panel p{margin:3px 0 7px;font-size:12px;line-height:1.5}
+.ocr-qr-panel small{font-size:11px;color:#5a7787;line-height:1.5;display:block}

@@ -312,6 +312,7 @@ function pdfRegions(hint,firstPage){
  if(/(?:CNH|HABILITACAO|DRIVER.?S.?LICENSE|PERMISSAO PARA DIRIGIR)/.test(text))
   return [
    {name:"Dados principais da CNH",rect:[.10,.125,.44,.255]},
+   {name:"Dados complementares da CNH",rect:[.10,.385,.44,.22]},
    {name:"Identificação MRZ da CNH",rect:[.115,.62,.42,.14]}
   ];
  return []; // Outros PDFs: OCR na página inteira quando não houver texto pesquisável.

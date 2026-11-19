@@ -67,3 +67,35 @@ body.pf-document-reader button,body.pf-document-reader input,body.pf-document-re
 @media(max-width:640px){.ocr-shell{padding:12px}.ocr-hero{padding:20px;display:block}.ocr-hero-side{margin-top:12px}.ocr-panel{padding:16px}.ocr-fields-grid{grid-template-columns:1fr}.ocr-result-actions{width:100%}.ocr-result-actions .ocr-btn{flex:1}.ocr-note{padding:12px}.ocr-preview{min-height:230px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{.nf-global-nav,.nf-global-nav-host,.ocr-note,.ocr-buttons,.ocr-dropzone,.ocr-preview-panel,.ocr-result-actions{display:none!important}}
+
+
+/* Multi-documentos: fila de até dez arquivos e resultados individuais. */
+.ocr-file-list-head{display:flex;justify-content:space-between;align-items:center;margin:16px 0 9px;gap:10px;font-size:12px;color:#28556f}
+.ocr-file-list-head strong{font-weight:850}
+.ocr-file-list-head span{border-radius:999px;border:1px solid #d4e6ee;background:#f3f9fb;padding:5px 10px;font-size:11px;font-weight:900}
+.ocr-files-list{display:grid;gap:9px;margin-bottom:15px;max-height:390px;overflow-y:auto}
+.ocr-file-item{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px) auto;align-items:center;gap:9px;border:1px solid #d7e5eb;background:#f9fcfd;padding:10px;border-radius:11px}
+.ocr-file-item.active{border-color:#25a173;box-shadow:0 0 0 2px #d8f2e4}
+.ocr-file-main{min-width:0;display:grid;justify-items:start;gap:3px;cursor:pointer;border:0;background:none;padding:0;text-align:left;color:#174666}
+.ocr-file-main strong{font-size:11px;overflow-wrap:anywhere;max-width:100%}
+.ocr-file-main small{color:#658098;font-size:10px}
+.ocr-file-state{font-weight:850;font-size:10px}
+.ocr-file-state[data-status="ok"]{color:#178553}
+.ocr-file-state[data-status="erro"]{color:#b23e47}
+.ocr-file-state[data-status="lendo"]{color:#176eb2}
+.ocr-file-type{min-width:0;width:100%;border:1px solid #cbdde7;border-radius:8px;background:#fff;color:#235774;padding:8px;font-size:11px}
+.ocr-file-remove{border:1px solid #e0e8ef;background:white;padding:8px 10px;border-radius:8px;font-size:11px;color:#5a758b;cursor:pointer}
+.ocr-file-remove:hover{border-color:#dc9298;color:#9b2634}
+.ocr-file-item:has(.ocr-file-remove:disabled){opacity:.65}
+.ocr-result-select{display:grid;gap:5px;max-width:450px;margin-top:14px;color:#22516f;font-size:11px;font-weight:850}
+.ocr-result-select select{border:1px solid #c5dae7;background:#fff;color:#174463;border-radius:9px;padding:10px 11px;font-size:12px;width:100%}
+.ocr-warnings{margin:9px 0 0;color:#8c561a;background:#fff5e7;border:1px solid #edce9d;border-radius:9px;padding:10px 12px;font-size:11px;max-width:650px}
+.ocr-preview-empty strong{overflow-wrap:anywhere}
+.ocr-fields-grid .ocr-field:has(input[value=""]){border:0}
+.ocr-legal{max-width:100%}
+@media(max-width:740px){
+.ocr-file-item{grid-template-columns:minmax(0,1fr) auto}
+.ocr-file-type{grid-column:1/-1;grid-row:2}
+.ocr-file-remove{grid-column:2;grid-row:1}
+.ocr-result-select{max-width:100%}
+}

@@ -20,7 +20,7 @@ function testEngine(){
  src=replaceSection(src,"async function recognize(","async function imageOCR(",
   "async function recognize(){window.__recognized++;return {text:window.__mockOcrText,confidence:87};}");
  assert.match(src,/void authGate\(\);/);
- src=src.replace("void authGate();","window.__pdfOCRTest=pdfOCR;");
+ src=src.replace("void authGate();","window.__pdfOCRTest=pdfOCR;window.__pdfZoomTest=ensureCanvasSize;");
  const values=new Map();
  const document={getElementById(id){
   if(!values.has(id))values.set(id,{dataset:{},value:0,textContent:""});
@@ -83,5 +83,32 @@ test("PDF de texto normal: preserva camada digital sem OCR desnecessário",async
  const result=await engine.__pdfOCRTest({name:"outro.pdf",arrayBuffer:async()=>new ArrayBuffer(8)});
  assert.match(result.text,/CONTRATO DIGITAL/);
  assert.equal(engine.__recognized,0);
+ assert.equal(closed,1);
+});
+
+test("Zoom real de 4x na renderização de PDF escaneado respeita limite de 12 MP",()=>{
+ const engine=testEngine();
+ const standard=engine.__pdfZoomTest(595,842,false);
+ const zoom=engine.__pdfZoomTest(595,842,true);
+ assert.ok(zoom>standard,"O OCR precisa receber mais pixels do que a prévia");
+ assert.ok(zoom>=3.5&&zoom<=4,"PDF CNH de uma página deve receber zoom próximo de 4x");
+ const huge=engine.__pdfZoomTest(5000,7000,true);
+ assert.ok(5000*7000*huge*huge<=12_000_010,"Zoom não pode superar 12 MP");
+});
+test("PDF escaneado sem nome CNH passa pela identificação e por novos recortes de zoom",async()=>{
+ const engine=testEngine();
+ let closed=0;
+ engine.__mockOcrText="CARTEIRA NACIONAL DE HABILITACAO\nNOME E SOBRENOME";
+ engine.__mockPdf={getDocument:()=>({
+  promise:Promise.resolve({numPages:1,getPage:async()=>({
+   getTextContent:async()=>({items:[]}),
+   getViewport:()=>({width:595,height:842}),cleanup(){}
+  })}),destroy:async()=>{closed++}
+ })};
+ const result=await engine.__pdfOCRTest({name:"documento-digitalizado.pdf",arrayBuffer:async()=>new ArrayBuffer(8)});
+ assert.match(result.text,/CARTEIRA NACIONAL/);
+ assert.equal(engine.__rendered,1);
+ assert.equal(engine.__cropped,3,"CNH detectada pelo OCR recebe três recortes focados");
+ assert.equal(engine.__recognized,4,"Primeiro OCR identifica o tipo, outros três leem os campos ampliados");
  assert.equal(closed,1);
 });

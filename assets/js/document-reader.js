@@ -206,6 +206,16 @@ async function ensureWorker(){
    }
   }
  });
+ // Documentos oficiais usam blocos de texto estruturados. O ajuste é
+ // suportado pela API do Tesseract.js e não altera o arquivo original.
+ if(typeof worker.setParameters==="function"){
+  try{
+   await worker.setParameters({
+    tessedit_pageseg_mode:window.Tesseract.PSM?.SINGLE_BLOCK||"6",
+    preserve_interword_spaces:"1"
+   });
+  }catch(e){console.warn("[OCR] Parâmetro opcional não aplicado:",e.message);}
+ }
  ocrWorker=worker;
  checkCancelled();
  return worker;
@@ -430,7 +440,9 @@ function present(scroll=false){
   "Camada digital / sem índice de confiança":
   "Confiança média OCR: "+Math.round(lastConf)+"%";
  $("ocrResultSub").textContent="Documento: "+(entry?.file?.name||"")+" · Confira cada campo antes de exportar.";
- const warnings=(lastResult.avisos||[]);
+ const warnings=[...(lastResult.avisos||[])];
+ if(lastConf!==null&&lastConf<72)
+  warnings.push("Confiança baixa no reconhecimento. Confira principalmente nomes, documentos, números e datas.");
  $("ocrWarnings").hidden=!warnings.length;
  $("ocrWarnings").textContent=warnings.join(" ");
  const grid=$("ocrFieldsGrid");grid.replaceChildren();

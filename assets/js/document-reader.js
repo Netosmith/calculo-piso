@@ -1,0 +1,352 @@
+/* Portal Frete · OCR local. Arquivos jamais enviados por fetch ou formulário.
+   Dependências fixadas por versão; resultados e anexos permanecem apenas em memória. */
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const MAX_BYTES=15*1024*1024,MAX_PAGES=8;
+const TESSERACT="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js";
+const PDF_MODULE="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
+const PDF_WORKER="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs";
+let file=null,kind=null,previewUrl=null,pdfjs=null,ocrWorker=null;
+let busy=false,cancelled=false,rawText="",lastResult=null,lastPages=0,lastConf=null;
+const fieldsApi=window.PortalOCRFields;
+if(!fieldsApi){console.error("[OCR] O extrator de campos não foi carregado.");return;}
+const say=(message,type="")=>{
+ const p=$("ocrMessage");p.textContent=message;p.className="ocr-message"+(type?" "+type:"");
+};
+function progress(label,value){
+ const n=Math.max(0,Math.min(100,Math.round(Number(value)||0)));
+ $("ocrProgressText").textContent=label;
+ $("ocrProgressPct").textContent=n+"%";
+ $("ocrProgress").value=n;
+}
+function setBusy(value){
+ busy=value;
+ $("ocrStart").disabled=value||!file;
+ $("ocrType").disabled=value;
+ $("ocrFile").disabled=value;
+ $("ocrRemove").disabled=value;
+ $("ocrCancel").hidden=!value;
+ $("ocrDropzone").setAttribute("aria-disabled",String(value));
+}
+function checkCancelled(){if(cancelled)throw new Error("Leitura cancelada pelo usuário.");}
+function resetOutput(){
+ rawText="";lastResult=null;lastPages=0;lastConf=null;
+ $("ocrResults").hidden=true;$("ocrFieldsGrid").replaceChildren();$("ocrRawText").value="";
+}
+function clearPreview(){
+ if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}
+ $("ocrPreviewImage").removeAttribute("src");
+ $("ocrPreviewImage").hidden=true;$("ocrPreviewPdf").hidden=true;
+ $("ocrEmptyPreview").hidden=false;
+ const canvas=$("ocrPreviewPdf");
+ canvas.width=1;canvas.height=1;
+}
+function clearAll(){
+ if(busy)return;
+ file=null;kind=null;
+ $("ocrFile").value="";$("ocrFileRow").hidden=true;
+ $("ocrStart").disabled=true;$("ocrProgressBox").hidden=true;
+ clearPreview();resetOutput();say("Nenhum documento selecionado.");
+}
+async function sniff(f){
+ if(!f||f.size<4||f.size>MAX_BYTES)throw new Error("O arquivo deve ter entre 4 bytes e 15 MB.");
+ const h=new Uint8Array(await f.slice(0,12).arrayBuffer());
+ if(h[0]===0xFF&&h[1]===0xD8&&h[2]===0xFF)return "image";
+ if(h[0]===0x89&&h[1]===0x50&&h[2]===0x4E&&h[3]===0x47)return "image";
+ if(h[0]===0x25&&h[1]===0x50&&h[2]===0x44&&h[3]===0x46)return "pdf";
+ throw new Error("Formato incompatível. Use somente JPG, PNG ou PDF válidos.");
+}
+async function selectFile(candidate){
+ if(busy)return;
+ if(!candidate){return;}
+ resetOutput();clearPreview();
+ try{
+  const detected=await sniff(candidate);
+  file=candidate;kind=detected;
+  $("ocrFileName").textContent=candidate.name;
+  $("ocrFileSize").textContent=(candidate.size/1024/1024).toFixed(2)+" MB · "+(detected==="pdf"?"PDF":"Imagem");
+  $("ocrFileRow").hidden=false;
+  $("ocrStart").disabled=false;
+  $("ocrProgressBox").hidden=true;
+  if(kind==="image"){
+   previewUrl=URL.createObjectURL(file);
+   $("ocrPreviewImage").src=previewUrl;
+   $("ocrPreviewImage").hidden=false;
+   $("ocrEmptyPreview").hidden=true;
+  }else{
+   $("ocrEmptyPreview").querySelector("strong").textContent="PDF selecionado";
+   $("ocrEmptyPreview").querySelector("small").textContent="A primeira página aparecerá durante a leitura.";
+  }
+  say("Documento pronto para leitura. Clique em Ler documento.");
+ }catch(e){
+  clearAll();say(String(e.message||e),"error");
+ }
+}
+function loadScript(url){
+ return new Promise((resolve,reject)=>{
+  if(window.Tesseract)return resolve();
+  const script=document.createElement("script");
+  script.src=url;script.async=true;script.crossOrigin="anonymous";
+  script.onload=()=>window.Tesseract?resolve():reject(new Error("Biblioteca OCR indisponível."));
+  script.onerror=()=>reject(new Error("Não foi possível baixar o mecanismo OCR. Verifique a conexão."));
+  document.head.append(script);
+ });
+}
+async function ensureWorker(){
+ if(ocrWorker)return ocrWorker;
+ await loadScript(TESSERACT);
+ checkCancelled();
+ progress("Preparando idioma português…",6);
+ const worker=await window.Tesseract.createWorker("por",1,{
+  logger:event=>{
+   if(!busy||cancelled)return;
+   if(event?.status==="recognizing text"&&Number.isFinite(event.progress)){
+    const pct=Number(event.progress);
+    const prior=Number($("ocrProgress").dataset.page||0);
+    const total=Number($("ocrProgress").dataset.pages||1);
+    progress("Reconhecendo texto · página "+(prior+1)+" de "+total,
+     8+((prior+pct)/Math.max(total,1))*85);
+   }
+  }
+ });
+ ocrWorker=worker;
+ checkCancelled();
+ return worker;
+}
+async function recognize(input){
+ const w=await ensureWorker();
+ checkCancelled();
+ const result=await w.recognize(input);
+ checkCancelled();
+ const text=String(result?.data?.text||"");
+ const c=Number(result?.data?.confidence);
+ return {text,confidence:Number.isFinite(c)?c:null};
+}
+async function imageOCR(f){
+ $("ocrProgress").dataset.page="0";$("ocrProgress").dataset.pages="1";
+ progress("Lendo imagem…",9);
+ const result=await recognize(f);
+ if(!result.text.trim())throw new Error("Não foi possível identificar texto na imagem. Tente uma foto mais nítida.");
+ return {text:result.text,pages:1,confidences:result.confidence===null?[]:[result.confidence]};
+}
+async function ensurePdf(){
+ if(pdfjs)return pdfjs;
+ progress("Carregando leitor de PDF…",4);
+ pdfjs=await import(PDF_MODULE);
+ pdfjs.GlobalWorkerOptions.workerSrc=PDF_WORKER;
+ return pdfjs;
+}
+function ensureCanvasSize(width,height){
+ const maxPixels=7_000_000;
+ const scale=Math.min(2,Math.sqrt(maxPixels/(width*height)));
+ return Math.max(.8,scale);
+}
+async function renderPage(page,firstPage=false){
+ const base=page.getViewport({scale:1});
+ const scale=ensureCanvasSize(base.width,base.height);
+ const view=page.getViewport({scale});
+ const canvas=document.createElement("canvas");
+ canvas.width=Math.round(view.width);canvas.height=Math.round(view.height);
+ const context=canvas.getContext("2d",{alpha:false,willReadFrequently:true});
+ if(!context)throw new Error("Canvas indisponível neste navegador.");
+ await page.render({canvasContext:context,viewport:view}).promise;
+ checkCancelled();
+ if(firstPage){
+  const preview=$("ocrPreviewPdf");
+  const max=1100,ratio=Math.min(1,max/Math.max(canvas.width,canvas.height));
+  preview.width=Math.round(canvas.width*ratio);preview.height=Math.round(canvas.height*ratio);
+  preview.getContext("2d",{alpha:false}).drawImage(canvas,0,0,preview.width,preview.height);
+  $("ocrPreviewPdf").hidden=false;$("ocrEmptyPreview").hidden=true;
+ }
+ return canvas;
+}
+async function pdfOCR(f){
+ const pdfLib=await ensurePdf();checkCancelled();
+ let task,pdf;
+ try{
+  const data=new Uint8Array(await f.arrayBuffer());
+  task=pdfLib.getDocument({data,isEvalSupported:false,stopAtErrors:true});
+  pdf=await task.promise;
+  const pages=pdf.numPages;
+  if(pages>MAX_PAGES)throw new Error("PDF com "+pages+" páginas. Limite desta versão: "+MAX_PAGES+". Divida o arquivo para continuar.");
+  const pieces=[],confidences=[];
+  $("ocrProgress").dataset.pages=String(pages);
+  for(let i=1;i<=pages;i++){
+   checkCancelled();
+   $("ocrProgress").dataset.page=String(i-1);
+   progress("Analisando página "+i+" de "+pages+"…",Math.round(6+(i-1)/pages*85));
+   const page=await pdf.getPage(i);
+   let embedded="";
+   try{
+    const text=await page.getTextContent();
+    embedded=(text.items||[]).map(item=>item.str||"").join("\n").trim();
+   }catch(e){console.warn("[OCR] Sem camada de texto nesta página.",e.message);}
+   let canvas;
+   if(i===1||embedded.length<80)canvas=await renderPage(page,i===1);
+   if(embedded.length>=80){
+    pieces.push(embedded);
+   }else{
+    const found=await recognize(canvas);
+    pieces.push(found.text);
+    if(found.confidence!==null)confidences.push(found.confidence);
+   }
+   if(canvas){canvas.width=1;canvas.height=1;}
+   page.cleanup();
+  }
+  const text=pieces.join("\n\n--- PÁGINA ---\n\n").trim();
+  if(!text)throw new Error("Não foi possível reconhecer texto no PDF.");
+  return {text,pages,confidences};
+ }catch(e){
+  if(/password/i.test(String(e.message)))throw new Error("PDF protegido por senha. Utilize um PDF desbloqueado.");
+  throw e;
+ }finally{
+  if(pdf)await pdf.destroy().catch(()=>{});
+  else if(task)await task.destroy().catch(()=>{});
+ }
+}
+async function terminateWorker(){
+ if(!ocrWorker)return;
+ const current=ocrWorker;ocrWorker=null;
+ try{await current.terminate();}catch(e){console.warn("[OCR] Encerramento do worker:",e);}
+}
+function showTab(which){
+ const raw=which==="raw";
+ $("ocrTabFields").classList.toggle("active",!raw);
+ $("ocrTabRaw").classList.toggle("active",raw);
+ $("ocrTabFields").setAttribute("aria-selected",String(!raw));
+ $("ocrTabRaw").setAttribute("aria-selected",String(raw));
+ $("ocrFieldsPanel").hidden=raw;$("ocrRawPanel").hidden=!raw;
+}
+function present(){
+ if(!rawText.trim())return;
+ const type=$("ocrType").value;
+ lastResult=fieldsApi.extract(rawText,type);
+ $("ocrResults").hidden=false;
+ $("ocrDetected").textContent=lastResult.titulo;
+ $("ocrPages").textContent=lastPages+" "+(lastPages===1?"página analisada":"páginas analisadas");
+ $("ocrConfidence").textContent=lastConf===null?
+  "Leitura digital / sem índice de confiança":
+  "Confiança média do OCR: "+Math.round(lastConf)+"%";
+ $("ocrResultSub").textContent="Campos sugeridos, editáveis e ainda não validados. Revise antes de exportar.";
+ const grid=$("ocrFieldsGrid");grid.replaceChildren();
+ if(!lastResult.camposDefinidos.length){
+  const notice=document.createElement("p");
+  notice.className="ocr-empty-fields";
+  notice.textContent="Nenhum modelo de campos selecionado. Confira o texto completo ou escolha CNH, CRLV ou endereço para sugerir campos.";
+  grid.append(notice);
+ }
+ for(const [key,label] of lastResult.camposDefinidos){
+  const field=document.createElement("label");field.className="ocr-field";
+  field.textContent=label;
+  const input=document.createElement("input");input.className="ocr-input";input.type="text";
+  input.autocomplete="off";input.spellcheck=false;input.dataset.field=key;
+  input.value=lastResult.campos[key]||"";input.placeholder="Não identificado · preencher manualmente";
+  input.maxLength=180;
+  input.addEventListener("input",()=>{if(lastResult)lastResult.campos[key]=input.value;});
+  field.append(input);grid.append(field);
+ }
+ $("ocrRawText").value=rawText;
+ showTab("fields");
+ $("ocrResults").scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function analyze(){
+ if(!file||busy)return;
+ cancelled=false;resetOutput();setBusy(true);
+ $("ocrProgressBox").hidden=false;
+ progress("Iniciando…",0);say("Analisando o documento localmente…");
+ try{
+  const result=kind==="pdf"?await pdfOCR(file):await imageOCR(file);
+  checkCancelled();
+  rawText=result.text;lastPages=result.pages;
+  lastConf=result.confidences.length?
+   result.confidences.reduce((a,b)=>a+b,0)/result.confidences.length:null;
+  progress("Concluído",100);say("Leitura concluída. Confira os campos extraídos antes de utilizar.","success");
+  present();
+ }catch(e){
+  say(String(e.message||"Erro inesperado ao ler o documento."),"error");
+  $("ocrProgressBox").hidden=true;
+ }finally{
+  await terminateWorker();setBusy(false);
+ }
+}
+async function cancel(){
+ if(!busy)return;
+ cancelled=true;say("Cancelando leitura…");
+ await terminateWorker();
+}
+function payload(){
+ if(!lastResult)return null;
+ return {
+  schema:"portal-frete.document-reader.v1",
+  tipoDocumento:lastResult.tipo,
+  tipoDescricao:lastResult.titulo,
+  nomeArquivo:file?.name||"",
+  paginasAnalisadas:lastPages,
+  campos:{...lastResult.campos},
+  textoReconhecido:rawText,
+  somenteConferencia:true,
+  revisadoPeloUsuario:false,
+  exportadoEm:new Date().toISOString()
+ };
+}
+async function copy(text){
+ try{await navigator.clipboard.writeText(text);say("Conteúdo copiado para a área de transferência.","success");}
+ catch{say("Não foi possível copiar automaticamente. Utilize o download JSON.","error");}
+}
+function download(){
+ const data=payload();if(!data)return;
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;a.download="leitura-"+data.tipoDocumento+"-"+new Date().toISOString().slice(0,10)+".json";
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ say("JSON exportado para seu dispositivo. Nenhum dado foi salvo no Portal.","success");
+}
+async function authGate(){
+ try{
+  let session;
+  if(window.portalAuthReady)session=await window.portalAuthReady;
+  else if(typeof verifyPortalSession==="function")
+   session=await verifyPortalSession({requireState:true,redirect:false});
+  if(!session||typeof canAccessFeature!=="function"||!canAccessFeature("leitura-documentos")){
+   location.replace(window.portalTenantHref?.("home.html")||"./home.html");return;
+  }
+  $("ocrMain").hidden=false;
+  init();
+ }catch(e){
+  console.warn("[OCR] Acesso negado ou sessão indisponível:",e);
+  location.replace(window.portalTenantHref?.("login.html")||"./login.html");
+ }
+}
+function init(){
+ const drop=$("ocrDropzone"),input=$("ocrFile");
+ drop.addEventListener("click",()=>{if(!busy)input.click();});
+ drop.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ")&&!busy){e.preventDefault();input.click();}
+ });
+ for(const event of ["dragenter","dragover"]){
+  drop.addEventListener(event,e=>{e.preventDefault();if(!busy)drop.classList.add("dragover");});
+ }
+ for(const event of ["dragleave","drop"])
+  drop.addEventListener(event,e=>{e.preventDefault();drop.classList.remove("dragover");});
+ drop.addEventListener("drop",e=>{if(!busy)void selectFile(e.dataTransfer?.files?.[0]);});
+ input.addEventListener("change",()=>void selectFile(input.files?.[0]));
+ $("ocrRemove").addEventListener("click",clearAll);
+ $("ocrStart").addEventListener("click",()=>void analyze());
+ $("ocrCancel").addEventListener("click",()=>void cancel());
+ $("ocrClear").addEventListener("click",clearAll);
+ $("ocrType").addEventListener("change",()=>{if(lastResult)present();});
+ $("ocrTabFields").addEventListener("click",()=>showTab("fields"));
+ $("ocrTabRaw").addEventListener("click",()=>showTab("raw"));
+ $("ocrCopyJson").addEventListener("click",()=>{const data=payload();if(data)void copy(JSON.stringify(data,null,2));});
+ $("ocrDownloadJson").addEventListener("click",download);
+ $("ocrCopyText").addEventListener("click",()=>void copy(rawText));
+ window.addEventListener("pagehide",()=>{
+  clearPreview();rawText="";lastResult=null;
+  if(ocrWorker)void terminateWorker();
+ },{once:true});
+}
+void authGate();
+})();

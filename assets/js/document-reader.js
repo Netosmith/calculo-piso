@@ -221,8 +221,14 @@ async function pdfOCR(f){
   if(/password/i.test(String(e.message)))throw new Error("PDF protegido por senha. Utilize um PDF desbloqueado.");
   throw e;
  }finally{
-  if(pdf)await pdf.destroy().catch(()=>{});
-  else if(task)await task.destroy().catch(()=>{});
+  // PDF.js 6 removeu PDFDocumentProxy.destroy(): o encerramento correto
+  // pertence ao PDFDocumentLoadingTask retornado por getDocument().
+  // Nunca transformar uma leitura bem-sucedida em erro de limpeza.
+  if(task&&typeof task.destroy==="function"){
+   try{await task.destroy();}catch(e){
+    console.warn("[OCR] Não foi possível liberar o leitor PDF.",e);
+   }
+  }
  }
 }
 async function terminateWorker(){

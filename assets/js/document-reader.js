@@ -181,6 +181,50 @@ async function renderPage(page,firstPage=false){
  }
  return canvas;
 }
+// Documentos oficiais costumam misturar texto digital com campos rasterizados.
+// O CRLV de teste já contém números em texto; na CNH de teste, os dados
+// pessoais aparecem em uma imagem no canto superior esquerdo.
+function pdfSearchRegion(canvas,x,y,w,h){
+ const sx=Math.floor(canvas.width*x),sy=Math.floor(canvas.height*y);
+ const sw=Math.min(canvas.width-sx,Math.round(canvas.width*w));
+ const sh=Math.min(canvas.height-sy,Math.round(canvas.height*h));
+ if(sw<=0||sh<=0)throw new Error("Recorte inválido do PDF.");
+ const scale=Math.min(2.5,2100/sw,Math.sqrt(6_000_000/(sw*sh)));
+ const out=document.createElement("canvas");
+ out.width=Math.max(1,Math.round(sw*scale));
+ out.height=Math.max(1,Math.round(sh*scale));
+ const ctx=out.getContext("2d",{alpha:false,willReadFrequently:true});
+ if(!ctx)throw new Error("Canvas OCR indisponível.");
+ ctx.fillStyle="#ffffff";
+ ctx.fillRect(0,0,out.width,out.height);
+ ctx.drawImage(canvas,sx,sy,sw,sh,0,0,out.width,out.height);
+ return out;
+}
+function pdfRegions(hint,firstPage){
+ if(!firstPage)return [];
+ const text=String(hint||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase();
+ if(/(?:CNH|HABILITACAO|DRIVER.?S.?LICENSE|PERMISSAO PARA DIRIGIR)/.test(text))
+  return [{name:"Dados da CNH",rect:[.035,.105,.49,.70]}];
+ if(/(?:CRLV|RENAVAM|LICENCIAMENTO|CAVALO|PLACA|DOCUMENTO DO VEICULO)/.test(text))
+  return [
+   {name:"Dados do veículo",rect:[.035,.055,.49,.50]},
+   {name:"Dados do proprietário",rect:[.51,.055,.47,.50]}
+  ];
+ return []; // Outros PDFs: OCR na página inteira quando não houver texto pesquisável.
+}
+function pdfLayoutText(items,pageWidth){
+ // Ordena as palavras por duas colunas antes da extração estruturada.
+ // Esta representação auxilia quando a sequência interna do PDF separa todos
+ // os títulos de todos os valores, como no CRLV digital.
+ const parts=(items||[]).filter(x=>typeof x.str==="string"&&x.str.trim());
+ const collect=arr=>arr.sort((a,b)=>{
+  const yA=Number(a.transform?.[5]||0),yB=Number(b.transform?.[5]||0);
+  return Math.abs(yA-yB)>2.5?yB-yA:
+    Number(a.transform?.[4]||0)-Number(b.transform?.[4]||0);
+ }).map(x=>String(x.str).trim()).join("\n");
+ return [collect(parts.filter(x=>Number(x.transform?.[4]||0)<pageWidth*.5)),
+  collect(parts.filter(x=>Number(x.transform?.[4]||0)>=pageWidth*.5))].join("\n");
+}
 async function pdfOCR(f){
  const pdfLib=await ensurePdf();checkCancelled();
  let task,pdf;
@@ -189,6 +233,7 @@ async function pdfOCR(f){
   task=pdfLib.getDocument({data,isEvalSupported:false,stopAtErrors:true});
   pdf=await task.promise;
   const pages=pdf.numPages;
+  if(!Number.isInteger(pages)||pages<1)throw new Error("PDF sem páginas disponíveis.");
   if(pages>MAX_PAGES)throw new Error("PDF com "+pages+" páginas. Limite desta versão: "+MAX_PAGES+". Divida o arquivo para continuar.");
   const pieces=[],confidences=[];
   $("ocrProgress").dataset.pages=String(pages);
@@ -197,40 +242,64 @@ async function pdfOCR(f){
    $("ocrProgress").dataset.page=String(i-1);
    progress("Analisando página "+i+" de "+pages+"…",Math.round(6+(i-1)/pages*85));
    const page=await pdf.getPage(i);
-   let embedded="";
+   let canvas=null;
    try{
-    const text=await page.getTextContent();
-    embedded=(text.items||[]).map(item=>item.str||"").join("\n").trim();
-   }catch(e){console.warn("[OCR] Sem camada de texto nesta página.",e.message);}
-   let canvas;
-   if(i===1||embedded.length<80)canvas=await renderPage(page,i===1);
-   if(embedded.length>=80){
-    pieces.push(embedded);
-   }else{
-    const found=await recognize(canvas);
-    pieces.push(found.text);
-    if(found.confidence!==null)confidences.push(found.confidence);
+    let embedded="",layout="";
+    try{
+     const text=await page.getTextContent();
+     embedded=(text.items||[]).map(item=>item.str||"").join("\n").trim();
+     layout=pdfLayoutText(text.items||[],page.getViewport({scale:1}).width).trim();
+    }catch(e){console.warn("[OCR] Não foi possível ler a camada de texto do PDF.",e.message);}
+    const hint=[f.name,$("ocrType").value,embedded.slice(0,400)].join(" ");
+    const regions=pdfRegions(hint,i===1);
+    const needOCR=regions.length>0||embedded.length<150;
+    if(i===1||needOCR)canvas=await renderPage(page,i===1);
+    const scan=[];
+    if(needOCR){
+     // Nas CNH e CRLV, ampliar as regiões legíveis é melhor do que
+     // reconhecer o QR-code e o rodapé inteiro na mesma imagem.
+     if(regions.length){
+      for(const region of regions){
+       checkCancelled();
+       progress("Lendo "+region.name+" · página "+i+"…",Math.round(8+(i-1)/pages*85));
+       const crop=pdfSearchRegion(canvas,...region.rect);
+       try{
+        const result=await recognize(crop);
+        if(result.text.trim())scan.push(result.text.trim());
+        if(result.confidence!==null)confidences.push(result.confidence);
+       }finally{crop.width=1;crop.height=1;}
+      }
+     }else{
+      const result=await recognize(canvas);
+      if(result.text.trim())scan.push(result.text.trim());
+      if(result.confidence!==null)confidences.push(result.confidence);
+     }
+    }
+    // Texto das zonas primeiro, para facilitar o reconhecimento dos
+    // rótulos junto a seus valores. Camada digital fica como complemento.
+    const combined=[...scan,layout||embedded].filter(Boolean).join("\n");
+    if(combined)pieces.push(combined);
+   }finally{
+    if(canvas){canvas.width=1;canvas.height=1;}
+    if(typeof page.cleanup==="function")page.cleanup();
    }
-   if(canvas){canvas.width=1;canvas.height=1;}
-   page.cleanup();
   }
   const text=pieces.join("\n\n--- PÁGINA ---\n\n").trim();
-  if(!text)throw new Error("Não foi possível reconhecer texto no PDF.");
+  if(!text)throw new Error("Não foi possível reconhecer texto no PDF. Confira a resolução e tente novamente.");
   return {text,pages,confidences};
  }catch(e){
   if(/password/i.test(String(e.message)))throw new Error("PDF protegido por senha. Utilize um PDF desbloqueado.");
   throw e;
  }finally{
-  // PDF.js 6 removeu PDFDocumentProxy.destroy(): o encerramento correto
-  // pertence ao PDFDocumentLoadingTask retornado por getDocument().
-  // Nunca transformar uma leitura bem-sucedida em erro de limpeza.
+  // PDF.js 6 removeu PDFDocumentProxy.destroy(): encerrar SOMENTE a tarefa.
   if(task&&typeof task.destroy==="function"){
    try{await task.destroy();}catch(e){
-    console.warn("[OCR] Não foi possível liberar o leitor PDF.",e);
+    console.warn("[OCR] Falha não fatal ao liberar o leitor PDF.",e);
    }
   }
  }
 }
+
 async function terminateWorker(){
  if(!ocrWorker)return;
  const current=ocrWorker;ocrWorker=null;

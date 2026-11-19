@@ -121,3 +121,26 @@ test("CNH: datas visíveis junto aos rótulos prevalecem sobre MRZ inconsistente
  assert.equal(x.campos.nascimento,"25/10/1998");
  assert.equal(x.campos.validade,"15/05/2036");
 });
+
+test("CNH com rótulo parcialmente ilegível mantém nome completo e registro",()=>{
+ const x=parser().extract([
+  "CARTEIRA NACIONAL DE HABILITACAO",
+  "2e1NDME E SOBSENOME                    1º HABILITACAO",
+  "[ MARIO DE OLIVEIRA VENANCIO DA SILVA ) [ 29/08/2022 )",
+  "3 DATA LOCAL E UF DE NASCIMENTO",
+  "| 25/10/1998, CIDADE, BA )",
+  "4a DATA EMISSAO       4b VALIDADE",
+  "| 17/07/2026 ) [ 15/05/2036 |-| D",
+  "4 OS IDENTIDADE / ORG EMISSOR E UF",
+  "| 9841070 MTE BA )",
+  "aa 5 Nº REGISTRO 9 CAT ESB",
+  "| 529.982.247-25 ) [ 07924147039 | | E )"
+ ].join("\n"),"cnh");
+ assert.equal(x.campos.nome,"MARIO DE OLIVEIRA VENANCIO DA SILVA");
+ assert.equal(x.campos.rg,"9841070 MTE BA");
+ assert.equal(x.campos.registro,"07924147039");
+ assert.equal(x.campos.categoria,"E");
+ assert.equal(x.campos.primeiraHabilitacao,"29/08/2022");
+ assert.equal(x.campos.validade,"15/05/2036");
+ assert.equal(x.avisos.length,0,"Nome completo impresso não deve ser substituído pela MRZ");
+});

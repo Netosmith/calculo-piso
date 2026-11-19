@@ -172,12 +172,18 @@
   const dates=row=>[...String(row||"").matchAll(/\b(\d{2}[\/.-]\d{2}[\/.-]\d{4})\b/g)].map(m=>m[1]);
   const next=i=>i>=0?rows[i+1]||"":"";
   const output={nome:"",rg:"",registro:"",categoria:"",validade:"",primeiraHabilitacao:""};
-  const nameIdx=locate(/NOME\s*(?:E|\/)\s*SOBRENOME|NOME DO CONDUTOR/);
-  if(nameIdx>=0){
-   const raw=next(nameIdx).split(/\b\d{2}[\/.-]\d{2}[\/.-]\d{4}\b/)[0];
-   const candidate=clean(raw.replace(/[^A-Za-zÀ-ÿ\s'’-]/g," "))
-     .replace(/^(?:I|L)\s+/,"").replace(/\s+/g," ");
-   if(isProbableName(candidate)&&candidate.split(/\s+/).length>=3)output.nome=candidate;
+  // OCR pode transformar "NOME E SOBRENOME" em "NDME E SOBSENOME".
+  // Verificar todos os blocos: o PDF contém recortes de zoom e texto digital.
+  const nameLabel=/N[O0D]?M[E3]\s*(?:E|\/)\s*SOB[RS]ENOME|NOME DO CONDUTOR/;
+  for(let i=0;i<rows.length-1;i++){
+   if(!nameLabel.test(folded[i]))continue;
+   for(let j=i+1;j<=Math.min(rows.length-1,i+2);j++){
+    const raw=rows[j].split(/\b\d{2}[\/.-]\d{2}[\/.-]\d{4}\b/)[0];
+    const candidate=clean(raw.replace(/[^A-Za-zÀ-ÿ\s'’-]/g," "))
+      .replace(/^(?:I|L)\s+/i,"").replace(/\s+/g," ");
+    if(isProbableName(candidate)&&candidate.split(/\s+/).length>=3&&
+      candidate.length>output.nome.length)output.nome=candidate;
+   }
   }
   const identityIdx=locate(/\bIDENTIDADE\b/);
   if(identityIdx>=0){
@@ -185,12 +191,17 @@
    const match=raw.match(/\b(\d{5,12})\s+([A-Z]{2,8})\s+([A-Z]{2})\b/);
    if(match)output.rg=[match[1],match[2],match[3]].join(" ");
   }
-  const regIdx=locate(/REGISTRO/);
-  if(regIdx>=0){
-   const block=[rows[regIdx],next(regIdx)].join("\n");
+  const regIndexes=folded.flatMap((row,i)=>row.includes("REGISTRO")?[i]:[]);
+  for(const i of regIndexes){
+   // CPF formatado não é registro; exigir sequência de 9 a 12 dígitos
+   // vinculada ao rótulo, sem preencher em caso de múltiplos candidatos.
+   const block=[rows[i],next(i),rows[i+2]||""].join("\n");
    const matches=[...block.matchAll(/(?:^|[^\d.])(\d{9,12})(?!\d)/g)].map(m=>m[1]);
-   const preferred=matches.filter(x=>x.length===11);
-   output.registro=(preferred.length===1?preferred[0]:(matches.length===1?matches[0]:""));
+   const possible=[...new Set(matches.filter(x=>x.length>=9&&x.length<=12))];
+   const preferred=possible.filter(x=>x.length===11);
+   const candidate=preferred.length===1?preferred[0]:
+     (possible.length===1?possible[0]:"");
+   if(candidate){output.registro=candidate;break;}
   }
   const catIdx=locate(/\bCAT\b|\bCATEGORIA\b/);
   if(catIdx>=0){
@@ -198,7 +209,6 @@
    if(inline)output.categoria=inline[1].toUpperCase();
    else{
     const tokens=[...next(catIdx).matchAll(/\b(ACC|AB|AC|AD|AE|A|B|C|D|E)\b/g)].map(m=>m[1]);
-    // A categoria fica na última coluna da linha de dados da CNH.
     if(tokens.length)output.categoria=tokens[tokens.length-1];
    }
   }
@@ -216,7 +226,6 @@
   }
   return output;
  }
-
  function detect(text){
   const t=fold(text);
   // Identificadores inequívocos prevalecem sobre termos genéricos

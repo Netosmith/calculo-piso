@@ -230,6 +230,14 @@ async function recognize(input){
  const c=Number(result?.data?.confidence);
  return {text,confidence:Number.isFinite(c)?c:null};
 }
+async function recognizeWithQrFallback(canvas,qr){
+ try{return await recognize(canvas);}
+ catch(error){
+  if(!qr?.detectado)throw error;
+  console.warn("[OCR] QR identificado, mas OCR indisponível:",error?.message||error);
+  return {text:"",confidence:null};
+ }
+}
 async function tryReadQRCode(canvas,documentType="auto"){
  if(!qrApi?.scanCanvas)return null;
  try{
@@ -266,7 +274,7 @@ async function imageOCR(f){
   checkCancelled();
   const qr=await tryReadQRCode(canvas,$("ocrType").value);
   progress("Lendo texto da imagem…",12);
-  const result=await recognize(canvas);
+  const result=await recognizeWithQrFallback(canvas,qr);
   if(!result.text.trim()&&!qr)
    throw new Error("Não foi possível identificar texto ou QR Code. Tente uma foto mais nítida.");
   return {text:result.text,pages:1,qr,
@@ -418,13 +426,13 @@ async function pdfOCR(f){
        progress("Lendo "+region.name+" · página "+i+"…",Math.round(8+(i-1)/pages*85));
        const crop=pdfSearchRegion(canvas,...region.rect);
        try{
-        const result=await recognize(crop);
+        const result=await recognizeWithQrFallback(crop,qr);
         if(result.text.trim())scan.push(result.text.trim());
         if(result.confidence!==null)confidences.push(result.confidence);
        }finally{crop.width=1;crop.height=1;}
       }
      }else{
-      const result=await recognize(canvas);
+      const result=await recognizeWithQrFallback(canvas,qr);
       if(result.text.trim())scan.push(result.text.trim());
       if(result.confidence!==null)confidences.push(result.confidence);
       // Um PDF digitalizado e sem título no nome pode ser identificado
@@ -436,7 +444,7 @@ async function pdfOCR(f){
         progress("Ampliando "+region.name+" · página "+i+"…",9);
         const crop=pdfSearchRegion(canvas,...region.rect);
         try{
-         const focused=await recognize(crop);
+         const focused=await recognizeWithQrFallback(crop,qr);
          if(focused.text.trim())scan.unshift(focused.text.trim());
          if(focused.confidence!==null)confidences.push(focused.confidence);
         }finally{crop.width=1;crop.height=1;}

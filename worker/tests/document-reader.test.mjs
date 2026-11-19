@@ -108,3 +108,16 @@ test("CNH sem categoria visível não interpreta 'de' como categoria DE",()=>{
  assert.equal(x.campos.categoria,"");
  assert.equal(x.campos.registro,"12345678901");
 });
+
+test("CNH: datas visíveis junto aos rótulos prevalecem sobre MRZ inconsistente",()=>{
+ const x=parser().extract([
+  "CARTEIRA NACIONAL DE HABILITACAO",
+  "DATA, LOCAL E UF DE NASCIMENTO",
+  "25/10/1998, CIDADE, BA",
+  "DATA EMISSAO 4b VALIDADE",
+  "17/07/2026 15/05/2036",
+  "9810269M3605162BRA<<<<<<<<<<<<"
+ ].join("\n"),"cnh");
+ assert.equal(x.campos.nascimento,"25/10/1998");
+ assert.equal(x.campos.validade,"15/05/2036");
+});

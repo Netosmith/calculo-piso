@@ -75,7 +75,7 @@ test("OCR e QR entram na mesma fila, sem envio remoto e com status separado",()=
  const html=read("pages/leitura-documentos.html");
  assert.ok(html.includes('id="ocrQrPanel"'));
  assert.ok(html.includes('id="ocrQrBadge"'));
- assert.ok(html.includes("document-reader-qr.js?v=20261119-qr-1"));
+ assert.ok(html.includes("document-reader-qr.js?v=20261119-qr-2"));
  assert.match(reader,/async function tryReadQRCode/);
  assert.ok(reader.includes("entry.qr=result.qr||null"));
  assert.ok(reader.includes("qrApi?.safeExport?.(entry.qr)"));

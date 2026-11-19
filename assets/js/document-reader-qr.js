@@ -31,7 +31,12 @@
   if(key==="registro")return /^\d{9,12}$/.test(v)?v:"";
   if(key==="cpf"){
    const d=v.replace(/\D/g,"");
-   return d.length===11?d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4"):"";
+   if(d.length!==11||/^(\d)\1+$/.test(d))return "";
+   for(let i=9;i<=10;i++){
+    const sum=[...d.slice(0,i)].reduce((acc,c,index)=>acc+Number(c)*(i+1-index),0);
+    if((sum*10%11)%10!==Number(d[i]))return "";
+   }
+   return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4");
   }
   if(key==="validade")return /^\d{2}[/.\-]\d{2}[/.\-]\d{4}$/.test(v)?v:"";
   if(key==="categoria")return /^(ACC|AB|AC|AD|AE|A|B|C|D|E)$/i.test(v)?v.toUpperCase():"";

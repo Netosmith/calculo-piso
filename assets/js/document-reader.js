@@ -203,13 +203,16 @@ function pdfSearchRegion(canvas,x,y,w,h){
 function pdfRegions(hint,firstPage){
  if(!firstPage)return [];
  const text=String(hint||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase();
- if(/(?:CNH|HABILITACAO|DRIVER.?S.?LICENSE|PERMISSAO PARA DIRIGIR)/.test(text))
-  return [{name:"Dados da CNH",rect:[.035,.105,.49,.70]}];
+ // O texto informativo de um CRLV pode mencionar CNH. Priorizar o
+ // documento de veículo quando houver RENAVAM/licenciamento e respeitar
+ // a seleção explícita de tipo feita pelo usuário.
  if(/(?:CRLV|RENAVAM|LICENCIAMENTO|CAVALO|PLACA|DOCUMENTO DO VEICULO)/.test(text))
   return [
    {name:"Dados do veículo",rect:[.035,.055,.49,.50]},
    {name:"Dados do proprietário",rect:[.51,.055,.47,.50]}
   ];
+ if(/(?:CNH|HABILITACAO|DRIVER.?S.?LICENSE|PERMISSAO PARA DIRIGIR)/.test(text))
+  return [{name:"Dados da CNH",rect:[.035,.105,.49,.70]}];
  return []; // Outros PDFs: OCR na página inteira quando não houver texto pesquisável.
 }
 function pdfLayoutText(items,pageWidth){

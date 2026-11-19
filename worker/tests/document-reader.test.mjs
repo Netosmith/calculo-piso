@@ -72,3 +72,39 @@ test("Registro no Super Admin e rota privada dos tenants",()=>{
   assert.ok(shell.includes('data-shared-page="leitura-documentos.html"'));
  }
 });
+
+test("CNH em colunas: campos extraídos do texto OCR vão ao rótulo correto",()=>{
+ const x=parser().extract([
+  "CARTEIRA NACIONAL DE HABILITACAO",
+  "2e1NOME E SOBRENOME                              1º HABILITAÇÃO",
+  "[ MARIA DE SOUZA ALMEIDA PEREIRA   ) [ 29/08/2022 )",
+  "3 DATA, LOCAL E UF DE NASCIMENTO",
+  "| 25/10/1998, CIDADE, BA )",
+  "43 CAIA MISSÃO 46 VALIDADE",
+  "| 17/07/2026 ) [ 15/05/2036 |-| D",
+  "4 OS IDENTIDADE / ORG EMISSOR E UF",
+  "| 8765432 MTE BA )",
+  "aa 5 Nº REGISTRO 9 CAT ESB",
+  "| 529.982.247-25 ) [ 01234567890 | | E )"
+ ].join("\n"),"cnh");
+ assert.equal(x.campos.nome,"MARIA DE SOUZA ALMEIDA PEREIRA");
+ assert.equal(x.campos.rg,"8765432 MTE BA");
+ assert.equal(x.campos.registro,"01234567890");
+ assert.equal(x.campos.categoria,"E");
+ assert.equal(x.campos.primeiraHabilitacao,"29/08/2022");
+ assert.equal(x.campos.validade,"15/05/2036");
+ assert.equal(x.campos.nascimento,"25/10/1998");
+ assert.equal(x.avisos.length,0);
+});
+test("CNH sem categoria visível não interpreta 'de' como categoria DE",()=>{
+ const x=parser().extract([
+  "CARTEIRA NACIONAL DE HABILITACAO",
+  "NOME: MARIA DE SOUZA",
+  "CAT ESB",
+  "de",
+  "Nº REGISTRO",
+  "12345678901"
+ ].join("\n"),"cnh");
+ assert.equal(x.campos.categoria,"");
+ assert.equal(x.campos.registro,"12345678901");
+});

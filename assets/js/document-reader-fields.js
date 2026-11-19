@@ -102,6 +102,10 @@
  }
  function detect(text){
   const t=fold(text);
+  // Identificadores inequívocos prevalecem sobre termos genéricos
+  // encontrados em rodapés (p.ex. CRLV que menciona a CNH digital).
+  if(/CERTIFICADO DE REGISTRO E LICENCIAMENTO|\bCRLV\b|\bCODIGO RENAVAM\b/.test(t))return "veiculo";
+  if(/CARTEIRA NACIONAL DE HABILITACAO|DRIVER LICENSE|PERMISO DE CONDUC/.test(t))return "cnh";
   const scores={
    cnh:["CARTEIRA NACIONAL DE HABILITACAO","PERMISSAO PARA DIRIGIR","CATEGORIA","PRIMEIRA HABILITACAO","N REGISTRO","ACC"].reduce((a,x)=>a+(t.includes(x)?1:0),0),
    veiculo:["CRLV","RENAVAM","CHASSI","PLACA","LICENCIAMENTO","ANO FABRICACAO","CERTIFICADO DE REGISTRO"].reduce((a,x)=>a+(t.includes(x)?1:0),0),
@@ -116,7 +120,8 @@
   const values={};
   const f=fold(text);
   if(chosen==="cnh"){
-   values.nome=nameFrom(text,["NOME(?: E SOBRENOME)?","NOME DO CONDUTOR"]);
+   values.nome=nameFrom(text,["NOME(?: E SOBRENOME)?","NOME DO CONDUTOR"])||
+    first(text,/(?:\b(?:NOME E SOBRENOME|NOME DO CONDUTOR)[^\n]*\n)([A-ZÀ-Ú][^\n]{5,95})/i);
    values.cpf=formatCPF(firstCPF(text));
    values.rg=labelled(text,["DOC(?:UMENTO)?(?: DE IDENTIDADE)?","IDENTIDADE","RG"],{min:5,max:50});
    values.nascimento=dateLabel(text,["DATA DE NASCIMENTO","NASCIMENTO","DT NASCIMENTO"]);
@@ -131,7 +136,7 @@
    values.renavam=first(labelled(text,["COD(?:IGO)? RENAVAM","RENAVAM"],{min:9,max:30}),/\b(\d{9,11})\b/)||
     first(f,/(?:RENAVAM)[^\d\n]{0,8}(\d{9,11})/);
    values.chassi=first(f,/\b([A-HJ-NPR-Z0-9]{17})\b/);
-   values.marcaModelo=labelled(text,["MARCA(?:\\s*\\/\\s*| E )MODELO","MARCA MODELO","MODELO"],{min:3,max:75});
+   values.marcaModelo=labelled(text,["MARCA\\s*(?:\\/|E)\\s*MODELO(?:\\s*\\/\\s*VERSAO)?","MARCA MODELO","MODELO"],{min:3,max:75});
    const match=f.match(/\b((?:19|20)\d{2})\s*[\/\-]\s*((?:19|20)\d{2})\b/);
    values.anoFabricacao=match?.[1]||first(labelled(text,["ANO FABRICACAO"],{max:30}),/\b((?:19|20)\d{2})\b/);
    values.anoModelo=match?.[2]||first(labelled(text,["ANO MODELO"],{max:30}),/\b((?:19|20)\d{2})\b/);

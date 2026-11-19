@@ -598,6 +598,27 @@ async function copy(text){
 }
 function download(){saveJson(payload(),"leitura-documentos");}
 function downloadSingle(){saveJson(selectedPayload(),"leitura-documento");}
+// Exportação local por documento para AutoHotkey v2. Não executa automação
+// e não envia os dados a nenhum endpoint.
+function exportAutoHotkey(){
+ const data=selectedPayload()?.documento;
+ if(!data){say("Selecione um documento já lido para exportar.","error");return;}
+ if(!window.PortalOCRAutoHotkey?.fromDocument){
+  say("Exportador AutoHotkey indisponível. Atualize a página.","error");return;
+ }
+ try{
+  const text=window.PortalOCRAutoHotkey.fromDocument(data);
+  const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  const slug=data.tipoDocumento==="veiculo"?"veiculo":data.tipoDocumento;
+  a.download="portal-frete-ahk-"+slug+"-"+new Date().toISOString().slice(0,10)+".txt";
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  say("Arquivo de integração AutoHotkey v2 exportado. Confira os dados antes de preencher o cadastro.","success");
+ }catch(error){say("Não foi possível exportar: "+String(error.message||error),"error");}
+}
 async function authGate(){
  try{
   let session;
@@ -648,6 +669,7 @@ function init(){
  $("ocrCopyJson").addEventListener("click",()=>{const data=payload();if(data)void copy(JSON.stringify(data,null,2));});
  $("ocrDownloadJson").addEventListener("click",download);
  $("ocrDownloadSingle").addEventListener("click",downloadSingle);
+ $("ocrExportAHK").addEventListener("click",exportAutoHotkey);
  $("ocrCopyText").addEventListener("click",()=>void copy(rawText));
  renderQueue();
  window.addEventListener("pagehide",()=>{

@@ -247,7 +247,7 @@
    values.rg=visual.rg||(rgCandidate&&/\d{4,}/.test(rgCandidate)&&
     !/(ASSINADO|DOCUMENTO ASSINADO|EMISSOR)/i.test(rgCandidate)?rgCandidate:"");
    if(!values.rg)values.rg=nearby(text,/DOC(?:UMENTO)?(?: DE IDENTIDADE)?/,/\b(\d{5,12}(?:\s+[A-Z]{2,6}\s+[A-Z]{2})?)\b/,{maxLines:3});
-   values.nascimento=mrz.birth||dateLabel(text,["DATA DE NASCIMENTO","NASCIMENTO","DT NASCIMENTO"]);
+   values.nascimento=dateLabel(text,["DATA DE NASCIMENTO","NASCIMENTO","DT NASCIMENTO"])||mrz.birth;
    values.registro=visual.registro||nearby(text,/\b(?:N\s*REGISTRO|NUMERO DE REGISTRO|REGISTRO DA CNH|REGISTRO)\b/,/\b(\d{9,12})\b/,{maxLines:3})||
     first(labelled(text,["N(?:UMERO)? DE REGISTRO","REGISTRO","N REGISTRO"],{min:7,max:35}),/\b(\d{9,12})\b/)||
     first(text,/(?:REGISTRO|N REGISTRO)\s*[:\-.]?\s*(\d{9,12})/i);
@@ -257,7 +257,7 @@
     first(text,/\bCAT(?:EGORIA)?(?:\s+HAB(?:ILITACAO)?)?\s*[:=]\s*(ACC|AB|AC|AD|AE|A|B|C|D|E)\b/i);
    values.categoria=/^(?:ACC|AB|AC|AD|AE|A|B|C|D|E)$/.test(values.categoria.toUpperCase())?
     values.categoria.toUpperCase():"";
-   values.validade=mrz.expiry||visual.validade||dateLabel(text,["VALIDADE","DATA DE VALIDADE"]);
+   values.validade=visual.validade||dateLabel(text,["VALIDADE","DATA DE VALIDADE"])||mrz.expiry;
    values.primeiraHabilitacao=visual.primeiraHabilitacao||dateLabel(text,["1.? HABILITACAO","PRIMEIRA HABILITACAO"]); 
    if(!isProbableName(values.nome)){
     values.nome=mrz.name||"";

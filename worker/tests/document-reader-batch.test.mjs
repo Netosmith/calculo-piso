@@ -93,21 +93,21 @@ test("Extrator CNH: usar MRZ para recuperar datas e sinalizar nome abreviado",()
  const raw=[
   "CARTEIRA NACIONAL DE HABILITACAO",
   "DOC IDENTIDADE / ORG EMISSOR UF",
-  "9841070 MTE BA",
+  "7654321 SSP GO",
   "CPF 529.982.247-25",
   "N REGISTRO",
-  "07924147939",
+  "01234567890",
   "CAT HAB",
   "E",
-  "I<BRA079241479<393<<<<<<<<<<<<",
-  "9810259M3605152BRA<<<<<<<<<<<0",
-  "ANDERSON<<OL<VENANCIO<DA<SILVA"
+  "I<BRA012345678<393<<<<<<<<<<<<",
+  "9502149M3605152BRA<<<<<<<<<<<0",
+  "RENATO<<CESAR<DE<SOUZA"
  ].join("\n");
  const data=mod.exports.extract(raw);
  assert.equal(data.tipo,"cnh");
- assert.equal(data.campos.nascimento,"25/10/1998");
+ assert.equal(data.campos.nascimento,"14/02/1995");
  assert.equal(data.campos.validade,"15/05/2036");
- assert.equal(data.campos.registro,"07924147939");
+ assert.equal(data.campos.registro,"01234567890");
  assert.equal(data.campos.categoria,"E");
  assert.ok(data.campos.nome);
  assert.ok(data.avisos.length>0);

@@ -15,6 +15,7 @@
    ["localEmissao","Local de emissão"]]},
   veiculo:{title:"CRLV / documento do veículo",fields:[
    ["placa","Placa"],["renavam","RENAVAM"],["chassi","Chassi"],
+   ["especieTipo","Espécie / tipo (CRLV)"],["tipoVeiculoSistema","Tipo do veículo (sistema)"],
    ["marcaModelo","Marca / modelo"],["anoFabricacao","Ano fabricação"],
    ["anoModelo","Ano modelo"],["cor","Cor"],["proprietario","Proprietário"],
    ["cpfCnpj","CPF / CNPJ do proprietário"],["municipio","Município"],
@@ -226,6 +227,27 @@
   }
   return output;
  }
+ // CRLV: a classificação do cavalo mecânico deve vir APENAS do
+ // campo ESPÉCIE / TIPO, nunca de observações ou de marca/modelo.
+ function especieTipoCRLV(text){
+  const rows=linesOf(text).map(fold);
+  const label=/\bESPECIE\s*(?:[/|:-]\s*)?TIPO\b/;
+  const cavalo=/\bTRACAO\s+CAMINHAO\s+TRATOR\b/;
+  for(let i=0;i<rows.length;i++){
+   const matched=label.exec(rows[i]);
+   if(!matched)continue;
+   const tail=rows[i].slice(matched.index+matched[0].length);
+   // O OCR pode quebrar o rótulo e seu valor em até duas linhas.
+   // Verificar os trechos separadamente evita falso positivo distante.
+   const nearby=[tail,rows[i+1]||"",rows[i+2]||""];
+   for(const section of nearby){
+    if(cavalo.test(section))return "TRAÇÃO CAMINHÃO TRATOR";
+   }
+   if(cavalo.test(nearby.join(" ").replace(/\s+/g," ")))
+    return "TRAÇÃO CAMINHÃO TRATOR";
+  }
+  return "";
+ }
  function detect(text){
   const t=fold(text);
   // Identificadores inequívocos prevalecem sobre termos genéricos
@@ -274,6 +296,8 @@
    }
    values.localEmissao=labelled(text,["LOCAL(?: DE EMISSAO)?","LOCAL E DATA"],{min:4,max:75});
   }else if(chosen==="veiculo"){
+   values.especieTipo=especieTipoCRLV(text);
+   values.tipoVeiculoSistema=values.especieTipo==="TRAÇÃO CAMINHÃO TRATOR"?"Cavalo-S":"";
    values.placa=first(f,/\b([A-Z]{3}[- ]?\d[A-Z0-9]\d{2})\b/).replace(/[-\s]/g,"");
    values.renavam=first(labelled(text,["COD(?:IGO)? RENAVAM","RENAVAM"],{min:9,max:30}),/\b(\d{9,11})\b/)||
     first(f,/(?:RENAVAM)[^\d\n]{0,8}(\d{9,11})/);

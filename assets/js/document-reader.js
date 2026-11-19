@@ -326,6 +326,7 @@ function pdfRegions(hint,firstPage){
  if(/(?:CRLV|RENAVAM|LICENCIAMENTO|CAVALO|PLACA|DOCUMENTO DO VEICULO)/.test(text))
   return [
    {name:"Dados do veículo",rect:[.035,.055,.49,.50]},
+   {name:"Espécie e tipo do CRLV",rect:[.035,.33,.50,.40]},
    {name:"Dados do proprietário",rect:[.51,.055,.47,.50]}
   ];
  if(/(?:CNH|HABILITACAO|DRIVER.?S.?LICENSE|PERMISSAO PARA DIRIGIR)/.test(text))

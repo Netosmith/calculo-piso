@@ -377,8 +377,13 @@ async function pdfOCR(f){
     const hint=[f.name,$("ocrType").value,embedded.slice(0,400)].join(" ");
     const regions=pdfRegions(hint,i===1);
     const needOCR=regions.length>0||embedded.length<150;
-    const isOfficialDocument=regions.length>0;
-    if(i===1||needOCR)canvas=await renderPage(page,i===1,isOfficialDocument);
+    // PDFs escaneados sem texto pesquisável também recebem zoom de alta
+    // resolução, mesmo quando o nome do arquivo não contém "CNH".
+    const isOfficialDocument=regions.length>0||(i===1&&embedded.length<150);
+    if(i===1||needOCR){
+     if(isOfficialDocument)progress("Ampliando o PDF em alta definição (até 4x)…",7);
+     canvas=await renderPage(page,i===1,isOfficialDocument);
+    }
     const scan=[];
     if(needOCR){
      // Nas CNH e CRLV, ampliar as regiões legíveis é melhor do que
@@ -398,6 +403,21 @@ async function pdfOCR(f){
       const result=await recognize(canvas);
       if(result.text.trim())scan.push(result.text.trim());
       if(result.confidence!==null)confidences.push(result.confidence);
+      // Um PDF digitalizado e sem título no nome pode ser identificado
+      // pelo primeiro OCR. A partir daí fazemos zoom nos campos da CNH/CRLV.
+      const detectedRegions=pdfRegions(result.text,i===1);
+      if(detectedRegions.length){
+       for(const region of detectedRegions){
+        checkCancelled();
+        progress("Ampliando "+region.name+" · página "+i+"…",9);
+        const crop=pdfSearchRegion(canvas,...region.rect);
+        try{
+         const focused=await recognize(crop);
+         if(focused.text.trim())scan.unshift(focused.text.trim());
+         if(focused.confidence!==null)confidences.push(focused.confidence);
+        }finally{crop.width=1;crop.height=1;}
+       }
+      }
      }
     }
     // Texto das zonas primeiro, para facilitar o reconhecimento dos

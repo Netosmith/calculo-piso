@@ -77,11 +77,28 @@
  function firstCNPJ(text){return matchAll(text,/\b\d{2}[.\s]?\d{3}[.\s]?\d{3}[\/.\s]?\d{4}[-.\s]?\d{2}\b/g).find(validCNPJ)||"";}
  function formatCPF(v){const d=digits(v);return validCPF(d)?d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4"):"";}
  function formatCNPJ(v){const d=digits(v);return validCNPJ(d)?d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5"):"";}
- function idDocument(text){return formatCNPJ(firstCNPJ(text))||formatCPF(firstCPF(text));}
+ function idDocument(text){
+  // Números de RENAVAM ou instalação podem passar matematicamente na regra
+  // de CPF por coincidência. Exigir o rótulo antes de propor um documento.
+  const f=fold(text);
+  if(!/\bCPF\b|\bCNPJ\b/.test(f))return "";
+  return formatCNPJ(firstCNPJ(text))||formatCPF(firstCPF(text));
+ }
  function dateLabel(text,labels){
-  const value=labelled(text,labels,{min:8,max:75});
-  return first(value,/\b(\d{2}[\/.\-]\d{2}[\/.\-]\d{4})\b/)||
-   first(text,new RegExp("(?:VALIDADE|NASCIMENTO)[^\\n]{0,35}?(\\d{2}[/.\\-]\\d{2}[/.\\-]\\d{4})","i"));
+  const lines=linesOf(text);
+  const date=/\b(\d{2}[\/.\-]\d{2}[\/.\-]\d{4})\b/;
+  for(let i=0;i<lines.length;i++){
+   const normalized=fold(lines[i]);
+   if(!labels.some(label=>new RegExp(label,"i").test(normalized)))continue;
+   // Somente a linha do próprio rótulo ou a linha seguinte.
+   const same=first(lines[i],date);
+   if(same)return same;
+   if(i+1<lines.length){
+    const next=first(lines[i+1],date);
+    if(next)return next;
+   }
+  }
+  return "";
  }
  function detect(text){
   const t=fold(text);
@@ -115,7 +132,6 @@
     first(f,/(?:RENAVAM)[^\d\n]{0,8}(\d{9,11})/);
    values.chassi=first(f,/\b([A-HJ-NPR-Z0-9]{17})\b/);
    values.marcaModelo=labelled(text,["MARCA(?:\\s*\\/\\s*| E )MODELO","MARCA MODELO","MODELO"],{min:3,max:75});
-   const anos=first(f,/\b((?:19|20)\d{2})\s*[\/\-]\s*((?:19|20)\d{2})\b/);
    const match=f.match(/\b((?:19|20)\d{2})\s*[\/\-]\s*((?:19|20)\d{2})\b/);
    values.anoFabricacao=match?.[1]||first(labelled(text,["ANO FABRICACAO"],{max:30}),/\b((?:19|20)\d{2})\b/);
    values.anoModelo=match?.[2]||first(labelled(text,["ANO MODELO"],{max:30}),/\b((?:19|20)\d{2})\b/);
@@ -129,7 +145,8 @@
    values.titular=nameFrom(text,["NOME DO TITULAR","CONSUMIDOR","TITULAR","CLIENTE"]);
    values.cpfCnpj=idDocument(text);
    values.logradouro=first(text,/\b((?:RUA|AVENIDA|AV\.|TRAVESSA|RODOVIA|ALAMEDA|ESTRADA|R\.|PRAÇA|PRACA)\s+[^\n,]{4,110})/i);
-   values.numero=first(text,/(?:N[º°.]?|NUMERO)\s*[:\-.]?\s*(\d{1,7}[A-Z]?)/i);
+   values.numero=first(text,/(?:N[º°.]?|NUMERO)\s*[:\-.]?\s*(\d{1,7}[A-Z]?)/i)||
+     first(text,/\b(?:RUA|AVENIDA|AV\.|TRAVESSA|RODOVIA|ALAMEDA|ESTRADA|R\.|PRAÇA|PRACA)\s+[^\n,]{4,110},\s*(\d{1,7}[A-Z]?)\b/i);
    values.complemento=labelled(text,["COMPLEMENTO"],{min:2,max:75});
    values.bairro=labelled(text,["BAIRRO"],{min:3,max:60});
    values.cidade=labelled(text,["CIDADE","MUNICIPIO"],{min:3,max:60});

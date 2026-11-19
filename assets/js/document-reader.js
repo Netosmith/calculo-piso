@@ -263,14 +263,19 @@ async function ensurePdf(){
  pdfjs.GlobalWorkerOptions.workerSrc=PDF_WORKER;
  return pdfjs;
 }
-function ensureCanvasSize(width,height){
- const maxPixels=7_000_000;
- const scale=Math.min(2,Math.sqrt(maxPixels/(width*height)));
+// PDFs rasterizados, como a CNH digital, possuem campos muito pequenos.
+ // O zoom é feito NA RENDERIZAÇÃO do PDF, antes do OCR. Ampliar somente
+ // uma imagem já reduzida não recupera detalhes das letras.
+function ensureCanvasSize(width,height,highResolution=false){
+ const maxPixels=highResolution?12_000_000:7_000_000;
+ const desiredZoom=highResolution?4:2;
+ const safeArea=Math.max(1,width*height);
+ const scale=Math.min(desiredZoom,Math.sqrt(maxPixels/safeArea));
  return Math.max(.0001,scale);
 }
-async function renderPage(page,firstPage=false){
+async function renderPage(page,firstPage=false,highResolution=false){
  const base=page.getViewport({scale:1});
- const scale=ensureCanvasSize(base.width,base.height);
+ const scale=ensureCanvasSize(base.width,base.height,highResolution);
  const view=page.getViewport({scale});
  const canvas=document.createElement("canvas");
  canvas.width=Math.round(view.width);canvas.height=Math.round(view.height);
@@ -297,12 +302,16 @@ function pdfSearchRegion(canvas,x,y,w,h){
  const sw=Math.min(canvas.width-sx,Math.round(canvas.width*w));
  const sh=Math.min(canvas.height-sy,Math.round(canvas.height*h));
  if(sw<=0||sh<=0)throw new Error("Recorte inválido do PDF.");
- const scale=Math.min(2.5,2100/sw,Math.sqrt(6_000_000/(sw*sh)));
+ // Recortar a região e ampliá-la com suavização antes de reconhecer;
+ // não ultrapassar 6 MP por recorte para evitar travar celulares.
+ const scale=Math.min(3.2,3000/sw,Math.sqrt(6_000_000/(sw*sh)));
  const out=document.createElement("canvas");
  out.width=Math.max(1,Math.round(sw*scale));
  out.height=Math.max(1,Math.round(sh*scale));
  const ctx=out.getContext("2d",{alpha:false,willReadFrequently:true});
  if(!ctx)throw new Error("Canvas OCR indisponível.");
+ ctx.imageSmoothingEnabled=true;
+ ctx.imageSmoothingQuality="high";
  ctx.fillStyle="#ffffff";
  ctx.fillRect(0,0,out.width,out.height);
  ctx.drawImage(canvas,sx,sy,sw,sh,0,0,out.width,out.height);
@@ -368,7 +377,8 @@ async function pdfOCR(f){
     const hint=[f.name,$("ocrType").value,embedded.slice(0,400)].join(" ");
     const regions=pdfRegions(hint,i===1);
     const needOCR=regions.length>0||embedded.length<150;
-    if(i===1||needOCR)canvas=await renderPage(page,i===1);
+    const isOfficialDocument=regions.length>0;
+    if(i===1||needOCR)canvas=await renderPage(page,i===1,isOfficialDocument);
     const scan=[];
     if(needOCR){
      // Nas CNH e CRLV, ampliar as regiões legíveis é melhor do que

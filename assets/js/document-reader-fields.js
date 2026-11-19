@@ -236,14 +236,19 @@
   for(let i=0;i<rows.length;i++){
    const matched=label.exec(rows[i]);
    if(!matched)continue;
-   const tail=rows[i].slice(matched.index+matched[0].length);
-   // O OCR pode quebrar o rótulo e seu valor em até duas linhas.
-   // Verificar os trechos separadamente evita falso positivo distante.
-   const nearby=[tail,rows[i+1]||"",rows[i+2]||""];
-   for(const section of nearby){
-    if(cavalo.test(section))return "TRAÇÃO CAMINHÃO TRATOR";
-   }
-   if(cavalo.test(nearby.join(" ").replace(/\s+/g," ")))
+   const tail=rows[i].slice(matched.index+matched[0].length).trim();
+   const next=(rows[i+1]||"").trim();
+   const after=(rows[i+2]||"").trim();
+   // O valor precisa pertencer ao campo ESPÉCIE/TIPO, não a observações
+   // ou a outras seções que aparecem perto no OCR.
+   if(cavalo.test(tail))return "TRAÇÃO CAMINHÃO TRATOR";
+   if(/^[:|–\s-]*TRACAO\b/.test(tail)&&cavalo.test(tail+" "+next))
+    return "TRAÇÃO CAMINHÃO TRATOR";
+   if(/[A-Z0-9]/.test(tail))continue; // outro tipo na mesma linha
+   if(/^(?:OBSERVAC|MARCA|MODELO|CHASSI|COMBUSTIVEL|COR|RENAVAM|PLACA)\b/.test(next))
+    continue;
+   if(cavalo.test(next))return "TRAÇÃO CAMINHÃO TRATOR";
+   if(/^[:|–\s-]*TRACAO\b/.test(next)&&cavalo.test(next+" "+after))
     return "TRAÇÃO CAMINHÃO TRATOR";
   }
   return "";
@@ -256,7 +261,7 @@
   if(/CARTEIRA NACIONAL DE HABILITACAO|DRIVER LICENSE|PERMISO DE CONDUC/.test(t))return "cnh";
   const scores={
    cnh:["CARTEIRA NACIONAL DE HABILITACAO","PERMISSAO PARA DIRIGIR","CATEGORIA","PRIMEIRA HABILITACAO","N REGISTRO","ACC"].reduce((a,x)=>a+(t.includes(x)?1:0),0),
-   veiculo:["CRLV","RENAVAM","CHASSI","PLACA","LICENCIAMENTO","ANO FABRICACAO","CERTIFICADO DE REGISTRO"].reduce((a,x)=>a+(t.includes(x)?1:0),0),
+   veiculo:["CRLV","RENAVAM","CHASSI","PLACA","LICENCIAMENTO","ANO FABRICACAO","CERTIFICADO DE REGISTRO","ESPECIE / TIPO","TRACAO CAMINHAO TRATOR"].reduce((a,x)=>a+(t.includes(x)?1:0),0),
    endereco:["CEP","FATURA","ENDERECO","INSTALACAO","CONSUMIDOR","ENERGIA ELETRICA","AGUA","CONTA"].reduce((a,x)=>a+(t.includes(x)?1:0),0)
   };
   const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);

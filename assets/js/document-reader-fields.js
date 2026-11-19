@@ -199,8 +199,10 @@
     first(text,/(?:CAT(?:EGORIA)?(?: HABILITACAO)?)[\s:\-.]{0,12}((?:ACC|[ABCDE]{1,3}))\b/i);
    values.validade=mrz.expiry||dateLabel(text,["VALIDADE","DATA DE VALIDADE"]);
    values.primeiraHabilitacao=dateLabel(text,["1.? HABILITACAO","PRIMEIRA HABILITACAO"]); 
-   if(!isProbableName(values.nome))values.nome=mrz.name||"";
-   if(values.nome&&/\b[A-Z]{1,2}\b/.test(values.nome)&&values.nome===mrz.name)warnings.push("Nome da CNH extraído da MRZ, pode estar abreviado.");
+   if(!isProbableName(values.nome)){
+    values.nome=mrz.name||"";
+    if(values.nome)warnings.push("Nome da CNH extraído da MRZ, pode estar abreviado.");
+   }
    values.localEmissao=labelled(text,["LOCAL(?: DE EMISSAO)?","LOCAL E DATA"],{min:4,max:75});
   }else if(chosen==="veiculo"){
    values.placa=first(f,/\b([A-Z]{3}[- ]?\d[A-Z0-9]\d{2})\b/).replace(/[-\s]/g,"");

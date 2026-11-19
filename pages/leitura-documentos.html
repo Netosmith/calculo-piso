@@ -88,7 +88,14 @@
         <button id="ocrClear" class="ocr-btn ocr-btn-quiet" type="button">Limpar todos</button>
       </div>
     </div>
-    <div class="ocr-insights"><span id="ocrDetected" class="ocr-type-pill">Documento</span><span id="ocrPages">1 página</span><span id="ocrConfidence">Confiança geral: não disponível</span></div>
+    <div class="ocr-insights"><span id="ocrDetected" class="ocr-type-pill">Documento</span><span id="ocrPages">1 página</span><span id="ocrConfidence">Confiança geral: não disponível</span><span id="ocrQrBadge">QR Code: não encontrado</span></div>
+    <div id="ocrQrPanel" class="ocr-qr-panel" hidden aria-live="polite">
+      <div class="ocr-qr-icon" aria-hidden="true">▦</div>
+      <div><strong id="ocrQrTitle">QR Code identificado</strong>
+        <p id="ocrQrMessage"></p>
+        <small>Leitura local do código não comprova autenticidade. Para CNH/CRLV com QR oficial Vio, a validação depende do serviço oficial.</small>
+      </div>
+    </div>
     <div class="ocr-tabs" role="tablist" aria-label="Resultado OCR">
       <button id="ocrTabFields" role="tab" type="button" aria-selected="true" aria-controls="ocrFieldsPanel" class="active">Campos para conferência</button>
       <button id="ocrTabRaw" role="tab" type="button" aria-selected="false" aria-controls="ocrRawPanel">Texto completo reconhecido</button>
@@ -109,6 +116,7 @@
 <script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
 <script src="../assets/js/document-reader-fields.js?v=20261119-crlv-cavalo-7"></script>
 <script src="../assets/js/document-reader-ahk.js?v=20261119-ahk-1"></script>
-<script src="../assets/js/document-reader.js?v=20261119-ahk-1"></script>
+<script src="../assets/js/document-reader-qr.js?v=20261119-qr-1"></script>
+<script src="../assets/js/document-reader.js?v=20261119-qr-1"></script>
 </body>
 </html>

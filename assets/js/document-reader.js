@@ -273,6 +273,8 @@ async function renderPage(page,firstPage=false){
   const max=1100,ratio=Math.min(1,max/Math.max(canvas.width,canvas.height));
   preview.width=Math.round(canvas.width*ratio);preview.height=Math.round(canvas.height*ratio);
   preview.getContext("2d",{alpha:false}).drawImage(canvas,0,0,preview.width,preview.height);
+  const entry=getActive();
+  if(entry)entry.previewData=preview.toDataURL("image/jpeg",.78);
   $("ocrPreviewPdf").hidden=false;$("ocrEmptyPreview").hidden=true;
  }
  return canvas;
@@ -412,22 +414,25 @@ function showTab(which){
  $("ocrTabRaw").setAttribute("aria-selected",String(raw));
  $("ocrFieldsPanel").hidden=raw;$("ocrRawPanel").hidden=!raw;
 }
-function present(){
+function present(scroll=false){
  if(!rawText.trim())return;
- const type=$("ocrType").value;
- lastResult=fieldsApi.extract(rawText,type);
+ const entry=getActive();
+ if(!lastResult)lastResult=fieldsApi.extract(rawText,entry?.type||$("ocrType").value);
+ if(entry)entry.result=lastResult;
  $("ocrResults").hidden=false;
  $("ocrDetected").textContent=lastResult.titulo;
  $("ocrPages").textContent=lastPages+" "+(lastPages===1?"página analisada":"páginas analisadas");
  $("ocrConfidence").textContent=lastConf===null?
-  "Leitura digital / sem índice de confiança":
-  "Confiança média do OCR: "+Math.round(lastConf)+"%";
- $("ocrResultSub").textContent="Campos sugeridos, editáveis e ainda não validados. Revise antes de exportar.";
+  "Camada digital / sem índice de confiança":
+  "Confiança média OCR: "+Math.round(lastConf)+"%";
+ $("ocrResultSub").textContent="Documento: "+(entry?.file?.name||"")+" · Confira cada campo antes de exportar.";
+ const warnings=(lastResult.avisos||[]);
+ $("ocrWarnings").hidden=!warnings.length;
+ $("ocrWarnings").textContent=warnings.join(" ");
  const grid=$("ocrFieldsGrid");grid.replaceChildren();
  if(!lastResult.camposDefinidos.length){
-  const notice=document.createElement("p");
-  notice.className="ocr-empty-fields";
-  notice.textContent="Nenhum modelo de campos selecionado. Confira o texto completo ou escolha CNH, CRLV ou endereço para sugerir campos.";
+  const notice=document.createElement("p");notice.className="ocr-empty-fields";
+  notice.textContent="Nenhum modelo de campos selecionado. Confira o texto completo ou escolha o tipo de documento.";
   grid.append(notice);
  }
  for(const [key,label] of lastResult.camposDefinidos){
@@ -437,31 +442,60 @@ function present(){
   input.autocomplete="off";input.spellcheck=false;input.dataset.field=key;
   input.value=lastResult.campos[key]||"";input.placeholder="Não identificado · preencher manualmente";
   input.maxLength=180;
-  input.addEventListener("input",()=>{if(lastResult)lastResult.campos[key]=input.value;});
+  input.addEventListener("input",()=>{
+   if(lastResult)lastResult.campos[key]=input.value;
+   if(entry?.result)entry.result.campos[key]=input.value;
+  });
   field.append(input);grid.append(field);
  }
  $("ocrRawText").value=rawText;
  showTab("fields");
- $("ocrResults").scrollIntoView({behavior:"smooth",block:"start"});
+ updateResultSelector();
+ if(scroll)$("ocrResults").scrollIntoView({behavior:"smooth",block:"start"});
 }
 async function analyze(){
- if(!file||busy)return;
- cancelled=false;resetOutput();setBusy(true);
+ if(busy||!entries.some(e=>e.status!=="ok"))return;
+ cancelled=false;setBusy(true);
  $("ocrProgressBox").hidden=false;
- progress("Iniciando…",0);say("Analisando o documento localmente…");
+ progress("Preparando fila…",0);
+ let succeeded=0,failed=0;
  try{
-  const result=kind==="pdf"?await pdfOCR(file):await imageOCR(file);
-  checkCancelled();
-  rawText=result.text;lastPages=result.pages;
-  lastConf=result.confidences.length?
-   result.confidences.reduce((a,b)=>a+b,0)/result.confidences.length:null;
-  progress("Concluído",100);say("Leitura concluída. Confira os campos extraídos antes de utilizar.","success");
-  present();
- }catch(e){
-  say(String(e.message||"Erro inesperado ao ler o documento."),"error");
-  $("ocrProgressBox").hidden=true;
+  const queue=entries.filter(e=>e.status!=="ok");
+  for(let i=0;i<queue.length;i++){
+   if(cancelled)break;
+   const entry=queue[i];
+   activeId=entry.id;file=entry.file;kind=entry.kind;
+   $("ocrType").value=entry.type;
+   entry.status="lendo";entry.error="";
+   showPreview(entry);renderQueue();
+   progress("Arquivo "+(i+1)+"/"+queue.length+" · "+entry.file.name,0);
+   say("Lendo "+entry.file.name+" ("+(i+1)+"/"+queue.length+")…");
+   try{
+    const result=entry.kind==="pdf"?await pdfOCR(entry.file):await imageOCR(entry.file);
+    checkCancelled();
+    entry.raw=result.text;entry.pages=result.pages;
+    entry.conf=result.confidences.length?
+     result.confidences.reduce((a,b)=>a+b,0)/result.confidences.length:null;
+    entry.result=fieldsApi.extract(entry.raw,entry.type);
+    entry.status="ok";succeeded++;
+   }catch(err){
+    if(cancelled){entry.status="cancelado";break;}
+    entry.status="erro";entry.error=String(err.message||err);failed++;
+    console.warn("[OCR] Falha ao ler um documento:",entry.file.name,err.message||err);
+   }finally{renderQueue();}
+  }
  }finally{
-  await terminateWorker();setBusy(false);
+  await terminateWorker();
+  setBusy(false);renderQueue();
+  const focus=entries.find(e=>e.status==="ok")||entries.find(e=>e.status==="erro")||entries[0];
+  if(focus)activate(focus.id);
+  if(succeeded){
+   progress("Leitura concluída",100);
+   say(succeeded+" documento(s) lido(s) com sucesso"+(failed?", "+failed+" com falha.":"."),"success");
+   if(focus?.status==="ok")$("ocrResults").scrollIntoView({behavior:"smooth",block:"start"});
+  }else if(cancelled)say("Leitura cancelada. Os documentos não concluídos podem ser lidos novamente.");
+  else say(failed+" documento(s) com falha. Verifique os arquivos e tente novamente.","error");
+  if(!succeeded)$("ocrProgressBox").hidden=true;
  }
 }
 async function cancel(){
@@ -469,35 +503,54 @@ async function cancel(){
  cancelled=true;say("Cancelando leitura…");
  await terminateWorker();
 }
-function payload(){
- if(!lastResult)return null;
+function documentPayload(entry){
  return {
-  schema:"portal-frete.document-reader.v1",
-  tipoDocumento:lastResult.tipo,
-  tipoDescricao:lastResult.titulo,
-  nomeArquivo:file?.name||"",
-  paginasAnalisadas:lastPages,
-  campos:{...lastResult.campos},
-  textoReconhecido:rawText,
+  nomeArquivo:entry.file.name,
+  tipoDocumento:entry.result.tipo,
+  tipoDescricao:entry.result.titulo,
+  paginasAnalisadas:entry.pages,
+  campos:{...entry.result.campos},
+  avisos:[...(entry.result.avisos||[])],
+  textoReconhecido:entry.raw,
   somenteConferencia:true,
-  revisadoPeloUsuario:false,
+  revisadoPeloUsuario:false
+ };
+}
+function payload(){
+ const list=entries.filter(e=>e.status==="ok"&&e.result);
+ if(!list.length)return null;
+ return {
+  schema:"portal-frete.document-reader.batch.v2",
+  totalDocumentos:list.length,
+  documentos:list.map(documentPayload),
   exportadoEm:new Date().toISOString()
  };
+}
+function selectedPayload(){
+ const entry=getActive();
+ if(!entry?.result)return null;
+ return {
+  schema:"portal-frete.document-reader.single.v2",
+  documento:documentPayload(entry),
+  exportadoEm:new Date().toISOString()
+ };
+}
+function saveJson(data,base){
+ if(!data)return;
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");a.href=url;
+ a.download=base+"-"+new Date().toISOString().slice(0,10)+".json";
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ say("JSON exportado para seu dispositivo. Nenhum dado foi salvo no Portal.","success");
 }
 async function copy(text){
  try{await navigator.clipboard.writeText(text);say("Conteúdo copiado para a área de transferência.","success");}
  catch{say("Não foi possível copiar automaticamente. Utilize o download JSON.","error");}
 }
-function download(){
- const data=payload();if(!data)return;
- const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
- a.href=url;a.download="leitura-"+data.tipoDocumento+"-"+new Date().toISOString().slice(0,10)+".json";
- document.body.append(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
- say("JSON exportado para seu dispositivo. Nenhum dado foi salvo no Portal.","success");
-}
+function download(){saveJson(payload(),"leitura-documentos");}
+function downloadSingle(){saveJson(selectedPayload(),"leitura-documento");}
 async function authGate(){
  try{
   let session;
@@ -525,22 +578,38 @@ function init(){
  }
  for(const event of ["dragleave","drop"])
   drop.addEventListener(event,e=>{e.preventDefault();drop.classList.remove("dragover");});
- drop.addEventListener("drop",e=>{if(!busy)void selectFile(e.dataTransfer?.files?.[0]);});
- input.addEventListener("change",()=>void selectFile(input.files?.[0]));
- $("ocrRemove").addEventListener("click",clearAll);
+ drop.addEventListener("drop",e=>{if(!busy)void selectFiles(e.dataTransfer?.files);});
+ input.addEventListener("change",()=>void selectFiles(input.files));
  $("ocrStart").addEventListener("click",()=>void analyze());
  $("ocrCancel").addEventListener("click",()=>void cancel());
  $("ocrClear").addEventListener("click",clearAll);
- $("ocrType").addEventListener("change",()=>{if(lastResult)present();});
+ $("ocrType").addEventListener("change",()=>{
+  const entry=getActive();if(!entry)return;
+  entry.type=$("ocrType").value;
+  if(entry.raw){
+   entry.result=fieldsApi.extract(entry.raw,entry.type);
+   lastResult=entry.result;present(false);
+  }
+  renderQueue();
+ });
+ $("ocrResultFile").addEventListener("change",()=>{
+  const id=Number($("ocrResultFile").value);
+  if(Number.isInteger(id))activate(id);
+ });
  $("ocrTabFields").addEventListener("click",()=>showTab("fields"));
  $("ocrTabRaw").addEventListener("click",()=>showTab("raw"));
  $("ocrCopyJson").addEventListener("click",()=>{const data=payload();if(data)void copy(JSON.stringify(data,null,2));});
  $("ocrDownloadJson").addEventListener("click",download);
+ $("ocrDownloadSingle").addEventListener("click",downloadSingle);
  $("ocrCopyText").addEventListener("click",()=>void copy(rawText));
+ renderQueue();
  window.addEventListener("pagehide",()=>{
   clearPreview();rawText="";lastResult=null;
+  entries.forEach(e=>{e.raw="";e.result=null;e.previewData=null;});
+  entries=[];
   if(ocrWorker)void terminateWorker();
  },{once:true});
 }
+
 void authGate();
 })();

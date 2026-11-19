@@ -22,7 +22,7 @@ test("QR em CRLV de texto simples preenche apenas campos vazios, sem validar ori
  assert.equal(result.campos.placa,"ABC1D23");
  assert.equal(result.campos.chassi,"9BWZZZ377VT004251");
  assert.equal(result.campos.renavam,"98765432101");
- assert.deepEqual(code.camposDivergentes,["renavam"]);
+ assert.deepEqual([...code.camposDivergentes],["renavam"]);
  assert.ok(result.avisos.length);
  const exported=api.safeExport(code);
  assert.equal(exported.validadoOficialmente,false);

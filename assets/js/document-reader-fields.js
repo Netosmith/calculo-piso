@@ -147,6 +147,20 @@
    text.split(/\s+/).length>=2&&
    !/(ASSINADO|VALIDADE|DOCUMENTO|REPUBLICA|FEDERATIVA|NACIONALIDADE|TERRITORIO|SENATRAN)/.test(text);
  };
+ function cnhFullName(text){
+  const rows=linesOf(text);
+  for(let i=0;i<rows.length;i++){
+   if(!/(NOME\s*E\s*SOBRENOME|NOME DO CONDUTOR|NOME\s*\/\s*SOBRENOME)/.test(fold(rows[i])))continue;
+   for(let j=i+1;j<=Math.min(rows.length-1,i+2);j++){
+    const candidate=clean(rows[j]
+     .replace(/\b\d{2}[\/.\-]\d{2}[\/.\-]\d{4}\b/g,"")
+     .replace(/[|{}\[\]<>]/g," ")).replace(/\s+/g," ");
+    if(isProbableName(candidate)&&candidate.split(/\s+/).length>=3)
+     return candidate;
+   }
+  }
+  return "";
+ }
  function detect(text){
   const t=fold(text);
   // Identificadores inequívocos prevalecem sobre termos genéricos
@@ -169,7 +183,7 @@
   const f=fold(text);
   if(chosen==="cnh"){
    const mrz=mrzData(text);
-   values.nome=nameFrom(text,["NOME(?: E SOBRENOME)?","NOME DO CONDUTOR"])||
+   values.nome=cnhFullName(text)||nameFrom(text,["NOME(?: E SOBRENOME)?","NOME DO CONDUTOR"])||
     first(text,/(?:\b(?:NOME E SOBRENOME|NOME DO CONDUTOR)[^\n]*\n)([A-ZÀ-Ú][^\n]{5,95})/i);
    values.cpf=formatCPF(firstCPF(text));
    const rgCandidate=labelled(text,["(?:4[º°a-z. ]*)?DOC(?:UMENTO)?(?: DE IDENTIDADE)?(?:\s*\/?\s*ORG.*)?","IDENTIDADE","RG"],{min:5,max:50});

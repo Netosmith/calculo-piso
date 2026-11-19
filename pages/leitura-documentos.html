@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="referrer" content="no-referrer">
   <title>Leitura de Documentos | Portal Frete</title>
-  <link rel="stylesheet" href="../assets/css/document-reader.css?v=20261119-1">
+  <link rel="stylesheet" href="../assets/css/document-reader.css?v=20261119-multi-1">
 </head>
 <body class="pf-document-reader" data-portal-module="leitura-documentos">
 <main id="ocrMain" class="ocr-shell" hidden>
@@ -30,7 +30,7 @@
     <section class="ocr-panel ocr-input-panel">
       <div class="ocr-panel-heading">
         <span class="ocr-step">01</span>
-        <div><h2>Documento para leitura</h2><p>Selecione um arquivo de cada vez.</p></div>
+        <div><h2>Documentos para leitura</h2><p>Adicione até 10 arquivos e faça a leitura em sequência.</p></div>
       </div>
       <label class="ocr-field" for="ocrType">Tipo de documento
         <select id="ocrType">
@@ -43,25 +43,22 @@
       </label>
       <div id="ocrDropzone" class="ocr-dropzone" role="button" tabindex="0" aria-label="Selecionar ou arrastar imagem ou PDF">
         <div class="ocr-upload-icon" aria-hidden="true">↑</div>
-        <strong>Arraste o documento aqui</strong>
-        <span>ou clique para selecionar no computador ou celular</span>
-        <small>JPG, JPEG, PNG ou PDF · até 15 MB · PDF de até 8 páginas</small>
+        <strong>Arraste seus documentos aqui</strong>
+        <span>ou clique para adicionar arquivos no computador ou celular</span>
+        <small>Até 10 arquivos · JPG, JPEG, PNG ou PDF · 15 MB por arquivo · PDF de até 8 páginas</small>
       </div>
-      <input id="ocrFile" class="ocr-file-input" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
-      <div id="ocrFileRow" class="ocr-file-row" hidden>
-        <div class="ocr-file-icon" aria-hidden="true">📄</div>
-        <div class="ocr-file-meta"><strong id="ocrFileName"></strong><small id="ocrFileSize"></small></div>
-        <button type="button" id="ocrRemove" class="ocr-btn ocr-btn-quiet" aria-label="Remover documento selecionado">Remover</button>
-      </div>
+      <input id="ocrFile" class="ocr-file-input" type="file" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+      <div class="ocr-file-list-head"><strong>Arquivos adicionados</strong><span id="ocrFileCount">0 / 10</span></div>
+      <div id="ocrFilesList" class="ocr-files-list" aria-label="Arquivos para leitura"></div>
       <div class="ocr-buttons">
-        <button id="ocrStart" class="ocr-btn ocr-btn-primary" type="button" disabled>🔎 Ler documento</button>
+        <button id="ocrStart" class="ocr-btn ocr-btn-primary" type="button" disabled>🔎 Ler documentos</button>
         <button id="ocrCancel" class="ocr-btn ocr-btn-outline" type="button" hidden>Cancelar</button>
       </div>
       <div class="ocr-progress" id="ocrProgressBox" hidden>
         <div class="ocr-progress-top"><strong id="ocrProgressText">Preparando leitura…</strong><span id="ocrProgressPct">0%</span></div>
         <progress id="ocrProgress" max="100" value="0"></progress>
       </div>
-      <p id="ocrMessage" class="ocr-message" role="status" aria-live="polite">Nenhum documento selecionado.</p>
+      <p id="ocrMessage" class="ocr-message" role="status" aria-live="polite">Adicione documentos para iniciar a leitura.</p>
     </section>
 
     <section class="ocr-panel ocr-preview-panel">
@@ -79,11 +76,16 @@
 
   <section id="ocrResults" class="ocr-panel ocr-results" hidden>
     <div class="ocr-results-head">
-      <div><div class="ocr-kicker">RESULTADO DA LEITURA</div><h2>Dados reconhecidos</h2><p id="ocrResultSub">Revise todos os campos antes de copiar ou exportar.</p></div>
+      <div><div class="ocr-kicker">RESULTADO DA LEITURA</div><h2>Dados reconhecidos</h2><p id="ocrResultSub">Revise todos os campos antes de copiar ou exportar.</p>
+      <label class="ocr-result-select" for="ocrResultFile">Documento em conferência
+        <select id="ocrResultFile" aria-label="Documento cujos campos serão exibidos"></select>
+      </label>
+      <p id="ocrWarnings" class="ocr-warnings" role="status" hidden></p>
+      </div>
       <div class="ocr-result-actions">
         <button id="ocrCopyJson" class="ocr-btn ocr-btn-outline" type="button">Copiar JSON</button>
-        <button id="ocrDownloadJson" class="ocr-btn ocr-btn-primary" type="button">Baixar JSON</button>
-        <button id="ocrClear" class="ocr-btn ocr-btn-quiet" type="button">Limpar dados</button>
+        <button id="ocrDownloadJson" class="ocr-btn ocr-btn-primary" type="button">Baixar JSON (todos)</button><button id="ocrDownloadSingle" class="ocr-btn ocr-btn-outline" type="button">Baixar deste arquivo</button>
+        <button id="ocrClear" class="ocr-btn ocr-btn-quiet" type="button">Limpar todos</button>
       </div>
     </div>
     <div class="ocr-insights"><span id="ocrDetected" class="ocr-type-pill">Documento</span><span id="ocrPages">1 página</span><span id="ocrConfidence">Confiança geral: não disponível</span></div>
@@ -105,7 +107,7 @@
   <footer class="ocr-footer">NOVA FROTA · Portal Frete · Versão inicial para reconhecimento e conferência de documentos. Integração automática com cadastros não habilitada.</footer>
 </main>
 <script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
-<script src="../assets/js/document-reader-fields.js?v=20261119-pdf-fix-3"></script>
-<script src="../assets/js/document-reader.js?v=20261119-pdf-fix-3"></script>
+<script src="../assets/js/document-reader-fields.js?v=20261119-multi-1"></script>
+<script src="../assets/js/document-reader.js?v=20261119-multi-1"></script>
 </body>
 </html>

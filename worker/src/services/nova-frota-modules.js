@@ -7,7 +7,7 @@ export const NOVA_FROTA_LEGACY_DEFAULTS=Object.freeze([
  "fretes2","funcionarios","relatorio"
 ]);
 export const NOVA_FROTA_NEW_MODULES=Object.freeze([
- "solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos"
+ "solicitacao-troca-notas","execucao-troca-notas","solicitacao-pedidos","execucao-pedidos","leitura-documentos"
 ]);
 export const NOVA_FROTA_MANAGED_MODULES=Object.freeze([
  ...NOVA_FROTA_LEGACY_DEFAULTS,...NOVA_FROTA_NEW_MODULES

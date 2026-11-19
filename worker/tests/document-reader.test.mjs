@@ -144,3 +144,30 @@ test("CNH com rótulo parcialmente ilegível mantém nome completo e registro",(
  assert.equal(x.campos.validade,"15/05/2036");
  assert.equal(x.avisos.length,0,"Nome completo impresso não deve ser substituído pela MRZ");
 });
+
+test("CRLV de cavalo: ESPÉCIE / TIPO = TRAÇÃO CAMINHÃO TRATOR marca Cavalo-S",()=>{
+ const x=parser().extract([
+  "CERTIFICADO DE REGISTRO E LICENCIAMENTO DO VEÍCULO - DIGITAL",
+  "PLACA: XYZ1A23",
+  "ESPÉCIE / TIPO",
+  "TRAÇÃO CAMINHÃO TRATOR",
+  "CARROCERIA",
+  "CABINE ESTENDIDA"
+ ].join("\n"));
+ assert.equal(x.tipo,"veiculo");
+ assert.equal(x.campos.especieTipo,"TRAÇÃO CAMINHÃO TRATOR");
+ assert.equal(x.campos.tipoVeiculoSistema,"Cavalo-S");
+ assert.ok(x.camposDefinidos.some(([key])=>key==="tipoVeiculoSistema"));
+});
+test("CRLV: não classificar cavalo por observação ou espécie diferente",()=>{
+ const other=parser().extract([
+  "CRLV",
+  "ESPÉCIE / TIPO",
+  "CARGA CAMINHÃO",
+  "OBSERVAÇÃO: TRAÇÃO CAMINHÃO TRATOR"
+ ].join("\n"));
+ assert.equal(other.campos.especieTipo,"");
+ assert.equal(other.campos.tipoVeiculoSistema,"");
+ const withoutLabel=parser().extract("CRLV\nOBSERVAÇÕES: TRAÇÃO CAMINHÃO TRATOR");
+ assert.equal(withoutLabel.campos.tipoVeiculoSistema,"");
+});

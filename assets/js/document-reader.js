@@ -11,6 +11,7 @@ let file=null,kind=null,previewUrl=null,pdfjs=null,ocrWorker=null;
 let entries=[],nextId=1,activeId=null;
 let busy=false,cancelled=false,rawText="",lastResult=null,lastPages=0,lastConf=null;
 const fieldsApi=window.PortalOCRFields;
+const qrApi=window.PortalOCRQRCode;
 if(!fieldsApi){console.error("[OCR] O extrator de campos não foi carregado.");return;}
 const say=(message,type="")=>{
  const p=$("ocrMessage");p.textContent=message;p.className="ocr-message"+(type?" "+type:"");
@@ -84,7 +85,7 @@ function renderQueue(){
   type.onchange=()=>{
    entry.type=type.value;
    if(entry.result){
-    entry.result=fieldsApi.extract(entry.raw,entry.type);
+    entry.result=mergeQrIntoFields(fieldsApi.extract(entry.raw,entry.type),entry.qr);
     if(entry.id===activeId){lastResult=entry.result;present(false);}
    }
    if(entry.id===activeId)$("ocrType").value=entry.type;
@@ -169,7 +170,7 @@ async function selectFiles(selection){
   try{
    const detected=await sniff(candidate);
    entries.push({id:nextId++,file:candidate,kind:detected,
-    type:$("ocrType").value,status:"aguardando",result:null,raw:"",pages:0,conf:null,previewData:null,error:""});
+    type:$("ocrType").value,status:"aguardando",result:null,raw:"",pages:0,conf:null,qr:null,previewData:null,error:""});
   }catch(e){rejected.push(candidate.name+": "+e.message);}
  }
  $("ocrFile").value="";
@@ -229,6 +230,23 @@ async function recognize(input){
  const c=Number(result?.data?.confidence);
  return {text,confidence:Number.isFinite(c)?c:null};
 }
+async function tryReadQRCode(canvas,documentType="auto"){
+ if(!qrApi?.scanCanvas)return null;
+ try{
+  progress("Procurando QR Code no documento…",7);
+  return await qrApi.scanCanvas(canvas,documentType);
+ }catch(error){
+  console.warn("[OCR] QR Code não pôde ser interpretado; continuando com OCR.",
+   error?.message||error);
+  return null;
+ }
+}
+function mergeQrIntoFields(result,qr){
+ if(!qrApi?.merge||!qr?.detectado)return result;
+ if(result?.tipo==="geral"&&qr.documentoSugerido)
+  result=fieldsApi.extract(result.texto||"",qr.documentoSugerido);
+ return qrApi.merge(result,qr);
+}
 async function imageOCR(f){
  $("ocrProgress").dataset.page="0";$("ocrProgress").dataset.pages="1";
  progress("Preparando imagem…",9);
@@ -246,11 +264,13 @@ async function imageOCR(f){
   canvas.height=Math.max(1,Math.round(bitmap.height*scale));
   canvas.getContext("2d",{alpha:false}).drawImage(bitmap,0,0,canvas.width,canvas.height);
   checkCancelled();
-  progress("Lendo imagem…",12);
+  const qr=await tryReadQRCode(canvas,$("ocrType").value);
+  progress("Lendo texto da imagem…",12);
   const result=await recognize(canvas);
-  if(!result.text.trim())
-   throw new Error("Não foi possível identificar texto na imagem. Tente uma foto mais nítida.");
-  return {text:result.text,pages:1,confidences:result.confidence===null?[]:[result.confidence]};
+  if(!result.text.trim()&&!qr)
+   throw new Error("Não foi possível identificar texto ou QR Code. Tente uma foto mais nítida.");
+  return {text:result.text,pages:1,qr,
+   confidences:result.confidence===null?[]:[result.confidence]};
  }finally{
   if(canvas){canvas.width=1;canvas.height=1;}
   bitmap.close();
@@ -361,6 +381,7 @@ async function pdfOCR(f){
   if(!Number.isInteger(pages)||pages<1)throw new Error("PDF sem páginas disponíveis.");
   if(pages>MAX_PAGES)throw new Error("PDF com "+pages+" páginas. Limite desta versão: "+MAX_PAGES+". Divida o arquivo para continuar.");
   const pieces=[],confidences=[];
+  let qr=null;
   $("ocrProgress").dataset.pages=String(pages);
   for(let i=1;i<=pages;i++){
    checkCancelled();
@@ -381,10 +402,12 @@ async function pdfOCR(f){
     // PDFs escaneados sem texto pesquisável também recebem zoom de alta
     // resolução, mesmo quando o nome do arquivo não contém "CNH".
     const isOfficialDocument=regions.length>0||(i===1&&embedded.length<150);
-    if(i===1||needOCR){
+    if(i===1||needOCR||!qr){
      if(isOfficialDocument)progress("Ampliando o PDF em alta definição (até 4x)…",7);
      canvas=await renderPage(page,i===1,isOfficialDocument);
     }
+    // QR primeiro, OCR continua para documentos Vio protegidos.
+    if(canvas&&!qr)qr=await tryReadQRCode(canvas,$("ocrType").value);
     const scan=[];
     if(needOCR){
      // Nas CNH e CRLV, ampliar as regiões legíveis é melhor do que
@@ -431,8 +454,8 @@ async function pdfOCR(f){
    }
   }
   const text=pieces.join("\n\n--- PÁGINA ---\n\n").trim();
-  if(!text)throw new Error("Não foi possível reconhecer texto no PDF. Confira a resolução e tente novamente.");
-  return {text,pages,confidences};
+  if(!text&&!qr)throw new Error("Não foi possível reconhecer texto ou QR Code no PDF.");
+  return {text,pages,confidences,qr};
  }catch(e){
   if(/password/i.test(String(e.message)))throw new Error("PDF protegido por senha. Utilize um PDF desbloqueado.");
   throw e;
@@ -460,9 +483,10 @@ function showTab(which){
  $("ocrFieldsPanel").hidden=raw;$("ocrRawPanel").hidden=!raw;
 }
 function present(scroll=false){
- if(!rawText.trim())return;
  const entry=getActive();
- if(!lastResult)lastResult=fieldsApi.extract(rawText,entry?.type||$("ocrType").value);
+ if(!rawText.trim()&&!entry?.qr)return;
+ if(!lastResult)lastResult=mergeQrIntoFields(
+  fieldsApi.extract(rawText,entry?.type||$("ocrType").value),entry?.qr);
  if(entry)entry.result=lastResult;
  $("ocrResults").hidden=false;
  $("ocrDetected").textContent=lastResult.titulo;
@@ -471,6 +495,15 @@ function present(scroll=false){
   "Camada digital / sem índice de confiança":
   "Confiança média OCR: "+Math.round(lastConf)+"%";
  $("ocrResultSub").textContent="Documento: "+(entry?.file?.name||"")+" · Confira cada campo antes de exportar.";
+ const qr=entry?.qr;
+ const hasQR=Boolean(qr?.detectado);
+ $("ocrQrBadge").textContent=hasQR?"QR Code encontrado":"QR Code não encontrado";
+ $("ocrQrPanel").hidden=!hasQR;
+ if(hasQR){
+  $("ocrQrTitle").textContent=qr.tipoConteudo==="dados_estruturados"?
+   "QR Code com dados estruturados":"QR Code detectado";
+  $("ocrQrMessage").textContent=qr.resumo;
+ }
  const warnings=[...(lastResult.avisos||[])];
  if(lastConf!==null&&lastConf<72)
   warnings.push("Confiança baixa no reconhecimento. Confira principalmente nomes, documentos, números e datas.");
@@ -521,9 +554,10 @@ async function analyze(){
     const result=entry.kind==="pdf"?await pdfOCR(entry.file):await imageOCR(entry.file);
     checkCancelled();
     entry.raw=result.text;entry.pages=result.pages;
+    entry.qr=result.qr||null;
     entry.conf=result.confidences.length?
      result.confidences.reduce((a,b)=>a+b,0)/result.confidences.length:null;
-    entry.result=fieldsApi.extract(entry.raw,entry.type);
+    entry.result=mergeQrIntoFields(fieldsApi.extract(entry.raw,entry.type),entry.qr);
     entry.status="ok";succeeded++;
    }catch(err){
     if(cancelled){entry.status="cancelado";break;}
@@ -559,6 +593,7 @@ function documentPayload(entry){
   campos:{...entry.result.campos},
   avisos:[...(entry.result.avisos||[])],
   textoReconhecido:entry.raw,
+  qrCode:qrApi?.safeExport?.(entry.qr)||{detectado:false,validadoOficialmente:false},
   somenteConferencia:true,
   revisadoPeloUsuario:false
  };
@@ -655,7 +690,7 @@ function init(){
   const entry=getActive();if(!entry)return;
   entry.type=$("ocrType").value;
   if(entry.raw){
-   entry.result=fieldsApi.extract(entry.raw,entry.type);
+   entry.result=mergeQrIntoFields(fieldsApi.extract(entry.raw,entry.type),entry.qr);
    lastResult=entry.result;present(false);
   }
   renderQueue();
@@ -674,7 +709,7 @@ function init(){
  renderQueue();
  window.addEventListener("pagehide",()=>{
   clearPreview();rawText="";lastResult=null;
-  entries.forEach(e=>{e.raw="";e.result=null;e.previewData=null;});
+  entries.forEach(e=>{e.raw="";e.result=null;e.qr=null;e.previewData=null;});
   entries=[];
   if(ocrWorker)void terminateWorker();
  },{once:true});

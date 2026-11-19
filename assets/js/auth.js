@@ -433,7 +433,7 @@ function isStateAllowedForUser(uf){
 // Liberações globais da Nova Frota, validadas no Worker.
 // Não substituem nem ampliam os perfis GO, MT, PISO, COMERCIAL etc.
 const NOVA_MANAGED_FEATURES=new Set([
- "piso","piso2","fretes","bi","divulgacao","controle","share","ordem","cadastros",
+ "piso","piso2","fretes","bi","divulgacao","controle","share","ordem","leitura-documentos","cadastros",
  "cadastro-solicitacoes","execucao-cadastros","estadias","custo-frota","administrativo",
  "monitoramento","fretes-mercado","custo-filial","patrimonio","embarques","chamados",
  "fretes2","funcionarios","relatorio",
@@ -509,7 +509,7 @@ function enforceNovaFrotaPageGrant(session){
  if(!session||session.tenantMode===true||session.transportadoraId!=="nova-frota")return true;
  const file=String(window.location.pathname||"").toLowerCase().split("/").pop();
  const filenames={
-  "calculo-piso.html":"piso","calculo-antt.html":"piso2","calculo-antt2.html":"piso2","ordem.html":"ordem",
+  "calculo-piso.html":"piso","calculo-antt.html":"piso2","calculo-antt2.html":"piso2","ordem.html":"ordem","leitura-documentos.html":"leitura-documentos",
   "fretes.html":"fretes","fretes2.html":"fretes2","funcionarios.html":"funcionarios","funcionarios-cadastro.html":"funcionarios","funcionarios-lancamentos.html":"funcionarios","funcionarios-tabela.html":"funcionarios","funcionarios-comissoes.html":"funcionarios","relatorio.html":"relatorio",
   "bi.html":"bi","divulgacao.html":"divulgacao",
   "controle.html":"controle","share-clientes.html":"share",
@@ -845,6 +845,14 @@ const PORTAL_NAV_ITEMS = [
     href:"./ordem.html",
     secondary:true,
     icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h10l3 3v15H6z"/><path d="M16 3v4h4M9 11h7M9 15h7M9 19h5"/></svg>'
+  },
+  {
+    key:"leitura-documentos",
+    label:"Leitura OCR",
+    feature:"leitura-documentos",
+    href:"./leitura-documentos.html",
+    secondary:true,
+    icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h9l5 5v13H5zM14 3v5h5M8 12h8M8 16h6"/><path d="M2 9v6M22 9v6"/></svg>'
   },
   {
     key:"share",

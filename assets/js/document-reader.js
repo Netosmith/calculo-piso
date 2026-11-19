@@ -125,10 +125,30 @@ async function recognize(input){
 }
 async function imageOCR(f){
  $("ocrProgress").dataset.page="0";$("ocrProgress").dataset.pages="1";
- progress("Lendo imagem…",9);
- const result=await recognize(f);
- if(!result.text.trim())throw new Error("Não foi possível identificar texto na imagem. Tente uma foto mais nítida.");
- return {text:result.text,pages:1,confidences:result.confidence===null?[]:[result.confidence]};
+ progress("Preparando imagem…",9);
+ if(typeof createImageBitmap!=="function")
+  throw new Error("Este navegador não suporta preparação segura de imagens. Atualize o navegador.");
+ const bitmap=await createImageBitmap(f);
+ let canvas;
+ try{
+  if(bitmap.width>20000||bitmap.height>20000)
+   throw new Error("Imagem com resolução excessiva. Reduza o tamanho da foto.");
+  const scale=Math.min(1,2400/Math.max(bitmap.width,bitmap.height),
+   Math.sqrt(7_000_000/(bitmap.width*bitmap.height)));
+  canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas.getContext("2d",{alpha:false}).drawImage(bitmap,0,0,canvas.width,canvas.height);
+  checkCancelled();
+  progress("Lendo imagem…",12);
+  const result=await recognize(canvas);
+  if(!result.text.trim())
+   throw new Error("Não foi possível identificar texto na imagem. Tente uma foto mais nítida.");
+  return {text:result.text,pages:1,confidences:result.confidence===null?[]:[result.confidence]};
+ }finally{
+  if(canvas){canvas.width=1;canvas.height=1;}
+  bitmap.close();
+ }
 }
 async function ensurePdf(){
  if(pdfjs)return pdfjs;
@@ -140,7 +160,7 @@ async function ensurePdf(){
 function ensureCanvasSize(width,height){
  const maxPixels=7_000_000;
  const scale=Math.min(2,Math.sqrt(maxPixels/(width*height)));
- return Math.max(.8,scale);
+ return Math.max(.0001,scale);
 }
 async function renderPage(page,firstPage=false){
  const base=page.getViewport({scale:1});

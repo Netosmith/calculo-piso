@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Leitura de Documentos | Portal Frete</title>
+  <link rel="stylesheet" href="../assets/css/document-reader.css?v=20261119-1">
+</head>
+<body class="pf-document-reader" data-portal-module="leitura-documentos">
+<main id="ocrMain" class="ocr-shell" hidden>
+  <header class="ocr-hero">
+    <div>
+      <div class="ocr-kicker"><span class="ocr-dot"></span> PORTAL FRETE · LEITURA INTELIGENTE</div>
+      <h1>Leitura de Documentos</h1>
+      <p>Extraia e confira informações de CNH, CRLV e comprovantes de endereço, usando fotos ou PDF.</p>
+    </div>
+    <div class="ocr-hero-side"><span class="ocr-chip">OCR no navegador</span><span class="ocr-chip">JPG · PNG · PDF</span></div>
+  </header>
+
+  <section class="ocr-note" aria-label="Privacidade do processamento">
+    <span aria-hidden="true">🔒</span>
+    <p><strong>Privacidade:</strong> o arquivo e os resultados não são enviados ao Portal, ao GitHub ou ao Google Sheets.
+      O processamento acontece neste navegador. Bibliotecas e idiomas são baixados da internet quando necessários.
+      <strong>Confira cada campo antes de utilizar.</strong></p>
+  </section>
+
+  <div class="ocr-layout">
+    <section class="ocr-panel ocr-input-panel">
+      <div class="ocr-panel-heading">
+        <span class="ocr-step">01</span>
+        <div><h2>Documento para leitura</h2><p>Selecione um arquivo de cada vez.</p></div>
+      </div>
+      <label class="ocr-field" for="ocrType">Tipo de documento
+        <select id="ocrType">
+          <option value="auto">Identificar automaticamente</option>
+          <option value="cnh">CNH / Habilitação</option>
+          <option value="veiculo">Documento de veículo (CRLV)</option>
+          <option value="endereco">Comprovante de endereço</option>
+          <option value="geral">Texto livre / Outro documento</option>
+        </select>
+      </label>
+      <div id="ocrDropzone" class="ocr-dropzone" role="button" tabindex="0" aria-label="Selecionar ou arrastar imagem ou PDF">
+        <div class="ocr-upload-icon" aria-hidden="true">↑</div>
+        <strong>Arraste o documento aqui</strong>
+        <span>ou clique para selecionar no computador ou celular</span>
+        <small>JPG, JPEG, PNG ou PDF · até 15 MB · PDF de até 8 páginas</small>
+      </div>
+      <input id="ocrFile" class="ocr-file-input" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+      <div id="ocrFileRow" class="ocr-file-row" hidden>
+        <div class="ocr-file-icon" aria-hidden="true">📄</div>
+        <div class="ocr-file-meta"><strong id="ocrFileName"></strong><small id="ocrFileSize"></small></div>
+        <button type="button" id="ocrRemove" class="ocr-btn ocr-btn-quiet" aria-label="Remover documento selecionado">Remover</button>
+      </div>
+      <div class="ocr-buttons">
+        <button id="ocrStart" class="ocr-btn ocr-btn-primary" type="button" disabled>🔎 Ler documento</button>
+        <button id="ocrCancel" class="ocr-btn ocr-btn-outline" type="button" hidden>Cancelar</button>
+      </div>
+      <div class="ocr-progress" id="ocrProgressBox" hidden>
+        <div class="ocr-progress-top"><strong id="ocrProgressText">Preparando leitura…</strong><span id="ocrProgressPct">0%</span></div>
+        <progress id="ocrProgress" max="100" value="0"></progress>
+      </div>
+      <p id="ocrMessage" class="ocr-message" role="status" aria-live="polite">Nenhum documento selecionado.</p>
+    </section>
+
+    <section class="ocr-panel ocr-preview-panel">
+      <div class="ocr-panel-heading">
+        <span class="ocr-step">02</span><div><h2>Pré-visualização</h2><p>Confira a imagem e sua legibilidade.</p></div>
+      </div>
+      <div id="ocrPreview" class="ocr-preview">
+        <div id="ocrEmptyPreview" class="ocr-preview-empty"><span aria-hidden="true">▤</span><strong>Prévia do documento</strong><small>Selecione um JPG, PNG ou PDF para começar.</small></div>
+        <img id="ocrPreviewImage" alt="Prévia do documento selecionado" hidden>
+        <canvas id="ocrPreviewPdf" aria-label="Primeira página do PDF" role="img" hidden></canvas>
+      </div>
+      <p class="ocr-preview-note">Dica: imagens nítidas, sem cortes e com boa iluminação melhoram o reconhecimento. A leitura não valida autenticidade nem situação do documento.</p>
+    </section>
+  </div>
+
+  <section id="ocrResults" class="ocr-panel ocr-results" hidden>
+    <div class="ocr-results-head">
+      <div><div class="ocr-kicker">RESULTADO DA LEITURA</div><h2>Dados reconhecidos</h2><p id="ocrResultSub">Revise todos os campos antes de copiar ou exportar.</p></div>
+      <div class="ocr-result-actions">
+        <button id="ocrCopyJson" class="ocr-btn ocr-btn-outline" type="button">Copiar JSON</button>
+        <button id="ocrDownloadJson" class="ocr-btn ocr-btn-primary" type="button">Baixar JSON</button>
+        <button id="ocrClear" class="ocr-btn ocr-btn-quiet" type="button">Limpar dados</button>
+      </div>
+    </div>
+    <div class="ocr-insights"><span id="ocrDetected" class="ocr-type-pill">Documento</span><span id="ocrPages">1 página</span><span id="ocrConfidence">Confiança geral: não disponível</span></div>
+    <div class="ocr-tabs" role="tablist" aria-label="Resultado OCR">
+      <button id="ocrTabFields" role="tab" type="button" aria-selected="true" aria-controls="ocrFieldsPanel" class="active">Campos para conferência</button>
+      <button id="ocrTabRaw" role="tab" type="button" aria-selected="false" aria-controls="ocrRawPanel">Texto completo reconhecido</button>
+    </div>
+    <div id="ocrFieldsPanel" role="tabpanel" aria-labelledby="ocrTabFields">
+      <div id="ocrFieldsGrid" class="ocr-fields-grid"></div>
+      <p class="ocr-legal">Os campos são sugestões geradas por reconhecimento de texto. Não representam consulta ao DETRAN, validação de CNH, placa, RENAVAM, CPF ou endereço.</p>
+    </div>
+    <div id="ocrRawPanel" role="tabpanel" aria-labelledby="ocrTabRaw" hidden>
+      <label class="ocr-field" for="ocrRawText">Texto extraído do documento
+        <textarea id="ocrRawText" rows="15" spellcheck="false" readonly></textarea>
+      </label>
+      <button id="ocrCopyText" class="ocr-btn ocr-btn-outline" type="button">Copiar texto completo</button>
+    </div>
+  </section>
+  <footer class="ocr-footer">NOVA FROTA · Portal Frete · Versão inicial para reconhecimento e conferência de documentos. Integração automática com cadastros não habilitada.</footer>
+</main>
+<script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
+<script src="../assets/js/document-reader-fields.js?v=20261119-1"></script>
+<script src="../assets/js/document-reader.js?v=20261119-1"></script>
+</body>
+</html>

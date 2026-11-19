@@ -22,7 +22,7 @@
   "estadias.html","fretes-mercado.html","embarques.html","chamados.html",
   "patrimonio-br.html","relatorio.html","custo-filial.html",
   "custo-frota-pesada.html","monitoramento.html","calculo-piso.html",
-  "calculo-antt.html","calculo-antt2.html","ordem.html"
+  "calculo-antt.html","calculo-antt2.html","ordem.html","leitura-documentos.html"
  ]);
  let stage="inicio";
  function refuse(){location.replace(login);}

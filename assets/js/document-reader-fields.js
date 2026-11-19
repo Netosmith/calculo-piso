@@ -100,6 +100,53 @@
   }
   return "";
  }
+ // Leitura adicional para CNH digital: zona de leitura mecânica (MRZ) visível
+ // no rodapé. A versão reduzida do nome pode conter abreviações; sempre revisar.
+ function mrzData(text){
+  const lines=linesOf(text).map(x=>fold(x).replace(/[|]/g,"I"));
+  let name="",birth="",expiry="";
+  for(const line of lines){
+   const match=line.match(/\b([A-Z]{3,})<<([A-Z<]{5,})/);
+   if(match&&!/^(?:BRA|NOME|CARTEIRA)$/.test(match[1])){
+    const candidate=[match[1],match[2].replace(/<+/g," ")].join(" ").replace(/\s+/g," ").trim();
+    if(candidate.length>name.length)name=candidate;
+   }
+   const codes=line.match(/\b(\d{6})\d?[MF](\d{6})\d?[A-Z]{3}\b/);
+   if(codes){
+    const date=(code,kind)=>{
+     const yy=Number(code.slice(0,2)),mm=Number(code.slice(2,4)),dd=Number(code.slice(4,6));
+     if(mm<1||mm>12||dd<1||dd>31)return "";
+     const current=new Date().getFullYear();
+     const year=kind==="expiry"?(yy+2000):(yy+2000>current?yy+1900:yy+2000);
+     const dt=new Date(Date.UTC(year,mm-1,dd));
+     if(dt.getUTCDate()!==dd||dt.getUTCMonth()!==mm-1)return "";
+     if(kind==="expiry"&&(year<2000||year>current+30))return "";
+     return String(dd).padStart(2,"0")+"/"+String(mm).padStart(2,"0")+"/"+year;
+    };
+    birth=date(codes[1],"birth")||birth;
+    expiry=date(codes[2],"expiry")||expiry;
+   }
+  }
+  return {name,birth,expiry};
+ }
+ function nearby(text,labelPattern,pattern,{maxLines=4}={}){
+  const list=linesOf(text);
+  for(let i=0;i<list.length;i++){
+   if(!labelPattern.test(fold(list[i])))continue;
+   for(let j=i;j<=Math.min(list.length-1,i+maxLines);j++){
+    const t=j===i?list[j].replace(labelPattern,""):list[j];
+    const match=t.match(pattern);
+    if(match)return clean(match[1]||match[0]);
+   }
+  }
+  return "";
+ }
+ const isProbableName=value=>{
+  const text=fold(value);
+  return /^[A-ZÀ-Ú][A-ZÀ-Ú .'’-]{5,95}$/.test(text)&&
+   text.split(/\s+/).length>=2&&
+   !/(ASSINADO|VALIDADE|DOCUMENTO|REPUBLICA|FEDERATIVA|NACIONALIDADE|TERRITORIO|SENATRAN)/.test(text);
+ };
  function detect(text){
   const t=fold(text);
   // Identificadores inequívocos prevalecem sobre termos genéricos
@@ -118,18 +165,28 @@
   const text=String(raw||"").slice(0,160000);
   const chosen=Object.hasOwn(TYPES,type)?type:detect(text);
   const values={};
+  const warnings=[];
   const f=fold(text);
   if(chosen==="cnh"){
+   const mrz=mrzData(text);
    values.nome=nameFrom(text,["NOME(?: E SOBRENOME)?","NOME DO CONDUTOR"])||
     first(text,/(?:\b(?:NOME E SOBRENOME|NOME DO CONDUTOR)[^\n]*\n)([A-ZÀ-Ú][^\n]{5,95})/i);
    values.cpf=formatCPF(firstCPF(text));
-   values.rg=labelled(text,["DOC(?:UMENTO)?(?: DE IDENTIDADE)?","IDENTIDADE","RG"],{min:5,max:50});
-   values.nascimento=dateLabel(text,["DATA DE NASCIMENTO","NASCIMENTO","DT NASCIMENTO"]);
-   values.registro=first(labelled(text,["N(?:UMERO)? DE REGISTRO","REGISTRO","N REGISTRO"],{min:7,max:35}),/\b(\d{9,12})\b/)||
+   const rgCandidate=labelled(text,["(?:4[º°a-z. ]*)?DOC(?:UMENTO)?(?: DE IDENTIDADE)?(?:\s*\/?\s*ORG.*)?","IDENTIDADE","RG"],{min:5,max:50});
+   values.rg=rgCandidate&&/\d{4,}/.test(rgCandidate)&&
+    !/(ASSINADO|DOCUMENTO ASSINADO|EMISSOR)/i.test(rgCandidate)?rgCandidate:"";
+   if(!values.rg)values.rg=nearby(text,/DOC(?:UMENTO)?(?: DE IDENTIDADE)?/,/\b(\d{5,12}(?:\s+[A-Z]{2,6}\s+[A-Z]{2})?)\b/,{maxLines:3});
+   values.nascimento=mrz.birth||dateLabel(text,["DATA DE NASCIMENTO","NASCIMENTO","DT NASCIMENTO"]);
+   values.registro=nearby(text,/\b(?:N\s*REGISTRO|NUMERO DE REGISTRO|REGISTRO DA CNH|REGISTRO)\b/,/\b(\d{9,12})\b/,{maxLines:3})||
+    first(labelled(text,["N(?:UMERO)? DE REGISTRO","REGISTRO","N REGISTRO"],{min:7,max:35}),/\b(\d{9,12})\b/)||
     first(text,/(?:REGISTRO|N REGISTRO)\s*[:\-.]?\s*(\d{9,12})/i);
-   values.categoria=first(text,/(?:CAT(?:EGORIA)?(?: HABILITACAO)?)[\s:\-.]{0,12}((?:ACC|[ABCDE]{1,3}))\b/i);
-   values.validade=dateLabel(text,["VALIDADE","DATA DE VALIDADE"]);
-   values.primeiraHabilitacao=dateLabel(text,["1.? HABILITACAO","PRIMEIRA HABILITACAO"]);
+   values.categoria=nearby(text,/\bCAT(?:EGORIA|\s*HAB(?:ILITACAO)?)\b/,
+    /\b(ACC|A[BE]?|B[CE]?|C[DE]?|D[E]?|E)\b/i,{maxLines:2})||
+    first(text,/(?:CAT(?:EGORIA)?(?: HABILITACAO)?)[\s:\-.]{0,12}((?:ACC|[ABCDE]{1,3}))\b/i);
+   values.validade=mrz.expiry||dateLabel(text,["VALIDADE","DATA DE VALIDADE"]);
+   values.primeiraHabilitacao=dateLabel(text,["1.? HABILITACAO","PRIMEIRA HABILITACAO"]); 
+   if(!isProbableName(values.nome))values.nome=mrz.name||"";
+   if(values.nome&&/\b[A-Z]{1,2}\b/.test(values.nome)&&values.nome===mrz.name)warnings.push("Nome da CNH extraído da MRZ, pode estar abreviado.");
    values.localEmissao=labelled(text,["LOCAL(?: DE EMISSAO)?","LOCAL E DATA"],{min:4,max:75});
   }else if(chosen==="veiculo"){
    values.placa=first(f,/\b([A-Z]{3}[- ]?\d[A-Z0-9]\d{2})\b/).replace(/[-\s]/g,"");
@@ -161,7 +218,7 @@
   }
   return {tipo:chosen,titulo:TYPES[chosen].title,campos:Object.fromEntries(
    (TYPES[chosen].fields||[]).map(([key])=>[key,String(values[key]||"").slice(0,120)])),
-   camposDefinidos:TYPES[chosen].fields, texto:text};
+   camposDefinidos:TYPES[chosen].fields, avisos:warnings, texto:text};
  }
  return Object.freeze({TYPES,detect,extract,validCPF,validCNPJ});
 });

@@ -310,7 +310,10 @@ function pdfRegions(hint,firstPage){
    {name:"Dados do proprietário",rect:[.51,.055,.47,.50]}
   ];
  if(/(?:CNH|HABILITACAO|DRIVER.?S.?LICENSE|PERMISSAO PARA DIRIGIR)/.test(text))
-  return [{name:"Dados da CNH",rect:[.035,.105,.49,.32]}];
+  return [
+   {name:"Dados principais da CNH",rect:[.10,.125,.44,.255]},
+   {name:"Identificação MRZ da CNH",rect:[.115,.62,.42,.14]}
+  ];
  return []; // Outros PDFs: OCR na página inteira quando não houver texto pesquisável.
 }
 function pdfLayoutText(items,pageWidth){

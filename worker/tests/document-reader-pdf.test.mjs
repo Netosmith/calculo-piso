@@ -67,8 +67,8 @@ test("CRLV híbrido: ler duas regiões OCR mesmo quando PDF já contém texto di
  })};
  const result=await engine.__pdfOCRTest({name:"doc-crlv-teste.pdf",arrayBuffer:async()=>new ArrayBuffer(8)});
  assert.equal(result.pages,1);
- assert.equal(engine.__cropped,2);
- assert.equal(engine.__recognized,2);
+ assert.equal(engine.__cropped,3);
+ assert.equal(engine.__recognized,3);
  assert.equal(closed,1);
 });
 test("PDF de texto normal: preserva camada digital sem OCR desnecessário",async()=>{

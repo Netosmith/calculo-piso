@@ -10,11 +10,32 @@
  let loadedTenant="",current=null,busy=false,loadSeq=0;
  const tenant=()=>selected?.id||"";
  function inform(text){$("pedSheetsMessage").textContent=text;}
+ const integrityChecks=data=>{
+  if(!data?.ready||!data.origem||!data.destino)return [];
+  const names=[["","Chamados"],["anexos","Anexos"],["mensagens","Mensagens"],["historico","Histórico"]];
+  return names.map(([key,label])=>{
+   const origem=key?data.origem[key]:data.origem;
+   const destino=key?data.destino[key]:data.destino;
+   const countEqual=origem&&destino&&Number(origem.count)===Number(destino.count);
+   const hashEqual=origem&&destino&&origem.fingerprint===destino.fingerprint;
+   return {label,ok:Boolean(countEqual&&hashEqual),countEqual:Boolean(countEqual),
+    from:origem?.count??"?",to:destino?.count??"?"};
+  });
+ };
+ function drawChecks(data){
+  const area=$("pedSheetsChecks");if(!area)return;
+  area.replaceChildren();
+  for(const check of integrityChecks(data)){
+   const item=document.createElement("span");item.className="ped-sheets-check "+(check.ok?"ok":"warning");
+   item.textContent=(check.ok?"✓ ":"! ")+check.label+": D1 "+check.from+" · Sheets "+check.to+
+    (check.ok?" · conferido":check.countEqual?" · dados diferentes":" · quantidades diferentes");
+   area.append(item);
+  }
+ }
  function controls(){
-  const ready=current?.ready===true,source=current?.origem,dest=current?.destino;
-  const verified=ready&&source&&dest&&source.count===dest.count&&
-    source.fingerprint===dest.fingerprint&&["anexos","mensagens","historico"].every(key=>
-      source[key]?.count===dest[key]?.count&&source[key]?.fingerprint===dest[key]?.fingerprint);
+  const ready=current?.ready===true;
+  const checks=integrityChecks(current);
+  const verified=ready&&checks.length===4&&checks.every(x=>x.ok);
   $("pedSheetsImport").disabled=busy||!ready||current?.mode==="sheets";
   $("pedSheetsActivate").disabled=busy||!verified||current?.mode==="sheets";
   $("pedSheetsStatus").disabled=busy;
@@ -37,18 +58,23 @@
  async function status(){
   const company=tenant(),seq=++loadSeq;
   if(!company)return inform("Selecione uma transportadora.");
-  busy=true;loadedTenant="";current=null;controls();
+  busy=true;loadedTenant="";current=null;controls();drawChecks(null);
   inform("Verificando banco D1, planilha e Apps Script de "+company+"...");
   try{
    const data=await api("status","GET",undefined,company);
    if(seq!==loadSeq||company!==tenant())return;
-   loadedTenant=company;current=data;
+   loadedTenant=company;current=data;drawChecks(data);
+   const checks=integrityChecks(data);
    const d1=data.origem?.count??0,google=data.destino?.count??0;
+   const different=checks.filter(x=>!x.ok);
    if(!data.ready)inform("Apps Script ainda não está pronto. "+(data.aviso||"Atualize a implantação privada antes da importação."));
    else if(data.mode==="sheets")inform("Google Sheets ATIVO para "+company+". "+google+" chamados migrados e vinculados.");
-   else if(d1===google&&data.origem.fingerprint===data.destino.fingerprint&&["anexos","mensagens","historico"].every(k=>data.origem[k]?.count===data.destino[k]?.count&&data.origem[k]?.fingerprint===data.destino[k]?.fingerprint))
-    inform("Integridade conferida. "+d1+" registros iguais no D1 e Google Sheets. Pode ativar.");
-   else inform("D1: "+d1+" chamados. Google Sheets: "+google+". Importe os registros para conferir a integridade.");
+   else if(!different.length&&checks.length===4)
+    inform("Integridade conferida: chamados, anexos, mensagens e histórico coincidem. Botão 3 liberado.");
+   else inform("Ativação protegida: "+different.map(x=>x.label).join(", ")+" ainda não "+
+     (different.length===1?"confere":"conferem")+". "+
+     (different.some(x=>!x.countEqual)?"Há diferenças nas quantidades. ":"As quantidades podem ser iguais, mas o conteúdo/identificadores são diferentes. ")+
+     "Corrija a divergência e clique em Verificar integração. Não ative sem conferência.");
   }catch(error){if(seq===loadSeq)inform(error.message);}
   finally{if(seq===loadSeq){busy=false;controls();}}
  }

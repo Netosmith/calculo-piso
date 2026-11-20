@@ -15,6 +15,7 @@ import { getSession, readSessionId } from "../services/session.js";
 import { errorResponse, success } from "../utils/response.js";
 import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
 import {adminReadProfileAccess} from "../services/profile-access.js";
+import {adminReadPedidosExec} from "../services/pedidos-exec-access.js";
 import { superAdminMonitorDeletion } from "./super-admin-monitor-delete.js";
 
 async function catalogReady(env) {
@@ -101,6 +102,8 @@ export async function superAdminController(request, env, verifiedStagingSession 
   if (path === "/v1/super-admin/modules") return success({modules:TENANT_MODULES});
   const profileAccessPath=path.match(/^\/v1\/super-admin\/transportadoras\/(nova-frota|[a-z0-9-]+)\/profile-access$/);
   if(profileAccessPath && request.method==="GET")return adminReadProfileAccess(env,profileAccessPath[1]);
+   const pedidosExecPath=path.match(/^\/v1\/super-admin\/transportadoras\/(nova-frota|[a-z0-9-]+)\/pedidos-exec-access$/);
+   if(pedidosExecPath&&request.method==="GET")return adminReadPedidosExec(env,pedidosExecPath[1]);
   if (path === "/v1/super-admin/transportadoras") {
     // Até o provisionamento do catálogo, preservar a leitura da empresa legada.
     let legacyModules;

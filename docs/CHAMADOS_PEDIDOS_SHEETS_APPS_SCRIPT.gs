@@ -99,12 +99,19 @@ function cmNow_(){return new Date().toISOString();}
 function cmId_(){return Utilities.getUuid();}
 function cmCell_(value){
  if(value===null||value===undefined)return "";
- var v=String(value);
- // impede fórmulas introduzidas por formulários externos
- return /^[=+\-@]/.test(v)?"'"+v:v;
+ var v=cmRaw_(value);
+ // Força timestamp como TEXTO. Sheets convertia "2026-11-12 22:00:59"
+ // automaticamente em valor de data, divergindo da assinatura do D1.
+ // Continua bloqueando fórmulas introduzidas pelos formulários externos.
+ return /^[=+\-@]/.test(v)||/^\d{4}-\d\d-\d\d[ T]\d\d:\d\d:\d\d/.test(v)?"'"+v:v;
 }
 function cmRaw_(s){
- return String(s===null||s===undefined?"":s);
+ if(s===null||s===undefined)return "";
+ // Dados importados ANTES desta correção podem estar como Date (tipo numérico).
+ // Usar UTC, pois D1 CURRENT_TIMESTAMP grava "YYYY-MM-DD HH:MM:SS" em UTC.
+ if(Object.prototype.toString.call(s)==="[object Date]")
+  return Utilities.formatDate(s,"Etc/GMT","yyyy-MM-dd HH:mm:ss");
+ return String(s);
 }
 function cmSafeText_(str,max,required){
  var value=cmRaw_(str).trim();

@@ -4,29 +4,34 @@ const $=id=>document.getElementById(id);
 const execution=document.body.dataset.pedidosVisao==="execucao";
 const API="https://api.portalfrete.net.br/v1/abertura-pedidos";
 const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],["PENDENTE","Pendente","#e8a01b"],["FINALIZADO","Finalizado","#168a57"]];
-const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT"};
+const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT",comprovante_pagamento:"Comprovante de pagamento",comprovante_guia:"Comprovante de GUIA"};
 const FIELDS=["email","nomeSolicitante","telefoneWhats","unidadeEmbarque","numeroPedidoOC","nfeManifestada","tomadorCnpj","coletaIe","entregaCnpj","entregaIe","freteEmpresa","freteMotorista","adiantamentoPct","icms","produto","especie","tag","obs","coordenadasColeta","coordenadasEntrega"];
 const LABELS=["E-mail","Nome do solicitante","Telefone / Whats","Unidade de embarque","Número do pedido OC","NF-e a manifestar","Tomador / CNPJ","Coleta / IE","Entrega / CNPJ","Entrega / IE","Frete empresa","Frete motorista","Adiantamento %","ICMS","Produto","Espécie","TAG","Observações","Coordenadas coleta","Coordenadas entrega"];
 const KINDS={
  PEDIDO:{title:"Abertura de pedido",short:"Pedido",hint:"Preencha os dados do pedido e anexe os documentos disponíveis."},
  CORRECAO_PEDIDO:{title:"Correção de pedido",short:"Correção",hint:"Informe o pedido e descreva o que deve ser corrigido. A mensagem abre o chat do chamado."},
  CTE_COMPLEMENTAR:{title:"CT-e complementar",short:"CT-e complementar",hint:"Informe o CT-e, descreva o complemento e anexe a liberação do cliente."},
- CARTA_CORRECAO:{title:"Carta de correção",short:"Carta de correção",hint:"Selecione CT-e ou MDF-e e escreva o texto da carta."}
+ CARTA_CORRECAO:{title:"Carta de correção",short:"Carta de correção",hint:"Selecione CT-e ou MDF-e e escreva o texto da carta."},
+ PAGAMENTO:{title:"Solicitação de pagamento",short:"Pagamento",hint:"Informe o CT-e, beneficiário e os dados para PIX IRION ou depósito."},
+ PAGAMENTO_GUIA:{title:"Pagamento de GUIA",short:"GUIA",hint:"Informe o CT-e e a NF. O comprovante será anexado pela execução após finalizar."}
 };
 const EXTRA_LABELS={
  numeroPedidoCorrecao:"Número do pedido",textoCorrecao:"Solicitação de correção",
  numeroCte:"Número do CT-e",descricaoComplemento:"Complemento solicitado",
- documentoTipo:"Tipo de documento",numeroDocumento:"Número do documento",textoCarta:"Texto da carta"
+ documentoTipo:"Tipo de documento",numeroDocumento:"Número do documento",textoCarta:"Texto da carta",
+ ctePagamento:"CT-e",placaPagamento:"Placa",nomeBeneficiario:"Nome",cpfCnpjPagamento:"CPF/CNPJ",formaPagamento:"Forma de pagamento",etapaPagamento:"Adiantamento / Saldo",pixPagamento:"PIX",bancoPagamento:"Banco",agenciaPagamento:"Agência",contaPagamento:"Conta",cteGuia:"CT-e",nfGuia:"NF"
 };
 const EXTRA_FIELDS={
  CORRECAO_PEDIDO:["numeroPedidoCorrecao","textoCorrecao"],
  CTE_COMPLEMENTAR:["numeroCte","descricaoComplemento"],
- CARTA_CORRECAO:["documentoTipo","numeroDocumento","textoCarta"]
+ CARTA_CORRECAO:["documentoTipo","numeroDocumento","textoCarta"],
+ PAGAMENTO:["ctePagamento","placaPagamento","nomeBeneficiario","cpfCnpjPagamento","formaPagamento","etapaPagamento","pixPagamento","bancoPagamento","agenciaPagamento","contaPagamento"],
+ PAGAMENTO_GUIA:["cteGuia","nfGuia"]
 };
 const kindOf=p=>Object.hasOwn(KINDS,p?.tipoSolicitacao)?p.tipoSolicitacao:"PEDIDO";
 const kindTitle=p=>KINDS[kindOf(p)].title;
 const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
- p?.dadosEspecificos?.numeroCte||p?.dadosEspecificos?.numeroDocumento||p?.numeroPedidoOC||"";
+ p?.dadosEspecificos?.numeroCte||p?.dadosEspecificos?.numeroDocumento||p?.dadosEspecificos?.ctePagamento||p?.dadosEspecificos?.cteGuia||p?.numeroPedidoOC||"";
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
@@ -77,10 +82,10 @@ function card(p){
  b.onclick=()=>openDetail(p.id);return b;
 }
 function render(){
- const board=$("tnBoard"),f=$("tnFilter").value,q=$("tnSearch").value.trim().toUpperCase();
+ const board=$("tnBoard"),f=$("tnFilter").value,t=$("tnTypeFilter")?.value||"",q=$("tnSearch").value.trim().toUpperCase();
  board.replaceChildren();
  for(const [key,label,color] of STATES){
-  const rows=chamados.filter(x=>x.status===key&&(!f||f===key)&&matches(x,q));
+  const rows=chamados.filter(x=>x.status===key&&(!f||f===key)&&(!t||kindOf(x)===t)&&matches(x,q));
   const lane=element("section","","cad-lane");lane.style.setProperty("--cad-lane-color",color);
   const head=element("div","","cad-lane-head");
   head.append(element("strong",label),element("span",String(rows.length),"cad-lane-count"));
@@ -93,11 +98,11 @@ function render(){
  const mine=$("tnMine");
  if(mine){
   mine.replaceChildren();
-  const rows=chamados.filter(x=>x.executor===user&&["ANDAMENTO","PENDENTE"].includes(x.status));
+  const rows=chamados.filter(x=>x.executor===user&&["ANDAMENTO","PENDENTE"].includes(x.status)&&(!t||kindOf(x)===t)&&matches(x,q));
   if(!rows.length)mine.append(element("p","Nenhuma solicitação sob sua responsabilidade.","cad-empty"));
   for(const row of rows)mine.append(card(row));
  }
- const button=$("tnDraftButton"),tray=$("tnDrafts"),drafts=chamados.filter(x=>x.status==="RASCUNHO");
+ const button=$("tnDraftButton"),tray=$("tnDrafts"),drafts=chamados.filter(x=>x.status==="RASCUNHO"&&(!t||kindOf(x)===t)&&matches(x,q));
  button.hidden=execution||!drafts.length;button.textContent="Rascunhos ("+drafts.length+")";
  if(!drafts.length)draftsExpanded=false;
  tray.hidden=!draftsExpanded;tray.replaceChildren();

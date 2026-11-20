@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const execution=document.body.dataset.pedidosVisao==="execucao";
 const API="https://api.portalfrete.net.br/v1/abertura-pedidos";
-const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],["PENDENTE","Pendente","#e8a01b"],["FINALIZADO","Finalizado","#168a57"]];
+const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],["PENDENTE","Pendente","#e8a01b"],["FINALIZADO","Finalizado (hoje)","#168a57"]];
 const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT",comprovante_pagamento:"Comprovante de pagamento",comprovante_guia:"Comprovante de GUIA"};
 const FIELDS=["email","nomeSolicitante","telefoneWhats","unidadeEmbarque","numeroPedidoOC","nfeManifestada","tomadorCnpj","coletaIe","entregaCnpj","entregaIe","freteEmpresa","freteMotorista","adiantamentoPct","icms","produto","especie","tag","obs","coordenadasColeta","coordenadasEntrega"];
 const LABELS=["E-mail","Nome do solicitante","Telefone / Whats","Unidade de embarque","Número do pedido OC","NF-e a manifestar","Tomador / CNPJ","Coleta / IE","Entrega / CNPJ","Entrega / IE","Frete empresa","Frete motorista","Adiantamento %","ICMS","Produto","Espécie","TAG","Observações","Coordenadas coleta","Coordenadas entrega"];

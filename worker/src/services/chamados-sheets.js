@@ -80,7 +80,7 @@ function onTodayOrActive(row,today){
  // Compatibilidade para versões antigas. A versão atual do script usa o
  // histórico real da conclusão e já devolve apenas finalizados do dia.
  const raw=String(row.atualizadoEm||"");
- const date=new Date(/^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d/.test(raw)?
+ const date=new Date(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d/.test(raw)?
   raw.replace(" ","T")+"Z":raw);
  return !Number.isNaN(date.getTime())&&saoPauloDay(date)===today;
 }
@@ -269,7 +269,7 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
   if(view==="solicitante"&&request.method==="GET"&&(action==="list"||action==="get")){
    // Contexto privilegiado efêmero gerado apenas pelo Worker autenticado.
    // Nenhum campo privado escapa para a lista pública.
-   const internal={...ctx,superAdmin:true};
+   const internal={...ctx,superAdmin:true,sharedMonitor:action==="list"};
    const result=await callScript(conf,p.id,options.sheetId,action,internal,data,ticketId);
    return success(action==="list"?sharedList(result,p):sharedDetail(result,p));
   }

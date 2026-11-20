@@ -299,3 +299,21 @@ body.pedidos-app #pedAdminRestore{color:#157455;border-color:#64b69d}
 body.pedidos-app [hidden]{display:none!important}
 @media(max-width:620px){body.pedidos-app .pedidos-history-list{grid-template-columns:1fr}
  body.pedidos-app .pedidos-admin-fields{grid-template-columns:1fr}}
+
+/* Solicitações: consultas antigas sob demanda; painel fechado mantém apenas um cabeçalho compacto. */
+body.pedidos-app details.pedidos-history-panel{display:block;overflow:hidden}
+body.pedidos-app .pedidos-history-summary{display:flex;align-items:center;justify-content:space-between;gap:18px;cursor:pointer;padding:16px 20px;list-style:none}
+body.pedidos-app .pedidos-history-summary::-webkit-details-marker{display:none}
+body.pedidos-app .pedidos-history-summary>span:first-child{display:grid;gap:5px}
+body.pedidos-app .pedidos-history-summary strong{font-size:17px;color:#122e48}
+body.pedidos-app .pedidos-history-summary small{font-size:12px;color:#57738e;font-weight:400}
+body.pedidos-app .pedidos-history-summary .eyebrow{font-size:10px;letter-spacing:.15em;color:#098c68}
+body.pedidos-app .pedidos-history-summary-action{color:#126a99;font-size:12px;font-weight:700;white-space:nowrap}
+body.pedidos-app details[open]>.pedidos-history-summary{border-bottom:1px solid #d5e3ef}
+body.pedidos-app .pedidos-history-summary-action span{display:inline-block;transition:transform .2s}
+body.pedidos-app details[open] .pedidos-history-summary-action span{transform:rotate(180deg)}
+body.pedidos-app .pedidos-history-toolbar,body.pedidos-app .pedidos-history-admin,
+body.pedidos-app .pedidos-history-list,body.pedidos-app .pedidos-history-next,
+body.pedidos-app .pedidos-history-panel>.cad-tip{margin-left:18px;margin-right:18px}
+body.pedidos-app .tn-auto-status{font-size:11px;font-weight:600;color:#426b86;align-self:center;white-space:nowrap}
+@media(max-width:680px){body.pedidos-app .pedidos-history-summary{padding:14px;flex-wrap:wrap}body.pedidos-app .tn-auto-status{white-space:normal}}

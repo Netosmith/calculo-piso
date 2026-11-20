@@ -134,6 +134,34 @@ export async function sheetsAdmin(request,env,p,view,flags,executor,kinds,conf,o
     chamados,anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[]});
    return success({importados:result.importados||0,nextOffset:records.length===20?offset+records.length:null,total:meta.count});
   }
+  if(path==="iniciar-vazio"&&request.method==="POST"){
+   // Migração alternativa explícita: nova base vazia, sem importar o D1 antigo.
+   // Nenhum registro/anexo/histórico do D1 é apagado ou modificado.
+   if(options.mode==="sheets")return errorResponse("Google Sheets já está ativo para esta transportadora.",409);
+   const body=await request.json().catch(()=>({}));
+   if(body.confirmacao!=="INICIAR DO ZERO"||body.sheetId!==options.sheetId)
+    return errorResponse("Confirme expressamente a nova base e a planilha desta transportadora.",400);
+   const remote=await callScript(conf,p.id,options.sheetId,"health",ctx);
+   if(remote.schema!==1||remote.transportadora!==p.id)
+    return errorResponse("Apps Script não confirmou a transportadora e a versão correta.",409);
+   const categories=["chamados","anexos","mensagens","historico"];
+   const values=[remote,remote.anexos,remote.mensagens,remote.historico];
+   const emptyFingerprint=await digest("");
+   if(values.some(group=>!group||Number(group.count)!==0||
+      group.fingerprint!==emptyFingerprint))
+    return errorResponse("O Google Sheets não está totalmente vazio. Nenhum dado foi alterado. Verifique chamados, anexos, mensagens e histórico.",409);
+   const old=await d1Fingerprint(db,p.id);
+   const verifiedAt=new Date().toISOString();
+   const config={version:1,sheetId:options.sheetId,mode:"sheets",
+     verifiedAt,actor:p.user,inicio:"base-vazia",
+     d1HistoricoPreservado:{registros:old.count,anexos:old.anexos.count,
+       mensagens:old.mensagens.count,historico:old.historico.count}};
+   await env.TENANT_BRANDS.put(MODE_KEY(p.id),JSON.stringify(config),
+    {httpMetadata:{contentType:"application/json"}});
+   return success({mode:"sheets",sheetId:options.sheetId,inicio:"base-vazia",
+     verifiedAt,d1RegistrosPreservados:old.count,
+     aviso:"Base nova iniciada. O D1 antigo foi preservado sem alterações."});
+  }
   if(path==="ativar"&&request.method==="POST"){
    if(options.mode==="sheets")return success({mode:"sheets",alreadyActive:true});
    const d1=await d1Fingerprint(db,p.id);

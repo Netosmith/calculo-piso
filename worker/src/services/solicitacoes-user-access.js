@@ -67,6 +67,10 @@ async function writeDoc(env,id,usuarios,actor){
 export async function assignSolicProfile(env,id,user,enabled,actor){
  const username=normalize(user);
  if(!TENANT.test(id)||!USER.test(username))throw Error("Usuário ou empresa inválidos.");
+ if(!env?.TENANT_BRANDS){
+  if(enabled)throw Error("Armazenamento R2 indisponível para atribuir SOLICITAÇÕES.");
+  return {usuarios:{},updatedAt:null};
+ }
  const state=await readSolicUserAccess(env,id);
  const usuarios={...state.usuarios};
  if(enabled){

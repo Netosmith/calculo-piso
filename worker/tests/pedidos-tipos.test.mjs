@@ -25,8 +25,9 @@ test("Seis tipos têm validações próprias e a abertura padrão não muda",()=
  assert.throws(()=>normalizedFields({tipoSolicitacao:"CTE_COMPLEMENTAR",
   dadosEspecificos:{numeroCte:"98765",descricaoComplemento:""}}),/Campo obrigatório/);
  const pix={ctePagamento:"CT123",placaPagamento:"ABC1D23",nomeBeneficiario:"Motorista",
-  cpfCnpjPagamento:"12345678901",formaPagamento:"PIX_IRION",etapaPagamento:"ADIANTAMENTO",pixPagamento:"email@pix.com",bancoPagamento:"Banco principal",agenciaPagamento:"0001",contaPagamento:"98765-0"};
+  cpfCnpjPagamento:"12345678901",formaPagamento:"PIX_IRIOM",etapaPagamento:"ADIANTAMENTO",pixPagamento:"email@pix.com",bancoPagamento:"Banco principal",agenciaPagamento:"0001",contaPagamento:"98765-0"};
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:pix}).dadosEspecificos.pixPagamento,"email@pix.com");
+ assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"PIX_IRION"}}).dadosEspecificos.formaPagamento,"PIX_IRIOM");
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:pix}).dadosEspecificos.bancoPagamento,"Banco principal");
  assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,bancoPagamento:""}}),/bancoPagamento/);
  const conjunto=normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,etapaPagamento:"ADIANTAMENTO_E_SALDO"}});
@@ -101,20 +102,22 @@ test("Tela tem seletor padrão Pedido e campos distintos com IDs únicos",()=>{
  assert.ok(js.includes('label.dataset.pedPayment==="bank"||!deposit'));
  const paymentMarkup=html.match(/<select id="pedFormaPagamento"[^>]*>([\s\S]*?)<\/select>/)?.[1]||"";
  const paymentValues=[...paymentMarkup.matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(paymentValues,["PIX_IRION","DEPOSITO"],
+ assert.deepEqual(paymentValues,["PIX_IRIOM","DEPOSITO"],
   "A seleção HTML deve utilizar os mesmos valores aceitos pela API.");
- assert.ok(!html.includes("PIX_IRIOM")&&!js.includes("PIX_IRIOM"),
-  "O valor incorreto PIX_IRIOM não pode reaparecer.");
+ assert.ok(!html.includes("PIX_IRION"),
+  "O identificador incorreto PIX_IRION não pode aparecer no formulário.");
+ assert.ok(js.includes('PIX_IRION:"PIX IRIOM"'),
+  "Chamados antigos devem ser exibidos como PIX IRIOM.");
  for(const formaPagamento of paymentValues){
   const dadosEspecificos={
    ctePagamento:"32312",placaPagamento:"LFT7B43",nomeBeneficiario:"Motorista Teste",
    cpfCnpjPagamento:"04392439255",formaPagamento,etapaPagamento:"ADIANTAMENTO",
-   pixPagamento:formaPagamento==="PIX_IRION"?"92528879":"",
+   pixPagamento:formaPagamento==="PIX_IRIOM"?"92528879":"",
    bancoPagamento:"BRASIL",agenciaPagamento:"3282-4",contaPagamento:"522548-4"
   };
   assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos}).dadosEspecificos.formaPagamento,formaPagamento);
  }
- assert.ok(css.includes('#pedFormaPagamento[data-method="PIX_IRION"]'));
+ assert.ok(css.includes('#pedFormaPagamento[data-method="PIX_IRIOM"]'));
  assert.ok(css.includes('#pedFormaPagamento[data-method="DEPOSITO"]'));
  assert.ok(css.includes('#pedEtapaPagamento[data-stage="ADIANTAMENTO_E_SALDO"]'));
   assert.ok(html.includes('id="pedidoComplementDoc"'));

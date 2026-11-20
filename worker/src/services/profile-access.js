@@ -79,7 +79,7 @@ export async function modulesForProfile(env,id,profile,enabledModules,ownerSuppo
  const permitted=new Set(config.profiles[role]||[]);
  if(role==="SOLICITACOES"){
   const individual=new Set(user?await solicModulesForUser(env,id,user):[]);
-  return enabled.filter(module=>permitted.has(module)&&individual.has(module));
+  return enabled.filter(module=>module==="solicitacao-pedidos"||(permitted.has(module)&&individual.has(module)));
  }
  // Acompanhamento de Chamados é comum a todos os usuários da transportadora;
  // execução continua exclusiva e todos os outros cards preservam sua matriz.

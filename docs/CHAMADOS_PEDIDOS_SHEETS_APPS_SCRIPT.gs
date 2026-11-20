@@ -203,7 +203,6 @@ function cmPublicTicket_(main){
 function cmTicketForAudience_(ss,p,main){
  var ctx=p.context||{};
  var own=ctx.superAdmin===true||main.SOLICITANTE===ctx.user||
-  (ctx.view==="solicitante"&&main.STATUS==="PENDENTE")||
   (ctx.view==="execucao"&&ctx.executor===true&&
    (ctx.allowedKinds||[]).indexOf(cmRaw_(main.TIPO))>=0);
  return own?cmTicket_(ss,main):cmPublicTicket_(main);

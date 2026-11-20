@@ -119,7 +119,7 @@ export async function tenantContextController(request,env){
   const current=await tenantSession(env.TENANTS_DB,request,env);
   if(!current||current.tenant_id!==target)return tenantJsonError("Sessao sem acesso a esta transportadora.",403);
   return success({session:tenantPublicSession(current,
-   await modulesForProfile(env,target,current.role,await enabledModules(env.TENANTS_DB,target),false,current.user_id)))});
+   await modulesForProfile(env,target,current.role,await enabledModules(env.TENANTS_DB,target),false,current.user_id))});
  }catch(error){
   console.error("[TENANT CONTEXT] Unavailable",{type:error?.name||"Error"});
   return tenantJsonError("Nao foi possivel validar o acesso a transportadora.",503);

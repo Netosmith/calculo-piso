@@ -16,7 +16,7 @@ import { errorResponse, success } from "../utils/response.js";
 import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
 import {adminReadProfileAccess} from "../services/profile-access.js";
 import {adminReadPedidosExec} from "../services/pedidos-exec-access.js";
-import {adminReadSolicUserAccess} from "../services/solicitacoes-user-access.js";
+import {adminReadSolicUserAccess,readSolicUserAccess} from "../services/solicitacoes-user-access.js";
 import { superAdminMonitorDeletion } from "./super-admin-monitor-delete.js";
 
 async function catalogReady(env) {
@@ -222,8 +222,11 @@ export async function superAdminController(request, env, verifiedStagingSession 
           Array.isArray(payload?.rows) ? payload.rows :
           Array.isArray(payload?.data?.rows) ? payload.data.rows : null;
         if (!rows) return errorResponse("Formato do cadastro legado nao reconhecido.",502);
+        const solicRoleMap=await readSolicUserAccess(env,tenantId);
         return success({
-          tenantId,usuarios:projectLegacyUsers(rows),origem:"apps-script-legado",
+          tenantId,usuarios:projectLegacyUsers(rows).map(u=>({
+           ...u,perfil:solicRoleMap.usuarios[u.usuario]?"SOLICITACOES":u.perfil
+          })),origem:"apps-script-legado",
           completo:true
         });
       } catch (error) {
@@ -245,10 +248,11 @@ export async function superAdminController(request, env, verifiedStagingSession 
              WHERE c.tenant_id=u.tenant_id AND c.user_id=u.user_id) AS password_set
            FROM portal_tenant_users u WHERE u.tenant_id=? ORDER BY u.user_id LIMIT 500`
       ).bind(tenantId).all();
+      const solicRoleMap=await readSolicUserAccess(env,tenantId);
       return success({
         tenantId,
         usuarios:(result?.results || []).map(u=>({
-          id:u.user_id,perfil:u.role,ativo:u.active===1,senhaConfigurada:Boolean(u.password_set),
+          id:u.user_id,perfil:solicRoleMap.usuarios[u.user_id]?"SOLICITACOES":u.role,ativo:u.active===1,senhaConfigurada:Boolean(u.password_set),
           acessoPronto:u.active===1&&Boolean(u.password_set),dataVinculo:u.created_at
         })),
         origem:"contas-d1",completo:true,

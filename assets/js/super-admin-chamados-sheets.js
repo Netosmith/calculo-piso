@@ -36,8 +36,12 @@
   const ready=current?.ready===true;
   const checks=integrityChecks(current);
   const verified=ready&&checks.length===4&&checks.every(x=>x.ok);
+  const dest=current?.destino;
+  const emptyReady=ready&&[dest,dest?.anexos,dest?.mensagens,dest?.historico].every(
+    item=>item&&Number(item.count)===0);
   $("pedSheetsImport").disabled=busy||!ready||current?.mode==="sheets";
   $("pedSheetsActivate").disabled=busy||!verified||current?.mode==="sheets";
+  $("pedSheetsStartEmpty").disabled=busy||!emptyReady||current?.mode==="sheets";
   $("pedSheetsStatus").disabled=busy;
   $("pedSheetsLink").hidden=!current?.sheetId;
   if(current?.sheetId)
@@ -71,6 +75,10 @@
    else if(data.mode==="sheets")inform("Google Sheets ATIVO para "+company+". "+google+" chamados migrados e vinculados.");
    else if(!different.length&&checks.length===4)
     inform("Integridade conferida: chamados, anexos, mensagens e histórico coincidem. Botão 3 liberado.");
+   else if([data.destino,data.destino?.anexos,data.destino?.mensagens,data.destino?.historico]
+     .every(item=>item&&Number(item.count)===0))
+    inform("A planilha Google Sheets está vazia. Se você quer COMEÇAR DO ZERO, use 3B. Iniciar base vazia. "+
+      "Não precisa importar os "+d1+" chamados antigos: eles ficam preservados exclusivamente no D1.");
    else {
     const missing=Number(google)<Number(d1);
     const reason=different.some(x=>!x.countEqual)?
@@ -105,6 +113,27 @@
   finally{busy=false;controls();}
   await status();
  }
+ async function startEmpty(){
+  const company=tenant();
+  if(busy||!current?.ready||company!==loadedTenant||!current?.sheetId)return;
+  const confirmation=window.prompt(
+   "ATENÇÃO: começar uma base vazia faz o Portal usar o Google Sheets sem importar registros antigos. "+
+   "Os registros anteriores continuam guardados no Cloudflare D1, sem aparecer na nova fila. "+
+   "Para confirmar, digite exatamente: INICIAR DO ZERO"
+  );
+  if(confirmation!=="INICIAR DO ZERO"){
+   inform("Ativação da nova base cancelada: confirmação não informada.");
+   return;
+  }
+  busy=true;controls();inform("Conferindo se todas as abas operacionais estão vazias...");
+  try{
+   const data=await api("iniciar-vazio","POST",{confirmacao:confirmation,sheetId:current.sheetId},company);
+   inform("Nova base Google Sheets ativada: 0 chamados. "+
+     data.d1RegistrosPreservados+" registro(s) antigos preservados no D1 para consulta histórica.");
+  }catch(error){inform("Ativação não realizada: "+error.message);}
+  finally{busy=false;controls();}
+  await status();
+ }
  async function bindSheet(){
   const company=tenant(),id=$("pedSheetsNewId").value.trim();
   if(busy||!/^[A-Za-z0-9_-]{25,120}$/.test(id))
@@ -134,6 +163,7 @@
  $("pedSheetsStatus").onclick=status;
  $("pedSheetsImport").onclick=importAll;
  $("pedSheetsActivate").onclick=activate;
+ $("pedSheetsStartEmpty").onclick=startEmpty;
  document.querySelector('[data-tab="profiles"]')?.addEventListener("click",()=>{
   if(tenant()!==loadedTenant)void status();
  });

@@ -33,7 +33,7 @@ test("somente migração idempotente com comparação de quantidade e fingerprin
  assert.match(controller,/sheetsGateway\(req,p,view,flags,executor,kinds,conf,googleSheets,normalizedFields\)/);
 });
 test("Apps Script preserva upload e download existentes e organiza onze abas",()=>{
- const script=read("docs/CHAMADOS_SHEETS_APPS_SCRIPT.gs");
+ const script=read("docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs");
  for(const tab of ["SOLICITACOES","PEDIDOS_DETALHES","CORRECOES","PAGAMENTOS","ANEXOS",
   "MENSAGENS","HISTORICO","AUDITORIA","EXCLUIDOS","USUARIOS","CONFIG"])
   assert.ok(script.includes(tab),tab);
@@ -44,4 +44,6 @@ test("Apps Script preserva upload e download existentes e organiza onze abas",()
  assert.ok(script.includes('if(p.action==="download")'));
  assert.ok(script.includes("function instalarAuditoriaChamados"));
  assert.ok(script.includes("LockService.getScriptLock"));
+ assert.match(script,/Utilities\.formatDate\(s,"Etc\/GMT","yyyy-MM-dd HH:mm:ss"\)/);
+ assert.match(script,/\^\\d\{4\}-\\d\\d-\\d\\d\[ T\]/);
 });

@@ -62,7 +62,13 @@ const digest=async text=>{
 async function d1Fingerprint(db,tenant){
  const rows=await db.prepare("SELECT id,status,atualizado_em FROM portal_pedidos_tickets WHERE tenant_id=? ORDER BY id").bind(tenant).all();
  const strings=(rows.results||[]).map(x=>[x.id,x.status,x.atualizado_em].join("|")).sort();
- return {count:strings.length,fingerprint:await digest(strings.join("\n"))};
+ const child={};
+ for(const [name,table] of [["anexos","portal_pedidos_docs"],["mensagens","portal_pedidos_messages"],["historico","portal_pedidos_history"]]){
+  const rs=await db.prepare("SELECT id,ticket_id FROM "+table+" WHERE tenant_id=?").bind(tenant).all();
+  const entries=(rs.results||[]).map(x=>x.id+"|"+x.ticket_id).sort();
+  child[name]={count:entries.length,fingerprint:await digest(entries.join("\n"))};
+ }
+ return {count:strings.length,fingerprint:await digest(strings.join("\n")),...child};
 }
 export async function sheetsAdmin(request,env,p,view,flags,executor,kinds,conf,options){
  if(!p.ownerSupport)return errorResponse("Somente Super Admin pode migrar o armazenamento.",403);
@@ -77,7 +83,8 @@ export async function sheetsAdmin(request,env,p,view,flags,executor,kinds,conf,o
    return success({sheetId:options.sheetId,mode:options.mode,
     verifiedAt:options.verifiedAt||null,ready:Boolean(remote),
     origem:await d1Fingerprint(db,p.id),
-    destino:remote?{count:remote.count,fingerprint:remote.fingerprint}:null,
+    destino:remote?{count:remote.count,fingerprint:remote.fingerprint,
+     anexos:remote.anexos,mensagens:remote.mensagens,historico:remote.historico}:null,
     aviso:warning||null});
   }
   if(path==="importar"&&request.method==="POST"){
@@ -120,8 +127,11 @@ export async function sheetsAdmin(request,env,p,view,flags,executor,kinds,conf,o
    if(options.mode==="sheets")return success({mode:"sheets",alreadyActive:true});
    const d1=await d1Fingerprint(db,p.id);
    const sheet=await callScript(conf,p.id,options.sheetId,"health",ctx);
-   if(d1.count!==Number(sheet.count)||d1.fingerprint!==sheet.fingerprint)
-    return errorResponse("Migração incompleta: a quantidade ou atualização dos chamados ainda difere. Importe novamente e confira antes de ativar.",409);
+   const inconsistent=d1.count!==Number(sheet.count)||d1.fingerprint!==sheet.fingerprint||
+    ["anexos","mensagens","historico"].some(name=>!sheet[name]||
+      d1[name].count!==Number(sheet[name].count)||d1[name].fingerprint!==sheet[name].fingerprint);
+   if(inconsistent)
+    return errorResponse("Migração incompleta: chamados, anexos, mensagens ou histórico ainda divergem. Importe novamente e confira antes de ativar.",409);
    const verifiedAt=new Date().toISOString();
    await env.TENANT_BRANDS.put(MODE_KEY(p.id),JSON.stringify({
     version:1,sheetId:options.sheetId,mode:"sheets",verifiedAt,actor:p.user

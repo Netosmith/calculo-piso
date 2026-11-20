@@ -43,7 +43,7 @@ jobs:
       - name: Validar nova camada Google Sheets com preservação do D1
         working-directory: worker
         run: |
-          node --test tests/chamados-sheets.test.mjs
+          node --test tests/chamados-sheets.test.mjs tests/chamados-lista-publica-legado.test.mjs
           node --check < ../docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs
 
       - name: Garantir bucket R2 de logos

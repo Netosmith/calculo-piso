@@ -32,7 +32,7 @@ jobs:
         working-directory: worker
         run: |
           node --test tests/chamados-sheets.test.mjs
-          node --check < ../docs/CHAMADOS_SHEETS_APPS_SCRIPT.gs
+          node --check < ../docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs
 
       - name: Garantir bucket R2 de logos
         working-directory: worker

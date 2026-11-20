@@ -34,7 +34,7 @@ const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
  p?.dadosEspecificos?.numeroCte||p?.dadosEspecificos?.numeroDocumento||p?.dadosEspecificos?.ctePagamento||p?.dadosEspecificos?.cteGuia||p?.numeroPedidoOC||"";
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
-let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
+let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",revisionPending=false,busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
 let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
 const lanes=new Map();
 let boardLoaded=false,refreshInFlight=null,autoTimer=null,lastBoardRefresh=0;
@@ -216,22 +216,27 @@ function setKind(kind,{syncPicker=true}={}){
 }
 function newForm(){
  if(!canCreate)return inform("Configure o Google Drive antes de solicitar documentos.",true);
- draft="";$("tnForm").reset();
+ draft="";revisionPending=false;$("tnForm").reset();
  setKind($("tnKindSelect")?.value||"PEDIDO");
  $("tnFormProgress").textContent="Preencha os campos obrigatórios. Anexos podem ser enviados junto à solicitação.";
  showDialog("tnFormDialog");
 }
 async function resume(row){
  if(execution)return;
- draft=row.id;$("tnForm").reset();setKind(kindOf(row));
+ draft=row.id;revisionPending=row.status==="PENDENTE";$("tnForm").reset();setKind(kindOf(row));
  for(const name of FIELDS)$("tnForm").elements[name].value=row[name]||"";
  for(const name of EXTRA_FIELDS[formKind]||[]){
   const input=$("tnForm").elements[name];
   if(input)input.value=name==="formaPagamento"&&row.dadosEspecificos?.[name]==="PIX_IRION"?"PIX_IRIOM":(row.dadosEspecificos?.[name]||"");
  }
  syncPaymentMethod();
- $("tnFormTitle").textContent="Retomar "+kindTitle(row)+" "+number(row);
- $("tnFormProgress").textContent="Dados editáveis. Os anexos já recebidos são preservados.";
+ $("tnFormTitle").textContent=revisionPending?
+  "Corrigir pendência: "+kindTitle(row)+" "+number(row):
+  "Retomar "+kindTitle(row)+" "+number(row);
+ $("tnEnviar").textContent=revisionPending?"Salvar correções e devolver à fila":"Enviar solicitação";
+ $("tnFormProgress").textContent=revisionPending?
+  "Revise todos os campos. Documentos corrigidos podem ser anexados sem apagar os originais. Ao enviar, o chamado retorna à FILA com o mesmo protocolo.":
+  "Dados editáveis. Os anexos já recebidos são preservados.";
  showDialog("tnFormDialog");
  try{
   const detail=await request("/"+row.id);
@@ -288,7 +293,7 @@ async function submitForm(e){
     return;
    }
   }else{
-   progress.textContent="Salvando alterações do rascunho...";
+   progress.textContent=revisionPending?"Salvando dados corrigidos...":"Salvando alterações do rascunho...";
    await request("/"+draft+"/dados","POST",payload);
   }
   for(let i=0;i<documents.length;i++){
@@ -298,7 +303,11 @@ async function submitForm(e){
   progress.textContent="Encaminhando a solicitação para execução...";
   const result=await request("/"+draft+"/enviar","POST",{});
   hideDialog("tnFormDialog");draft="";
-  inform(KINDS[formKind].title+" "+(result.numero?"#"+String(result.numero).padStart(5,"0"):"")+" encaminhada para a fila.");
+  inform(revisionPending?
+   "Correção registrada: chamado "+(result.numero?"#"+String(result.numero).padStart(5,"0"):"")+
+   " retornou à FILA, aguardando novo executor.":
+   KINDS[formKind].title+" "+(result.numero?"#"+String(result.numero).padStart(5,"0"):"")+" encaminhada para a fila.");
+  revisionPending=false;
   void refresh();
  }catch(error){
   progress.textContent="Envio incompleto. "+error.message+" O rascunho foi preservado.";
@@ -487,6 +496,7 @@ async function openDetail(id){
  $("tnExecution").hidden=!execution;
  $("tnChatForm").hidden=true;
  $("tnPendingUpload").hidden=true;
+ if($("tnPendingCorrection"))$("tnPendingCorrection").hidden=true;
  $("tnAssumir").hidden=!(execution&&executor&&preview?.status==="FILA");
  $("tnStatusForm").hidden=true;
  showDialog("tnDetailDialog");
@@ -548,7 +558,17 @@ async function openDetail(id){
    updateSystemInput();
   }
   $("tnChatForm").hidden=data.consultaPublica===true||["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
-  $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE";
+  $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE"||row.solicitante!==user;
+  const allowCorrection=!execution&&data.consultaPublica!==true&&row.status==="PENDENTE"&&row.solicitante===user;
+  if($("tnPendingCorrection")){
+   $("tnPendingCorrection").hidden=!allowCorrection;
+   $("tnPendingReason").textContent=allowCorrection?
+    (row.motivo||"A execução solicitou correções neste chamado. Revise os dados antes de reenviar."):"";
+   $("tnPendingEdit").onclick=()=>{
+    hideDialog("tnDetailDialog");
+    void resume(row);
+   };
+  }
   showDialog("tnDetailDialog");
  }catch(e){inform(e.message,true);}
 }

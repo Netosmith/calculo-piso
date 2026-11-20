@@ -99,6 +99,21 @@ test("Tela tem seletor padrão Pedido e campos distintos com IDs únicos",()=>{
   assert.ok(html.includes('name="'+campo+'"'),campo);
  }
  assert.ok(js.includes('label.dataset.pedPayment==="bank"||!deposit'));
+ const paymentMarkup=html.match(/<select id="pedFormaPagamento"[^>]*>([\s\S]*?)<\/select>/)?.[1]||"";
+ const paymentValues=[...paymentMarkup.matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(paymentValues,["PIX_IRION","DEPOSITO"],
+  "A seleção HTML deve utilizar os mesmos valores aceitos pela API.");
+ assert.ok(!html.includes("PIX_IRIOM")&&!js.includes("PIX_IRIOM"),
+  "O valor incorreto PIX_IRIOM não pode reaparecer.");
+ for(const formaPagamento of paymentValues){
+  const dadosEspecificos={
+   ctePagamento:"32312",placaPagamento:"LFT7B43",nomeBeneficiario:"Motorista Teste",
+   cpfCnpjPagamento:"04392439255",formaPagamento,etapaPagamento:"ADIANTAMENTO",
+   pixPagamento:formaPagamento==="PIX_IRION"?"92528879":"",
+   bancoPagamento:"BRASIL",agenciaPagamento:"3282-4",contaPagamento:"522548-4"
+  };
+  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos}).dadosEspecificos.formaPagamento,formaPagamento);
+ }
  assert.ok(css.includes('#pedFormaPagamento[data-method="PIX_IRION"]'));
  assert.ok(css.includes('#pedFormaPagamento[data-method="DEPOSITO"]'));
  assert.ok(css.includes('#pedEtapaPagamento[data-stage="ADIANTAMENTO_E_SALDO"]'));

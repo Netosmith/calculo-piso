@@ -129,7 +129,7 @@ export function normalizedFields(b,requester=""){
    const optionalPayment=kind==="PAGAMENTO"&&(
     (extras.formaPagamento==="DEPOSITO"&&key==="pixPagamento")||
     (extras.formaPagamento!=="DEPOSITO"&&["bancoPagamento","agenciaPagamento","contaPagamento"].includes(key)));
-   if(optionalPayment&&!String(extras[key]||"").trim()){result.dadosEspecificos[key]="";continue;}
+   if(optionalPayment){result.dadosEspecificos[key]="";continue;}
    const value=["textoCorrecao","descricaoComplemento","textoCarta"].includes(key)
     ? cleanMultiline(extras[key],max) : clean(extras[key],max);
    if(!value)throw Error("Campo obrigatório ou inválido: "+key);

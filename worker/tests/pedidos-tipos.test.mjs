@@ -31,7 +31,7 @@ test("Seis tipos têm validações próprias e a abertura padrão não muda",()=
  assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,bancoPagamento:""}}),/bancoPagamento/);
  const conjunto=normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,etapaPagamento:"ADIANTAMENTO_E_SALDO"}});
  assert.equal(conjunto.dadosEspecificos.etapaPagamento,"ADIANTAMENTO_E_SALDO");
- assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO"}}),/Campo obrigatório/);
+ assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO",agenciaPagamento:""}}),/agenciaPagamento/);
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO",bancoPagamento:"Banco",agenciaPagamento:"001",contaPagamento:"1234"}}).dadosEspecificos.contaPagamento,"1234");
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO"}}).dadosEspecificos.pixPagamento,"");
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO_GUIA",dadosEspecificos:{cteGuia:"CT1",nfGuia:"NF2"}}).tipoSolicitacao,"PAGAMENTO_GUIA");

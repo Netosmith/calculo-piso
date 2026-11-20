@@ -64,7 +64,7 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
       const record=complete?await makePasswordRecord(body.senha):null;
       await db.batch([
         db.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES (?,?,?,?)")
-          .bind(tenantId,id,body.perfil==="SOLICITACOES"?"OPERACIONAL":body.perfil,complete?1:0),
+          .bind(tenantId,id,body.perfil==="SOLICITACOES"?"PISO":body.perfil,complete?1:0),
         ...(complete?[db.prepare(`INSERT INTO portal_tenant_credentials
           (tenant_id,user_id,password_salt,password_hash,iterations,version)
           VALUES (?,?,?,?,?,?)`).bind(tenantId,id,record.password_salt,record.password_hash,
@@ -97,7 +97,7 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
       const active=body.ativo??Boolean(current.active);
       await db.batch([
         db.prepare("UPDATE portal_tenant_users SET role=?,active=? WHERE tenant_id=? AND user_id=?")
-          .bind(role==="SOLICITACOES"?"OPERACIONAL":role,active?1:0,tenantId,id),
+          .bind(role==="SOLICITACOES"?"PISO":role,active?1:0,tenantId,id),
         await audit(db,actor,tenantId,"membership.update",{usuario:id,perfil:role,ativo:active})
       ]);
       if(Object.hasOwn(body,"perfil"))

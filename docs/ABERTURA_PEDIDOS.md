@@ -37,7 +37,7 @@ O módulo de solicitações de pedidos foi unificado sob o título **SOLICITAÇ�
 
 ### Tipos disponíveis
 - Abertura de pedido (`PEDIDO`), Correção de pedido (`CORRECAO_PEDIDO`), CT-e complementar (`CTE_COMPLEMENTAR`) e Carta de correção (`CARTA_CORRECAO`).
-- Solicitação de pagamento (`PAGAMENTO`): CT-e, placa, nome do beneficiário, CPF/CNPJ, PIX IRION **ou** depósito, chave PIX ou banco/agência/conta, classificação como adiantamento ou saldo.
+- Solicitação de pagamento (`PAGAMENTO`): CT-e, placa, nome do beneficiário, CPF/CNPJ, PIX IRION **ou** depósito, com banco, agência e conta obrigatórios em ambos; a chave PIX só é exigida em PIX IRION. Classificação: adiantamento, saldo ou adiantamento e saldo.
 - Pagamento de GUIA (`PAGAMENTO_GUIA`): CT-e e NF.
 
 O acompanhamento possui filtros independentes por **situação** e **tipo**. Dados específicos de cada categoria ficam no JSON existente, sem renumerar chamados.
@@ -45,7 +45,7 @@ O acompanhamento possui filtros independentes por **situação** e **tipo**. Dad
 ### Fluxo de comprovantes
 - Os chamados financeiros passam por `FILA`, `ANDAMENTO`, `PENDENTE` e `FINALIZADO`.
 - **Somente o executor responsável**, na tela de execução, pode anexar o comprovante de pagamento ou de guia **após a finalização**. O solicitante o visualiza ou baixa nos documentos do protocolo.
-- Formatos: PDF, JPEG, PNG, WebP (até 6 MB por arquivo). É necessário atualizar e reimplantar `docs/CADASTRO_DRIVE_APPS_SCRIPT.gs` no Apps Script de cada transportadora para liberar os dois slots novos.
+- Formatos: PDF, JPEG, PNG, WebP (até 6 MB por arquivo). O Worker envia os comprovantes usando o slot privado já existente `liberacao` e os identifica pelo campo `tipo_anexo`, evitando reimplantar o Apps Script só por causa desses dois tipos de comprovante.
 - A finalização do chamado não significa confirmação automática de transferência bancária: a plataforma registra solicitação e comprovante fornecido.
 
 ### Perfil Pedido Execução por usuário

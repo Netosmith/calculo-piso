@@ -192,7 +192,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
  </section>
 <section class="ped-exec-panel" id="pedSheetsMigrationPanel">
  <h3>Armazenamento de chamados · Google Sheets + Drive</h3>
- <p class="muted">A importação mantém protocolos, anexos e históricos existentes. O banco D1 permanece ativo até que a contagem e a integridade dos registros sejam conferidas. Cada transportadora possui uma planilha própria.</p>
+ <p class="muted">Escolha como iniciar: <strong>Importar</strong> para conservar os chamados do D1 na nova planilha ou <strong>Iniciar base vazia</strong> para fazer novos testes. Os chamados antigos permanecem guardados no D1 em ambos os casos. Cada transportadora tem sua própria planilha.</p>
  <div class="ped-sheets-buttons"><input id="pedSheetsNewId" type="text" maxlength="120" placeholder="ID da planilha para nova transportadora" style="min-width:240px"><button id="pedSheetsBind" type="button" class="ghost">Vincular planilha</button></div>
  <div class="ped-sheets-buttons">
   <button type="button" id="pedSheetsStatus" class="ghost">1. Verificar integração</button>
@@ -1121,7 +1121,7 @@ document.querySelector('[data-tab="settings"]')?.addEventListener('click',loadCa
 <script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
 <script src="../assets/js/super-admin-profile-access.js?v=20261112-2"></script>
 <script src="../assets/js/super-admin-pedidos-perfis.js?v=20261120-1"></script>
-<script src="../assets/js/super-admin-chamados-sheets.js?v=20261120-checks-2"></script>
+<script src="../assets/js/super-admin-chamados-sheets.js?v=20261120-iniciar-zero-1"></script>
 <script src="../assets/js/super-admin-real-preview.js?v=9" defer></script>
 <script src="../assets/js/super-admin-monitor-delete.js?v=1" defer></script>
 <script src="../assets/js/portal-preferences.js?v=9" defer></script>

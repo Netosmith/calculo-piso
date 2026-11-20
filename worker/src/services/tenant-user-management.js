@@ -1,8 +1,9 @@
 import {errorResponse,success} from "../utils/response.js";
 import {makePasswordRecord,normalizeTenantUser,validTenantPassword} from "./tenant-auth.js";
 import {credentialSchemaStatus} from "./super-admin-tenant-credentials.js";
+import {assignSolicProfile,effectiveSolicRole,readSolicUserAccess} from "./solicitacoes-user-access.js";
 
-const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM"]);
+const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","SOLICITACOES"]);
 const MAX_USERS=500;
 const error=(message,status=400)=>errorResponse(message,status);
 const tenantUser=(value)=>normalizeTenantUser(value);
@@ -45,7 +46,10 @@ export async function tenantUsersController(request,env,principal,modules,path){
       WHERE c.tenant_id=u.tenant_id AND c.user_id=u.user_id) AS password_set
      FROM portal_tenant_users u WHERE u.tenant_id=? ORDER BY u.user_id LIMIT 500`)
      .bind(tenant).all();
-   return success({usuarios:(out.results||[]).map(visible)});
+   const configured=await readSolicUserAccess(env,tenant);
+   return success({usuarios:(out.results||[]).map(u=>visible({
+    ...u,role:configured.usuarios[u.user_id]?"SOLICITACOES":u.role
+   }))});
   }catch{return error("Consulta de usuarios indisponivel. Confirme a migracao D1.",503);}
  }
  if(!["POST","PATCH"].includes(request.method))
@@ -71,12 +75,13 @@ export async function tenantUsersController(request,env,principal,modules,path){
    const password=await makePasswordRecord(data.senha);
    await db.batch([
     db.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES (?,?,?,?)")
-     .bind(tenant,id,role,data.ativo?1:0),
+     .bind(tenant,id,role==="SOLICITACOES"?"OPERACIONAL":role,data.ativo?1:0),
     db.prepare(`INSERT INTO portal_tenant_credentials
      (tenant_id,user_id,password_salt,password_hash,iterations,version) VALUES (?,?,?,?,?,?)`)
      .bind(tenant,id,password.password_salt,password.password_hash,password.iterations,password.version),
     await audit(db,tenant,actor,"user.onboard",{usuario:id,perfil:role,ativo:data.ativo,senhaConfigurada:true})
    ]);
+   if(role==="SOLICITACOES")await assignSolicProfile(env,tenant,id,true,actor);
    return success({usuario:{Usuario:id,Nome:id,Perfil:role,Ativo:data.ativo?"SIM":"NÃO",Acesso:data.ativo?"PRONTO":"INATIVO"}},201);
   }catch(ex){
    console.error("[TENANT USERS] create failed",{type:ex?.name||"Error"});
@@ -96,7 +101,7 @@ export async function tenantUsersController(request,env,principal,modules,path){
   const old=await db.prepare("SELECT role,active FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")
     .bind(tenant,id).first();
   if(!old)return error("Usuario nao encontrado nesta transportadora.",404);
-  const role=data.perfil??old.role,active=data.ativo??Boolean(old.active);
+  const role=data.perfil??await effectiveSolicRole(env,tenant,id,old.role),active=data.ativo??Boolean(old.active);
   if(id===actor && (role!=="ADMINISTRADOR" || !active))
    return error("O administrador nao pode desativar seu proprio acesso.",403);
   if(old.role==="ADMINISTRADOR" && (role!=="ADMINISTRADOR" || !active)){
@@ -112,7 +117,7 @@ export async function tenantUsersController(request,env,principal,modules,path){
   const password=reset?await makePasswordRecord(data.senha):null;
   const statements=[
    db.prepare("UPDATE portal_tenant_users SET role=?,active=? WHERE tenant_id=? AND user_id=?")
-    .bind(role,active?1:0,tenant,id)
+    .bind(role==="SOLICITACOES"?"OPERACIONAL":role,active?1:0,tenant,id)
   ];
   if(reset){
    statements.push(db.prepare(`INSERT INTO portal_tenant_credentials
@@ -127,6 +132,8 @@ export async function tenantUsersController(request,env,principal,modules,path){
   statements.push(await audit(db,tenant,actor,"user.update",
     {usuario:id,perfil:role,ativo:active,senhaRedefinida:reset}));
   await db.batch(statements);
+  if(Object.hasOwn(data,"perfil"))
+   await assignSolicProfile(env,tenant,id,role==="SOLICITACOES",actor);
   return success({usuario:{Usuario:id,Nome:id,Perfil:role,Ativo:active?"SIM":"NÃO"}});
  }catch(ex){
   console.error("[TENANT USERS] update failed",{type:ex?.name||"Error"});

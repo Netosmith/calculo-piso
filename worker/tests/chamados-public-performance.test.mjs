@@ -50,7 +50,23 @@ test("protocolo priorizado e UI não aguarda o histórico para renderizar a fila
  assert.doesNotThrow(()=>new Script(client));
  assert.ok(client.includes('enviarAgora:direct'));
  assert.ok(client.includes('result.chamado.status==="FILA"'));
- assert.ok(client.includes('await Promise.all([refresh(),fetchHistoric(true)])'));
+ assert.ok(!client.includes('await Promise.all([refresh(),fetchHistoric(true)])'));
+ assert.ok(client.includes('startAutoRefresh();'));
+ assert.ok(client.includes('window.setInterval(()=>'));
+ assert.ok(client.includes('},30000);'));
+ assert.ok(client.includes('function ensureBoard(){'));
+ assert.ok(client.includes('if(lane.signature!==signature)'));
+ assert.ok(client.includes('hideDialog("tnFormDialog");'));
+ assert.ok(client.includes('if($("tnNew"))$("tnNew").disabled=true;'));
+ assert.ok(client.includes('showDialog("tnFormDialog");'));
+ assert.ok(client.includes('window.addEventListener("beforeunload"'));
+ const solicitation=read("pages/solicitacao-pedidos.html");
+ const execution=read("pages/execucao-pedidos.html");
+ for(const html of [solicitation,execution]){
+  assert.match(html,/<details class="cad-panel pedidos-history-panel" id="pedidosHistoric">/);
+  assert.ok(html.includes('id="tnAutoStatus"'));
+  assert.ok(html.includes("Consultar histórico"));
+ }
  assert.ok(client.includes('void refresh().catch(error=>inform(error.message,true))'));
  assert.ok(client.includes('showDialog("tnDetailDialog")'));
  assert.ok(client.includes('const preview=chamados.find(row=>row.id===id)'));

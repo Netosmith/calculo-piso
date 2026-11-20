@@ -2,16 +2,19 @@
 // O login D1 mantém o papel físico OPERACIONAL para compatibilidade com seu CHECK legado.
 // Esta camada R2 atribui o perfil virtual e a seleção individual dos módulos.
 import {errorResponse,success} from "../utils/response.js";
+import {TENANT_MODULES} from "../config/tenant-modules.js";
+import {NOVA_FROTA_MANAGED_MODULES} from "./nova-frota-modules.js";
 
-export const SOLIC_MODULE_KEYS=Object.freeze([
- "solicitacao-pedidos","execucao-pedidos",
- "cadastro-solicitacoes","execucao-cadastros",
- "solicitacao-troca-notas","execucao-troca-notas"
-]);
-export const SOLIC_DEFAULT_KEYS=Object.freeze(["solicitacao-pedidos","execucao-pedidos"]);
 export const isSolicRequest=key=>key==="cadastro-solicitacoes"||/^solicitacao-[a-z0-9-]+$/.test(String(key||""));
 export const isSolicExecution=key=>/^execucao-[a-z0-9-]+$/.test(String(key||""));
-export const isSolicModule=key=>SOLIC_MODULE_KEYS.includes(key)||isSolicRequest(key)||isSolicExecution(key);
+export const isSolicModule=key=>isSolicRequest(key)||isSolicExecution(key);
+export const SOLIC_MODULE_KEYS=Object.freeze([...new Set([
+ "solicitacao-pedidos","execucao-pedidos",
+ "cadastro-solicitacoes","execucao-cadastros",
+ "solicitacao-troca-notas","execucao-troca-notas",
+ ...[...TENANT_MODULES,...NOVA_FROTA_MANAGED_MODULES].filter(isSolicModule)
+])]);
+export const SOLIC_DEFAULT_KEYS=Object.freeze(["solicitacao-pedidos","execucao-pedidos"]);
 const TENANT=/^(?:nova-frota|[a-z][a-z0-9-]{2,48})$/;
 const USER=/^[A-Z0-9][A-Z0-9._-]{1,79}$/;
 const KEY=id=>"tenant/"+id+"/private/solicitacoes-user-access-v1.json";

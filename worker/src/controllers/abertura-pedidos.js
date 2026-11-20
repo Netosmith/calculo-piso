@@ -133,9 +133,9 @@ export function normalizedFields(b,requester=""){
    const value=["textoCorrecao","descricaoComplemento","textoCarta"].includes(key)
     ? cleanMultiline(extras[key],max) : clean(extras[key],max);
    if(!value)throw Error("Campo obrigatório ou inválido: "+key);
-   result.dadosEspecificos[key]=value;
+   result.dadosEspecificos[key]=kind==="PAGAMENTO"&&key==="formaPagamento"&&value==="PIX_IRION"?"PIX_IRIOM":value;
   }
-  if(kind==="PAGAMENTO"&&(!["PIX_IRION","DEPOSITO"].includes(result.dadosEspecificos.formaPagamento)||
+  if(kind==="PAGAMENTO"&&(!["PIX_IRIOM","DEPOSITO"].includes(result.dadosEspecificos.formaPagamento)||
     !["ADIANTAMENTO","SALDO","ADIANTAMENTO_E_SALDO"].includes(result.dadosEspecificos.etapaPagamento)))
    throw Error("Forma ou etapa do pagamento inválida.");
   if(kind==="CARTA_CORRECAO"&&!["CTE","MDFE"].includes(result.dadosEspecificos.documentoTipo))
@@ -284,13 +284,13 @@ export async function aberturaPedidosController(req,env){
    const max=normal?.[1]||extra?.[1]||120;
    if(!novo||novo.length>max||/[\u0000-\u001f\u007f]/.test(novo))
     return err("Valor corrigido inválido.",400);
-   if(campo==="formaPagamento"&&!["PIX_IRION","DEPOSITO"].includes(novo))return err("Forma de pagamento inválida.",400);
+   if(campo==="formaPagamento"&&!["PIX_IRIOM","DEPOSITO"].includes(novo))return err("Forma de pagamento inválida.",400);
    if(campo==="etapaPagamento"&&!["ADIANTAMENTO","SALDO","ADIANTAMENTO_E_SALDO"].includes(novo))return err("Etapa de pagamento inválida.",400);
    if(campo==="documentoTipo"&&!["CTE","MDFE"].includes(novo))return err("Tipo de documento inválido.",400);
    let statement;
    if(extra){
     let data={};try{data=JSON.parse(row.dados_especificos_json||"{}")}catch{}
-    if(campo==="formaPagamento"&&novo!==data.formaPagamento)
+    if(campo==="formaPagamento"&&novo!==(data.formaPagamento==="PIX_IRION"?"PIX_IRIOM":data.formaPagamento))
      return err("Para mudar a forma de pagamento, crie um novo chamado ou solicite suporte técnico.",409);
     data[campo]=novo;
     statement=db.prepare("UPDATE portal_pedidos_tickets SET dados_especificos_json=?,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=?")

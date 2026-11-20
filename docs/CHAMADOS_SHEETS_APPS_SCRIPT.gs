@@ -61,6 +61,7 @@ function result_(value){return ContentService.createTextOutput(JSON.stringify(va
   SheetId é enviado pelo Worker após autenticação, nunca pelo browser.
   Mantém upload/download legado sem alteração.
 =========================================================== */
+var CM_CACHE_={};
 var CM_SPECS={
  SOLICITACOES:["ID","TRANSPORTADORA","PROTOCOLO","NUMERO","TIPO","STATUS","SOLICITANTE","NOME_SOLICITANTE","EXECUTOR","NUMERO_PEDIDO_SISTEMA","MOTIVO","CRIADO_EM","ATUALIZADO_EM","ENVIADO_EM","EXCLUIDO_EM","EXCLUIDO_POR","MOTIVO_EXCLUSAO"],
  PEDIDOS_DETALHES:["CHAMADO_ID","EMAIL","TELEFONE_WHATS","UNIDADE_EMBARQUE","NUMERO_PEDIDO_OC","NFE_MANIFESTADA","TOMADOR_CNPJ","COLETA_IE","ENTREGA_CNPJ","ENTREGA_IE","FRETE_EMPRESA","FRETE_MOTORISTA","ADIANTAMENTO_PCT","ICMS","PRODUTO","ESPECIE","TAG","OBS","COORDENADAS_COLETA","COORDENADAS_ENTREGA"],
@@ -119,8 +120,9 @@ function cmTab_(ss,name){
  return tab;
 }
 function cmRows_(ss,name){
+ if(CM_CACHE_[name])return CM_CACHE_[name];
  var sh=cmTab_(ss,name),keys=CM_SPECS[name],last=sh.getLastRow();
- if(last<2)return [];
+ if(last<2)return CM_CACHE_[name]=[];
  var values=sh.getRange(2,1,last-1,keys.length).getValues(),all=[];
  values.forEach(function(v,i){
   if(!v[0])return;
@@ -128,7 +130,7 @@ function cmRows_(ss,name){
   keys.forEach(function(k,j){obj[k]=v[j];});
   all.push(obj);
  });
- return all;
+ return CM_CACHE_[name]=all;
 }
 function cmGet_(ss,name,key,value){
  var rows=cmRows_(ss,name);
@@ -144,6 +146,7 @@ function cmPut_(ss,name,data,key){
  });
  if(previous)sheet.getRange(previous.__row,1,1,row.length).setValues([row]);
  else sheet.appendRow(row);
+ delete CM_CACHE_[name];
  return previous;
 }
 function cmCfg_(ss,key){
@@ -495,6 +498,7 @@ function chamadosDispatch_(p,props,tenant){
  var lock=LockService.getScriptLock();
  if(!lock.tryLock(30000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
  try{
+  CM_CACHE_={};
   var ss=cmSheet_(p);
   // Saúde e consultas não alteram registros. Todas as operações de escrita estão
   // serializadas por LockService para preservar números e evitar dupla execução.
@@ -505,4 +509,45 @@ function chamadosDispatch_(p,props,tenant){
   console.warn("Falha no módulo de chamados:",err&&err.name);
   return result_({ok:false,error:cmRaw_(err&&err.message).slice(0,200)});
  }finally{lock.releaseLock();}
+}
+
+/**
+ * Auditoria de edições diretas na planilha.
+ * Execução única pelo proprietário do Apps Script, depois da implantação:
+ * - informe sheetId na função instalarAuditoriaChamados(sheetId).
+ * - exige autorização da conta Google, não usa chaves no código.
+ * - registros criados pelo próprio Apps Script não disparam onEdit.
+ */
+function instalarAuditoriaChamados(sheetId){
+ var ss=SpreadsheetApp.openById(sheetId);
+ var exists=ScriptApp.getProjectTriggers().some(function(t){
+  return t.getHandlerFunction()==="cmOnEdit_"&&
+   t.getTriggerSourceId()===sheetId;
+ });
+ if(!exists)ScriptApp.newTrigger("cmOnEdit_").forSpreadsheet(ss).onEdit().create();
+}
+function cmOnEdit_(event){
+ if(!event||!event.range||!event.source)return;
+ try{
+  var ss=event.source,sh=event.range.getSheet(),name=sh.getName();
+  if(["AUDITORIA","HISTORICO","CONFIG"].indexOf(name)>=0||!CM_SPECS[name])return;
+  var rowIndex=event.range.getRow(),colIndex=event.range.getColumn();
+  if(rowIndex<2||colIndex>CM_SPECS[name].length)return;
+  var key=name==="SOLICITACOES"?"ID":
+    ["PEDIDOS_DETALHES","CORRECOES","PAGAMENTOS","EXCLUIDOS"].indexOf(name)>=0?"CHAMADO_ID":"CHAMADO_ID";
+  var headers=CM_SPECS[name],idColumn=headers.indexOf(key)+1;
+  if(!idColumn)return;
+  var ticketId=String(sh.getRange(rowIndex,idColumn).getValue()||"");
+  if(!ticketId)return;
+  var tenant=cmCfg_(ss,"TENANT_ID");
+  if(!tenant)return;
+  CM_CACHE_={};
+  var after=event.range.getNumRows()===1&&event.range.getNumColumns()===1?
+    String(event.value||""):"Várias células alteradas";
+  var before=event.oldValue===undefined?"Valor anterior indisponível":String(event.oldValue);
+  var column=headers[colIndex-1]||"";
+  cmPut_(ss,"AUDITORIA",{ID:cmId_(),TRANSPORTADORA:tenant,CHAMADO_ID:ticketId,
+   AUTOR:Session.getActiveUser().getEmail()||"EDITOR_PLANILHA",ACAO:"EDICAO_DIRETA",
+   CAMPO:name+"."+column,VALOR_ANTERIOR:before,VALOR_NOVO:after,CRIADO_EM:cmNow_()},"ID");
+ }catch(error){console.warn("Falha ao auditar edição:",error&&error.name);}
 }

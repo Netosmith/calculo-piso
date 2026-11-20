@@ -66,6 +66,8 @@ export async function tenantUsersController(request,env,principal,modules,path){
   const id=tenantUser(data.usuario),role=data.perfil;
   if(!id||!ROLES.has(role)||!validTenantPassword(data.senha)||
     typeof data.ativo!=="boolean")return error("Usuario, perfil, senha ou situacao invalidos. Senha minima: 12 caracteres.",400);
+   if(role==="SOLICITACOES"&&!env.TENANT_BRANDS)
+    return error("Armazenamento R2 necessário para criar SOLICITAÇÕES.",503);
   try{
    const qty=await db.prepare("SELECT COUNT(*) AS n FROM portal_tenant_users WHERE tenant_id=?").bind(tenant).first();
    if(Number(qty?.n)>=MAX_USERS)return error("Limite de usuarios atingido.",409);
@@ -94,6 +96,8 @@ export async function tenantUsersController(request,env,principal,modules,path){
  if(!exactKeys(data,["perfil","ativo","senha"])||Object.keys(data).length===0)
   return error("Campos de edicao invalidos.",400);
  if(Object.hasOwn(data,"perfil")&&!ROLES.has(data.perfil))return error("Perfil invalido.",400);
+ if(data.perfil==="SOLICITACOES"&&!env.TENANT_BRANDS)
+  return error("Armazenamento R2 necessário para atribuir SOLICITAÇÕES.",503);
  if(Object.hasOwn(data,"ativo")&&typeof data.ativo!=="boolean")return error("Situacao invalida.",400);
  if(Object.hasOwn(data,"senha")&&data.senha!==""&&!validTenantPassword(data.senha))
   return error("A senha exige de 12 a 128 caracteres.",400);

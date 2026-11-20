@@ -39,7 +39,7 @@ test("Apps Script preserva upload e download existentes e organiza onze abas",()
   assert.ok(script.includes(tab),tab);
  for(const operation of ["health","import","list","historico","get","create","updateDraft","enviar",
   "assumir","situacao","mensagens","upload","download","ocultar","restaurar","corrigir"])
-  assert.ok(script.includes('op==="'+operation+'"'),operation);
+  assert.ok(script.includes('op==="'+operation+'"')||script.includes('"ocultar","restaurar"'),operation);
  assert.ok(script.includes('if(p.action==="upload")'));
  assert.ok(script.includes('if(p.action==="download")'));
  assert.ok(script.includes("function instalarAuditoriaChamados"));

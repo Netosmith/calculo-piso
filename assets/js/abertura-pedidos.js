@@ -36,6 +36,8 @@ const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
 let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
+const lanes=new Map();
+let boardLoaded=false,refreshInFlight=null,autoTimer=null,lastBoardRefresh=0;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
 function time(value){
@@ -82,19 +84,35 @@ function card(p){
  b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"");
  b.onclick=()=>openDetail(p.id);return b;
 }
-function render(){
- const board=$("tnBoard"),f=$("tnFilter").value,t=$("tnTypeFilter")?.value||"",q=$("tnSearch").value.trim().toUpperCase();
- board.replaceChildren();
+function ensureBoard(){
+ if(lanes.size)return;
+ const board=$("tnBoard");
  for(const [key,label,color] of STATES){
-  const rows=chamados.filter(x=>x.status===key&&(!f||f===key)&&(!t||kindOf(x)===t)&&matches(x,q));
-  const lane=element("section","","cad-lane");lane.style.setProperty("--cad-lane-color",color);
+  const lane=element("section","","cad-lane");
+  lane.style.setProperty("--cad-lane-color",color);
   const head=element("div","","cad-lane-head");
-  head.append(element("strong",label),element("span",String(rows.length),"cad-lane-count"));
-  lane.append(head);
+  const count=element("span","0","cad-lane-count");
+  head.append(element("strong",label),count);
   const items=element("div","","cad-lane-items");
-  if(!rows.length)items.append(element("p","Nenhuma solicitação nesta etapa.","cad-lane-empty"));
-  for(const row of rows)items.append(card(row));
-  lane.append(items);board.append(lane);
+  items.append(element("p","Aguardando atualização...","cad-lane-empty"));
+  lane.append(head,items);board.append(lane);
+  lanes.set(key,{items,count,signature:null});
+ }
+}
+function render(){
+ ensureBoard();
+ const f=$("tnFilter").value,t=$("tnTypeFilter")?.value||"",q=$("tnSearch").value.trim().toUpperCase();
+ for(const [key] of STATES){
+  const rows=chamados.filter(x=>x.status===key&&(!f||f===key)&&(!t||kindOf(x)===t)&&matches(x,q));
+  const lane=lanes.get(key);
+  const signature=JSON.stringify(rows.map(x=>[x.id,x.atualizadoEm,x.status,x.executor,x.nomeSolicitante,x.numeroPedidoOC,x.dadosEspecificos]))+"|"+boardLoaded;
+  lane.count.textContent=String(rows.length);
+  if(lane.signature!==signature){
+   lane.signature=signature;
+   lane.items.replaceChildren(...(rows.length?rows.map(card):[
+    element("p",boardLoaded?"Nenhuma solicitação nesta etapa.":"Carregando chamados...","cad-lane-empty")
+   ]));
+  }
  }
  const mine=$("tnMine");
  if(mine){
@@ -112,14 +130,37 @@ function render(){
   b.type="button";b.onclick=()=>resume(row);tray.append(b);
  }
 }
-async function refresh(){
- const serial=++boardSerial;
- const result=await request();
- if(serial!==boardSerial)return;
- chamados=Array.isArray(result.chamados)?result.chamados:[];
- render();
- // A fila não espera pela consulta ao arquivo.
- if(historyLoaded&&!historyBusy)void fetchHistoric(true);
+function refresh(){
+ if(refreshInFlight)return refreshInFlight;
+ const job=(async()=>{
+  const serial=++boardSerial;
+  try{
+   const result=await request();
+   if(serial!==boardSerial)return;
+   chamados=Array.isArray(result.chamados)?result.chamados:[];
+   boardLoaded=true;lastBoardRefresh=Date.now();
+   render();
+   if($("tnAutoStatus"))
+    $("tnAutoStatus").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+" · automático 30 s";
+  }catch(error){
+   if($("tnAutoStatus"))$("tnAutoStatus").textContent="Falha na atualização · tente novamente";
+   throw error;
+  }
+ })();
+ refreshInFlight=job;
+ void job.finally(()=>{if(refreshInFlight===job)refreshInFlight=null;}).catch(()=>{});
+ return job;
+}
+function startAutoRefresh(){
+ if(autoTimer)return;
+ autoTimer=window.setInterval(()=>{
+  if(!document.hidden&&!refreshInFlight&&!busy&&!actionBusy)
+   void refresh().catch(()=>{});
+ },30000);
+ document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden&&lastBoardRefresh&&Date.now()-lastBoardRefresh>=30000&&!refreshInFlight)
+   void refresh().catch(()=>{});
+ });
 }
 function syncPaymentMethod(){
  const active=formKind==="PAGAMENTO",deposit=$("pedFormaPagamento")?.value==="DEPOSITO";
@@ -226,6 +267,10 @@ async function submitForm(e){
   progress.textContent="Anexe a liberação do cliente para solicitar um CT-e complementar.";return;
  }
  busy=true;button.disabled=true;
+ if($("tnNew"))$("tnNew").disabled=true;
+ // Fecha o formulário antes da rede, mas só confirma sucesso após persistência.
+ hideDialog("tnFormDialog");
+ inform("Enviando solicitação... Aguardando confirmação do protocolo. Mantenha a página aberta.");
  try{
   if(!draft){
    progress.textContent="Registrando o número do protocolo...";
@@ -257,8 +302,13 @@ async function submitForm(e){
   void refresh();
  }catch(error){
   progress.textContent="Envio incompleto. "+error.message+" O rascunho foi preservado.";
+  showDialog("tnFormDialog");
+  inform("Envio não confirmado: "+error.message+" Confira o rascunho antes de tentar novamente.",true);
   void refresh().catch(()=>{});
- }finally{busy=false;button.disabled=false;}
+ }finally{
+  busy=false;button.disabled=false;
+  if($("tnNew"))$("tnNew").disabled=!canCreate;
+ }
 }
 async function fileBlob(id,doc){
  const headers={Accept:doc.mime||"application/octet-stream"};
@@ -518,9 +568,10 @@ async function action(path,data,message){
    if(path==="/assumir"){$("tnAssumir").hidden=true;$("tnStatusForm").hidden=false;}
   }
   inform(message||"Alteração salva.");
-  // Atualizações em paralelo depois que a escrita foi confirmada.
+  // Recarregar a fila não exige reabrir a consulta completa do chamado.
   void refresh().catch(error=>inform(error.message,true));
-  void openDetail(id);
+  if(path==="/situacao")hideDialog("tnDetailDialog");
+  else if(path==="/assumir"||path==="/mensagens")void openDetail(id);
  }catch(e){inform(e.message,true);}
  finally{actionBusy=false;$("tnAssumir").disabled=false;}
 }
@@ -539,7 +590,8 @@ async function extraDocument(){
  catch(e){inform(e.message,true);}
 }
 async function boot(){
- $("tnBoard").replaceChildren(element("p","Carregando chamados da transportadora...","cad-empty"));
+ ensureBoard();render();
+ if($("tnAutoStatus"))$("tnAutoStatus").textContent="Atualização automática a cada 30 segundos";
  try{
   const auth=window.portalAuthReady?await window.portalAuthReady:null;
   const session=window.__PORTAL_TENANT_SESSION||auth?.session||auth;
@@ -565,10 +617,14 @@ async function boot(){
   if($("tnSwitch"))$("tnSwitch").hidden=!executor;
   if($("tnNew"))$("tnNew").disabled=!canCreate;
   if(!canCreate)inform("Configure o Google Drive da transportadora no Super Admin antes de usar os anexos.",true);
-  await Promise.all([refresh(),fetchHistoric(true)]);
+  startAutoRefresh();
+  await refresh();
  }catch(e){
   if($("tnNew"))$("tnNew").disabled=true;
-  $("tnBoard").replaceChildren(element("p",e.message,"cad-empty"));
+  ensureBoard();
+  if($("tnAutoStatus"))$("tnAutoStatus").textContent="Não foi possível carregar.";
+  if(!boardLoaded)for(const lane of lanes.values())
+   lane.items.replaceChildren(element("p",e.message,"cad-lane-empty"));
   inform(e.message,true);
  }
 }

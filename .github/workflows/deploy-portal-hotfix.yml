@@ -225,6 +225,16 @@ jobs:
             npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "ALTER TABLE portal_pedidos_docs ADD COLUMN tipo_anexo TEXT NOT NULL DEFAULT '';"
           fi
           npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "CREATE INDEX IF NOT EXISTS idx_pedidos_categoria_chamado ON portal_pedidos_tickets(tenant_id,categoria_chamado,status,atualizado_em DESC);"
+          # Remoção reversível e consulta independente dos finalizados.
+          for col in excluido_em excluido_por excluido_motivo; do
+            if npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "SELECT $col FROM portal_pedidos_tickets LIMIT 0;" >/dev/null 2>&1; then
+              echo "Campo $col já disponível."
+            else
+              npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "ALTER TABLE portal_pedidos_tickets ADD COLUMN $col TEXT NOT NULL DEFAULT '';"
+            fi
+          done
+          npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "CREATE INDEX IF NOT EXISTS idx_pedidos_historico_finalizados ON portal_pedidos_tickets(tenant_id,status,excluido_em,atualizado_em DESC,id DESC);"
+
 
       - name: Publicar Worker
         working-directory: worker

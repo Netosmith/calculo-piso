@@ -12,7 +12,7 @@ const KINDS={
  CORRECAO_PEDIDO:{title:"Correção de pedido",short:"Correção",hint:"Informe o pedido e descreva o que deve ser corrigido. A mensagem abre o chat do chamado."},
  CTE_COMPLEMENTAR:{title:"CT-e complementar",short:"CT-e complementar",hint:"Informe o CT-e, descreva o complemento e anexe a liberação do cliente."},
  CARTA_CORRECAO:{title:"Carta de correção",short:"Carta de correção",hint:"Selecione CT-e ou MDF-e e escreva o texto da carta."},
- PAGAMENTO:{title:"Solicitação de pagamento",short:"Pagamento",hint:"Informe o CT-e, beneficiário e os dados para PIX IRION ou depósito."},
+ PAGAMENTO:{title:"Solicitação de pagamento",short:"Pagamento",hint:"Informe o CT-e, beneficiário e os dados para PIX IRIOM ou depósito."},
  PAGAMENTO_GUIA:{title:"Pagamento de GUIA",short:"GUIA",hint:"Informe o CT-e e a NF. O comprovante será anexado pela execução após finalizar."}
 };
 const EXTRA_LABELS={
@@ -183,7 +183,7 @@ async function resume(row){
  for(const name of FIELDS)$("tnForm").elements[name].value=row[name]||"";
  for(const name of EXTRA_FIELDS[formKind]||[]){
   const input=$("tnForm").elements[name];
-  if(input)input.value=row.dadosEspecificos?.[name]||"";
+  if(input)input.value=name==="formaPagamento"&&row.dadosEspecificos?.[name]==="PIX_IRION"?"PIX_IRIOM":(row.dadosEspecificos?.[name]||"");
  }
  syncPaymentMethod();
  $("tnFormTitle").textContent="Retomar "+kindTitle(row)+" "+number(row);
@@ -432,7 +432,7 @@ async function openDetail(id){
    for(const name of EXTRA_FIELDS[kind]||[]){
     if(kind==="PAGAMENTO"&&name==="pixPagamento"&&extras.formaPagamento==="DEPOSITO")continue;
     const value=name==="formaPagamento"?
-      ({PIX_IRION:"PIX IRION",DEPOSITO:"Depósito bancário"}[extras[name]]||extras[name]):
+      ({PIX_IRIOM:"PIX IRIOM",PIX_IRION:"PIX IRIOM",DEPOSITO:"Depósito bancário"}[extras[name]]||extras[name]):
       name==="etapaPagamento"?
       ({ADIANTAMENTO:"Adiantamento",SALDO:"Saldo",ADIANTAMENTO_E_SALDO:"Adiantamento e Saldo"}[extras[name]]||extras[name]):
       extras[name];

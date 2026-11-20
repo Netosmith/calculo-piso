@@ -253,7 +253,7 @@ export async function aberturaPedidosController(req,env){
    const motivo=clean(body.motivo,400);
    if(!motivo||motivo.length<8)return err("Informe motivo com pelo menos 8 caracteres.",400);
    const removing=action==="ocultar";
-   if(Boolean(row.excluido_em)===!removing)return err("Chamado já está nesta situação.",409);
+   if(removing ? Boolean(row.excluido_em) : !row.excluido_em)return err("Chamado já está nesta situação.",409);
    const sql=removing?
     "UPDATE portal_pedidos_tickets SET excluido_em=CURRENT_TIMESTAMP,excluido_por=?,excluido_motivo=?,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND excluido_em=''":
     "UPDATE portal_pedidos_tickets SET excluido_em='',excluido_por='',excluido_motivo='',atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND excluido_em<>''";

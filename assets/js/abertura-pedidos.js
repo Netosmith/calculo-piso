@@ -118,9 +118,12 @@ async function refresh(){
 }
 function syncPaymentMethod(){
  const active=formKind==="PAGAMENTO",deposit=$("pedFormaPagamento")?.value==="DEPOSITO";
+ const method=$("pedFormaPagamento"),stage=$("pedEtapaPagamento");
+ if(method)method.dataset.method=method.value;
+ if(stage)stage.dataset.stage=stage.value;
  const group=$("pedidoExtraFields");if(!group)return;
  for(const label of group.querySelectorAll("[data-ped-payment]")){
-  const visible=active&&(label.dataset.pedPayment==="bank"?deposit:!deposit);
+  const visible=active&&(label.dataset.pedPayment==="bank"||!deposit);
   label.hidden=!visible;const input=label.querySelector("input");
   if(input){input.disabled=!visible;input.required=visible;}
  }
@@ -412,6 +415,7 @@ if($("tnKindSelect")){
  $("tnKindSelect").dataset.kind="PEDIDO";
 }
 if($("pedFormaPagamento"))$("pedFormaPagamento").onchange=syncPaymentMethod;
+if($("pedEtapaPagamento"))$("pedEtapaPagamento").onchange=syncPaymentMethod;
 if($("tnNew"))$("tnNew").onclick=newForm;
 if($("tnForm"))$("tnForm").onsubmit=submitForm;
 $("tnAssumir").onclick=()=>action("/assumir",{},"Solicitação assumida.");

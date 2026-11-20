@@ -119,6 +119,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 .profile-access-item:has(input:disabled){opacity:.72;cursor:default}
 .profile-access-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:16px}
 .profile-access-footer p{margin:0;color:#c1e2f5}
+.ped-exec-panel{margin-top:24px;padding:18px;border:1px solid #355c76;border-radius:16px;background:#0b2135}.ped-exec-panel h3{margin:0 0 8px}.ped-exec-input{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:16px 0}.ped-exec-input label{display:grid;gap:6px;min-width:260px;font-weight:700}.ped-exec-input input{background:#f7fbff;color:#112d44;border:1px solid #9abbd1;border-radius:10px;padding:11px}.ped-exec-kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.ped-exec-kinds label{padding:10px;border:1px solid #315775;border-radius:10px;background:#102c43;font-size:13px}.ped-exec-list{display:grid;gap:7px;margin:15px 0}.ped-exec-user{display:flex;gap:10px;align-items:center;border-bottom:1px solid #24455e;padding:7px}.ped-exec-user span{flex:1;font-size:12px;overflow-wrap:anywhere}
 </style>
 </head>
 <body class="super-admin-shell">
@@ -172,6 +173,21 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
   <button id="saveProfileAccess" type="button" disabled>Salvar perfis e acessos</button>
  </div>
  <p class="muted">Ao salvar, a regra passa a ser usada pelo Worker e pelo Portal. PISO continua sem acesso aos dados operacionais da Home. Alguns recursos de execução de solicitações exigem, além deste módulo, a autorização de executor.</p>
+ <section class="ped-exec-panel">
+  <h3>Perfil: Pedido Execução</h3>
+  <p class="muted">Classifique os tipos de chamados que cada usuário pode visualizar e executar. O módulo Execução de Solicitações deve estar liberado para a transportadora e para o perfil principal. Após a primeira gravação, usuários não listados deixam de ver a fila.</p>
+  <div class="ped-exec-input"><label for="pedExecUsuario">Usuário (login exato)<input id="pedExecUsuario" maxlength="80" placeholder="Ex.: FINANCEIRO01" autocomplete="off"></label><button id="pedExecAssign" type="button">Adicionar / atualizar usuário</button></div>
+  <div class="ped-exec-kinds">
+   <label><input type="checkbox" data-ped-exec-kind="PEDIDO"> Abertura de pedido</label>
+   <label><input type="checkbox" data-ped-exec-kind="CORRECAO_PEDIDO"> Correção de pedido</label>
+   <label><input type="checkbox" data-ped-exec-kind="CTE_COMPLEMENTAR"> CT-e complementar</label>
+   <label><input type="checkbox" data-ped-exec-kind="CARTA_CORRECAO"> Carta de correção</label>
+   <label><input type="checkbox" data-ped-exec-kind="PAGAMENTO"> Solicitação de pagamento</label>
+   <label><input type="checkbox" data-ped-exec-kind="PAGAMENTO_GUIA"> Pagamento de GUIA</label>
+  </div>
+  <div id="pedExecList" class="ped-exec-list"></div>
+  <div class="profile-access-footer"><p id="pedExecStatus" role="status">Selecione uma transportadora para configurar os executores.</p><button id="pedExecSave" type="button" disabled>Salvar perfis de execução</button></div>
+ </section>
 </div>
 <div id="users" class="tab" hidden><h2>Usuários e vínculos da transportadora</h2><p class="muted">Nas novas empresas, o novo cadastro cria usuário ativo e senha. Para usuários antigos, use "Definir senha e ativar". A Nova Frota continua no cadastro original.</p><div class="row"><button id="addMembership" type="button" disabled>+ Novo usuário</button><input id="userSearch" type="search" placeholder="Buscar usuário, nome ou perfil" aria-label="Buscar usuários"><button id="refreshUsers" type="button">Atualizar lista</button></div><p class="muted" id="userSource">Consulta somente leitura. Nenhuma alteração de acesso está habilitada.</p><div id="userList" class="empty">Selecione uma transportadora para carregar os usuários.</div></div>
 <div id="brand" class="tab" hidden>
@@ -1087,6 +1103,7 @@ document.querySelector('[data-tab="settings"]')?.addEventListener('click',loadCa
 </script>
 <script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
 <script src="../assets/js/super-admin-profile-access.js?v=20261112-2"></script>
+<script src="../assets/js/super-admin-pedidos-perfis.js?v=20261120-1"></script>
 <script src="../assets/js/super-admin-real-preview.js?v=9" defer></script>
 <script src="../assets/js/super-admin-monitor-delete.js?v=1" defer></script>
 <script src="../assets/js/portal-preferences.js?v=9" defer></script>

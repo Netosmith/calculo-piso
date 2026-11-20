@@ -40,7 +40,9 @@ test("Solicitações pode consultar/executar somente seus módulos individualmen
  }),env,"OWNER","nova-frota");
  assert.equal(resp.status,200);
  assert.deepEqual(await modulesForProfile(env,"nova-frota","SOLICITACOES",other,false,"OUTRO"),
-   ["cadastro-solicitacoes","execucao-cadastros"]);
+   ["solicitacao-pedidos","cadastro-solicitacoes","execucao-cadastros"]);
+ assert.equal(await profileAllowsModule(env,"nova-frota","SOLICITACOES","solicitacao-pedidos",false,"OUTRO"),false,
+  "Pode acompanhar a fila comum sem poder criar novos chamados");
  assert.equal(await profileAllowsModule(env,"nova-frota","SOLICITACOES","execucao-pedidos",false,"OUTRO"),false);
  assert.equal(await profileAllowsModule(env,"nova-frota","SOLICITACOES","execucao-cadastros",false,"OUTRO"),true);
  // Ainda depende de o módulo estar ativo na transportadora.

@@ -39,7 +39,7 @@ export async function readSolicUserAccess(env,id){
 }
 export async function effectiveSolicRole(env,id,user,physicalRole){
  const profile=String(physicalRole||"").trim().toUpperCase();
- if(profile==="SOLICITACOES")return profile;
+ if(profile==="SOLICITACOES"||!env?.TENANT_BRANDS)return profile;
  const data=await readSolicUserAccess(env,id);
  return has(data.usuarios,normalize(user))?"SOLICITACOES":profile;
 }

@@ -41,6 +41,8 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
       const body=await readBody(request,["usuario","perfil","senha"]);
       const id=normalizeUser(body.usuario);
       if(!id || !ROLES.has(body.perfil))return errorResponse("Usuario ou perfil invalido.",400);
+      if(body.perfil==="SOLICITACOES"&&!env.TENANT_BRANDS)
+       return errorResponse("Configuração R2 necessária para o perfil SOLICITAÇÕES.",503);
       const complete=Object.hasOwn(body,"senha");
       if(complete && (!validTenantPassword(body.senha) ||
           env.SUPER_ADMIN_CREDENTIAL_WRITES!=="enabled"))
@@ -84,6 +86,8 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
         return errorResponse("Nenhuma alteracao informada.",400);
       if(Object.hasOwn(body,"perfil") && !ROLES.has(body.perfil))
         return errorResponse("Perfil invalido.",400);
+      if(body.perfil==="SOLICITACOES"&&!env.TENANT_BRANDS)
+        return errorResponse("Configuração R2 necessária para o perfil SOLICITAÇÕES.",503);
       if(Object.hasOwn(body,"ativo") && typeof body.ativo!=="boolean")
         return errorResponse("Status de vinculo invalido.",400);
       const current=await db.prepare("SELECT role,active FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")

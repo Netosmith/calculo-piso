@@ -1,4 +1,5 @@
 import {profileAllowsModule} from "../services/profile-access.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 import {ALLOWED_ORIGINS} from "../config.js";
 import {errorResponse,success} from "../utils/response.js";
 import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
@@ -94,12 +95,12 @@ async function principalFor(request,env){
   return o?{tenantId:o.tenant_id,user:o.user_id,role:o.role,ownerSupport:true}:null;
  }
  if(hasTenantSessionCookie(request)){
-  const s=await tenantSession(env.TENANTS_DB,request);
+  const s=await tenantSession(env.TENANTS_DB,request,env);
   return s?{tenantId:s.tenant_id,user:s.user_id,role:s.role}:null;
  }
  const s=await getSession(env,readSessionId(request));
  return s&&tenantIdForLegacySession(s)===LEGACY_NOVA_FROTA.id?
-  {tenantId:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil,
+  {tenantId:LEGACY_NOVA_FROTA.id,user:s.usuario,role:await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,s.usuario,s.perfil),
    ownerSupport:Boolean(env.SUPER_ADMIN_USER)&&
     String(s.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase()
   }:null;
@@ -159,10 +160,10 @@ export async function cadastroController(request,env){
  if(!p)return err("Sessão inválida.",401);
  const db=env.TENANTS_DB;
  const access=await modulesForCadastros(env,p.tenantId);
- access.solicitar=access.solicitar&&await profileAllowsModule(env,p.tenantId,p.role,"cadastro-solicitacoes",p.ownerSupport===true);
- access.executar=access.executar&&await profileAllowsModule(env,p.tenantId,p.role,"execucao-cadastros",p.ownerSupport===true);
+ access.solicitar=access.solicitar&&await profileAllowsModule(env,p.tenantId,p.role,"cadastro-solicitacoes",p.ownerSupport===true,p.user);
+ access.executar=access.executar&&await profileAllowsModule(env,p.tenantId,p.role,"execucao-cadastros",p.ownerSupport===true,p.user);
  const conf=await configFor(env,p.tenantId);
- const executor=access.executar&&isExecutor(p,conf);
+ const executor=access.executar&&(p.role==="SOLICITACOES"||p.ownerSupport===true||isExecutor(p,conf));
  const url=new URL(request.url);
  const path=url.pathname.slice("/v1/cadastro-solicitacoes".length);
  const view=url.searchParams.get("visao")||"solicitante";

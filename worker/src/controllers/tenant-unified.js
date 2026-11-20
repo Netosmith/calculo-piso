@@ -15,6 +15,7 @@ import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 import {tenantUsersController} from "../services/tenant-user-management.js";
 import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
 import {modulesForProfile} from "../services/profile-access.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 import {readTenantVisual} from "../services/tenant-visual-assets.js";
 
 export const tenantPortalEnabled=env=>env?.TENANT_PORTAL_ENABLED==="enabled" && Boolean(env.TENANTS_DB);
@@ -55,9 +56,10 @@ export async function tenantLoginController(request,env,body){
   const tenant=await env.TENANTS_DB.prepare("SELECT name FROM portal_tenants WHERE id=?").bind(tenantId).first();
   const member=await env.TENANTS_DB.prepare("SELECT role FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")
     .bind(tenantId,usuario).first();
-  const modules=await modulesForProfile(env,tenantId,member?.role||"OPERACIONAL",await enabledModules(env.TENANTS_DB,tenantId));
+  const role=await effectiveSolicRole(env,tenantId,usuario,member?.role||"OPERACIONAL");
+   const modules=await modulesForProfile(env,tenantId,role,await enabledModules(env.TENANTS_DB,tenantId),false,usuario);
   const session=tenantPublicSession({
-   tenant_id:tenantId,tenant_name:tenant?.name||tenantId,user_id:usuario,role:member?.role||"OPERACIONAL"
+   tenant_id:tenantId,tenant_name:tenant?.name||tenantId,user_id:usuario,role
   },modules);
   const response=success({session,requiresStateSelection:false});
   response.headers.append("Set-Cookie",tenantSessionCookie(result.session.token));
@@ -86,12 +88,12 @@ export function tenantPublicSession(principal,modules=[]){
 }
 export async function currentTenantPrincipal(request,env){
  if(!tenantPortalEnabled(env))return null;
- return tenantSession(env.TENANTS_DB,request);
+ return tenantSession(env.TENANTS_DB,request,env);
 }
 export async function tenantSessionController(request,env){
  const principal=await currentTenantPrincipal(request,env);
  if(!principal)return tenantJsonError("Sessao da transportadora invalida ou expirada.",401);
- return success({session:tenantPublicSession(principal,await modulesForProfile(env,principal.tenant_id,principal.role,await enabledModules(env.TENANTS_DB,principal.tenant_id),principal.owner_support===true))});
+ return success({session:tenantPublicSession(principal,await modulesForProfile(env,principal.tenant_id,principal.role,await enabledModules(env.TENANTS_DB,principal.tenant_id),principal.owner_support===true,principal.user_id))});
 }
 export async function tenantLogoutController(request,env){
  if(env.TENANTS_DB){
@@ -113,11 +115,11 @@ export async function tenantContextController(request,env){
  try{
   const owner=await ownerSupportPrincipal(request,env,target);
   if(owner)return success({session:tenantPublicSession(owner,
-   await modulesForProfile(env,target,owner.role,await enabledModules(env.TENANTS_DB,target),true))});
-  const current=await tenantSession(env.TENANTS_DB,request);
+   await modulesForProfile(env,target,owner.role,await enabledModules(env.TENANTS_DB,target),true,owner.user_id))});
+  const current=await tenantSession(env.TENANTS_DB,request,env);
   if(!current||current.tenant_id!==target)return tenantJsonError("Sessao sem acesso a esta transportadora.",403);
   return success({session:tenantPublicSession(current,
-   await modulesForProfile(env,target,current.role,await enabledModules(env.TENANTS_DB,target)))});
+   await modulesForProfile(env,target,current.role,await enabledModules(env.TENANTS_DB,target),false,current.user_id)))});
  }catch(error){
   console.error("[TENANT CONTEXT] Unavailable",{type:error?.name||"Error"});
   return tenantJsonError("Nao foi possivel validar o acesso a transportadora.",503);
@@ -154,11 +156,11 @@ export async function tenantApiController(request,env){
     principal=await ownerSupportPrincipal(request,env,supportTarget);
     if(!principal)return tenantJsonError("Acesso exclusivo do proprietario.",403);
   }else{
-    principal=await tenantSession(env.TENANTS_DB,request);
+    principal=await tenantSession(env.TENANTS_DB,request,env);
   }
   if(!principal)return tenantJsonError("Sessao invalida ou transportadora inativa.",401);
   const modules=await modulesForProfile(env,principal.tenant_id,principal.role,
-    await enabledModules(env.TENANTS_DB,principal.tenant_id),principal.owner_support===true);
+    await enabledModules(env.TENANTS_DB,principal.tenant_id),principal.owner_support===true,principal.user_id);
   if(path==="/v1/tenant/me"&&request.method==="GET")
    return success({session:tenantPublicSession(principal,modules)});
   // Except for its own identity and logo, PISO cannot access any tenant

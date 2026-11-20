@@ -249,9 +249,16 @@ export async function aberturaPedidosController(req,env){
     pagina:pageRaw,escopo:admin?"todos":"finalizados",removidos:removed});
   }
   if((path===""||path==="/")&&req.method==="GET"){
+   // Finalizações do dia em Goiás/Brasília. O evento FINALIZADO evita confundir
+   // pagamentos/comprovantes anexados depois com a data de conclusão.
+   const finalizedToday="EXISTS (SELECT 1 FROM portal_pedidos_history final_event WHERE "+
+    "final_event.tenant_id=portal_pedidos_tickets.tenant_id AND "+
+    "final_event.ticket_id=portal_pedidos_tickets.id AND "+
+    "final_event.status='FINALIZADO' AND "+
+    "date(final_event.criado_em,'-3 hours')=date('now','-3 hours'))";
    const list=execView?
-    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND status NOT IN ('RASCUNHO','FINALIZADO') AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
-    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status<>'RASCUNHO' OR solicitante_id=?) ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
+    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status NOT IN ('RASCUNHO','FINALIZADO') OR (status='FINALIZADO' AND "+finalizedToday+")) AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
+    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status<>'RASCUNHO' OR solicitante_id=?) AND (status<>'FINALIZADO' OR "+finalizedToday+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
    return success({chamados:(list.results||[]).map(row=>(p.ownerSupport||row.solicitante_id===p.user||execView&&executor)?ticketView(row):publicTicket(row)),executor});
   }
   if((path===""||path==="/")&&req.method==="POST"){

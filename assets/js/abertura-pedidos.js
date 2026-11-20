@@ -235,7 +235,7 @@ async function resume(row){
   "Retomar "+kindTitle(row)+" "+number(row);
  $("tnEnviar").textContent=revisionPending?"Salvar correções e devolver à fila":"Enviar solicitação";
  $("tnFormProgress").textContent=revisionPending?
-  "Revise todos os campos. Documentos corrigidos podem ser anexados sem apagar os originais. Ao enviar, o chamado retorna à FILA com o mesmo protocolo.":
+  "Qualquer usuário desta transportadora pode corrigir a pendência. Revise os campos e anexe documentos novos se necessário. Ao enviar, o chamado retorna à FILA com o mesmo protocolo.":
   "Dados editáveis. Os anexos já recebidos são preservados.";
  showDialog("tnFormDialog");
  try{
@@ -558,8 +558,8 @@ async function openDetail(id){
    updateSystemInput();
   }
   $("tnChatForm").hidden=data.consultaPublica===true||["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
-  $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE"||row.solicitante!==user;
-  const allowCorrection=!execution&&data.consultaPublica!==true&&row.status==="PENDENTE"&&row.solicitante===user;
+  $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE";
+  const allowCorrection=!execution&&data.consultaPublica!==true&&row.status==="PENDENTE";
   if($("tnPendingCorrection")){
    $("tnPendingCorrection").hidden=!allowCorrection;
    $("tnPendingReason").textContent=allowCorrection?

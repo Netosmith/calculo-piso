@@ -261,15 +261,19 @@ export async function aberturaPedidosController(req,env){
     const protocolo="PED-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+id.slice(0,8).toUpperCase();
     const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos)];
-    await db.prepare("INSERT INTO portal_pedidos_tickets(id,tenant_id,protocolo,solicitante_id,"+
-      columns.join(",")+") VALUES("+params.map(()=>"?").join(",")+")").bind(...params).run();
+    const statements=[
+     db.prepare("INSERT INTO portal_pedidos_tickets(id,tenant_id,protocolo,solicitante_id,"+
+      columns.join(",")+") VALUES("+params.map(()=>"?").join(",")+")").bind(...params)
+    ];
     if(direct){
-     await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE tenant_id=? AND id=? AND status='RASCUNHO'").bind(p.id,id).run();
-     await hist(db,p,id,"FILA","Solicitação enviada diretamente para execução").run();
+     statements.push(db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE tenant_id=? AND id=? AND status='RASCUNHO'").bind(p.id,id));
+     statements.push(hist(db,p,id,"FILA","Solicitação enviada diretamente para execução"));
      if(values.tipoSolicitacao==="CORRECAO_PEDIDO"&&values.dadosEspecificos?.textoCorrecao)
-      await db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
-       .bind(crypto.randomUUID(),p.id,id,p.user,values.dadosEspecificos.textoCorrecao).run();
-    }else await hist(db,p,id,"RASCUNHO",TIPOS_SOLICITACAO[values.tipoSolicitacao]+" criada").run();
+      statements.push(db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
+       .bind(crypto.randomUUID(),p.id,id,p.user,values.dadosEspecificos.textoCorrecao));
+    }else statements.push(hist(db,p,id,"RASCUNHO",TIPOS_SOLICITACAO[values.tipoSolicitacao]+" criada"));
+    // Commit único: nunca responde com protocolo se parte do registro falhou.
+    await db.batch(statements);
     const row=await ticket(db,p,id);
     return success({chamado:ticketView(row)},201);
    }

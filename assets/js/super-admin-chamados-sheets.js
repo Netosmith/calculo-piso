@@ -71,10 +71,16 @@
    else if(data.mode==="sheets")inform("Google Sheets ATIVO para "+company+". "+google+" chamados migrados e vinculados.");
    else if(!different.length&&checks.length===4)
     inform("Integridade conferida: chamados, anexos, mensagens e histórico coincidem. Botão 3 liberado.");
-   else inform("Ativação protegida: "+different.map(x=>x.label).join(", ")+" ainda não "+
-     (different.length===1?"confere":"conferem")+". "+
-     (different.some(x=>!x.countEqual)?"Há diferenças nas quantidades. ":"As quantidades podem ser iguais, mas o conteúdo/identificadores são diferentes. ")+
-     "Corrija a divergência e clique em Verificar integração. Não ative sem conferência.");
+   else {
+    const missing=Number(google)<Number(d1);
+    const reason=different.some(x=>!x.countEqual)?
+     "Há diferenças nas quantidades. ":"As quantidades são iguais em algumas abas, mas as assinaturas dos registros ainda divergem. ";
+    inform("Ativação protegida: "+different.map(x=>x.label).join(", ")+" ainda não "+
+     (different.length===1?"confere":"conferem")+". "+reason+
+     (missing?"Clique em 2. Importar chamados existentes para repor os dados preservados no D1. ":
+     "Confira os itens indicados; se necessário, importe novamente com o Apps Script atualizado. ")+
+     "Depois clique em 1. Verificar integração.");
+   }
   }catch(error){if(seq===loadSeq)inform(error.message);}
   finally{if(seq===loadSeq){busy=false;controls();}}
  }

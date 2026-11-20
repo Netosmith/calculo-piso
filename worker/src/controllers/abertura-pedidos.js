@@ -402,7 +402,7 @@ export async function aberturaPedidosController(req,env){
    return success({anexado:true,slot:b.slot});
   }
   if(action==="enviar"&&req.method==="POST"){
-   if(execView||!owner||!["RASCUNHO","PENDENTE"].includes(row.status))
+   if(execView||!["RASCUNHO","PENDENTE"].includes(row.status)||(row.status==="RASCUNHO"&&!owner))
     return err("Somente o autor envia rascunhos; a equipe pode devolver pendências corrigidas à fila.",403);
    if(row.tipo_solicitacao==="CTE_COMPLEMENTAR"){
     const lib=await db.prepare("SELECT id FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND slot='liberacao' LIMIT 1").bind(p.id,id).first();

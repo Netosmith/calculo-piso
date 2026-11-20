@@ -2,6 +2,7 @@ import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportado
 import {getSession,readSessionId} from "../services/session.js";
 import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
 import {modulesForProfile} from "../services/profile-access.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 import {success,errorResponse} from "../utils/response.js";
 export async function novaFrotaModulesController(request,env){
  if(request.method!=="GET")return errorResponse("Método não permitido.",405);
@@ -12,7 +13,8 @@ export async function novaFrotaModulesController(request,env){
   const state=await readNovaFrotaModules(env);
   const isOwner=String(env.SUPER_ADMIN_USER||"").trim().toUpperCase()===
     String(session.usuario||"").trim().toUpperCase() && Boolean(env.SUPER_ADMIN_USER);
-  const modules=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,session.perfil,state.modules,isOwner);
+  const role=await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,session.usuario,session.perfil);
+   const modules=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,role,state.modules,isOwner,session.usuario);
   return success({empresa:LEGACY_NOVA_FROTA.id,modules,configured:state.configured});
  }catch{
   return errorResponse("Não foi possível carregar permissões dos módulos.",503);

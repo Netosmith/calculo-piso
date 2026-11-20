@@ -7,9 +7,9 @@ import {normalizedFields,TIPOS_SOLICITACAO} from "../src/controllers/abertura-pe
 
 const read=path=>readFileSync(new URL("../../"+path,import.meta.url),"utf8");
 
-test("Quatro tipos têm validações próprias e a abertura padrão não muda",()=>{
+test("Seis tipos têm validações próprias e a abertura padrão não muda",()=>{
  assert.deepEqual(Object.keys(TIPOS_SOLICITACAO),[
-  "PEDIDO","CORRECAO_PEDIDO","CTE_COMPLEMENTAR","CARTA_CORRECAO"
+  "PEDIDO","CORRECAO_PEDIDO","CTE_COMPLEMENTAR","CARTA_CORRECAO","PAGAMENTO","PAGAMENTO_GUIA"
  ]);
  assert.throws(()=>normalizedFields({tipoSolicitacao:"PEDIDO"}),/Campo obrigatório/);
  assert.equal(normalizedFields({tipoSolicitacao:"CORRECAO_PEDIDO",
@@ -24,6 +24,13 @@ test("Quatro tipos têm validações próprias e a abertura padrão não muda",(
   dadosEspecificos:{documentoTipo:"OUTRO",numeroDocumento:"12345",textoCarta:"Corrigir"}}),/CT-e ou MDF-e/);
  assert.throws(()=>normalizedFields({tipoSolicitacao:"CTE_COMPLEMENTAR",
   dadosEspecificos:{numeroCte:"98765",descricaoComplemento:""}}),/Campo obrigatório/);
+ const pix={ctePagamento:"CT123",placaPagamento:"ABC1D23",nomeBeneficiario:"Motorista",
+  cpfCnpjPagamento:"12345678901",formaPagamento:"PIX_IRION",etapaPagamento:"ADIANTAMENTO",pixPagamento:"email@pix.com"};
+ assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:pix}).dadosEspecificos.pixPagamento,"email@pix.com");
+ assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO"}}),/Campo obrigatório/);
+ assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO",bancoPagamento:"Banco",agenciaPagamento:"001",contaPagamento:"1234"}}).dadosEspecificos.contaPagamento,"1234");
+ assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO_GUIA",dadosEspecificos:{cteGuia:"CT1",nfGuia:"NF2"}}).tipoSolicitacao,"PAGAMENTO_GUIA");
+ assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO_GUIA",dadosEspecificos:{cteGuia:"CT1"}}),/Campo obrigatório/);
  assert.throws(()=>normalizedFields({tipoSolicitacao:"X",dadosEspecificos:{}}),/Tipo de solicitação inválido/);
 });
 
@@ -39,6 +46,7 @@ test("Migração D1 preserva protocolos, números e dados de pedidos existentes"
  const old=db.prepare("SELECT numero FROM portal_pedidos_tickets WHERE id='pedido-antigo'").get();
  assert.equal(old.numero,1);
  db.exec(read("worker/migrations/super-admin/0009_pedidos_tipos_solicitacao.sql"));
+ db.exec(read("worker/migrations/super-admin/0010_chamados_financeiro.sql"));
  const preserved=db.prepare("SELECT tipo_solicitacao,dados_especificos_json,numero FROM portal_pedidos_tickets WHERE id='pedido-antigo'").get();
  assert.equal(preserved.tipo_solicitacao,"PEDIDO");
  assert.equal(preserved.dados_especificos_json,"{}");
@@ -48,6 +56,8 @@ test("Migração D1 preserva protocolos, números e dados de pedidos existentes"
  const after=db.prepare("SELECT * FROM portal_pedidos_tickets WHERE id='pedido-antigo'").get();
  assert.equal(JSON.parse(after.dados_especificos_json).textoCorrecao,"Trocar o tomador");
  assert.equal(after.numero,1);
+ assert.equal(after.categoria_chamado,"");
+ assert.equal(db.prepare("SELECT tipo_anexo FROM portal_pedidos_docs LIMIT 0").columns().length,1);
  assert.throws(()=>db.prepare("UPDATE portal_pedidos_tickets SET tipo_solicitacao='TIPO_FALSO' WHERE id='pedido-antigo'").run());
  db.close();
 });
@@ -59,7 +69,7 @@ test("Tela tem seletor padrão Pedido e campos distintos com IDs únicos",()=>{
  const css=read("assets/css/abertura-pedidos.css");
  assert.match(html,/<select id="tnKindSelect"/);
  assert.match(html,/<option value="PEDIDO">/);
- for(const tipo of ["CORRECAO_PEDIDO","CTE_COMPLEMENTAR","CARTA_CORRECAO"]){
+ for(const tipo of ["CORRECAO_PEDIDO","CTE_COMPLEMENTAR","CARTA_CORRECAO","PAGAMENTO","PAGAMENTO_GUIA"]){
   assert.ok(html.includes('data-kind-fields="'+tipo+'"'),tipo);
   assert.ok(css.includes('[data-kind="'+tipo+'"]'),tipo);
   assert.ok(js.includes(tipo),tipo);

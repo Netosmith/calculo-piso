@@ -202,7 +202,10 @@ export async function aberturaPedidosController(req,env){
   return success({empresa:p.id,solicitacoesHabilitadas:flags.publico,podeCriar:flags.solicitar,execucaoHabilitada:flags.executar,executor,tiposLiberados:execView?kinds:[],superAdmin:p.ownerSupport===true,armazenamentoConfigurado:!!conf,armazenamentoChamados:googleSheets.mode});
  if(execView&&!executor)return err("Execução de Abertura de Pedidos não liberada para este usuário.",403);
  if(!execView&&!flags.publico)return err("Solicitações / Chamados não habilitado nesta transportadora.",403);
- if(!execView&&req.method!=="GET"&&!flags.solicitar)return err("Você pode acompanhar, mas não editar solicitações.",403);
+ const collaborativePendingWrite=!execView&&req.method==="POST"&&
+   /^\/[a-f0-9-]{36}\/(?:dados|enviar|anexos)$/.test(path);
+  if(!execView&&req.method!=="GET"&&!flags.solicitar&&!collaborativePendingWrite)
+   return err("Você pode acompanhar os chamados, mas não criar novas solicitações.",403);
  try{
   if(googleSheets.mode==="sheets")
    return await sheetsGateway(req,p,view,flags,executor,kinds,conf,googleSheets,normalizedFields);
@@ -291,7 +294,9 @@ export async function aberturaPedidosController(req,env){
   if(row.excluido_em&&!p.ownerSupport)return err("Chamado indisponível.",404);
   if(execView&&!p.ownerSupport&&!kinds.includes(effectiveKind(row)))return err("Tipo de chamado não autorizado.",403);
   const owner=row.solicitante_id===p.user;
-  const privateAccess=p.ownerSupport||owner||execView&&executor;
+  // Pendência compartilhada para correção por qualquer conta do tenant.
+   const pendingEditor=!execView&&row.status==="PENDENTE";
+   const privateAccess=p.ownerSupport||owner||(execView&&executor)||pendingEditor;
   if(!privateAccess&&(req.method!=="GET"||action!==""))return err("Chamado não autorizado.",403);
   if(row.status==="RASCUNHO"&&!owner&&!p.ownerSupport)return err("Rascunho privado.",403);
   if(row.excluido_em&&!["","restaurar"].includes(action)&&req.method!=="GET")
@@ -357,19 +362,20 @@ export async function aberturaPedidosController(req,env){
    return success({chamado:ticketView(row),anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[],executor});
   }
   if(action==="dados"&&req.method==="POST"){
-    if(execView||!owner||!["RASCUNHO","PENDENTE"].includes(row.status))
-     return err("Somente o solicitante pode editar rascunhos ou chamados pendentes.",403);
+    if(execView||!["RASCUNHO","PENDENTE"].includes(row.status)||
+      (row.status==="RASCUNHO"&&!owner))
+     return err("Somente o autor edita rascunhos; pendências podem ser corrigidas pela equipe.",403);
     const b=await bodyJson(req,12000),values=normalizedFields(b,p.user);
     if(values.tipoSolicitacao!==effectiveKind(row))
      return err("O tipo do chamado não pode ser alterado durante a correção.",409);
     const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const changed=await db.prepare("UPDATE portal_pedidos_tickets SET "+
       columns.map(c=>c+"=?").join(",")+
-      ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status IN ('RASCUNHO','PENDENTE')")
+      ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status IN ('RASCUNHO','PENDENTE') AND (status='PENDENTE' OR solicitante_id=?)")
      .bind(...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos),id,p.id,p.user).run();
     if(changed.meta?.changes!==1)return err("Chamado alterado por outra operação. Atualize a página.",409);
     if(row.status==="PENDENTE")
-     await hist(db,p,id,"PENDENTE","Dados do chamado corrigidos pelo solicitante").run();
+     await hist(db,p,id,"PENDENTE","Dados da pendência corrigidos por "+p.user).run();
     return success({atualizado:true,status:row.status});
    }
    if(action==="anexos"&&req.method==="POST"){
@@ -384,7 +390,7 @@ export async function aberturaPedidosController(req,env){
    const proof=proofSlot!==null&&b.slot===proofSlot;
    const canProof=proof&&execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO";
    if((b.slot==="comprovante_pagamento"||b.slot==="comprovante_guia")?!canProof:
-      (!owner||execView||!["RASCUNHO","PENDENTE"].includes(row.status)))
+      ((row.status==="RASCUNHO"&&!owner)||execView||!["RASCUNHO","PENDENTE"].includes(row.status)))
      return err("Anexo não autorizado para este usuário ou etapa.",403);
     const saved=await drive(conf,p.id,"upload",{ticketId:id,slot:proof?"liberacao":b.slot,nome:b.nome,mime:b.mime,base64:b.base64});
    if(!FILEID.test(saved.fileId||""))return err("Google Drive não confirmou o arquivo.",502);
@@ -397,16 +403,16 @@ export async function aberturaPedidosController(req,env){
   }
   if(action==="enviar"&&req.method==="POST"){
    if(execView||!owner||!["RASCUNHO","PENDENTE"].includes(row.status))
-    return err("Somente o solicitante pode enviar rascunhos ou devolver pendências à fila.",403);
+    return err("Somente o autor envia rascunhos; a equipe pode devolver pendências corrigidas à fila.",403);
    if(row.tipo_solicitacao==="CTE_COMPLEMENTAR"){
     const lib=await db.prepare("SELECT id FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND slot='liberacao' LIMIT 1").bind(p.id,id).first();
     if(!lib)return err("Anexe a liberação do cliente antes de enviar o CT-e complementar.",409);
    }
    const wasPending=row.status==="PENDENTE";
-   const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',executor_id=NULL,motivo='',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status=?").bind(id,p.id,p.user,row.status).run();
+   const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',executor_id=NULL,motivo='',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status=? AND (status='PENDENTE' OR solicitante_id=?)").bind(id,p.id,row.status,p.user).run();
    if(update.meta?.changes!==1)return err("Chamado alterado por outra operação. Atualize a fila.",409);
    await hist(db,p,id,"FILA",wasPending?
-    "Pendência corrigida pelo solicitante. Chamado devolvido à fila de execução":
+    "Pendência corrigida por "+p.user+". Chamado devolvido à fila de execução":
     "Enviado para a fila de execução").run();
    // Evita duplicar a mensagem inicial ao reenviar a correção de pedido.
    if(!wasPending&&row.tipo_solicitacao==="CORRECAO_PEDIDO"){

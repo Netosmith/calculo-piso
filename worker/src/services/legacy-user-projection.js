@@ -1,6 +1,6 @@
 // Projection for a future server-side Apps Script integration.
 // Never return source objects: legacy records may include private fields.
-const ALLOWED_ROLES = new Set(["ADMINISTRADOR","OPERACIONAL","COMERCIAL","PISO","GOADM","MT","PR"]);
+const ALLOWED_ROLES = new Set(["ADMINISTRADOR","OPERACIONAL","COMERCIAL","PISO","GOADM","MT","PR","SOLICITACOES"]);
 const MAX_USERS = 500;
 
 function clean(value, limit = 160) {

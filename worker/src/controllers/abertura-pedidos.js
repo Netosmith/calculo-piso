@@ -158,6 +158,14 @@ const ticketView=x=>{
  for(const [k,col] of Object.entries(COLUMNS))item[k]=x[col]||"";
  return item;
 };
+// Público = andamento e identificadores, nunca dados bancários, CPF, chat e documentos.
+const publicTicket=row=>{
+ const x=ticketView(row);
+ return {id:x.id,protocolo:x.protocolo,numero:x.numero,tipoSolicitacao:x.tipoSolicitacao,
+  status:x.status,solicitante:x.solicitante,nomeSolicitante:x.nomeSolicitante,
+  executor:x.executor,criadoEm:x.criadoEm,atualizadoEm:x.atualizadoEm,
+  enviadoEm:x.enviadoEm,numeroPedidoSistema:"",dadosEspecificos:{},numeroPedidoOC:"",motivo:""};
+};
 const hist=(db,p,t,status,message)=>db.prepare("INSERT INTO portal_pedidos_history(id,tenant_id,ticket_id,autor_id,status,descricao) VALUES(?,?,?,?,?,?)")
  .bind(crypto.randomUUID(),p.id,t,p.user,status,message||"");
 async function ticket(db,p,id){return db.prepare("SELECT * FROM portal_pedidos_tickets WHERE id=? AND tenant_id=?").bind(id,p.id).first();}
@@ -170,6 +178,7 @@ export async function aberturaPedidosController(req,env){
  if(!["solicitante","execucao"].includes(view))return err("Visão inválida.");
  if(req.method!=="GET"&&!originAllowed(req))return err("Origem não autorizada.",403);
  const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
+ flags.publico=flags.solicitar;
  flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true,p.user);
  flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true,p.user);
  const execProfile=await readPedidosExecAccess(env,p.id);
@@ -184,9 +193,10 @@ export async function aberturaPedidosController(req,env){
  if(path.startsWith("/sheets/"))
   return sheetsAdmin(req,env,p,view,flags,executor,kinds,conf,googleSheets);
  if(path==="/config"&&req.method==="GET")
-  return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,tiposLiberados:execView?kinds:[],superAdmin:p.ownerSupport===true,armazenamentoConfigurado:!!conf,armazenamentoChamados:googleSheets.mode});
+  return success({empresa:p.id,solicitacoesHabilitadas:flags.publico,podeCriar:flags.solicitar,execucaoHabilitada:flags.executar,executor,tiposLiberados:execView?kinds:[],superAdmin:p.ownerSupport===true,armazenamentoConfigurado:!!conf,armazenamentoChamados:googleSheets.mode});
  if(execView&&!executor)return err("Execução de Abertura de Pedidos não liberada para este usuário.",403);
- if(!execView&&!flags.solicitar)return err("Solicitação de Abertura de Pedidos não liberada nesta transportadora.",403);
+ if(!execView&&!flags.publico)return err("Solicitações / Chamados não habilitado nesta transportadora.",403);
+ if(!execView&&req.method!=="GET"&&!flags.solicitar)return err("Você pode acompanhar, mas não editar solicitações.",403);
  try{
   if(googleSheets.mode==="sheets")
    return await sheetsGateway(req,p,view,flags,executor,kinds,conf,googleSheets,normalizedFields);
@@ -208,7 +218,7 @@ export async function aberturaPedidosController(req,env){
    cond.push(removed?"excluido_em<>''":"excluido_em=''");
    if(!admin){cond.push("status='FINALIZADO'");}
    else if(etapa){cond.push("status=?");bind.push(etapa);}
-   if(!admin&&!execView){cond.push("solicitante_id=?");bind.push(p.user);}
+   // Finalizados disponíveis a todos os usuários autenticados desta transportadora.
    if(execView&&!p.ownerSupport){
     cond.push("COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+")");
     bind.push(...kinds);
@@ -222,25 +232,32 @@ export async function aberturaPedidosController(req,env){
     " ORDER BY atualizado_em DESC,id DESC LIMIT ? OFFSET ?";
    const result=await db.prepare(query).bind(...bind,41,pageRaw*40).all();
    const rows=result.results||[];
-   return success({chamados:rows.slice(0,40).map(ticketView),proximaPagina:rows.length>40?pageRaw+1:null,
+   return success({chamados:rows.slice(0,40).map(row=>(p.ownerSupport||row.solicitante_id===p.user||execView&&executor)?ticketView(row):publicTicket(row)),proximaPagina:rows.length>40?pageRaw+1:null,
     pagina:pageRaw,escopo:admin?"todos":"finalizados",removidos:removed});
   }
   if((path===""||path==="/")&&req.method==="GET"){
    const list=execView?
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND status NOT IN ('RASCUNHO','FINALIZADO') AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
-    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND solicitante_id=? AND excluido_em='' AND status<>'FINALIZADO' ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
-   return success({chamados:(list.results||[]).map(ticketView),executor});
+    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status<>'RASCUNHO' OR solicitante_id=?) ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
+   return success({chamados:(list.results||[]).map(row=>(p.ownerSupport||row.solicitante_id===p.user||execView&&executor)?ticketView(row):publicTicket(row)),executor});
   }
   if((path===""||path==="/")&&req.method==="POST"){
     if(execView)return err("Solicitação exclusiva do solicitante.",403);
     const b=await bodyJson(req,12000),values=normalizedFields(b,p.user),id=crypto.randomUUID();
+    const direct=b.enviarAgora===true&&values.tipoSolicitacao!=="CTE_COMPLEMENTAR";
     const protocolo="PED-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+id.slice(0,8).toUpperCase();
     const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos)];
     await db.prepare("INSERT INTO portal_pedidos_tickets(id,tenant_id,protocolo,solicitante_id,"+
       columns.join(",")+") VALUES("+params.map(()=>"?").join(",")+")").bind(...params).run();
+    if(direct){
+     await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE tenant_id=? AND id=? AND status='RASCUNHO'").bind(p.id,id).run();
+     await hist(db,p,id,"FILA","Solicitação enviada diretamente para execução").run();
+     if(values.tipoSolicitacao==="CORRECAO_PEDIDO"&&values.dadosEspecificos?.textoCorrecao)
+      await db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
+       .bind(crypto.randomUUID(),p.id,id,p.user,values.dadosEspecificos.textoCorrecao).run();
+    }else await hist(db,p,id,"RASCUNHO",TIPOS_SOLICITACAO[values.tipoSolicitacao]+" criada").run();
     const row=await ticket(db,p,id);
-    await hist(db,p,id,"RASCUNHO",TIPOS_SOLICITACAO[values.tipoSolicitacao]+" criada").run();
     return success({chamado:ticketView(row)},201);
    }
    const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
@@ -250,7 +267,8 @@ export async function aberturaPedidosController(req,env){
   if(row.excluido_em&&!p.ownerSupport)return err("Chamado indisponível.",404);
   if(execView&&!p.ownerSupport&&!kinds.includes(effectiveKind(row)))return err("Tipo de chamado não autorizado.",403);
   const owner=row.solicitante_id===p.user;
-  if(!p.ownerSupport&&(execView?!executor:!owner))return err("Chamado não autorizado.",403);
+  const privateAccess=p.ownerSupport||owner||execView&&executor;
+  if(!privateAccess&&(req.method!=="GET"||action!==""))return err("Chamado não autorizado.",403);
   if(row.status==="RASCUNHO"&&!owner&&!p.ownerSupport)return err("Rascunho privado.",403);
   if(row.excluido_em&&!["","restaurar"].includes(action)&&req.method!=="GET")
    return err("Chamado removido da operação. Restaure antes de alterar.",409);
@@ -306,6 +324,7 @@ export async function aberturaPedidosController(req,env){
    return success({atualizado:true,campo,protocolo:row.protocolo});
   }
   if(action===""&&req.method==="GET"){
+   if(!privateAccess)return success({chamado:publicTicket(row),anexos:[],mensagens:[],historico:[],executor:false,consultaPublica:true});
    const [docs,messages,history]=await Promise.all([
     db.prepare("SELECT id,COALESCE(NULLIF(tipo_anexo,''),slot) AS slot,nome,mime,bytes,criado_em FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all(),
     db.prepare("SELECT autor_id,texto,criado_em FROM portal_pedidos_messages WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id LIMIT 500").bind(p.id,id).all(),

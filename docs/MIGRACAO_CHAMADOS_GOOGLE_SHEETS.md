@@ -99,10 +99,26 @@ Apps Script deste cenário B **ainda não foram criados ou implantados por
 este assistente**. A conexão atual com Google Drive permite criar arquivos
 e planilhas, mas não autoriza a publicação de projetos Apps Script.
 
-## Passo 2: importar os dados com segurança
+## Passo 2: escolher Importar ou Começar do Zero
 
 No Portal Frete, entre em:
 **Super Admin > Perfis e Acessos > Armazenamento de chamados · Google Sheets + Drive**.
+
+### Opção A: começar do zero, sem importar os chamados antigos
+
+Se os chamados anteriores eram apenas testes e você **esvaziou voluntariamente** a planilha:
+
+1. Verifique se as abas SOLICITACOES, ANEXOS, MENSAGENS e HISTORICO estão vazias.
+2. Verifique `CONFIG!B4` (`ULTIMO_NUMERO`). Coloque `0` se deseja reiniciar a numeração. **Só faça isso antes da primeira ativação de uma base realmente vazia.**
+3. Clique em **1. Verificar integração**. O painel indicará que a planilha está vazia.
+4. Clique em **3B. Iniciar base vazia (sem importar)** e digite `INICIAR DO ZERO`.
+5. O Worker verifica novamente os quatro conjuntos de dados e suas assinaturas vazias, confere o ID da transportadora e ativa a planilha. **O D1 anterior permanece intacto como arquivo histórico**, mas seus chamados antigos não aparecerão na nova fila.
+
+**Nova Frota:** a planilha de testes foi verificada vazia e o `ULTIMO_NUMERO` foi redefinido de 3 para 0 em 20/11/2026. Ainda é necessário clicar no botão 3B para efetivar a troca. Não clique em "Importar chamados existentes" se deseja a base limpa.
+
+### Opção B: importar os dados anteriores
+
+
 
 Para **cada transportadora**:
 1. Selecione a transportadora e clique em **1. Verificar integração**.

@@ -54,6 +54,58 @@ const scope=(p,view,kinds,executor,flags)=>({
  user:String(p.user||""),superAdmin:p.ownerSupport===true,view,allowedKinds:kinds,
  executor:Boolean(executor),solicitar:Boolean(flags.solicitar),executar:Boolean(flags.executar)
 });
+
+/* Visibilidade pública entre usuários autenticados da mesma transportadora.
+   Usa contexto interno SOMENTE em GET, nunca em comandos que gravam dados.
+   Ajuda com versões anteriores do Apps Script que ainda filtram por autor. */
+function publicSummary(row){
+ return {
+  id:String(row.id||""),protocolo:String(row.protocolo||""),
+  numero:Number(row.numero)||0,tipoSolicitacao:String(row.tipoSolicitacao||"PEDIDO"),
+  status:String(row.status||""),solicitante:String(row.solicitante||""),
+  nomeSolicitante:String(row.nomeSolicitante||""),executor:String(row.executor||""),
+  criadoEm:String(row.criadoEm||""),atualizadoEm:String(row.atualizadoEm||""),
+  enviadoEm:String(row.enviadoEm||""),numeroPedidoSistema:"",
+  numeroPedidoOC:"",motivo:"",dadosEspecificos:{}
+ };
+}
+function saoPauloDay(date){
+ const parts=Object.fromEntries(new Intl.DateTimeFormat("en-US",{
+  timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"
+ }).formatToParts(date).map(p=>[p.type,p.value]));
+ return parts.year+"-"+parts.month+"-"+parts.day;
+}
+function onTodayOrActive(row,today){
+ if(row.status!=="FINALIZADO")return true;
+ // Compatibilidade para versões antigas. A versão atual do script usa o
+ // histórico real da conclusão e já devolve apenas finalizados do dia.
+ const raw=String(row.atualizadoEm||"");
+ const date=new Date(/^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d/.test(raw)?
+  raw.replace(" ","T")+"Z":raw);
+ return !Number.isNaN(date.getTime())&&saoPauloDay(date)===today;
+}
+function sharedList(result,principal){
+ const day=saoPauloDay(new Date());
+ const chamados=(Array.isArray(result.chamados)?result.chamados:[])
+  .filter(row=>row&&typeof row==="object"&&!row.excluidoEm&&
+    (row.status!=="RASCUNHO"||row.solicitante===principal.user||principal.ownerSupport)&&
+    onTodayOrActive(row,day))
+  .map(row=>row.solicitante===principal.user||principal.ownerSupport?row:publicSummary(row));
+ return {chamados,empresa:principal.id,visibilidade:"transportadora",executor:false};
+}
+function sharedDetail(result,principal){
+ const row=result?.chamado;
+ if(!row||typeof row!=="object")throw Error("Chamado não encontrado.");
+ if(row.excluidoEm&&!principal.ownerSupport)throw Error("Chamado indisponível.");
+ if(row.status==="RASCUNHO"&&row.solicitante!==principal.user&&!principal.ownerSupport)
+  throw Error("Rascunho privado.");
+ if(row.status==="PENDENTE"||row.solicitante===principal.user||principal.ownerSupport){
+  const {ok,...payload}=result;
+  return payload;
+ }
+ return {chamado:publicSummary(row),anexos:[],mensagens:[],historico:[],
+  executor:false,consultaPublica:true};
+}
 const digest=async text=>{
  const data=new TextEncoder().encode(text);
  const array=new Uint8Array(await crypto.subtle.digest("SHA-256",data));
@@ -213,6 +265,13 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
     if(sub==="dados"){data={fields:normalizedFields(data,p.user)};}
    }
    else return errorResponse("Método não permitido.",405);
+  }
+  if(view==="solicitante"&&request.method==="GET"&&(action==="list"||action==="get")){
+   // Contexto privilegiado efêmero gerado apenas pelo Worker autenticado.
+   // Nenhum campo privado escapa para a lista pública.
+   const internal={...ctx,superAdmin:true};
+   const result=await callScript(conf,p.id,options.sheetId,action,internal,data,ticketId);
+   return success(action==="list"?sharedList(result,p):sharedDetail(result,p));
   }
   const result=await callScript(conf,p.id,options.sheetId,action,ctx,data,ticketId);
   if(action==="download"){

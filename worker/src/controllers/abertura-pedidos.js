@@ -1,4 +1,5 @@
 import {profileAllowsModule} from "../services/profile-access.js";
+import {PEDIDOS_EXEC_KINDS,PEDIDOS_EXEC_LEGACY_KINDS,readPedidosExecAccess} from "../services/pedidos-exec-access.js";
 import {ALLOWED_ORIGINS} from "../config.js";
 import {errorResponse,success} from "../utils/response.js";
 import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
@@ -11,17 +12,21 @@ const SLUG=/^[a-z][a-z0-9-]{2,63}$/;
 const FILEID=/^[A-Za-z0-9_-]{15,160}$/;
 const MIME=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 const MAX_FILE=6*1024*1024;
-const SLOTS=new Set(["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt"]);
+const SLOTS=new Set(["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt","comprovante_pagamento","comprovante_guia"]);
 export const TIPOS_SOLICITACAO=Object.freeze({
  PEDIDO:"Abertura de pedido",
  CORRECAO_PEDIDO:"Correção de pedido",
  CTE_COMPLEMENTAR:"CT-e complementar",
- CARTA_CORRECAO:"Carta de correção"
+ CARTA_CORRECAO:"Carta de correção",
+ PAGAMENTO:"Solicitação de pagamento",
+ PAGAMENTO_GUIA:"Pagamento de GUIA"
 });
 const EXTRA_FIELDS=Object.freeze({
  CORRECAO_PEDIDO:[["numeroPedidoCorrecao",120],["textoCorrecao",1800]],
  CTE_COMPLEMENTAR:[["numeroCte",120],["descricaoComplemento",1800]],
- CARTA_CORRECAO:[["documentoTipo",8],["numeroDocumento",120],["textoCarta",1800]]
+ CARTA_CORRECAO:[["documentoTipo",8],["numeroDocumento",120],["textoCarta",1800]],
+ PAGAMENTO:[["ctePagamento",120],["placaPagamento",40],["nomeBeneficiario",160],["cpfCnpjPagamento",24],["formaPagamento",20],["etapaPagamento",20],["pixPagamento",160],["bancoPagamento",120],["agenciaPagamento",40],["contaPagamento",60]],
+ PAGAMENTO_GUIA:[["cteGuia",120],["nfGuia",120]]
 });
 
 
@@ -121,11 +126,18 @@ export function normalizedFields(b,requester=""){
   const extras=b.dadosEspecificos;
   if(!extras||typeof extras!=="object"||Array.isArray(extras))throw Error("Dados específicos da solicitação não informados.");
   for(const [key,max] of EXTRA_FIELDS[kind]){
+   const optionalPayment=kind==="PAGAMENTO"&&(
+    (extras.formaPagamento==="DEPOSITO"&&key==="pixPagamento")||
+    (extras.formaPagamento!=="DEPOSITO"&&["bancoPagamento","agenciaPagamento","contaPagamento"].includes(key)));
+   if(optionalPayment&&!String(extras[key]||"").trim()){result.dadosEspecificos[key]="";continue;}
    const value=["textoCorrecao","descricaoComplemento","textoCarta"].includes(key)
     ? cleanMultiline(extras[key],max) : clean(extras[key],max);
    if(!value)throw Error("Campo obrigatório ou inválido: "+key);
    result.dadosEspecificos[key]=value;
   }
+  if(kind==="PAGAMENTO"&&(!["PIX_IRION","DEPOSITO"].includes(result.dadosEspecificos.formaPagamento)||
+    !["ADIANTAMENTO","SALDO"].includes(result.dadosEspecificos.etapaPagamento)))
+   throw Error("Forma ou etapa do pagamento inválida.");
   if(kind==="CARTA_CORRECAO"&&!["CTE","MDFE"].includes(result.dadosEspecificos.documentoTipo))
    throw Error("Selecione CT-e ou MDF-e.");
   result.nomeSolicitante=result.nomeSolicitante||requester;
@@ -294,7 +306,7 @@ export async function aberturaPedidosController(req,env){
   const message=String(error?.message||"");
   if(message==="Envie JSON."||message==="Dados inválidos."||message==="E-mail inválido."||
      message==="Tipo de solicitação inválido."||message==="Dados específicos da solicitação não informados."||
-     message==="Selecione CT-e ou MDF-e."||
+     message==="Selecione CT-e ou MDF-e."||message==="Forma ou etapa do pagamento inválida."||
      message.startsWith("Campo obrigatório:")||message.startsWith("Campo inválido:")||
      message.startsWith("Campo obrigatório ou inválido:"))
    return err(message,400);

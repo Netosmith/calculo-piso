@@ -26,7 +26,12 @@
 </section>
 <div id="pedSystemNumber" class="pedido-system-number" hidden><div><small>NÚMERO DO PEDIDO NO SISTEMA</small><strong id="pedSystemNumberValue"></strong><span>Utilize para prosseguir com o manifesto eletrônico.</span></div><button type="button" class="secondary" id="pedCopySystemNumber">Copiar número</button></div>
 <div class="cad-detail-body"><div class="cad-detail-main">
-<section class="cad-detail-section"><h3>Dados da solicitação</h3><div class="cad-detail-info" id="tnDetailInfo"></div></section>
+<section class="tn-pending-correction" id="tnPendingCorrection" hidden>
+ <strong><span aria-hidden="true">✎</span> Pendência aguardando correção</strong>
+ <p id="tnPendingReason"></p>
+ <button type="button" id="tnPendingEdit" class="primary">Corrigir solicitação e devolver à fila</button>
+ <small>Qualquer usuário da transportadora pode corrigir. O formulário abrirá na área de Solicitações.</small>
+ </section><section class="cad-detail-section"><h3>Dados da solicitação</h3><div class="cad-detail-info" id="tnDetailInfo"></div></section>
 <section class="cad-detail-section"><h3>Documentos anexados</h3><div id="tnDetailDocs" class="cad-files"></div><div id="tnPendingUpload" hidden><p class="cad-tip">Complemente os documentos enquanto estiver pendente.</p><label>Documento<select id="tnAdditionalSlot"><option value="nota">Nota</option><option value="nota_coleta">Nota de coleta</option><option value="liberacao">Liberação</option><option value="rota_pedagio">Print da rota de pedágio</option><option value="tabela_antt">Print da tabela ANTT</option></select></label><input id="tnAdditionalFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"><button id="tnAdditionalSend" type="button" class="secondary">Anexar documento</button></div></section>
 <section class="cad-detail-section"><h3>Histórico</h3><div class="cad-history" id="tnHistory"></div></section>
 </div><aside class="cad-chat-panel"><div id="tnExecution" hidden><h3>Execução da solicitação</h3><button id="tnAssumir" type="button" class="primary" hidden>Assumir solicitação</button>

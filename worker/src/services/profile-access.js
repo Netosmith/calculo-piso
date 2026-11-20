@@ -81,13 +81,16 @@ export async function modulesForProfile(env,id,profile,enabledModules,ownerSuppo
   const individual=new Set(user?await solicModulesForUser(env,id,user):[]);
   return enabled.filter(module=>permitted.has(module)&&individual.has(module));
  }
- return enabled.filter(module=>permitted.has(module)&&!isSolicExecution(module));
+ // Acompanhamento de Chamados é comum a todos os usuários da transportadora;
+ // execução continua exclusiva e todos os outros cards preservam sua matriz.
+ return enabled.filter(module=>(module==="solicitacao-pedidos"||permitted.has(module))&&!isSolicExecution(module));
 }
 export async function profileAllowsModule(env,id,role,module,ownerSupport=false,user=""){
  if(ownerSupport===true)return true;
  const key=String(module||"").trim().toLowerCase();
  if(!KEYS.has(key))return false;
  const normalized=roleName(role);
+ if(key==="solicitacao-pedidos"&&normalized!=="SOLICITACOES")return true;
  if(!PROFILE_ROLES.includes(normalized))return !isSolicExecution(key);
  const data=await readProfileAccess(env,id);
  if(!data.profiles[normalized].includes(key))return false;

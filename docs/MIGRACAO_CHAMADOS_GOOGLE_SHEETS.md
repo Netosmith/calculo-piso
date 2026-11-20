@@ -28,31 +28,76 @@ MENSAGENS, HISTORICO, AUDITORIA, EXCLUIDOS, USUARIOS e CONFIG.
 - Os perfis autorizados e segregação de empresa ainda são verificados pelo Cloudflare Worker e pelo Super Admin.
 - D1 preserva toda a cópia original dos chamados migrados e não é apagado.
 
-## Passo 1: atualizar o Apps Script privado de cada empresa
+## Passo 1: criar/configurar o Apps Script (esclarecimento importante)
 
-Esta é a única etapa que depende da conta proprietária de cada projeto
-Google Apps Script. Os conectores de Google Drive não conseguem publicar
-novas versões do Apps Script automaticamente.
+**A criação das planilhas no Google Drive NÃO cria ou publica Apps Script.**
+Também **não cria automaticamente propriedades do script**, pastas de documentos
+nem a integração privada no Worker. As três planilhas já estão prontas, mas
+cada transportadora ainda precisa de um serviço Apps Script conectado.
 
-1. Acesse o projeto Apps Script que já faz upload/download de documentos
-   daquela transportadora e abra seu editor.
-2. Faça uma cópia do código anterior e **substitua o código completo da
-   implantação de documentos** pelo conteúdo de
-   [CHAMADOS_SHEETS_APPS_SCRIPT.gs](CHAMADOS_SHEETS_APPS_SCRIPT.gs).
-   Atenção: não deixe dois métodos \`doPost\` conflitantes no projeto.
-3. Em **Configurações do projeto > Propriedades do script**, mantenha
-   \`CADASTRO_GATEWAY_KEY\`, \`CADASTRO_TENANT_ID\` e
-   \`CADASTRO_DRIVE_FOLDER_ID\` como estão. **Não copie essas propriedades
-   para HTML, GitHub ou planilhas**.
-4. Confirme que a conta executora do Apps Script tem **acesso de editor**
-   à planilha dessa transportadora.
-5. Em **Implantar > Gerenciar implantações > Editar**, escolha
-   **Nova versão > Implantar**. Conserve a mesma URL /exec já registrada
-   no Super Admin. Caso publique uma nova URL, atualize-a no local
-   privado de integração do Super Admin, sem revelar a chave.
+**De onde vêm os nomes CADASTRO_*?** O arquivo integrado foi desenvolvido a
+partir do serviço de documentos que já existe no Portal. Por compatibilidade
+com a API atual, as propriedades se chamam
+`CADASTRO_GATEWAY_KEY`, `CADASTRO_TENANT_ID` e
+`CADASTRO_DRIVE_FOLDER_ID`, mesmo quando o mesmo serviço atende
+Solicitações / Chamados. **Não presuma que elas já existem.**
 
-O código novo inclui as operações anteriores de upload e download,
-para que documentos de Cadastro e Troca de Notas continuem funcionando.
+### Cenário A: a transportadora já utiliza Apps Script para Cadastro
+
+Em **Super Admin > Configurações > Google Drive: Solicitações de Cadastro**,
+verifique se URL, pasta e chave já estão configuradas. Se sim,
+faça backup do código desse serviço e atualize o **mesmo projeto**, utilizando
+o arquivo [CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs](CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs),
+pois ele inclui as operações de upload/download anteriores e as novas de
+chamados. **Não substitua o serviço existente por um projeto novo sem
+preservar o código e a configuração**: a integração de documentos é
+compartilhada no Worker atual.
+
+Se as propriedades já existirem, mantenha os valores, publique uma nova
+versão na mesma implantação e confirme permissão de edição da planilha.
+
+### Cenário B: a transportadora não tem Apps Script/propriedades configurados
+
+1. Abra a **planilha de chamados daquela transportadora** e clique
+   **Extensões > Apps Script**. Isso cria um **novo projeto**, vinculado
+   àquela planilha.
+2. No editor, substitua o conteúdo do `Código.gs` pelo arquivo completo
+   [CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs](CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs).
+   Mantenha apenas **um** `doPost` nesse projeto.
+3. No Google Drive, crie uma **pasta privada de anexos exclusiva** para
+   a transportadora. Copie o **ID da pasta** (não o ID da planilha).
+   O script precisa ter permissão de acesso à pasta e de edição à planilha.
+4. Em **Apps Script > Configurações do projeto > Propriedades do script**,
+   clique em **Adicionar propriedade** e cadastre estas três:
+
+   | Nome exato | Valor |
+   | --- | --- |
+   | `CADASTRO_GATEWAY_KEY` | Uma nova chave aleatória forte, com pelo menos 24 caracteres, que também será salva no Super Admin |
+   | `CADASTRO_TENANT_ID` | ID técnico exato da transportadora no Portal (não o nome de exibição) |
+   | `CADASTRO_DRIVE_FOLDER_ID` | ID da pasta privada de anexos criada no Google Drive |
+
+   Salve as propriedades. **Nunca publique a chave no GitHub, HTML ou Sheets**.
+   O `CADASTRO_DRIVE_FOLDER_ID` é um ID de **pasta Drive**,
+   enquanto o `sheetId` da integração é o ID de **planilha**: são distintos.
+
+5. Em **Implantar > Nova implantação > Aplicativo da Web**, configure
+   a execução como a conta proprietária e acesso que permita ao Worker
+   invocar a URL (o código exige a chave privada para autorizar a operação).
+   Implante e copie a URL que termina em `/exec`.
+6. No portal, entre em **Super Admin > Configurações >
+   Google Drive: Solicitações de Cadastro** e salve
+   **URL do Apps Script**, **ID da pasta privada do Drive** e
+   **a mesma chave** definida nas propriedades do script.
+   A API atual **compartilha essa integração privada** entre os anexos
+   de Cadastro e de Solicitações / Chamados. Não substitua uma
+   integração existente por outra sem reconciliar os dois módulos.
+7. Em **Super Admin > Perfis e Acessos > Armazenamento de chamados**,
+   clique em **Verificar integração** e siga a migração abaixo.
+
+**Atenção:** embora as planilhas já tenham sido criadas, os projetos
+Apps Script deste cenário B **ainda não foram criados ou implantados por
+este assistente**. A conexão atual com Google Drive permite criar arquivos
+e planilhas, mas não autoriza a publicação de projetos Apps Script.
 
 ## Passo 2: importar os dados com segurança
 
@@ -133,7 +178,7 @@ correspondente. Em seguida repita Verificar, Importar e Ativar.
 
 ## Repositório técnico
 
-- \`docs/CHAMADOS_SHEETS_APPS_SCRIPT.gs\`: código Apps Script integrado de Drive + Sheets.
+- \`docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs\`: código Apps Script integrado de Drive + Sheets.
 - \`worker/src/services/chamados-sheets.js\`: gateway Worker autenticado.
 - \`worker/src/controllers/abertura-pedidos.js\`: chaveamento entre D1 e Sheets.
 - \`assets/js/super-admin-chamados-sheets.js\`: interface de migração.

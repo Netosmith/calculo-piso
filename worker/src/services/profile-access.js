@@ -4,8 +4,9 @@
 import {TENANT_MODULES} from "../config/tenant-modules.js";
 import {NOVA_FROTA_MANAGED_MODULES} from "./nova-frota-modules.js";
 import {errorResponse,success} from "../utils/response.js";
+import {isSolicExecution,isSolicModule,isSolicRequest,solicModulesForUser} from "./solicitacoes-user-access.js";
 
-export const PROFILE_ROLES=Object.freeze(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GOADM","PISO"]);
+export const PROFILE_ROLES=Object.freeze(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GOADM","PISO","SOLICITACOES"]);
 export const PROFILE_MODULES=Object.freeze([...new Set([...TENANT_MODULES,...NOVA_FROTA_MANAGED_MODULES])]);
 const KEYS=new Set(PROFILE_MODULES);
 const UF=/^fretes-(?:ac|al|ap|am|ba|ce|df|es|go|ma|mt|ms|mg|pa|pb|pr|pe|pi|rj|rn|rs|ro|rr|sc|sp|se|to)$/;
@@ -25,19 +26,21 @@ function normalizeModules(id,role,values){
  // proprietário pode autorizá-los explicitamente no Super Admin.
  // PISO mantém sua restrição estrutural exclusiva ao Piso 2.
  return availableForCompany(id).filter(module=>allowed.has(module)&&
-   !(role==="PISO"&&module!=="piso2"));
+   (role==="SOLICITACOES"?isSolicModule(module):
+    (!isSolicExecution(module)&&(role!=="PISO"||module==="piso2"||isSolicRequest(module)))));
 }
 export function defaultProfileModules(id,role){
  const all=availableForCompany(id);
- if(role==="ADMINISTRADOR")return all;
- if(role==="COMERCIAL")return all.filter(x=>!["cadastros","funcionarios"].includes(x));
+ if(role==="SOLICITACOES")return all.filter(isSolicModule);
+ if(role==="ADMINISTRADOR")return normalizeModules(id,role,all);
+ if(role==="COMERCIAL")return normalizeModules(id,role,all.filter(x=>!["cadastros","funcionarios"].includes(x)));
  if(role==="GOADM")return all.filter(x=>x==="administrativo");
  if(role==="PISO")return all.filter(x=>x==="piso2");
- if(role==="OPERACIONAL")return all.filter(x=>
+ if(role==="OPERACIONAL")return normalizeModules(id,role,all.filter(x=>
    ["piso","piso2","fretes","fretes2","divulgacao","controle","ordem",
     "estadias","monitoramento","fretes-mercado","embarques","chamados",
     "cadastro-solicitacoes","solicitacao-troca-notas","solicitacao-pedidos"].includes(x)||
-    UF.test(x));
+    UF.test(x)));
  return [];
 }
 export function defaultProfileAccess(id){
@@ -51,11 +54,11 @@ export async function readProfileAccess(env,id){
  if(!raw)return {profiles:defaults,configured:false};
  const saved=await raw.json();
  if(saved?.version!==1||!saved.profiles||typeof saved.profiles!=="object"||
-   Array.isArray(saved.profiles)||PROFILE_ROLES.some(role=>!Array.isArray(saved.profiles[role])))
+   Array.isArray(saved.profiles)||PROFILE_ROLES.some(role=>role!=="SOLICITACOES"&&!Array.isArray(saved.profiles[role])))
   throw new Error("Configuração de perfis inválida.");
  const profiles={};
  for(const role of PROFILE_ROLES){
-  const list=saved.profiles[role];
+  const list=Array.isArray(saved.profiles[role])?saved.profiles[role]:defaults[role];
   if(list.length>PROFILE_MODULES.length||
     list.some(key=>typeof key!=="string"||!KEYS.has(key))||
     new Set(list).size!==list.length)throw new Error("Configuração de perfis inválida.");
@@ -65,24 +68,31 @@ export async function readProfileAccess(env,id){
  }
  return {profiles,configured:true,updatedAt:saved.updatedAt||null};
 }
-export async function modulesForProfile(env,id,profile,enabledModules,ownerSupport=false){
+export async function modulesForProfile(env,id,profile,enabledModules,ownerSupport=false,user=""){
  const enabled=Array.isArray(enabledModules)?enabledModules.filter(k=>KEYS.has(k)):[];
  const role=roleName(profile);
  if(ownerSupport===true)return enabled;
  // Perfis históricos ainda existentes em cadastros antigos continuam seguindo
  // as regras legadas até sua migração individual para os cinco perfis atuais.
- if(!PROFILE_ROLES.includes(role))return enabled;
+ if(!PROFILE_ROLES.includes(role))return enabled.filter(key=>!isSolicExecution(key));
  const config=await readProfileAccess(env,id);
  const permitted=new Set(config.profiles[role]||[]);
- return enabled.filter(module=>permitted.has(module));
+ if(role==="SOLICITACOES"){
+  const individual=new Set(user?await solicModulesForUser(env,id,user):[]);
+  return enabled.filter(module=>permitted.has(module)&&individual.has(module));
+ }
+ return enabled.filter(module=>permitted.has(module)&&!isSolicExecution(module));
 }
-export async function profileAllowsModule(env,id,role,module,ownerSupport=false){
+export async function profileAllowsModule(env,id,role,module,ownerSupport=false,user=""){
  if(ownerSupport===true)return true;
  const key=String(module||"").trim().toLowerCase();
  if(!KEYS.has(key))return false;
- if(!PROFILE_ROLES.includes(roleName(role)))return true;
+ const normalized=roleName(role);
+ if(!PROFILE_ROLES.includes(normalized))return !isSolicExecution(key);
  const data=await readProfileAccess(env,id);
- return data.profiles[roleName(role)].includes(key);
+ if(!data.profiles[normalized].includes(key))return false;
+ if(normalized==="SOLICITACOES")return !!user&&(await solicModulesForUser(env,id,user)).includes(key);
+ return !isSolicExecution(key);
 }
 export async function adminReadProfileAccess(env,id){
  if(!ID.test(id))return errorResponse("Transportadora inválida.",400);
@@ -116,16 +126,16 @@ export async function adminWriteProfileAccess(request,env,actor,id){
      Object.keys(data).some(x=>x!=="profiles")||
      !data.profiles||typeof data.profiles!=="object"||Array.isArray(data.profiles)||
      Object.keys(data.profiles).some(x=>!PROFILE_ROLES.includes(x))||
-     PROFILE_ROLES.some(role=>!Array.isArray(data.profiles[role])))throw Error("shape");
+     PROFILE_ROLES.some(role=>role!=="SOLICITACOES"&&!Array.isArray(data.profiles[role])))throw Error("shape");
   for(const role of PROFILE_ROLES){
-   const list=data.profiles[role];
+   const list=Array.isArray(data.profiles[role])?data.profiles[role]:defaultProfileModules(id,role);
    if(list.length>PROFILE_MODULES.length||new Set(list).size!==list.length||
       list.some(x=>typeof x!=="string"||!KEYS.has(x)))throw Error("values");
   }
  }catch{return errorResponse("Matriz de perfis inválida.",400);}
  const profiles={};
  for(const role of PROFILE_ROLES){
-  profiles[role]=normalizeModules(id,role,data.profiles[role]);
+  profiles[role]=normalizeModules(id,role,Array.isArray(data.profiles[role])?data.profiles[role]:defaultProfileModules(id,role));
  }
  const updatedAt=new Date().toISOString();
  try{

@@ -62,6 +62,7 @@ function result_(value){return ContentService.createTextOutput(JSON.stringify(va
   Mantém upload/download legado sem alteração.
 =========================================================== */
 var CM_CACHE_={};
+var CM_TABS_={};
 var CM_SPECS={
  SOLICITACOES:["ID","TRANSPORTADORA","PROTOCOLO","NUMERO","TIPO","STATUS","SOLICITANTE","NOME_SOLICITANTE","EXECUTOR","NUMERO_PEDIDO_SISTEMA","MOTIVO","CRIADO_EM","ATUALIZADO_EM","ENVIADO_EM","EXCLUIDO_EM","EXCLUIDO_POR","MOTIVO_EXCLUSAO"],
  PEDIDOS_DETALHES:["CHAMADO_ID","EMAIL","TELEFONE_WHATS","UNIDADE_EMBARQUE","NUMERO_PEDIDO_OC","NFE_MANIFESTADA","TOMADOR_CNPJ","COLETA_IE","ENTREGA_CNPJ","ENTREGA_IE","FRETE_EMPRESA","FRETE_MOTORISTA","ADIANTAMENTO_PCT","ICMS","PRODUTO","ESPECIE","TAG","OBS","COORDENADAS_COLETA","COORDENADAS_ENTREGA"],
@@ -119,12 +120,13 @@ function cmSafeText_(str,max,required){
  return value;
 }
 function cmTab_(ss,name){
+ if(CM_TABS_[name])return CM_TABS_[name];
  var tab=ss.getSheetByName(name);
  if(!tab)throw new Error("Planilha sem a aba "+name+".");
  var expected=CM_SPECS[name],actual=tab.getRange(1,1,1,expected.length).getValues()[0].map(String);
  if(expected.some(function(k,i){return actual[i]!==k;}))
   throw new Error("Cabeçalho alterado na aba "+name+". Corrija antes de continuar.");
- return tab;
+ return CM_TABS_[name]=tab;
 }
 function cmRows_(ss,name){
  if(CM_CACHE_[name])return CM_CACHE_[name];
@@ -545,7 +547,7 @@ function chamadosDispatch_(p,props,tenant){
  var lock=readOnly?null:LockService.getScriptLock();
  if(lock&&!lock.tryLock(12000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
  try{
-  CM_CACHE_={};
+  CM_CACHE_={};CM_TABS_={};
   var ss=cmSheet_(p);
   // Saúde e consultas não alteram registros. Todas as operações de escrita estão
   // serializadas por LockService para preservar números e evitar dupla execução.

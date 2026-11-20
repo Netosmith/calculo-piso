@@ -205,3 +205,20 @@ body.pedidos-app .pedido-category-ticket .tn-client{overflow-wrap:anywhere}
 body.pedidos-app .pedido-form-dialog[data-kind="CORRECAO_PEDIDO"] .cad-dialog-head{border-top:5px solid #df7e23}
 body.pedidos-app .pedido-form-dialog[data-kind="CTE_COMPLEMENTAR"] .cad-dialog-head{border-top:5px solid #267dcc}
 body.pedidos-app .pedido-form-dialog[data-kind="CARTA_CORRECAO"] .cad-dialog-head{border-top:5px solid #9250c5}
+
+
+/* Novas categorias financeiras, preservando o desenho original do Kanban. */
+body.pedidos-app .pedido-kind-picker[data-kind="PAGAMENTO"]{--pedido-kind-accent:#ffd36c}
+body.pedidos-app .pedido-kind-picker[data-kind="PAGAMENTO_GUIA"]{--pedido-kind-accent:#ff9fa0}
+body.pedidos-app .pedido-category-ticket[data-kind="PAGAMENTO"]{--pedido-accent:#a77a06;--pedido-bg:#fff4d0}
+body.pedidos-app .pedido-category-ticket[data-kind="PAGAMENTO_GUIA"]{--pedido-accent:#b74753;--pedido-bg:#ffe7e8}
+body.pedidos-app .pedido-tipo-badge[data-kind="PAGAMENTO"]{--pedido-accent:#906900;--pedido-bg:#fff3cf}
+body.pedidos-app .pedido-tipo-badge[data-kind="PAGAMENTO_GUIA"]{--pedido-accent:#a73747;--pedido-bg:#ffe4e7}
+body.pedidos-app .pedido-form-dialog[data-kind="PAGAMENTO"] .cad-dialog-head{border-top:5px solid #dcae40}
+body.pedidos-app .pedido-form-dialog[data-kind="PAGAMENTO_GUIA"] .cad-dialog-head{border-top:5px solid #e26d7b}
+body.pedidos-app .pedido-proof-upload{display:grid;gap:9px;margin-top:16px;padding:14px;border:1px solid #c9deed;border-radius:12px;background:#f5fbff}
+body.pedidos-app .pedido-proof-upload h4{margin:0;color:#173f5a}
+body.pedidos-app .pedido-proof-upload p{margin:0;font-size:12px;color:#52748a}
+body.pedidos-app .pedido-proof-upload input{max-width:100%}
+body.pedidos-app .pedido-proof-flag{font-size:11px;font-weight:800;color:#774f0c;background:#fff0cc;border-radius:999px;padding:5px 10px}
+body.pedidos-app .cad-tools #tnTypeFilter{min-width:165px}

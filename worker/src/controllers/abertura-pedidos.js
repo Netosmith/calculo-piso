@@ -175,7 +175,8 @@ export async function aberturaPedidosController(req,env){
  const execProfile=await readPedidosExecAccess(env,p.id);
  const userKey=String(p.user||"").trim().toUpperCase();
  const kinds=p.ownerSupport===true?[...PEDIDOS_EXEC_KINDS]:
-  execProfile.configured?[...(execProfile.usuarios[userKey]||[])]:p.role==="SOLICITACOES"?[...PEDIDOS_EXEC_KINDS]:[...PEDIDOS_EXEC_LEGACY_KINDS];
+  execProfile.configured&&Object.prototype.hasOwnProperty.call(execProfile.usuarios,userKey)?
+    [...execProfile.usuarios[userKey]]:p.role==="SOLICITACOES"?[...PEDIDOS_EXEC_KINDS]:[...PEDIDOS_EXEC_LEGACY_KINDS];
  const executor=flags.executar&&kinds.length>0&&String(p.role||"").toUpperCase()!=="PISO"&&
   (p.role==="SOLICITACOES"||p.ownerSupport===true||isExecutor(p,conf)||(execProfile.configured&&kinds.length>0));
  const execView=view==="execucao";

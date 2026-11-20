@@ -46,7 +46,8 @@ test("Cada pedido e documento são separados por transportadora e solicitante",(
  assert.ok(db.includes("idx_pedidos_numero"));
  assert.ok(db.includes("trg_pedidos_numero"));
  assert.ok(c.includes("WHERE tenant_id=? AND solicitante_id=?"));
- assert.ok(c.includes('if(execView?!executor:!owner)'));
+ assert.ok(c.includes('if(!p.ownerSupport&&(execView?!executor:!owner))'));
+  assert.ok(c.includes('if(row.excluido_em&&!p.ownerSupport)'));
  assert.ok(c.includes('row.executor_id!==p.user'));
  assert.ok(c.includes("WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'"));
  assert.ok(c.includes('SLOTS.has(b.slot)'));

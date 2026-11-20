@@ -20,7 +20,7 @@ function testEngine(){
  src=replaceSection(src,"async function recognize(","async function imageOCR(",
   "async function recognize(){window.__recognized++;return {text:window.__mockOcrText,confidence:87};}");
  assert.match(src,/void authGate\(\);/);
- src=src.replace("void authGate();","window.__pdfOCRTest=pdfOCR;window.__pdfZoomTest=ensureCanvasSize;");
+ src=src.replace("void authGate();","async function tryReadQRCode(){return null;} window.__pdfOCRTest=pdfOCR;window.__pdfZoomTest=ensureCanvasSize;");
  const values=new Map();
  const document={getElementById(id){
   if(!values.has(id))values.set(id,{dataset:{},value:0,textContent:""});

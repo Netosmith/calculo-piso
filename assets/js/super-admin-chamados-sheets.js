@@ -73,6 +73,19 @@
   finally{busy=false;controls();}
   await status();
  }
+ async function bindSheet(){
+  const company=tenant(),id=$("pedSheetsNewId").value.trim();
+  if(busy||!/^[A-Za-z0-9_-]{25,120}$/.test(id))
+   return inform("Informe o ID válido da planilha Google que pertence à transportadora.");
+  if(!window.confirm("Vincular esta planilha ao perfil "+company+"? A base D1 continuará ativa até a migração."))return;
+  busy=true;controls();inform("Verificando a estrutura e o identificador da transportadora...");
+  try{
+   await api("vincular","POST",{sheetId:id},company);
+   inform("Planilha vinculada. Agora pode iniciar a verificação dos chamados.");
+  }catch(e){inform(e.message);}
+  finally{busy=false;controls();}
+  await status();
+ }
  async function activate(){
   const company=tenant();
   if(busy||!current||company!==loadedTenant)return;
@@ -85,6 +98,7 @@
   finally{busy=false;controls();}
   await status();
  }
+ $("pedSheetsBind").onclick=bindSheet;
  $("pedSheetsStatus").onclick=status;
  $("pedSheetsImport").onclick=importAll;
  $("pedSheetsActivate").onclick=activate;

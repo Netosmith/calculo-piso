@@ -38,7 +38,8 @@ test("Google Sheets libera consultas sem trava e só permite dados privados ao r
  assert.ok(gs.includes('}finally{if(lock)lock.releaseLock();}'));
  assert.ok(gs.includes('return admin||owner||ticket.STATUS!=="RASCUNHO"'));
  assert.ok(gs.includes('if(!canReadPrivate)return {chamado:cmPublicTicket_(ticket),anexos:[],mensagens:[]'));
- assert.ok(gs.includes('if(!admin&&!owner&&!isMine)throw new Error("Anexo privado'));
+ assert.ok(gs.includes('if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")'));
+ assert.ok(gs.includes('if(!canReadPrivate)return {chamado:cmPublicTicket_(ticket)'));
  assert.ok(gs.includes('ctx.view!=="execucao"&&item.STATUS==="RASCUNHO"&&item.SOLICITANTE!==ctx.user'));
  assert.ok(gs.includes('if(op==="list")return {chamados:rows.slice(0,500).map(function(x){return cmTicketForAudience_(ss,p,x);})'));
  assert.ok(gs.includes('var direct=data.enviarAgora===true'));

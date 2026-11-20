@@ -47,3 +47,21 @@ test("Apps Script preserva upload e download existentes e organiza onze abas",()
  assert.match(script,/Utilities\.formatDate\(s,"Etc\/GMT","yyyy-MM-dd HH:mm:ss"\)/);
  assert.match(script,/\^\\d\{4\}-\\d\\d-\\d\\d\[ T\]/);
 });
+
+test("início do zero é explícito, exige planilha completamente vazia e preserva histórico antigo no D1",()=>{
+ const service=read("worker/src/services/chamados-sheets.js");
+ const admin=read("assets/js/super-admin-chamados-sheets.js");
+ const page=read("pages/super-admin.html");
+ assert.ok(service.includes('path==="iniciar-vazio"&&request.method==="POST"'));
+ assert.ok(service.includes('body.confirmacao!=="INICIAR DO ZERO"'));
+ assert.ok(service.includes('body.sheetId!==options.sheetId'));
+ assert.ok(service.includes('remote.schema!==1||remote.transportadora!==p.id'));
+ assert.ok(service.includes('const emptyFingerprint=await digest("")'));
+ assert.ok(service.includes('Number(group.count)!==0'));
+ assert.ok(service.includes('group.fingerprint!==emptyFingerprint'));
+ assert.ok(service.includes('d1HistoricoPreservado:'));
+ assert.ok(!service.includes('DELETE FROM portal_pedidos_'));
+ assert.ok(admin.includes('pedSheetsStartEmpty'));
+ assert.ok(admin.includes('await api("iniciar-vazio","POST"'));
+ assert.ok(page.includes('3B. Iniciar base vazia'));
+});

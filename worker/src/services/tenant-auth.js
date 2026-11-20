@@ -1,3 +1,4 @@
+import {effectiveSolicRole} from "./solicitacoes-user-access.js";
 // Independent identity system for the isolated tenant Worker.
 // No Nova Frota legacy session, Apps Script, KV or PORTAL_KEY is used.
 const COOKIE="__Host-tenant_session";
@@ -130,7 +131,7 @@ export async function createTenantSession(db,tenantId,userId,version){
   .bind(hash,tenantId,userId,version,expires).run();
  return {token,expiresAt:expires};
 }
-export async function tenantSession(db,request){
+export async function tenantSession(db,request,env=null){
  const token=sessionToken(request);
  if(!/^[A-Za-z0-9_-]{43}$/.test(token))return null;
  const hash=await digest(token);
@@ -143,6 +144,7 @@ export async function tenantSession(db,request){
   WHERE s.token_hash=? AND s.expires_at>? AND
     s.credential_version=c.version AND u.active=1 AND t.status='active'
   LIMIT 1`).bind(hash,now).first();
+ if(row&&env)row.role=await effectiveSolicRole(env,row.tenant_id,row.user_id,row.role);
  return row||null;
 }
 export async function revokeTenantSession(db,request){

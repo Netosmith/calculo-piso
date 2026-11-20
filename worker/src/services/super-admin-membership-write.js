@@ -1,8 +1,9 @@
 import {errorResponse,success} from "../utils/response.js";
 import {makePasswordRecord,validTenantPassword} from "./tenant-auth.js";
 import {credentialSchemaStatus} from "./super-admin-tenant-credentials.js";
+import {assignSolicProfile,effectiveSolicRole} from "./solicitacoes-user-access.js";
 
-const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM"]);
+const ROLES=new Set(["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","SOLICITACOES"]);
 const USER_ID=/^[A-Z0-9][A-Z0-9._-]{1,79}$/;
 const allowed=(object,keys)=>object && typeof object==="object" &&
   !Array.isArray(object) && Object.keys(object).every(key=>keys.includes(key));
@@ -61,7 +62,7 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
       const record=complete?await makePasswordRecord(body.senha):null;
       await db.batch([
         db.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES (?,?,?,?)")
-          .bind(tenantId,id,body.perfil,complete?1:0),
+          .bind(tenantId,id,body.perfil==="SOLICITACOES"?"OPERACIONAL":body.perfil,complete?1:0),
         ...(complete?[db.prepare(`INSERT INTO portal_tenant_credentials
           (tenant_id,user_id,password_salt,password_hash,iterations,version)
           VALUES (?,?,?,?,?,?)`).bind(tenantId,id,record.password_salt,record.password_hash,
@@ -69,6 +70,7 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
         await audit(db,actor,tenantId,complete?"user.onboard":"membership.create",
           {usuario:id,perfil:body.perfil,ativo:complete,senhaConfigurada:complete})
       ]);
+      if(body.perfil==="SOLICITACOES")await assignSolicProfile(env,tenantId,id,true,actor);
       return success({tenantId,usuario:{id,perfil:body.perfil,ativo:complete,
         ...(complete?{senhaConfigurada:true}:{})},
         aviso:complete?"Usuario ativo com senha configurada. Login liberado.":"Vinculo cadastrado sem credenciais ou login."},201);
@@ -87,13 +89,15 @@ export async function writeTenantMembership(request,env,actor,tenantId,userId=nu
       const current=await db.prepare("SELECT role,active FROM portal_tenant_users WHERE tenant_id=? AND user_id=?")
         .bind(tenantId,id).first();
       if(!current)return errorResponse("Vinculo nao encontrado.",404);
-      const role=body.perfil??current.role;
+      const role=body.perfil??await effectiveSolicRole(env,tenantId,id,current.role);
       const active=body.ativo??Boolean(current.active);
       await db.batch([
         db.prepare("UPDATE portal_tenant_users SET role=?,active=? WHERE tenant_id=? AND user_id=?")
-          .bind(role,active?1:0,tenantId,id),
+          .bind(role==="SOLICITACOES"?"OPERACIONAL":role,active?1:0,tenantId,id),
         await audit(db,actor,tenantId,"membership.update",{usuario:id,perfil:role,ativo:active})
       ]);
+      if(Object.hasOwn(body,"perfil"))
+       await assignSolicProfile(env,tenantId,id,role==="SOLICITACOES",actor);
       return success({tenantId,usuario:{id,perfil:role,ativo:active},aviso:"Alteracao restrita ao catalogo, sem atualizar credenciais."});
     }
     return errorResponse("Metodo de vinculo nao permitido.",405);

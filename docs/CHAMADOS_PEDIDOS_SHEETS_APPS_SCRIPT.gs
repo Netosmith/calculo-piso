@@ -448,22 +448,28 @@ function cmOperation_(ss,p){
    historico:cmHistoryResult_(ss,p.tenant,ticket.ID),executor:executor};
  }
  if(op==="updateDraft"){
-  if(ctx.view==="execucao"||!owner||ticket.STATUS!=="RASCUNHO")throw new Error("Rascunho não autorizado.");
+  if(ctx.view==="execucao"||!owner||["RASCUNHO","PENDENTE"].indexOf(ticket.STATUS)<0)throw new Error("Somente o solicitante pode corrigir rascunhos ou chamados pendentes.");
   var vals=data.fields||{};
-  if(vals.tipoSolicitacao!==ticket.TIPO)throw new Error("Não é possível trocar o tipo deste rascunho.");
+  if(vals.tipoSolicitacao!==ticket.TIPO)throw new Error("Não é possível trocar o tipo do chamado na correção.");
   cmUpdateDetails_(ss,ticket.ID,vals,vals.dadosEspecificos||{});
   ticket.NOME_SOLICITANTE=vals.nomeSolicitante||user;ticket.ATUALIZADO_EM=cmNow_();
   cmPut_(ss,"SOLICITACOES",ticket,"ID");
-  cmHist_(ss,p,ticket,"RASCUNHO","Dados do rascunho atualizados");
-  return {atualizado:true};
+  cmHist_(ss,p,ticket,ticket.STATUS,ticket.STATUS==="PENDENTE"?
+   "Dados do chamado corrigidos pelo solicitante":"Dados do rascunho atualizados");
+  return {atualizado:true,status:ticket.STATUS};
  }
  if(op==="enviar"){
-  if(!owner||ticket.STATUS!=="RASCUNHO")throw new Error("Somente autor envia rascunho.");
+  if(ctx.view==="execucao"||!owner||["RASCUNHO","PENDENTE"].indexOf(ticket.STATUS)<0)throw new Error("Somente o solicitante envia rascunhos ou pendências corrigidas.");
   if(ticket.TIPO==="CTE_COMPLEMENTAR"&&!cmFile_(ss,p,ticket).some(function(x){return x.slot==="liberacao";}))
    throw new Error("Anexe a liberação do cliente antes de enviar.");
-  ticket.STATUS="FILA";ticket.ENVIADO_EM=cmNow_();ticket.ATUALIZADO_EM=ticket.ENVIADO_EM;
-  cmPut_(ss,"SOLICITACOES",ticket,"ID");cmHist_(ss,p,ticket,"FILA","Enviado para execução");
-  if(ticket.TIPO==="CORRECAO_PEDIDO"){
+  var wasPending=ticket.STATUS==="PENDENTE";
+  ticket.STATUS="FILA";ticket.EXECUTOR="";ticket.MOTIVO="";
+  ticket.ENVIADO_EM=cmNow_();ticket.ATUALIZADO_EM=ticket.ENVIADO_EM;
+  cmPut_(ss,"SOLICITACOES",ticket,"ID");
+  cmHist_(ss,p,ticket,"FILA",wasPending?
+   "Pendência corrigida pelo solicitante. Chamado devolvido à fila de execução":
+   "Enviado para execução");
+  if(!wasPending&&ticket.TIPO==="CORRECAO_PEDIDO"){
    var text=cmRaw_(object.dadosEspecificos.textoCorrecao);
    if(text)cmMessage_(ss,p,ticket,text,user);
   }

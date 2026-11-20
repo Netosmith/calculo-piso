@@ -160,6 +160,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
     <option value="OPERACIONAL" selected>OPERACIONAL</option>
     <option value="GOADM">GOADM</option>
     <option value="PISO">PISO</option>
+     <option value="SOLICITACOES">SOLICITAÇÕES</option>
    </select>
   </label>
   <div>
@@ -190,6 +191,30 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
   <div id="pedExecList" class="ped-exec-list"></div>
   <div class="profile-access-footer"><p id="pedExecStatus" role="status">Selecione uma transportadora para configurar os executores.</p><button id="pedExecSave" type="button" disabled>Salvar perfis de execução</button></div>
  </section>
+<section class="ped-exec-panel" id="solicitUserAccessPanel">
+ <h3>Perfil SOLICITAÇÕES · acessos individuais por usuário</h3>
+ <p class="muted">O perfil começa com <strong>Solicitações / Chamados</strong> e <strong>Execução de Solicitações</strong>. Libere separadamente Cadastro e Troca de Notas para quem realmente precisar. As telas de execução nunca são herdadas pelos outros perfis.</p>
+ <div class="ped-exec-input">
+  <label for="solicUserName">Login do usuário
+   <input id="solicUserName" type="text" maxlength="80" autocomplete="off" placeholder="Ex.: GEOVANNA">
+  </label>
+  <button type="button" id="solicUserAssign">Adicionar / atualizar usuário</button>
+ </div>
+ <div class="ped-exec-kinds" id="solicUserModules">
+  <label><input type="checkbox" data-solic-module="solicitacao-pedidos" checked> Solicitações / Chamados</label>
+  <label><input type="checkbox" data-solic-module="execucao-pedidos" checked> Execução de Solicitações / Chamados</label>
+  <label><input type="checkbox" data-solic-module="cadastro-solicitacoes"> Solicitação de Cadastro</label>
+  <label><input type="checkbox" data-solic-module="execucao-cadastros"> Execução de Cadastro</label>
+  <label><input type="checkbox" data-solic-module="solicitacao-troca-notas"> Solicitação de Troca de Notas</label>
+  <label><input type="checkbox" data-solic-module="execucao-troca-notas"> Execução de Troca de Notas</label>
+ </div>
+ <div id="solicUsersList" class="ped-exec-list"></div>
+ <div class="profile-access-footer">
+  <p id="solicUsersStatus" role="status">Selecione uma transportadora para carregar os acessos individuais.</p>
+  <button type="button" id="solicUsersSave" disabled>Salvar acessos dos usuários</button>
+ </div>
+ <p class="muted">Para criar um novo login, utilize a aba <strong>Usuários</strong> e selecione o perfil SOLICITAÇÕES. Para usuários da Nova Frota já cadastrados, informe o login acima e salve os módulos. O acesso final também depende de os módulos estarem habilitados para a transportadora.</p>
+</section>
 <section class="ped-exec-panel" id="pedSheetsMigrationPanel">
  <h3>Armazenamento de chamados · Google Sheets + Drive</h3>
  <p class="muted">Escolha como iniciar: <strong>Importar</strong> para conservar os chamados do D1 na nova planilha ou <strong>Iniciar base vazia</strong> para fazer novos testes. Os chamados antigos permanecem guardados no D1 em ambos os casos. Cada transportadora tem sua própria planilha.</p>
@@ -317,7 +342,7 @@ const legacyManageable=new Set(["fretes2","funcionarios","relatorio","piso","pis
 const canEditMembership=()=>Boolean(canEdit()&&membershipReady&&selected?.id!=="nova-frota");
 const canEditBrand=()=>Boolean(canEdit()&&brandReady);
 let credentialReady=false,credentialProblem='';
-const ROLES=["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM"];
+const ROLES=["ADMINISTRADOR","COMERCIAL","OPERACIONAL","PISO","GOADM","SOLICITACOES"];
 function notice(message){$('notice').textContent=message;}
 async function request(path,options={}){
  const response=await fetch(API_BASE+path,{credentials:'include',cache:'no-store',...options,headers:{'Accept':'application/json',...(options.headers||{})}});
@@ -1119,7 +1144,8 @@ document.querySelector('[data-tab="settings"]')?.addEventListener('click',loadCa
 
 </script>
 <script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
-<script src="../assets/js/super-admin-profile-access.js?v=20261112-2"></script>
+<script src="../assets/js/super-admin-profile-access.js?v=20261120-solicitacoes-1"></script>
+<script src="../assets/js/super-admin-solicitacoes-users.js?v=20261120-solicitacoes-1"></script>
 <script src="../assets/js/super-admin-pedidos-perfis.js?v=20261120-1"></script>
 <script src="../assets/js/super-admin-chamados-sheets.js?v=20261120-iniciar-zero-1"></script>
 <script src="../assets/js/super-admin-real-preview.js?v=9" defer></script>

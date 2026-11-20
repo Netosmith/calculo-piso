@@ -133,7 +133,12 @@ function cmRows_(ss,name){
  if(CM_CACHE_[name])return CM_CACHE_[name];
  var sh=cmTab_(ss,name),keys=CM_SPECS[name],last=sh.getLastRow();
  if(last<2)return CM_CACHE_[name]=[];
- var values=sh.getRange(2,1,last-1,keys.length).getValues(),all=[];
+ // Dados bancários são identificadores TEXTUAIS. getValues() transforma
+ // agência "3282-4" em Date e pode remover zeros à esquerda de PIX/CPF.
+ // getDisplayValues() preserva exatamente o texto mostrado no Sheets.
+ var values=sh.getRange(2,1,last-1,keys.length)[
+  name==="PAGAMENTOS"?"getDisplayValues":"getValues"
+ ](),all=[];
  values.forEach(function(v,i){
   if(!v[0])return;
   var obj={__row:i+2};
@@ -159,7 +164,14 @@ function cmPut_(ss,name,data,key){
   // Preserva outras colunas, inclusive edições manuais.
   return cmCell_(Object.prototype.hasOwnProperty.call(data,k)?data[k]:(previous?previous[k]:""));
  });
- if(previous)sheet.getRange(previous.__row,1,1,row.length).setValues([row]);
+ if(name==="PAGAMENTOS"){
+  // Formate ANTES de escrever, pois 3282-4 é interpretado como abril/3282.
+  // Inclui novas linhas e atualizações, mesmo em outras transportadoras.
+  var rowIndex=previous?previous.__row:sheet.getLastRow()+1;
+  var target=sheet.getRange(rowIndex,1,1,row.length);
+  target.setNumberFormat("@");
+  target.setValues([row]);
+ }else if(previous)sheet.getRange(previous.__row,1,1,row.length).setValues([row]);
  else sheet.appendRow(row);
  delete CM_CACHE_[name];
  Object.keys(CM_INDEX_).forEach(function(k){

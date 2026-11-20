@@ -77,7 +77,7 @@ export async function tenantUsersController(request,env,principal,modules,path){
    const password=await makePasswordRecord(data.senha);
    await db.batch([
     db.prepare("INSERT INTO portal_tenant_users(tenant_id,user_id,role,active) VALUES (?,?,?,?)")
-     .bind(tenant,id,role==="SOLICITACOES"?"OPERACIONAL":role,data.ativo?1:0),
+     .bind(tenant,id,role==="SOLICITACOES"?"PISO":role,data.ativo?1:0),
     db.prepare(`INSERT INTO portal_tenant_credentials
      (tenant_id,user_id,password_salt,password_hash,iterations,version) VALUES (?,?,?,?,?,?)`)
      .bind(tenant,id,password.password_salt,password.password_hash,password.iterations,password.version),
@@ -121,7 +121,7 @@ export async function tenantUsersController(request,env,principal,modules,path){
   const password=reset?await makePasswordRecord(data.senha):null;
   const statements=[
    db.prepare("UPDATE portal_tenant_users SET role=?,active=? WHERE tenant_id=? AND user_id=?")
-    .bind(role==="SOLICITACOES"?"OPERACIONAL":role,active?1:0,tenant,id)
+    .bind(role==="SOLICITACOES"?"PISO":role,active?1:0,tenant,id)
   ];
   if(reset){
    statements.push(db.prepare(`INSERT INTO portal_tenant_credentials

@@ -179,7 +179,22 @@ function cmAllowed_(p,ticket,action){
  var owner=ticket.SOLICITANTE===user;
  var allowed=(ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0;
  if(view==="execucao")return admin||(executor&&allowed&&ticket.STATUS!=="RASCUNHO");
- return admin||owner;
+ return admin||owner||ticket.STATUS!=="RASCUNHO";
+}
+function cmPublicTicket_(main){
+ return {id:cmRaw_(main.ID),protocolo:cmRaw_(main.PROTOCOLO),numero:Number(main.NUMERO)||0,
+  solicitante:cmRaw_(main.SOLICITANTE),nomeSolicitante:cmRaw_(main.NOME_SOLICITANTE),
+  executor:cmRaw_(main.EXECUTOR),tipoSolicitacao:cmRaw_(main.TIPO)||"PEDIDO",
+  status:cmRaw_(main.STATUS),criadoEm:cmRaw_(main.CRIADO_EM),
+  atualizadoEm:cmRaw_(main.ATUALIZADO_EM),enviadoEm:cmRaw_(main.ENVIADO_EM),
+  numeroPedidoSistema:"",motivo:"",dadosEspecificos:{},numeroPedidoOC:""};
+}
+function cmTicketForAudience_(ss,p,main){
+ var ctx=p.context||{};
+ var own=ctx.superAdmin===true||main.SOLICITANTE===ctx.user||
+  (ctx.view==="execucao"&&ctx.executor===true&&
+   (ctx.allowedKinds||[]).indexOf(cmRaw_(main.TIPO))>=0);
+ return own?cmTicket_(ss,main):cmPublicTicket_(main);
 }
 function cmTicket_(ss,main){
  var out={
@@ -267,11 +282,11 @@ function cmFilterRows_(ss,p,history){
   if(Boolean(item.EXCLUIDO_EM)!==removed)return false;
   if(ctx.view==="execucao"&&!ctx.superAdmin&&
      (allowed.indexOf(cmRaw_(item.TIPO))<0||item.STATUS==="RASCUNHO"))return false;
-  if(!ctx.superAdmin&&ctx.view!=="execucao"&&item.SOLICITANTE!==ctx.user)return false;
+  if(!ctx.superAdmin&&ctx.view!=="execucao"&&item.STATUS==="RASCUNHO"&&item.SOLICITANTE!==ctx.user)return false;
   if(history){
    if(!all&&item.STATUS!=="FINALIZADO")return false;
    if(all&&state&&item.STATUS!==state)return false;
-  }else if(item.STATUS==="FINALIZADO"|| (ctx.view==="execucao"&&item.STATUS==="RASCUNHO"))return false;
+  }else if(ctx.view==="execucao"&&(item.STATUS==="FINALIZADO"||item.STATUS==="RASCUNHO"))return false;
   if(tipo&&item.TIPO!==tipo)return false;
   if(q){
    var payload=[item.PROTOCOLO,item.NUMERO,item.NOME_SOLICITANTE,item.NUMERO_PEDIDO_SISTEMA,
@@ -346,30 +361,40 @@ function cmOperation_(ss,p){
  }
  if(op==="list"||op==="historico"){
   var rows=cmFilterRows_(ss,p,op==="historico");
-  if(op==="list")return {chamados:rows.slice(0,500).map(function(x){return cmTicket_(ss,x);}),executor:executor};
+  if(op==="list")return {chamados:rows.slice(0,500).map(function(x){return cmTicketForAudience_(ss,p,x);}),executor:executor};
   var page=Math.max(0,Math.min(1000,Number(data.pagina)||0));
   var offset=page*40,list=rows.slice(offset,offset+41);
-  return {chamados:list.slice(0,40).map(function(x){return cmTicket_(ss,x);}),
+  return {chamados:list.slice(0,40).map(function(x){return cmTicketForAudience_(ss,p,x);}),
    proximaPagina:list.length>40?page+1:null,pagina:page,escopo:data.escopo||"finalizados"};
  }
  if(op==="create"){
   if(ctx.view!=="solicitante"||!ctx.solicitar)throw new Error("Solicitação não autorizada.");
   var payload=data.fields||{},now=cmNow_(),id=cmId_(),number=cmSequence_(ss);
+  var direct=data.enviarAgora===true&&payload.tipoSolicitacao!=="CTE_COMPLEMENTAR";
   var obj=Object.assign({},payload,{
    id:id,protocolo:"PED-"+now.slice(0,10).replace(/-/g,"")+"-"+id.slice(0,8).toUpperCase(),
-   numero:number,solicitante:user,executor:"",status:"RASCUNHO",motivo:"",
-   criadoEm:now,atualizadoEm:now,enviadoEm:"",excluidoEm:"",excluidoPor:"",
+   numero:number,solicitante:user,executor:"",status:direct?"FILA":"RASCUNHO",motivo:"",
+   criadoEm:now,atualizadoEm:now,enviadoEm:direct?now:"",excluidoEm:"",excluidoPor:"",
    numeroPedidoSistema:"",nomeSolicitante:payload.nomeSolicitante||user
   });
   cmSaveMain_(ss,p,obj);
   var row=cmGet_(ss,"SOLICITACOES","ID",id);
-  cmHist_(ss,p,row,"RASCUNHO","Nova solicitação criada");
+  cmHist_(ss,p,row,direct?"FILA":"RASCUNHO",direct?
+   "Nova solicitação criada e enviada para a fila":"Nova solicitação criada");
+  if(direct&&payload.tipoSolicitacao==="CORRECAO_PEDIDO"){
+   var correctionText=cmRaw_((payload.dadosEspecificos||{}).textoCorrecao);
+   if(correctionText)cmMessage_(ss,p,row,correctionText,user);
+  }
   return {chamado:cmTicket_(ss,row)};
  }
  var ticket=cmMain_(ss,p,cmRaw_(p.ticketId));
  var object=cmTicket_(ss,ticket),owner=ticket.SOLICITANTE===user;
  var isMine=executor&&ticket.EXECUTOR===user&&ctx.view==="execucao";
  if(op==="get"){
+  var canReadPrivate=admin||owner||ctx.view==="execucao"&&executor&&
+   (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0;
+  if(!canReadPrivate)return {chamado:cmPublicTicket_(ticket),anexos:[],mensagens:[],
+    historico:[],executor:false,consultaPublica:true};
   var docs=cmFile_(ss,p,ticket),messages=cmRows_(ss,"MENSAGENS")
     .filter(function(x){return x.CHAMADO_ID===ticket.ID&&x.TRANSPORTADORA===p.tenant;})
     .map(function(x){return {autor_id:x.AUTOR,texto:x.TEXTO,criado_em:x.CRIADO_EM};});
@@ -450,6 +475,7 @@ function cmOperation_(ss,p){
   return {anexado:true,slot:slot};
  }
  if(op==="download"){
+  if(!admin&&!owner&&!isMine)throw new Error("Anexo privado do solicitante ou executor.");
   var doc=cmGet_(ss,"ANEXOS","ID",cmRaw_(data.docId));
   if(!doc||doc.CHAMADO_ID!==ticket.ID||doc.TRANSPORTADORA!==p.tenant)throw new Error("Documento não encontrado.");
   var directory=getTicketFolder_(DriveApp.getFolderById(
@@ -510,20 +536,22 @@ function cmOperation_(ss,p){
  throw new Error("Operação de chamados desconhecida.");
 }
 function chamadosDispatch_(p,props,tenant){
- var lock=LockService.getScriptLock();
- if(!lock.tryLock(30000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
+ var op=String(p.action||"").replace(/^chamados\./,"");
+ var readOnly=["health","list","historico","get","download"].indexOf(op)>=0;
+ var lock=readOnly?null:LockService.getScriptLock();
+ if(lock&&!lock.tryLock(12000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
  try{
   CM_CACHE_={};
   var ss=cmSheet_(p);
   // Saúde e consultas não alteram registros. Todas as operações de escrita estão
   // serializadas por LockService para preservar números e evitar dupla execução.
   var answer=cmOperation_(ss,p);
-  SpreadsheetApp.flush();
+  if(!readOnly)SpreadsheetApp.flush();
   return cmReply_(answer);
  }catch(err){
   console.warn("Falha no módulo de chamados:",err&&err.name);
   return result_({ok:false,error:cmRaw_(err&&err.message).slice(0,200)});
- }finally{lock.releaseLock();}
+ }finally{if(lock)lock.releaseLock();}
 }
 
 /**

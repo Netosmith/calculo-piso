@@ -58,14 +58,8 @@ test("agência e demais campos bancários preservam texto, hífens e zeros inici
  assert.ok(bank.includes('target.setValues([row]);'));
  assert.ok(bank.indexOf('target.setNumberFormat("@");')<bank.indexOf('target.setValues([row]);'));
  assert.ok(script.includes('agenciaPagamento:"AGENCIA_PAGAMENTO",contaPagamento:"CONTA_PAGAMENTO"'));
- const {Script}=requireScript();
- assert.doesNotThrow(()=>new Script(script));
+ assert.doesNotThrow(()=>new VmScript(script));
 });
-
-function requireScript(){
- // Nodes test runner already supports standard ESM imports.
- return {Script:VmScript};
-}
 
 test("início do zero é explícito, exige planilha completamente vazia e preserva histórico antigo no D1",()=>{
  const service=read("worker/src/services/chamados-sheets.js");

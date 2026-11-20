@@ -25,10 +25,15 @@ test("Seis tipos têm validações próprias e a abertura padrão não muda",()=
  assert.throws(()=>normalizedFields({tipoSolicitacao:"CTE_COMPLEMENTAR",
   dadosEspecificos:{numeroCte:"98765",descricaoComplemento:""}}),/Campo obrigatório/);
  const pix={ctePagamento:"CT123",placaPagamento:"ABC1D23",nomeBeneficiario:"Motorista",
-  cpfCnpjPagamento:"12345678901",formaPagamento:"PIX_IRION",etapaPagamento:"ADIANTAMENTO",pixPagamento:"email@pix.com"};
+  cpfCnpjPagamento:"12345678901",formaPagamento:"PIX_IRION",etapaPagamento:"ADIANTAMENTO",pixPagamento:"email@pix.com",bancoPagamento:"Banco principal",agenciaPagamento:"0001",contaPagamento:"98765-0"};
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:pix}).dadosEspecificos.pixPagamento,"email@pix.com");
+ assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:pix}).dadosEspecificos.bancoPagamento,"Banco principal");
+ assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,bancoPagamento:""}}),/bancoPagamento/);
+ const conjunto=normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,etapaPagamento:"ADIANTAMENTO_E_SALDO"}});
+ assert.equal(conjunto.dadosEspecificos.etapaPagamento,"ADIANTAMENTO_E_SALDO");
  assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO"}}),/Campo obrigatório/);
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO",bancoPagamento:"Banco",agenciaPagamento:"001",contaPagamento:"1234"}}).dadosEspecificos.contaPagamento,"1234");
+ assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO",dadosEspecificos:{...pix,formaPagamento:"DEPOSITO"}}).dadosEspecificos.pixPagamento,"");
  assert.equal(normalizedFields({tipoSolicitacao:"PAGAMENTO_GUIA",dadosEspecificos:{cteGuia:"CT1",nfGuia:"NF2"}}).tipoSolicitacao,"PAGAMENTO_GUIA");
  assert.throws(()=>normalizedFields({tipoSolicitacao:"PAGAMENTO_GUIA",dadosEspecificos:{cteGuia:"CT1"}}),/Campo obrigatório/);
  assert.throws(()=>normalizedFields({tipoSolicitacao:"X",dadosEspecificos:{}}),/Tipo de solicitação inválido/);
@@ -79,7 +84,16 @@ test("Tela tem seletor padrão Pedido e campos distintos com IDs únicos",()=>{
   assert.ok(html.includes('name="'+field+'"'),field);
   assert.ok(js.includes(field),field);
  }
- assert.ok(html.includes('id="pedidoComplementDoc"'));
+ assert.ok(html.includes('id="pedEtapaPagamento"'));
+ assert.ok(html.includes('<option value="ADIANTAMENTO_E_SALDO">Adiantamento e Saldo</option>'));
+ for(const campo of ["bancoPagamento","agenciaPagamento","contaPagamento"]){
+  assert.ok(html.includes('name="'+campo+'"'),campo);
+ }
+ assert.ok(js.includes('label.dataset.pedPayment==="bank"||!deposit'));
+ assert.ok(css.includes('#pedFormaPagamento[data-method="PIX_IRION"]'));
+ assert.ok(css.includes('#pedFormaPagamento[data-method="DEPOSITO"]'));
+ assert.ok(css.includes('#pedEtapaPagamento[data-stage="ADIANTAMENTO_E_SALDO"]'));
+  assert.ok(html.includes('id="pedidoComplementDoc"'));
  assert.ok(html.includes('data-slot="liberacao" required disabled'));
  assert.ok(html.includes('id="pedidoOriginalFields"'));
  assert.ok(exec.includes('id="tnDetailTipo"'));

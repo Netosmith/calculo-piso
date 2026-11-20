@@ -145,9 +145,10 @@ export function normalizedFields(b,requester=""){
  }
  return result;
 }
+const effectiveKind=row=>row.categoria_chamado||row.tipo_solicitacao||"PEDIDO";
 const ticketView=x=>{
  let extras={};try{extras=JSON.parse(x.dados_especificos_json||"{}");}catch{extras={};}
- const tipo=Object.hasOwn(TIPOS_SOLICITACAO,x.tipo_solicitacao)?x.tipo_solicitacao:"PEDIDO";
+ const tipo=Object.hasOwn(TIPOS_SOLICITACAO,effectiveKind(x))?effectiveKind(x):"PEDIDO";
  const item={id:x.id,protocolo:x.protocolo,numero:x.numero,solicitante:x.solicitante_id,executor:x.executor_id,
   tipoSolicitacao:tipo,dadosEspecificos:extras,
   status:x.status,motivo:x.motivo||"",numeroPedidoSistema:x.numero_pedido_sistema||"",
@@ -183,7 +184,7 @@ export async function aberturaPedidosController(req,env){
  try{
   if((path===""||path==="/")&&req.method==="GET"){
    const list=execView?
-    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND status<>'RASCUNHO' AND tipo_solicitacao IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
+    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND status<>'RASCUNHO' AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND solicitante_id=? ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
    return success({chamados:(list.results||[]).map(ticketView),executor});
   }
@@ -191,8 +192,8 @@ export async function aberturaPedidosController(req,env){
     if(execView)return err("Solicitação exclusiva do solicitante.",403);
     const b=await bodyJson(req,12000),values=normalizedFields(b,p.user),id=crypto.randomUUID();
     const protocolo="PED-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+id.slice(0,8).toUpperCase();
-    const columns=[...Object.values(COLUMNS),"tipo_solicitacao","dados_especificos_json"],keys=Object.keys(COLUMNS);
-    const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k]),values.tipoSolicitacao,JSON.stringify(values.dadosEspecificos)];
+    const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
+    const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos)];
     await db.prepare("INSERT INTO portal_pedidos_tickets(id,tenant_id,protocolo,solicitante_id,"+
       columns.join(",")+") VALUES("+params.map(()=>"?").join(",")+")").bind(...params).run();
     const row=await ticket(db,p,id);
@@ -203,13 +204,13 @@ export async function aberturaPedidosController(req,env){
   if(!match)return err("Rota de Abertura de Pedidos inexistente.",404);
   const id=match[1],action=match[2]||"",row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
-  if(execView&&!kinds.includes(row.tipo_solicitacao||"PEDIDO"))return err("Tipo de chamado não autorizado.",403);
+  if(execView&&!kinds.includes(effectiveKind(row)))return err("Tipo de chamado não autorizado.",403);
   const owner=row.solicitante_id===p.user;
   if(execView?!executor:!owner)return err("Chamado não autorizado.",403);
   if(row.status==="RASCUNHO"&&!owner)return err("Rascunho privado.",403);
   if(action===""&&req.method==="GET"){
    const [docs,messages,history]=await Promise.all([
-    db.prepare("SELECT id,slot,nome,mime,bytes,criado_em FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all(),
+    db.prepare("SELECT id,COALESCE(NULLIF(tipo_anexo,''),slot) AS slot,nome,mime,bytes,criado_em FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all(),
     db.prepare("SELECT autor_id,texto,criado_em FROM portal_pedidos_messages WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id LIMIT 500").bind(p.id,id).all(),
     db.prepare("SELECT autor_id,status,descricao,criado_em FROM portal_pedidos_history WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all()
    ]);
@@ -219,11 +220,11 @@ export async function aberturaPedidosController(req,env){
     if(execView||!owner||row.status!=="RASCUNHO")
      return err("Somente o autor pode editar o rascunho de um pedido.",403);
     const b=await bodyJson(req,12000),values=normalizedFields(b,p.user);
-    const columns=[...Object.values(COLUMNS),"tipo_solicitacao","dados_especificos_json"],keys=Object.keys(COLUMNS);
+    const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const changed=await db.prepare("UPDATE portal_pedidos_tickets SET "+
       columns.map(c=>c+"=?").join(",")+
       ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'")
-     .bind(...keys.map(k=>values[k]),values.tipoSolicitacao,JSON.stringify(values.dadosEspecificos),id,p.id,p.user).run();
+     .bind(...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos),id,p.id,p.user).run();
     if(changed.meta?.changes!==1)return err("Não foi possível atualizar o rascunho.",409);
     return success({atualizado:true});
    }
@@ -234,8 +235,8 @@ export async function aberturaPedidosController(req,env){
       b.base64.length>Math.ceil(MAX_FILE/3)*4+8||!/^[A-Za-z0-9+/]+={0,2}$/.test(b.base64))return err("Anexo inválido. Envie PDF, JPG, PNG ou WebP de até 6 MB.");
    const size=Math.floor(b.base64.length*3/4)-(b.base64.endsWith("==")?2:b.base64.endsWith("=")?1:0);
    if(!size||size>MAX_FILE)return err("Arquivo acima de 6 MB.",413);
-   const proofSlot=row.tipo_solicitacao==="PAGAMENTO"?"comprovante_pagamento":
-    row.tipo_solicitacao==="PAGAMENTO_GUIA"?"comprovante_guia":null;
+   const proofSlot=effectiveKind(row)==="PAGAMENTO"?"comprovante_pagamento":
+    effectiveKind(row)==="PAGAMENTO_GUIA"?"comprovante_guia":null;
    const proof=proofSlot!==null&&b.slot===proofSlot;
    const canProof=proof&&execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO";
    if((b.slot==="comprovante_pagamento"||b.slot==="comprovante_guia")?!canProof:
@@ -244,8 +245,8 @@ export async function aberturaPedidosController(req,env){
     const saved=await drive(conf,p.id,"upload",{ticketId:id,slot:b.slot,nome:b.nome,mime:b.mime,base64:b.base64});
    if(!FILEID.test(saved.fileId||""))return err("Google Drive não confirmou o arquivo.",502);
    await db.batch([
-    db.prepare("INSERT INTO portal_pedidos_docs(id,tenant_id,ticket_id,slot,drive_id,nome,mime,bytes) VALUES(?,?,?,?,?,?,?,?)")
-     .bind(crypto.randomUUID(),p.id,id,b.slot,saved.fileId,b.nome,b.mime,size),
+    db.prepare("INSERT INTO portal_pedidos_docs(id,tenant_id,ticket_id,slot,tipo_anexo,drive_id,nome,mime,bytes) VALUES(?,?,?,?,?,?,?,?,?)")
+     .bind(crypto.randomUUID(),p.id,id,proof?"liberacao":b.slot,proof?b.slot:"",saved.fileId,b.nome,b.mime,size),
     hist(db,p,id,row.status,"Documento anexado: "+b.slot)
    ]);
    return success({anexado:true,slot:b.slot});
@@ -283,7 +284,7 @@ export async function aberturaPedidosController(req,env){
    if(!["ANDAMENTO","PENDENTE","FINALIZADO"].includes(status))return err("Situação inválida.");
    if(status==="PENDENTE"&&motivo.length<8)return err("Informe o motivo detalhado da pendência.");
    const numeroPedidoSistema=clean(b.numeroPedidoSistema,120);
-    if(status==="FINALIZADO"&&(row.tipo_solicitacao||"PEDIDO")==="PEDIDO"&&!numeroPedidoSistema)
+    if(status==="FINALIZADO"&&effectiveKind(row)==="PEDIDO"&&!numeroPedidoSistema)
      return err("Informe o número do pedido no sistema antes de finalizar.",409);
     const update=await db.prepare("UPDATE portal_pedidos_tickets SET status=?,motivo=?,numero_pedido_sistema=CASE WHEN ?='FINALIZADO' THEN ? ELSE numero_pedido_sistema END,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND executor_id=? AND status IN ('ANDAMENTO','PENDENTE')")
     .bind(status,motivo,status,status==="FINALIZADO"?numeroPedidoSistema:"",id,p.id,p.user).run();

@@ -10,6 +10,7 @@ import {TENANT_MODULES} from "../config/tenant-modules.js";
 import {saveNovaFrotaModules,NOVA_FROTA_MANAGED_MODULES} from "./nova-frota-modules.js";
 import {adminWriteProfileAccess} from "./profile-access.js";
 import {adminWritePedidosExec} from "./pedidos-exec-access.js";
+import {adminWriteSolicUserAccess} from "./solicitacoes-user-access.js";
 import {LEGACY_NOVA_FROTA} from "../config/transportadoras.js";
 
 const BASE="/v1/super-admin/transportadoras";
@@ -59,6 +60,11 @@ export async function writeTenantCatalog(request,env,actor) {
      if(pedidosExecRoute){
        if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
        return adminWritePedidosExec(request,env,actor,pedidosExecRoute[1]);
+     }
+     const solicitUserRoute=action.match(/^\/([a-z0-9-]+)\/solicitacoes-user-access$/);
+     if(solicitUserRoute){
+      if(request.method!=="PUT")return errorResponse("Metodo nao permitido.",405);
+      return adminWriteSolicUserAccess(request,env,actor,solicitUserRoute[1]);
      }
      const profileAccessRoute=action.match(/^\/([a-z0-9-]+)\/profile-access$/);
     if(profileAccessRoute){

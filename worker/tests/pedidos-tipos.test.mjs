@@ -94,5 +94,5 @@ test("API obriga liberação do cliente no CT-e e só exige número de sistema n
  assert.ok(api.includes("Anexe a liberação do cliente antes de enviar"));
  assert.ok(api.includes('row.tipo_solicitacao==="CORRECAO_PEDIDO"'));
  assert.ok(api.includes("INSERT INTO portal_pedidos_messages"));
- assert.ok(api.includes('(row.tipo_solicitacao||"PEDIDO")==="PEDIDO"&&!numeroPedidoSistema'));
+ assert.ok(api.includes('effectiveKind(row)==="PEDIDO"&&!numeroPedidoSistema'));
 });

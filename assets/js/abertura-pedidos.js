@@ -12,7 +12,7 @@ const KINDS={
  CORRECAO_PEDIDO:{title:"Correção de pedido",short:"Correção",hint:"Informe o pedido e descreva o que deve ser corrigido. A mensagem abre o chat do chamado."},
  CTE_COMPLEMENTAR:{title:"CT-e complementar",short:"CT-e complementar",hint:"Informe o CT-e, descreva o complemento e anexe a liberação do cliente."},
  CARTA_CORRECAO:{title:"Carta de correção",short:"Carta de correção",hint:"Selecione CT-e ou MDF-e e escreva o texto da carta."},
- PAGAMENTO:{title:"Solicitação de pagamento",short:"Pagamento",hint:"Informe o CT-e, beneficiário e os dados para PIX IRIOM ou depósito."},
+ PAGAMENTO:{title:"Solicitação de pagamento",short:"Pagamento",hint:"Informe o CT-e, beneficiário e os dados para PIX IRION ou depósito."},
  PAGAMENTO_GUIA:{title:"Pagamento de GUIA",short:"GUIA",hint:"Informe o CT-e e a NF. O comprovante será anexado pela execução após finalizar."}
 };
 const EXTRA_LABELS={
@@ -35,7 +35,7 @@ const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
-let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false;
+let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
 function time(value){
@@ -113,10 +113,13 @@ function render(){
  }
 }
 async function refresh(){
+ const serial=++boardSerial;
  const result=await request();
+ if(serial!==boardSerial)return;
  chamados=Array.isArray(result.chamados)?result.chamados:[];
  render();
- if(historyLoaded)await fetchHistoric(true);
+ // A fila não espera pela consulta ao arquivo.
+ if(historyLoaded&&!historyBusy)void fetchHistoric(true);
 }
 function syncPaymentMethod(){
  const active=formKind==="PAGAMENTO",deposit=$("pedFormaPagamento")?.value==="DEPOSITO";
@@ -225,8 +228,20 @@ async function submitForm(e){
  busy=true;button.disabled=true;
  try{
   if(!draft){
-   progress.textContent="Criando protocolo...";
-   const result=await request("","POST",payload);draft=result.chamado.id;
+   progress.textContent="Registrando o número do protocolo...";
+   const direct=documents.length===0&&formKind!=="CTE_COMPLEMENTAR";
+   const result=await request("","POST",{...payload,enviarAgora:direct});
+   draft=result.chamado.id;
+   const issued=number(result.chamado);
+   progress.textContent="Protocolo "+issued+" registrado."+
+    (result.chamado.status==="FILA"?" Já está na fila.":" Processando documentos...");
+   inform("Protocolo "+issued+" criado."+
+    (result.chamado.status==="FILA"?" Chamado disponível na fila.":
+     " O processamento continua nesta página. Mantenha-a aberta até confirmar o envio."));
+   if(result.chamado.status==="FILA"){
+    hideDialog("tnFormDialog");draft="";void refresh();
+    return;
+   }
   }else{
    progress.textContent="Salvando alterações do rascunho...";
    await request("/"+draft+"/dados","POST",payload);
@@ -239,10 +254,10 @@ async function submitForm(e){
   const result=await request("/"+draft+"/enviar","POST",{});
   hideDialog("tnFormDialog");draft="";
   inform(KINDS[formKind].title+" "+(result.numero?"#"+String(result.numero).padStart(5,"0"):"")+" encaminhada para a fila.");
-  await refresh();
+  void refresh();
  }catch(error){
   progress.textContent="Envio incompleto. "+error.message+" O rascunho foi preservado.";
-  try{await refresh();}catch(_){}
+  void refresh().catch(()=>{});
  }finally{busy=false;button.disabled=false;}
 }
 async function fileBlob(id,doc){
@@ -408,8 +423,20 @@ function updateSystemInput(){
  wrap.hidden=!final;form.elements.numeroPedidoSistema.required=final;
 }
 async function openDetail(id){
+ const serial=++detailSerial;
+ $("tnDetailProtocol").textContent="Carregando chamado...";
+ $("tnDetailTitle").textContent="Consultando dados e histórico";
+ $("tnDetailInfo").replaceChildren(element("p","Buscando informações...","cad-empty"));
+ $("tnExecution").hidden=true;
+ $("tnChatForm").hidden=true;
+ $("tnPendingUpload").hidden=true;
+ $("tnAssumir").hidden=true;
+ $("tnStatusForm").hidden=true;
+ showDialog("tnDetailDialog");
  try{
-  const data=await request("/"+id),row=data.chamado;selected=row;
+  const data=await request("/"+id);
+  if(serial!==detailSerial)return;
+  const row=data.chamado;selected=row;
   const kind=kindOf(row),extras=row.dadosEspecificos||{};
   const payment=["PAGAMENTO","PAGAMENTO_GUIA"].includes(kind),proofSlot=kind==="PAGAMENTO"?"comprovante_pagamento":"comprovante_guia";
   const hasProof=(data.anexos||[]).some(doc=>doc.slot===proofSlot);
@@ -432,7 +459,7 @@ async function openDetail(id){
    for(const name of EXTRA_FIELDS[kind]||[]){
     if(kind==="PAGAMENTO"&&name==="pixPagamento"&&extras.formaPagamento==="DEPOSITO")continue;
     const value=name==="formaPagamento"?
-      ({PIX_IRIOM:"PIX IRIOM",PIX_IRION:"PIX IRIOM",DEPOSITO:"Depósito bancário"}[extras[name]]||extras[name]):
+      ({PIX_IRION:"PIX IRION",DEPOSITO:"Depósito bancário"}[extras[name]]||extras[name]):
       name==="etapaPagamento"?
       ({ADIANTAMENTO:"Adiantamento",SALDO:"Saldo",ADIANTAMENTO_E_SALDO:"Adiantamento e Saldo"}[extras[name]]||extras[name]):
       extras[name];
@@ -463,15 +490,27 @@ async function openDetail(id){
    $("tnStatusForm").elements.numeroPedidoSistema.value=row.numeroPedidoSistema||"";
    updateSystemInput();
   }
-  $("tnChatForm").hidden=["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
-  $("tnPendingUpload").hidden=execution||row.status!=="PENDENTE";
+  $("tnChatForm").hidden=data.consultaPublica===true||["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
+  $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE";
   showDialog("tnDetailDialog");
  }catch(e){inform(e.message,true);}
 }
 async function action(path,data,message){
  if(!selected)return;const id=selected.id;
- try{await request("/"+id+path,"POST",data);await refresh();await openDetail(id);inform(message||"Alteração salva.");}
- catch(e){inform(e.message,true);}
+ try{
+  const saved=await request("/"+id+path,"POST",data);
+  if(selected?.id===id){
+   if(saved.status)selected.status=saved.status;
+   if(path==="/assumir")selected.executor=user;
+   $("tnDetailStatus").textContent=({ANDAMENTO:"Em andamento",PENDENTE:"Pendente",FINALIZADO:"Finalizado"})[selected.status]||selected.status;
+   $("tnDetailOwner").textContent=selected.executor?"Executor: "+selected.executor:"Aguardando executor";
+   if(path==="/assumir"){$("tnAssumir").hidden=true;$("tnStatusForm").hidden=false;}
+  }
+  inform(message||"Alteração salva.");
+  // Atualizações em paralelo depois que a escrita foi confirmada.
+  void refresh().catch(error=>inform(error.message,true));
+  void openDetail(id);
+ }catch(e){inform(e.message,true);}
 }
 async function extraProof(){
  if(!selected||!["PAGAMENTO","PAGAMENTO_GUIA"].includes(kindOf(selected))||selected.status!=="FINALIZADO")return;
@@ -509,12 +548,11 @@ async function boot(){
    for(const option of [...$("tnTypeFilter").options])if(option.value&&!allowed.has(option.value))option.remove();}
   user=String(session.usuario||session.user||"").trim();
   if(!user)throw Error("Usuário não identificado.");
-  canCreate=state.armazenamentoConfigurado===true;
+  canCreate=state.armazenamentoConfigurado===true&&state.podeCriar!==false;
   if($("tnSwitch"))$("tnSwitch").hidden=!executor;
   if($("tnNew"))$("tnNew").disabled=!canCreate;
   if(!canCreate)inform("Configure o Google Drive da transportadora no Super Admin antes de usar os anexos.",true);
-  await refresh();
-  await fetchHistoric(true);
+  await Promise.all([refresh(),fetchHistoric(true)]);
  }catch(e){
   if($("tnNew"))$("tnNew").disabled=true;
   $("tnBoard").replaceChildren(element("p",e.message,"cad-empty"));

@@ -24,6 +24,18 @@ jobs:
         working-directory: worker
         run: npm ci --ignore-scripts
 
+      - name: Validar novo perfil SOLICITAÇÕES e permissões por usuário
+        working-directory: worker
+        run: |
+          node --check src/services/solicitacoes-user-access.js
+          node --check src/services/profile-access.js
+          node --check src/services/tenant-auth.js
+          node --check src/controllers/tenant-unified.js
+          node --check src/controllers/session.js
+          node --check ../assets/js/super-admin-solicitacoes-users.js
+          node --check ../assets/js/super-admin-profile-access.js
+          node --test tests/profile-access.test.mjs tests/solicitacoes-profile.test.mjs tests/portal-auth-ready.test.mjs tests/tenant-user-onboarding.test.mjs
+
       - name: Testar regras de comissões antes do deploy
         working-directory: worker
         run: node --test tests/rh-commissions.test.mjs

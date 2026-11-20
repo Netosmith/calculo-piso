@@ -29,10 +29,10 @@ function googleDateHelpers(){
 }
 
 test("A fila e a execução incluem FINALIZADO de hoje pelo evento, não por edição posterior",()=>{
- assert.ok(d1.includes('final_event.status=\\'FINALIZADO\\''));
+ assert.ok(d1.includes("final_event.status='FINALIZADO'"));
  assert.ok(d1.includes("date(final_event.criado_em,'-3 hours')=date('now','-3 hours')"));
- assert.ok(d1.includes('status=\\'FINALIZADO\\' AND "+finalizedToday+'));
- assert.ok(d1.includes('status<>\\'FINALIZADO\\' OR "+finalizedToday+'));
+ assert.ok(d1.includes("status='FINALIZADO' AND "));
+ assert.ok(d1.includes("status<>'FINALIZADO' OR "));
  assert.ok(d1.includes('SELECT * FROM portal_pedidos_tickets WHERE tenant_id=?'));
  assert.ok(d1.includes('if(path==="/historico"&&req.method==="GET")'));
 });

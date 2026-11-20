@@ -559,14 +559,19 @@ async function openDetail(id){
   }
   $("tnChatForm").hidden=data.consultaPublica===true||["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
   $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE";
-  const allowCorrection=!execution&&data.consultaPublica!==true&&row.status==="PENDENTE";
+  const allowCorrection=data.consultaPublica!==true&&row.status==="PENDENTE";
   if($("tnPendingCorrection")){
    $("tnPendingCorrection").hidden=!allowCorrection;
    $("tnPendingReason").textContent=allowCorrection?
     (row.motivo||"A execução solicitou correções neste chamado. Revise os dados antes de reenviar."):"";
    $("tnPendingEdit").onclick=()=>{
     hideDialog("tnDetailDialog");
-    void resume(row);
+    if(execution){
+     // A edição utiliza os mesmos controles e validações do formulário Solicitações.
+     const next=new URL("solicitacao-pedidos.html",window.location.href);
+     next.searchParams.set("corrigir",row.id);
+     window.location.assign(next.href);
+    }else void resume(row);
    };
   }
   showDialog("tnDetailDialog");
@@ -639,6 +644,22 @@ async function boot(){
   if(!canCreate)inform("Configure o Google Drive da transportadora no Super Admin antes de usar os anexos.",true);
   startAutoRefresh();
   await refresh();
+  if(!execution){
+   const deepLink=new URL(window.location.href);
+   const pendingId=deepLink.searchParams.get("corrigir");
+   if(pendingId){
+    deepLink.searchParams.delete("corrigir");
+    window.history.replaceState(null,"",deepLink.pathname+deepLink.search+deepLink.hash);
+    if(/^[a-f0-9-]{36}$/.test(pendingId)){
+     try{
+      const details=await request("/"+pendingId);
+      if(details?.chamado?.status==="PENDENTE"&&details.consultaPublica!==true)
+       void resume(details.chamado);
+      else inform("Este chamado não está mais pendente ou não pode ser corrigido.",true);
+     }catch(e){inform("Não foi possível abrir a pendência: "+e.message,true);}
+    }
+   }
+  }
  }catch(e){
   if($("tnNew"))$("tnNew").disabled=true;
   ensureBoard();

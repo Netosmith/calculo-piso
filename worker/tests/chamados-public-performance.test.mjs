@@ -53,6 +53,9 @@ test("protocolo priorizado e UI não aguarda o histórico para renderizar a fila
  assert.ok(client.includes('await Promise.all([refresh(),fetchHistoric(true)])'));
  assert.ok(client.includes('void refresh().catch(error=>inform(error.message,true))'));
  assert.ok(client.includes('showDialog("tnDetailDialog")'));
+ assert.ok(client.includes('const preview=chamados.find(row=>row.id===id)'));
+ assert.ok(client.includes('actionBusy=true;detailSerial++'));
+ assert.ok(client.includes('$("tnAssumir").hidden=!(execution&&executor&&preview?.status==="FILA")'));
  assert.ok(sheets.includes('enviarAgora:raw?.enviarAgora===true'));
  assert.ok(controller.includes('const direct=b.enviarAgora===true'));
 });

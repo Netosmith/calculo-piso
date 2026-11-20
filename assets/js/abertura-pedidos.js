@@ -215,6 +215,8 @@ function setKind(kind,{syncPicker=true}={}){
  $("pedFormTypeBadge").textContent=KINDS[formKind].title.toUpperCase();
  $("pedFormHint").textContent=KINDS[formKind].hint;
  $("pedDocumentsTitle").hidden=formKind!=="PEDIDO";
+ const privacy=form.querySelector(".cad-privacy");
+ if(privacy)privacy.hidden=!(formKind==="PEDIDO"||complement);
  $("tnEnviar").textContent="Enviar "+(formKind==="PEDIDO"?"pedido":"solicitação");
  $("tnFormDialog").dataset.kind=formKind;
  if(selector){
@@ -225,7 +227,7 @@ function newForm(){
  if(!canCreate)return inform("Configure o Google Drive antes de solicitar documentos.",true);
  draft="";revisionPending=false;$("tnForm").reset();
  setKind($("tnKindSelect")?.value||"PEDIDO");
- $("tnFormProgress").textContent="Preencha os campos obrigatórios. Anexos podem ser enviados junto à solicitação.";
+ $("tnFormProgress").textContent="Preencha os campos obrigatórios."+(["PEDIDO","CTE_COMPLEMENTAR"].includes(formKind)?" Anexos podem ser enviados junto à solicitação.":"");
  showDialog("tnFormDialog");
 }
 async function resume(row){
@@ -243,13 +245,13 @@ async function resume(row){
   "Retomar "+kindTitle(row)+" "+number(row);
  $("tnEnviar").textContent=revisionPending?"Salvar correções e devolver à fila":"Enviar solicitação";
  $("tnFormProgress").textContent=revisionPending?
-  "Qualquer usuário desta transportadora pode corrigir a pendência. Revise os campos e anexe documentos novos se necessário. Ao enviar, o chamado retorna à FILA com o mesmo protocolo.":
-  "Dados editáveis. Os anexos já recebidos são preservados.";
+  "Qualquer usuário desta transportadora pode corrigir a pendência. Revise os campos"+(formKind==="PAGAMENTO"?" bancários.":" e anexe documentos novos se necessário.")+" Ao enviar, o chamado retorna à FILA com o mesmo protocolo.":
+  formKind==="PAGAMENTO"?"Dados editáveis. Confira as informações para pagamento.":"Dados editáveis. Os anexos já recebidos são preservados.";
  if(corruptedAgency)$("tnFormProgress").textContent="ATENÇÃO: a agência anterior foi convertida em data pelo Google Sheets. Informe a agência correta antes de salvar.";
  showDialog("tnFormDialog");
  try{
   const detail=await request("/"+row.id);
-  $("tnFormProgress").textContent=(corruptedAgency?"ATENÇÃO: agência convertida em data. Digite a agência correta. ":"")+(detail.anexos||[]).length+" anexo(s) já salvos. Selecione somente arquivos adicionais.";
+  $("tnFormProgress").textContent=(corruptedAgency?"ATENÇÃO: agência convertida em data. Digite a agência correta. ":"")+(formKind==="PAGAMENTO"?"Revise os dados para pagamento e salve a correção.":(detail.anexos||[]).length+" anexo(s) já salvos. Selecione somente arquivos adicionais.");
  }catch(e){inform(e.message,true);}
 }
 function checkFile(file){
@@ -543,7 +545,9 @@ async function openDetail(id){
     info.append(detailItem(EXTRA_LABELS[name],value));
    }
   }
-  renderDocs(id,data.anexos||[],kind);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
+  const currentDocs=data.anexos||[];
+  $("tnDetailDocs").closest(".cad-detail-section").hidden=kind==="PAGAMENTO"&&currentDocs.length===0;
+  renderDocs(id,currentDocs,kind);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
   $("pedProofFlag").hidden=!payment||row.status!=="FINALIZADO";
   $("pedProofFlag").textContent=hasProof?"Comprovante anexado":"Aguardando comprovante";
   const isMine=execution&&executor&&row.executor===user;
@@ -568,7 +572,7 @@ async function openDetail(id){
    updateSystemInput();
   }
   $("tnChatForm").hidden=data.consultaPublica===true||["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
-  $("tnPendingUpload").hidden=data.consultaPublica===true||execution||row.status!=="PENDENTE";
+  $("tnPendingUpload").hidden=kind==="PAGAMENTO"||data.consultaPublica===true||execution||row.status!=="PENDENTE";
   const allowCorrection=data.consultaPublica!==true&&row.status==="PENDENTE";
   if($("tnPendingCorrection")){
    $("tnPendingCorrection").hidden=!allowCorrection;

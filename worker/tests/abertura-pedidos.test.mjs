@@ -53,7 +53,8 @@ test("Cada pedido e documento são separados por transportadora e solicitante",(
  assert.ok(c.includes('if(!privateAccess&&(req.method!=="GET"||action!==""))'));
   assert.ok(c.includes('if(row.excluido_em&&!p.ownerSupport)'));
  assert.ok(c.includes('row.executor_id!==p.user'));
- assert.ok(c.includes("WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'"));
+ assert.ok(c.includes("WHERE id=? AND tenant_id=? AND status IN ('RASCUNHO','PENDENTE') AND (status='PENDENTE' OR solicitante_id=?)"));
+ assert.ok(c.includes('if(row.status==="RASCUNHO"&&!owner&&!p.ownerSupport)'));
  assert.ok(c.includes('SLOTS.has(b.slot)'));
 });
 

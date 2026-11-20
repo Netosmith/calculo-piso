@@ -17,8 +17,8 @@ function env(){
 }
 const read=p=>readFileSync(new URL("../../"+p,import.meta.url),"utf8");
 
-test("Cinco perfis configuráveis; SUPER-ADMIN nunca é cadastro comum",()=>{
- assert.deepEqual(PROFILE_ROLES,["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GOADM","PISO"]);
+test("Seis perfis configuráveis; SUPER-ADMIN nunca é cadastro comum",()=>{
+ assert.deepEqual(PROFILE_ROLES,["ADMINISTRADOR","COMERCIAL","OPERACIONAL","GOADM","PISO","SOLICITACOES"]);
  assert.deepEqual(defaultProfileModules("nova-frota","PISO"),["piso2"]);
  assert.deepEqual(defaultProfileModules("nova-frota","GOADM"),["administrativo"]);
  const op=defaultProfileModules("nova-frota","OPERACIONAL");
@@ -37,6 +37,10 @@ test("Cinco perfis configuráveis; SUPER-ADMIN nunca é cadastro comum",()=>{
  assert.ok(adm.includes("cadastros"));
  assert.ok(adm.includes("funcionarios"));
  assert.ok(adm.includes("administrativo"));
+ assert.ok(!adm.includes("execucao-pedidos"));
+ assert.ok(!adm.includes("execucao-cadastros"));
+ assert.ok(!adm.includes("execucao-troca-notas"));
+ assert.ok(defaultProfileModules("nova-frota","SOLICITACOES").includes("execucao-pedidos"));
  assert.ok(!defaultProfileModules("transvale-01","ADMINISTRADOR").includes("fretes2"));
 });
 
@@ -115,7 +119,8 @@ test("Interface apresenta a aba e o carregador protege links e PISO",()=>{
  assert.ok(panel.includes('id="saveProfileAccess"'));
  assert.ok(panel.includes('super-admin-profile-access.js?v='));
  assert.ok(ui.includes("/profile-access"));
- assert.ok(ui.includes('return !(currentRole==="PISO"&&key!=="piso2");'));
+ assert.ok(ui.includes('currentRole==="SOLICITACOES"'));
+ assert.ok(ui.includes('key==="piso2"||key==="cadastro-solicitacoes"'));
  assert.ok(!ui.includes('currentRole!=="ADMINISTRADOR"'));
  assert.ok(guard.includes("routeFeature"));
  assert.ok(guard.includes("session.modules.includes(routeFeature)"));

@@ -193,7 +193,8 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
   }
   else if(!path&&request.method==="POST"){
    if(view==="execucao")return errorResponse("Ação exclusiva do solicitante.",403);
-   action="create";data={fields:normalizedFields(await request.json(),p.user)};
+   const raw=await request.json();
+    action="create";data={fields:normalizedFields(raw,p.user),enviarAgora:raw?.enviarAgora===true};
   }else{
    const match=path.match(/^([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
    if(!match)return errorResponse("Rota não encontrada.",404);

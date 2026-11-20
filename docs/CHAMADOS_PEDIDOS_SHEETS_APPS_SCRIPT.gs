@@ -203,6 +203,7 @@ function cmPublicTicket_(main){
 function cmTicketForAudience_(ss,p,main){
  var ctx=p.context||{};
  var own=ctx.superAdmin===true||main.SOLICITANTE===ctx.user||
+  (ctx.view==="solicitante"&&main.STATUS==="PENDENTE")||
   (ctx.view==="execucao"&&ctx.executor===true&&
    (ctx.allowedKinds||[]).indexOf(cmRaw_(main.TIPO))>=0);
  return own?cmTicket_(ss,main):cmPublicTicket_(main);
@@ -437,8 +438,9 @@ function cmOperation_(ss,p){
  var object=cmTicket_(ss,ticket),owner=ticket.SOLICITANTE===user;
  var isMine=executor&&ticket.EXECUTOR===user&&ctx.view==="execucao";
  if(op==="get"){
-  var canReadPrivate=admin||owner||ctx.view==="execucao"&&executor&&
-   (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0;
+  var canReadPrivate=admin||owner||(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")||
+   (ctx.view==="execucao"&&executor&&
+    (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0);
   if(!canReadPrivate)return {chamado:cmPublicTicket_(ticket),anexos:[],mensagens:[],
     historico:[],executor:false,consultaPublica:true};
   var docs=cmFile_(ss,p,ticket),messages=cmRows_(ss,"MENSAGENS")
@@ -448,18 +450,22 @@ function cmOperation_(ss,p){
    historico:cmHistoryResult_(ss,p.tenant,ticket.ID),executor:executor};
  }
  if(op==="updateDraft"){
-  if(ctx.view==="execucao"||!owner||["RASCUNHO","PENDENTE"].indexOf(ticket.STATUS)<0)throw new Error("Somente o solicitante pode corrigir rascunhos ou chamados pendentes.");
+  if(ctx.view==="execucao"||["RASCUNHO","PENDENTE"].indexOf(ticket.STATUS)<0||
+   (ticket.STATUS==="RASCUNHO"&&!owner))
+   throw new Error("Somente o autor edita rascunhos; chamados pendentes são colaborativos.");
   var vals=data.fields||{};
   if(vals.tipoSolicitacao!==ticket.TIPO)throw new Error("Não é possível trocar o tipo do chamado na correção.");
   cmUpdateDetails_(ss,ticket.ID,vals,vals.dadosEspecificos||{});
   ticket.NOME_SOLICITANTE=vals.nomeSolicitante||user;ticket.ATUALIZADO_EM=cmNow_();
   cmPut_(ss,"SOLICITACOES",ticket,"ID");
   cmHist_(ss,p,ticket,ticket.STATUS,ticket.STATUS==="PENDENTE"?
-   "Dados do chamado corrigidos pelo solicitante":"Dados do rascunho atualizados");
+   "Dados da pendência corrigidos por "+user:"Dados do rascunho atualizados");
   return {atualizado:true,status:ticket.STATUS};
  }
  if(op==="enviar"){
-  if(ctx.view==="execucao"||!owner||["RASCUNHO","PENDENTE"].indexOf(ticket.STATUS)<0)throw new Error("Somente o solicitante envia rascunhos ou pendências corrigidas.");
+  if(ctx.view==="execucao"||["RASCUNHO","PENDENTE"].indexOf(ticket.STATUS)<0||
+   (ticket.STATUS==="RASCUNHO"&&!owner))
+   throw new Error("Somente o autor envia rascunhos; pendências podem ser devolvidas pela equipe.");
   if(ticket.TIPO==="CTE_COMPLEMENTAR"&&!cmFile_(ss,p,ticket).some(function(x){return x.slot==="liberacao";}))
    throw new Error("Anexe a liberação do cliente antes de enviar.");
   var wasPending=ticket.STATUS==="PENDENTE";
@@ -467,7 +473,7 @@ function cmOperation_(ss,p){
   ticket.ENVIADO_EM=cmNow_();ticket.ATUALIZADO_EM=ticket.ENVIADO_EM;
   cmPut_(ss,"SOLICITACOES",ticket,"ID");
   cmHist_(ss,p,ticket,"FILA",wasPending?
-   "Pendência corrigida pelo solicitante. Chamado devolvido à fila de execução":
+   "Pendência corrigida por "+user+". Chamado devolvido à fila de execução":
    "Enviado para execução");
   if(!wasPending&&ticket.TIPO==="CORRECAO_PEDIDO"){
    var text=cmRaw_(object.dadosEspecificos.textoCorrecao);
@@ -497,7 +503,8 @@ function cmOperation_(ss,p){
   return {status:next,numeroPedidoSistema:cmRaw_(ticket.NUMERO_PEDIDO_SISTEMA)};
  }
  if(op==="mensagens"){
-  if(["RASCUNHO","FINALIZADO"].includes(ticket.STATUS)||(!owner&&!isMine))
+  if(["RASCUNHO","FINALIZADO"].includes(ticket.STATUS)||
+   (!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")))
    throw new Error("Chat não liberado.");
   var msg=cmSafeText_(data.texto,1800,true);
   cmMessage_(ss,p,ticket,msg,user);return {enviado:true};
@@ -509,7 +516,8 @@ function cmOperation_(ss,p){
   var correctProof=(ticket.TIPO==="PAGAMENTO"&&slot==="comprovante_pagamento")||
     (ticket.TIPO==="PAGAMENTO_GUIA"&&slot==="comprovante_guia");
   if(proof?!(correctProof&&isMine&&ticket.STATUS==="FINALIZADO"):
-    !(owner&&ctx.view==="solicitante"&&["RASCUNHO","PENDENTE"].includes(ticket.STATUS)))
+    !(ctx.view==="solicitante"&&
+    (ticket.STATUS==="PENDENTE"||(owner&&ticket.STATUS==="RASCUNHO"))))
    throw new Error("Anexo não autorizado.");
   var mime=cmRaw_(data.mime),accepted=["application/pdf","image/jpeg","image/png","image/webp"];
   if(accepted.indexOf(mime)<0||!/^[A-Za-z0-9+/]+={0,2}$/.test(cmRaw_(data.base64))||
@@ -527,7 +535,8 @@ function cmOperation_(ss,p){
   return {anexado:true,slot:slot};
  }
  if(op==="download"){
-  if(!admin&&!owner&&!isMine)throw new Error("Anexo privado do solicitante ou executor.");
+  if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE"))
+  throw new Error("Anexo privado do solicitante ou executor.");
   var doc=cmGet_(ss,"ANEXOS","ID",cmRaw_(data.docId));
   if(!doc||doc.CHAMADO_ID!==ticket.ID||doc.TRANSPORTADORA!==p.tenant)throw new Error("Documento não encontrado.");
   var directory=getTicketFolder_(DriveApp.getFolderById(

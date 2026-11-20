@@ -1,4 +1,5 @@
 import {profileAllowsModule} from "../services/profile-access.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 import {PEDIDOS_EXEC_KINDS,PEDIDOS_EXEC_LEGACY_KINDS,readPedidosExecAccess} from "../services/pedidos-exec-access.js";
 import {ALLOWED_ORIGINS} from "../config.js";
 import {errorResponse,success} from "../utils/response.js";
@@ -58,12 +59,12 @@ async function principalFor(req,env){
   return s?{id:s.tenant_id,user:s.user_id,role:s.role,ownerSupport:true}:null;
  }
  if(hasTenantSessionCookie(req)){
-  const s=await tenantSession(env.TENANTS_DB,req);
+  const s=await tenantSession(env.TENANTS_DB,req,env);
   return s?{id:s.tenant_id,user:s.user_id,role:s.role}:null;
  }
  const s=await getSession(env,readSessionId(req));
  return s&&tenantIdForLegacySession(s)===LEGACY_NOVA_FROTA.id?
-   {id:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil,
+   {id:LEGACY_NOVA_FROTA.id,user:s.usuario,role:await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,s.usuario,s.perfil),
     ownerSupport:Boolean(env.SUPER_ADMIN_USER)&&
       String(s.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase()
    }:null;
@@ -169,14 +170,14 @@ export async function aberturaPedidosController(req,env){
  if(!["solicitante","execucao"].includes(view))return err("Visão inválida.");
  if(req.method!=="GET"&&!originAllowed(req))return err("Origem não autorizada.",403);
  const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
- flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true);
- flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true);
+ flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true,p.user);
+ flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true,p.user);
  const execProfile=await readPedidosExecAccess(env,p.id);
  const userKey=String(p.user||"").trim().toUpperCase();
  const kinds=p.ownerSupport===true?[...PEDIDOS_EXEC_KINDS]:
-  execProfile.configured?[...(execProfile.usuarios[userKey]||[])]:[...PEDIDOS_EXEC_LEGACY_KINDS];
+  execProfile.configured?[...(execProfile.usuarios[userKey]||[])]:p.role==="SOLICITACOES"?[...PEDIDOS_EXEC_KINDS]:[...PEDIDOS_EXEC_LEGACY_KINDS];
  const executor=flags.executar&&kinds.length>0&&String(p.role||"").toUpperCase()!=="PISO"&&
-  (isExecutor(p,conf)||(execProfile.configured&&kinds.length>0));
+  (p.role==="SOLICITACOES"||p.ownerSupport===true||isExecutor(p,conf)||(execProfile.configured&&kinds.length>0));
  const execView=view==="execucao";
  const googleSheets=await sheetsConfig(env,p.id);
  if(path.startsWith("/sheets/"))

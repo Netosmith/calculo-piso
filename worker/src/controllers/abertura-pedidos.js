@@ -127,8 +127,7 @@ export function normalizedFields(b,requester=""){
   if(!extras||typeof extras!=="object"||Array.isArray(extras))throw Error("Dados específicos da solicitação não informados.");
   for(const [key,max] of EXTRA_FIELDS[kind]){
    const optionalPayment=kind==="PAGAMENTO"&&(
-    (extras.formaPagamento==="DEPOSITO"&&key==="pixPagamento")||
-    (extras.formaPagamento!=="DEPOSITO"&&["bancoPagamento","agenciaPagamento","contaPagamento"].includes(key)));
+    (extras.formaPagamento==="DEPOSITO"&&key==="pixPagamento"));
    if(optionalPayment){result.dadosEspecificos[key]="";continue;}
    const value=["textoCorrecao","descricaoComplemento","textoCarta"].includes(key)
     ? cleanMultiline(extras[key],max) : clean(extras[key],max);
@@ -136,7 +135,7 @@ export function normalizedFields(b,requester=""){
    result.dadosEspecificos[key]=value;
   }
   if(kind==="PAGAMENTO"&&(!["PIX_IRION","DEPOSITO"].includes(result.dadosEspecificos.formaPagamento)||
-    !["ADIANTAMENTO","SALDO"].includes(result.dadosEspecificos.etapaPagamento)))
+    !["ADIANTAMENTO","SALDO","ADIANTAMENTO_E_SALDO"].includes(result.dadosEspecificos.etapaPagamento)))
    throw Error("Forma ou etapa do pagamento inválida.");
   if(kind==="CARTA_CORRECAO"&&!["CTE","MDFE"].includes(result.dadosEspecificos.documentoTipo))
    throw Error("Selecione CT-e ou MDF-e.");

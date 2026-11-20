@@ -32,6 +32,13 @@ const kindOf=p=>Object.hasOwn(KINDS,p?.tipoSolicitacao)?p.tipoSolicitacao:"PEDID
 const kindTitle=p=>KINDS[kindOf(p)].title;
 const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
  p?.dadosEspecificos?.numeroCte||p?.dadosEspecificos?.numeroDocumento||p?.dadosEspecificos?.ctePagamento||p?.dadosEspecificos?.cteGuia||p?.numeroPedidoOC||"";
+function agencyLooksLikeDate(value){
+ const v=String(value||"").trim();
+ return /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{4}/i.test(v)||
+ /^\d{4}-\d{2}-\d{2}(?:[T\s]|$)/.test(v)||
+ /^\d{1,2}\/\d{1,2}\/\d{4}(?:\s|$)/.test(v)||
+ /(?:GMT[+-]\d{4}|Horário Padrão de Brasília)/i.test(v);
+}
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",revisionPending=false,busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
@@ -227,9 +234,10 @@ async function resume(row){
  for(const name of FIELDS)$("tnForm").elements[name].value=row[name]||"";
  for(const name of EXTRA_FIELDS[formKind]||[]){
   const input=$("tnForm").elements[name];
-  if(input)input.value=name==="formaPagamento"&&row.dadosEspecificos?.[name]==="PIX_IRION"?"PIX_IRIOM":(row.dadosEspecificos?.[name]||"");
+  if(input){const value=name==="formaPagamento"&&row.dadosEspecificos?.[name]==="PIX_IRION"?"PIX_IRIOM":(row.dadosEspecificos?.[name]||"");input.value=name==="agenciaPagamento"&&agencyLooksLikeDate(value)?"":value;}
  }
  syncPaymentMethod();
+ const corruptedAgency=formKind==="PAGAMENTO"&&agencyLooksLikeDate(row.dadosEspecificos?.agenciaPagamento);
  $("tnFormTitle").textContent=revisionPending?
   "Corrigir pendência: "+kindTitle(row)+" "+number(row):
   "Retomar "+kindTitle(row)+" "+number(row);
@@ -237,10 +245,11 @@ async function resume(row){
  $("tnFormProgress").textContent=revisionPending?
   "Qualquer usuário desta transportadora pode corrigir a pendência. Revise os campos e anexe documentos novos se necessário. Ao enviar, o chamado retorna à FILA com o mesmo protocolo.":
   "Dados editáveis. Os anexos já recebidos são preservados.";
+ if(corruptedAgency)$("tnFormProgress").textContent="ATENÇÃO: a agência anterior foi convertida em data pelo Google Sheets. Informe a agência correta antes de salvar.";
  showDialog("tnFormDialog");
  try{
   const detail=await request("/"+row.id);
-  $("tnFormProgress").textContent=(detail.anexos||[]).length+" anexo(s) já salvos. Selecione somente arquivos adicionais.";
+  $("tnFormProgress").textContent=(corruptedAgency?"ATENÇÃO: agência convertida em data. Digite a agência correta. ":"")+(detail.anexos||[]).length+" anexo(s) já salvos. Selecione somente arquivos adicionais.";
  }catch(e){inform(e.message,true);}
 }
 function checkFile(file){
@@ -266,6 +275,7 @@ async function submitForm(e){
  payload.dadosEspecificos={};
  for(const name of EXTRA_FIELDS[formKind]||[])
   payload.dadosEspecificos[name]=form.elements[name].disabled?"":String(form.elements[name].value||"").trim();
+ if(formKind==="PAGAMENTO"&&agencyLooksLikeDate(payload.dadosEspecificos.agenciaPagamento)){progress.textContent="Agência inválida: foi convertida em data. Informe novamente o número correto da agência.";form.elements.agenciaPagamento.focus();return;}
  const documents=[...form.querySelectorAll("[data-slot]:not([disabled])")].flatMap(input=>
   [...input.files].map(file=>({slot:input.dataset.slot,file})));
  if(formKind==="CTE_COMPLEMENTAR"&&!draft&&!documents.some(x=>x.slot==="liberacao")){

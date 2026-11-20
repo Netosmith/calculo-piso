@@ -23,7 +23,8 @@ const has=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key);
 const cleanKeys=(values,available=SOLIC_MODULE_KEYS)=>available.filter(key=>values.includes(key));
 
 export async function readSolicUserAccess(env,id){
- if(!TENANT.test(id)||!env?.TENANT_BRANDS)throw Error("Armazenamento de usuários de Solicitações indisponível.");
+ if(!TENANT.test(id))throw Error("Transportadora inválida.");
+ if(!env?.TENANT_BRANDS)return {configured:false,usuarios:{}};
  const file=await env.TENANT_BRANDS.get(KEY(id));
  if(!file)return {configured:false,usuarios:{}};
  const data=await file.json();

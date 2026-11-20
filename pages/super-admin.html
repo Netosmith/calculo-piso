@@ -119,6 +119,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
 .profile-access-item:has(input:disabled){opacity:.72;cursor:default}
 .profile-access-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:16px}
 .profile-access-footer p{margin:0;color:#c1e2f5}
+.ped-sheets-checks{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.ped-sheets-check{font-size:12px;border:1px solid #3a7189;border-radius:10px;padding:8px 10px;background:#15384f;color:#ccecff}.ped-sheets-check.ok{border-color:#387f65;color:#b8ead4}.ped-sheets-check.warning{border-color:#bd9649;color:#ffe09e;background:#423219}
 .ped-sheets-buttons{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}.ped-sheets-buttons a{color:#a8dafa;text-decoration:underline;font-weight:750}.ped-sheets-buttons button:disabled{opacity:.55;cursor:not-allowed}
 .ped-exec-panel{margin-top:24px;padding:18px;border:1px solid #355c76;border-radius:16px;background:#0b2135}.ped-exec-panel h3{margin:0 0 8px}.ped-exec-input{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:16px 0}.ped-exec-input label{display:grid;gap:6px;min-width:260px;font-weight:700}.ped-exec-input input{background:#f7fbff;color:#112d44;border:1px solid #9abbd1;border-radius:10px;padding:11px}.ped-exec-kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.ped-exec-kinds label{padding:10px;border:1px solid #315775;border-radius:10px;background:#102c43;font-size:13px}.ped-exec-list{display:grid;gap:7px;margin:15px 0}.ped-exec-user{display:flex;gap:10px;align-items:center;border-bottom:1px solid #24455e;padding:7px}.ped-exec-user span{flex:1;font-size:12px;overflow-wrap:anywhere}
 </style>
@@ -200,6 +201,7 @@ main{max-width:1420px;padding:26px 22px 60px}h1{font-size:clamp(27px,3vw,36px);l
   <a id="pedSheetsLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir planilha</a>
  </div>
  <p id="pedSheetsMessage" role="status" class="muted">Selecione uma transportadora e verifique a conexão.</p>
+ <div id="pedSheetsChecks" class="ped-sheets-checks" aria-live="polite"></div>
  <p class="muted">Antes de importar, atualize a implantação do Apps Script existente para esta empresa com o <a href="https://github.com/Netosmith/calculo-piso/blob/main/docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs" target="_blank" rel="noopener noreferrer">código atualizado do serviço Drive + Sheets</a>, mantendo as propriedades CADASTRO_* e permissões privadas. A atualização não altera Cadastro nem Troca de Notas.</p>
 </section>
 </div>
@@ -1118,7 +1120,7 @@ document.querySelector('[data-tab="settings"]')?.addEventListener('click',loadCa
 <script src="../assets/js/auth.js?v=20261119-ocr-1"></script>
 <script src="../assets/js/super-admin-profile-access.js?v=20261112-2"></script>
 <script src="../assets/js/super-admin-pedidos-perfis.js?v=20261120-1"></script>
-<script src="../assets/js/super-admin-chamados-sheets.js?v=20261120-sheets-1"></script>
+<script src="../assets/js/super-admin-chamados-sheets.js?v=20261120-checks-2"></script>
 <script src="../assets/js/super-admin-real-preview.js?v=9" defer></script>
 <script src="../assets/js/super-admin-monitor-delete.js?v=1" defer></script>
 <script src="../assets/js/portal-preferences.js?v=9" defer></script>

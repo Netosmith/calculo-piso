@@ -1,4 +1,5 @@
 import {profileAllowsModule} from "../services/profile-access.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 import {ALLOWED_ORIGINS} from "../config.js";
 import {errorResponse,success} from "../utils/response.js";
 import {tenantSession,hasTenantSessionCookie} from "../services/tenant-auth.js";
@@ -41,12 +42,12 @@ async function principalFor(req,env){
   return s?{id:s.tenant_id,user:s.user_id,role:s.role,ownerSupport:true}:null;
  }
  if(hasTenantSessionCookie(req)){
-  const s=await tenantSession(env.TENANTS_DB,req);
+  const s=await tenantSession(env.TENANTS_DB,req,env);
   return s?{id:s.tenant_id,user:s.user_id,role:s.role}:null;
  }
  const s=await getSession(env,readSessionId(req));
  return s&&tenantIdForLegacySession(s)===LEGACY_NOVA_FROTA.id?
-   {id:LEGACY_NOVA_FROTA.id,user:s.usuario,role:s.perfil,
+   {id:LEGACY_NOVA_FROTA.id,user:s.usuario,role:await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,s.usuario,s.perfil),
     ownerSupport:Boolean(env.SUPER_ADMIN_USER)&&
       String(s.usuario||"").trim().toUpperCase()===String(env.SUPER_ADMIN_USER).trim().toUpperCase()
    }:null;
@@ -144,9 +145,9 @@ export async function trocaNotasController(req,env){
  if(!["solicitante","execucao"].includes(view))return err("Visão inválida.");
  if(req.method!=="GET"&&!originAllowed(req))return err("Origem não autorizada.",403);
  const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
- flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-troca-notas",p.ownerSupport===true);
- flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-troca-notas",p.ownerSupport===true);
- const executor=flags.executar&&isExecutor(p,conf),execView=view==="execucao";
+ flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-troca-notas",p.ownerSupport===true,p.user);
+ flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-troca-notas",p.ownerSupport===true,p.user);
+ const executor=flags.executar&&(p.role==="SOLICITACOES"||p.ownerSupport===true||isExecutor(p,conf)),execView=view==="execucao";
  if(path==="/config"&&req.method==="GET")
   return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,armazenamentoConfigurado:!!conf});
  if(execView&&!executor)return err("Execução de Troca de Notas não liberada para este usuário.",403);

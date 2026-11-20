@@ -231,8 +231,15 @@ export async function aberturaPedidosController(req,env){
    }
    if(kind){cond.push("COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao)=?");bind.push(kind);}
    if(busca){
-    cond.push("(UPPER(protocolo) LIKE ? OR CAST(numero AS TEXT) LIKE ? OR UPPER(nome_solicitante) LIKE ? OR UPPER(numero_pedido_oc) LIKE ? OR UPPER(dados_especificos_json) LIKE ?)");
-    const pattern="%"+busca+"%";bind.push(pattern,pattern,pattern,pattern,pattern);
+    const pattern="%"+busca+"%";
+    if(execView&&executor||p.ownerSupport){
+     cond.push("(UPPER(protocolo) LIKE ? OR CAST(numero AS TEXT) LIKE ? OR UPPER(nome_solicitante) LIKE ? OR UPPER(numero_pedido_oc) LIKE ? OR UPPER(dados_especificos_json) LIKE ?)");
+     bind.push(pattern,pattern,pattern,pattern,pattern);
+    }else{
+     // Pesquisa compartilhada nunca revela se CPF, chave PIX ou conta oculta coincide.
+     cond.push("(UPPER(protocolo) LIKE ? OR CAST(numero AS TEXT) LIKE ? OR UPPER(nome_solicitante) LIKE ?)");
+     bind.push(pattern,pattern,pattern);
+    }
    }
    const query="SELECT * FROM portal_pedidos_tickets WHERE "+cond.join(" AND ")+
     " ORDER BY atualizado_em DESC,id DESC LIMIT ? OFFSET ?";

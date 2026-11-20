@@ -52,6 +52,7 @@ test("Migração D1 preserva protocolos, números e dados de pedidos existentes"
  assert.equal(old.numero,1);
  db.exec(read("worker/migrations/super-admin/0009_pedidos_tipos_solicitacao.sql"));
  db.exec(read("worker/migrations/super-admin/0010_chamados_financeiro.sql"));
+ db.exec(read("worker/migrations/super-admin/0011_chamados_arquivamento.sql"));
  const preserved=db.prepare("SELECT tipo_solicitacao,dados_especificos_json,numero FROM portal_pedidos_tickets WHERE id='pedido-antigo'").get();
  assert.equal(preserved.tipo_solicitacao,"PEDIDO");
  assert.equal(preserved.dados_especificos_json,"{}");
@@ -62,6 +63,14 @@ test("Migração D1 preserva protocolos, números e dados de pedidos existentes"
  assert.equal(JSON.parse(after.dados_especificos_json).textoCorrecao,"Trocar o tomador");
  assert.equal(after.numero,1);
  assert.equal(after.categoria_chamado,"");
+ assert.equal(after.excluido_em,"");
+ db.prepare("UPDATE portal_pedidos_tickets SET excluido_em=CURRENT_TIMESTAMP,excluido_por=?,excluido_motivo=? WHERE id=?")
+  .run("SUPERADMIN","Registro de teste","pedido-antigo");
+ assert.equal(db.prepare("SELECT COUNT(*) AS qtd FROM portal_pedidos_tickets WHERE excluido_em=''").get().qtd,0);
+ assert.equal(db.prepare("SELECT COUNT(*) AS qtd FROM portal_pedidos_tickets").get().qtd,1);
+ assert.equal(db.prepare("SELECT numero FROM portal_pedidos_tickets WHERE id='pedido-antigo'").get().numero,1);
+ db.prepare("UPDATE portal_pedidos_tickets SET excluido_em='',excluido_por='',excluido_motivo='' WHERE id=?").run("pedido-antigo");
+ assert.equal(db.prepare("SELECT COUNT(*) AS qtd FROM portal_pedidos_tickets WHERE excluido_em=''").get().qtd,1);
  assert.equal(db.prepare("SELECT tipo_anexo FROM portal_pedidos_docs LIMIT 0").columns().length,1);
  assert.throws(()=>db.prepare("UPDATE portal_pedidos_tickets SET tipo_solicitacao='TIPO_FALSO' WHERE id='pedido-antigo'").run());
  db.close();
@@ -100,6 +109,12 @@ test("Tela tem seletor padrão Pedido e campos distintos com IDs únicos",()=>{
  assert.ok(js.includes('form.elements.tipoSolicitacao.value=formKind'));
  assert.ok(js.includes('renderDocs(id,data.anexos||[],kind)'));
  assert.doesNotThrow(()=>new Script(js));
+ for(const page of [html,exec]){
+  for(const id of ["pedidosHistoric","tnHistorySearch","tnHistoryType","tnHistoryMore",
+   "tnHistoryAll","tnHistoryRemoved","pedAdminActions","pedAdminProtocol","pedAdminEditSave"]){
+    assert.ok(page.includes('id="'+id+'"'),id);
+  }
+ }
 });
 
 test("API obriga liberação do cliente no CT-e e só exige número de sistema no pedido original",()=>{
@@ -112,4 +127,10 @@ test("API obriga liberação do cliente no CT-e e só exige número de sistema n
  assert.ok(api.includes('slot:proof?"liberacao":b.slot'));
  assert.ok(api.includes('proof?b.slot:""'));
  assert.ok(api.includes('execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO"'));
+ assert.ok(api.includes('if(path==="/historico"&&req.method==="GET")'));
+ assert.ok(api.includes('SELECT * FROM portal_pedidos_tickets WHERE '));
+ assert.ok(api.includes('if(!p.ownerSupport)return err("Somente o Super Admin pode remover ou restaurar."'));
+ assert.ok(api.includes('protocolo completo'));
+ assert.ok(api.includes('excluido_em'));
+ assert.ok(api.includes('hist(db,p,id,row.status,"Correção administrativa: "'));
 });

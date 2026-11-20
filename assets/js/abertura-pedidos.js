@@ -422,7 +422,7 @@ function syncHistoryAdmin(){
  $("tnHistoryStatus").disabled=!all;
  $("tnHistoryRemoved").disabled=!all;
  if(!all){$("tnHistoryRemoved").checked=false;$("tnHistoryStatus").value="";}
- fetchHistoric(true);
+ if($("pedidosHistoric").open&&historyLoaded)void fetchHistoric(true);
 }
 function setupAdminFields(row){
  const select=$("pedAdminField");select.replaceChildren();
@@ -635,11 +635,11 @@ $("tnFilter").onchange=render;$("tnTypeFilter").onchange=render;$("tnSearch").on
 $("tnDraftButton").onclick=()=>{draftsExpanded=!draftsExpanded;render();};
 $("tnHistoryRefresh").onclick=()=>fetchHistoric(true);
 $("tnHistoryMore").onclick=()=>fetchHistoric(false);
-$("tnHistoryType").onchange=()=>fetchHistoric(true);
+$("tnHistoryType").onchange=()=>{if($("pedidosHistoric").open)void fetchHistoric(true);};
 $("tnHistorySearch").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();fetchHistoric(true);}};
 $("tnHistoryAll").onchange=syncHistoryAdmin;
-$("tnHistoryStatus").onchange=()=>fetchHistoric(true);
-$("tnHistoryRemoved").onchange=()=>fetchHistoric(true);
+$("tnHistoryStatus").onchange=()=>{if($("pedidosHistoric").open)void fetchHistoric(true);};
+$("tnHistoryRemoved").onchange=()=>{if($("pedidosHistoric").open)void fetchHistoric(true);};
 $("pedAdminEditSave").onclick=adminCorrection;
 $("pedAdminRemove").onclick=()=>adminRemove(false);
 $("pedAdminRestore").onclick=()=>adminRemove(true);
@@ -670,5 +670,9 @@ $("pedCopySystemNumber").onclick=()=>{
  const value=$("pedSystemNumberValue").textContent;
  if(value&&navigator.clipboard)navigator.clipboard.writeText(value).then(()=>inform("Número copiado.")).catch(()=>inform("Não foi possível copiar.",true));
 };
+window.addEventListener("beforeunload",event=>{
+ if(!busy)return;
+ event.preventDefault();event.returnValue="";
+});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else void boot();
 })();

@@ -5,6 +5,7 @@ import { hasModulePin } from "../services/module-pin.js";
 import { canRunGatewayAction, MODULE_ACTIONS } from "../services/permissions.js";
 import {isNovaFrotaModuleEnabled,readNovaFrotaModules} from "../services/nova-frota-modules.js";
 import {modulesForProfile} from "../services/profile-access.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 import { getMaintenanceState, isAdministrator } from "../services/maintenance.js";
 import { readJson } from "../utils/validation.js";
 import { errorResponse, success } from "../utils/response.js";
@@ -607,7 +608,7 @@ export async function portalGatewayController(request, env, ctx) {
     const global=await readNovaFrotaModules(env);
     const owner=Boolean(env.SUPER_ADMIN_USER)&&
       String(env.SUPER_ADMIN_USER).trim().toUpperCase()===String(session.usuario||"").trim().toUpperCase();
-    profileModules=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,session.perfil,global.modules,owner);
+    profileModules=await modulesForProfile(env,LEGACY_NOVA_FROTA.id,await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,session.usuario,session.perfil),global.modules,owner,session.usuario);
   }catch{return errorResponse("Não foi possível verificar os acessos do perfil.",503);}
   const requestOnly=moduleName==="administrativo"&&actionName==="create"&&
     resourceName==="solicitacoes"&&String(session.perfil||"").toUpperCase()!=="PISO";

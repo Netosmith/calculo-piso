@@ -213,6 +213,18 @@ jobs:
           else
             npx wrangler d1 execute portal-super-admin-tenants-staging --remote --file=migrations/super-admin/0009_pedidos_tipos_solicitacao.sql
           fi
+          # ALTER TABLE protegido por consulta para não afetar dados existentes.
+          if npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "SELECT categoria_chamado FROM portal_pedidos_tickets LIMIT 0;" >/dev/null 2>&1; then
+            echo "Categorias de chamados já instaladas."
+          else
+            npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "ALTER TABLE portal_pedidos_tickets ADD COLUMN categoria_chamado TEXT NOT NULL DEFAULT '';"
+          fi
+          if npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "SELECT tipo_anexo FROM portal_pedidos_docs LIMIT 0;" >/dev/null 2>&1; then
+            echo "Campos de comprovantes já instalados."
+          else
+            npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "ALTER TABLE portal_pedidos_docs ADD COLUMN tipo_anexo TEXT NOT NULL DEFAULT '';"
+          fi
+          npx wrangler d1 execute portal-super-admin-tenants-staging --remote --command "CREATE INDEX IF NOT EXISTS idx_pedidos_categoria_chamado ON portal_pedidos_tickets(tenant_id,categoria_chamado,status,atualizado_em DESC);"
 
       - name: Publicar Worker
         working-directory: worker

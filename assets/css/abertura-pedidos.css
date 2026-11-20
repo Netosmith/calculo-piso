@@ -222,3 +222,35 @@ body.pedidos-app .pedido-proof-upload p{margin:0;font-size:12px;color:#52748a}
 body.pedidos-app .pedido-proof-upload input{max-width:100%}
 body.pedidos-app .pedido-proof-flag{font-size:11px;font-weight:800;color:#774f0c;background:#fff0cc;border-radius:999px;padding:5px 10px}
 body.pedidos-app .cad-tools #tnTypeFilter{min-width:165px}
+
+
+/* Seletores financeiros com identificação visual imediata. */
+body.pedidos-app .pedido-form-dialog #pedFormaPagamento,
+body.pedidos-app .pedido-form-dialog #pedEtapaPagamento{
+  font-weight:850;cursor:pointer;min-height:43px;
+  border-width:2px;transition:background-color .18s,border-color .18s,color .18s;
+}
+body.pedidos-app .pedido-form-dialog #pedFormaPagamento[data-method="PIX_IRION"]{
+  background:#fff2b3;color:#664600;border-color:#e2ad13;
+  box-shadow:inset 4px 0 #e5af0c;
+}
+body.pedidos-app .pedido-form-dialog #pedFormaPagamento[data-method="DEPOSITO"]{
+  background:#dceeff;color:#174a89;border-color:#3486d1;
+  box-shadow:inset 4px 0 #3486d1;
+}
+body.pedidos-app .pedido-form-dialog #pedEtapaPagamento[data-stage="ADIANTAMENTO"]{
+  background:#fff0d7;color:#8a4b08;border-color:#e7a347;
+  box-shadow:inset 4px 0 #df9635;
+}
+body.pedidos-app .pedido-form-dialog #pedEtapaPagamento[data-stage="SALDO"]{
+  background:#dff8ed;color:#126a4b;border-color:#46b792;
+  box-shadow:inset 4px 0 #28a47b;
+}
+body.pedidos-app .pedido-form-dialog #pedEtapaPagamento[data-stage="ADIANTAMENTO_E_SALDO"]{
+  background:#eee5ff;color:#623e98;border-color:#a17ad8;
+  box-shadow:inset 4px 0 #8c65c6;
+}
+body.pedidos-app .pedido-form-dialog #pedFormaPagamento:focus-visible,
+body.pedidos-app .pedido-form-dialog #pedEtapaPagamento:focus-visible{
+  outline:3px solid rgba(44,133,197,.22);outline-offset:2px;
+}

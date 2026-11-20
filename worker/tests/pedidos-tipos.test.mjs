@@ -109,4 +109,7 @@ test("API obriga liberação do cliente no CT-e e só exige número de sistema n
  assert.ok(api.includes('row.tipo_solicitacao==="CORRECAO_PEDIDO"'));
  assert.ok(api.includes("INSERT INTO portal_pedidos_messages"));
  assert.ok(api.includes('effectiveKind(row)==="PEDIDO"&&!numeroPedidoSistema'));
+ assert.ok(api.includes('slot:proof?"liberacao":b.slot'));
+ assert.ok(api.includes('proof?b.slot:""'));
+ assert.ok(api.includes('execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO"'));
 });

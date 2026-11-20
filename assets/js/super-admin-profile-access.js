@@ -7,7 +7,8 @@
   COMERCIAL:"COMERCIAL",
   OPERACIONAL:"OPERACIONAL",
   GOADM:"GOADM",
-  PISO:"PISO"
+  PISO:"PISO",
+  SOLICITACOES:"SOLICITAÇÕES"
  };
  let loadedFor="", requestNumber=0, currentRole="OPERACIONAL";
  let profiles=null, defaults=null, registry=null, dirty=false, saving=false;
@@ -24,7 +25,9 @@
  function editable(key){
   // Todos os cards são editáveis para COMERCIAL e ADMINISTRADOR.
   // PISO continua exclusivamente no ANTT Piso 2.
-  return !(currentRole==="PISO"&&key!=="piso2");
+  return currentRole==="SOLICITACOES"?/^(?:solicitacao-|execucao-)/.test(key)||key==="cadastro-solicitacoes":
+    currentRole==="PISO"?(key==="piso2"||key==="cadastro-solicitacoes"||key.startsWith("solicitacao-")):
+    !key.startsWith("execucao-");
  }
  function render(){
   const container=$("profileModuleGrid");if(!container)return;
@@ -35,7 +38,8 @@
    COMERCIAL:"Começa com Cadastro e Funcionários desmarcados, mas você pode habilitar ou desabilitar qualquer card deste perfil.",
    OPERACIONAL:"Selecione os módulos usados na operação. Fretes por estado podem ser habilitados separadamente.",
    GOADM:"Por padrão, somente Administrativo. Outros cards só aparecem se forem selecionados explicitamente aqui.",
-   PISO:"Restrição permanente: somente Piso 2 (ANTT). O restante da Home e os dados operacionais continuam ocultos."
+   PISO:"Piso 2 e, se liberados aqui, apenas módulos de solicitação. Execuções permanecem bloqueadas.",
+    SOLICITACOES:"Perfil dedicado aos chamados. Defina aqui os módulos possíveis e, no painel abaixo, escolha exatamente quais cada usuário pode acessar."
   }[currentRole]||"";
   const enabled=new Set(selected?.modules||[]);
   const userModules=new Set(profiles?.[currentRole]||[]);

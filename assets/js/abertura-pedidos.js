@@ -116,6 +116,15 @@ async function refresh(){
  chamados=Array.isArray(result.chamados)?result.chamados:[];
  render();
 }
+function syncPaymentMethod(){
+ const active=formKind==="PAGAMENTO",deposit=$("pedFormaPagamento")?.value==="DEPOSITO";
+ const group=$("pedidoExtraFields");if(!group)return;
+ for(const label of group.querySelectorAll("[data-ped-payment]")){
+  const visible=active&&(label.dataset.pedPayment==="bank"?deposit:!deposit);
+  label.hidden=!visible;const input=label.querySelector("input");
+  if(input){input.disabled=!visible;input.required=visible;}
+ }
+}
 function setKind(kind,{syncPicker=true}={}){
  formKind=Object.hasOwn(KINDS,kind)?kind:"PEDIDO";
  const selector=$("tnKindSelect");
@@ -140,6 +149,7 @@ function setKind(kind,{syncPicker=true}={}){
   group.hidden=!active;
   for(const input of group.querySelectorAll("input,textarea,select"))input.disabled=!active;
  }
+ syncPaymentMethod();
  for(const input of $("pedidoComplementDoc").querySelectorAll("input")){
   input.disabled=!complement;
   // Rascunho pode conter anexo salvo no Drive. O Worker verifica a presença.
@@ -170,6 +180,7 @@ async function resume(row){
   const input=$("tnForm").elements[name];
   if(input)input.value=row.dadosEspecificos?.[name]||"";
  }
+ syncPaymentMethod();
  $("tnFormTitle").textContent="Retomar "+kindTitle(row)+" "+number(row);
  $("tnFormProgress").textContent="Dados editáveis. Os anexos já recebidos são preservados.";
  showDialog("tnFormDialog");
@@ -303,6 +314,8 @@ async function openDetail(id){
  try{
   const data=await request("/"+id),row=data.chamado;selected=row;
   const kind=kindOf(row),extras=row.dadosEspecificos||{};
+  const payment=["PAGAMENTO","PAGAMENTO_GUIA"].includes(kind),proofSlot=kind==="PAGAMENTO"?"comprovante_pagamento":"comprovante_guia";
+  const hasProof=(data.anexos||[]).some(doc=>doc.slot===proofSlot);
   $("tnDetailProtocol").textContent=kindTitle(row).toUpperCase()+" "+number(row);
   $("tnDetailTitle").textContent=kind==="PEDIDO"?
    "OC "+row.numeroPedidoOC+" · "+row.unidadeEmbarque:
@@ -323,9 +336,13 @@ async function openDetail(id){
     info.append(detailItem(EXTRA_LABELS[name],extras[name]));
   }
   renderDocs(id,data.anexos||[],kind);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
+  $("pedProofFlag").hidden=!payment||row.status!=="FINALIZADO";
+  $("pedProofFlag").textContent=hasProof?"Comprovante anexado":"Aguardando comprovante";
   const isMine=execution&&executor&&row.executor===user;
   const canMove=isMine&&["ANDAMENTO","PENDENTE"].includes(row.status);
   $("tnExecution").hidden=!execution;
+  $("pedProofSection").hidden=!(execution&&isMine&&payment&&row.status==="FINALIZADO");
+  $("pedProofFile").value="";
   $("tnAssumir").hidden=!(execution&&executor&&row.status==="FILA");
   $("tnStatusForm").hidden=!canMove;
   if(canMove){
@@ -342,6 +359,13 @@ async function openDetail(id){
 async function action(path,data,message){
  if(!selected)return;const id=selected.id;
  try{await request("/"+id+path,"POST",data);await refresh();await openDetail(id);inform(message||"Alteração salva.");}
+ catch(e){inform(e.message,true);}
+}
+async function extraProof(){
+ if(!selected||!["PAGAMENTO","PAGAMENTO_GUIA"].includes(kindOf(selected))||selected.status!=="FINALIZADO")return;
+ const file=$("pedProofFile").files[0];if(!file)return inform("Selecione o comprovante.",true);
+ const slot=kindOf(selected)==="PAGAMENTO"?"comprovante_pagamento":"comprovante_guia";
+ try{await upload(selected.id,slot,file);await openDetail(selected.id);inform("Comprovante anexado com sucesso.");}
  catch(e){inform(e.message,true);}
 }
 async function extraDocument(){
@@ -363,6 +387,8 @@ async function boot(){
   if(execution?(!state.execucaoHabilitada||!state.executor):!state.solicitacoesHabilitadas)
    throw Error("Abertura de Pedidos ainda não liberada pelo Super Admin para este perfil.");
   executor=state.executor===true;
+  if(execution){const allowed=new Set(state.tiposLiberados||[]);
+   for(const option of [...$("tnTypeFilter").options])if(option.value&&!allowed.has(option.value))option.remove();}
   user=String(session.usuario||session.user||"").trim();
   if(!user)throw Error("Usuário não identificado.");
   canCreate=state.armazenamentoConfigurado===true;
@@ -379,12 +405,13 @@ async function boot(){
 document.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>hideDialog(btn.dataset.close));
 $("tnPreviewDialog").addEventListener("close",clearPreview);
 $("tnRefresh").onclick=()=>refresh().catch(e=>inform(e.message,true));
-$("tnFilter").onchange=render;$("tnSearch").oninput=render;
+$("tnFilter").onchange=render;$("tnTypeFilter").onchange=render;$("tnSearch").oninput=render;
 $("tnDraftButton").onclick=()=>{draftsExpanded=!draftsExpanded;render();};
 if($("tnKindSelect")){
  $("tnKindSelect").onchange=()=>setKind($("tnKindSelect").value,{syncPicker:false});
  $("tnKindSelect").dataset.kind="PEDIDO";
 }
+if($("pedFormaPagamento"))$("pedFormaPagamento").onchange=syncPaymentMethod;
 if($("tnNew"))$("tnNew").onclick=newForm;
 if($("tnForm"))$("tnForm").onsubmit=submitForm;
 $("tnAssumir").onclick=()=>action("/assumir",{},"Solicitação assumida.");
@@ -401,6 +428,7 @@ $("tnChatForm").onsubmit=e=>{
  action("/mensagens",{texto:message},"Mensagem enviada.");
 };
 $("tnAdditionalSend").onclick=extraDocument;
+$("pedProofSend").onclick=extraProof;
 $("pedCopySystemNumber").onclick=()=>{
  const value=$("pedSystemNumberValue").textContent;
  if(value&&navigator.clipboard)navigator.clipboard.writeText(value).then(()=>inform("Número copiado.")).catch(()=>inform("Não foi possível copiar.",true));

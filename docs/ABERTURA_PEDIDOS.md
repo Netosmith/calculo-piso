@@ -37,7 +37,7 @@ O módulo de solicitações de pedidos foi unificado sob o título **SOLICITAÇ�
 
 ### Tipos disponíveis
 - Abertura de pedido (`PEDIDO`), Correção de pedido (`CORRECAO_PEDIDO`), CT-e complementar (`CTE_COMPLEMENTAR`) e Carta de correção (`CARTA_CORRECAO`).
-- Solicitação de pagamento (`PAGAMENTO`): CT-e, placa, nome do beneficiário, CPF/CNPJ, PIX IRION **ou** depósito, com banco, agência e conta obrigatórios em ambos; a chave PIX só é exigida em PIX IRION. Classificação: adiantamento, saldo ou adiantamento e saldo.
+- Solicitação de pagamento (`PAGAMENTO`): CT-e, placa, nome do beneficiário, CPF/CNPJ, PIX IRIOM **ou** depósito, com banco, agência e conta obrigatórios em ambos; a chave PIX só é exigida em PIX IRIOM. Classificação: adiantamento, saldo ou adiantamento e saldo.
 - Pagamento de GUIA (`PAGAMENTO_GUIA`): CT-e e NF.
 
 O acompanhamento possui filtros independentes por **situação** e **tipo**. Dados específicos de cada categoria ficam no JSON existente, sem renumerar chamados.

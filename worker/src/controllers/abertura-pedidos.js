@@ -357,16 +357,20 @@ export async function aberturaPedidosController(req,env){
    return success({chamado:ticketView(row),anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[],executor});
   }
   if(action==="dados"&&req.method==="POST"){
-    if(execView||!owner||row.status!=="RASCUNHO")
-     return err("Somente o autor pode editar o rascunho de um pedido.",403);
+    if(execView||!owner||!["RASCUNHO","PENDENTE"].includes(row.status))
+     return err("Somente o solicitante pode editar rascunhos ou chamados pendentes.",403);
     const b=await bodyJson(req,12000),values=normalizedFields(b,p.user);
+    if(values.tipoSolicitacao!==effectiveKind(row))
+     return err("O tipo do chamado não pode ser alterado durante a correção.",409);
     const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const changed=await db.prepare("UPDATE portal_pedidos_tickets SET "+
       columns.map(c=>c+"=?").join(",")+
-      ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'")
+      ",atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status IN ('RASCUNHO','PENDENTE')")
      .bind(...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos),id,p.id,p.user).run();
-    if(changed.meta?.changes!==1)return err("Não foi possível atualizar o rascunho.",409);
-    return success({atualizado:true});
+    if(changed.meta?.changes!==1)return err("Chamado alterado por outra operação. Atualize a página.",409);
+    if(row.status==="PENDENTE")
+     await hist(db,p,id,"PENDENTE","Dados do chamado corrigidos pelo solicitante").run();
+    return success({atualizado:true,status:row.status});
    }
    if(action==="anexos"&&req.method==="POST"){
    if(!conf)return err("Google Drive desta transportadora não configurado.",503);
@@ -392,16 +396,20 @@ export async function aberturaPedidosController(req,env){
    return success({anexado:true,slot:b.slot});
   }
   if(action==="enviar"&&req.method==="POST"){
-   if(!owner||row.status!=="RASCUNHO")return err("Somente o solicitante pode enviar seu rascunho.",403);
+   if(execView||!owner||!["RASCUNHO","PENDENTE"].includes(row.status))
+    return err("Somente o solicitante pode enviar rascunhos ou devolver pendências à fila.",403);
    if(row.tipo_solicitacao==="CTE_COMPLEMENTAR"){
     const lib=await db.prepare("SELECT id FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND slot='liberacao' LIMIT 1").bind(p.id,id).first();
     if(!lib)return err("Anexe a liberação do cliente antes de enviar o CT-e complementar.",409);
    }
-   const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status='RASCUNHO'").bind(id,p.id).run();
-   if(update.meta?.changes!==1)return err("Chamado já enviado.",409);
-   await hist(db,p,id,"FILA","Enviado para a fila de execução").run();
-   // A descrição da correção já chega como primeira mensagem do chat.
-   if(row.tipo_solicitacao==="CORRECAO_PEDIDO"){
+   const wasPending=row.status==="PENDENTE";
+   const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',executor_id=NULL,motivo='',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND solicitante_id=? AND status=?").bind(id,p.id,p.user,row.status).run();
+   if(update.meta?.changes!==1)return err("Chamado alterado por outra operação. Atualize a fila.",409);
+   await hist(db,p,id,"FILA",wasPending?
+    "Pendência corrigida pelo solicitante. Chamado devolvido à fila de execução":
+    "Enviado para a fila de execução").run();
+   // Evita duplicar a mensagem inicial ao reenviar a correção de pedido.
+   if(!wasPending&&row.tipo_solicitacao==="CORRECAO_PEDIDO"){
     let extras={};try{extras=JSON.parse(row.dados_especificos_json||"{}");}catch{}
     const message=cleanMultiline(extras.textoCorrecao,1800);
     if(message)await db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")

@@ -35,7 +35,7 @@ const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
-let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0;
+let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
 function time(value){
@@ -424,13 +424,20 @@ function updateSystemInput(){
 }
 async function openDetail(id){
  const serial=++detailSerial;
- $("tnDetailProtocol").textContent="Carregando chamado...";
- $("tnDetailTitle").textContent="Consultando dados e histórico";
+ const preview=chamados.find(row=>row.id===id)||historyRows.find(row=>row.id===id);
+ selected=preview||{id};
+ $("tnDetailProtocol").textContent=preview?number(preview):"Carregando chamado...";
+ $("tnDetailTitle").textContent=preview?kindTitle(preview)+" · "+(kindRef(preview)||number(preview)):
+  "Consultando dados e histórico";
+ if(preview){
+  $("tnDetailStatus").textContent=({FILA:"Na fila",ANDAMENTO:"Em andamento",PENDENTE:"Pendente",FINALIZADO:"Finalizado"})[preview.status]||preview.status;
+  $("tnDetailOwner").textContent=preview.executor?"Executor: "+preview.executor:"Aguardando executor";
+ }
  $("tnDetailInfo").replaceChildren(element("p","Buscando informações...","cad-empty"));
- $("tnExecution").hidden=true;
+ $("tnExecution").hidden=!execution;
  $("tnChatForm").hidden=true;
  $("tnPendingUpload").hidden=true;
- $("tnAssumir").hidden=true;
+ $("tnAssumir").hidden=!(execution&&executor&&preview?.status==="FILA");
  $("tnStatusForm").hidden=true;
  showDialog("tnDetailDialog");
  try{
@@ -496,7 +503,11 @@ async function openDetail(id){
  }catch(e){inform(e.message,true);}
 }
 async function action(path,data,message){
- if(!selected)return;const id=selected.id;
+ if(!selected||actionBusy)return;const id=selected.id;
+ actionBusy=true;detailSerial++;
+ $("tnAssumir").disabled=true;
+ inform((path==="/assumir"?"Assumindo chamado ":"Salvando alterações do chamado ")+
+  (selected.protocolo||number(selected)||"")+"...");
  try{
   const saved=await request("/"+id+path,"POST",data);
   if(selected?.id===id){
@@ -511,6 +522,7 @@ async function action(path,data,message){
   void refresh().catch(error=>inform(error.message,true));
   void openDetail(id);
  }catch(e){inform(e.message,true);}
+ finally{actionBusy=false;$("tnAssumir").disabled=false;}
 }
 async function extraProof(){
  if(!selected||!["PAGAMENTO","PAGAMENTO_GUIA"].includes(kindOf(selected))||selected.status!=="FINALIZADO")return;
@@ -527,6 +539,7 @@ async function extraDocument(){
  catch(e){inform(e.message,true);}
 }
 async function boot(){
+ $("tnBoard").replaceChildren(element("p","Carregando chamados da transportadora...","cad-empty"));
  try{
   const auth=window.portalAuthReady?await window.portalAuthReady:null;
   const session=window.__PORTAL_TENANT_SESSION||auth?.session||auth;

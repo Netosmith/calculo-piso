@@ -7,6 +7,7 @@ import {ownerSupportPrincipal} from "../services/tenant-owner-support.js";
 import {getSession,readSessionId} from "../services/session.js";
 import {LEGACY_NOVA_FROTA,tenantIdForLegacySession} from "../config/transportadoras.js";
 import {readNovaFrotaModules} from "../services/nova-frota-modules.js";
+import {sheetsConfig,sheetsAdmin,sheetsGateway} from "../services/chamados-sheets.js";
 
 const SLUG=/^[a-z][a-z0-9-]{2,63}$/;
 const FILEID=/^[A-Za-z0-9_-]{15,160}$/;
@@ -177,11 +178,16 @@ export async function aberturaPedidosController(req,env){
  const executor=flags.executar&&kinds.length>0&&String(p.role||"").toUpperCase()!=="PISO"&&
   (isExecutor(p,conf)||(execProfile.configured&&kinds.length>0));
  const execView=view==="execucao";
+ const googleSheets=await sheetsConfig(env,p.id);
+ if(path.startsWith("/sheets/"))
+  return sheetsAdmin(req,env,p,view,flags,executor,kinds,conf,googleSheets);
  if(path==="/config"&&req.method==="GET")
-  return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,tiposLiberados:execView?kinds:[],superAdmin:p.ownerSupport===true,armazenamentoConfigurado:!!conf});
+  return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,tiposLiberados:execView?kinds:[],superAdmin:p.ownerSupport===true,armazenamentoConfigurado:!!conf,armazenamentoChamados:googleSheets.mode});
  if(execView&&!executor)return err("Execução de Abertura de Pedidos não liberada para este usuário.",403);
  if(!execView&&!flags.solicitar)return err("Solicitação de Abertura de Pedidos não liberada nesta transportadora.",403);
  try{
+  if(googleSheets.mode==="sheets")
+   return await sheetsGateway(req,p,view,flags,executor,kinds,conf,googleSheets,normalizedFields);
   if(path==="/historico"&&req.method==="GET"){
    // Consulta independente do quadro de 500 registros. Finalizados não expiram.
    // Somente o Super Admin acessa "todos" e os retirados da operação.

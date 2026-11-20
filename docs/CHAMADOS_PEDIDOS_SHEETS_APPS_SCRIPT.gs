@@ -202,6 +202,10 @@ function cmPublicTicket_(main){
 }
 function cmTicketForAudience_(ss,p,main){
  var ctx=p.context||{};
+ // Monitor coletivo assinado pelo Worker: cards públicos não precisam de leitura
+ // das 3 abas de detalhes, evitando lentidão em empresas com muitos chamados.
+ if(ctx.sharedMonitor===true&&main.SOLICITANTE!==ctx.user)
+  return cmPublicTicket_(main);
  var own=ctx.superAdmin===true||main.SOLICITANTE===ctx.user||
   (ctx.view==="execucao"&&ctx.executor===true&&
    (ctx.allowedKinds||[]).indexOf(cmRaw_(main.TIPO))>=0);

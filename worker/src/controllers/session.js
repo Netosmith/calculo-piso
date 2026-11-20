@@ -13,6 +13,7 @@ import { readJson } from "../utils/validation.js";
 import {hasTenantSessionCookie,clearTenantSessionCookie,revokeTenantSession} from "../services/tenant-auth.js";
 import {tenantLoginController,tenantSessionController,tenantLogoutController,tenantPortalEnabled} from "./tenant-unified.js";
 import { errorResponse, success } from "../utils/response.js";
+import {effectiveSolicRole} from "../services/solicitacoes-user-access.js";
 
 function normalizeUpper(value) {
   return String(value || "")
@@ -100,7 +101,7 @@ export async function loginController(request, env) {
   const session = {
     usuario: normalizeUpper(result.usuario || usuario),
     nome: String(result.nome || result.usuario || usuario).trim(),
-    perfil: normalizeUpper(result.perfil || "OPERACIONAL"),
+    perfil: await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,usuario,normalizeUpper(result.perfil || "OPERACIONAL")),
     transportadoraId: LEGACY_NOVA_FROTA.id,
     estados,
     estado: "",
@@ -152,7 +153,7 @@ export async function sessionController(request, env) {
     return errorResponse("Sessão inválida ou expirada.", 401);
   }
 
-  return success({ session: publicSession(session) });
+  return success({ session: publicSession({...session,perfil:await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,session.usuario,session.perfil)}) });
 }
 
 export async function selectStateController(request, env) {
@@ -190,7 +191,7 @@ export async function selectStateController(request, env) {
   }
 
   return success(
-    { session: publicSession(session) },
+    { session: publicSession({...session,perfil:await effectiveSolicRole(env,LEGACY_NOVA_FROTA.id,session.usuario,session.perfil)}) },
     200,
     { "Set-Cookie": sessionCookie(sessionToken) }
   );

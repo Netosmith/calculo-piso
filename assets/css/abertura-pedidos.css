@@ -230,7 +230,7 @@ body.pedidos-app .pedido-form-dialog #pedEtapaPagamento{
   font-weight:850;cursor:pointer;min-height:43px;
   border-width:2px;transition:background-color .18s,border-color .18s,color .18s;
 }
-body.pedidos-app .pedido-form-dialog #pedFormaPagamento[data-method="PIX_IRION"]{
+body.pedidos-app .pedido-form-dialog #pedFormaPagamento[data-method="PIX_IRIOM"]{
   background:#fff2b3;color:#664600;border-color:#e2ad13;
   box-shadow:inset 4px 0 #e5af0c;
 }

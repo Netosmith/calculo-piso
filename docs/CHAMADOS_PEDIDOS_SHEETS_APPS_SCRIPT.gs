@@ -292,6 +292,10 @@ function cmFilterRows_(ss,p,history){
    var payload=[item.PROTOCOLO,item.NUMERO,item.NOME_SOLICITANTE,item.NUMERO_PEDIDO_SISTEMA,
     item.MOTIVO,item.TIPO,cmRaw_(item.ID)].join(" ").toUpperCase();
    if(payload.indexOf(q)<0){
+    var privateSearch=ctx.superAdmin===true||item.SOLICITANTE===ctx.user||
+      (ctx.view==="execucao"&&ctx.executor===true&&allowed.indexOf(cmRaw_(item.TIPO))>=0);
+    // Pesquisa pública não pode revelar existência de dados bancários, chaves PIX e CPFs.
+    if(!privateSearch)return false;
     var detail=cmTicket_(ss,item);
     var haystack=(Object.keys(detail).map(function(k){
      var v=detail[k];return typeof v==="object"?JSON.stringify(v):cmRaw_(v);

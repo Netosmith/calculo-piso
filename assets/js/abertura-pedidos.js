@@ -308,6 +308,98 @@ function renderHistory(items){
   root.append(row);
  }
 }
+function historicFilters(){
+ const params=new URLSearchParams();
+ params.set("pagina",String(historyNext??0));
+ const all=superAdmin&&$("tnHistoryAll").checked;
+ if(all)params.set("escopo","todos");
+ if(all&&$("tnHistoryRemoved").checked)params.set("removidos","1");
+ if(all&&$("tnHistoryStatus").value)params.set("etapa",$("tnHistoryStatus").value);
+ if($("tnHistoryType").value)params.set("tipo",$("tnHistoryType").value);
+ const query=$("tnHistorySearch").value.trim();
+ if(query)params.set("busca",query);
+ return params.toString();
+}
+function renderHistoricList(){
+ const list=$("tnHistoryList");list.replaceChildren();
+ if(!historyRows.length)list.append(element("p","Nenhum chamado encontrado com estes filtros.","cad-empty"));
+ for(const record of historyRows){
+  const block=element("div","","pedidos-history-entry");
+  if(record.excluidoEm)block.classList.add("pedidos-history-removed");
+  const head=element("div","","pedidos-history-entry-head");
+  head.append(element("strong",record.excluidoEm?"Excluído da operação":
+   record.status==="FINALIZADO"?"Finalizado":record.status),
+   element("small","Atualizado: "+time(record.atualizadoEm)));
+  if(record.excluidoEm)head.append(element("small","Retirado: "+time(record.excluidoEm)));
+  block.append(head,card(record));list.append(block);
+ }
+ $("tnHistoryMore").hidden=historyNext===null;
+}
+async function fetchHistoric(reset=true){
+ if(historyBusy)return;
+ if(reset){historyNext=0;historyRows=[];}
+ if(historyNext===null)return;
+ const page=historyNext;
+ historyBusy=true;$("tnHistoryRefresh").disabled=true;$("tnHistoryMore").disabled=true;
+ $("tnHistoryNotice").textContent="Consultando chamados arquivados...";
+ try{
+  const result=await request("/historico?"+historicFilters());
+  historyRows=page===0?(result.chamados||[]):[...historyRows,...(result.chamados||[])];
+  historyNext=result.proximaPagina;
+  historyLoaded=true;renderHistoricList();
+  $("tnHistoryNotice").textContent=historyRows.length+" registro(s) carregado(s). "+
+   (historyNext!==null?"Há mais resultados disponíveis.":"Fim dos resultados encontrados.");
+ }catch(e){$("tnHistoryNotice").textContent=e.message;inform(e.message,true);}
+ finally{historyBusy=false;$("tnHistoryRefresh").disabled=false;$("tnHistoryMore").disabled=false;}
+}
+function syncHistoryAdmin(){
+ const all=superAdmin&&$("tnHistoryAll").checked;
+ $("tnHistoryStatus").disabled=!all;
+ $("tnHistoryRemoved").disabled=!all;
+ if(!all){$("tnHistoryRemoved").checked=false;$("tnHistoryStatus").value="";}
+ fetchHistoric(true);
+}
+function setupAdminFields(row){
+ const select=$("pedAdminField");select.replaceChildren();
+ const choices=FIELDS.map((name,i)=>[name,LABELS[i]]);
+ for(const name of EXTRA_FIELDS[kindOf(row)]||[])choices.push([name,EXTRA_LABELS[name]||name]);
+ if(kindOf(row)==="PEDIDO")choices.push(["numeroPedidoSistema","Número do pedido no sistema"]);
+ for(const [key,label] of choices){
+  const op=document.createElement("option");op.value=key;op.textContent=label;select.append(op);
+ }
+ const update=()=>{
+  const key=select.value;
+  $("pedAdminValue").value=String(
+   key==="numeroPedidoSistema"?row.numeroPedidoSistema:
+    Object.hasOwn(row.dadosEspecificos||{},key)?row.dadosEspecificos[key]:row[key]||"");
+ };
+ select.onchange=update;update();
+}
+async function adminCorrection(){
+ if(!superAdmin||!selected)return;
+ const field=$("pedAdminField").value,val=$("pedAdminValue").value.trim();
+ const reason=$("pedAdminEditReason").value.trim();
+ if(!field||!val||reason.length<8)return inform("Informe o campo, o novo valor e uma justificativa de pelo menos 8 caracteres.",true);
+ try{
+  await request("/"+selected.id+"/corrigir","POST",{campo:field,valor:val,motivo:reason});
+  await openDetail(selected.id);await refresh();inform("Informação corrigida. Justificativa incluída no histórico.");
+ }catch(e){inform(e.message,true);}
+}
+async function adminRemove(restore){
+ if(!superAdmin||!selected)return;
+ const protocol=$("pedAdminProtocol").value.trim(),reason=$("pedAdminReason").value.trim();
+ if(protocol!==selected.protocolo)return inform("Digite exatamente o protocolo "+selected.protocolo+" para confirmar.",true);
+ if(reason.length<8)return inform("Informe o motivo com pelo menos 8 caracteres.",true);
+ const action=restore?"restaurar":"ocultar";
+ if(!window.confirm(restore?"Restaurar este chamado para a operação?":
+  "Excluir "+selected.protocolo+" da operação? Dados e anexos serão mantidos para auditoria."))return;
+ try{
+  await request("/"+selected.id+"/"+action,"POST",{protocolo:protocol,motivo:reason});
+  hideDialog("tnDetailDialog");selected=null;
+  await refresh();
+  inform(restore?"Chamado restaurado.":"Chamado excluído da operação e preservado para restauração.");
+ }catch(e){inform(e.message,true);}
+}
 const detailItem=(label,value)=>{
  const e=element("div");e.append(element("span",label),element("strong",value||"Não informado"));return e;
 };

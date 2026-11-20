@@ -72,10 +72,21 @@ async function d1Fingerprint(db,tenant){
 }
 export async function sheetsAdmin(request,env,p,view,flags,executor,kinds,conf,options){
  if(!p.ownerSupport)return errorResponse("Somente Super Admin pode migrar o armazenamento.",403);
- if(!options.sheetId)return errorResponse("Planilha ainda não provisionada para esta transportadora.",409);
  const url=new URL(request.url),path=url.pathname.replace(/^\/v1\/abertura-pedidos\/sheets\/?/,"");
  const ctx=scope(p,"execucao",kinds,executor,flags),db=env.TENANTS_DB;
  try{
+  if(path==="vincular"&&request.method==="POST"){
+   if(options.mode==="sheets")return errorResponse("Desative com migração reversa antes de trocar a planilha ativa.",409);
+   const raw=await request.json().catch(()=>({}));
+   const id=String(raw.sheetId||"").trim();
+   if(!/^[A-Za-z0-9_-]{25,120}$/.test(id))return errorResponse("ID de planilha inválido.",400);
+   const health=await callScript(conf,p.id,id,"health",ctx);
+   if(health.schema!==1||health.transportadora!==p.id)return errorResponse("A planilha não pertence a esta transportadora.",403);
+   await env.TENANT_BRANDS.put(MODE_KEY(p.id),JSON.stringify({version:1,sheetId:id,mode:"d1",
+    verifiedAt:null,actor:p.user}),{httpMetadata:{contentType:"application/json"}});
+   return success({sheetId:id,vinculado:true,mode:"d1"});
+  }
+  if(!options.sheetId)return errorResponse("Planilha ainda não provisionada para esta transportadora.",409);
   if(path==="status"&&request.method==="GET"){
    let remote=null,warning="";
    try{remote=await callScript(conf,p.id,options.sheetId,"health",ctx);}

@@ -177,11 +177,17 @@ export async function aberturaPedidosController(req,env){
  const path=url.pathname.slice("/v1/abertura-pedidos".length),view=url.searchParams.get("visao")||"solicitante";
  if(!["solicitante","execucao"].includes(view))return err("Visão inválida.");
  if(req.method!=="GET"&&!originAllowed(req))return err("Origem não autorizada.",403);
- const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
+ // Leituras KV/D1 independentes em paralelo, sem serializar todo clique.
+ const [flags,conf,execProfile,googleSheets]=await Promise.all([
+  flagsFor(env,p.id),driveConfig(env,p.id),readPedidosExecAccess(env,p.id),sheetsConfig(env,p.id)
+ ]);
  flags.publico=flags.solicitar;
- flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true,p.user);
- flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true,p.user);
- const execProfile=await readPedidosExecAccess(env,p.id);
+ const [solicitPermit,execPermit]=await Promise.all([
+  flags.solicitar?profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true,p.user):false,
+  flags.executar?profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true,p.user):false
+ ]);
+ flags.solicitar=flags.solicitar&&solicitPermit;
+ flags.executar=flags.executar&&execPermit;
  const userKey=String(p.user||"").trim().toUpperCase();
  const kinds=p.ownerSupport===true?[...PEDIDOS_EXEC_KINDS]:
   execProfile.configured&&Object.prototype.hasOwnProperty.call(execProfile.usuarios,userKey)?
@@ -189,7 +195,7 @@ export async function aberturaPedidosController(req,env){
  const executor=flags.executar&&kinds.length>0&&String(p.role||"").toUpperCase()!=="PISO"&&
   (p.role==="SOLICITACOES"||p.ownerSupport===true||isExecutor(p,conf)||(execProfile.configured&&kinds.length>0));
  const execView=view==="execucao";
- const googleSheets=await sheetsConfig(env,p.id);
+
  if(path.startsWith("/sheets/"))
   return sheetsAdmin(req,env,p,view,flags,executor,kinds,conf,googleSheets);
  if(path==="/config"&&req.method==="GET")

@@ -12,11 +12,24 @@
   "execucao-troca-notas":"Execução de Troca de Notas"
  };
  const defaults=["solicitacao-pedidos","execucao-pedidos"];
- const all=Object.keys(labels);
+ let all=Object.keys(labels);
  let loaded="",users={},dirty=false,saving=false,serial=0;
  const tenant=()=>selected?.id||"";
  const editable=()=>typeof canEditModules==="function"&&canEditModules();
  const status=message=>{$("solicUsersStatus").textContent=message;};
+ function syncAvailable(keys){
+  const root=$("solicUserModules");
+  const known=new Set([...root.querySelectorAll("[data-solic-module]")].map(x=>x.dataset.solicModule));
+  const companyModuleLabels=new Map((typeof MODULES!=="undefined"?MODULES:[]).map(([key,name])=>[key,name]));
+  for(const key of keys){
+   if(known.has(key))continue;
+   labels[key]=companyModuleLabels.get(key)||key;
+   const line=document.createElement("label");
+   const checkbox=document.createElement("input");checkbox.type="checkbox";checkbox.dataset.solicModule=key;
+   line.append(checkbox,document.createTextNode(" "+labels[key]));root.append(line);
+  }
+  all=[...keys];
+ }
  function setChecked(modules){
   const selectedKeys=new Set(modules);
   document.querySelectorAll("[data-solic-module]").forEach(el=>{
@@ -63,6 +76,7 @@
     encodeURIComponent(company)+"/solicitacoes-user-access");
    if(id!==serial||company!==tenant())return;
    if(!data?.usuarios||!Array.isArray(data.modules))throw Error("Configuração inválida.");
+   syncAvailable(data.modules);
    users=Object.fromEntries(Object.entries(data.usuarios).map(([key,record])=>[key,record.modules||[]]));
    loaded=company;dirty=false;draw();
    status(data.configured?

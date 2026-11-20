@@ -50,7 +50,8 @@ test("Super Admin segue sendo o filtro, sem conceder módulos ao PISO ou perfis 
  assert.match(auth,/if\(profile==="PISO"\)return isAuthedHome\(\) && feature==="piso2"/);
  assert.match(auth,/O Worker já reduziu session.modules/);
  assert.match(auth,/if\(!modules.includes\(feature\)\)return false/);
- assert.match(auth,/if\(feature==="execucao-pedidos"\)return modules.includes\(feature\)&&/);
+ assert.match(auth,/if\(PORTAL_OPTIONAL_FLAGS\[feature\]\)/);
+  assert.match(auth,/return modules.includes\(feature\) &&/);
 });
 
 test("Páginas principais usam versão nova do script de autenticação",()=>{

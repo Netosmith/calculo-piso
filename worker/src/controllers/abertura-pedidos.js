@@ -241,7 +241,7 @@ export async function aberturaPedidosController(req,env){
    if((b.slot==="comprovante_pagamento"||b.slot==="comprovante_guia")?!canProof:
       (!owner||execView||!["RASCUNHO","PENDENTE"].includes(row.status)))
      return err("Anexo não autorizado para este usuário ou etapa.",403);
-    const saved=await drive(conf,p.id,"upload",{ticketId:id,slot:b.slot,nome:b.nome,mime:b.mime,base64:b.base64});
+    const saved=await drive(conf,p.id,"upload",{ticketId:id,slot:proof?"liberacao":b.slot,nome:b.nome,mime:b.mime,base64:b.base64});
    if(!FILEID.test(saved.fileId||""))return err("Google Drive não confirmou o arquivo.",502);
    await db.batch([
     db.prepare("INSERT INTO portal_pedidos_docs(id,tenant_id,ticket_id,slot,tipo_anexo,drive_id,nome,mime,bytes) VALUES(?,?,?,?,?,?,?,?,?)")

@@ -28,6 +28,7 @@ const STATE_FEATURES = {
   ESTADIAS_EDITOR: ["estadias"],
   ESTADIAS_CONSULTA: ["estadias"],
   PISO: ["piso2"],
+  SOLICITACOES: ["solicitacao-pedidos","execucao-pedidos","cadastro-solicitacoes","execucao-cadastros","solicitacao-troca-notas","execucao-troca-notas"],
 
   SP: ["piso", "divulgacao", "estadias"],
   MG: ["piso", "divulgacao", "estadias"],

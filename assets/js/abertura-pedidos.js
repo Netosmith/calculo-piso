@@ -211,7 +211,7 @@ async function submitForm(e){
  for(const field of FIELDS)payload[field]=String(form.elements[field].value||"").trim();
  payload.dadosEspecificos={};
  for(const name of EXTRA_FIELDS[formKind]||[])
-  payload.dadosEspecificos[name]=String(form.elements[name].value||"").trim();
+  payload.dadosEspecificos[name]=form.elements[name].disabled?"":String(form.elements[name].value||"").trim();
  const documents=[...form.querySelectorAll("[data-slot]:not([disabled])")].flatMap(input=>
   [...input.files].map(file=>({slot:input.dataset.slot,file})));
  if(formKind==="CTE_COMPLEMENTAR"&&!draft&&!documents.some(x=>x.slot==="liberacao")){

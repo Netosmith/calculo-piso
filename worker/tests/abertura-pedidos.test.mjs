@@ -16,7 +16,8 @@ test("Os módulos Pedidos são independentes e dependem do Super Admin",()=>{
  assert.ok(controller.includes("enabled=1 AND module_key IN"));
  assert.ok(controller.includes('private/optional-modules-v1.json'));
  assert.ok(controller.includes("if(execView&&!executor)"));
- assert.ok(controller.includes("if(!execView&&!flags.solicitar)"));
+ assert.ok(controller.includes("if(!execView&&!flags.publico)"));
+ assert.ok(controller.includes('req.method!=="GET"&&!flags.solicitar'));
 });
 
 test("Dados do pedido correspondem aos vinte campos e documentos solicitados",()=>{
@@ -45,8 +46,10 @@ test("Cada pedido e documento são separados por transportadora e solicitante",(
  }
  assert.ok(db.includes("idx_pedidos_numero"));
  assert.ok(db.includes("trg_pedidos_numero"));
- assert.ok(c.includes("WHERE tenant_id=? AND solicitante_id=?"));
- assert.ok(c.includes('if(!p.ownerSupport&&(execView?!executor:!owner))'));
+ assert.ok(c.includes("WHERE tenant_id=? AND excluido_em=\'\' AND (status<>\'RASCUNHO\' OR solicitante_id=?)"));
+ assert.ok(c.includes("const publicTicket=row=>"));
+ assert.ok(c.includes('const privateAccess=p.ownerSupport||owner||execView&&executor'));
+ assert.ok(c.includes('if(!privateAccess&&(req.method!=="GET"||action!==""))'));
   assert.ok(c.includes('if(row.excluido_em&&!p.ownerSupport)'));
  assert.ok(c.includes('row.executor_id!==p.user'));
  assert.ok(c.includes("WHERE id=? AND tenant_id=? AND solicitante_id=? AND status='RASCUNHO'"));

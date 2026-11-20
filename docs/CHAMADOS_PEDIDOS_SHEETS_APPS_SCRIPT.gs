@@ -63,6 +63,7 @@ function result_(value){return ContentService.createTextOutput(JSON.stringify(va
 =========================================================== */
 var CM_CACHE_={};
 var CM_TABS_={};
+var CM_INDEX_={};
 var CM_SPECS={
  SOLICITACOES:["ID","TRANSPORTADORA","PROTOCOLO","NUMERO","TIPO","STATUS","SOLICITANTE","NOME_SOLICITANTE","EXECUTOR","NUMERO_PEDIDO_SISTEMA","MOTIVO","CRIADO_EM","ATUALIZADO_EM","ENVIADO_EM","EXCLUIDO_EM","EXCLUIDO_POR","MOTIVO_EXCLUSAO"],
  PEDIDOS_DETALHES:["CHAMADO_ID","EMAIL","TELEFONE_WHATS","UNIDADE_EMBARQUE","NUMERO_PEDIDO_OC","NFE_MANIFESTADA","TOMADOR_CNPJ","COLETA_IE","ENTREGA_CNPJ","ENTREGA_IE","FRETE_EMPRESA","FRETE_MOTORISTA","ADIANTAMENTO_PCT","ICMS","PRODUTO","ESPECIE","TAG","OBS","COORDENADAS_COLETA","COORDENADAS_ENTREGA"],
@@ -142,9 +143,14 @@ function cmRows_(ss,name){
  return CM_CACHE_[name]=all;
 }
 function cmGet_(ss,name,key,value){
- var rows=cmRows_(ss,name);
- for(var i=0;i<rows.length;i++)if(String(rows[i][key])===String(value))return rows[i];
- return null;
+ // Índice O(1) por coluna. Não percorre todos os registros a cada card.
+ var cacheKey=name+"|"+key,lookup=CM_INDEX_[cacheKey];
+ if(!lookup){
+  lookup=Object.create(null);
+  cmRows_(ss,name).forEach(function(row){lookup[String(row[key])]=row;});
+  CM_INDEX_[cacheKey]=lookup;
+ }
+ return lookup[String(value)]||null;
 }
 function cmPut_(ss,name,data,key){
  var sheet=cmTab_(ss,name),keys=CM_SPECS[name];
@@ -156,6 +162,9 @@ function cmPut_(ss,name,data,key){
  if(previous)sheet.getRange(previous.__row,1,1,row.length).setValues([row]);
  else sheet.appendRow(row);
  delete CM_CACHE_[name];
+ Object.keys(CM_INDEX_).forEach(function(k){
+  if(k.indexOf(name+"|")===0)delete CM_INDEX_[k];
+ });
  return previous;
 }
 function cmCfg_(ss,key){
@@ -273,12 +282,36 @@ function cmMain_(ss,p,id){
  return item;
 }
 function cmReply_(o){return result_(Object.assign({ok:true},o||{}));}
+// Data da conclusão registrada no histórico, não da última alteração do chamado.
+function cmBrazilDate_(value){
+ var v=cmRaw_(value);
+ if(!v)return "";
+ var canonical=/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d/.test(v)?
+  v.replace(" ","T")+"Z":v;
+ var date=new Date(canonical);
+ return Number.isNaN(date.getTime())?"":Utilities.formatDate(date,"America/Sao_Paulo","yyyy-MM-dd");
+}
+function cmFinishedDates_(ss,tenant){
+ var latest=Object.create(null);
+ cmRows_(ss,"HISTORICO").forEach(function(row){
+  if(row.TRANSPORTADORA!==tenant||row.STATUS!=="FINALIZADO")return;
+  var id=cmRaw_(row.CHAMADO_ID),raw=cmRaw_(row.CRIADO_EM);
+  var canonical=/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d/.test(raw)?
+    raw.replace(" ","T")+"Z":raw;
+  var epoch=new Date(canonical).getTime();
+  if(!Number.isFinite(epoch))return;
+  if(!latest[id]||epoch>latest[id].time)latest[id]={time:epoch,value:raw};
+ });
+ return latest;
+}
 function cmFilterRows_(ss,p,history){
  var ctx=p.context||{},all=ctx.superAdmin===true&&p.data&&p.data.escopo==="todos";
  var removed=all&&p.data.removidos==="1",state=cmRaw_(p.data&&p.data.etapa).toUpperCase();
  var tipo=cmRaw_(p.data&&p.data.tipo).toUpperCase();
  var q=cmRaw_(p.data&&p.data.busca).trim().toUpperCase();
  var allowed=ctx.allowedKinds||[];
+ var today=history?"":Utilities.formatDate(new Date(),"America/Sao_Paulo","yyyy-MM-dd");
+ var finished=history?null:cmFinishedDates_(ss,p.tenant);
  var rows=cmRows_(ss,"SOLICITACOES").filter(function(item){
   if(item.TRANSPORTADORA!==p.tenant)return false;
   if(Boolean(item.EXCLUIDO_EM)!==removed)return false;
@@ -288,7 +321,13 @@ function cmFilterRows_(ss,p,history){
   if(history){
    if(!all&&item.STATUS!=="FINALIZADO")return false;
    if(all&&state&&item.STATUS!==state)return false;
-  }else if(ctx.view==="execucao"&&(item.STATUS==="FINALIZADO"||item.STATUS==="RASCUNHO"))return false;
+  }else{
+   if(ctx.view==="execucao"&&item.STATUS==="RASCUNHO")return false;
+   if(item.STATUS==="FINALIZADO"){
+    var event=finished[cmRaw_(item.ID)];
+    if(cmBrazilDate_(event?event.value:item.ATUALIZADO_EM)!==today)return false;
+   }
+  }
   if(tipo&&item.TIPO!==tipo)return false;
   if(q){
    var payload=[item.PROTOCOLO,item.NUMERO,item.NOME_SOLICITANTE,item.NUMERO_PEDIDO_SISTEMA,
@@ -547,7 +586,7 @@ function chamadosDispatch_(p,props,tenant){
  var lock=readOnly?null:LockService.getScriptLock();
  if(lock&&!lock.tryLock(12000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
  try{
-  CM_CACHE_={};CM_TABS_={};
+  CM_CACHE_={};CM_TABS_={};CM_INDEX_={};
   var ss=cmSheet_(p);
   // Saúde e consultas não alteram registros. Todas as operações de escrita estão
   // serializadas por LockService para preservar números e evitar dupla execução.

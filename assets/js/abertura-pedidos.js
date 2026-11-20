@@ -335,8 +335,15 @@ async function openDetail(id){
   if(kind==="PEDIDO"){
    for(let i=0;i<FIELDS.length;i++)info.append(detailItem(LABELS[i],row[FIELDS[i]]));
   }else{
-   for(const name of EXTRA_FIELDS[kind]||[])
-    info.append(detailItem(EXTRA_LABELS[name],extras[name]));
+   for(const name of EXTRA_FIELDS[kind]||[]){
+    if(kind==="PAGAMENTO"&&name==="pixPagamento"&&extras.formaPagamento==="DEPOSITO")continue;
+    const value=name==="formaPagamento"?
+      ({PIX_IRION:"PIX IRION",DEPOSITO:"Depósito bancário"}[extras[name]]||extras[name]):
+      name==="etapaPagamento"?
+      ({ADIANTAMENTO:"Adiantamento",SALDO:"Saldo",ADIANTAMENTO_E_SALDO:"Adiantamento e Saldo"}[extras[name]]||extras[name]):
+      extras[name];
+    info.append(detailItem(EXTRA_LABELS[name],value));
+   }
   }
   renderDocs(id,data.anexos||[],kind);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
   $("pedProofFlag").hidden=!payment||row.status!=="FINALIZADO";

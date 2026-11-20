@@ -1,5 +1,5 @@
 // Subperfil SOLICITACOES por usuário, isolado por transportadora.
-// O login D1 mantém o papel físico OPERACIONAL para compatibilidade com seu CHECK legado.
+// O login D1 mantém o papel físico PISO (mínimo privilégio) para compatibilidade com o CHECK legado.
 // Esta camada R2 atribui o perfil virtual e a seleção individual dos módulos.
 import {errorResponse,success} from "../utils/response.js";
 import {TENANT_MODULES} from "../config/tenant-modules.js";

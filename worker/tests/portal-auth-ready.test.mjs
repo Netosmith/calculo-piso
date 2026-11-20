@@ -74,6 +74,6 @@ test("Cadastro aguarda confirmação da matriz antes de validar ADMINISTRADOR ou
   "Validação de Cadastro não pode acontecer antes das permissões do servidor");
  assert.ok(page.includes("const session=window.portalAuthReady?await window.portalAuthReady:null"));
  assert.ok(page.includes("cadastros.js?v=20261112-cadastros-owner-3"));
- assert.match(modules,/modulesForProfile\(env,LEGACY_NOVA_FROTA\.id,session\.perfil,state\.modules,isOwner\)/);
+ assert.match(modules,/modulesForProfile\(env,LEGACY_NOVA_FROTA\.id,role,state\.modules,isOwner,session\.usuario\)/);
  assert.match(modules,/env\.SUPER_ADMIN_USER/);
 });

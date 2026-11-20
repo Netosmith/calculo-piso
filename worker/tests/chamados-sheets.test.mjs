@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {Script as VmScript} from "node:vm";
 import {sheetsConfig} from "../src/services/chamados-sheets.js";
 
 const read=path=>readFileSync(new URL("../../"+path,import.meta.url),"utf8");
@@ -47,6 +48,24 @@ test("Apps Script preserva upload e download existentes e organiza onze abas",()
  assert.match(script,/Utilities\.formatDate\(s,"Etc\/GMT","yyyy-MM-dd HH:mm:ss"\)/);
  assert.match(script,/\^\\d\{4\}-\\d\\d-\\d\\d\[ T\]/);
 });
+
+test("agência e demais campos bancários preservam texto, hífens e zeros iniciais no Apps Script",()=>{
+ const script=read("docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs");
+ assert.ok(script.includes('name==="PAGAMENTOS"?"getDisplayValues":"getValues"'));
+ assert.ok(script.includes('if(name==="PAGAMENTOS"){'));
+ const bank=script.slice(script.indexOf('if(name==="PAGAMENTOS"){'),script.indexOf('}else if(previous)sheet.getRange'));
+ assert.ok(bank.includes('target.setNumberFormat("@");'));
+ assert.ok(bank.includes('target.setValues([row]);'));
+ assert.ok(bank.indexOf('target.setNumberFormat("@");')<bank.indexOf('target.setValues([row]);'));
+ assert.ok(script.includes('agenciaPagamento:"AGENCIA_PAGAMENTO",contaPagamento:"CONTA_PAGAMENTO"'));
+ const {Script}=requireScript();
+ assert.doesNotThrow(()=>new Script(script));
+});
+
+function requireScript(){
+ // Nodes test runner already supports standard ESM imports.
+ return {Script:VmScript};
+}
 
 test("início do zero é explícito, exige planilha completamente vazia e preserva histórico antigo no D1",()=>{
  const service=read("worker/src/services/chamados-sheets.js");

@@ -34,7 +34,8 @@ const kindRef=p=>p?.dadosEspecificos?.numeroPedidoCorrecao||
  p?.dadosEspecificos?.numeroCte||p?.dadosEspecificos?.numeroDocumento||p?.dadosEspecificos?.ctePagamento||p?.dadosEspecificos?.cteGuia||p?.numeroPedidoOC||"";
 const MAX_FILE=6*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
-let user="",executor=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
+let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
+let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
 function time(value){
@@ -115,6 +116,7 @@ async function refresh(){
  const result=await request();
  chamados=Array.isArray(result.chamados)?result.chamados:[];
  render();
+ if(historyLoaded)await fetchHistoric(true);
 }
 function syncPaymentMethod(){
  const active=formKind==="PAGAMENTO",deposit=$("pedFormaPagamento")?.value==="DEPOSITO";
@@ -350,6 +352,14 @@ async function openDetail(id){
   $("pedProofFlag").textContent=hasProof?"Comprovante anexado":"Aguardando comprovante";
   const isMine=execution&&executor&&row.executor===user;
   const canMove=isMine&&["ANDAMENTO","PENDENTE"].includes(row.status);
+  $("pedAdminActions").hidden=!superAdmin;
+  if(superAdmin){
+   $("pedAdminProtocol").value="";$("pedAdminReason").value="";
+   $("pedAdminEditReason").value="";$("pedAdminEditWrap").open=false;
+   $("pedAdminRemove").hidden=Boolean(row.excluidoEm);
+   $("pedAdminRestore").hidden=!row.excluidoEm;
+   setupAdminFields(row);
+  }
   $("tnExecution").hidden=!execution;
   $("pedProofSection").hidden=!(execution&&isMine&&payment&&row.status==="FINALIZADO");
   $("pedProofFile").value="";
@@ -396,7 +406,13 @@ async function boot(){
   if(state.empresa!==expected)throw Error("Sessão pertence a outra transportadora.");
   if(execution?(!state.execucaoHabilitada||!state.executor):!state.solicitacoesHabilitadas)
    throw Error("Abertura de Pedidos ainda não liberada pelo Super Admin para este perfil.");
-  executor=state.executor===true;
+  executor=state.executor===true;superAdmin=state.superAdmin===true;
+  $("tnHistoryAdmin").hidden=!superAdmin;
+  if(execution){
+   const allowedKinds=new Set(state.tiposLiberados||[]);
+   for(const option of [...$("tnHistoryType").options])
+    if(option.value&&!allowedKinds.has(option.value))option.remove();
+  }
   if(execution){const allowed=new Set(state.tiposLiberados||[]);
    for(const option of [...$("tnTypeFilter").options])if(option.value&&!allowed.has(option.value))option.remove();}
   user=String(session.usuario||session.user||"").trim();
@@ -406,6 +422,7 @@ async function boot(){
   if($("tnNew"))$("tnNew").disabled=!canCreate;
   if(!canCreate)inform("Configure o Google Drive da transportadora no Super Admin antes de usar os anexos.",true);
   await refresh();
+  await fetchHistoric(true);
  }catch(e){
   if($("tnNew"))$("tnNew").disabled=true;
   $("tnBoard").replaceChildren(element("p",e.message,"cad-empty"));
@@ -417,6 +434,16 @@ $("tnPreviewDialog").addEventListener("close",clearPreview);
 $("tnRefresh").onclick=()=>refresh().catch(e=>inform(e.message,true));
 $("tnFilter").onchange=render;$("tnTypeFilter").onchange=render;$("tnSearch").oninput=render;
 $("tnDraftButton").onclick=()=>{draftsExpanded=!draftsExpanded;render();};
+$("tnHistoryRefresh").onclick=()=>fetchHistoric(true);
+$("tnHistoryMore").onclick=()=>fetchHistoric(false);
+$("tnHistoryType").onchange=()=>fetchHistoric(true);
+$("tnHistorySearch").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();fetchHistoric(true);}};
+$("tnHistoryAll").onchange=syncHistoryAdmin;
+$("tnHistoryStatus").onchange=()=>fetchHistoric(true);
+$("tnHistoryRemoved").onchange=()=>fetchHistoric(true);
+$("pedAdminEditSave").onclick=adminCorrection;
+$("pedAdminRemove").onclick=()=>adminRemove(false);
+$("pedAdminRestore").onclick=()=>adminRemove(true);
 if($("tnKindSelect")){
  $("tnKindSelect").onchange=()=>setKind($("tnKindSelect").value,{syncPicker:false});
  $("tnKindSelect").dataset.kind="PEDIDO";

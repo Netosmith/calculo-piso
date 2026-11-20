@@ -13,7 +13,8 @@
  function controls(){
   const ready=current?.ready===true,source=current?.origem,dest=current?.destino;
   const verified=ready&&source&&dest&&source.count===dest.count&&
-    source.fingerprint===dest.fingerprint;
+    source.fingerprint===dest.fingerprint&&["anexos","mensagens","historico"].every(key=>
+      source[key]?.count===dest[key]?.count&&source[key]?.fingerprint===dest[key]?.fingerprint);
   $("pedSheetsImport").disabled=busy||!ready||current?.mode==="sheets";
   $("pedSheetsActivate").disabled=busy||!verified||current?.mode==="sheets";
   $("pedSheetsStatus").disabled=busy;
@@ -45,7 +46,7 @@
    const d1=data.origem?.count??0,google=data.destino?.count??0;
    if(!data.ready)inform("Apps Script ainda não está pronto. "+(data.aviso||"Atualize a implantação privada antes da importação."));
    else if(data.mode==="sheets")inform("Google Sheets ATIVO para "+company+". "+google+" chamados migrados e vinculados.");
-   else if(d1===google&&data.origem.fingerprint===data.destino.fingerprint)
+   else if(d1===google&&data.origem.fingerprint===data.destino.fingerprint&&["anexos","mensagens","historico"].every(k=>data.origem[k]?.count===data.destino[k]?.count&&data.origem[k]?.fingerprint===data.destino[k]?.fingerprint))
     inform("Integridade conferida. "+d1+" registros iguais no D1 e Google Sheets. Pode ativar.");
    else inform("D1: "+d1+" chamados. Google Sheets: "+google+". Importe os registros para conferir a integridade.");
   }catch(error){if(seq===loadSeq)inform(error.message);}

@@ -296,11 +296,19 @@ function cmFingerprint_(ss,p){
  var digest=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,sorted.join("\n"),Utilities.Charset.UTF_8);
  return digest.map(function(x){return ("0"+(x&255).toString(16)).slice(-2);}).join("");
 }
+function cmChildDigest_(ss,p,name){
+ var values=cmRows_(ss,name).filter(function(x){return x.TRANSPORTADORA===p.tenant;})
+  .map(function(x){return cmRaw_(x.ID)+"|"+cmRaw_(x.CHAMADO_ID);}).sort();
+ var hash=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,values.join("\n"),Utilities.Charset.UTF_8);
+ return {count:values.length,fingerprint:hash.map(function(x){return ("0"+(x&255).toString(16)).slice(-2);}).join("")};
+}
 function cmOperation_(ss,p){
  var op=p.action.replace(/^chamados\./,""),ctx=p.context||{},data=p.data||{};
  var user=cmRaw_(ctx.user),admin=ctx.superAdmin===true,executor=ctx.executor===true;
  if(op==="health")return {schema:1,count:cmRows_(ss,"SOLICITACOES").filter(function(x){return x.TRANSPORTADORA===p.tenant;}).length,
-  fingerprint:cmFingerprint_(ss,p),transportadora:p.tenant};
+  fingerprint:cmFingerprint_(ss,p),transportadora:p.tenant,
+  anexos:cmChildDigest_(ss,p,"ANEXOS"),mensagens:cmChildDigest_(ss,p,"MENSAGENS"),
+  historico:cmChildDigest_(ss,p,"HISTORICO")};
  if(op==="import"){
   if(!admin||ctx.view!=="execucao")throw new Error("Importação restrita ao Super Admin.");
   if(!Array.isArray(data.chamados)||data.chamados.length>20)throw new Error("Lote inválido.");

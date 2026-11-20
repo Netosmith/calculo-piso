@@ -169,15 +169,21 @@ export async function aberturaPedidosController(req,env){
  const flags=await flagsFor(env,p.id),conf=await driveConfig(env,p.id);
  flags.solicitar=flags.solicitar&&await profileAllowsModule(env,p.id,p.role,"solicitacao-pedidos",p.ownerSupport===true);
  flags.executar=flags.executar&&await profileAllowsModule(env,p.id,p.role,"execucao-pedidos",p.ownerSupport===true);
- const executor=flags.executar&&isExecutor(p,conf),execView=view==="execucao";
+ const execProfile=await readPedidosExecAccess(env,p.id);
+ const userKey=String(p.user||"").trim().toUpperCase();
+ const kinds=p.ownerSupport===true?[...PEDIDOS_EXEC_KINDS]:
+  execProfile.configured?[...(execProfile.usuarios[userKey]||[])]:[...PEDIDOS_EXEC_LEGACY_KINDS];
+ const executor=flags.executar&&kinds.length>0&&String(p.role||"").toUpperCase()!=="PISO"&&
+  (isExecutor(p,conf)||(execProfile.configured&&kinds.length>0));
+ const execView=view==="execucao";
  if(path==="/config"&&req.method==="GET")
-  return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,armazenamentoConfigurado:!!conf});
+  return success({empresa:p.id,solicitacoesHabilitadas:flags.solicitar,execucaoHabilitada:flags.executar,executor,tiposLiberados:execView?kinds:[],armazenamentoConfigurado:!!conf});
  if(execView&&!executor)return err("Execução de Abertura de Pedidos não liberada para este usuário.",403);
  if(!execView&&!flags.solicitar)return err("Solicitação de Abertura de Pedidos não liberada nesta transportadora.",403);
  try{
   if((path===""||path==="/")&&req.method==="GET"){
    const list=execView?
-    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND status<>'RASCUNHO' ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id).all():
+    await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND status<>'RASCUNHO' AND tipo_solicitacao IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND solicitante_id=? ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
    return success({chamados:(list.results||[]).map(ticketView),executor});
   }
@@ -197,6 +203,7 @@ export async function aberturaPedidosController(req,env){
   if(!match)return err("Rota de Abertura de Pedidos inexistente.",404);
   const id=match[1],action=match[2]||"",row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
+  if(execView&&!kinds.includes(row.tipo_solicitacao||"PEDIDO"))return err("Tipo de chamado não autorizado.",403);
   const owner=row.solicitante_id===p.user;
   if(execView?!executor:!owner)return err("Chamado não autorizado.",403);
   if(row.status==="RASCUNHO"&&!owner)return err("Rascunho privado.",403);
@@ -227,8 +234,13 @@ export async function aberturaPedidosController(req,env){
       b.base64.length>Math.ceil(MAX_FILE/3)*4+8||!/^[A-Za-z0-9+/]+={0,2}$/.test(b.base64))return err("Anexo inválido. Envie PDF, JPG, PNG ou WebP de até 6 MB.");
    const size=Math.floor(b.base64.length*3/4)-(b.base64.endsWith("==")?2:b.base64.endsWith("=")?1:0);
    if(!size||size>MAX_FILE)return err("Arquivo acima de 6 MB.",413);
-   if(!owner||!["RASCUNHO","PENDENTE"].includes(row.status))
-     return err("Somente solicitante pode anexar no rascunho ou pendência.",403);
+   const proofSlot=row.tipo_solicitacao==="PAGAMENTO"?"comprovante_pagamento":
+    row.tipo_solicitacao==="PAGAMENTO_GUIA"?"comprovante_guia":null;
+   const proof=proofSlot!==null&&b.slot===proofSlot;
+   const canProof=proof&&execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO";
+   if((b.slot==="comprovante_pagamento"||b.slot==="comprovante_guia")?!canProof:
+      (!owner||execView||!["RASCUNHO","PENDENTE"].includes(row.status)))
+     return err("Anexo não autorizado para este usuário ou etapa.",403);
     const saved=await drive(conf,p.id,"upload",{ticketId:id,slot:b.slot,nome:b.nome,mime:b.mime,base64:b.base64});
    if(!FILEID.test(saved.fileId||""))return err("Google Drive não confirmou o arquivo.",502);
    await db.batch([

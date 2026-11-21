@@ -1,65 +1,83 @@
-# Central de Execuções | Kanban de Chamados
+# Central de Execuções | Kanban com movimentação livre
+Atualização: 21/11/2026 · Portal Frete
 
-Atualização: 21/11/2026. Módulos: `pages/solicitacao-pedidos.html` e
-`pages/execucao-pedidos.html`.
+## Movimentação em qualquer direção
 
-## Fluxos validados pela API
+Na **Central de Execuções**, um executor autorizado pode mover um chamado
+de qualquer etapa para outra: FILA, ANDAMENTO, PENDENTE e FINALIZADO.
+Inclusive FILA → FINALIZADO, FINALIZADO → PENDENTE ou ANDAMENTO → FILA.
 
-| Origem | Destino | Resultado |
-| --- | --- | --- |
-| FILA | ANDAMENTO | O executor assume o chamado pelo endpoint `/:id/assumir`. |
-| ANDAMENTO | PENDENTE | Requer motivo com pelo menos 8 caracteres; grava histórico. |
-| ANDAMENTO | FINALIZADO | Finaliza o chamado. Abertura de pedido exige número do pedido do sistema. |
-| PENDENTE | ANDAMENTO | Somente o executor responsável retoma o atendimento. |
-| PENDENTE | FILA | Abre o formulário de correção na tela Solicitações; somente após salvar volta à fila e limpa o executor. |
-| FINALIZADO | Qualquer etapa | Não permitido; permanece no histórico permanente. |
+O drag-and-drop não exige confirmação nos destinos FILA, ANDAMENTO e
+FINALIZADO. Ao entrar em PENDENTE:
+- Se houver motivo salvo no chamado com ao menos 8 caracteres, a operação
+  ocorre diretamente e reutiliza o motivo, sem abrir nova janela.
+- Se não houver, abre-se apenas a janela "Motivo ou justificativa".
+- Se o motivo for digitado dentro do detalhe do chamado e enviado com a mudança
+  para PENDENTE, nenhuma janela adicional aparece.
 
-Não existe movimentação direta de FILA para FINALIZADO ou PENDENTE. A operação
-por arrastar e soltar **não substitui** a validação do Worker. Cada movimento é
-confirmado por uma requisição autenticada. O card só muda de coluna depois
-que a API confirma a transação. Falhas preservam a posição anterior.
+Na visão **Solicitações**, a correção de pendência permanece colaborativa e o
+movimento PENDENTE → FILA abre o formulário para validar os dados corrigidos.
+Usuários solicitantes não recebem poderes de execução.
 
-## Interface
+## Persistência e segurança
 
-- Cabeçalho dedicado à Central de Execuções, centrado, com etapas do processo.
-- Indicadores de FILA, ANDAMENTO, PENDENTE e FINALIZADO (hoje), clicáveis para filtrar.
-- Soltar na coluna válida destaca o destino; destinos inválidos ficam atenuados.
-- Janela de confirmação para assumir, justificar pendência, retomar ou finalizar.
-- Na tela de Solicitações, arrastar PENDENTE para FILA abre a correção colaborativa.
-- Clicar no card continua abrindo o detalhe, inclusive em celular, com botões
-  de status, chat e anexos já existentes. Não depender do drag em touchscreen.
-- Área **Meu foco** compacta substitui a duplicação de cards da fila.
-- Arquivo permanente continua carregado somente quando solicitado.
+O frontend chama `POST /v1/abertura-pedidos/:id/mover`, enviando:
+- `origem`: a etapa exibida na tela;
+- `status`: etapa de destino;
+- `motivo`: justificativa opcional, obrigatória somente se entrar em PENDENTE
+  sem motivo anteriormente salvo;
+- `numeroPedidoSistema`: opcional quando disponível.
 
-## Latência e carga
+O Worker verifica sessão, transportadora, tipo autorizado do executor, estado
+anterior e se o chamado está ativo (não excluído). Em D1, o UPDATE confirma
+`status=origem`, evitando a sobrescrita silenciosa de movimentações
+concorrentes. Na integração Sheets, as gravações são serializadas pelo
+Apps Script. Cada movimento grava uma entrada no histórico, preservando
+mensagens, anexos e número do pedido já preenchido.
 
-- Status confirmados atualizam o Kanban localmente, sem segundo GET de detalhes.
-- As colunas só reconstroem os cards quando os dados exibidos mudaram.
-- Os GETs completos de detalhes, anexos e histórico ficam sob demanda.
-- D1 seleciona apenas as colunas de resumo da Execução, sem `SELECT *`.
-- O Apps Script passa a construir um resumo leve das solicitações na listagem;
-  a rota `/:id` continua retornando os dados completos e protegidos.
-- A sincronização automática ocorre a cada 15 segundos no modo D1 e a cada
-  30 segundos no modo Sheets, desde que a aba esteja visível e sem modal aberto.
-  A periodicidade não garante tempo máximo de resposta da rede.
+Ao voltar à FILA, o executor é limpo para que outro colaborador possa assumir.
+Ao mover para outro estado, o responsável passa a ser quem executou a ação.
+Isso garante que o comprovante de pagamento, quando cabível, continue sob
+a responsabilidade do executor ativo.
 
-## Publicação e testes
+A conclusão de pedidos pelo **arraste** não exige o número do pedido no
+sistema. Caso ainda não tenha sido informado, ele ficará vazio e deverá ser
+preenchido posteriormente para o fluxo que exige esse número. O botão legado
+de situação ainda conserva suas validações próprias.
 
-Frontend e Worker estão versionados no repositório. O Worker usa o fluxo
-existente de deploy pelo GitHub Actions. **A otimização de Google Sheets**
-incluída no arquivo `docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs` só fica
-ativa em produção depois de atualizar a implantação existente do Google Apps
-Script da transportadora.
+## Interface e desempenho
 
-Validação local:
+- Painel centralizado com indicadores por etapa e fluxo da operação.
+- Drop zones destacam etapas permitidas; clique no card abre o detalhe.
+- Indicador "Motivo já registrado" no card PENDENTE.
+- Formulário de detalhe permite todas as etapas, inclusive FILA.
+- A posição da coluna só muda após resposta de sucesso do servidor.
+- A listagem retorna campos essenciais; detalhes, mensagens e anexos
+  são consultados sob demanda.
+- Atualização automática nominal: D1 a cada 15 s; Sheets a cada 30 s,
+  condicionada à aba visível, sem modais e sem requisições em andamento.
+- Histórico permanente permanece disponível para consulta.
 
-```bash
-node --check assets/js/abertura-pedidos.js
-node --check worker/src/controllers/abertura-pedidos.js
-node --test worker/tests/chamados-kanban-ui.test.mjs worker/tests/chamados-public-performance.test.mjs
-```
+## Arquivos alterados
 
-A automação `.github/workflows/chamados-kanban-check.yml` repete esses
-testes nas alterações do Kanban. Testes unitários não substituem a verificação
-manual em desktop/celular com os perfis COMERCIAL, OPERACIONAL, executor e
-Super Admin de cada transportadora.
+- `assets/js/abertura-pedidos.js`
+- `assets/css/abertura-pedidos.css`
+- `pages/execucao-pedidos.html` e `pages/solicitacao-pedidos.html`
+- `worker/src/controllers/abertura-pedidos.js`
+- `worker/src/services/chamados-sheets.js`
+- `docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs`
+- `worker/tests/chamados-kanban-ui.test.mjs`
+
+## Publicação e verificação
+
+O GitHub recebe o frontend e o Worker; o despliegue do Worker depende do
+GitHub Actions do repositório. Para transportadoras que usam **Google Sheets**
+como fonte principal, a implementação do `mover` precisa também estar na
+**implantação ativa do Apps Script**. Sem republicar a implantação existente,
+a API pode retornar "Operação desconhecida".
+
+Verificar usando executor autorizado: arrastar FILA → FINALIZADO,
+FINALIZADO → ANDAMENTO, ANDAMENTO → PENDENTE com novo motivo,
+PENDENTE → FILA, FINALIZADO → PENDENTE com motivo previamente salvo,
+além de comparar etapas e histórico em duas sessões simultâneas.
+Não confundir verificações estáticas com teste em produção.

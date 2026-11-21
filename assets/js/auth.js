@@ -1567,8 +1567,29 @@ function portalNavCurrentFile(){
     .toLowerCase();
 }
 
+let portalSuperAdminNavVerified=false;
+async function verifyPortalSuperAdminNav(session){
+ portalSuperAdminNavVerified=false;
+ if(!session||!isAuthedHome())return;
+ if(session.tenantMode===true){
+  portalSuperAdminNavVerified=session.ownerSupport===true;
+ }else{
+  try{
+   const response=await fetch("https://api.portalfrete.net.br/v1/super-admin/me",{
+    method:"GET",credentials:"include",cache:"no-store",headers:{Accept:"application/json"}
+   });
+   if(response.ok){
+    const data=await response.json();
+    portalSuperAdminNavVerified=data?.superAdmin===true&&
+     String(data.usuario||"").trim().toUpperCase()===String(session.usuario||"").trim().toUpperCase();
+   }
+  }catch(_){}
+ }
+ if(portalNavCurrentFile()!=="home.html"&&isAuthedHome())renderPortalGlobalNav();
+}
 function portalNavAllowed(item){
   if(item.always) return isAuthedHome();
+  if(item.key==="super-admin")return portalSuperAdminNavVerified;
   // Bases Fretes por Estado pertencem SOMENTE aos tenants; nunca misturar
   // itens residuais numa troca de sessão com a Home principal da Nova Frota.
   if(/^fretes-[a-z]{2}$/.test(item.key) &&
@@ -1965,6 +1986,7 @@ window.portalAuthReady = refreshPortalSession()
     // Na Home os controladores especializados já fazem a consulta. Nas
     // páginas internas, atualizar a navegação sem atrasar a autenticação.
     const currentFile=String(window.location.pathname||"").split("/").pop().toLowerCase();
+    if(!["login.html"].includes(currentFile))void verifyPortalSuperAdminNav(session);
     if(!["home.html","login.html","super-admin.html"].includes(currentFile))
       void refreshOptionalNavGrants(session);
     return session;

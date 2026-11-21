@@ -536,7 +536,7 @@ function cmOperation_(ss,p){
    throw new Error("Etapa inválida.");
   if(previous!==ticket.STATUS)throw new Error("Chamado alterado por outra pessoa. Atualize o quadro.");
   var supplied=cmSafeText_(data.motivo||"",1800,false);
-  var order=cmSafeText_(data.numeroPedidoSistema||"",120,false);
+  var order=ticket.TIPO==="PEDIDO"?cmSafeText_(data.numeroPedidoSistema||"",120,false):"";
   if(next===ticket.STATUS){
    if(supplied.length<8&&!order)throw new Error("Informe o motivo ou número de pedido.");
    if(supplied.length>=8)ticket.MOTIVO=supplied;

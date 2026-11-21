@@ -1,0 +1,49 @@
+name: Sincronizar modulos da barra de titulos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/src/config/tenant-modules.js'
+      - 'worker/src/services/nova-frota-modules.js'
+      - 'pages/*.html'
+      - 'assets/js/auth.js'
+      - 'assets/js/tenant-page.js'
+      - 'assets/js/tenant-route.js'
+      - '.github/scripts/sync-portal-navigation.mjs'
+      - '.github/workflows/sync-portal-navigation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: portal-nav-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir sintaxe e permissões do menu
+        run: |
+          node --check assets/js/auth.js
+          node --check assets/js/tenant-route.js
+          node --check assets/js/tenant-page.js
+          node --check .github/scripts/sync-portal-navigation.mjs
+          node .github/scripts/sync-portal-navigation.mjs
+          node .github/scripts/sync-portal-navigation.mjs --check
+
+      - name: Publicar novos atalhos das transportadoras
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'pages/*/*.html'
+          if git diff --cached --quiet; then
+            echo "Todas as páginas e barras já estão sincronizadas."
+            exit 0
+          fi
+          git commit -m "build(nav): sincronizar entradas dos modulos liberados"
+          git push

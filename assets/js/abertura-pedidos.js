@@ -111,7 +111,7 @@ function card(p){
   [p.nomeSolicitante,p.solicitante].filter(Boolean).join(" · ");
  b.append(meta,badge,element("strong",title||kindTitle(p),"tn-client"),
   element("span",subtitle,"tn-branch"),foot);
- b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"");
+ b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"")+(movable?" · Arraste para mudar a etapa":"");
  b.onclick=()=>{if(Date.now()>=ignoreClickUntil)void openDetail(p.id);};return b;
 }
 
@@ -190,7 +190,7 @@ function ensureMoveDialog(){
     if(target==="FINALIZADO"&&kindOf(current)==="PEDIDO")current.numeroPedidoSistema=system;
     current.atualizadoEm=new Date().toISOString();
    }
-   mineSignature="";
+   mineSignature="";boardSerial++; // descarta atualização antiga
    dialog.close();moveTicket=null;moveTarget="";
    render();
    if($("tnAutoStatus"))$("tnAutoStatus").textContent="Alteração confirmada · atualização automática ativa";
@@ -366,11 +366,11 @@ function refresh(){
 function startAutoRefresh(){
  if(autoTimer)return;
  autoTimer=window.setInterval(()=>{
-  if(!document.hidden&&!refreshInFlight&&!busy&&!actionBusy)
+  if(!document.hidden&&!document.querySelector("dialog[open]")&&!refreshInFlight&&!busy&&!actionBusy)
    void refresh().catch(()=>{});
  },30000);
  document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden&&lastBoardRefresh&&Date.now()-lastBoardRefresh>=30000&&!refreshInFlight)
+  if(!document.hidden&&lastBoardRefresh&&Date.now()-lastBoardRefresh>=30000&&!refreshInFlight&&!document.querySelector("dialog[open]"))
    void refresh().catch(()=>{});
  });
 }
@@ -811,11 +811,25 @@ async function action(path,data,message){
    $("tnDetailOwner").textContent=selected.executor?"Executor: "+selected.executor:"Aguardando executor";
    if(path==="/assumir"){$("tnAssumir").hidden=true;$("tnStatusForm").hidden=false;}
   }
+  // A resposta da API já confirma o movimento. Atualizar localmente é imediato.
+  const local=chamados.find(row=>row.id===id);
+  if(local&&(path==="/assumir"||path==="/situacao")){
+   if(saved.status)local.status=saved.status;
+   if(path==="/assumir")local.executor=user;
+   if(path==="/situacao"&&saved.numeroPedidoSistema)local.numeroPedidoSistema=saved.numeroPedidoSistema;
+   local.atualizadoEm=new Date().toISOString();
+   boardSerial++;mineSignature="";render();lastBoardRefresh=Date.now();
+   if($("tnAutoStatus"))$("tnAutoStatus").textContent="Alteração confirmada · sincronização automática ativa";
+  }
+  if(path==="/assumir"){
+   $("tnStatusForm").elements.status.value="ANDAMENTO";
+   $("tnStatusForm").elements.motivo.value="";
+   $("tnStatusForm").hidden=false;
+   updateSystemInput();
+  }
   inform(message||"Alteração salva.");
-  // Recarregar a fila não exige reabrir a consulta completa do chamado.
-  void refresh().catch(error=>inform(error.message,true));
   if(path==="/situacao")hideDialog("tnDetailDialog");
-  else if(path==="/assumir"||path==="/mensagens")void openDetail(id);
+  else if(path==="/mensagens")void openDetail(id);
  }catch(e){inform(e.message,true);}
  finally{actionBusy=false;$("tnAssumir").disabled=false;}
 }
@@ -860,7 +874,7 @@ async function boot(){
   canCreate=state.armazenamentoConfigurado===true&&state.podeCriar!==false;
   if($("tnSwitch"))$("tnSwitch").hidden=!executor;
   if($("tnNew"))$("tnNew").disabled=!canCreate;
-  if(!canCreate)inform("Configure o Google Drive da transportadora no Super Admin antes de usar os anexos.",true);
+  if(!canCreate)inform("Criação indisponível. Confirme as permissões e o armazenamento no Super Admin.",true);
   startAutoRefresh();
   await refresh();
   if(!execution){
@@ -891,7 +905,19 @@ async function boot(){
 document.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>hideDialog(btn.dataset.close));
 $("tnPreviewDialog").addEventListener("close",clearPreview);
 $("tnRefresh").onclick=()=>refresh().catch(e=>inform(e.message,true));
-$("tnFilter").onchange=render;$("tnTypeFilter").onchange=render;$("tnSearch").oninput=render;
+$("tnFilter").onchange=render;$("tnTypeFilter").onchange=render;
+$("tnSearch").oninput=()=>{
+ cancelAnimationFrame(searchFrame);searchFrame=requestAnimationFrame(render);
+};
+if($("tnOpsOverview")){
+ $("tnOpsOverview").addEventListener("click",event=>{
+  const metric=event.target.closest("[data-metric-status]");
+  if(!metric)return;
+  const value=metric.dataset.metricStatus;
+  $("tnFilter").value=$("tnFilter").value===value?"":value;
+  render();
+ });
+}
 $("tnDraftButton").onclick=()=>{draftsExpanded=!draftsExpanded;render();};
 $("tnHistoryRefresh").onclick=()=>fetchHistoric(true);
 $("tnHistoryMore").onclick=()=>fetchHistoric(false);

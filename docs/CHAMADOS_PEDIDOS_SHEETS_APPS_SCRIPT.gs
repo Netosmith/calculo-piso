@@ -526,6 +526,7 @@ function cmOperation_(ss,p){
   return {numero:Number(ticket.NUMERO)||0,status:"FILA"};
  }
  if(op==="mover"){
+  if(ticket.EXCLUIDO_EM)throw new Error("Restaure o chamado antes de movimentá-lo.");
   if(ctx.view!=="execucao"||!executor||
     (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))<0)
    throw new Error("Movimentação exclusiva de executor autorizado para este tipo.");

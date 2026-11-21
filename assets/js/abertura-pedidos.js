@@ -181,6 +181,24 @@ function ensureMoveDialog(){
  dialog.addEventListener("close",()=>{if(!moveBusy){moveTicket=null;moveTarget="";}});
  return dialog;
 }
+async function saveReasonInsideCard(ticket,reason){
+ if(!execution||!executor||!ticket||actionBusy||moveBusy)return;
+ if(reason.trim().length<8)return inform("Descreva o motivo com pelo menos 8 caracteres.",true);
+ actionBusy=true;
+ try{
+  const saved=await request("/"+ticket.id+"/mover","POST",{
+   origem:ticket.status,status:ticket.status,motivo:reason.trim()
+  });
+  const cardRow=chamados.find(x=>x.id===ticket.id);
+  if(cardRow){cardRow.motivo=saved.motivo||reason.trim();cardRow.atualizadoEm=new Date().toISOString();}
+  if(selected?.id===ticket.id)selected.motivo=saved.motivo||reason.trim();
+  boardSerial++;mineSignature="";render();lastBoardRefresh=Date.now();
+  inform("Motivo salvo. Ao movimentar para Pendente, não será necessário digitá-lo novamente.");
+ }catch(error){
+  inform("Não foi possível salvar o motivo: "+error.message,true);
+  void refresh().catch(()=>{});
+ }finally{actionBusy=false;}
+}
 async function executeMove(ticket,target,reason="",systemNumber=""){
  if(!canMoveTicket(ticket,target))return inform("Atualize o quadro antes de movimentar este chamado.",true);
  if(!execution)return;
@@ -953,11 +971,9 @@ $("tnStatusForm").onsubmit=e=>{
  const f=e.currentTarget,target=f.elements.status.value;
  const reason=f.elements.motivo.value.trim();
  if(target===selected.status){
-  // É possível gravar o motivo primeiro, dentro do atendimento.
-  if(["ANDAMENTO","PENDENTE"].includes(target)&&selected.executor===user&&reason.length>=8)
-   return void action("/situacao",{status:target,motivo:reason,
-    numeroPedidoSistema:f.elements.numeroPedidoSistema.value.trim()},"Motivo registrado no chamado.");
-  return inform("Escolha outra etapa ou informe um motivo para registrar.",true);
+  // Salvar motivo no próprio card funciona em qualquer etapa.
+  if(reason.length>=8)return void saveReasonInsideCard(selected,reason);
+  return inform("Escolha outra etapa ou informe um motivo com pelo menos 8 caracteres para registrar.",true);
  }
  if(target==="PENDENTE"){
   if(reason.length>=8)return void executeMove(selected,target,reason);

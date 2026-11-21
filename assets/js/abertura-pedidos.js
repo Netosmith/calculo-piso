@@ -700,7 +700,7 @@ const detailItem=(label,value)=>{
 };
 function updateSystemInput(){
  const form=$("tnStatusForm"),wrap=$("pedSystemNumberInputWrap"),final=form.elements.status.value==="FINALIZADO"&&kindOf(selected)==="PEDIDO";
- wrap.hidden=!final;form.elements.numeroPedidoSistema.required=final;
+ wrap.hidden=!final;form.elements.numeroPedidoSistema.required=false;
 }
 async function openDetail(id){
  const serial=++detailSerial;
@@ -760,7 +760,7 @@ async function openDetail(id){
   $("pedProofFlag").hidden=!payment||row.status!=="FINALIZADO";
   $("pedProofFlag").textContent=hasProof?"Comprovante anexado":"Aguardando comprovante";
   const isMine=execution&&executor&&row.executor===user;
-  const canMove=isMine&&["ANDAMENTO","PENDENTE"].includes(row.status);
+  const canMove=execution&&executor&&STATES.some(entry=>entry[0]===row.status);
   $("pedAdminActions").hidden=!superAdmin;
   if(superAdmin){
    $("pedAdminProtocol").value="";$("pedAdminReason").value="";
@@ -776,7 +776,7 @@ async function openDetail(id){
   $("tnStatusForm").hidden=!canMove;
   if(canMove){
    $("tnStatusForm").elements.status.value=row.status;
-   $("tnStatusForm").elements.motivo.value="";
+   $("tnStatusForm").elements.motivo.value=row.motivo||"";
    $("tnStatusForm").elements.numeroPedidoSistema.value=row.numeroPedidoSistema||"";
    updateSystemInput();
   }
@@ -819,6 +819,7 @@ async function action(path,data,message){
   const local=chamados.find(row=>row.id===id);
   if(local&&(path==="/assumir"||path==="/situacao")){
    if(saved.status)local.status=saved.status;
+   if(path==="/situacao")local.motivo=data.motivo||local.motivo||"";
    if(path==="/assumir")local.executor=user;
    if(path==="/situacao"&&saved.numeroPedidoSistema)local.numeroPedidoSistema=saved.numeroPedidoSistema;
    local.atualizadoEm=new Date().toISOString();
@@ -947,9 +948,23 @@ if($("tnForm"))$("tnForm").onsubmit=submitForm;
 $("tnAssumir").onclick=()=>action("/assumir",{},"Solicitação assumida.");
 $("tnStatusForm").elements.status.onchange=updateSystemInput;
 $("tnStatusForm").onsubmit=e=>{
- e.preventDefault();const f=e.currentTarget;
- action("/situacao",{status:f.elements.status.value,motivo:f.elements.motivo.value.trim(),
-  numeroPedidoSistema:f.elements.numeroPedidoSistema.value.trim()},"Situação atualizada.");
+ e.preventDefault();
+ if(!selected||actionBusy||moveBusy)return;
+ const f=e.currentTarget,target=f.elements.status.value;
+ const reason=f.elements.motivo.value.trim();
+ if(target===selected.status){
+  // É possível gravar o motivo primeiro, dentro do atendimento.
+  if(["ANDAMENTO","PENDENTE"].includes(target)&&selected.executor===user&&reason.length>=8)
+   return void action("/situacao",{status:target,motivo:reason,
+    numeroPedidoSistema:f.elements.numeroPedidoSistema.value.trim()},"Motivo registrado no chamado.");
+  return inform("Escolha outra etapa ou informe um motivo para registrar.",true);
+ }
+ if(target==="PENDENTE"){
+  if(reason.length>=8)return void executeMove(selected,target,reason);
+  return void planMove(selected,target);
+ }
+ // Sem confirmação fora de PENDENTE.
+ void executeMove(selected,target,"",f.elements.numeroPedidoSistema.value.trim());
 };
 $("tnChatForm").onsubmit=e=>{
  e.preventDefault();const txt=e.currentTarget.elements.texto;

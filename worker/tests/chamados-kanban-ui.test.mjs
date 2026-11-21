@@ -65,6 +65,15 @@ test("motivo digitado no detalhe é usado sem segunda solicitação",()=>{
  assert.match(js,/Motivo já registrado/);
  assert.match(js,/f\.elements\.motivo\.value\.trim\(\)/);
 });
+test("motivo ou número podem ser salvos sem trocar a etapa",()=>{
+ assert.match(js,/async function saveReasonInsideCard\(ticket,reason,systemNumber/);
+ assert.match(js,/status:ticket\.status,motivo:reason\.trim\(\)/);
+ assert.match(js,/return void saveReasonInsideCard\(selected,reason,systemNumber\)/);
+ assert.match(d1,/if\(next===row\.status\)/);
+ assert.match(d1,/OBSERVACAO/);
+ assert.match(gs,/if\(next===ticket\.STATUS\)/);
+ assert.match(gs,/cmHist_\(ss,p,ticket,"OBSERVACAO"/);
+});
 test("Worker valida tenant, tipo e origem para evitar movimentos concorrentes",()=>{
  assert.match(d1,/if\(action==="mover"&&req\.method==="POST"\)/);
  assert.match(d1,/kinds\.includes\(effectiveKind\(row\)\)/);

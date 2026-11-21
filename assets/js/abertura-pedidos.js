@@ -45,6 +45,8 @@ let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",r
 let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
 const lanes=new Map();
 let boardLoaded=false,refreshInFlight=null,autoTimer=null,lastBoardRefresh=0;
+let draggedTicket=null,moveTicket=null,moveTarget="",moveBusy=false,ignoreClickUntil=0,mineSignature="";
+let searchFrame=0;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
 function time(value){
@@ -76,6 +78,27 @@ function matches(p,q){
 function card(p){
  const b=element("button","","cad-lane-ticket pedido-category-ticket");b.type="button";
  b.dataset.kind=kindOf(p);
+ b.dataset.ticketId=p.id;b.dataset.stage=p.status;
+ const movable=["FILA","ANDAMENTO","PENDENTE"].includes(p.status)&&
+   (execution?executor&&(
+     p.status==="FILA"||p.status==="PENDENTE"||p.executor===user
+   ):p.status==="PENDENTE");
+ if(movable){
+  b.draggable=true;b.classList.add("tn-movable");
+  b.title="Segure e arraste para uma etapa permitida ou clique para abrir";
+  b.addEventListener("dragstart",event=>{
+   if(actionBusy||moveBusy){event.preventDefault();return;}
+   draggedTicket=p;ignoreClickUntil=Date.now()+450;
+   event.dataTransfer.effectAllowed="move";
+   event.dataTransfer.setData("text/plain",p.id);
+   requestAnimationFrame(()=>b.classList.add("tn-dragging"));
+   markDropTargets(p);
+  });
+  b.addEventListener("dragend",()=>{
+   ignoreClickUntil=Date.now()+450;
+   clearDragTargets();
+  });
+ }
  const meta=element("div","","cad-lane-ticket-meta");
  meta.append(element("span",number(p),"cad-short-number"),element("span",time(p.criadoEm)));
  const badge=element("span",kindTitle(p),"pedido-category-label");
@@ -89,7 +112,7 @@ function card(p){
  b.append(meta,badge,element("strong",title||kindTitle(p),"tn-client"),
   element("span",subtitle,"tn-branch"),foot);
  b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"");
- b.onclick=()=>openDetail(p.id);return b;
+ b.onclick=()=>{if(Date.now()>=ignoreClickUntil)void openDetail(p.id);};return b;
 }
 function ensureBoard(){
  if(lanes.size)return;
@@ -102,17 +125,46 @@ function ensureBoard(){
   head.append(element("strong",label),count);
   const items=element("div","","cad-lane-items");
   items.append(element("p","Aguardando atualização...","cad-lane-empty"));
-  lane.append(head,items);board.append(lane);
-  lanes.set(key,{items,count,signature:null});
+  lane.dataset.stage=key;lane.append(head,items);board.append(lane);
+  lane.addEventListener("dragover",event=>{
+   if(!draggedTicket)return;
+   event.preventDefault();
+   event.dataTransfer.dropEffect=canMoveTicket(draggedTicket,key)?"move":"none";
+  });
+  lane.addEventListener("drop",event=>{
+   event.preventDefault();event.stopPropagation();
+   const row=draggedTicket,source=event.dataTransfer.getData("text/plain");
+   clearDragTargets();
+   if(!row||source!==row.id)return;
+   ignoreClickUntil=Date.now()+450;
+   void planMove(row,key);
+  });
+  lanes.set(key,{lane,items,count,signature:null});
  }
 }
 function render(){
  ensureBoard();
  const f=$("tnFilter").value,t=$("tnTypeFilter")?.value||"",q=$("tnSearch").value.trim().toUpperCase();
+ const groups=Object.fromEntries(STATES.map(([key])=>[key,[]]));
+ const totals=Object.fromEntries(STATES.map(([key])=>[key,0]));
+ const mine=[];
+ const drafts=[];
+ for(const row of chamados){
+  if(Object.hasOwn(totals,row.status))totals[row.status]++;
+  const visible=(!t||kindOf(row)===t)&&matches(row,q);
+  if(!visible)continue;
+  if(row.status==="RASCUNHO")drafts.push(row);
+  if(row.executor===user&&["ANDAMENTO","PENDENTE"].includes(row.status))mine.push(row);
+  if(groups[row.status]&&(!f||f===row.status))groups[row.status].push(row);
+ }
  for(const [key] of STATES){
-  const rows=chamados.filter(x=>x.status===key&&(!f||f===key)&&(!t||kindOf(x)===t)&&matches(x,q));
-  const lane=lanes.get(key);
-  const signature=JSON.stringify(rows.map(x=>[x.id,x.atualizadoEm,x.status,x.executor,x.nomeSolicitante,x.numeroPedidoOC,x.dadosEspecificos]))+"|"+boardLoaded;
+  const rows=groups[key],lane=lanes.get(key);
+  // Assinatura leve: não serializar dados privados nem recriar centenas de cards
+  // se apenas a atualização automática retornou os mesmos chamados.
+  const signature=rows.map(x=>[
+   x.id,x.atualizadoEm,x.status,x.executor,x.nomeSolicitante,
+   x.numeroPedidoOC,kindRef(x),x.numeroPedidoSistema
+  ].join("|")).join("~")+"|"+boardLoaded;
   lane.count.textContent=String(rows.length);
   if(lane.signature!==signature){
    lane.signature=signature;
@@ -121,14 +173,34 @@ function render(){
    ]));
   }
  }
- const mine=$("tnMine");
- if(mine){
-  mine.replaceChildren();
-  const rows=chamados.filter(x=>x.executor===user&&["ANDAMENTO","PENDENTE"].includes(x.status)&&(!t||kindOf(x)===t)&&matches(x,q));
-  if(!rows.length)mine.append(element("p","Nenhuma solicitação sob sua responsabilidade.","cad-empty"));
-  for(const row of rows)mine.append(card(row));
+ const metrics=$("tnOpsOverview");
+ if(metrics){
+  for(const button of metrics.querySelectorAll("[data-metric-status]")){
+   const key=button.dataset.metricStatus;
+   const count=button.querySelector("[data-metric-count]");
+   if(count)count.textContent=String(totals[key]||0);
+   button.classList.toggle("is-selected",f===key);
+  }
+  const total=metrics.querySelector("[data-ops-total]");
+  if(total)total.textContent=String(Object.values(totals).reduce((a,b)=>a+b,0));
  }
- const button=$("tnDraftButton"),tray=$("tnDrafts"),drafts=chamados.filter(x=>x.status==="RASCUNHO"&&(!t||kindOf(x)===t)&&matches(x,q));
+ const mineRoot=$("tnMine");
+ if(mineRoot){
+  const sig=mine.map(x=>x.id+"|"+x.status+"|"+x.atualizadoEm).join("~")+"|"+q+"|"+t;
+  if(mineSignature!==sig){
+   mineSignature=sig;mineRoot.replaceChildren();
+   if(!mine.length)mineRoot.append(element("p","Nenhum chamado atribuído a você. A fila acima está disponível para assumir.","cad-empty"));
+   for(const row of mine){
+    const b=element("button","","tn-focus-item");
+    b.type="button";
+    b.append(element("strong",number(row)),
+      element("span",kindTitle(row)),
+      element("small",row.status==="PENDENTE"?"Aguardando correção":"Em execução"));
+    b.onclick=()=>void openDetail(row.id);mineRoot.append(b);
+   }
+  }
+ }
+ const button=$("tnDraftButton"),tray=$("tnDrafts");
  button.hidden=execution||!drafts.length;button.textContent="Rascunhos ("+drafts.length+")";
  if(!drafts.length)draftsExpanded=false;
  tray.hidden=!draftsExpanded;tray.replaceChildren();

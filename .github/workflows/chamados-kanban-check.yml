@@ -10,6 +10,8 @@ on:
       - 'pages/execucao-pedidos.html'
       - 'docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs'
       - 'worker/tests/chamados-kanban-ui.test.mjs'
+      - 'worker/tests/chamados-public-performance.test.mjs'
+      - 'worker/src/controllers/abertura-pedidos.js'
       - '.github/workflows/chamados-kanban-check.yml'
   pull_request:
     paths:
@@ -19,6 +21,8 @@ on:
       - 'pages/execucao-pedidos.html'
       - 'docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs'
       - 'worker/tests/chamados-kanban-ui.test.mjs'
+      - 'worker/tests/chamados-public-performance.test.mjs'
+      - 'worker/src/controllers/abertura-pedidos.js'
   workflow_dispatch:
 
 permissions:
@@ -36,4 +40,4 @@ jobs:
         run: |
           node --check assets/js/abertura-pedidos.js
           node --check worker/tests/chamados-kanban-ui.test.mjs
-          node --test worker/tests/chamados-kanban-ui.test.mjs
+          node --test worker/tests/chamados-kanban-ui.test.mjs worker/tests/chamados-public-performance.test.mjs

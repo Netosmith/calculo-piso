@@ -471,7 +471,7 @@ export async function aberturaPedidosController(req,env){
     return err("Destino inválido.",400);
    if(previous!==row.status)return err("Chamado atualizado por outra pessoa. Atualize o quadro.",409);
    const suppliedReason=cleanMultiline(b.motivo,1800)||"";
-   const providedOrder=clean(b.numeroPedidoSistema,120)||"";
+   const providedOrder=effectiveKind(row)==="PEDIDO"?(clean(b.numeroPedidoSistema,120)||""):"";
    // Também permite preencher motivo ou número do pedido sem trocar a etapa.
    // OBSERVACAO não cria outro evento FINALIZADO na contagem dos concluídos.
    if(next===row.status){

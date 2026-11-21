@@ -67,7 +67,7 @@ test("motivo digitado no detalhe é usado sem segunda solicitação",()=>{
 });
 test("motivo ou número podem ser salvos sem trocar a etapa",()=>{
  assert.match(js,/async function saveReasonInsideCard\(ticket,reason,systemNumber/);
- assert.match(js,/status:ticket\.status,motivo:reason\.trim\(\)/);
+ assert.match(js,/requestMoveCompatible\(ticket,ticket\.status,reason\.trim\(\),systemNumber\.trim\(\)\)/);
  assert.match(js,/return void saveReasonInsideCard\(selected,reason,systemNumber\)/);
  assert.match(d1,/if\(next===row\.status\)/);
  assert.match(d1,/OBSERVACAO/);

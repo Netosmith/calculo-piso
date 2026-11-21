@@ -181,14 +181,45 @@ function ensureMoveDialog(){
  dialog.addEventListener("close",()=>{if(!moveBusy){moveTicket=null;moveTarget="";}});
  return dialog;
 }
+// Compatibilidade enquanto a implantação do Google Apps Script da
+// transportadora ainda não inclui a operação "mover". Não simular sucesso
+// quando a versão antiga não sabe persistir a transição.
+function missingMoveOperation(error){
+ return /Opera(?:ç|c)(?:ã|a)o de chamados desconhecida|atualize a implanta(?:ç|c)(?:ã|a)o do Apps Script/i.test(String(error?.message||""));
+}
+function requireUpdatedScript(){
+ return Error("O Apps Script desta transportadora está desatualizado. Atualize a implantação existente usando o código CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs do GitHub para liberar movimentos como Voltar à Fila e Finalizado → Pendente.");
+}
+async function requestMoveCompatible(ticket,target,motivo="",numeroPedidoSistema=""){
+ const payload={origem:ticket.status,status:target,motivo,numeroPedidoSistema};
+ try{return await request("/"+ticket.id+"/mover","POST",payload);}
+ catch(error){
+  if(!missingMoveOperation(error))throw error;
+  // Somente caminhos que a implantação antiga suporta com segurança.
+  if(ticket.status==="FILA"&&target==="ANDAMENTO"){
+   const result=await request("/"+ticket.id+"/assumir","POST",{});
+   return {...result,executor:user,motivo:ticket.motivo||""};
+  }
+  if(["ANDAMENTO","PENDENTE"].includes(ticket.status)&&ticket.executor===user&&
+     ["ANDAMENTO","PENDENTE","FINALIZADO"].includes(target)){
+   if(target==="PENDENTE"&&motivo.trim().length<8)throw Error("Informe a justificativa da pendência.");
+   if(target==="FINALIZADO"&&kindOf(ticket)==="PEDIDO"&&!numeroPedidoSistema.trim())
+    throw requireUpdatedScript();
+   const result=await request("/"+ticket.id+"/situacao","POST",{
+    status:target,motivo:motivo.trim(),numeroPedidoSistema:numeroPedidoSistema.trim()
+   });
+   return {...result,executor:ticket.executor,motivo:motivo.trim()||ticket.motivo||"",
+    numeroPedidoSistema:result.numeroPedidoSistema||ticket.numeroPedidoSistema||""};
+  }
+  throw requireUpdatedScript();
+ }
+}
 async function saveReasonInsideCard(ticket,reason,systemNumber=""){
  if(!execution||!executor||!ticket||actionBusy||moveBusy)return;
  if(reason.trim().length<8&&!systemNumber.trim())return inform("Informe um motivo ou o número do pedido.",true);
  actionBusy=true;
  try{
-  const saved=await request("/"+ticket.id+"/mover","POST",{
-   origem:ticket.status,status:ticket.status,motivo:reason.trim(),numeroPedidoSistema:systemNumber.trim()
-  });
+  const saved=await requestMoveCompatible(ticket,ticket.status,reason.trim(),systemNumber.trim());
   const cardRow=chamados.find(x=>x.id===ticket.id);
   if(cardRow){
    cardRow.motivo=saved.motivo||cardRow.motivo||"";
@@ -218,9 +249,7 @@ async function executeMove(ticket,target,reason="",systemNumber=""){
   $("tnMoveMessage").textContent="Registrando pendência...";
  else inform("Movendo "+number(ticket)+" para "+(STATES.find(x=>x[0]===target)?.[1]||target)+"...");
  try{
-  const saved=await request("/"+ticket.id+"/mover","POST",{
-   origem:original,status:target,motivo:reason,numeroPedidoSistema:systemNumber
-  });
+  const saved=await requestMoveCompatible(ticket,target,reason,systemNumber);
   const current=chamados.find(x=>x.id===ticket.id);
   if(current){
    current.status=saved.status||target;

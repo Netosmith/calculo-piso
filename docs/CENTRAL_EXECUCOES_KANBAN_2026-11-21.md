@@ -14,6 +14,10 @@ FINALIZADO. Ao entrar em PENDENTE:
 - Se não houver, abre-se apenas a janela "Motivo ou justificativa".
 - Se o motivo for digitado dentro do detalhe do chamado e enviado com a mudança
   para PENDENTE, nenhuma janela adicional aparece.
+- Se o card estiver aberto, é possível gravar **Motivo / atualização**
+  mantendo a etapa atual (selecionar a mesma etapa e clicar em Salvar).
+  Essa informação é persistida e será reutilizada na próxima movimentação
+  para PENDENTE, inclusive se o card estava em FILA ou FINALIZADO.
 
 Na visão **Solicitações**, a correção de pendência permanece colaborativa e o
 movimento PENDENTE → FILA abre o formulário para validar os dados corrigidos.
@@ -42,7 +46,7 @@ a responsabilidade do executor ativo.
 
 A conclusão de pedidos pelo **arraste** não exige o número do pedido no
 sistema. Caso ainda não tenha sido informado, ele ficará vazio e deverá ser
-preenchido posteriormente para o fluxo que exige esse número. O botão legado
+preenchido depois no próprio detalhe do chamado, sem precisar voltar\ná uma etapa anterior. O botão legado
 de situação ainda conserva suas validações próprias.
 
 ## Interface e desempenho

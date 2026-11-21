@@ -45,7 +45,7 @@ let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",r
 let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
 const lanes=new Map();
 let boardLoaded=false,refreshInFlight=null,autoTimer=null,lastBoardRefresh=0;
-let draggedTicket=null,moveTicket=null,moveTarget="",moveBusy=false,ignoreClickUntil=0,mineSignature="";
+let draggedTicket=null,moveTicket=null,moveTarget="",moveBusy=false,ignoreClickUntil=0,mineSignature="",canCorrectPending=false;
 let searchFrame=0;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
 const number=p=>p?.numero?"#"+String(p.numero).padStart(5,"0"):p?.protocolo||"";
@@ -120,7 +120,7 @@ function card(p){
    mover visualmente o card. Nenhum arraste grava dados por conta própria. */
 function canMoveTicket(row,destination){
  if(!row||row.status===destination||actionBusy||moveBusy)return false;
- if(row.status==="PENDENTE"&&destination==="FILA")return true;
+ if(row.status==="PENDENTE"&&destination==="FILA")return canCorrectPending;
  if(!execution||!executor)return false;
  if(row.status==="FILA")return destination==="ANDAMENTO";
  if(row.executor!==user)return false;
@@ -861,6 +861,7 @@ async function boot(){
   if(execution?(!state.execucaoHabilitada||!state.executor):!state.solicitacoesHabilitadas)
    throw Error("Abertura de Pedidos ainda não liberada pelo Super Admin para este perfil.");
   executor=state.executor===true;superAdmin=state.superAdmin===true;
+  canCorrectPending=state.solicitacoesHabilitadas===true;
   $("tnHistoryAdmin").hidden=!superAdmin;
   if(execution){
    const allowedKinds=new Set(state.tiposLiberados||[]);

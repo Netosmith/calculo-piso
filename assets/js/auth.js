@@ -454,7 +454,10 @@ async function refreshNovaFrotaModuleGrants(session){
   const data=await response.json();
   if(data?.ok!==true||data.empresa!=="nova-frota"||!Array.isArray(data.modules))
    throw new Error("Resposta de permissões inválida.");
-  novaFrotaEnabledModules=new Set(data.modules.filter(m=>NOVA_MANAGED_FEATURES.has(m)));
+  // A lista assinada pelo Worker já foi cruzada com os perfis do Super Admin.
+  // Não limitar a navegação a uma segunda lista fixa no navegador.
+  novaFrotaEnabledModules=new Set(data.modules.filter(m=>
+   typeof m==="string"&&/^[a-z][a-z0-9-]{1,63}$/.test(m)&&m!=="super-admin"));
   novaFrotaModulesConfirmed=true;
  }catch(error){
   // Falhar fechado: jamais interpretar falha de rede como autorização.
@@ -462,8 +465,9 @@ async function refreshNovaFrotaModuleGrants(session){
  }
 }
 function novaFrotaModuleGranted(feature){
- return !NOVA_MANAGED_FEATURES.has(feature) ||
-  (novaFrotaModulesConfirmed&&novaFrotaEnabledModules.has(feature));
+ // Fonte única: módulos efetivos recebidos da API autenticada, sem permissões
+ // inferidas de nomes de arquivos ou dados do localStorage.
+ return novaFrotaModulesConfirmed&&novaFrotaEnabledModules.has(feature);
 }
 // Navegação global: em páginas internas, os controladores da Home não são
 // carregados. Consultar a mesma API de status para renderizar corretamente os
@@ -524,7 +528,12 @@ function enforceNovaFrotaPageGrant(session){
   "execucao-troca-notas.html":"execucao-troca-notas",
   "solicitacao-pedidos.html":"solicitacao-pedidos","execucao-pedidos.html":"execucao-pedidos"
  };
- const feature=filenames[file];
+ // Um novo módulo com nome canônico (slug.html) também entra no bloqueio
+ // do Worker: a ausência em "filenames" nunca é uma permissão.
+ const feature=filenames[file]||(
+  /^[a-z][a-z0-9-]{2,63}\.html$/.test(file)&&
+  !["home.html","login.html","index.html","super-admin.html"].includes(file)
+   ?file.slice(0,-5):null);
  if(feature&&!novaFrotaModuleGranted(feature)){
   window.location.replace("./home.html");
   return false;
@@ -606,7 +615,7 @@ function canAccessFeature(featureKey, context=""){
   // com as caixas selecionadas no Super Admin para cada perfil.
 
   // Suporte também obedece à matriz do perfil e à liberação da empresa.
-  if(novaFrotaModulesConfirmed && NOVA_MANAGED_FEATURES.has(feature)){
+  if(novaFrotaModulesConfirmed){
     return isAuthedHome() && novaFrotaModuleGranted(feature);
   }
   const features = featuresForProfile(profile)
@@ -1035,6 +1044,39 @@ function ensureTenantFreightNavItems(){
       icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
     });
   }
+}
+
+// Os nomes e acessos vêm da sessão assinada; os itens legados acima fornecem
+// apenas ícones, rótulos e aliases. Módulos novos que seguem a convenção
+// modulo-chave -> modulo-chave.html entram automaticamente na barra.
+function portalGrantedModuleKeys(){
+ const session=window.__PORTAL_TENANT_SESSION;
+ if(session?.tenantMode===true)
+  return Array.isArray(session.modules)?session.modules:[];
+ return novaFrotaModulesConfirmed?[...novaFrotaEnabledModules]:[];
+}
+function portalGeneratedNavLabel(key){
+ if(/^fretes-[a-z]{2}$/.test(key))return "Fretes "+key.slice(-2).toUpperCase();
+ return key.split("-").map(word=>word.length<=2?word.toUpperCase():
+  word.charAt(0).toUpperCase()+word.slice(1)).join(" ");
+}
+function ensurePortalAuthorizedNavItems(){
+ const existing=new Set(PORTAL_NAV_ITEMS.flatMap(item=>
+  [item.key,...(Array.isArray(item.feature)?item.feature:[item.feature])].filter(Boolean)));
+ for(const feature of portalGrantedModuleKeys()){
+  if(typeof feature!=="string"||!/^[a-z][a-z0-9-]{2,63}$/.test(feature)||
+     feature==="super-admin"||existing.has(feature))continue;
+  // Esses módulos são exclusivos da Nova Frota. Somente a API pode liberá-los
+  // e a página canônica só deve ser construída para um slug seguro.
+  if(!canAccessFeature(feature,"navigation"))continue;
+  const file=feature+".html";
+  PORTAL_NAV_ITEMS.push({
+   key:feature,feature,label:portalGeneratedNavLabel(feature),
+   href:"./"+file,paths:[file],secondary:true,
+   icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 9h8M8 13h8M8 17h5"/></svg>'
+  });
+  existing.add(feature);
+ }
 }
 
 function injectPortalNavStyles(){
@@ -1557,6 +1599,7 @@ function portalNavIsActive(item){
 
 function createPortalGlobalNav(){
   ensureTenantFreightNavItems();
+  ensurePortalAuthorizedNavItems();
   const nav = document.createElement("nav");
   nav.className = "nf-global-nav";
   nav.id = "nfGlobalNav";

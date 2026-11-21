@@ -226,7 +226,7 @@ async function planMove(row,target){
    const detail=await request("/"+row.id);
    if(detail.chamado?.status!=="PENDENTE"||detail.consultaPublica===true)
     throw Error("Chamado não está mais disponível para correção.");
-   await resume(detail.chamado);
+   await resume(detail.chamado,detail);
   }catch(error){inform("Correção não aberta: "+error.message,true);}
   return;
  }
@@ -435,7 +435,7 @@ function newForm(){
  $("tnFormProgress").textContent="Preencha os campos obrigatórios."+(["PEDIDO","CTE_COMPLEMENTAR"].includes(formKind)?" Anexos podem ser enviados junto à solicitação.":"");
  showDialog("tnFormDialog");
 }
-async function resume(row){
+async function resume(row,existingDetail=null){
  if(execution)return;
  draft=row.id;revisionPending=row.status==="PENDENTE";$("tnForm").reset();setKind(kindOf(row));
  for(const name of FIELDS)$("tnForm").elements[name].value=row[name]||"";
@@ -455,7 +455,7 @@ async function resume(row){
  if(corruptedAgency)$("tnFormProgress").textContent="ATENÇÃO: a agência anterior foi convertida em data pelo Google Sheets. Informe a agência correta antes de salvar.";
  showDialog("tnFormDialog");
  try{
-  const detail=await request("/"+row.id);
+  const detail=existingDetail||await request("/"+row.id);
   $("tnFormProgress").textContent=(corruptedAgency?"ATENÇÃO: agência convertida em data. Digite a agência correta. ":"")+(formKind==="PAGAMENTO"?"Revise os dados para pagamento e salve a correção.":(detail.anexos||[]).length+" anexo(s) já salvos. Selecione somente arquivos adicionais.");
  }catch(e){inform(e.message,true);}
 }
@@ -790,7 +790,7 @@ async function openDetail(id){
      const next=new URL("solicitacao-pedidos.html",window.location.href);
      next.searchParams.set("corrigir",row.id);
      window.location.assign(next.href);
-    }else void resume(row);
+    }else void resume(row,data);
    };
   }
   showDialog("tnDetailDialog");
@@ -887,7 +887,7 @@ async function boot(){
      try{
       const details=await request("/"+pendingId);
       if(details?.chamado?.status==="PENDENTE"&&details.consultaPublica!==true)
-       void resume(details.chamado);
+       void resume(details.chamado,details);
       else inform("Este chamado não está mais pendente ou não pode ser corrigido.",true);
      }catch(e){inform("Não foi possível abrir a pendência: "+e.message,true);}
     }

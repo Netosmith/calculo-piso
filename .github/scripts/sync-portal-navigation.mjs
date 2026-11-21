@@ -40,7 +40,7 @@ for(const feature of union){
  if(!exists(p))fail("Módulo registrado sem HTML compartilhado: "+feature+" -> "+p);
  // Um módulo nunca deve depender da Home para construir seu menu.
  const html=read(p);
- if(!/assets\\/js\\/auth\\.js(?:\\?|["'])/.test(html))
+ if(!/assets\/js\/auth\.js(?:\?|["'])/.test(html))
   fail("Página sem auth.js / barra compartilhada: "+p);
 }
 const home=read("pages/home.html");
@@ -55,7 +55,7 @@ function wrapper(tenant,feature){
  const {file,shared,uf}=route(feature);
  const title=escapeHtml(uf?"Fretes "+uf:feature.replaceAll("-"," "));
  const attr=uf?' data-freight-base="'+uf+'"':"";
- return '<!doctype html>\\n<html lang="pt-BR">\\n<head>\\n<meta charset="utf-8">\\n<meta name="viewport" content="width=device-width,initial-scale=1">\\n<meta name="robots" content="noindex,nofollow">\\n<title>'+title+' | Portal Frete</title>\\n</head>\\n<body>\\n<p>Validando sessão da transportadora...</p>\\n<script src="/assets/js/tenant-page.js?v=nav-auto-1" data-tenant-id="'+escapeHtml(tenant)+'" data-shared-page="'+shared+'"'+attr+'></script>\\n</body>\\n</html>\\n';
+ return '<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="robots" content="noindex,nofollow">\n<title>'+title+' | Portal Frete</title>\n</head>\n<body>\n<p>Validando sessão da transportadora...</p>\n<script src="/assets/js/tenant-page.js?v=nav-auto-1" data-tenant-id="'+escapeHtml(tenant)+'" data-shared-page="'+shared+'"'+attr+'></script>\n</body>\n</html>\n';
 }
 const allowedTenantKeys=tenantKeys.filter(key=>!["fretes2","funcionarios","relatorio","super-admin"].includes(key));
 const pages=path.join(root,"pages");
@@ -73,8 +73,8 @@ for(const entry of fs.readdirSync(pages,{withFileTypes:true})){
   const contents=wrapper(tenant,feature);
   if(process.argv.includes("--check"))fail("Falta entrada: "+dest);
   fs.writeFileSync(path.join(root,dest),contents,"utf8");created++;
-  process.stdout.write("Criado "+dest+"\\n");
+  process.stdout.write("Criado "+dest+"\n");
  }
 }
 process.stdout.write("[NAVEGAÇÃO] "+union.size+" módulos cadastrados; "+cards.size+
- " cards da Home; "+checked+" atalhos verificados; "+created+" novos atalhos.\\n");
+ " cards da Home; "+checked+" atalhos verificados; "+created+" novos atalhos.\n");

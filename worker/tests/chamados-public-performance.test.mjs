@@ -32,7 +32,7 @@ test("D1 mostra status públicos da mesma empresa e protege rascunhos e privados
 });
 test("Google Sheets libera consultas sem trava e só permite dados privados ao responsável",()=>{
  const gs=read("docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs");
- assert.ok(gs.includes('var readOnly=["health","list","historico","get","download"]'));
+ assert.ok(gs.includes('var readOnly=["health","list","historico","get","download","capabilities"]'));
  assert.ok(gs.includes('var lock=readOnly?null:LockService.getScriptLock()'));
  assert.ok(gs.includes('if(!readOnly)SpreadsheetApp.flush()'));
  assert.ok(gs.includes('}finally{if(lock)lock.releaseLock();}'));

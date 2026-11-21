@@ -682,7 +682,7 @@ function cmOperation_(ss,p){
 }
 function chamadosDispatch_(p,props,tenant){
  var op=String(p.action||"").replace(/^chamados\./,"");
- var readOnly=["health","list","historico","get","download"].indexOf(op)>=0;
+ var readOnly=["health","list","historico","get","download","capabilities"].indexOf(op)>=0;
  var lock=readOnly?null:LockService.getScriptLock();
  if(lock&&!lock.tryLock(12000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
  try{

@@ -477,18 +477,18 @@ export async function aberturaPedidosController(req,env){
    // Também permite preencher motivo ou número do pedido sem trocar a etapa.
    // OBSERVACAO não cria outro evento FINALIZADO na contagem dos concluídos.
    if(next===row.status){
-    if(suppliedReason.length<8&&!providedOrder)
-     return err("Informe um motivo ou número de pedido válido.",400);
+    if(!suppliedReason&&!providedOrder)
+     return err("Informe uma observação ou número de pedido válido.",400);
     const note=await db.prepare("UPDATE portal_pedidos_tickets SET "+
      "motivo=CASE WHEN ?<>'' THEN ? ELSE motivo END,"+
      "numero_pedido_sistema=CASE WHEN ?<>'' THEN ? ELSE numero_pedido_sistema END,"+
      "atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status=? AND excluido_em=''")
-     .bind(suppliedReason.length>=8?suppliedReason:"",suppliedReason,
+     .bind(suppliedReason,suppliedReason,
       providedOrder,providedOrder,id,p.id,previous).run();
     if(note.meta?.changes!==1)return err("Chamado alterado por outra pessoa. Atualize.",409);
     await hist(db,p,id,"OBSERVACAO","Informações complementares registradas por "+p.user).run();
     return success({status:row.status,executor:row.executor_id||"",
-     motivo:suppliedReason.length>=8?suppliedReason:String(row.motivo||""),
+     motivo:suppliedReason||String(row.motivo||""),
      numeroPedidoSistema:providedOrder||row.numero_pedido_sistema||""});
    }
    const reason=next==="PENDENTE"?(suppliedReason||String(row.motivo||"").trim()):String(row.motivo||"");

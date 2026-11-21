@@ -13,8 +13,17 @@
   "estadias.html","fretes-mercado.html","embarques.html","chamados.html",
   "patrimonio-br.html","relatorio.html","custo-filial.html",
   "custo-frota-pesada.html","monitoramento.html","calculo-piso.html",
-  "calculo-antt.html","calculo-antt2.html","ordem.html"
+  "calculo-antt.html","calculo-antt2.html","ordem.html","leitura-documentos.html"
  ]);
+ // A relação de páginas é ampliada exclusivamente a partir dos módulos
+ // assinados pelo Worker. Novas chaves canônicas não exigem editar este arquivo.
+ const granted=Array.isArray(window.__PORTAL_TENANT_SESSION?.modules)
+  ?window.__PORTAL_TENANT_SESSION.modules:[];
+ for(const feature of granted){
+  if(typeof feature!=="string"||!/^[a-z][a-z0-9-]{2,63}$/.test(feature)||
+    ["super-admin","fretes2","funcionarios","relatorio"].includes(feature))continue;
+  modules.add(feature+".html");
+ }
  const ownLogin=prefix+"login.html";
  // Artwork and logo images cannot attach an XMLHttpRequest header. Encode
  // only the requested tenant scope; the Worker validates signed owner cookies.

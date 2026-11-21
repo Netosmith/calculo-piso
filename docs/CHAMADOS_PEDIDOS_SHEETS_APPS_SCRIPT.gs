@@ -245,6 +245,7 @@ function cmBoardTicket_(ss,main){
    numeroCte:cmRaw_(correction.NUMERO_CTE),numeroDocumento:cmRaw_(correction.NUMERO_DOCUMENTO)};
  }
  out.numeroPedidoSistema=cmRaw_(main.NUMERO_PEDIDO_SISTEMA);
+ out.motivo=cmRaw_(main.MOTIVO);
  return out;
 }
 function cmTicket_(ss,main){
@@ -523,6 +524,33 @@ function cmOperation_(ss,p){
    if(text)cmMessage_(ss,p,ticket,text,user);
   }
   return {numero:Number(ticket.NUMERO)||0,status:"FILA"};
+ }
+ if(op==="mover"){
+  if(ctx.view!=="execucao"||!executor||
+    (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))<0)
+   throw new Error("Movimentação exclusiva de executor autorizado para este tipo.");
+  var stages=["FILA","ANDAMENTO","PENDENTE","FINALIZADO"];
+  var previous=cmRaw_(data.origem).toUpperCase();
+  var next=cmRaw_(data.status).toUpperCase();
+  if(stages.indexOf(ticket.STATUS)<0||stages.indexOf(next)<0||next===ticket.STATUS)
+   throw new Error("Etapa inválida.");
+  if(previous!==ticket.STATUS)throw new Error("Chamado alterado por outra pessoa. Atualize o quadro.");
+  var supplied=cmSafeText_(data.motivo||"",1800,false);
+  var reason=next==="PENDENTE"?(supplied||cmRaw_(ticket.MOTIVO)):cmRaw_(ticket.MOTIVO);
+  if(next==="PENDENTE"&&reason.length<8)throw new Error("Informe um motivo para a pendência.");
+  var order=cmSafeText_(data.numeroPedidoSistema||"",120,false);
+  var previousReason=cmRaw_(ticket.MOTIVO);
+  ticket.STATUS=next;
+  ticket.EXECUTOR=next==="FILA"?"":user;
+  if(next==="PENDENTE")ticket.MOTIVO=reason;
+  if(order)ticket.NUMERO_PEDIDO_SISTEMA=order;
+  ticket.ATUALIZADO_EM=cmNow_();
+  cmPut_(ss,"SOLICITACOES",ticket,"ID");
+  cmHist_(ss,p,ticket,next,"Movimentado de "+previous+" para "+next+" por "+user);
+  if(next==="PENDENTE"&&supplied&&supplied!==previousReason)
+   cmMessage_(ss,p,ticket,supplied,user);
+  return {status:next,anterior:previous,executor:ticket.EXECUTOR,
+   motivo:cmRaw_(ticket.MOTIVO),numeroPedidoSistema:cmRaw_(ticket.NUMERO_PEDIDO_SISTEMA)};
  }
  if(op==="assumir"){
   if(!executor||ctx.view!=="execucao"||ticket.STATUS!=="FILA")throw new Error("Chamado já assumido ou não autorizado.");

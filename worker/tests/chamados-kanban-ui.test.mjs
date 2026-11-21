@@ -89,7 +89,7 @@ test("painéis conservam histórico, detalhes e sincronização",()=>{
  assert.match(execution,/<option value="FILA">FILA<\/option>/);
  assert.match(css,/tn-drop-valid/);
  assert.match(css,/tn-move-dialog/);
- assert.match(execution,/20261121-exec-kanban-v4/);
- assert.match(requester,/20261121-exec-kanban-v4/);
+ assert.match(execution,/20261121-kanban-livre-v5/);
+ assert.match(requester,/20261121-kanban-livre-v5/);
  assert.match(js,/if\(lane\.signature!==signature\)/);
 });

@@ -43,6 +43,8 @@ async function callScript(conf,tenantId,sheetId,action,context={},data={},ticket
   if(raw.length>12500000)throw Error("Resposta do Apps Script muito grande.");
   let result;try{result=JSON.parse(raw);}catch{throw Error("Resposta inválida do Apps Script.");}
   if(result?.ok!==true){
+   if(action==="mover"&&/Opera(?:ç|c)(?:ã|a)o (?:de chamados )?desconhecida\.?/i.test(String(result?.error||"")))
+    throw Error("Operação de movimentação indisponível: o Apps Script desta transportadora está em uma versão antiga. Publique a versão atual do arquivo CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs na implantação existente.");
    if(result?.error==="Operação desconhecida.")
     throw Error("Atualize a implantação do Apps Script com a versão de Solicitações / Chamados.");
    throw Error(result?.error||"Google Sheets recusou a operação.");
@@ -238,6 +240,18 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
  const ctx=scope(p,view,kinds,executor,flags);
  let action,data={},ticketId="";
  try{
+  if(path==="capacidades"&&request.method==="GET"){
+   try{
+    const result=await callScript(conf,p.id,options.sheetId,"capabilities",ctx);
+    return success({modo:"sheets",movimentacaoLivre:result.mover===true,
+     salvarObservacao:result.observacao===true,versao:String(result.build||"desconhecida")});
+   }catch(error){
+    if(/Opera(?:ç|c)(?:ã|a)o (?:de chamados )?desconhecida|atualize a implantação do Apps Script/i.test(String(error?.message||"")))
+     return success({modo:"sheets",movimentacaoLivre:false,salvarObservacao:false,
+      atualizacaoNecessaria:true});
+    throw error;
+   }
+  }
   if(!path&&request.method==="GET")action="list";
   else if(path==="historico"&&request.method==="GET"){
    action="historico";

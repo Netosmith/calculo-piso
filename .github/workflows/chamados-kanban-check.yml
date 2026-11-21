@@ -1,0 +1,39 @@
+name: Validacao Kanban de Chamados
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/abertura-pedidos.js'
+      - 'assets/css/abertura-pedidos.css'
+      - 'pages/solicitacao-pedidos.html'
+      - 'pages/execucao-pedidos.html'
+      - 'docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs'
+      - 'worker/tests/chamados-kanban-ui.test.mjs'
+      - '.github/workflows/chamados-kanban-check.yml'
+  pull_request:
+    paths:
+      - 'assets/js/abertura-pedidos.js'
+      - 'assets/css/abertura-pedidos.css'
+      - 'pages/solicitacao-pedidos.html'
+      - 'pages/execucao-pedidos.html'
+      - 'docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs'
+      - 'worker/tests/chamados-kanban-ui.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kanban-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe e matriz das etapas
+        run: |
+          node --check assets/js/abertura-pedidos.js
+          node --check worker/tests/chamados-kanban-ui.test.mjs
+          node --test worker/tests/chamados-kanban-ui.test.mjs

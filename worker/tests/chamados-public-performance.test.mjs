@@ -55,7 +55,8 @@ test("protocolo priorizado e UI não aguarda o histórico para renderizar a fila
  assert.ok(!client.includes('await Promise.all([refresh(),fetchHistoric(true)])'));
  assert.ok(client.includes('startAutoRefresh();'));
  assert.ok(client.includes('window.setInterval(()=>'));
- assert.ok(client.includes('},30000);'));
+ assert.ok(client.includes('},15000);'));
+ assert.ok(client.includes('autoEvery=state.armazenamentoChamados==="sheets"?30000:15000'));
  assert.ok(client.includes('function ensureBoard(){'));
  assert.ok(client.includes('if(lane.signature!==signature)'));
  assert.ok(client.includes('hideDialog("tnFormDialog");'));

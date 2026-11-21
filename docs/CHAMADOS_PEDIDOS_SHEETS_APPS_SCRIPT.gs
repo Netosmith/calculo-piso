@@ -540,8 +540,8 @@ function cmOperation_(ss,p){
   var supplied=cmSafeText_(data.motivo||"",1800,false);
   var order=ticket.TIPO==="PEDIDO"?cmSafeText_(data.numeroPedidoSistema||"",120,false):"";
   if(next===ticket.STATUS){
-   if(supplied.length<8&&!order)throw new Error("Informe o motivo ou número de pedido.");
-   if(supplied.length>=8)ticket.MOTIVO=supplied;
+   if(!supplied&&!order)throw new Error("Informe uma observação ou número de pedido.");
+   if(supplied)ticket.MOTIVO=supplied;
    if(order)ticket.NUMERO_PEDIDO_SISTEMA=order;
    ticket.ATUALIZADO_EM=cmNow_();
    cmPut_(ss,"SOLICITACOES",ticket,"ID");

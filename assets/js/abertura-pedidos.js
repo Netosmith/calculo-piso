@@ -906,6 +906,20 @@ async function extraDocument(){
  try{await upload(selected.id,$("tnAdditionalSlot").value,file);await openDetail(selected.id);inform("Documento anexado.");}
  catch(e){inform(e.message,true);}
 }
+// Verificação leve e independente da listagem: evita descobrir uma versão
+// antiga do Apps Script somente depois que alguém tenta arrastar um chamado.
+async function checkMoveCapabilities(){
+ if(!execution)return;
+ try{
+  const info=await request("/capacidades");
+  if(info.atualizacaoNecessaria===true||info.movimentacaoLivre===false){
+   inform("A planilha desta transportadora ainda usa um Apps Script antigo. Para mover livremente, inclusive voltar à FILA, atualize a implantação existente usando o script CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs do GitHub. Movimentos compatíveis continuam disponíveis.",true);
+  }
+ }catch(error){
+  // Não bloquear nem atrasar o quadro por uma consulta opcional.
+  console.warn("Não foi possível verificar a versão de Chamados.",error.message);
+ }
+}
 async function boot(){
  ensureBoard();render();
  if($("tnAutoStatus"))$("tnAutoStatus").textContent="Sincronização automática disponível";
@@ -939,6 +953,7 @@ async function boot(){
   if($("tnAutoStatus"))$("tnAutoStatus").textContent="Atualização automática a cada "+(autoEvery/1000)+" segundos";
   startAutoRefresh();
   await refresh();
+  if(execution)void checkMoveCapabilities();
   if(!execution){
    const deepLink=new URL(window.location.href);
    const pendingId=deepLink.searchParams.get("corrigir");

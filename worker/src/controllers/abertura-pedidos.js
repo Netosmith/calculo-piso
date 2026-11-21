@@ -239,6 +239,8 @@ export async function aberturaPedidosController(req,env){
  try{
   if(googleSheets.mode==="sheets")
    return await sheetsGateway(req,p,view,flags,executor,kinds,conf,googleSheets,normalizedFields);
+  if(path==="/capacidades"&&req.method==="GET")
+   return success({modo:"d1",movimentacaoLivre:true,salvarObservacao:true});
   if(path==="/historico"&&req.method==="GET"){
    // Consulta independente do quadro de 500 registros. Finalizados não expiram.
    // Somente o Super Admin acessa "todos" e os retirados da operação.

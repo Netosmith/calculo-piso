@@ -57,6 +57,12 @@ function time(value){
 function inform(message,error=false){
  const box=$("tnAlert");box.hidden=false;box.textContent=message;box.className="cad-alert"+(error?" error":"");
 }
+function syncConnection(ok){
+ const text=$("tnCommandStatus");
+ if(!text)return;
+ text.textContent=ok?"Central sincronizada":"Falha na sincronização";
+ text.closest(".tn-command-connected").dataset.state=ok?"online":"error";
+}
 function showDialog(name){const d=$(name);if(d&&!d.open)d.showModal();}
 function hideDialog(name){const d=$(name);if(d?.open)d.close();}
 async function request(path="",method="GET",data){
@@ -190,7 +196,7 @@ function ensureMoveDialog(){
     if(target==="FINALIZADO"&&kindOf(current)==="PEDIDO")current.numeroPedidoSistema=system;
     current.atualizadoEm=new Date().toISOString();
    }
-   mineSignature="";boardSerial++; // descarta atualização antiga
+   mineSignature="";boardSerial++;syncConnection(true); // descarta atualização antiga
    dialog.close();moveTicket=null;moveTarget="";
    render();
    if($("tnAutoStatus"))$("tnAutoStatus").textContent="Alteração confirmada · atualização automática ativa";
@@ -351,11 +357,12 @@ function refresh(){
    if(serial!==boardSerial)return;
    chamados=Array.isArray(result.chamados)?result.chamados:[];
    boardLoaded=true;lastBoardRefresh=Date.now();
-   render();
+   render();syncConnection(true);
    if($("tnAutoStatus"))
     $("tnAutoStatus").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+" · automático 30 s";
   }catch(error){
    if($("tnAutoStatus"))$("tnAutoStatus").textContent="Falha na atualização · tente novamente";
+   syncConnection(false);
    throw error;
   }
  })();

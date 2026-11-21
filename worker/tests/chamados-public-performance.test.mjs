@@ -41,7 +41,8 @@ test("Google Sheets libera consultas sem trava e só permite dados privados ao r
  assert.ok(gs.includes('if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")'));
  assert.ok(gs.includes('if(!canReadPrivate)return {chamado:cmPublicTicket_(ticket)'));
  assert.ok(gs.includes('ctx.view!=="execucao"&&item.STATUS==="RASCUNHO"&&item.SOLICITANTE!==ctx.user'));
- assert.ok(gs.includes('if(op==="list")return {chamados:rows.slice(0,500).map(function(x){return cmTicketForAudience_(ss,p,x);})'));
+ assert.ok(gs.includes('if(op==="list")return {chamados:rows.slice(0,500).map(function(x){')); 
+ assert.ok(gs.includes('ctx.view==="execucao"?cmBoardTicket_(ss,x):cmTicketForAudience_(ss,p,x)'));
  assert.ok(gs.includes('var direct=data.enviarAgora===true'));
 });
 test("protocolo priorizado e UI não aguarda o histórico para renderizar a fila",()=>{
@@ -68,7 +69,7 @@ test("protocolo priorizado e UI não aguarda o histórico para renderizar a fila
   assert.ok(html.includes('id="tnAutoStatus"'));
   assert.ok(html.includes("Consultar histórico"));
  }
- assert.ok(client.includes('void refresh().catch(error=>inform(error.message,true))'));
+ assert.ok(client.includes('boardSerial++;mineSignature="";render();lastBoardRefresh=Date.now()'));
  assert.ok(client.includes('showDialog("tnDetailDialog")'));
  assert.ok(client.includes('const preview=chamados.find(row=>row.id===id)'));
  assert.ok(client.includes('actionBusy=true;detailSerial++'));

@@ -185,7 +185,7 @@ function ensureMoveDialog(){
 // transportadora ainda não inclui a operação "mover". Não simular sucesso
 // quando a versão antiga não sabe persistir a transição.
 function missingMoveOperation(error){
- return /Opera(?:ç|c)(?:ã|a)o de chamados desconhecida|atualize a implanta(?:ç|c)(?:ã|a)o do Apps Script/i.test(String(error?.message||""));
+ return /Opera(?:ç|c)(?:ã|a)o (?:de chamados desconhecida|de movimenta(?:ç|c)(?:ã|a)o indispon[ií]vel)|Apps Script desta transportadora est[aá] em uma vers[aã]o antiga|atualize a implanta(?:ç|c)(?:ã|a)o do Apps Script/i.test(String(error?.message||""));
 }
 function requireUpdatedScript(){
  return Error("O Apps Script desta transportadora está desatualizado. Atualize a implantação existente usando o código CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs do GitHub para liberar movimentos como Voltar à Fila e Finalizado → Pendente.");

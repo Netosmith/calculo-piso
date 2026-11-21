@@ -114,6 +114,139 @@ function card(p){
  b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"");
  b.onclick=()=>{if(Date.now()>=ignoreClickUntil)void openDetail(p.id);};return b;
 }
+
+/* Fluxo de Kanban: somente transições admitidas pelas regras de execução.
+   A API continua sendo a autoridade e confirma cada alteração antes de
+   mover visualmente o card. Nenhum arraste grava dados por conta própria. */
+function canMoveTicket(row,destination){
+ if(!row||row.status===destination||actionBusy||moveBusy)return false;
+ if(row.status==="PENDENTE"&&destination==="FILA")return true;
+ if(!execution||!executor)return false;
+ if(row.status==="FILA")return destination==="ANDAMENTO";
+ if(row.executor!==user)return false;
+ return row.status==="ANDAMENTO"&&["PENDENTE","FINALIZADO"].includes(destination)||
+   row.status==="PENDENTE"&&destination==="ANDAMENTO";
+}
+function markDropTargets(row){
+ for(const [stage,lane] of lanes){
+  lane.lane.classList.toggle("tn-drop-valid",canMoveTicket(row,stage));
+  lane.lane.classList.toggle("tn-drop-blocked",row.status!==stage&&!canMoveTicket(row,stage));
+ }
+ document.body.classList.add("tn-drag-active");
+}
+function clearDragTargets(){
+ draggedTicket=null;
+ document.body.classList.remove("tn-drag-active");
+ for(const lane of lanes.values())lane.lane.classList.remove("tn-drop-valid","tn-drop-blocked");
+ document.querySelectorAll(".tn-dragging").forEach(node=>node.classList.remove("tn-dragging"));
+}
+function ensureMoveDialog(){
+ let dialog=$("tnMoveDialog");
+ if(dialog)return dialog;
+ dialog=document.createElement("dialog");dialog.id="tnMoveDialog";dialog.className="tn-move-dialog";
+ dialog.innerHTML=`
+  <form id="tnMoveForm">
+   <div class="tn-move-head"><span class="tn-move-kicker">MOVIMENTAÇÃO DE CHAMADO</span>
+    <h2 id="tnMoveTitle">Confirmar movimentação</h2>
+    <p id="tnMoveDescription"></p></div>
+   <div class="tn-move-body">
+    <label id="tnMoveReasonWrap" hidden>Motivo ou justificativa
+     <textarea id="tnMoveReason" rows="3" maxlength="1800" placeholder="Descreva a pendência para quem fará a correção"></textarea>
+    </label>
+    <label id="tnMoveSystemWrap" hidden>Número do pedido no sistema
+     <input id="tnMoveSystem" type="text" maxlength="120" autocomplete="off" placeholder="Obrigatório para finalizar abertura de pedido">
+    </label>
+    <p id="tnMoveMessage" role="status" aria-live="polite">A movimentação será validada pelo sistema.</p>
+   </div>
+   <div class="tn-move-actions"><button id="tnMoveCancel" type="button" class="secondary">Cancelar</button>
+    <button id="tnMoveConfirm" class="primary" type="submit">Confirmar movimentação</button></div>
+  </form>`;
+ document.body.append(dialog);
+ dialog.querySelector("#tnMoveCancel").onclick=()=>{if(!moveBusy)dialog.close();};
+ dialog.querySelector("#tnMoveForm").onsubmit=async event=>{
+  event.preventDefault();if(moveBusy||!moveTicket||!moveTarget)return;
+  const ticket=moveTicket,target=moveTarget;
+  if(!canMoveTicket(ticket,target)){dialog.close();inform("Movimentação indisponível. Atualize a fila.",true);return;}
+  const reason=$("tnMoveReason").value.trim(),system=$("tnMoveSystem").value.trim();
+  if(target==="PENDENTE"&&reason.length<8){
+   $("tnMoveMessage").textContent="Informe o motivo da pendência com pelo menos 8 caracteres.";
+   $("tnMoveReason").focus();return;
+  }
+  if(target==="FINALIZADO"&&kindOf(ticket)==="PEDIDO"&&!system){
+   $("tnMoveMessage").textContent="Informe o número do pedido no sistema antes de finalizar.";
+   $("tnMoveSystem").focus();return;
+  }
+  moveBusy=true;actionBusy=true;
+  $("tnMoveConfirm").disabled=true;$("tnMoveCancel").disabled=true;
+  $("tnMoveMessage").textContent="Validando alteração com a central...";
+  try{
+   const command=ticket.status==="FILA"?"/assumir":"/situacao";
+   const payload=command==="/assumir"?{}:{status:target,motivo:reason,numeroPedidoSistema:system};
+   const result=await request("/"+ticket.id+command,"POST",payload);
+   const current=chamados.find(row=>row.id===ticket.id);
+   if(current){
+    current.status=result.status||target;
+    if(command==="/assumir")current.executor=user;
+    if(target==="FINALIZADO"&&kindOf(current)==="PEDIDO")current.numeroPedidoSistema=system;
+    current.atualizadoEm=new Date().toISOString();
+   }
+   mineSignature="";
+   dialog.close();moveTicket=null;moveTarget="";
+   render();
+   if($("tnAutoStatus"))$("tnAutoStatus").textContent="Alteração confirmada · atualização automática ativa";
+   inform(number(ticket)+" atualizado para "+STATES.find(x=>x[0]===target)[1]+".");
+   lastBoardRefresh=Date.now();
+  }catch(error){
+   $("tnMoveMessage").textContent="Não foi possível mover: "+error.message;
+   inform("Movimentação não confirmada: "+error.message,true);
+   void refresh().catch(()=>{});
+  }finally{
+   moveBusy=false;actionBusy=false;
+   $("tnMoveConfirm").disabled=false;$("tnMoveCancel").disabled=false;
+  }
+ };
+ dialog.addEventListener("close",()=>{if(!moveBusy){moveTicket=null;moveTarget="";}});
+ return dialog;
+}
+async function planMove(row,target){
+ if(!row||row.status===target)return;
+ if(!canMoveTicket(row,target)){
+  inform("Movimentação não permitida. Use as etapas autorizadas ou abra os detalhes do chamado.",true);
+  return;
+ }
+ // Pendência só volta à fila depois de TODOS os campos serem corrigidos.
+ if(row.status==="PENDENTE"&&target==="FILA"){
+  if(execution){
+   const url=new URL("solicitacao-pedidos.html",window.location.href);
+   url.searchParams.set("corrigir",row.id);
+   window.location.assign(url.href);
+   return;
+  }
+  try{
+   const detail=await request("/"+row.id);
+   if(detail.chamado?.status!=="PENDENTE"||detail.consultaPublica===true)
+    throw Error("Chamado não está mais disponível para correção.");
+   await resume(detail.chamado);
+  }catch(error){inform("Correção não aberta: "+error.message,true);}
+  return;
+ }
+ const dialog=ensureMoveDialog();
+ moveTicket=row;moveTarget=target;
+ const destination=STATES.find(x=>x[0]===target)?.[1]||target;
+ $("tnMoveTitle").textContent=number(row)+" → "+destination;
+ $("tnMoveDescription").textContent=kindTitle(row)+" · "+
+  (target==="ANDAMENTO"&&row.status==="FILA"?"Este chamado será assumido por você.":
+   target==="PENDENTE"?"A pendência precisa de um motivo para orientar a correção.":
+   target==="FINALIZADO"?"Confira a execução antes de finalizar. A operação será registrada no histórico.":
+   "A execução será retomada pelo responsável atual.");
+ $("tnMoveReason").value="";$("tnMoveSystem").value="";
+ $("tnMoveReasonWrap").hidden=target!=="PENDENTE";
+ $("tnMoveSystemWrap").hidden=target!=="FINALIZADO"||kindOf(row)!=="PEDIDO";
+ $("tnMoveReason").required=target==="PENDENTE";
+ $("tnMoveSystem").required=target==="FINALIZADO"&&kindOf(row)==="PEDIDO";
+ $("tnMoveMessage").textContent="Confirme para registrar a movimentação. Histórico e permissões serão preservados.";
+ dialog.showModal();
+}
 function ensureBoard(){
  if(lanes.size)return;
  const board=$("tnBoard");

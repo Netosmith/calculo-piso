@@ -223,6 +223,30 @@ function cmTicketForAudience_(ss,p,main){
    (ctx.allowedKinds||[]).indexOf(cmRaw_(main.TIPO))>=0);
  return own?cmTicket_(ss,main):cmPublicTicket_(main);
 }
+// Cartão de Kanban: somente identificadores necessários para executar e
+// localizar o chamado. Dados completos, anexos e histórico ficam no GET /id.
+// A versão pública de solicitantes continua sem informações financeiras.
+function cmBoardTicket_(ss,main){
+ var out=cmPublicTicket_(main),kind=cmRaw_(main.TIPO);
+ if(kind==="PEDIDO"){
+  var details=cmGet_(ss,"PEDIDOS_DETALHES","CHAMADO_ID",main.ID)||{};
+  out.unidadeEmbarque=cmRaw_(details.UNIDADE_EMBARQUE);
+  out.numeroPedidoOC=cmRaw_(details.NUMERO_PEDIDO_OC);
+  out.produto=cmRaw_(details.PRODUTO);
+ }else if(kind==="PAGAMENTO"||kind==="PAGAMENTO_GUIA"){
+  var payment=cmGet_(ss,"PAGAMENTOS","CHAMADO_ID",main.ID)||{};
+  out.dadosEspecificos=kind==="PAGAMENTO"?
+   {ctePagamento:cmRaw_(payment.CTE_PAGAMENTO),placaPagamento:cmRaw_(payment.PLACA_PAGAMENTO),
+    nomeBeneficiario:cmRaw_(payment.NOME_BENEFICIARIO)}:
+   {cteGuia:cmRaw_(payment.CTE_GUIA),nfGuia:cmRaw_(payment.NF_GUIA)};
+ }else if(kind==="CORRECAO_PEDIDO"||kind==="CTE_COMPLEMENTAR"||kind==="CARTA_CORRECAO"){
+  var correction=cmGet_(ss,"CORRECOES","CHAMADO_ID",main.ID)||{};
+  out.dadosEspecificos={numeroPedidoCorrecao:cmRaw_(correction.NUMERO_PEDIDO_CORRECAO),
+   numeroCte:cmRaw_(correction.NUMERO_CTE),numeroDocumento:cmRaw_(correction.NUMERO_DOCUMENTO)};
+ }
+ out.numeroPedidoSistema=cmRaw_(main.NUMERO_PEDIDO_SISTEMA);
+ return out;
+}
 function cmTicket_(ss,main){
  var out={
   id:cmRaw_(main.ID),protocolo:cmRaw_(main.PROTOCOLO),
@@ -423,7 +447,9 @@ function cmOperation_(ss,p){
  }
  if(op==="list"||op==="historico"){
   var rows=cmFilterRows_(ss,p,op==="historico");
-  if(op==="list")return {chamados:rows.slice(0,500).map(function(x){return cmTicketForAudience_(ss,p,x);}),executor:executor};
+  if(op==="list")return {chamados:rows.slice(0,500).map(function(x){
+   return ctx.view==="execucao"?cmBoardTicket_(ss,x):cmTicketForAudience_(ss,p,x);
+  }),executor:executor};
   var page=Math.max(0,Math.min(1000,Number(data.pagina)||0));
   var offset=page*40,list=rows.slice(offset,offset+41);
   return {chamados:list.slice(0,40).map(function(x){return cmTicketForAudience_(ss,p,x);}),
@@ -450,7 +476,7 @@ function cmOperation_(ss,p){
   return {chamado:cmTicket_(ss,row)};
  }
  var ticket=cmMain_(ss,p,cmRaw_(p.ticketId));
- var object=cmTicket_(ss,ticket),owner=ticket.SOLICITANTE===user;
+ var object=null,owner=ticket.SOLICITANTE===user;
  var isMine=executor&&ticket.EXECUTOR===user&&ctx.view==="execucao";
  if(op==="get"){
   var canReadPrivate=admin||owner||(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")||
@@ -458,6 +484,7 @@ function cmOperation_(ss,p){
     (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0);
   if(!canReadPrivate)return {chamado:cmPublicTicket_(ticket),anexos:[],mensagens:[],
     historico:[],executor:false,consultaPublica:true};
+  object=cmTicket_(ss,ticket);
   var docs=cmFile_(ss,p,ticket),messages=cmRows_(ss,"MENSAGENS")
     .filter(function(x){return x.CHAMADO_ID===ticket.ID&&x.TRANSPORTADORA===p.tenant;})
     .map(function(x){return {autor_id:x.AUTOR,texto:x.TEXTO,criado_em:x.CRIADO_EM};});
@@ -491,6 +518,7 @@ function cmOperation_(ss,p){
    "Pendência corrigida por "+user+". Chamado devolvido à fila de execução":
    "Enviado para execução");
   if(!wasPending&&ticket.TIPO==="CORRECAO_PEDIDO"){
+   object=cmTicket_(ss,ticket);
    var text=cmRaw_(object.dadosEspecificos.textoCorrecao);
    if(text)cmMessage_(ss,p,ticket,text,user);
   }
@@ -588,6 +616,7 @@ function cmOperation_(ss,p){
   var field=cmRaw_(data.campo),value=cmSafeText_(data.valor,1800,true);
   var explanation=cmSafeText_(data.motivo,400,true);
   if(explanation.length<8)throw new Error("Justificativa insuficiente.");
+  object=cmTicket_(ss,ticket);
   var before="",location="";
   if(CM_FIELDS[field]){location="PEDIDOS_DETALHES";before=cmRaw_(object[field]);
    var record={CHAMADO_ID:ticket.ID};record[CM_FIELDS[field]]=value;

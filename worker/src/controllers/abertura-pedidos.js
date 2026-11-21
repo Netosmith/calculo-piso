@@ -166,6 +166,36 @@ const publicTicket=row=>{
   executor:x.executor,criadoEm:x.criadoEm,atualizadoEm:x.atualizadoEm,
   enviadoEm:x.enviadoEm,numeroPedidoSistema:"",dadosEspecificos:{},numeroPedidoOC:"",motivo:""};
 };
+// A consulta do quadro é enxuta; documentos e dados pessoais completos só
+// saem da rota autenticada /:id quando o usuário abre o atendimento.
+const executionBoardTicket=row=>{
+ const kind=Object.hasOwn(TIPOS_SOLICITACAO,effectiveKind(row))?effectiveKind(row):"PEDIDO";
+ const item={
+  id:row.id,protocolo:row.protocolo,numero:row.numero,
+  tipoSolicitacao:kind,status:row.status,solicitante:row.solicitante_id,
+  nomeSolicitante:row.nome_solicitante||row.solicitante_id||"",
+  executor:row.executor_id||"",criadoEm:row.criado_em,
+  atualizadoEm:row.atualizado_em,enviadoEm:row.enviado_em,
+  numeroPedidoSistema:row.numero_pedido_sistema||"",dadosEspecificos:{}
+ };
+ if(kind==="PEDIDO"){
+  item.unidadeEmbarque=row.unidade_embarque||"";
+  item.numeroPedidoOC=row.numero_pedido_oc||"";
+  item.produto=row.produto||"";
+ }else{
+  let extras={};
+  try{extras=JSON.parse(row.dados_especificos_json||"{}");}catch{extras={};}
+  const keys={
+   PAGAMENTO:["ctePagamento","placaPagamento","nomeBeneficiario"],
+   PAGAMENTO_GUIA:["cteGuia","nfGuia"],
+   CORRECAO_PEDIDO:["numeroPedidoCorrecao"],
+   CTE_COMPLEMENTAR:["numeroCte"],
+   CARTA_CORRECAO:["numeroDocumento"]
+  }[kind]||[];
+  for(const key of keys)item.dadosEspecificos[key]=String(extras[key]||"");
+ }
+ return item;
+};
 const hist=(db,p,t,status,message)=>db.prepare("INSERT INTO portal_pedidos_history(id,tenant_id,ticket_id,autor_id,status,descricao) VALUES(?,?,?,?,?,?)")
  .bind(crypto.randomUUID(),p.id,t,p.user,status,message||"");
 async function ticket(db,p,id){return db.prepare("SELECT * FROM portal_pedidos_tickets WHERE id=? AND tenant_id=?").bind(id,p.id).first();}
@@ -262,7 +292,7 @@ export async function aberturaPedidosController(req,env){
    const list=execView?
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status NOT IN ('RASCUNHO','FINALIZADO') OR (status='FINALIZADO' AND "+finalizedToday+")) AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status<>'RASCUNHO' OR solicitante_id=?) AND (status<>'FINALIZADO' OR "+finalizedToday+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
-   return success({chamados:(list.results||[]).map(row=>(p.ownerSupport||row.solicitante_id===p.user||execView&&executor)?ticketView(row):publicTicket(row)),executor});
+   return success({chamados:(list.results||[]).map(row=>execView?executionBoardTicket(row):(p.ownerSupport||row.solicitante_id===p.user?ticketView(row):publicTicket(row))),executor});
   }
   if((path===""||path==="/")&&req.method==="POST"){
     if(execView)return err("Solicitação exclusiva do solicitante.",403);

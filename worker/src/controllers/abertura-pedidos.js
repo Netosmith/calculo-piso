@@ -174,7 +174,7 @@ const executionBoardTicket=row=>{
   id:row.id,protocolo:row.protocolo,numero:row.numero,
   tipoSolicitacao:kind,status:row.status,solicitante:row.solicitante_id,
   nomeSolicitante:row.nome_solicitante||row.solicitante_id||"",
-  executor:row.executor_id||"",criadoEm:row.criado_em,
+  executor:row.executor_id||"",motivo:row.motivo||"",criadoEm:row.criado_em,
   atualizadoEm:row.atualizado_em,enviadoEm:row.enviado_em,
   numeroPedidoSistema:row.numero_pedido_sistema||"",dadosEspecificos:{}
  };
@@ -292,7 +292,7 @@ export async function aberturaPedidosController(req,env){
    // Evitar SELECT * no quadro: reduzir bytes lidos e serializados por acesso.
    const boardColumns="id,protocolo,numero,solicitante_id,executor_id,nome_solicitante,"+
     "criado_em,atualizado_em,enviado_em,numero_pedido_sistema,tipo_solicitacao,"+
-    "categoria_chamado,status,unidade_embarque,numero_pedido_oc,produto,dados_especificos_json";
+    "categoria_chamado,status,motivo,unidade_embarque,numero_pedido_oc,produto,dados_especificos_json";
    const list=execView?
     await db.prepare("SELECT "+boardColumns+" FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status NOT IN ('RASCUNHO','FINALIZADO') OR (status='FINALIZADO' AND "+finalizedToday+")) AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status<>'RASCUNHO' OR solicitante_id=?) AND (status<>'FINALIZADO' OR "+finalizedToday+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
@@ -321,7 +321,7 @@ export async function aberturaPedidosController(req,env){
     const row=await ticket(db,p,id);
     return success({chamado:ticketView(row)},201);
    }
-   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
+   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
   if(!match)return err("Rota de Abertura de Pedidos inexistente.",404);
   const id=match[1],action=match[2]||"",row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
@@ -456,6 +456,41 @@ export async function aberturaPedidosController(req,env){
      .bind(crypto.randomUUID(),p.id,id,p.user,message).run();
    }
    return success({numero:row.numero,status:"FILA"});
+  }
+  // Kanban livre: executor autorizado pode movimentar entre quaisquer etapas.
+  // Validação de status anterior evita sobrescrever mudança de outro usuário.
+  if(action==="mover"&&req.method==="POST"){
+   if(!execView||!executor||!kinds.includes(effectiveKind(row)))
+    return err("Você não possui permissão de execução para este tipo de chamado.",403);
+   if(!["FILA","ANDAMENTO","PENDENTE","FINALIZADO"].includes(row.status))
+    return err("Esta solicitação não está em uma etapa movimentável.",409);
+   const b=await bodyJson(req,2400);
+   const next=String(b.status||"").toUpperCase();
+   const previous=String(b.origem||"").toUpperCase();
+   if(!["FILA","ANDAMENTO","PENDENTE","FINALIZADO"].includes(next)||next===row.status)
+    return err("Destino inválido ou igual à etapa atual.",400);
+   if(previous!==row.status)return err("Chamado atualizado por outra pessoa. Atualize o quadro.",409);
+   const suppliedReason=cleanMultiline(b.motivo,1800)||"";
+   const reason=next==="PENDENTE"?(suppliedReason||String(row.motivo||"").trim()):String(row.motivo||"");
+   if(next==="PENDENTE"&&reason.length<8)
+    return err("Informe um motivo para colocar o chamado como pendente.",400);
+   const providedOrder=clean(b.numeroPedidoSistema,120)||"";
+   const updated=await db.prepare(
+    "UPDATE portal_pedidos_tickets SET status=?,executor_id=?,"+
+    "motivo=CASE WHEN ?='PENDENTE' THEN ? ELSE motivo END,"+
+    "numero_pedido_sistema=CASE WHEN ?<>'' THEN ? ELSE numero_pedido_sistema END,"+
+    "atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status=? AND excluido_em=''"
+   ).bind(next,next==="FILA"?null:p.user,next,reason,providedOrder,providedOrder,id,p.id,previous).run();
+   if(updated.meta?.changes!==1)return err("Chamado atualizado por outra pessoa. Atualize a fila.",409);
+   const log="Movimentado de "+previous+" para "+next+" por "+p.user;
+   const events=[hist(db,p,id,next,log)];
+   if(next==="PENDENTE"&&suppliedReason&&suppliedReason!==String(row.motivo||"").trim())
+    events.push(db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
+     .bind(crypto.randomUUID(),p.id,id,p.user,suppliedReason));
+   await db.batch(events);
+   return success({status:next,anterior:previous,executor:next==="FILA"?"":p.user,
+    motivo:next==="PENDENTE"?reason:String(row.motivo||""),
+    numeroPedidoSistema:providedOrder||row.numero_pedido_sistema||""});
   }
   if(action==="assumir"&&req.method==="POST"){
    if(!execView||!executor)return err("Ação exclusiva de executores.",403);

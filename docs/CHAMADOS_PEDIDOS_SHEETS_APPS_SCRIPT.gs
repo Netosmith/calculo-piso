@@ -414,6 +414,7 @@ function cmChildDigest_(ss,p,name){
 function cmOperation_(ss,p){
  var op=p.action.replace(/^chamados\./,""),ctx=p.context||{},data=p.data||{};
  var user=cmRaw_(ctx.user),admin=ctx.superAdmin===true,executor=ctx.executor===true;
+ if(op==="capabilities")return {schema:2,mover:true,observacao:true,build:"kanban-livre-2026-11-21"};
  if(op==="health")return {schema:1,count:cmRows_(ss,"SOLICITACOES").filter(function(x){return x.TRANSPORTADORA===p.tenant;}).length,
   fingerprint:cmFingerprint_(ss,p),transportadora:p.tenant,
   anexos:cmChildDigest_(ss,p,"ANEXOS"),mensagens:cmChildDigest_(ss,p,"MENSAGENS"),

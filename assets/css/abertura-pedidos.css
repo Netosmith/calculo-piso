@@ -394,7 +394,7 @@ body.pedidos-app .tn-command-right{display:flex;flex-direction:column;align-item
 body.pedidos-app .tn-command-connected{display:flex;gap:9px;align-items:center;padding:9px 12px;
  border-radius:999px;background:rgba(7,36,52,.28);border:1px solid rgba(202,240,239,.25);
  color:#e2fff3;font-weight:800;font-size:11px}
-body.pedidos-app .tn-command-connected span{width:8px;height:8px;background:#55eab0;
+body.pedidos-app .tn-command-connected>span:first-child{width:8px;height:8px;background:#55eab0;
  box-shadow:0 0 0 4px rgba(40,219,149,.12);border-radius:50%}
 body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-right .hero-action{
  color:#143b54;background:#fff;border:1px solid rgba(255,255,255,.7);border-radius:11px;
@@ -500,4 +500,12 @@ body.pedidos-app[data-pedidos-visao="execucao"] .pedidos-history-panel{
 }
 @media(prefers-reduced-motion:reduce){
  body.pedidos-app .tn-movable,body.pedidos-app .tn-exec-metric,body.pedidos-app .cad-lane{transition:none!important}
+}
+
+body.pedidos-app .tn-command-connected #tnCommandStatus{font-size:11px;color:inherit;white-space:nowrap}
+body.pedidos-app .tn-command-connected[data-state="error"]>span:first-child{
+ background:#ffad73;box-shadow:0 0 0 4px rgba(255,154,97,.15)
+}
+body.pedidos-app .tn-command-connected[data-state="loading"]>span:first-child{
+ background:#8ec2e8;box-shadow:0 0 0 4px rgba(142,194,232,.12)
 }

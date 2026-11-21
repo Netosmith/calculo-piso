@@ -509,3 +509,8 @@ body.pedidos-app .tn-command-connected[data-state="error"]>span:first-child{
 body.pedidos-app .tn-command-connected[data-state="loading"]>span:first-child{
  background:#8ec2e8;box-shadow:0 0 0 4px rgba(142,194,232,.12)
 }
+
+/* Kanban livre: motivo já registrado dispensa nova confirmação. */
+body.pedidos-app .tn-reason-saved{display:inline-flex;align-items:center;width:max-content;max-width:100%;font-size:10px;font-weight:800;color:#8b6214;background:#fff0ce;border:1px solid #f2d493;border-radius:8px;padding:5px 8px}
+body.pedidos-app .tn-movable[data-stage="FINALIZADO"]{cursor:grab}
+body.pedidos-app .tn-move-dialog .tn-move-body textarea:focus-visible{outline:3px solid #9bdbf7;outline-offset:1px}

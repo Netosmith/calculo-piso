@@ -467,10 +467,22 @@ export async function aberturaPedidosController(req,env){
    const b=await bodyJson(req,2400);
    const next=String(b.status||"").toUpperCase();
    const previous=String(b.origem||"").toUpperCase();
-   if(!["FILA","ANDAMENTO","PENDENTE","FINALIZADO"].includes(next)||next===row.status)
-    return err("Destino inválido ou igual à etapa atual.",400);
+   if(!["FILA","ANDAMENTO","PENDENTE","FINALIZADO"].includes(next))
+    return err("Destino inválido.",400);
    if(previous!==row.status)return err("Chamado atualizado por outra pessoa. Atualize o quadro.",409);
    const suppliedReason=cleanMultiline(b.motivo,1800)||"";
+   // Permite salvar uma justificativa dentro do card antes de movimentar.
+   // OBSERVACAO não gera novo evento FINALIZADO e preserva os finalizados do dia.
+   if(next===row.status){
+    if(suppliedReason.length<8)return err("Informe um motivo com pelo menos 8 caracteres.",400);
+    const note=await db.prepare("UPDATE portal_pedidos_tickets SET motivo=?,atualizado_em=CURRENT_TIMESTAMP "+
+     "WHERE id=? AND tenant_id=? AND status=? AND excluido_em=''")
+     .bind(suppliedReason,id,p.id,previous).run();
+    if(note.meta?.changes!==1)return err("Chamado alterado por outra pessoa. Atualize.",409);
+    await hist(db,p,id,"OBSERVACAO","Motivo atualizado por "+p.user).run();
+    return success({status:row.status,executor:row.executor_id||"",motivo:suppliedReason,
+     numeroPedidoSistema:row.numero_pedido_sistema||""});
+   }
    const reason=next==="PENDENTE"?(suppliedReason||String(row.motivo||"").trim()):String(row.motivo||"");
    if(next==="PENDENTE"&&reason.length<8)
     return err("Informe um motivo para colocar o chamado como pendente.",400);

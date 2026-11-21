@@ -216,7 +216,7 @@ async function requestMoveCompatible(ticket,target,motivo="",numeroPedidoSistema
 }
 async function saveReasonInsideCard(ticket,reason,systemNumber=""){
  if(!execution||!executor||!ticket||actionBusy||moveBusy)return;
- if(reason.trim().length<8&&!systemNumber.trim())return inform("Informe um motivo ou o número do pedido.",true);
+ if(!reason.trim()&&!systemNumber.trim())return inform("Informe uma observação ou o número do pedido.",true);
  actionBusy=true;
  try{
   const saved=await requestMoveCompatible(ticket,ticket.status,reason.trim(),systemNumber.trim());
@@ -1024,7 +1024,7 @@ $("tnStatusForm").onsubmit=e=>{
  if(target===selected.status){
   // Salvar motivo e número de pedido no próprio atendimento, sem alterar etapa.
   const systemNumber=f.elements.numeroPedidoSistema.value.trim();
-  if(reason.length>=8||systemNumber)
+  if(reason||systemNumber)
    return void saveReasonInsideCard(selected,reason,systemNumber);
   return inform("Escolha outra etapa ou informe um motivo/número de pedido para registrar.",true);
  }

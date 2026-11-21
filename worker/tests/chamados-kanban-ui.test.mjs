@@ -59,8 +59,8 @@ test("indicadores, fluxos, filtros, acessibilidade e cache de telas",()=>{
  assert.match(css,/tn-move-dialog/);
  assert.match(js,/lastBoardRefresh=Date\.now\(\)/);
  assert.match(js,/if\(lane\.signature!==signature\)/);
- assert.match(execution,/20261121-exec-kanban-v3/);
- assert.match(requester,/20261121-exec-kanban-v3/);
+ assert.match(execution,/20261121-exec-kanban-v4/);
+ assert.match(requester,/20261121-exec-kanban-v4/);
 });
 test("resumo do Kanban Sheets carrega detalhes somente sob demanda",()=>{
  const first=script.indexOf("function cmBoardTicket_(");

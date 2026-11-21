@@ -44,7 +44,7 @@ const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",revisionPending=false,busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
 let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
 const lanes=new Map();
-let boardLoaded=false,refreshInFlight=null,autoTimer=null,lastBoardRefresh=0;
+let boardLoaded=false,refreshInFlight=null,autoTimer=null,lastBoardRefresh=0,autoEvery=30000;
 let draggedTicket=null,moveTicket=null,moveTarget="",moveBusy=false,ignoreClickUntil=0,mineSignature="",canCorrectPending=false;
 let searchFrame=0;
 const element=(tag,text="",className="")=>{const x=document.createElement(tag);x.textContent=text;if(className)x.className=className;return x;};
@@ -359,7 +359,7 @@ function refresh(){
    boardLoaded=true;lastBoardRefresh=Date.now();
    render();syncConnection(true);
    if($("tnAutoStatus"))
-    $("tnAutoStatus").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+" · automático 30 s";
+    $("tnAutoStatus").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+" · automático "+(autoEvery/1000)+" s";
   }catch(error){
    if($("tnAutoStatus"))$("tnAutoStatus").textContent="Falha na atualização · tente novamente";
    syncConnection(false);
@@ -373,11 +373,11 @@ function refresh(){
 function startAutoRefresh(){
  if(autoTimer)return;
  autoTimer=window.setInterval(()=>{
-  if(!document.hidden&&!document.querySelector("dialog[open]")&&!refreshInFlight&&!busy&&!actionBusy)
+  if(!document.hidden&&!document.querySelector("dialog[open]")&&!refreshInFlight&&!busy&&!actionBusy&&(!lastBoardRefresh||Date.now()-lastBoardRefresh>=autoEvery))
    void refresh().catch(()=>{});
- },30000);
+ },15000);
  document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden&&lastBoardRefresh&&Date.now()-lastBoardRefresh>=30000&&!refreshInFlight&&!document.querySelector("dialog[open]"))
+  if(!document.hidden&&lastBoardRefresh&&Date.now()-lastBoardRefresh>=autoEvery&&!refreshInFlight&&!document.querySelector("dialog[open]"))
    void refresh().catch(()=>{});
  });
 }
@@ -856,7 +856,7 @@ async function extraDocument(){
 }
 async function boot(){
  ensureBoard();render();
- if($("tnAutoStatus"))$("tnAutoStatus").textContent="Atualização automática a cada 30 segundos";
+ if($("tnAutoStatus"))$("tnAutoStatus").textContent="Sincronização automática disponível";
  try{
   const auth=window.portalAuthReady?await window.portalAuthReady:null;
   const session=window.__PORTAL_TENANT_SESSION||auth?.session||auth;
@@ -868,6 +868,7 @@ async function boot(){
   if(execution?(!state.execucaoHabilitada||!state.executor):!state.solicitacoesHabilitadas)
    throw Error("Abertura de Pedidos ainda não liberada pelo Super Admin para este perfil.");
   executor=state.executor===true;superAdmin=state.superAdmin===true;
+  autoEvery=state.armazenamentoChamados==="sheets"?30000:15000;
   canCorrectPending=state.solicitacoesHabilitadas===true;
   $("tnHistoryAdmin").hidden=!superAdmin;
   if(execution){
@@ -883,6 +884,7 @@ async function boot(){
   if($("tnSwitch"))$("tnSwitch").hidden=!executor;
   if($("tnNew"))$("tnNew").disabled=!canCreate;
   if(!canCreate)inform("Criação indisponível. Confirme as permissões e o armazenamento no Super Admin.",true);
+  if($("tnAutoStatus"))$("tnAutoStatus").textContent="Atualização automática a cada "+(autoEvery/1000)+" segundos";
   startAutoRefresh();
   await refresh();
   if(!execution){

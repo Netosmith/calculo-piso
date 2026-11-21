@@ -326,3 +326,178 @@ body.pedidos-app .tn-pending-correction p{color:#5b4935;font-size:13px;line-heig
 body.pedidos-app .tn-pending-correction small{color:#7b6544;font-size:11px}
 body.pedidos-app .tn-pending-correction button{background:#bd7910;border-color:#bd7910;color:white;padding:10px 15px}
 body.pedidos-app .tn-pending-correction button:hover{background:#935909}
+
+
+/* ==============================================================
+   CENTRAL DE EXECUÇÕES · 21/11/2026
+   Mesmas regras do Worker, apresentação unificada e responsiva.
+   ============================================================== */
+body.pedidos-app .tn-movable{
+ cursor:grab;user-select:none;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+ touch-action:pan-y;
+}
+body.pedidos-app .tn-movable:hover{transform:translateY(-2px);box-shadow:0 9px 21px rgba(20,59,99,.12)}
+body.pedidos-app .tn-movable:active{cursor:grabbing}
+body.pedidos-app .tn-dragging{opacity:.38;transform:scale(.985)}
+body.pedidos-app .cad-lane{transition:background-color .17s,border-color .17s,box-shadow .17s}
+body.pedidos-app.tn-drag-active .cad-lane.tn-drop-valid{
+ background:#e8f7f3!important;outline:2px dashed #0d9b78;outline-offset:-5px;
+ box-shadow:inset 0 0 0 2px rgba(14,156,118,.1);
+}
+body.pedidos-app.tn-drag-active .cad-lane.tn-drop-valid .cad-lane-head strong{color:#087455}
+body.pedidos-app.tn-drag-active .cad-lane.tn-drop-blocked{opacity:.58}
+body.pedidos-app .cad-lane-ticket:focus-visible{outline:3px solid #20a4c8;outline-offset:3px}
+body.pedidos-app .tn-move-dialog{padding:0;border:0;border-radius:19px;width:min(530px,calc(100vw - 26px));
+ max-height:min(92vh,780px);overflow:auto;background:#fff;color:#153750;box-shadow:0 35px 105px #061b3559}
+body.pedidos-app .tn-move-dialog::backdrop{background:rgba(4,21,42,.62);backdrop-filter:blur(3px)}
+body.pedidos-app .tn-move-head{background:linear-gradient(125deg,#0c2b4a,#105b71);color:#fff;padding:24px 26px}
+body.pedidos-app .tn-move-head h2{font-size:23px;letter-spacing:-.03em;margin:8px 0}
+body.pedidos-app .tn-move-head p{margin:0;color:#c7e6ed;font-size:13px;line-height:1.5}
+body.pedidos-app .tn-move-kicker{color:#75e6c0;font-size:10px;font-weight:900;letter-spacing:.16em}
+body.pedidos-app .tn-move-body{display:grid;gap:16px;padding:23px 26px}
+body.pedidos-app .tn-move-body label{display:grid;gap:9px;font-weight:800;font-size:13px}
+body.pedidos-app .tn-move-body input,
+body.pedidos-app .tn-move-body textarea{background:#fff;color:#143954;border:1px solid #c3d8e7;
+ border-radius:10px;resize:vertical;font:inherit;font-size:14px;padding:12px;width:100%;box-sizing:border-box}
+body.pedidos-app #tnMoveMessage{margin:0;font-size:12px;color:#54748c;line-height:1.5}
+body.pedidos-app .tn-move-actions{display:flex;justify-content:flex-end;gap:9px;padding:14px 26px 22px}
+body.pedidos-app .tn-move-actions button{min-height:43px}
+body.pedidos-app[data-pedidos-visao="execucao"]{background:#edf3f9}
+body.pedidos-app[data-pedidos-visao="execucao"] .exec-console-shell{
+ width:100%;max-width:1740px;margin-inline:auto;padding:17px clamp(12px,1.7vw,28px) 48px;box-sizing:border-box;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-hero{
+ display:flex;align-items:center;justify-content:space-between;gap:28px;
+ padding:29px clamp(24px,2.8vw,44px);border-radius:20px;min-height:174px;
+ background:radial-gradient(ellipse at 91% 7%,rgba(47,191,145,.55),transparent 38%),
+ linear-gradient(112deg,#091e37 0%,#103957 61%,#16745e 100%);
+ box-shadow:0 18px 42px rgba(11,51,82,.17);position:relative;isolation:isolate;overflow:hidden;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-hero::after{
+ content:"";position:absolute;right:20%;top:-90px;width:260px;height:260px;
+ border:1px solid rgba(147,233,225,.11);border-radius:50%;pointer-events:none;
+ box-shadow:0 0 0 54px rgba(121,222,217,.025),0 0 0 110px rgba(121,222,217,.02);z-index:-1;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-copy{max-width:830px}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-copy h1{
+ font-size:clamp(28px,3vw,44px);font-weight:900;line-height:1.05;letter-spacing:-.04em;margin:12px 0 9px;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-copy>p{
+ font-size:13px;color:#c1dbe9;max-width:680px;line-height:1.65;
+}
+body.pedidos-app .tn-exec-flow{display:flex;gap:10px;align-items:center;margin-top:21px;flex-wrap:wrap}
+body.pedidos-app .tn-exec-flow span{font-size:11px;color:#d1e5ed;font-weight:750;white-space:nowrap}
+body.pedidos-app .tn-exec-flow span b{display:inline-grid;place-items:center;width:24px;height:24px;
+ margin-right:6px;border:1px solid rgba(101,217,182,.4);border-radius:7px;color:#7ce6c1;background:rgba(20,170,130,.13);font-size:9px}
+body.pedidos-app .tn-exec-flow i{width:19px;border-top:1px dashed rgba(192,225,236,.45);height:1px}
+body.pedidos-app .tn-command-right{display:flex;flex-direction:column;align-items:flex-end;gap:18px;flex:0 0 auto;z-index:1}
+body.pedidos-app .tn-command-connected{display:flex;gap:9px;align-items:center;padding:9px 12px;
+ border-radius:999px;background:rgba(7,36,52,.28);border:1px solid rgba(202,240,239,.25);
+ color:#e2fff3;font-weight:800;font-size:11px}
+body.pedidos-app .tn-command-connected span{width:8px;height:8px;background:#55eab0;
+ box-shadow:0 0 0 4px rgba(40,219,149,.12);border-radius:50%}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-right .hero-action{
+ color:#143b54;background:#fff;border:1px solid rgba(255,255,255,.7);border-radius:11px;
+ padding:12px 16px;font-size:12px;font-weight:850;white-space:nowrap;box-shadow:0 8px 18px #071b2b20;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-exec-overview{
+ background:#fff;border:1px solid #d7e5ef;border-radius:17px;
+ padding:17px 20px 20px;margin-top:16px;box-shadow:0 9px 22px rgba(21,65,92,.045);
+}
+body.pedidos-app .tn-overview-caption{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:13px}
+body.pedidos-app .tn-overview-caption>div{display:grid;gap:3px}
+body.pedidos-app .tn-overview-caption .eyebrow{color:#0c9874}
+body.pedidos-app .tn-overview-caption strong{font-size:17px;color:#142f49;letter-spacing:-.015em}
+body.pedidos-app .tn-overview-caption small{font-size:11px;color:#6b869b}
+body.pedidos-app .tn-overview-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+body.pedidos-app .tn-exec-metric{display:flex;align-items:center;gap:12px;text-align:left;min-width:0;
+ min-height:74px;border:1px solid #d9e5ef;border-radius:13px;background:linear-gradient(150deg,#fff,#f7fafc);
+ color:#173b56;padding:13px 15px;transition:border-color .15s,transform .15s,box-shadow .15s}
+body.pedidos-app .tn-exec-metric:hover{transform:translateY(-1px);box-shadow:0 8px 22px #21486912}
+body.pedidos-app .tn-exec-metric.is-selected{border-color:#1389b1;box-shadow:0 0 0 2px #c5eafb}
+body.pedidos-app .tn-metric-symbol{display:grid;place-items:center;flex:0 0 39px;width:39px;height:39px;
+ font-size:20px;border-radius:11px;font-weight:850;color:#2578c0;background:#e6f1ff}
+body.pedidos-app [data-metric-status="ANDAMENTO"] .tn-metric-symbol{color:#078d69;background:#e1f8ee}
+body.pedidos-app [data-metric-status="PENDENTE"] .tn-metric-symbol{color:#a86a07;background:#fff2d7}
+body.pedidos-app [data-metric-status="FINALIZADO"] .tn-metric-symbol{color:#178652;background:#e1f7e9}
+body.pedidos-app .tn-metric-text{display:grid;gap:5px;flex:1;min-width:0;font-size:12px;font-weight:850}
+body.pedidos-app .tn-metric-text small{font-weight:550;color:#7c91a2;font-size:10px}
+body.pedidos-app .tn-exec-metric>strong{font-size:29px;letter-spacing:-.06em;font-weight:900;color:#142f49}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard{margin-top:16px;
+ border-radius:17px;border:1px solid #d4e3ed;box-shadow:0 8px 23px rgba(33,79,112,.055)}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard-head{
+ padding:19px 22px;background:#fff;gap:20px;flex-wrap:wrap;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard-head h2{font-size:20px;color:#0b3352}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard-head p{font-size:12px;max-width:660px}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard-tools .cad-tools{gap:8px;align-items:center}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard-tools .cad-tools select,
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-workboard-tools .cad-tools input{
+ min-height:40px;border-color:#cbdde9;border-radius:9px;background:#fbfdff;font-size:12px;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-kanban{
+ grid-template-columns:repeat(4,minmax(255px,1fr));gap:13px;padding:18px;
+ overflow-x:auto;align-items:stretch;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane{
+ background:#f4f7fb;border:1px solid #d9e5ee;border-top:4px solid var(--cad-lane-color);
+ border-radius:12px;padding:13px;min-height:322px;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane-head{padding:3px 1px 11px;
+ border-bottom:1px solid #dfe8ef;letter-spacing:.06em}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane-head strong{font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane-count{
+ background:#fff;border:1px solid #dce7f0;color:#345e79;min-width:25px;text-align:center;font-weight:850
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane-items{
+ max-height:min(68vh,820px);min-height:145px;overflow-y:auto;overflow-x:hidden;gap:10px;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane-ticket{
+ padding:13px 14px;gap:7px;line-height:1.4;min-height:112px;border-radius:10px;
+ border-left:4px solid var(--pedido-accent,var(--cad-lane-color))!important;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .cad-lane-ticket .tn-client{font-size:13px;line-height:1.35}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-mine{margin-top:16px;border-radius:15px}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-mine .cad-panel-head{padding:17px 21px}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-mine .cad-panel-head h2{font-size:17px}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-focus-list{
+ display:flex!important;align-items:stretch;gap:10px;flex-wrap:wrap;padding:13px 19px;
+}
+body.pedidos-app .tn-focus-list .tn-focus-item{display:flex;align-items:center;gap:12px;
+ min-height:44px;padding:10px 13px;border:1px solid #d1e2ef;background:#f8fbff;
+ border-radius:10px;color:#194667;text-align:left}
+body.pedidos-app .tn-focus-item strong{color:#0b7d69}
+body.pedidos-app .tn-focus-item span{font-size:12px;font-weight:800}
+body.pedidos-app .tn-focus-item small{font-size:10px;color:#6d899a}
+body.pedidos-app[data-pedidos-visao="execucao"] .tn-mine .cad-empty{
+ text-align:left;max-width:100%;width:100%;padding:18px 16px;
+}
+body.pedidos-app[data-pedidos-visao="execucao"] .pedidos-history-panel{
+ margin-top:16px;border-radius:15px;border-color:#d4e3ed;
+}
+@media(max-width:1260px){
+ body.pedidos-app .tn-overview-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.pedidos-app[data-pedidos-visao="execucao"] .cad-kanban{grid-template-columns:repeat(4,minmax(240px,1fr))}
+}
+@media(max-width:760px){
+ body.pedidos-app[data-pedidos-visao="execucao"] .tn-command-hero{flex-direction:column;align-items:flex-start;gap:18px;padding:22px 20px}
+ body.pedidos-app .tn-command-right{flex-direction:row;justify-content:space-between;width:100%;align-items:center;flex-wrap:wrap}
+ body.pedidos-app .tn-exec-flow{gap:8px;margin-top:15px}
+ body.pedidos-app .tn-exec-flow i{width:8px}
+ body.pedidos-app .tn-overview-caption{align-items:start}
+ body.pedidos-app[data-pedidos-visao="execucao"] .cad-kanban{grid-template-columns:repeat(4,minmax(230px,1fr));padding:12px}
+ body.pedidos-app .tn-metric-text small{display:none}
+}
+@media(max-width:480px){
+ body.pedidos-app .tn-overview-metrics{gap:7px}
+ body.pedidos-app .tn-exec-metric{padding:10px;min-height:64px;gap:8px}
+ body.pedidos-app .tn-metric-symbol{width:29px;height:29px;flex-basis:29px;font-size:16px}
+ body.pedidos-app .tn-exec-metric>strong{font-size:22px}
+ body.pedidos-app .tn-metric-text{font-size:11px}
+ body.pedidos-app .tn-overview-caption{flex-direction:column;gap:5px}
+ body.pedidos-app .tn-move-actions{flex-direction:column-reverse}
+ body.pedidos-app .tn-move-actions button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ body.pedidos-app .tn-movable,body.pedidos-app .tn-exec-metric,body.pedidos-app .cad-lane{transition:none!important}
+}

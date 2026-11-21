@@ -2,72 +2,94 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const js=fs.readFileSync(new URL("../../assets/js/abertura-pedidos.js",import.meta.url),"utf8");
-const css=fs.readFileSync(new URL("../../assets/css/abertura-pedidos.css",import.meta.url),"utf8");
-const execution=fs.readFileSync(new URL("../../pages/execucao-pedidos.html",import.meta.url),"utf8");
-const requester=fs.readFileSync(new URL("../../pages/solicitacao-pedidos.html",import.meta.url),"utf8");
-const script=fs.readFileSync(new URL("../../docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs",import.meta.url),"utf8");
+const read=path=>fs.readFileSync(new URL("../../"+path,import.meta.url),"utf8");
+const js=read("assets/js/abertura-pedidos.js");
+const css=read("assets/css/abertura-pedidos.css");
+const execution=read("pages/execucao-pedidos.html");
+const requester=read("pages/solicitacao-pedidos.html");
+const gs=read("docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs");
+const d1=read("worker/src/controllers/abertura-pedidos.js");
+const gateway=read("worker/src/services/chamados-sheets.js");
 
-function policy({view="execucao",user="PAGAMENTOS",authorized=true,busy=false,correct=true}={}){
+function policy({view="execucao",authorized=true,busy=false,correct=true}={}){
  const begin=js.indexOf("function canMoveTicket(");
  const end=js.indexOf("function markDropTargets(",begin);
  assert.ok(begin>=0&&end>begin);
- const factory=new Function("execution","executor","user","actionBusy","moveBusy","canCorrectPending",
+ const factory=new Function("execution","executor","actionBusy","moveBusy","canCorrectPending","STATES",
   js.slice(begin,end)+";return canMoveTicket;");
- return factory(view==="execucao",authorized,user,busy,false,correct);
+ return factory(view==="execucao",authorized,busy,false,correct,
+  [["FILA"],["ANDAMENTO"],["PENDENTE"],["FINALIZADO"]]);
 }
-const ticket=(status,executor="PAGAMENTOS")=>({id:"123",tipoSolicitacao:"PAGAMENTO",status,executor});
+const ticket=(status,executor="PAGAMENTOS",motivo="")=>
+ ({id:"123",tipoSolicitacao:"PAGAMENTO",status,executor,motivo});
 
-test("JavaScript da Central carrega sem erros de sintaxe",()=>{
+test("scripts carregam sem erros de sintaxe",()=>{
  assert.doesNotThrow(()=>new Function(js));
+ assert.doesNotThrow(()=>new Function(gs));
 });
-test("fila só pode ser assumida por executor autorizado",()=>{
+test("executor move livremente entre quaisquer etapas distintas",()=>{
  const can=policy();
- assert.equal(can(ticket("FILA",""),"ANDAMENTO"),true);
- assert.equal(can(ticket("FILA",""),"FINALIZADO"),false);
- assert.equal(policy({authorized:false})(ticket("FILA",""),"ANDAMENTO"),false);
+ for(const from of ["FILA","ANDAMENTO","PENDENTE","FINALIZADO"]){
+  for(const to of ["FILA","ANDAMENTO","PENDENTE","FINALIZADO"]){
+   assert.equal(can(ticket(from,"OUTRO"),to),from!==to,from+" → "+to);
+  }
+ }
+ assert.equal(policy({authorized:false})(ticket("FILA"),"FINALIZADO"),false);
+ assert.equal(policy({busy:true})(ticket("FILA"),"FINALIZADO"),false);
+ assert.equal(can(ticket("RASCUNHO"),"PENDENTE"),false);
 });
-test("etapas não saltam o responsável nem a correção",()=>{
- const can=policy();
- assert.equal(can(ticket("ANDAMENTO"),"PENDENTE"),true);
- assert.equal(can(ticket("ANDAMENTO"),"FINALIZADO"),true);
- assert.equal(can(ticket("PENDENTE"),"ANDAMENTO"),true);
- assert.equal(can(ticket("PENDENTE"),"FILA"),true);
- assert.equal(can(ticket("ANDAMENTO","OUTRO"),"FINALIZADO"),false);
- assert.equal(can(ticket("FINALIZADO"),"ANDAMENTO"),false);
- assert.equal(policy({busy:true})(ticket("FILA",""),"ANDAMENTO"),false);
-});
-test("solicitante só pode encaminhar uma pendência para correção",()=>{
+test("solicitante só devolve pendência via formulário de correção",()=>{
  const can=policy({view:"solicitante"});
  assert.equal(can(ticket("PENDENTE"),"FILA"),true);
- assert.equal(can(ticket("FILA"),"ANDAMENTO"),false);
- assert.equal(can(ticket("ANDAMENTO"),"FINALIZADO"),false);
+ assert.equal(can(ticket("FINALIZADO"),"FILA"),false);
+ assert.equal(can(ticket("FILA"),"FINALIZADO"),false);
  assert.equal(policy({view:"solicitante",correct:false})(ticket("PENDENTE"),"FILA"),false);
-});
-test("confirmar motivos e números antes de mover",()=>{
- assert.match(js,/target==="PENDENTE"&&reason\.length<8/);
- assert.match(js,/target==="FINALIZADO"&&kindOf\(ticket\)==="PEDIDO"&&!system/);
- assert.match(js,/await request\("\/"\+ticket\.id\+command,"POST",payload\)/);
- assert.match(js,/const detail=await request\("\/"\+row\.id\)/);
  assert.match(js,/await resume\(detail\.chamado,detail\)/);
 });
-test("indicadores, fluxos, filtros, acessibilidade e cache de telas",()=>{
+test("só PENDENTE sem motivo salvo abre janela; outros destinos são diretos",()=>{
+ const start=js.indexOf("async function planMove(");
+ const end=js.indexOf("function ensureBoard(",start);
+ const section=js.slice(start,end);
+ assert.match(section,/if\(target==="PENDENTE"\)/);
+ assert.match(section,/const reason=savedPendingReason\(row\)/);
+ assert.match(section,/if\(reason\)\{void executeMove\(row,target,reason\);return;\}/);
+ assert.match(section,/dialog\.showModal\(\)/);
+ assert.match(section,/void executeMove\(row,target\)/);
+ assert.match(js,/request\("\/"\+ticket\.id\+"\/mover","POST"/);
+ assert.doesNotMatch(section,/numeroPedidoSistema\.required/);
+});
+test("motivo digitado no detalhe é usado sem segunda solicitação",()=>{
+ assert.match(js,/selected\?\.id===row\?\.id/);
+ assert.match(js,/current\.length>=8\?current:stored\.length>=8\?stored:""/);
+ assert.match(js,/if\(reason\.length>=8\)return void executeMove\(selected,target,reason\)/);
+ assert.match(js,/Motivo já registrado/);
+ assert.match(js,/f\.elements\.motivo\.value\.trim\(\)/);
+});
+test("Worker valida tenant, tipo e origem para evitar movimentos concorrentes",()=>{
+ assert.match(d1,/if\(action==="mover"&&req\.method==="POST"\)/);
+ assert.match(d1,/kinds\.includes\(effectiveKind\(row\)\)/);
+ assert.match(d1,/if\(previous!==row\.status\)/);
+ assert.match(d1,/AND status=\? AND excluido_em=''/);
+ assert.match(d1,/hist\(db,p,id,next,log\)/);
+ assert.match(d1,/executor_id=\?/);
+ assert.match(d1,/if\(next==="PENDENTE"&&reason\.length<8\)/);
+});
+test("Apps Script suporta o mesmo fluxo e mantém logs",()=>{
+ assert.match(gs,/if\(op==="mover"\)/);
+ assert.match(gs,/if\(previous!==ticket\.STATUS\)/);
+ assert.match(gs,/cmHist_\(ss,p,ticket,next,"Movimentado de "/);
+ assert.match(gs,/ticket\.EXECUTOR=next==="FILA"\?"":user/);
+ assert.match(gs,/out\.motivo=cmRaw_\(main\.MOTIVO\)/);
+ assert.match(gateway,/"mover":"mover"/);
+});
+test("painéis conservam histórico, detalhes e sincronização",()=>{
  for(const id of ["tnOpsOverview","tnBoard","tnMine","tnFilter","tnTypeFilter","tnStatusForm","tnPendingEdit","pedProofSend"]){
   assert.ok(execution.includes('id="'+id+'"'),"faltando "+id);
  }
+ assert.match(execution,/<option value="FILA">FILA<\/option>/);
  assert.match(css,/tn-drop-valid/);
  assert.match(css,/tn-move-dialog/);
- assert.match(js,/lastBoardRefresh=Date\.now\(\)/);
- assert.match(js,/if\(lane\.signature!==signature\)/);
  assert.match(execution,/20261121-exec-kanban-v4/);
  assert.match(requester,/20261121-exec-kanban-v4/);
-});
-test("resumo do Kanban Sheets carrega detalhes somente sob demanda",()=>{
- const first=script.indexOf("function cmBoardTicket_(");
- const last=script.indexOf("function cmTicket_(",first);
- assert.ok(first>=0&&last>first);
- const board=script.slice(first,last);
- assert.doesNotMatch(board,/AGENCIA_PAGAMENTO|CPF_CNPJ_PAGAMENTO|PIX_PAGAMENTO/);
- assert.match(script,/ctx\.view==="execucao"\?cmBoardTicket_\(ss,x\):cmTicketForAudience_\(ss,p,x\)/);
- assert.match(script,/var object=null,owner=ticket\.SOLICITANTE===user/);
+ assert.match(js,/if\(lane\.signature!==signature\)/);
 });

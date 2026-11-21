@@ -181,19 +181,26 @@ function ensureMoveDialog(){
  dialog.addEventListener("close",()=>{if(!moveBusy){moveTicket=null;moveTarget="";}});
  return dialog;
 }
-async function saveReasonInsideCard(ticket,reason){
+async function saveReasonInsideCard(ticket,reason,systemNumber=""){
  if(!execution||!executor||!ticket||actionBusy||moveBusy)return;
- if(reason.trim().length<8)return inform("Descreva o motivo com pelo menos 8 caracteres.",true);
+ if(reason.trim().length<8&&!systemNumber.trim())return inform("Informe um motivo ou o número do pedido.",true);
  actionBusy=true;
  try{
   const saved=await request("/"+ticket.id+"/mover","POST",{
-   origem:ticket.status,status:ticket.status,motivo:reason.trim()
+   origem:ticket.status,status:ticket.status,motivo:reason.trim(),numeroPedidoSistema:systemNumber.trim()
   });
   const cardRow=chamados.find(x=>x.id===ticket.id);
-  if(cardRow){cardRow.motivo=saved.motivo||reason.trim();cardRow.atualizadoEm=new Date().toISOString();}
-  if(selected?.id===ticket.id)selected.motivo=saved.motivo||reason.trim();
+  if(cardRow){
+   cardRow.motivo=saved.motivo||cardRow.motivo||"";
+   if(saved.numeroPedidoSistema)cardRow.numeroPedidoSistema=saved.numeroPedidoSistema;
+   cardRow.atualizadoEm=new Date().toISOString();
+  }
+  if(selected?.id===ticket.id){
+   selected.motivo=saved.motivo||selected.motivo||"";
+   if(saved.numeroPedidoSistema)selected.numeroPedidoSistema=saved.numeroPedidoSistema;
+  }
   boardSerial++;mineSignature="";render();lastBoardRefresh=Date.now();
-  inform("Motivo salvo. Ao movimentar para Pendente, não será necessário digitá-lo novamente.");
+  inform("Informações salvas. Um motivo registrado será reutilizado ao mover para Pendente.");
  }catch(error){
   inform("Não foi possível salvar o motivo: "+error.message,true);
   void refresh().catch(()=>{});
@@ -971,9 +978,11 @@ $("tnStatusForm").onsubmit=e=>{
  const f=e.currentTarget,target=f.elements.status.value;
  const reason=f.elements.motivo.value.trim();
  if(target===selected.status){
-  // Salvar motivo no próprio card funciona em qualquer etapa.
-  if(reason.length>=8)return void saveReasonInsideCard(selected,reason);
-  return inform("Escolha outra etapa ou informe um motivo com pelo menos 8 caracteres para registrar.",true);
+  // Salvar motivo e número de pedido no próprio atendimento, sem alterar etapa.
+  const systemNumber=f.elements.numeroPedidoSistema.value.trim();
+  if(reason.length>=8||systemNumber)
+   return void saveReasonInsideCard(selected,reason,systemNumber);
+  return inform("Escolha outra etapa ou informe um motivo/número de pedido para registrar.",true);
  }
  if(target==="PENDENTE"){
   if(reason.length>=8)return void executeMove(selected,target,reason);

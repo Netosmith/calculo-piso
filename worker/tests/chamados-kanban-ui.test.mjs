@@ -91,6 +91,18 @@ test("Apps Script suporta o mesmo fluxo e mantém logs",()=>{
  assert.match(gs,/out\.motivo=cmRaw_\(main\.MOTIVO\)/);
  assert.match(gateway,/"mover":"mover"/);
 });
+test("Apps Script antigo não perde observações e informa limites da versão",()=>{
+ assert.match(js,/function missingMoveOperation\(error\)/);
+ assert.match(js,/async function requestMoveCompatible\(/);
+ assert.match(js,/request\("\/"\+ticket\.id\+"\/situacao","POST"/);
+ assert.match(js,/request\("\/"\+ticket\.id\+"\/assumir","POST"/);
+ assert.match(js,/throw requireUpdatedScript\(\)/);
+ assert.match(js,/async function checkMoveCapabilities\(\)/);
+ assert.match(js,/if\(execution\)void checkMoveCapabilities\(\)/);
+ assert.match(gs,/if\(op==="capabilities"\)/);
+ assert.match(gateway,/if\(path==="capacidades"&&request.method==="GET"\)/);
+ assert.match(d1,/if\(path==="\/capacidades"&&req.method==="GET"\)/);
+});
 test("painéis conservam histórico, detalhes e sincronização",()=>{
  for(const id of ["tnOpsOverview","tnBoard","tnMine","tnFilter","tnTypeFilter","tnStatusForm","tnPendingEdit","pedProofSend"]){
   assert.ok(execution.includes('id="'+id+'"'),"faltando "+id);
@@ -98,7 +110,7 @@ test("painéis conservam histórico, detalhes e sincronização",()=>{
  assert.match(execution,/<option value="FILA">FILA<\/option>/);
  assert.match(css,/tn-drop-valid/);
  assert.match(css,/tn-move-dialog/);
- assert.match(execution,/20261121-kanban-livre-v6/);
- assert.match(requester,/20261121-kanban-livre-v6/);
+ assert.match(execution,/20261121-corrige-sheets-v7/);
+ assert.match(requester,/20261121-corrige-sheets-v7/);
  assert.match(js,/if\(lane\.signature!==signature\)/);
 });

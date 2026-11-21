@@ -536,17 +536,19 @@ function cmOperation_(ss,p){
    throw new Error("Etapa inválida.");
   if(previous!==ticket.STATUS)throw new Error("Chamado alterado por outra pessoa. Atualize o quadro.");
   var supplied=cmSafeText_(data.motivo||"",1800,false);
+  var order=cmSafeText_(data.numeroPedidoSistema||"",120,false);
   if(next===ticket.STATUS){
-   if(supplied.length<8)throw new Error("Informe o motivo com pelo menos 8 caracteres.");
-   ticket.MOTIVO=supplied;ticket.ATUALIZADO_EM=cmNow_();
+   if(supplied.length<8&&!order)throw new Error("Informe o motivo ou número de pedido.");
+   if(supplied.length>=8)ticket.MOTIVO=supplied;
+   if(order)ticket.NUMERO_PEDIDO_SISTEMA=order;
+   ticket.ATUALIZADO_EM=cmNow_();
    cmPut_(ss,"SOLICITACOES",ticket,"ID");
-   cmHist_(ss,p,ticket,"OBSERVACAO","Motivo atualizado por "+user);
-   return {status:ticket.STATUS,executor:cmRaw_(ticket.EXECUTOR),motivo:supplied,
-    numeroPedidoSistema:cmRaw_(ticket.NUMERO_PEDIDO_SISTEMA)};
+   cmHist_(ss,p,ticket,"OBSERVACAO","Informações complementares registradas por "+user);
+   return {status:ticket.STATUS,executor:cmRaw_(ticket.EXECUTOR),
+    motivo:cmRaw_(ticket.MOTIVO),numeroPedidoSistema:cmRaw_(ticket.NUMERO_PEDIDO_SISTEMA)};
   }
   var reason=next==="PENDENTE"?(supplied||cmRaw_(ticket.MOTIVO)):cmRaw_(ticket.MOTIVO);
   if(next==="PENDENTE"&&reason.length<8)throw new Error("Informe um motivo para a pendência.");
-  var order=cmSafeText_(data.numeroPedidoSistema||"",120,false);
   var previousReason=cmRaw_(ticket.MOTIVO);
   ticket.STATUS=next;
   ticket.EXECUTOR=next==="FILA"?"":user;

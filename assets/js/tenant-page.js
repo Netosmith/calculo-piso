@@ -186,7 +186,11 @@
   document.documentElement.removeAttribute("data-pf-tenant-boot");
  }
  async function load(){
-  if(!tenant||!slug||!allowed.has(page)){refuse();return;}
+  // Além das páginas legadas, aceitar módulos com nome canônico registrados
+  // pelo Worker. O acesso efetivo é validado com a sessão assinada abaixo.
+  const canonical=/^[a-z][a-z0-9-]{2,63}\.html$/.test(page);
+  if(!tenant||!slug||(!allowed.has(page)&&!canonical)||
+     ["login.html","super-admin.html","fretes2.html"].includes(page)){refuse();return;}
   const baseAlias=/^fretes-(GO|MT|SP|MS|BA|PR|SC|RO|TO|MA|AC|AL|AP|AM|CE|DF|ES|MG|PA|PB|PE|PI|RJ|RN|RS|RR|SE)\.html$/.exec(file);
   if(baseAlias){
    if(freightBase!==baseAlias[1]||page!=="fretes.html"){refuse();return;}

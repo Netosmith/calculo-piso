@@ -430,7 +430,11 @@ export async function aberturaPedidosController(req,env){
    return success({atualizado:true,campo,protocolo:row.protocolo});
   }
   if(action===""&&req.method==="GET"){
-   if(!privateAccess)return success({chamado:publicTicket(row),anexos:[],mensagens:[],historico:[],executor:false,consultaPublica:true});
+   if(!privateAccess){
+    const publicRow=publicTicket(row);
+    publicRow.transferenciaAnexos=await uploadState(db,p,id);
+    return success({chamado:publicRow,anexos:[],mensagens:[],historico:[],executor:false,consultaPublica:true});
+   }
    const [docs,messages,history]=await Promise.all([
     db.prepare("SELECT id,COALESCE(NULLIF(tipo_anexo,''),slot) AS slot,nome,mime,bytes,criado_em FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all(),
     db.prepare("SELECT autor_id,texto,criado_em FROM portal_pedidos_messages WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id LIMIT 500").bind(p.id,id).all(),
@@ -460,7 +464,28 @@ export async function aberturaPedidosController(req,env){
      await hist(db,p,id,"PENDENTE","Dados da pendência corrigidos por "+p.user).run();
     return success({atualizado:true,status:row.status});
    }
-   if(action==="anexos"&&req.method==="POST"){
+   if(["anexos/concluir","anexos/falha"].includes(action)&&req.method==="POST"){
+   if(execView||!owner||row.status!=="FILA")return err("Somente o solicitante pode concluir o envio dos anexos.",403);
+   const transfer=await uploadState(db,p,id);
+   if(!transfer)return err("Este chamado não possui transferência de anexos pendente.",409);
+   if(transfer.estado==="PRONTO")return success({transferenciaAnexos:transfer});
+   const countRow=await db.prepare("SELECT COUNT(*) AS quantidade FROM portal_pedidos_docs "+
+    "WHERE tenant_id=? AND ticket_id=? AND slot NOT IN ('comprovante_pagamento','comprovante_guia')")
+    .bind(p.id,id).first();
+   const actual=Number(countRow?.quantidade||0);
+   if(action==="anexos/concluir"){
+    if(actual<transfer.total)return err("Ainda faltam documentos: "+actual+"/"+transfer.total,409);
+    if(effectiveKind(row)==="CTE_COMPLEMENTAR"){
+     const lib=await db.prepare("SELECT id FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND slot='liberacao' LIMIT 1").bind(p.id,id).first();
+     if(!lib)return err("Anexe a liberação do cliente para liberar a execução do CT-e.",409);
+    }
+   }
+   const next=action==="anexos/concluir"?"ANEXOS_PRONTOS":"ANEXOS_FALHA";
+   await hist(db,p,id,next,transfer.total+":"+Math.min(transfer.total,actual)).run();
+   return success({transferenciaAnexos:{estado:next==="ANEXOS_PRONTOS"?"PRONTO":"FALHA",
+    total:transfer.total,enviados:Math.min(actual,transfer.total)}});
+  }
+  if(action==="anexos"&&req.method==="POST"){
    if(!conf)return err("Google Drive desta transportadora não configurado.",503);
    const b=await bodyJson(req,8500000);
    if(!SLOTS.has(b.slot)||!MIME.has(b.mime)||!clean(b.nome,160)||typeof b.base64!=="string"||
@@ -470,9 +495,11 @@ export async function aberturaPedidosController(req,env){
    const proofSlot=effectiveKind(row)==="PAGAMENTO"?"comprovante_pagamento":
     effectiveKind(row)==="PAGAMENTO_GUIA"?"comprovante_guia":null;
    const proof=proofSlot!==null&&b.slot===proofSlot;
+   const activeUpload=await uploadState(db,p,id);
+   const isQueueUpload=!execView&&owner&&row.status==="FILA"&&activeUpload&&activeUpload.estado!=="PRONTO";
    const canProof=proof&&execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO";
    if((b.slot==="comprovante_pagamento"||b.slot==="comprovante_guia")?!canProof:
-      ((row.status==="RASCUNHO"&&!owner)||execView||!["RASCUNHO","PENDENTE"].includes(row.status)))
+      ((row.status==="RASCUNHO"&&!owner)||execView||(!["RASCUNHO","PENDENTE"].includes(row.status)&&!isQueueUpload)))
      return err("Anexo não autorizado para este usuário ou etapa.",403);
     const saved=await drive(conf,p.id,"upload",{ticketId:id,slot:proof?"liberacao":b.slot,nome:b.nome,mime:b.mime,base64:b.base64});
    if(!FILEID.test(saved.fileId||""))return err("Google Drive não confirmou o arquivo.",502);
@@ -481,7 +508,14 @@ export async function aberturaPedidosController(req,env){
      .bind(crypto.randomUUID(),p.id,id,proof?"liberacao":b.slot,proof?b.slot:"",saved.fileId,b.nome,b.mime,size),
     hist(db,p,id,row.status,"Documento anexado: "+b.slot)
    ]);
-   return success({anexado:true,slot:b.slot});
+   let transferenciaAnexos=null;
+   if(isQueueUpload){
+    const count=await db.prepare("SELECT COUNT(*) AS quantidade FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND slot NOT IN ('comprovante_pagamento','comprovante_guia')").bind(p.id,id).first();
+    const sent=Math.min(activeUpload.total,Number(count?.quantidade||0));
+    await hist(db,p,id,"ANEXOS_ENVIO",activeUpload.total+":"+sent).run();
+    transferenciaAnexos={estado:"ENVIANDO",total:activeUpload.total,enviados:sent};
+   }
+   return success({anexado:true,slot:b.slot,transferenciaAnexos});
   }
   if(action==="enviar"&&req.method==="POST"){
    if(execView||!["RASCUNHO","PENDENTE"].includes(row.status)||(row.status==="RASCUNHO"&&!owner))
@@ -510,6 +544,8 @@ export async function aberturaPedidosController(req,env){
   if(action==="mover"&&req.method==="POST"){
    if(!execView||!executor||!kinds.includes(effectiveKind(row)))
     return err("Você não possui permissão de execução para este tipo de chamado.",403);
+   const transfer=await uploadState(db,p,id);
+   if(transfer&&transfer.estado!=="PRONTO")return err("Aguarde o término dos anexos para executar este chamado.",409);
    if(!["FILA","ANDAMENTO","PENDENTE","FINALIZADO"].includes(row.status))
     return err("Esta solicitação não está em uma etapa movimentável.",409);
    const b=await bodyJson(req,2400);
@@ -559,6 +595,8 @@ export async function aberturaPedidosController(req,env){
   }
   if(action==="assumir"&&req.method==="POST"){
    if(!execView||!executor)return err("Ação exclusiva de executores.",403);
+   const transfer=await uploadState(db,p,id);
+   if(transfer&&transfer.estado!=="PRONTO")return err("Documentos ainda em envio. Aguarde a conclusão.",409);
    const update=await db.prepare("UPDATE portal_pedidos_tickets SET status='ANDAMENTO',executor_id=?,atualizado_em=CURRENT_TIMESTAMP WHERE id=? AND tenant_id=? AND status='FILA'")
     .bind(p.user,id,p.id).run();
    if(update.meta?.changes!==1)return err("Chamado já assumido por outro executor.",409);

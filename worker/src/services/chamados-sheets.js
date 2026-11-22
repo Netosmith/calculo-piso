@@ -244,7 +244,8 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
    try{
     const result=await callScript(conf,p.id,options.sheetId,"capabilities",ctx);
     return success({modo:"sheets",movimentacaoLivre:result.mover===true,
-     salvarObservacao:result.observacao===true,versao:String(result.build||"desconhecida")});
+     salvarObservacao:result.observacao===true,anexosEmFila:result.anexosEmFila===true,
+     versao:String(result.build||"desconhecida")});
    }catch(error){
     if(/Opera(?:ç|c)(?:ã|a)o (?:de chamados )?desconhecida|atualize a implantação do Apps Script/i.test(String(error?.message||"")))
      return success({modo:"sheets",movimentacaoLivre:false,salvarObservacao:false,

@@ -32,6 +32,12 @@ function doPost(e) {
       // Google Drive mantém o arquivo PRIVADO. Não chamar setSharing.
       return result_({ok:true,fileId:file.getId()});
     }
+    if(p.action==="uploadChunk")return result_(Object.assign({ok:true},
+      portalChunkUpload_(folder,tenant,p.ticketId,p)));
+    if(p.action==="finalizeChunks")return result_(Object.assign({ok:true},
+      portalChunkFinish_(folder,tenant,p.ticketId,p)));
+    if(p.action==="downloadChunk")return result_(Object.assign({ok:true},
+      portalChunkRead_(folder,p.ticketId,p.fileId,Number(p.index))));
     if(p.action==="download"){
       if(!/^[A-Za-z0-9_-]{15,160}$/.test(p.fileId||""))return result_({ok:false});
       var directory=getTicketFolder_(folder,p.ticketId,false);
@@ -45,6 +51,73 @@ function doPost(e) {
     }
     return result_({ok:false,error:"Operação desconhecida."});
   }catch(err){console.error("Falha no serviço de documentos",err.name);return result_({ok:false,error:"Armazenamento indisponível."});}
+}
+// Envio parcelado de documentos grandes: partes privadas no Drive.
+var PORTAL_LARGE_FILE_MAX_=20*1024*1024;
+var PORTAL_CHUNK_BYTES_=2*1024*1024;
+function portalChunkUpload_(root,tenant,ticketId,data){
+ var u=String(data.uploadId||""),index=Number(data.index),total=Number(data.total),
+  size=Number(data.size),encoded=String(data.base64||"");
+ if(!/^[a-f0-9-]{36}$/.test(u)||!Number.isInteger(index)||!Number.isInteger(total)||
+   total<1||total>10||index<0||index>=total||
+   !Number.isInteger(size)||size<1||size>PORTAL_LARGE_FILE_MAX_||
+   total!==Math.ceil(size/PORTAL_CHUNK_BYTES_)||
+   !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)||
+   encoded.length>Math.ceil(PORTAL_CHUNK_BYTES_/3)*4+8)throw Error("Parte de documento inválida.");
+ var bytes=Utilities.base64Decode(encoded),offset=index*PORTAL_CHUNK_BYTES_;
+ if(bytes.length!==Math.min(PORTAL_CHUNK_BYTES_,size-offset))throw Error("Tamanho da parte inválido.");
+ var ticketFolder=getTicketFolder_(root,ticketId,true),
+  name=".portal-upload-"+u,dirs=ticketFolder.getFoldersByName(name),
+  dir=dirs.hasNext()?dirs.next():ticketFolder.createFolder(name),
+  chunkName="part-"+("000"+index).slice(-3),old=dir.getFilesByName(chunkName);
+ while(old.hasNext())old.next().setTrashed(true);
+ dir.createFile(Utilities.newBlob(bytes,"application/octet-stream",chunkName));
+ return {recebida:true,index:index,total:total};
+}
+function portalChunkFinish_(root,tenant,ticketId,data){
+ var u=String(data.uploadId||""),size=Number(data.size),total=Number(data.total),
+  mime=String(data.mime||""),slot=String(data.slot||""),
+  name=String(data.nome||"documento").replace(/[\\/\u0000-\u001f]/g,"_").slice(0,100);
+ if(!/^[a-f0-9-]{36}$/.test(u)||!Number.isInteger(size)||
+  size<1||size>PORTAL_LARGE_FILE_MAX_||!Number.isInteger(total)||
+  total!==Math.ceil(size/PORTAL_CHUNK_BYTES_)||total>10||
+  ["application/pdf","image/jpeg","image/png","image/webp"].indexOf(mime)<0||
+  !name||name.length>100)throw Error("Dados do documento inválidos.");
+ var folder=getTicketFolder_(root,ticketId,true);
+ var all=folder.getFiles(),tag="PORTAL_UPLOAD_ID:"+u;
+ while(all.hasNext()){
+  var saved=all.next();
+  if(saved.getDescription().indexOf(tag)>=0)return {fileId:saved.getId(),bytes:size,repetido:true};
+ }
+ var dirs=folder.getFoldersByName(".portal-upload-"+u);
+ if(!dirs.hasNext())throw Error("Partes não encontradas. Selecione o PDF novamente.");
+ var dir=dirs.next(),bytes=new Array(size),position=0;
+ for(var i=0;i<total;i++){
+  var found=dir.getFilesByName("part-"+("000"+i).slice(-3));
+  if(!found.hasNext())throw Error("Documento incompleto. Falta a parte "+(i+1)+"/"+total);
+  var part=found.next().getBlob().getBytes();
+  var expected=Math.min(PORTAL_CHUNK_BYTES_,size-position);
+  if(part.length!==expected)throw Error("Parte "+(i+1)+" com tamanho inesperado.");
+  for(var j=0;j<part.length;j++)bytes[position++]=part[j];
+ }
+ if(position!==size)throw Error("Documento incompleto.");
+ var file=folder.createFile(Utilities.newBlob(bytes,mime,name));
+ file.setDescription("Portal Frete "+tenant+" / "+ticketId+" / "+slot+" / "+tag);
+ dir.setTrashed(true);
+ return {fileId:file.getId(),bytes:size};
+}
+function portalChunkRead_(root,ticketId,fileId,index){
+ if(!/^[A-Za-z0-9_-]{15,160}$/.test(fileId||"")||
+   !Number.isInteger(index)||index<0||index>9)throw Error("Parte inválida.");
+ var dir=getTicketFolder_(root,ticketId,false);
+ if(!dir)throw Error("Pasta não encontrada.");
+ var it=dir.getFiles(),file=null;
+ while(it.hasNext()){var candidate=it.next();if(candidate.getId()===fileId){file=candidate;break;}}
+ if(!file)throw Error("Documento não encontrado.");
+ var all=file.getBlob().getBytes(),offset=index*PORTAL_CHUNK_BYTES_;
+ if(offset>=all.length)throw Error("Parte não encontrada.");
+ var cut=all.slice(offset,Math.min(all.length,offset+PORTAL_CHUNK_BYTES_));
+ return {base64:Utilities.base64Encode(cut),total:Math.ceil(all.length/PORTAL_CHUNK_BYTES_),bytes:all.length};
 }
 function getTicketFolder_(root,id,create) {
  var f=root.getFoldersByName(id);
@@ -436,7 +509,7 @@ function cmChildDigest_(ss,p,name){
 function cmOperation_(ss,p){
  var op=p.action.replace(/^chamados\./,""),ctx=p.context||{},data=p.data||{};
  var user=cmRaw_(ctx.user),admin=ctx.superAdmin===true,executor=ctx.executor===true;
- if(op==="capabilities")return {schema:3,mover:true,observacao:true,anexosEmFila:true,build:"fila-imediata-2026-11-22"};
+ if(op==="capabilities")return {schema:4,mover:true,observacao:true,anexosEmFila:true,anexosGrandes:true,limiteMB:20,build:"pdf-20mb-2026-11-22"};
  if(op==="health")return {schema:1,count:cmRows_(ss,"SOLICITACOES").filter(function(x){return x.TRANSPORTADORA===p.tenant;}).length,
   fingerprint:cmFingerprint_(ss,p),transportadora:p.tenant,
   anexos:cmChildDigest_(ss,p,"ANEXOS"),mensagens:cmChildDigest_(ss,p,"MENSAGENS"),
@@ -637,6 +710,43 @@ function cmOperation_(ss,p){
   cmHist_(ss,p,ticket,state,transfer.total+":"+Math.min(transfer.total,docs.length));
   return {transferenciaAnexos:{estado:state==="ANEXOS_PRONTOS"?"PRONTO":"FALHA",
    total:transfer.total,enviados:Math.min(transfer.total,docs.length)}};
+ }
+ if(op==="uploadChunk"||op==="finalizeChunks"){
+  var slot=cmRaw_(data.slot),proof=slot==="comprovante_pagamento"||slot==="comprovante_guia",
+   correctProof=(ticket.TIPO==="PAGAMENTO"&&slot==="comprovante_pagamento")||
+    (ticket.TIPO==="PAGAMENTO_GUIA"&&slot==="comprovante_guia"),
+   active=cmUploadState_(ss,p.tenant,ticket.ID),
+   queueUpload=ctx.view==="solicitante"&&owner&&ticket.STATUS==="FILA"&&active&&active.estado!=="PRONTO",
+   allowed=["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt","comprovante_pagamento","comprovante_guia"];
+  if(allowed.indexOf(slot)<0||
+   (proof?!(correctProof&&isMine&&ticket.STATUS==="FINALIZADO"):
+    !(ctx.view==="solicitante"&&(ticket.STATUS==="PENDENTE"||
+     (owner&&ticket.STATUS==="RASCUNHO")||queueUpload))))
+   throw new Error("Anexo não autorizado.");
+  var folder=DriveApp.getFolderById(PropertiesService.getScriptProperties().getProperty("CADASTRO_DRIVE_FOLDER_ID"));
+  if(op==="uploadChunk")return portalChunkUpload_(folder,p.tenant,ticket.ID,data);
+  var saved=portalChunkFinish_(folder,p.tenant,ticket.ID,data);
+  if(!saved.repetido||!cmGet_(ss,"ANEXOS","ID",cmRaw_(data.uploadId))){
+   cmPut_(ss,"ANEXOS",{ID:cmRaw_(data.uploadId),TRANSPORTADORA:p.tenant,CHAMADO_ID:ticket.ID,
+    TIPO_ANEXO:slot,DRIVE_ID:saved.fileId,NOME:cmSafeText_(data.nome,160,true),
+    MIME:cmRaw_(data.mime),BYTES:saved.bytes,CRIADO_EM:cmNow_()},"ID");
+   cmHist_(ss,p,ticket,ticket.STATUS,"Documento anexado: "+slot);
+  }
+  if(queueUpload){
+   var count=cmFile_(ss,p,ticket).filter(function(x){return ["comprovante_pagamento","comprovante_guia"].indexOf(x.slot)<0;}).length;
+   cmHist_(ss,p,ticket,"ANEXOS_ENVIO",active.total+":"+Math.min(active.total,count));
+   return {anexado:true,slot:slot,transferenciaAnexos:cmUploadState_(ss,p.tenant,ticket.ID)};
+  }
+  return {anexado:true,slot:slot};
+ }
+ if(op==="downloadChunk"){
+  if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE"))
+   throw new Error("Anexo privado.");
+  var entry=cmGet_(ss,"ANEXOS","ID",cmRaw_(data.docId));
+  if(!entry||entry.CHAMADO_ID!==ticket.ID||entry.TRANSPORTADORA!==p.tenant)
+   throw new Error("Documento não encontrado.");
+  return portalChunkRead_(DriveApp.getFolderById(PropertiesService.getScriptProperties().getProperty("CADASTRO_DRIVE_FOLDER_ID")),
+   ticket.ID,entry.DRIVE_ID,Number(data.index));
  }
  if(op==="upload"){
   var slot=cmRaw_(data.slot),allowed=["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt","comprovante_pagamento","comprovante_guia"];

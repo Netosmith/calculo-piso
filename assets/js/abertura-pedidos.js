@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id);
 const execution=document.body.dataset.pedidosVisao==="execucao";
 const API="https://api.portalfrete.net.br/v1/abertura-pedidos";
 const uploadJobs=new Map();
+let immediateQueueCapable=false;
 const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],["PENDENTE","Pendente","#e8a01b"],["FINALIZADO","Finalizado (hoje)","#168a57"]];
 const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT",comprovante_pagamento:"Comprovante de pagamento",comprovante_guia:"Comprovante de GUIA"};
 const FIELDS=["email","nomeSolicitante","telefoneWhats","unidadeEmbarque","numeroPedidoOC","nfeManifestada","tomadorCnpj","coletaIe","entregaCnpj","entregaIe","freteEmpresa","freteMotorista","adiantamentoPct","icms","produto","especie","tag","obs","coordenadasColeta","coordenadasEntrega"];
@@ -613,6 +614,11 @@ async function submitForm(e){
  if(formKind==="PAGAMENTO"&&agencyLooksLikeDate(payload.dadosEspecificos.agenciaPagamento)){progress.textContent="Agência inválida: foi convertida em data. Informe novamente o número correto da agência.";form.elements.agenciaPagamento.focus();return;}
  const documents=[...form.querySelectorAll("[data-slot]:not([disabled])")].flatMap(input=>
   [...input.files].map(file=>({slot:input.dataset.slot,file})));
+ if(documents.length>30){
+  progress.textContent="Selecione no máximo 30 arquivos por chamado.";return;
+ }
+ try{for(const item of documents)checkFile(item.file);}
+ catch(error){progress.textContent=error.message;return;}
  if(formKind==="CTE_COMPLEMENTAR"&&!draft&&!documents.some(x=>x.slot==="liberacao")){
   progress.textContent="Anexe a liberação do cliente para solicitar um CT-e complementar.";return;
  }
@@ -624,8 +630,12 @@ async function submitForm(e){
  try{
   if(!draft){
    progress.textContent="Registrando o número do protocolo...";
-   const result=await request("","POST",{...payload,enviarAgora:true,
-    anexosPrevistos:documents.length});
+   // Só usar a nova FILA antecipada quando o armazenamento ativo confirma
+   // suporte à transferência em andamento. Sem isso, preservar o envio legado.
+   const direct=documents.length===0&&formKind!=="CTE_COMPLEMENTAR"||
+    immediateQueueCapable;
+   const result=await request("","POST",{...payload,enviarAgora:direct,
+    anexosPrevistos:direct?documents.length:0});
    draft=result.chamado.id;
    const issued=number(result.chamado);
    if(result.chamado.status==="FILA"){
@@ -1024,6 +1034,17 @@ async function extraDocument(){
 }
 // Verificação leve e independente da listagem: evita descobrir uma versão
 // antiga do Apps Script somente depois que alguém tenta arrastar um chamado.
+async function checkUploadCapabilities(){
+ try{
+  const support=await request("/capacidades");
+  immediateQueueCapable=support.anexosEmFila===true;
+  if(!immediateQueueCapable)
+   inform("A entrada imediata na FILA com anexos está aguardando a atualização da implantação do Apps Script. Os chamados continuam no envio seguro tradicional por enquanto.");
+ }catch(error){
+  immediateQueueCapable=false;
+  // A versão antiga pode não possuir /capacidades; preservar o fluxo original.
+ }
+}
 async function checkMoveCapabilities(){
  if(!execution)return;
  try{
@@ -1070,6 +1091,7 @@ async function boot(){
   startAutoRefresh();
   await refresh();
   if(execution)void checkMoveCapabilities();
+  else void checkUploadCapabilities();
   if(!execution){
    const deepLink=new URL(window.location.href);
    const pendingId=deepLink.searchParams.get("corrigir");

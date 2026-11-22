@@ -514,3 +514,27 @@ body.pedidos-app .tn-command-connected[data-state="loading"]>span:first-child{
 body.pedidos-app .tn-reason-saved{display:inline-flex;align-items:center;width:max-content;max-width:100%;font-size:10px;font-weight:800;color:#8b6214;background:#fff0ce;border:1px solid #f2d493;border-radius:8px;padding:5px 8px}
 body.pedidos-app .tn-movable[data-stage="FINALIZADO"]{cursor:grab}
 body.pedidos-app .tn-move-dialog .tn-move-body textarea:focus-visible{outline:3px solid #9bdbf7;outline-offset:1px}
+
+/* Solicitação imediata na FILA, com transferência de documentos no card. */
+body.pedidos-app .tn-upload-progress{
+ display:grid;gap:5px;margin-top:8px;padding:9px 10px;border:1px solid #bfd9ef;
+ border-radius:9px;background:#eaf5ff;color:#17618a;font-size:11px;font-weight:850;
+}
+body.pedidos-app .tn-upload-progress.is-failed{
+ color:#9d4b19;background:#fff0e5;border-color:#efc8ac;
+}
+body.pedidos-app .tn-upload-track{
+ height:5px;border-radius:999px;background:#c9ddeb;overflow:hidden;
+}
+body.pedidos-app .tn-upload-progress.is-failed .tn-upload-track{background:#f1d6c5}
+body.pedidos-app .tn-upload-fill{
+ display:block;height:100%;width:0;background:linear-gradient(90deg,#258ac8,#0ba67f);
+ border-radius:999px;transition:width .18s ease;
+}
+body.pedidos-app .tn-upload-progress.is-failed .tn-upload-fill{background:#e88e4a}
+body.pedidos-app .tn-upload-detail-status{
+ padding:12px 14px;margin:10px 0 12px;border:1px solid #b7d5ec;
+ background:#edf7ff;color:#1a587f;font-size:12px;font-weight:700;
+ line-height:1.55;border-radius:9px;
+}
+body.pedidos-app #tnUploadRetry{margin:8px 0 12px}

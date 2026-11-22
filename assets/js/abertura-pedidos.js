@@ -659,7 +659,9 @@ async function submitForm(e){
  if($("tnNew"))$("tnNew").disabled=true;
  // Fecha o formulário antes da rede, mas só confirma sucesso após persistência.
  hideDialog("tnFormDialog");
- inform("Registrando protocolo e validando os dados da solicitação...");
+ inform(documents.length&&!immediateQueueCapable?
+  "Esta transportadora ainda usa o envio tradicional: registrando rascunho e anexos antes de entrar na FILA. Atualize o Apps Script para ativar a Fila imediata.":
+  "Registrando protocolo e validando os dados da solicitação...");
  try{
   if(!draft){
    progress.textContent="Registrando o número do protocolo...";

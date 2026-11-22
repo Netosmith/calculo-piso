@@ -886,12 +886,28 @@ async function openDetail(id){
    }
   }
   const currentDocs=data.anexos||[];
-  $("tnDetailDocs").closest(".cad-detail-section").hidden=kind==="PAGAMENTO"&&currentDocs.length===0;
+  const transfer=uploadTransfer(row);
+  const pendingTransfer=transfer&&transfer.estado!=="PRONTO";
+  $("tnDetailDocs").closest(".cad-detail-section").hidden=
+   kind==="PAGAMENTO"&&currentDocs.length===0&&!pendingTransfer;
+  const detailUpload=$("tnUploadDetailStatus");
+  detailUpload.hidden=!pendingTransfer;
+  if(pendingTransfer)detailUpload.textContent=
+   (transfer.estado==="FALHA"?"Envio interrompido":"Anexos em transferência")+
+   " · "+transfer.enviados+"/"+transfer.total+
+   ". O chamado já está na FILA, mas a execução só será liberada após completar os documentos.";
+  const job=uploadJobs.get(row.id);
+  const canResume=!execution&&row.solicitante===user&&row.status==="FILA"&&pendingTransfer;
+  $("tnUploadTip").textContent=canResume?
+   "Este chamado já está na FILA. Para concluir o recebimento, envie somente os arquivos restantes.":
+   "Complemente os documentos enquanto estiver pendente.";
+  $("tnUploadRetry").hidden=!(canResume&&job&&!job.running);
+  $("tnUploadRetry").onclick=()=>{hideDialog("tnDetailDialog");void runUploadJob(row.id);};
   renderDocs(id,currentDocs,kind);renderChat(data.mensagens||[]);renderHistory(data.historico||[]);
   $("pedProofFlag").hidden=!payment||row.status!=="FINALIZADO";
   $("pedProofFlag").textContent=hasProof?"Comprovante anexado":"Aguardando comprovante";
   const isMine=execution&&executor&&row.executor===user;
-  const canMove=execution&&executor&&STATES.some(entry=>entry[0]===row.status);
+  const canMove=execution&&executor&&!pendingTransfer&&STATES.some(entry=>entry[0]===row.status);
   $("pedAdminActions").hidden=!superAdmin;
   if(superAdmin){
    $("pedAdminProtocol").value="";$("pedAdminReason").value="";
@@ -903,7 +919,7 @@ async function openDetail(id){
   $("tnExecution").hidden=!execution;
   $("pedProofSection").hidden=!(execution&&isMine&&payment&&row.status==="FINALIZADO");
   $("pedProofFile").value="";
-  $("tnAssumir").hidden=!(execution&&executor&&row.status==="FILA");
+  $("tnAssumir").hidden=!(execution&&executor&&row.status==="FILA"&&!pendingTransfer);
   $("tnStatusForm").hidden=!canMove;
   if(canMove){
    $("tnStatusForm").elements.status.value=row.status;
@@ -912,7 +928,8 @@ async function openDetail(id){
    updateSystemInput();
   }
   $("tnChatForm").hidden=data.consultaPublica===true||["RASCUNHO","FINALIZADO"].includes(row.status)||(execution&&!isMine);
-  $("tnPendingUpload").hidden=kind==="PAGAMENTO"||data.consultaPublica===true||execution||row.status!=="PENDENTE";
+  $("tnPendingUpload").hidden=kind==="PAGAMENTO"||data.consultaPublica===true||execution||
+   !(row.status==="PENDENTE"||canResume);
   const allowCorrection=data.consultaPublica!==true&&row.status==="PENDENTE";
   if($("tnPendingCorrection")){
    $("tnPendingCorrection").hidden=!allowCorrection;
@@ -980,8 +997,27 @@ async function extraDocument(){
  if(!selected)return;
  const file=$("tnAdditionalFile").files[0];
  if(!file)return inform("Selecione um arquivo.",true);
- try{await upload(selected.id,$("tnAdditionalSlot").value,file);await openDetail(selected.id);inform("Documento anexado.");}
- catch(e){inform(e.message,true);}
+ const ticket=selected;
+ const job=uploadJobs.get(ticket.id);
+ if(job?.running)return inform("O envio original ainda está em andamento. Aguarde a conclusão.",true);
+ const button=$("tnAdditionalSend");
+ button.disabled=true;
+ try{
+  const response=await upload(ticket.id,$("tnAdditionalSlot").value,file);
+  const state=response.transferenciaAnexos;
+  if(state){
+   updateUploadProgress(ticket.id,state);
+   if(state.enviados>=state.total){
+    const completed=await request("/"+ticket.id+"/anexos/concluir","POST",{});
+    if(completed.transferenciaAnexos)updateUploadProgress(ticket.id,completed.transferenciaAnexos);
+    uploadJobs.delete(ticket.id);
+    inform("Todos os anexos recebidos. Chamado liberado para execução.");
+   }else inform("Anexo recebido. Restam "+(state.total-state.enviados)+" arquivo(s).");
+  }else inform("Documento anexado.");
+  await openDetail(ticket.id);
+  void refresh().catch(()=>{});
+ }catch(e){inform("Anexo não confirmado: "+e.message,true);}
+ finally{button.disabled=false;}
 }
 // Verificação leve e independente da listagem: evita descobrir uma versão
 // antiga do Apps Script somente depois que alguém tenta arrastar um chamado.

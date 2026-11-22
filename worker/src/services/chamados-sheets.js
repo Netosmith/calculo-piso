@@ -67,7 +67,7 @@ function publicSummary(row){
   status:String(row.status||""),solicitante:String(row.solicitante||""),
   nomeSolicitante:String(row.nomeSolicitante||""),executor:String(row.executor||""),
   criadoEm:String(row.criadoEm||""),atualizadoEm:String(row.atualizadoEm||""),
-  enviadoEm:String(row.enviadoEm||""),numeroPedidoSistema:"",
+  enviadoEm:String(row.enviadoEm||""),transferenciaAnexos:row.transferenciaAnexos||null,numeroPedidoSistema:"",
   numeroPedidoOC:"",motivo:"",dadosEspecificos:{}
  };
 }
@@ -260,13 +260,13 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
   else if(!path&&request.method==="POST"){
    if(view==="execucao")return errorResponse("Ação exclusiva do solicitante.",403);
    const raw=await request.json();
-    action="create";data={fields:normalizedFields(raw,p.user),enviarAgora:raw?.enviarAgora===true};
+    action="create";data={fields:normalizedFields(raw,p.user),enviarAgora:raw?.enviarAgora===true,anexosPrevistos:raw?.anexosPrevistos||0};
   }else{
-   const match=path.match(/^([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
+   const match=path.match(/^([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36})|\/concluir|\/falha)?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
    if(!match)return errorResponse("Rota não encontrada.",404);
    ticketId=match[1];const sub=match[2]||"";
    const routes={"":"get","dados":"updateDraft","enviar":"enviar","assumir":"assumir",
-    "situacao":"situacao","mover":"mover","mensagens":"mensagens","ocultar":"ocultar","restaurar":"restaurar","corrigir":"corrigir"};
+    "situacao":"situacao","mover":"mover","anexos/concluir":"concluirUpload","anexos/falha":"falhaUpload","mensagens":"mensagens","ocultar":"ocultar","restaurar":"restaurar","corrigir":"corrigir"};
    if(sub==="anexos"&&request.method==="POST"){action="upload";data=await request.json();
     if(!SLOTS.has(data?.slot)||!MIMES.has(data?.mime)||
        typeof data?.base64!=="string"||data.base64.length>8500000)

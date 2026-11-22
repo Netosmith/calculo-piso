@@ -198,6 +198,34 @@ const executionBoardTicket=row=>{
 };
 const hist=(db,p,t,status,message)=>db.prepare("INSERT INTO portal_pedidos_history(id,tenant_id,ticket_id,autor_id,status,descricao) VALUES(?,?,?,?,?,?)")
  .bind(crypto.randomUUID(),p.id,t,p.user,status,message||"");
+const uploadStates=new Set(["ANEXOS_ENVIO","ANEXOS_PRONTOS","ANEXOS_FALHA"]);
+function decodeUploadState(row){
+ if(!row||!uploadStates.has(row.status))return null;
+ const [totalRaw,uploadedRaw]=String(row.descricao||"").split(":");
+ const total=Number(totalRaw),uploaded=Number(uploadedRaw);
+ if(!Number.isInteger(total)||total<1||total>30)return null;
+ return {estado:row.status==="ANEXOS_PRONTOS"?"PRONTO":row.status==="ANEXOS_FALHA"?"FALHA":"ENVIANDO",
+  total,enviados:Math.max(0,Math.min(total,Number.isInteger(uploaded)?uploaded:0)),
+  atualizadoEm:row.criado_em||""};
+}
+async function uploadState(db,p,id){
+ const row=await db.prepare("SELECT status,descricao,criado_em FROM portal_pedidos_history "+
+  "WHERE tenant_id=? AND ticket_id=? AND status IN ('ANEXOS_ENVIO','ANEXOS_PRONTOS','ANEXOS_FALHA') "+
+  "ORDER BY criado_em DESC,rowid DESC LIMIT 1").bind(p.id,id).first();
+ return decodeUploadState(row);
+}
+async function uploadStatesForBoard(db,p,rows){
+ const ids=rows.map(x=>x.id);
+ if(!ids.length)return new Map();
+ const result=await db.prepare("SELECT ticket_id,status,descricao,criado_em FROM portal_pedidos_history "+
+  "WHERE tenant_id=? AND ticket_id IN ("+ids.map(()=>"?").join(",")+") "+
+  "AND status IN ('ANEXOS_ENVIO','ANEXOS_PRONTOS','ANEXOS_FALHA') "+
+  "ORDER BY criado_em DESC,rowid DESC").bind(p.id,...ids).all();
+ const found=new Map();
+ for(const row of result.results||[])if(!found.has(row.ticket_id))
+  found.set(row.ticket_id,decodeUploadState(row));
+ return found;
+}
 async function ticket(db,p,id){return db.prepare("SELECT * FROM portal_pedidos_tickets WHERE id=? AND tenant_id=?").bind(id,p.id).first();}
 export async function aberturaPedidosController(req,env){
  if(!env.TENANTS_DB)return err("Banco de Abertura de Pedidos indisponível.",503);
@@ -298,12 +326,21 @@ export async function aberturaPedidosController(req,env){
    const list=execView?
     await db.prepare("SELECT "+boardColumns+" FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status NOT IN ('RASCUNHO','FINALIZADO') OR (status='FINALIZADO' AND "+finalizedToday+")) AND COALESCE(NULLIF(categoria_chamado,''),tipo_solicitacao) IN ("+kinds.map(()=>"?").join(",")+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,...kinds).all():
     await db.prepare("SELECT * FROM portal_pedidos_tickets WHERE tenant_id=? AND excluido_em='' AND (status<>'RASCUNHO' OR solicitante_id=?) AND (status<>'FINALIZADO' OR "+finalizedToday+") ORDER BY atualizado_em DESC,id DESC LIMIT 500").bind(p.id,p.user).all();
-   return success({chamados:(list.results||[]).map(row=>execView?executionBoardTicket(row):(p.ownerSupport||row.solicitante_id===p.user?ticketView(row):publicTicket(row))),executor});
+   const rows=list.results||[];
+   const transfers=await uploadStatesForBoard(db,p,rows);
+   return success({chamados:rows.map(row=>{
+    const item=execView?executionBoardTicket(row):
+     (p.ownerSupport||row.solicitante_id===p.user?ticketView(row):publicTicket(row));
+    item.transferenciaAnexos=transfers.get(row.id)||null;
+    return item;
+   }),executor});
   }
   if((path===""||path==="/")&&req.method==="POST"){
     if(execView)return err("Solicitação exclusiva do solicitante.",403);
     const b=await bodyJson(req,12000),values=normalizedFields(b,p.user),id=crypto.randomUUID();
-    const direct=b.enviarAgora===true&&values.tipoSolicitacao!=="CTE_COMPLEMENTAR";
+    const expected=Number(b.anexosPrevistos||0);
+    if(!Number.isInteger(expected)||expected<0||expected>30)return err("Quantidade inválida de anexos.",400);
+    const direct=b.enviarAgora===true&&(values.tipoSolicitacao!=="CTE_COMPLEMENTAR"||expected>0);
     const protocolo="PED-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+id.slice(0,8).toUpperCase();
     const columns=[...Object.values(COLUMNS),"tipo_solicitacao","categoria_chamado","dados_especificos_json"],keys=Object.keys(COLUMNS);
     const params=[id,p.id,protocolo,p.user,...keys.map(k=>values[k]),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?"PEDIDO":values.tipoSolicitacao),(values.tipoSolicitacao==="PAGAMENTO"||values.tipoSolicitacao==="PAGAMENTO_GUIA"?values.tipoSolicitacao:""),JSON.stringify(values.dadosEspecificos)];
@@ -313,7 +350,8 @@ export async function aberturaPedidosController(req,env){
     ];
     if(direct){
      statements.push(db.prepare("UPDATE portal_pedidos_tickets SET status='FILA',enviado_em=CURRENT_TIMESTAMP,atualizado_em=CURRENT_TIMESTAMP WHERE tenant_id=? AND id=? AND status='RASCUNHO'").bind(p.id,id));
-     statements.push(hist(db,p,id,"FILA","Solicitação enviada diretamente para execução"));
+     statements.push(hist(db,p,id,"FILA","Solicitação registrada na fila de execução"));
+     if(expected>0)statements.push(hist(db,p,id,"ANEXOS_ENVIO",expected+":0"));
      if(values.tipoSolicitacao==="CORRECAO_PEDIDO"&&values.dadosEspecificos?.textoCorrecao)
       statements.push(db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)")
        .bind(crypto.randomUUID(),p.id,id,p.user,values.dadosEspecificos.textoCorrecao));
@@ -321,9 +359,12 @@ export async function aberturaPedidosController(req,env){
     // Commit único: nunca responde com protocolo se parte do registro falhou.
     await db.batch(statements);
     const row=await ticket(db,p,id);
-    return success({chamado:ticketView(row)},201);
+    const created=ticketView(row);
+    created.transferenciaAnexos=direct&&expected>0?
+     {estado:"ENVIANDO",total:expected,enviados:0}:null;
+    return success({chamado:created},201);
    }
-   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36}))?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
+   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36})|\/concluir|\/falha)?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
   if(!match)return err("Rota de Abertura de Pedidos inexistente.",404);
   const id=match[1],action=match[2]||"",row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
@@ -395,7 +436,12 @@ export async function aberturaPedidosController(req,env){
     db.prepare("SELECT autor_id,texto,criado_em FROM portal_pedidos_messages WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id LIMIT 500").bind(p.id,id).all(),
     db.prepare("SELECT autor_id,status,descricao,criado_em FROM portal_pedidos_history WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all()
    ]);
-   return success({chamado:ticketView(row),anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[],executor});
+   const current=ticketView(row);
+   current.transferenciaAnexos=decodeUploadState((history.results||[])
+    .filter(x=>uploadStates.has(x.status))
+    .sort((a,b)=>String(b.criado_em).localeCompare(String(a.criado_em)))[0])||
+    await uploadState(db,p,id);
+   return success({chamado:current,anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[],executor});
   }
   if(action==="dados"&&req.method==="POST"){
     if(execView||!["RASCUNHO","PENDENTE"].includes(row.status)||

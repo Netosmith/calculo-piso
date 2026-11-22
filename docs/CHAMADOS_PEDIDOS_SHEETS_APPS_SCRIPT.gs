@@ -740,7 +740,8 @@ function cmOperation_(ss,p){
   return {anexado:true,slot:slot};
  }
  if(op==="downloadChunk"){
-  if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE"))
+  if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")&&
+   !(ctx.view==="execucao"&&executor&&(ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0))
    throw new Error("Anexo privado.");
   var entry=cmGet_(ss,"ANEXOS","ID",cmRaw_(data.docId));
   if(!entry||entry.CHAMADO_ID!==ticket.ID||entry.TRANSPORTADORA!==p.tenant)
@@ -781,7 +782,8 @@ function cmOperation_(ss,p){
   return {anexado:true,slot:slot};
  }
  if(op==="download"){
-  if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE"))
+  if(!admin&&!owner&&!isMine&&!(ctx.view==="solicitante"&&ticket.STATUS==="PENDENTE")&&
+   !(ctx.view==="execucao"&&executor&&(ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))>=0))
   throw new Error("Anexo privado do solicitante ou executor.");
   var doc=cmGet_(ss,"ANEXOS","ID",cmRaw_(data.docId));
   if(!doc||doc.CHAMADO_ID!==ticket.ID||doc.TRANSPORTADORA!==p.tenant)throw new Error("Documento não encontrado.");

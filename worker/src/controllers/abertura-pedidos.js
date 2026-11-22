@@ -441,10 +441,7 @@ export async function aberturaPedidosController(req,env){
     db.prepare("SELECT autor_id,status,descricao,criado_em FROM portal_pedidos_history WHERE tenant_id=? AND ticket_id=? ORDER BY criado_em,id").bind(p.id,id).all()
    ]);
    const current=ticketView(row);
-   current.transferenciaAnexos=decodeUploadState((history.results||[])
-    .filter(x=>uploadStates.has(x.status))
-    .sort((a,b)=>String(b.criado_em).localeCompare(String(a.criado_em)))[0])||
-    await uploadState(db,p,id);
+   current.transferenciaAnexos=await uploadState(db,p,id);
    return success({chamado:current,anexos:docs.results||[],mensagens:messages.results||[],historico:history.results||[],executor});
   }
   if(action==="dados"&&req.method==="POST"){

@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const execution=document.body.dataset.pedidosVisao==="execucao";
 const API="https://api.portalfrete.net.br/v1/abertura-pedidos";
 const uploadJobs=new Map();
-let immediateQueueCapable=false;
+let immediateQueueCapable=false,largeFilesCapable=false;
 const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],["PENDENTE","Pendente","#e8a01b"],["FINALIZADO","Finalizado (hoje)","#168a57"]];
 const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT",comprovante_pagamento:"Comprovante de pagamento",comprovante_guia:"Comprovante de GUIA"};
 const FIELDS=["email","nomeSolicitante","telefoneWhats","unidadeEmbarque","numeroPedidoOC","nfeManifestada","tomadorCnpj","coletaIe","entregaCnpj","entregaIe","freteEmpresa","freteMotorista","adiantamentoPct","icms","produto","especie","tag","obs","coordenadasColeta","coordenadasEntrega"];
@@ -41,7 +41,9 @@ function agencyLooksLikeDate(value){
  /^\d{1,2}\/\d{1,2}\/\d{4}(?:\s|$)/.test(v)||
  /(?:GMT[+-]\d{4}|Horário Padrão de Brasília)/i.test(v);
 }
-const MAX_FILE=6*1024*1024;
+const MAX_FILE=20*1024*1024;
+const SINGLE_UPLOAD_LIMIT=6*1024*1024;
+const CHUNK_BYTES=2*1024*1024;
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 let user="",executor=false,superAdmin=false,chamados=[],selected=null,draft="",revisionPending=false,busy=false,draftsExpanded=false,previewUrl=null,previewSequence=0,canCreate=false,formKind="PEDIDO";
 let historyLoaded=false,historyNext=0,historyRows=[],historyBusy=false,boardSerial=0,detailSerial=0,actionBusy=false;
@@ -101,7 +103,12 @@ async function runUploadJob(id){
  try{
   for(;job.next<job.documents.length;){
    const item=job.documents[job.next];
-   const received=await upload(id,item.slot,item.file);
+   const received=await upload(id,item.slot,item.file,(part,total)=>{
+    updateUploadProgress(id,{
+     estado:"ENVIANDO",total:job.documents.length,enviados:job.next,
+     partes:part,totalPartes:total
+    });
+   },item);
    job.next++;
    updateUploadProgress(id,received.transferenciaAnexos||{
     estado:"ENVIANDO",total:job.documents.length,enviados:job.next
@@ -167,12 +174,15 @@ function card(p){
  const transfer=uploadTransfer(p);
  if(transfer&&transfer.estado!=="PRONTO"){
   const isFailure=transfer.estado==="FALHA";
-  const text=isFailure?"Anexos interrompidos · "+transfer.enviados+"/"+transfer.total:
-   "Enviando anexos · "+transfer.enviados+"/"+transfer.total;
+  const suffix=transfer.totalPartes?" · PDF "+transfer.partes+"/"+transfer.totalPartes+" partes":"";
+  const text=(isFailure?"Anexos interrompidos · ":"Enviando anexos · ")+
+   transfer.enviados+"/"+transfer.total+suffix;
   const progress=element("div","","tn-upload-progress"+(isFailure?" is-failed":""));
   progress.append(element("span",text),element("div","","tn-upload-track"));
   progress.lastChild.append(element("i","","tn-upload-fill"));
-  progress.lastChild.firstChild.style.width=(100*Math.min(transfer.total,transfer.enviados)/transfer.total)+"%";
+  const fraction=transfer.totalPartes?transfer.partes/transfer.totalPartes:0;
+  progress.lastChild.firstChild.style.width=(100*Math.min(transfer.total,
+    transfer.enviados+fraction)/transfer.total)+"%";
   b.append(progress);
  }
  if(execution&&p.status==="PENDENTE"&&String(p.motivo||"").trim().length>=8)
@@ -590,7 +600,7 @@ async function resume(row,existingDetail=null){
 }
 function checkFile(file){
  if(!file||!MIMES.has(file.type)||file.size<1||file.size>MAX_FILE)
-  throw Error("Arquivo inválido ou acima de 6 MB: "+(file?.name||"documento")+". Use PDF, JPG, PNG ou WebP.");
+  throw Error("Arquivo inválido ou acima de 20 MB: "+(file?.name||"documento")+". Use PDF, JPG, PNG ou WebP.");
 }
 function toBase64(file){
  return new Promise((resolve,reject)=>{
@@ -599,9 +609,28 @@ function toBase64(file){
   reader.readAsDataURL(file);
  });
 }
-async function upload(id,slot,file){
+async function upload(id,slot,file,onPart,record){
  checkFile(file);
- return request("/"+id+"/anexos","POST",{slot,nome:file.name,mime:file.type,base64:await toBase64(file)});
+ if(file.size<=SINGLE_UPLOAD_LIMIT)
+  return request("/"+id+"/anexos","POST",{slot,nome:file.name,mime:file.type,base64:await toBase64(file)});
+ if(!largeFilesCapable)
+  throw Error("Para PDF acima de 6 MB, atualize a implantação do Apps Script desta transportadora (limite novo: 20 MB).");
+ const total=Math.ceil(file.size/CHUNK_BYTES),item=record||{};
+ item.uploadId ||=crypto.randomUUID();
+ item.sentParts ||=0;
+ for(let i=item.sentParts;i<total;i++){
+  const slice=file.slice(i*CHUNK_BYTES,Math.min((i+1)*CHUNK_BYTES,file.size),file.type);
+  const part=await toBase64(slice);
+  await request("/"+id+"/anexos/parte","POST",{
+   slot,nome:file.name,mime:file.type,uploadId:item.uploadId,
+   index:i,total,size:file.size,base64:part
+  });
+  item.sentParts=i+1;
+  if(onPart)onPart(i+1,total);
+ }
+ return request("/"+id+"/anexos/fechar","POST",{
+  slot,nome:file.name,mime:file.type,uploadId:item.uploadId,total,size:file.size
+ });
 }
 async function submitForm(e){
  e.preventDefault();if(busy)return;
@@ -617,8 +646,12 @@ async function submitForm(e){
  if(documents.length>30){
   progress.textContent="Selecione no máximo 30 arquivos por chamado.";return;
  }
- try{for(const item of documents)checkFile(item.file);}
- catch(error){progress.textContent=error.message;return;}
+ try{for(const item of documents){
+  checkFile(item.file);
+  if(item.file.size>SINGLE_UPLOAD_LIMIT&&!largeFilesCapable)
+   throw Error("PDF acima de 6 MB exige a nova implantação do Apps Script (até 20 MB). Atualize a integração antes de enviar.");
+ }}
+ catch(error){progress.textContent=error.message;inform(error.message,true);return;}
  if(formKind==="CTE_COMPLEMENTAR"&&!draft&&!documents.some(x=>x.slot==="liberacao")){
   progress.textContent="Anexe a liberação do cliente para solicitar um CT-e complementar.";return;
  }
@@ -626,7 +659,7 @@ async function submitForm(e){
  if($("tnNew"))$("tnNew").disabled=true;
  // Fecha o formulário antes da rede, mas só confirma sucesso após persistência.
  hideDialog("tnFormDialog");
- inform("Enviando solicitação... Aguardando confirmação do protocolo. Mantenha a página aberta.");
+ inform("Registrando protocolo e validando os dados da solicitação...");
  try{
   if(!draft){
    progress.textContent="Registrando o número do protocolo...";
@@ -653,7 +686,7 @@ async function submitForm(e){
     }else{
      inform("Protocolo "+issued+" criado e disponível na FILA.");
     }
-    progress.textContent="Protocolo "+issued+" criado.";
+    progress.textContent="Protocolo "+issued+" confirmado e registrado na Fila.";
     void refresh().catch(()=>{});
     return;
    }
@@ -685,9 +718,24 @@ async function submitForm(e){
  }
 }
 async function fileBlob(id,doc){
- const headers={Accept:doc.mime||"application/octet-stream"};
- if(window.__PORTAL_TENANT_SESSION?.ownerSupport===true)headers["X-Portal-Support-Tenant"]=window.__PORTAL_TENANT_EXPECTED;
- const resp=await fetch(API+"/"+id+"/anexos/"+doc.id+"?visao="+(execution?"execucao":"solicitante"),
+ const headers={Accept:"application/octet-stream"};
+ if(window.__PORTAL_TENANT_SESSION?.ownerSupport===true)
+  headers["X-Portal-Support-Tenant"]=window.__PORTAL_TENANT_EXPECTED;
+ const root=API+"/"+id+"/anexos/"+doc.id;
+ if(Number(doc.bytes||0)>SINGLE_UPLOAD_LIMIT){
+  const parts=Math.ceil(doc.bytes/CHUNK_BYTES),blobs=[];
+  for(let index=0;index<parts;index++){
+   const response=await fetch(root+"/parte/"+index+"?visao="+(execution?"execucao":"solicitante"),
+    {credentials:"include",cache:"no-store",headers});
+   if(!response.ok)throw Error("Não foi possível recuperar a parte "+(index+1)+"/"+parts+" do documento.");
+   const chunk=await response.blob();
+   if(chunk.size!==Math.min(CHUNK_BYTES,doc.bytes-index*CHUNK_BYTES))
+    throw Error("Parte do documento incompleta; tente novamente.");
+   blobs.push(chunk);
+  }
+  return new Blob(blobs,{type:doc.mime||"application/pdf"});
+ }
+ const resp=await fetch(root+"?visao="+(execution?"execucao":"solicitante"),
   {credentials:"include",cache:"no-store",headers});
  if(!resp.ok)throw Error("Documento não disponível.");
  return resp.blob();
@@ -1038,10 +1086,11 @@ async function checkUploadCapabilities(){
  try{
   const support=await request("/capacidades");
   immediateQueueCapable=support.anexosEmFila===true;
+  largeFilesCapable=support.anexosGrandes===true;
   if(!immediateQueueCapable)
    inform("A entrada imediata na FILA com anexos está aguardando a atualização da implantação do Apps Script. Os chamados continuam no envio seguro tradicional por enquanto.");
  }catch(error){
-  immediateQueueCapable=false;
+  immediateQueueCapable=false;largeFilesCapable=false;
   // A versão antiga pode não possuir /capacidades; preservar o fluxo original.
  }
 }

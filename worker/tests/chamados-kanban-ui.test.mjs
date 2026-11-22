@@ -15,10 +15,11 @@ function policy({view="execucao",authorized=true,busy=false,correct=true}={}){
  const begin=js.indexOf("function canMoveTicket(");
  const end=js.indexOf("function markDropTargets(",begin);
  assert.ok(begin>=0&&end>begin);
- const factory=new Function("execution","executor","actionBusy","moveBusy","canCorrectPending","STATES",
+ const factory=new Function("execution","executor","actionBusy","moveBusy","canCorrectPending","STATES","transferIncomplete",
   js.slice(begin,end)+";return canMoveTicket;");
  return factory(view==="execucao",authorized,busy,false,correct,
-  [["FILA"],["ANDAMENTO"],["PENDENTE"],["FINALIZADO"]]);
+  [["FILA"],["ANDAMENTO"],["PENDENTE"],["FINALIZADO"]],
+  row=>Boolean(row.transferenciaAnexos&&row.transferenciaAnexos.estado!=="PRONTO"));
 }
 const ticket=(status,executor="PAGAMENTOS",motivo="")=>
  ({id:"123",tipoSolicitacao:"PAGAMENTO",status,executor,motivo});
@@ -37,6 +38,7 @@ test("executor move livremente entre quaisquer etapas distintas",()=>{
  assert.equal(policy({authorized:false})(ticket("FILA"),"FINALIZADO"),false);
  assert.equal(policy({busy:true})(ticket("FILA"),"FINALIZADO"),false);
  assert.equal(can(ticket("RASCUNHO"),"PENDENTE"),false);
+ assert.equal(can({...ticket("FILA"),transferenciaAnexos:{estado:"ENVIANDO",total:2,enviados:1}},"ANDAMENTO"),false);
 });
 test("solicitante só devolve pendência via formulário de correção",()=>{
  const can=policy({view:"solicitante"});

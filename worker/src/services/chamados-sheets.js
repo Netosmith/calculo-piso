@@ -13,6 +13,8 @@ const KNOWN_SHEETS=Object.freeze({
 const MODE_KEY=id=>"tenant/"+id+"/private/chamados-sheets-v1.json";
 const UUID=/^[a-f0-9-]{36}$/;
 const MAX_FILE=6*1024*1024;
+const LARGE_FILE=20*1024*1024;
+const CHUNK_BYTES=2*1024*1024;
 const SLOTS=new Set(["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt","comprovante_pagamento","comprovante_guia"]);
 const MIMES=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 
@@ -244,8 +246,8 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
    try{
     const result=await callScript(conf,p.id,options.sheetId,"capabilities",ctx);
     return success({modo:"sheets",movimentacaoLivre:result.mover===true,
-     salvarObservacao:result.observacao===true,anexosEmFila:result.anexosEmFila===true,
-     versao:String(result.build||"desconhecida")});
+     salvarObservacao:result.observacao===true,anexosEmFila:result.anexosEmFila===true,anexosGrandes:result.anexosGrandes===true,
+     limiteMB:result.anexosGrandes===true?20:6,versao:String(result.build||"desconhecida")});
    }catch(error){
     if(/Opera(?:ç|c)(?:ã|a)o (?:de chamados )?desconhecida|atualize a implantação do Apps Script/i.test(String(error?.message||"")))
      return success({modo:"sheets",movimentacaoLivre:false,salvarObservacao:false,
@@ -263,16 +265,36 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
    const raw=await request.json();
     action="create";data={fields:normalizedFields(raw,p.user),enviarAgora:raw?.enviarAgora===true,anexosPrevistos:raw?.anexosPrevistos||0};
   }else{
-   const match=path.match(/^([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36})|\/concluir|\/falha)?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
+   const match=path.match(/^([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36})(?:\/parte\/([0-9]{1,2}))?|\/concluir|\/falha|\/parte|\/fechar)?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
    if(!match)return errorResponse("Rota não encontrada.",404);
    ticketId=match[1];const sub=match[2]||"";
    const routes={"":"get","dados":"updateDraft","enviar":"enviar","assumir":"assumir",
-    "situacao":"situacao","mover":"mover","anexos/concluir":"concluirUpload","anexos/falha":"falhaUpload","mensagens":"mensagens","ocultar":"ocultar","restaurar":"restaurar","corrigir":"corrigir"};
+    "situacao":"situacao","mover":"mover","anexos/concluir":"concluirUpload","anexos/falha":"falhaUpload","anexos/parte":"uploadChunk","anexos/fechar":"finalizeChunks","mensagens":"mensagens","ocultar":"ocultar","restaurar":"restaurar","corrigir":"corrigir"};
    if(sub==="anexos"&&request.method==="POST"){action="upload";data=await request.json();
     if(!SLOTS.has(data?.slot)||!MIMES.has(data?.mime)||
        typeof data?.base64!=="string"||data.base64.length>8500000)
      return errorResponse("Arquivo inválido.",400);
-   }else if(sub.startsWith("anexos/")&&request.method==="GET"){action="download";data={docId:match[3]};}
+   }else if(sub==="anexos/parte"&&request.method==="POST"){
+    action="uploadChunk";data=await request.json();
+    if(!SLOTS.has(data?.slot)||!MIMES.has(data?.mime)||
+      !/^[a-f0-9-]{36}$/.test(data?.uploadId||"")||
+      !Number.isInteger(data?.size)||data.size<1||data.size>LARGE_FILE||
+      !Number.isInteger(data?.index)||!Number.isInteger(data?.total)||
+      data.total!==Math.ceil(data.size/CHUNK_BYTES)||
+      data.index<0||data.index>=data.total||data.total>10||
+      typeof data?.base64!=="string"||data.base64.length>Math.ceil(CHUNK_BYTES/3)*4+8)
+     return errorResponse("Parte inválida (até 2 MB).",400);
+   }else if(sub==="anexos/fechar"&&request.method==="POST"){
+    action="finalizeChunks";data=await request.json();
+    if(!SLOTS.has(data?.slot)||!MIMES.has(data?.mime)||
+      !/^[a-f0-9-]{36}$/.test(data?.uploadId||"")||
+      !Number.isInteger(data?.size)||data.size<1||data.size>LARGE_FILE||
+      data?.total!==Math.ceil(data.size/CHUNK_BYTES))
+     return errorResponse("Arquivo inválido (até 20 MB).",400);
+   }else if(sub.startsWith("anexos/")&&request.method==="GET"){
+    if(match[4]!==undefined){action="downloadChunk";data={docId:match[3],index:Number(match[4])};}
+    else{action="download";data={docId:match[3]};}
+   }
    else if(request.method==="GET"&&sub==="")action="get";
    else if(request.method==="POST"&&Object.hasOwn(routes,sub)){
     action=routes[sub];
@@ -289,6 +311,15 @@ export async function sheetsGateway(request,p,view,flags,executor,kinds,conf,opt
    return success(action==="list"?sharedList(result,p):sharedDetail(result,p));
   }
   const result=await callScript(conf,p.id,options.sheetId,action,ctx,data,ticketId);
+  if(action==="downloadChunk"){
+   if(typeof result.base64!=="string"||result.base64.length>Math.ceil(CHUNK_BYTES/3)*4+8)
+    return errorResponse("Parte do arquivo inválida.",502);
+   const bytes=Uint8Array.from(atob(result.base64),c=>c.charCodeAt(0));
+   if(!bytes.length||bytes.length>CHUNK_BYTES)
+    return errorResponse("Parte do arquivo excede 2 MB.",413);
+   return new Response(bytes,{headers:{"Content-Type":"application/octet-stream",
+    "Cache-Control":"private,no-store","X-Content-Type-Options":"nosniff"}});
+  }
   if(action==="download"){
    if(typeof result.base64!=="string"||result.base64.length>Math.ceil(MAX_FILE/3)*4+8)
     return errorResponse("Anexo inválido.",502);

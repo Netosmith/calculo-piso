@@ -204,6 +204,26 @@ function cmAllowed_(p,ticket,action){
  if(view==="execucao")return admin||(executor&&allowed&&ticket.STATUS!=="RASCUNHO");
  return admin||owner||ticket.STATUS!=="RASCUNHO";
 }
+// Estado independente da coluna FILA, persistido no HISTORICO, sem alterar
+// as abas existentes. A última transição de transferência prevalece.
+var CM_UPLOAD_STATES_=null;
+function cmUploadState_(ss,tenant,id){
+ if(!CM_UPLOAD_STATES_){
+  CM_UPLOAD_STATES_={};
+  cmRows_(ss,"HISTORICO").forEach(function(row){
+   if(["ANEXOS_ENVIO","ANEXOS_PRONTOS","ANEXOS_FALHA"].indexOf(row.STATUS)<0)return;
+   var value=cmRaw_(row.DESCRICAO).split(":");
+   var total=Number(value[0]),sent=Number(value[1]);
+   if(!Number.isInteger(total)||total<1||total>30)return;
+   CM_UPLOAD_STATES_[cmRaw_(row.TRANSPORTADORA)+"|"+cmRaw_(row.CHAMADO_ID)]={
+    estado:row.STATUS==="ANEXOS_PRONTOS"?"PRONTO":row.STATUS==="ANEXOS_FALHA"?"FALHA":"ENVIANDO",
+    total:total,enviados:Math.min(total,Math.max(0,Number.isInteger(sent)?sent:0)),
+    atualizadoEm:cmRaw_(row.CRIADO_EM)
+   };
+  });
+ }
+ return CM_UPLOAD_STATES_[tenant+"|"+id]||null;
+}
 function cmPublicTicket_(main){
  return {id:cmRaw_(main.ID),protocolo:cmRaw_(main.PROTOCOLO),numero:Number(main.NUMERO)||0,
   solicitante:cmRaw_(main.SOLICITANTE),nomeSolicitante:cmRaw_(main.NOME_SOLICITANTE),
@@ -214,14 +234,14 @@ function cmPublicTicket_(main){
 }
 function cmTicketForAudience_(ss,p,main){
  var ctx=p.context||{};
+ var upload=cmUploadState_(ss,p.tenant,main.ID);
  // Monitor coletivo assinado pelo Worker: cards públicos não precisam de leitura
  // das 3 abas de detalhes, evitando lentidão em empresas com muitos chamados.
- if(ctx.sharedMonitor===true&&main.SOLICITANTE!==ctx.user)
-  return cmPublicTicket_(main);
+ if(ctx.sharedMonitor===true&&main.SOLICITANTE!==ctx.user){var publicItem=cmPublicTicket_(main);publicItem.transferenciaAnexos=upload;return publicItem;}
  var own=ctx.superAdmin===true||main.SOLICITANTE===ctx.user||
   (ctx.view==="execucao"&&ctx.executor===true&&
    (ctx.allowedKinds||[]).indexOf(cmRaw_(main.TIPO))>=0);
- return own?cmTicket_(ss,main):cmPublicTicket_(main);
+ var item=own?cmTicket_(ss,main):cmPublicTicket_(main);item.transferenciaAnexos=upload;return item;
 }
 // Cartão de Kanban: somente identificadores necessários para executar e
 // localizar o chamado. Dados completos, anexos e histórico ficam no GET /id.
@@ -246,6 +266,7 @@ function cmBoardTicket_(ss,main){
  }
  out.numeroPedidoSistema=cmRaw_(main.NUMERO_PEDIDO_SISTEMA);
  out.motivo=cmRaw_(main.MOTIVO);
+ out.transferenciaAnexos=cmUploadState_(ss,main.TRANSPORTADORA,main.ID);
  return out;
 }
 function cmTicket_(ss,main){
@@ -258,7 +279,7 @@ function cmTicket_(ss,main){
   motivo:cmRaw_(main.MOTIVO),criadoEm:cmRaw_(main.CRIADO_EM),
   atualizadoEm:cmRaw_(main.ATUALIZADO_EM),enviadoEm:cmRaw_(main.ENVIADO_EM),
   excluidoEm:cmRaw_(main.EXCLUIDO_EM),excluidoPor:cmRaw_(main.EXCLUIDO_POR),
-  dadosEspecificos:{}
+  dadosEspecificos:{},transferenciaAnexos:cmUploadState_(ss,main.TRANSPORTADORA,main.ID)
  };
  var details=cmGet_(ss,"PEDIDOS_DETALHES","CHAMADO_ID",main.ID)||{};
  var corrections=cmGet_(ss,"CORRECOES","CHAMADO_ID",main.ID)||{};
@@ -282,6 +303,7 @@ function cmUpdateDetails_(ss,id,fields,extras){
  if(Object.keys(payment).length>1)cmPut_(ss,"PAGAMENTOS",payment,"CHAMADO_ID");
 }
 function cmHist_(ss,p,ticket,status,description){
+ CM_UPLOAD_STATES_=null;
  cmPut_(ss,"HISTORICO",{ID:cmId_(),TRANSPORTADORA:p.tenant,CHAMADO_ID:ticket.ID,
   AUTOR:cmRaw_(p.context.user),STATUS:status,DESCRICAO:description,CRIADO_EM:cmNow_()},"ID");
 }
@@ -460,7 +482,9 @@ function cmOperation_(ss,p){
  if(op==="create"){
   if(ctx.view!=="solicitante"||!ctx.solicitar)throw new Error("Solicitação não autorizada.");
   var payload=data.fields||{},now=cmNow_(),id=cmId_(),number=cmSequence_(ss);
-  var direct=data.enviarAgora===true&&payload.tipoSolicitacao!=="CTE_COMPLEMENTAR";
+  var expected=Number(data.anexosPrevistos||0);
+  if(!Number.isInteger(expected)||expected<0||expected>30)throw new Error("Quantidade inválida de anexos.");
+  var direct=data.enviarAgora===true&&(payload.tipoSolicitacao!=="CTE_COMPLEMENTAR"||expected>0);
   var obj=Object.assign({},payload,{
    id:id,protocolo:"PED-"+now.slice(0,10).replace(/-/g,"")+"-"+id.slice(0,8).toUpperCase(),
    numero:number,solicitante:user,executor:"",status:direct?"FILA":"RASCUNHO",motivo:"",
@@ -470,7 +494,8 @@ function cmOperation_(ss,p){
   cmSaveMain_(ss,p,obj);
   var row=cmGet_(ss,"SOLICITACOES","ID",id);
   cmHist_(ss,p,row,direct?"FILA":"RASCUNHO",direct?
-   "Nova solicitação criada e enviada para a fila":"Nova solicitação criada");
+   "Solicitação registrada na fila":"Nova solicitação criada");
+  if(direct&&expected>0)cmHist_(ss,p,row,"ANEXOS_ENVIO",expected+":0");
   if(direct&&payload.tipoSolicitacao==="CORRECAO_PEDIDO"){
    var correctionText=cmRaw_((payload.dadosEspecificos||{}).textoCorrecao);
    if(correctionText)cmMessage_(ss,p,row,correctionText,user);
@@ -527,6 +552,8 @@ function cmOperation_(ss,p){
   return {numero:Number(ticket.NUMERO)||0,status:"FILA"};
  }
  if(op==="mover"){
+  var uploading=cmUploadState_(ss,p.tenant,ticket.ID);
+  if(uploading&&uploading.estado!=="PRONTO")throw new Error("Anexos incompletos. Aguarde a transferência.");
   if(ticket.EXCLUIDO_EM)throw new Error("Restaure o chamado antes de movimentá-lo.");
   if(ctx.view!=="execucao"||!executor||
     (ctx.allowedKinds||[]).indexOf(cmRaw_(ticket.TIPO))<0)
@@ -565,6 +592,8 @@ function cmOperation_(ss,p){
    motivo:cmRaw_(ticket.MOTIVO),numeroPedidoSistema:cmRaw_(ticket.NUMERO_PEDIDO_SISTEMA)};
  }
  if(op==="assumir"){
+  var uploading=cmUploadState_(ss,p.tenant,ticket.ID);
+  if(uploading&&uploading.estado!=="PRONTO")throw new Error("Aguarde o recebimento dos anexos antes de assumir.");
   if(!executor||ctx.view!=="execucao"||ticket.STATUS!=="FILA")throw new Error("Chamado já assumido ou não autorizado.");
   ticket.STATUS="ANDAMENTO";ticket.EXECUTOR=user;ticket.ATUALIZADO_EM=cmNow_();
   cmPut_(ss,"SOLICITACOES",ticket,"ID");cmHist_(ss,p,ticket,"ANDAMENTO","Chamado assumido");
@@ -592,15 +621,34 @@ function cmOperation_(ss,p){
   var msg=cmSafeText_(data.texto,1800,true);
   cmMessage_(ss,p,ticket,msg,user);return {enviado:true};
  }
+ if(op==="concluirUpload"||op==="falhaUpload"){
+  if(ctx.view!=="solicitante"||!owner||ticket.STATUS!=="FILA")
+   throw new Error("Somente o solicitante pode concluir a transferência.");
+  var transfer=cmUploadState_(ss,p.tenant,ticket.ID);
+  if(!transfer)throw new Error("Este chamado não possui anexos em transferência.");
+  if(transfer.estado==="PRONTO")return {transferenciaAnexos:transfer};
+  var docs=cmFile_(ss,p,ticket).filter(function(doc){return ["comprovante_pagamento","comprovante_guia"].indexOf(doc.slot)<0;});
+  if(op==="concluirUpload"){
+   if(docs.length<transfer.total)throw new Error("Ainda faltam arquivos: "+docs.length+"/"+transfer.total);
+   if(ticket.TIPO==="CTE_COMPLEMENTAR"&&!docs.some(function(doc){return doc.slot==="liberacao";}))
+    throw new Error("A liberação do cliente deve ser anexada antes de iniciar a execução.");
+  }
+  var state=op==="concluirUpload"?"ANEXOS_PRONTOS":"ANEXOS_FALHA";
+  cmHist_(ss,p,ticket,state,transfer.total+":"+Math.min(transfer.total,docs.length));
+  return {transferenciaAnexos:{estado:state==="ANEXOS_PRONTOS"?"PRONTO":"FALHA",
+   total:transfer.total,enviados:Math.min(transfer.total,docs.length)}};
+ }
  if(op==="upload"){
   var slot=cmRaw_(data.slot),allowed=["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt","comprovante_pagamento","comprovante_guia"];
   if(allowed.indexOf(slot)<0)throw new Error("Tipo de anexo inválido.");
   var proof=slot==="comprovante_pagamento"||slot==="comprovante_guia";
   var correctProof=(ticket.TIPO==="PAGAMENTO"&&slot==="comprovante_pagamento")||
     (ticket.TIPO==="PAGAMENTO_GUIA"&&slot==="comprovante_guia");
+  var queue=cmUploadState_(ss,p.tenant,ticket.ID);
+  var queueUpload=ctx.view==="solicitante"&&owner&&ticket.STATUS==="FILA"&&queue&&queue.estado!=="PRONTO";
   if(proof?!(correctProof&&isMine&&ticket.STATUS==="FINALIZADO"):
     !(ctx.view==="solicitante"&&
-    (ticket.STATUS==="PENDENTE"||(owner&&ticket.STATUS==="RASCUNHO"))))
+    (ticket.STATUS==="PENDENTE"||(owner&&ticket.STATUS==="RASCUNHO")||queueUpload)))
    throw new Error("Anexo não autorizado.");
   var mime=cmRaw_(data.mime),accepted=["application/pdf","image/jpeg","image/png","image/webp"];
   if(accepted.indexOf(mime)<0||!/^[A-Za-z0-9+/]+={0,2}$/.test(cmRaw_(data.base64))||
@@ -615,6 +663,11 @@ function cmOperation_(ss,p){
    TIPO_ANEXO:slot,DRIVE_ID:file.getId(),NOME:file.getName(),MIME:mime,
    BYTES:bytes.length,CRIADO_EM:cmNow_()},"ID");
   cmHist_(ss,p,ticket,ticket.STATUS,"Documento anexado: "+slot);
+  if(queueUpload){
+   var sent=cmFile_(ss,p,ticket).filter(function(doc){return ["comprovante_pagamento","comprovante_guia"].indexOf(doc.slot)<0;}).length;
+   cmHist_(ss,p,ticket,"ANEXOS_ENVIO",queue.total+":"+Math.min(queue.total,sent));
+   return {anexado:true,slot:slot,transferenciaAnexos:cmUploadState_(ss,p.tenant,ticket.ID)};
+  }
   return {anexado:true,slot:slot};
  }
  if(op==="download"){
@@ -686,7 +739,7 @@ function chamadosDispatch_(p,props,tenant){
  var lock=readOnly?null:LockService.getScriptLock();
  if(lock&&!lock.tryLock(12000))return result_({ok:false,error:"Sistema ocupado. Tente novamente."});
  try{
-  CM_CACHE_={};CM_TABS_={};CM_INDEX_={};
+  CM_CACHE_={};CM_TABS_={};CM_INDEX_={};CM_UPLOAD_STATES_=null;
   var ss=cmSheet_(p);
   // Saúde e consultas não alteram registros. Todas as operações de escrita estão
   // serializadas por LockService para preservar números e evitar dupla execução.

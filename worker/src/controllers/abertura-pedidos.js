@@ -14,6 +14,8 @@ const SLUG=/^[a-z][a-z0-9-]{2,63}$/;
 const FILEID=/^[A-Za-z0-9_-]{15,160}$/;
 const MIME=new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
 const MAX_FILE=6*1024*1024;
+const LARGE_FILE=20*1024*1024;
+const CHUNK_BYTES=2*1024*1024;
 const SLOTS=new Set(["nota","nota_coleta","liberacao","rota_pedagio","tabela_antt","comprovante_pagamento","comprovante_guia"]);
 export const TIPOS_SOLICITACAO=Object.freeze({
  PEDIDO:"Abertura de pedido",
@@ -268,7 +270,7 @@ export async function aberturaPedidosController(req,env){
   if(googleSheets.mode==="sheets")
    return await sheetsGateway(req,p,view,flags,executor,kinds,conf,googleSheets,normalizedFields);
   if(path==="/capacidades"&&req.method==="GET")
-   return success({modo:"d1",movimentacaoLivre:true,salvarObservacao:true,anexosEmFila:true});
+   return success({modo:"d1",movimentacaoLivre:true,salvarObservacao:true,anexosEmFila:true,anexosGrandes:true,limiteMB:20});
   if(path==="/historico"&&req.method==="GET"){
    // Consulta independente do quadro de 500 registros. Finalizados não expiram.
    // Somente o Super Admin acessa "todos" e os retirados da operação.
@@ -364,7 +366,7 @@ export async function aberturaPedidosController(req,env){
      {estado:"ENVIANDO",total:expected,enviados:0}:null;
     return success({chamado:created},201);
    }
-   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36})|\/concluir|\/falha)?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
+   const match=path.match(/^\/([a-f0-9-]{36})(?:\/(anexos(?:\/([a-f0-9-]{36})(?:\/parte\/([0-9]{1,2}))?|\/concluir|\/falha|\/parte|\/fechar)?|dados|enviar|assumir|mover|situacao|mensagens|ocultar|restaurar|corrigir))?$/);
   if(!match)return err("Rota de Abertura de Pedidos inexistente.",404);
   const id=match[1],action=match[2]||"",row=await ticket(db,p,id);
   if(!row)return err("Chamado não encontrado.",404);
@@ -481,6 +483,59 @@ export async function aberturaPedidosController(req,env){
    await hist(db,p,id,next,transfer.total+":"+Math.min(transfer.total,actual)).run();
    return success({transferenciaAnexos:{estado:next==="ANEXOS_PRONTOS"?"PRONTO":"FALHA",
     total:transfer.total,enviados:Math.min(actual,transfer.total)}});
+  }
+  if(["anexos/parte","anexos/fechar"].includes(action)&&req.method==="POST"){
+   if(!conf)return err("Google Drive desta transportadora não configurado.",503);
+   const payload=await bodyJson(req,4000000);
+   const slot=String(payload.slot||""),mime=String(payload.mime||""),
+    name=clean(payload.nome,160),uploadId=String(payload.uploadId||"");
+   const size=Number(payload.size),parts=Number(payload.total),
+    index=Number(payload.index);
+   if(!SLOTS.has(slot)||!MIME.has(mime)||!name||
+     !/^[a-f0-9-]{36}$/.test(uploadId)||!Number.isInteger(size)||
+     size<1||size>LARGE_FILE||!Number.isInteger(parts)||
+     parts!==Math.ceil(size/CHUNK_BYTES)||parts>10)
+    return err("Documento grande inválido. Limite: 20 MB.",400);
+   const proofSlot=effectiveKind(row)==="PAGAMENTO"?"comprovante_pagamento":
+    effectiveKind(row)==="PAGAMENTO_GUIA"?"comprovante_guia":null;
+   const proof=slot===proofSlot;
+   const active=await uploadState(db,p,id);
+   const queue=!execView&&owner&&row.status==="FILA"&&active&&active.estado!=="PRONTO";
+   const allowed=proof?execView&&executor&&row.executor_id===p.user&&row.status==="FINALIZADO":
+    !execView&&(row.status==="PENDENTE"||(owner&&row.status==="RASCUNHO")||queue);
+   if(!allowed)return err("Anexo não autorizado nesta etapa.",403);
+   if(action==="anexos/parte"){
+    if(!Number.isInteger(index)||index<0||index>=parts||
+      typeof payload.base64!=="string"||
+      payload.base64.length>Math.ceil(CHUNK_BYTES/3)*4+8||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(payload.base64))
+     return err("Parte inválida ou acima de 2 MB.",400);
+    const part=await drive(conf,p.id,"uploadChunk",{ticketId:id,slot,mime,nome:name,
+     uploadId,size,total:parts,index,base64:payload.base64});
+    return success({recebida:part.recebida===true,index});
+   }
+   const already=await db.prepare("SELECT id FROM portal_pedidos_docs WHERE id=? AND tenant_id=? AND ticket_id=?")
+    .bind(uploadId,p.id,id).first();
+   if(already)return success({anexado:true,slot,jaRecebido:true,transferenciaAnexos:active});
+   const saved=await drive(conf,p.id,"finalizeChunks",{ticketId:id,slot,mime,nome:name,
+    uploadId,size,total:parts});
+   if(!FILEID.test(saved.fileId||"")||saved.bytes!==size)
+    return err("Google Drive não confirmou a montagem completa do PDF.",502);
+   await db.batch([
+    db.prepare("INSERT INTO portal_pedidos_docs(id,tenant_id,ticket_id,slot,tipo_anexo,drive_id,nome,mime,bytes) VALUES(?,?,?,?,?,?,?,?,?)")
+     .bind(uploadId,p.id,id,proof?"liberacao":slot,proof?slot:"",saved.fileId,name,mime,size),
+    hist(db,p,id,row.status,"Documento recebido: "+slot+" ("+size+" bytes)")
+   ]);
+   let transferenciaAnexos=null;
+   if(queue){
+    const counted=await db.prepare("SELECT COUNT(*) AS n FROM portal_pedidos_docs "+
+     "WHERE tenant_id=? AND ticket_id=? AND slot NOT IN ('comprovante_pagamento','comprovante_guia')")
+     .bind(p.id,id).first();
+    const sent=Math.min(active.total,Number(counted?.n||0));
+    await hist(db,p,id,"ANEXOS_ENVIO",active.total+":"+sent).run();
+    transferenciaAnexos={estado:"ENVIANDO",total:active.total,enviados:sent};
+   }
+   return success({anexado:true,slot,transferenciaAnexos});
   }
   if(action==="anexos"&&req.method==="POST"){
    if(!conf)return err("Google Drive desta transportadora não configurado.",503);
@@ -624,6 +679,21 @@ export async function aberturaPedidosController(req,env){
    if(!message)return err("Mensagem vazia ou grande demais.");
    await db.prepare("INSERT INTO portal_pedidos_messages(id,tenant_id,ticket_id,autor_id,texto) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),p.id,id,p.user,message).run();
    return success({enviado:true});
+  }
+  if(action==="anexos/"+match[3]+"/parte/"+match[4]&&req.method==="GET"){
+   if(!conf)return err("Google Drive não configurado.",503);
+   const doc=await db.prepare("SELECT * FROM portal_pedidos_docs WHERE tenant_id=? AND ticket_id=? AND id=?")
+    .bind(p.id,id,match[3]).first();
+   if(!doc)return err("Documento não encontrado.",404);
+   const part=await drive(conf,p.id,"downloadChunk",{
+    ticketId:id,fileId:doc.drive_id,index:Number(match[4])
+   });
+   if(typeof part.base64!=="string"||part.base64.length>Math.ceil(CHUNK_BYTES/3)*4+8)
+    return err("Parte de documento inválida.",502);
+   const bytes=Uint8Array.from(atob(part.base64),ch=>ch.charCodeAt(0));
+   if(!bytes.length||bytes.length>CHUNK_BYTES)return err("Parte de documento excedida.",413);
+   return new Response(bytes,{headers:{"Content-Type":"application/octet-stream",
+    "Cache-Control":"private,no-store","X-Content-Type-Options":"nosniff"}});
   }
   if(action==="anexos/"+match[3]&&req.method==="GET"){
    if(!conf)return err("Google Drive não configurado.",503);

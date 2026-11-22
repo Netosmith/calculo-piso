@@ -11,6 +11,7 @@ on:
       - 'docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs'
       - 'worker/tests/chamados-kanban-ui.test.mjs'
       - 'worker/tests/chamados-fila-antecipada.test.mjs'
+      - 'worker/tests/chamados-pdf-20mb.test.mjs'
       - 'worker/tests/chamados-public-performance.test.mjs'
       - 'worker/src/controllers/abertura-pedidos.js'
       - '.github/workflows/chamados-kanban-check.yml'
@@ -23,6 +24,7 @@ on:
       - 'docs/CHAMADOS_PEDIDOS_SHEETS_APPS_SCRIPT.gs'
       - 'worker/tests/chamados-kanban-ui.test.mjs'
       - 'worker/tests/chamados-fila-antecipada.test.mjs'
+      - 'worker/tests/chamados-pdf-20mb.test.mjs'
       - 'worker/tests/chamados-public-performance.test.mjs'
       - 'worker/src/controllers/abertura-pedidos.js'
   workflow_dispatch:
@@ -42,4 +44,4 @@ jobs:
         run: |
           node --check assets/js/abertura-pedidos.js
           node --check worker/tests/chamados-kanban-ui.test.mjs
-          node --test worker/tests/chamados-kanban-ui.test.mjs worker/tests/chamados-public-performance.test.mjs worker/tests/chamados-fila-antecipada.test.mjs
+          node --test worker/tests/chamados-kanban-ui.test.mjs worker/tests/chamados-public-performance.test.mjs worker/tests/chamados-fila-antecipada.test.mjs worker/tests/chamados-pdf-20mb.test.mjs

@@ -50,7 +50,9 @@ test("protocolo priorizado e UI não aguarda o histórico para renderizar a fila
  const controller=read("worker/src/controllers/abertura-pedidos.js");
  const sheets=read("worker/src/services/chamados-sheets.js");
  assert.doesNotThrow(()=>new Script(client));
- assert.ok(client.includes('enviarAgora:direct'));
+ assert.ok(client.includes('enviarAgora:true'));
+ assert.ok(client.includes('anexosPrevistos:documents.length'));
+ assert.ok(client.includes('void runUploadJob(fresh.id)'));
  assert.ok(client.includes('result.chamado.status==="FILA"'));
  assert.ok(!client.includes('await Promise.all([refresh(),fetchHistoric(true)])'));
  assert.ok(client.includes('startAutoRefresh();'));

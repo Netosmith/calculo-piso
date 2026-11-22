@@ -3,6 +3,7 @@
 const $=id=>document.getElementById(id);
 const execution=document.body.dataset.pedidosVisao==="execucao";
 const API="https://api.portalfrete.net.br/v1/abertura-pedidos";
+const uploadJobs=new Map();
 const STATES=[["FILA","Fila","#227cde"],["ANDAMENTO","Em andamento","#15a16e"],["PENDENTE","Pendente","#e8a01b"],["FINALIZADO","Finalizado (hoje)","#168a57"]];
 const SLOTS={nota:"Nota",nota_coleta:"Nota de coleta",liberacao:"Liberação",rota_pedagio:"Print da rota de pedágio",tabela_antt:"Print da tabela ANTT",comprovante_pagamento:"Comprovante de pagamento",comprovante_guia:"Comprovante de GUIA"};
 const FIELDS=["email","nomeSolicitante","telefoneWhats","unidadeEmbarque","numeroPedidoOC","nfeManifestada","tomadorCnpj","coletaIe","entregaCnpj","entregaIe","freteEmpresa","freteMotorista","adiantamentoPct","icms","produto","especie","tag","obs","coordenadasColeta","coordenadasEntrega"];
@@ -81,11 +82,55 @@ function matches(p,q){
  return !q||[number(p),p.protocolo,kindTitle(p),kindRef(p),...Object.values(p.dadosEspecificos||{}),p.unidadeEmbarque,p.numeroPedidoOC,p.nomeSolicitante,p.nfeManifestada,p.produto,p.numeroPedidoSistema,p.executor]
   .some(v=>String(v||"").toUpperCase().includes(q));
 }
+function uploadTransfer(p){
+ return p?.transferenciaAnexos||null;
+}
+function transferIncomplete(p){
+ const state=uploadTransfer(p);
+ return Boolean(state&&state.estado!=="PRONTO");
+}
+function updateUploadProgress(id,state){
+ const row=chamados.find(x=>x.id===id);
+ if(row){row.transferenciaAnexos=state;render();}
+}
+async function runUploadJob(id){
+ const job=uploadJobs.get(id);
+ if(!job||job.running)return;
+ job.running=true;job.failed=false;
+ try{
+  for(;job.next<job.documents.length;){
+   const item=job.documents[job.next];
+   const received=await upload(id,item.slot,item.file);
+   job.next++;
+   updateUploadProgress(id,received.transferenciaAnexos||{
+    estado:"ENVIANDO",total:job.documents.length,enviados:job.next
+   });
+  }
+  const complete=await request("/"+id+"/anexos/concluir","POST",{});
+  updateUploadProgress(id,complete.transferenciaAnexos||{
+   estado:"PRONTO",total:job.documents.length,enviados:job.documents.length
+  });
+  uploadJobs.delete(id);
+  inform(number(job.ticket)+" · Todos os anexos enviados. Chamado liberado para execução.");
+  void refresh().catch(()=>{});
+ }catch(error){
+  job.failed=true;
+  const state={estado:"FALHA",total:job.documents.length,enviados:job.next};
+  updateUploadProgress(id,state);
+  try{const marked=await request("/"+id+"/anexos/falha","POST",{});
+   if(marked.transferenciaAnexos)updateUploadProgress(id,marked.transferenciaAnexos);
+  }catch(_){}
+  inform("Anexos de "+number(job.ticket)+" interrompidos: "+error.message+
+   ". Abra o card para tentar novamente. O chamado continua na Fila.",true);
+ }finally{
+  job.running=false;
+ }
+}
 function card(p){
  const b=element("button","","cad-lane-ticket pedido-category-ticket");b.type="button";
  b.dataset.kind=kindOf(p);
  b.dataset.ticketId=p.id;b.dataset.stage=p.status;
- const movable=execution?executor&&STATES.some(stage=>stage[0]===p.status):
+ const movable=execution?executor&&!transferIncomplete(p)&&STATES.some(stage=>stage[0]===p.status):
    p.status==="PENDENTE"&&canCorrectPending;
  if(movable){
   b.draggable=true;b.classList.add("tn-movable");
@@ -115,6 +160,17 @@ function card(p){
   [p.nomeSolicitante,p.solicitante].filter(Boolean).join(" · ");
  b.append(meta,badge,element("strong",title||kindTitle(p),"tn-client"),
   element("span",subtitle,"tn-branch"),foot);
+ const transfer=uploadTransfer(p);
+ if(transfer&&transfer.estado!=="PRONTO"){
+  const isFailure=transfer.estado==="FALHA";
+  const text=isFailure?"Anexos interrompidos · "+transfer.enviados+"/"+transfer.total:
+   "Enviando anexos · "+transfer.enviados+"/"+transfer.total;
+  const progress=element("div","","tn-upload-progress"+(isFailure?" is-failed":""));
+  progress.append(element("span",text),element("div","","tn-upload-track"));
+  progress.lastChild.append(element("i","","tn-upload-fill"));
+  progress.lastChild.firstChild.style.width=(100*Math.min(transfer.total,transfer.enviados)/transfer.total)+"%";
+  b.append(progress);
+ }
  if(execution&&p.status==="PENDENTE"&&String(p.motivo||"").trim().length>=8)
   b.append(element("small","Motivo já registrado ✓","tn-reason-saved"));
  b.title=number(p)+" · "+kindTitle(p)+" · "+(kindRef(p)||p.unidadeEmbarque||"")+(movable?" · Arraste para mudar a etapa":"");
@@ -126,7 +182,7 @@ function card(p){
 function canMoveTicket(row,destination){
  if(!row||row.status===destination||actionBusy||moveBusy)return false;
  if(!STATES.some(item=>item[0]===destination)||!STATES.some(item=>item[0]===row.status))return false;
- if(execution)return executor;
+ if(execution)return executor&&!transferIncomplete(row);
  return canCorrectPending&&row.status==="PENDENTE"&&destination==="FILA";
 }
 function markDropTargets(row){
@@ -353,7 +409,8 @@ function render(){
   // se apenas a atualização automática retornou os mesmos chamados.
   const signature=rows.map(x=>[
    x.id,x.atualizadoEm,x.status,x.executor,x.nomeSolicitante,
-   x.numeroPedidoOC,kindRef(x),x.numeroPedidoSistema,x.motivo
+   x.numeroPedidoOC,kindRef(x),x.numeroPedidoSistema,x.motivo,
+   x.transferenciaAnexos?.estado,x.transferenciaAnexos?.enviados
   ].join("|")).join("~")+"|"+boardLoaded;
   lane.count.textContent=String(rows.length);
   if(lane.signature!==signature){
@@ -407,6 +464,16 @@ function refresh(){
    const result=await request();
    if(serial!==boardSerial)return;
    chamados=Array.isArray(result.chamados)?result.chamados:[];
+   // Sobreposição local somente durante o envio: o cartão nunca perde seu
+   // indicador por causa de um GET iniciado antes da gravação do anexo.
+   for(const [id,job] of uploadJobs){
+    const item=chamados.find(x=>x.id===id);
+    if(item&&!job.failed&&job.running){
+     const state=item.transferenciaAnexos;
+     if(state&&state.estado!=="PRONTO"&&state.enviados<job.next)
+      item.transferenciaAnexos={...state,enviados:job.next};
+    }
+   }
    boardLoaded=true;lastBoardRefresh=Date.now();
    render();syncConnection(true);
    if($("tnAutoStatus"))
@@ -554,17 +621,27 @@ async function submitForm(e){
  try{
   if(!draft){
    progress.textContent="Registrando o número do protocolo...";
-   const direct=documents.length===0&&formKind!=="CTE_COMPLEMENTAR";
-   const result=await request("","POST",{...payload,enviarAgora:direct});
+   const result=await request("","POST",{...payload,enviarAgora:true,
+    anexosPrevistos:documents.length});
    draft=result.chamado.id;
    const issued=number(result.chamado);
-   progress.textContent="Protocolo "+issued+" registrado."+
-    (result.chamado.status==="FILA"?" Já está na fila.":" Processando documentos...");
-   inform("Protocolo "+issued+" criado."+
-    (result.chamado.status==="FILA"?" Chamado disponível na fila.":
-     " O processamento continua nesta página. Mantenha-a aberta até confirmar o envio."));
    if(result.chamado.status==="FILA"){
-    hideDialog("tnFormDialog");draft="";void refresh();
+    const fresh=result.chamado;
+    if(!chamados.some(x=>x.id===fresh.id))chamados.unshift(fresh);
+    boardLoaded=true;render();
+    draft="";revisionPending=false;
+    if(documents.length){
+     // O protocolo já foi confirmado e o cartão já está na FILA.
+     // A transferência segue nesta aba sem bloquear novas solicitações.
+     uploadJobs.set(fresh.id,{ticket:fresh,documents,next:0,running:false,failed:false});
+     inform("Protocolo "+issued+" já na FILA. Enviando "+documents.length+
+      " anexo(s) no próprio card; mantenha esta aba aberta até concluir.");
+     void runUploadJob(fresh.id);
+    }else{
+     inform("Protocolo "+issued+" criado e disponível na FILA.");
+    }
+    progress.textContent="Protocolo "+issued+" criado.";
+    void refresh().catch(()=>{});
     return;
    }
   }else{
@@ -585,9 +662,9 @@ async function submitForm(e){
   revisionPending=false;
   void refresh();
  }catch(error){
-  progress.textContent="Envio incompleto. "+error.message+" O rascunho foi preservado.";
+  progress.textContent="Envio não confirmado. "+error.message+(draft?" O rascunho foi preservado.":" Nenhum protocolo foi confirmado.");
   showDialog("tnFormDialog");
-  inform("Envio não confirmado: "+error.message+" Confira o rascunho antes de tentar novamente.",true);
+  inform("Envio não confirmado: "+error.message+" Confira a solicitação antes de tentar novamente.",true);
   void refresh().catch(()=>{});
  }finally{
   busy=false;button.disabled=false;
@@ -1048,7 +1125,7 @@ $("pedCopySystemNumber").onclick=()=>{
  if(value&&navigator.clipboard)navigator.clipboard.writeText(value).then(()=>inform("Número copiado.")).catch(()=>inform("Não foi possível copiar.",true));
 };
 window.addEventListener("beforeunload",event=>{
- if(!busy)return;
+ if(!busy&&!uploadJobs.size)return;
  event.preventDefault();event.returnValue="";
 });
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else void boot();

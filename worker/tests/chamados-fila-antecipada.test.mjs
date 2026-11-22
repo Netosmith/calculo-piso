@@ -71,7 +71,7 @@ test("Decode seguro do estado da transferência",()=>{
  const begin=d1.indexOf("function decodeUploadState(");
  const end=d1.indexOf("async function uploadState(",begin);
  assert.ok(begin>=0&&end>begin);
- const decode=new Function(d1.slice(begin,end)+"return decodeUploadState;")();
+ const decode=new Function("const uploadStates=new Set([\"ANEXOS_ENVIO\",\"ANEXOS_PRONTOS\",\"ANEXOS_FALHA\"]);"+d1.slice(begin,end)+"return decodeUploadState;")();
  assert.deepEqual(decode({status:"ANEXOS_ENVIO",descricao:"4:2",criado_em:"X"}),{
   estado:"ENVIANDO",total:4,enviados:2,atualizadoEm:"X"});
  assert.equal(decode({status:"FINALIZADO",descricao:"4:4"}),null);

@@ -91,7 +91,7 @@ function transferIncomplete(p){
 }
 function updateUploadProgress(id,state){
  const row=chamados.find(x=>x.id===id);
- if(row){row.transferenciaAnexos=state;render();}
+ if(row){row.transferenciaAnexos=state;boardSerial++;render();}
 }
 async function runUploadJob(id){
  const job=uploadJobs.get(id);
@@ -118,7 +118,10 @@ async function runUploadJob(id){
   const state={estado:"FALHA",total:job.documents.length,enviados:job.next};
   updateUploadProgress(id,state);
   try{const marked=await request("/"+id+"/anexos/falha","POST",{});
-   if(marked.transferenciaAnexos)updateUploadProgress(id,marked.transferenciaAnexos);
+   if(marked.transferenciaAnexos){
+    job.next=Math.max(job.next,Math.min(job.documents.length,marked.transferenciaAnexos.enviados));
+    updateUploadProgress(id,marked.transferenciaAnexos);
+   }
   }catch(_){}
   inform("Anexos de "+number(job.ticket)+" interrompidos: "+error.message+
    ". Abra o card para tentar novamente. O chamado continua na Fila.",true);

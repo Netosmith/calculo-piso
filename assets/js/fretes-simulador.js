@@ -1,7 +1,7 @@
 /* PORTAL FRETE - Simulador financeiro indicativo (2026). Sem persistência de dados. */
 (function(){
 "use strict";
-const VERSION="20261123-layout-v7";
+const VERSION="20261123-portal-v8";
 const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const fmt=n=>BRL.format(Math.round((n+Number.EPSILON)*100)/100);
 const max=n=>Math.max(0,Number.isFinite(n)?n:0);
@@ -55,38 +55,6 @@ function calculate(v){
  return {gross,driver,netDriver,spread:round(gross-driver),inssBase,inss,sest,senat,
   patronal,irrf,pis,cofins,irpj,csll,das,icms,iss,totalTax,toll,insurance,other,
   cost,extraCost,balance,margin:gross?balance/gross:0,auto};
-}
-// Comparação fiel aos números exibidos na imagem da aba NFS.
-// Este modelo é uma RECONCILIAÇÃO HISTÓRICA, não uma tabela de impostos atuais.
-const PLANILHA_NFS={
- "REAL":{label:"REAL/PRESUMIDO",iss:30.69,pis:1.53,cofins:7.07,patronal:0,other:.38},
- "SIMPLES":{label:"SIMPLES (planilha)",iss:30.69,pis:5.37,cofins:24.74,patronal:0,other:.38},
- "AUTONOMO":{label:"AUTÔNOMO (planilha)",iss:30.69,pis:5.37,cofins:24.74,patronal:37.2,other:4.25}
-};
-function historicalNfs(name){
- const x=PLANILHA_NFS[name]||PLANILHA_NFS.AUTONOMO;
- return {...x,receita:1023,motorista:930,
-  saldo:round(1023-930-x.iss-x.pis-x.cofins-x.patronal-x.other)};
-}
-function reconcile(v,r){
- const panel=id("fs_comparePanel");if(!panel)return;
- panel.hidden=v.cte!=="NFS";
- const key=getstr("legacyColumn")||"AUTONOMO",old=historicalNfs(key);
- text("legacyLabel",old.label);text("legacyBalance",fmt(old.saldo));
- text("legacyPortal",fmt(r.balance));text("legacyGap",fmt(round(r.balance-old.saldo)));
- const matches=v.companyRate===33&&v.driverRate===30&&v.tons===31;
- id("fs_legacyLive").hidden=!matches;
- id("fs_legacyMismatch").hidden=matches;
- const matrix=id("fs_legacyMatrix");
- matrix.replaceChildren(
-  line("ISS · planilha",old.iss),line("ISS · Portal",r.iss),
-  line("PIS + COFINS · planilha",round(old.pis+old.cofins)),
-  line("Tributos empresa · Portal (PIS/COFINS/DAS)",round(r.pis+r.cofins+r.das)),
-  line("INSS patronal · planilha",old.patronal),
-  line("INSS patronal · Portal",r.patronal),
-  line("Outros custos · planilha",old.other),
-  line("Outros custos · Portal",round(r.other+r.extraCost))
- );
 }
 function input(name,label,value,unit,step){
  return '<label class="fs-field"><span>'+label+'</span><div class="fs-input">'+
@@ -146,7 +114,7 @@ function fill(){
    line("CSLL (estimativa)",-r.csll),line("DAS (Simples)",-r.das)
   ]),
   line("ICMS",-r.icms),line("ISS",-r.iss),
-  line("Pedágio",-r.toll,"Já embutido no preço da empresa, conforme a planilha"),
+  line("Pedágio",-r.toll,"Custo efetivo do pedágio informado para esta viagem"),
   line("Seguro",-r.insurance),line("Outros custos",-r.other),
   line("Custo extra da viagem",-r.extraCost,"Ex.: lona para envelopamento, despesas adicionais"),
   line("SALDO DA TRANSPORTADORA",r.balance,"Projeção financeira, não apuração fiscal",true)
@@ -170,7 +138,7 @@ function fill(){
   "Equiparado não determina automaticamente o INSS/IRRF. Selecione o tratamento fiscal confirmado.");
  if(regime==="SIMPLES"&&!cashIssOnly&&!v.dasRate)
   warnings.push("Simples Nacional exige alíquota efetiva de DAS obtida no PGDAS-D e RBT12. Sem ela, saldo é provisório.");
- if(regime==="SIMPLES"&&!cashIssOnly)warnings.push("No Simples, PIS e COFINS integram o DAS. Não reproduza os descontos isolados da planilha sem validar o tratamento tributário.");
+ if(regime==="SIMPLES"&&!cashIssOnly)warnings.push("No Simples, PIS e COFINS integram o DAS. Evite descontá-los novamente sem confirmar o regime fiscal.");
  if(regime==="SIMPLES"&&!cashIssOnly&&v.cte==="NFS"){
   warnings.push("O ISS da NFS normalmente integra o DAS. Só marque ISS separado se houver retenção/recolhimento fora do DAS e o DAS informado estiver ajustado para não contar esse ISS duas vezes.");
   if(v.issRate&&!v.issOutsideDas)warnings.push("ISS informado de "+v.issRate.toFixed(2).replace(".",",")+"%, mas não debitado separadamente porque já pode integrar o DAS.");
@@ -184,7 +152,6 @@ function fill(){
  warnings.push("2026: IBS/CBS têm regras de teste e compensação, não somamos 1% automaticamente ao custo do frete.");
  warnings.push("Para PF, IRRF/INSS são estimativas por viagem e dependem das demais remunerações no mês. SEST e SENAT são retenções do motorista.");
  id("fs_warnings").replaceChildren(...warnings.map(s=>{const p=document.createElement("p");p.textContent=s;return p}));
- reconcile(v,r);
  id("fs_preliminary").hidden=!pending;
  id("fs_preliminary").textContent=cashIssOnly?
   "Cenário de caixa: apenas ISSQN desta nota. Outros tributos empresariais não estão incluídos. Não utilize como lucro líquido fiscal.":
@@ -205,7 +172,7 @@ function attach(){
  '<div class="fs-modal" role="dialog" aria-modal="true" aria-labelledby="fs_heading">',
  '<header class="fs-head"><div><span>PORTAL FRETE · FINANCEIRO 2026</span>',
  '<h2 id="fs_heading">Simulador de Resultado do Frete</h2>',
- '<p>Frete da empresa, motorista, impostos e saldo. Valores iniciais são exemplos da planilha anexada.</p></div>',
+ '<p>Calcule a margem da transportadora com os valores reais da viagem, impostos e custos.</p></div>',
  '<button type="button" id="fs_close" aria-label="Fechar simulador">×</button></header>',
  '<div class="fs-content"><div class="fs-form-grid"><section class="fs-section"><h3>01 · Frete e peso</h3><div class="fs-fields">',
  input("companyRate","Frete empresa / tonelada",240,"R$/t"),
@@ -238,7 +205,7 @@ function attach(){
  '</div><p class="fs-help">ICMS depende de UF, trajeto, benefício e incidência. Não presumimos uma alíquota fixa.</p>',
  '</section><section class="fs-section"><h3>03 · Custos e retenções</h3><div class="fs-fields">',
  input("insuranceRate","Seguro sobre mercadoria",.06,"%"),
- input("cteCost","Taxa fixa por CT-e (planilha)",.38,"R$"),
+ input("cteCost","Taxa fixa por CT-e",.38,"R$"),
  input("ciotRate","Tarifa operacional CIOT (não imposto)",0,"%"),
  input("other","Outros custos diretos",0,"R$"),
  input("extraCost","Custo extra da viagem (ex.: lona)",0,"R$"),
@@ -262,19 +229,6 @@ function attach(){
  '<span>Custo total: <b id="fs_cost"></b></span></div>',
  '<div class="fs-breakdown"><section><h3>Transportadora</h3><div id="fs_companyDetails"></div></section>',
  '<section><h3>Motorista</h3><div id="fs_driverDetails"></div></section></div></section>',
- '<details id="fs_comparePanel" class="fs-section fs-reconcile" hidden open>',
- '<summary>Conferência da planilha NFS · por que o saldo é diferente?</summary>',
- '<p class="fs-help">Valores extraídos da imagem da planilha NFS. Comparação contábil histórica, não alíquotas fiscais recomendadas.</p>',
- '<div class="fs-reconcile-tools">',
- select("legacyColumn","Coluna da planilha",[["AUTONOMO","Autônomo: -R$ 9,25"],["SIMPLES","Simples: R$ 31,82"],["REAL","Real/Presumido: R$ 53,33"]]),
- '<button type="button" id="fs_applyNfs">Usar o exemplo NFS (33 / 30 / 31 t)</button></div>',
- '<div id="fs_legacyLive"><div class="fs-reconcile-kpis"><div><small>Planilha · <span id="fs_legacyLabel"></span></small><strong id="fs_legacyBalance"></strong></div>',
- '<div><small>Portal · parâmetros informados</small><strong id="fs_legacyPortal"></strong></div>',
- '<div><small>Diferença Portal − planilha</small><strong id="fs_legacyGap"></strong></div></div>',
- '<div id="fs_legacyMatrix" class="fs-reconcile-matrix"></div></div>',
- '<p id="fs_legacyMismatch" class="fs-help" hidden>Os valores atuais diferem do exemplo original. Clique em “Usar o exemplo NFS” para conciliar os mesmos R$ 33/t, R$ 30/t e 31 toneladas.</p>',
- '<p class="fs-reconcile-note">A coluna AUTÔNOMO da planilha aplica ISS R$ 30,69, PIS R$ 5,37, COFINS R$ 24,74, INSS R$ 37,20 e custos R$ 4,25. No Portal Simples, o DAS precisa ser informado conforme o PGDAS-D e o ISS só deve ser descontado fora do DAS quando isso estiver confirmado. Não copie as alíquotas da planilha diretamente para o DAS.</p>',
- '</details>',
  '<details id="fs_notesPanel" class="fs-section fs-notes"><summary>Premissas e alertas · clique para expandir</summary><div id="fs_warnings"></div>',
  '<details class="fs-sources"><summary>Fontes tributárias oficiais (2026)</summary><div id="fs_sources"></div></details></details></div>',
  '<footer class="fs-foot"><span>Simulador local. Não altera o frete salvo.</span>',
@@ -290,16 +244,6 @@ function attach(){
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!overlay.hidden)close()});
  overlay.addEventListener("input",fill);overlay.addEventListener("change",fill);
  id("fs_print").onclick=()=>window.print();
- id("fs_applyNfs").onclick=()=>{
-  Object.entries({companyRate:33,driverRate:30,tons:31,tollRate:0,tollFixed:0,
-   merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,
-   issRate:3,dasRate:0,icmsRate:0,previousFreight:0,inssPreviousBase:0,
-   inssAlready:0,dependents:0}).forEach(([name,val])=>{id("fs_"+name).value=val});
-  id("fs_cte").value="NFS";id("fs_driverType").value="PF";
-  id("fs_nfsMode").value="ISS_ONLY";
-  id("fs_chargeEmployer").checked=true;id("fs_issOutsideDas").checked=false;
-  id("fs_legacyColumn").value="AUTONOMO";fill();
- };
  id("fs_reset").onclick=()=>{
   for(const [name,val] of Object.entries({companyRate:240,driverRate:230,tons:30,tollRate:0,
    tollFixed:0,merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,
@@ -312,7 +256,7 @@ function attach(){
  for(const [title,url] of src){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=title;root.append(a)}
  fill();
 }
-window.PortalFreteSimulador=Object.freeze({calculate,ir2026,historicalNfs,version:VERSION});
+window.PortalFreteSimulador=Object.freeze({calculate,ir2026,version:VERSION});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",attach,{once:true});
 else attach();
 })();

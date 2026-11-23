@@ -83,6 +83,58 @@ valores reais ou regime confirmado da Nova Frota.
 - Equiparação de PF a PJ, Receita Federal:
   https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/declaracoes-e-demonstrativos/ecf/perguntas-e-respostas-pessoa-juridica-2021-arquivos/capitulo-i-declaracoes-da-pessoa-juridica-2021.pdf
 
+## Conciliação da aba NFS (imagem de 23/11/2026)
+
+Com tarifas **R$ 33,00/t empresa**, **R$ 30,00/t motorista** e
+**31 toneladas**, ambas as telas calculam receita de R$ 1.023,00,
+frete do motorista de R$ 930,00 e diferença bruta de R$ 93,00.
+
+| Rubrica | Planilha NFS AUTÔNOMO | Portal na imagem |
+| --- | ---: | ---: |
+| Frete da empresa | R$ 1.023,00 | R$ 1.023,00 |
+| Frete motorista | R$ 930,00 | R$ 930,00 |
+| INSS patronal mostrado | R$ 37,20 | R$ 37,20 |
+| ISS | R$ 30,69 | R$ 0,00 |
+| PIS | R$ 5,37 | R$ 0,00 |
+| COFINS | R$ 24,74 | R$ 0,00 |
+| Custos diretos | R$ 4,25 | R$ 0,38 |
+| **Saldo** | **-R$ 9,25** | **R$ 55,42** |
+
+A diferença de **R$ 64,67** é explicada integralmente por
+ISS (R$ 30,69), PIS+COFINS (R$ 30,11) e despesas (R$ 3,87).
+A aba NFS também mostra resultados de R$ 53,33 para REAL/PRESUMIDO
+e R$ 31,82 para SIMPLES; esses rótulos não equivalem automaticamente
+ao regime fiscal real selecionado no Portal.
+
+Foi incluída a seção **Conferência da planilha NFS**, com botão
+**Usar exemplo NFS (33 / 30 / 31 t)** e seleção das três colunas
+históricas. Os valores da aba NFS não são carregados como tributos
+legais por padrão, mas servem para explicar diferenças matemáticas.
+
+No Simples Nacional, o ISS pode integrar o DAS e a retenção de ISS
+na fonte exige segregação adequada da receita no PGDAS-D.
+O campo **ISS separado do DAS** só deve ser marcado quando a
+contabilidade confirmar a obrigação e que não haverá duplicidade.
+
+Na tela da imagem, o DAS efetivo foi deixado **em 0%**, e o campo
+ISS também estava **em 0%**. Para obter um saldo fiscal confiável,
+informar o DAS efetivo, a existência de retenção de ISS e os
+custos efetivamente suportados. A soma de PIS e COFINS isolados
+da planilha não substitui uma alíquota efetiva do PGDAS-D.
+
+Além disso, **transporte municipal** em regra é tributado pelo ISS,
+enquanto transporte **intermunicipal/interestadual** requer análise
+de CT-e e ICMS. A seleção de NFS pode não representar o transporte
+de grãos efetivamente executado.
+
+Fontes:
+- Simples Nacional, ISS na retenção:
+  https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=92278
+- Perguntão do Simples Nacional:
+  https://www8.receita.fazenda.gov.br/SimplesNacional/Arquivos/manual/PerguntaoSN.pdf
+- Secretaria da Fazenda PR, obrigação de CT-e:
+  https://atendimento.fazenda.pr.gov.br/sacsefa/portal/assuntosReferente/47
+
 ## Testes e limites
 
 Executar: node --test worker/tests/fretes-simulador-2026.test.mjs

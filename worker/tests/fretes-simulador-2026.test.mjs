@@ -42,7 +42,7 @@ test("Retenções do PF não são cobradas duas vezes da empresa",()=>{
  const pf=calculate({...base,driverType:"PF"});
  const pj=calculate({...base,driverType:"PJ"});
  assert.equal(pf.cost-pj.cost,276);
- assert.equal(pf.driver-pf.netDriver,186.3);
+ assert.equal(Math.round((pf.driver-pf.netDriver)*100)/100,186.3);
  assert.equal(pj.netDriver,pj.driver);
  assert.equal(pj.patronal,0);
 });
@@ -61,6 +61,13 @@ test("Simples não soma PIS/COFINS separadamente quando DAS informado",()=>{
  assert.equal(p.cofins,0);
  assert.equal(p.irpj,0);
  assert.equal(p.csll,0);
+});
+test("Simples não duplica ICMS já dentro do DAS",()=>{
+ const same=calculate({...base,driverType:"PJ",regime:"SIMPLES",dasRate:6.2,icmsRate:12});
+ assert.equal(same.icms,0);
+ const separate=calculate({...base,driverType:"PJ",regime:"SIMPLES",dasRate:6.2,
+  icmsRate:12,icmsOutsideDas:true});
+ assert.equal(separate.icms,864);
 });
 test("Pedágio, custos e seguro são descontados uma única vez",()=>{
  const p=calculate({...base,driverType:"PJ",tollRate:2,tollFixed:10,merchandiseRate:1000,

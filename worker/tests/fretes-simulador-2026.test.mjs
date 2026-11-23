@@ -15,7 +15,7 @@ const base={companyRate:240,driverRate:230,tons:30,tollRate:0,tollFixed:0,
 test("Calculadora e telas carregam com sintaxe válida",()=>{
  assert.doesNotThrow(()=>new vm.Script(javascript));
  for(const page of [screen1,screen2]){
-  assert.match(page,/fretes-simulador\.js\?v=20261123-v1/);
+  assert.match(page,/fretes-simulador\.js\?v=20261123-v2/);
   assert.match(page,/fretes-simulador\.css\?v=20261123-v1/);
   assert.match(page,/id="btnOrdem"/);
  }

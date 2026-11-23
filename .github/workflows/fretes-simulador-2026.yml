@@ -1,0 +1,36 @@
+name: Validar simulador fiscal de fretes 2026
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/fretes-simulador.js'
+      - 'assets/css/fretes-simulador.css'
+      - 'pages/fretes.html'
+      - 'pages/fretes2.html'
+      - 'worker/tests/fretes-simulador-2026.test.mjs'
+      - '.github/workflows/fretes-simulador-2026.yml'
+  pull_request:
+    paths:
+      - 'assets/js/fretes-simulador.js'
+      - 'assets/css/fretes-simulador.css'
+      - 'pages/fretes.html'
+      - 'pages/fretes2.html'
+      - 'worker/tests/fretes-simulador-2026.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calcular:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar JavaScript e fórmulas
+        run: |
+          node --check assets/js/fretes-simulador.js
+          node --test worker/tests/fretes-simulador-2026.test.mjs

@@ -141,8 +141,10 @@ function fill(){
  id("fs_companyDetails").replaceChildren(
   line("Receita empresa",r.gross),line("Frete motorista contratado",-r.driver),
   line("INSS patronal sobre autônomo",-r.patronal,"20% sobre base de 20% do frete"),
-  line("PIS",-r.pis),line("COFINS",-r.cofins),line("IRPJ (estimativa)",-r.irpj),
-  line("CSLL (estimativa)",-r.csll),line("DAS (Simples)",-r.das),
+  ...(v.cashIssOnly?[]:[
+   line("PIS",-r.pis),line("COFINS",-r.cofins),line("IRPJ (estimativa)",-r.irpj),
+   line("CSLL (estimativa)",-r.csll),line("DAS (Simples)",-r.das)
+  ]),
   line("ICMS",-r.icms),line("ISS",-r.iss),
   line("Pedágio",-r.toll,"Já embutido no preço da empresa, conforme a planilha"),
   line("Seguro",-r.insurance),line("Outros custos",-r.other),
@@ -293,7 +295,8 @@ function attach(){
    merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,
    issRate:3,dasRate:0,icmsRate:0,previousFreight:0,inssPreviousBase:0,
    inssAlready:0,dependents:0}).forEach(([name,val])=>{id("fs_"+name).value=val});
-  id("fs_cte").value="NFS";id("fs_driverType").value="PF";id("fs_regime").value="SIMPLES";
+  id("fs_cte").value="NFS";id("fs_driverType").value="PF";
+  id("fs_nfsMode").value="ISS_ONLY";
   id("fs_chargeEmployer").checked=true;id("fs_issOutsideDas").checked=false;
   id("fs_legacyColumn").value="AUTONOMO";fill();
  };

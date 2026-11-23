@@ -16,8 +16,8 @@ const base={companyRate:240,driverRate:230,tons:30,tollRate:0,tollFixed:0,
 test("Calculadora e telas carregam com sintaxe válida",()=>{
  assert.doesNotThrow(()=>new vm.Script(javascript));
  for(const page of [screen1,screen2]){
-  assert.match(page,/fretes-simulador\.js\?v=20261123-layout-v7/);
-  assert.match(page,/fretes-simulador\.css\?v=20261123-layout-v3/);
+  assert.match(page,/fretes-simulador\.js\?v=20261123-portal-v8/);
+  assert.match(page,/fretes-simulador\.css\?v=20261123-portal-v4/);
   assert.match(page,/id="btnOrdem"/);
  }
  assert.match(javascript,/order\.insertAdjacentElement\("afterend",btn\)/);
@@ -34,8 +34,7 @@ test("Layout do modal respeita ordem e fluxo vertical sem sobreposição",()=>{
  vm.runInNewContext(capture,{window:{},document:fakeDoc,Intl});
  const html=fakeDoc.__captured;
  assert.ok(html,"Falha ao gerar HTML do modal");
- const order=["class=\"fs-form-grid\"","class=\"fs-result\"",
-  "id=\"fs_comparePanel\"","id=\"fs_notesPanel\""];
+ const order=["class=\"fs-form-grid\"","class=\"fs-result\"","id=\"fs_notesPanel\""];
  let offset=-1;
  for(const term of order){
   const pos=html.indexOf(term);
@@ -56,7 +55,7 @@ test("Layout do modal respeita ordem e fluxo vertical sem sobreposição",()=>{
  assert.match(styles,/\.fs-content > \.fs-form-grid/);
  assert.match(styles,/\.fs-notes > summary/);
 });
-test("Exemplo da planilha: PF frete 7200 motorista 6900",()=>{
+test("Frete simulado: PF empresa 7200 motorista 6900",()=>{
  const result=calculate({...base,driverType:"PF"});
  assert.equal(result.gross,7200);
  assert.equal(result.driver,6900);
@@ -169,15 +168,6 @@ test("DAS permanece no cálculo fiscal quando Simples for selecionado",()=>{
   regime:"SIMPLES",issRate:3,issOutsideDas:true,dasRate:8.2});
  assert.equal(retido.iss,216);
 });
-test("Conciliação NFS reproduz os valores vistos nas três colunas da planilha",()=>{
- const old=context.window.PortalFreteSimulador.historicalNfs;
- assert.equal(old("REAL").saldo,53.33);
- assert.equal(old("SIMPLES").saldo,31.82);
- assert.equal(old("AUTONOMO").saldo,-9.25);
- assert.equal(old("AUTONOMO").iss,30.69);
- assert.equal(old("AUTONOMO").pis+old("AUTONOMO").cofins,30.11);
- assert.equal(old("AUTONOMO").other,4.25);
-});
 test("NFS no Simples não duplica ISS do DAS sem confirmação expressa",()=>{
  const v={...base,companyRate:33,driverRate:30,tons:31,
   cte:"NFS",driverType:"PF",regime:"SIMPLES",dasRate:0,
@@ -193,14 +183,15 @@ test("NFS no Simples não duplica ISS do DAS sem confirmação expressa",()=>{
  assert.equal(separate.balance,24.73);
  const adjusted=calculate({...v,issOutsideDas:true,other:3.87});
  assert.equal(adjusted.balance,20.86);
- assert.equal(Math.round((original.balance-(-9.25))*100)/100,64.67);
 });
-test("Nova seção esclarece diferenças de tributação e oferece exemplo NFS",()=>{
- assert.match(javascript,/fs_comparePanel/);
- assert.match(javascript,/fs_applyNfs/);
- assert.match(javascript,/fs_legacyMatrix/);
- assert.match(javascript,/fs_issOutsideDas/);
- assert.match(javascript,/Selecione o regime real/);
+test("Simulador preserva apenas elementos funcionais do Portal Frete",()=>{
+ for(const obsolete of ["planilha","fs_comparePanel","fs_applyNfs","fs_legacy","historicalNfs"]){
+  assert.ok(!javascript.toLowerCase().includes(obsolete.toLowerCase()));
+ }
+ assert.match(javascript,/Taxa fixa por CT-e/);
+ assert.match(javascript,/Saldo operacional parcial/);
+ assert.match(javascript,/Custo extra da viagem/);
+ assert.match(styles,/\.fs-content\{[^}]*display:flex;flex-direction:column/);
 });
 test("ICMS e ISS dependem do documento e da alíquota informada",()=>{
  const cte=calculate({...base,driverType:"PJ",icmsRate:12,issRate:5,cte:"CTE"});

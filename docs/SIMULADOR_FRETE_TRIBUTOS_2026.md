@@ -135,6 +135,46 @@ Fontes:
 - Secretaria da Fazenda PR, obrigação de CT-e:
   https://atendimento.fazenda.pr.gov.br/sacsefa/portal/assuntosReferente/47
 
+## Cenário ISSQN isolado na NFS (23/11/2026)
+
+O campo DAS só deve ser preenchido quando o regime tributário real da
+transportadora for Simples Nacional e a receita estiver sujeita ao DAS
+correspondente. Se o usuário informa que nesta NFS só paga o ISSQN,
+isso não permite presumir isenção dos demais impostos.
+
+Novo campo **Cenário de cálculo da NFS**:
+- **Tributos conforme regime fiscal** (padrão): conserva o cálculo do
+  Simples Nacional com DAS efetivo e possibilidade de ISS retido fora
+  do DAS, sem duplicar a parcela do ISS.
+- **Somente ISSQN pago na nota (cálculo parcial)**: oculta os controles
+  de regime e DAS, desconta apenas o ISSQN informado da receita desta
+  NFS, além de frete motorista e custos/encargos operacionais
+  selecionados. Não provisiona PIS, COFINS, IRPJ, CSLL nem DAS.
+  A tela usa o título "Saldo operacional parcial (somente ISSQN)" e
+  mantém um aviso explícito de que isso não é lucro líquido fiscal.
+
+Com tarifa empresa de R$ 33/t, motorista de R$ 30/t, 31 toneladas,
+ISSQN de 3%, INSS patronal do TAC marcado e custo fixo de R$ 0,38:
+- Receita: R$ 1.023,00
+- Motorista: R$ 930,00
+- ISSQN: R$ 30,69
+- INSS patronal estimado: R$ 37,20
+- Taxa fixa: R$ 0,38
+- **Resultado operacional parcial: R$ 24,73**
+- Sem INSS patronal, caso a contabilidade confirme que não é custo
+  adicional nessa operação: **R$ 61,93**.
+
+Se a empresa for optante pelo Simples, ter ISS retido/recolhido à
+parte não elimina automaticamente os demais tributos do DAS. O ISS
+retido é segregado na apuração do PGDAS-D, observadas as regras.
+Fonte: https://www8.receita.fazenda.gov.br/SimplesNacional/Arquivos/manual/PerguntaoSN.pdf
+e https://www.gov.br/pt-br/servicos/emitir-das-para-pagamento-de-tributos-do-simples-nacional
+
+É indispensável confirmar com a contabilidade **se a empresa é optante
+pelo Simples** e quem recolhe o ISS da nota (prestador ou tomador).
+Não confundir pagamento de imposto retido com inexistência de obrigação
+tributária.
+
 ## Testes e limites
 
 Executar: node --test worker/tests/fretes-simulador-2026.test.mjs

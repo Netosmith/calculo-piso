@@ -1,7 +1,7 @@
 /* PORTAL FRETE - Simulador financeiro indicativo (2026). Sem persistência de dados. */
 (function(){
 "use strict";
-const VERSION="20261123-v4";
+const VERSION="20261123-v5";
 const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const fmt=n=>BRL.format(Math.round((n+Number.EPSILON)*100)/100);
 const max=n=>Math.max(0,Number.isFinite(n)?n:0);

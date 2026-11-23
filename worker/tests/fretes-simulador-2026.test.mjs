@@ -106,6 +106,39 @@ test("Limite do INSS PF considera a base já utilizada no mês",()=>{
  assert.equal(result.sest,20.7);
  assert.equal(result.senat,13.8);
 });
+test("Conciliação NFS reproduz os valores vistos nas três colunas da planilha",()=>{
+ const old=context.window.PortalFreteSimulador.historicalNfs;
+ assert.equal(old("REAL").saldo,53.33);
+ assert.equal(old("SIMPLES").saldo,31.82);
+ assert.equal(old("AUTONOMO").saldo,-9.25);
+ assert.equal(old("AUTONOMO").iss,30.69);
+ assert.equal(old("AUTONOMO").pis+old("AUTONOMO").cofins,30.11);
+ assert.equal(old("AUTONOMO").other,4.25);
+});
+test("NFS no Simples não duplica ISS do DAS sem confirmação expressa",()=>{
+ const v={...base,companyRate:33,driverRate:30,tons:31,
+  cte:"NFS",driverType:"PF",regime:"SIMPLES",dasRate:0,
+  issRate:3,issOutsideDas:false};
+ const original=calculate(v);
+ assert.equal(original.gross,1023);
+ assert.equal(original.driver,930);
+ assert.equal(original.patronal,37.2);
+ assert.equal(original.iss,0);
+ assert.equal(original.balance,55.42);
+ const separate=calculate({...v,issOutsideDas:true});
+ assert.equal(separate.iss,30.69);
+ assert.equal(separate.balance,24.73);
+ const adjusted=calculate({...v,issOutsideDas:true,other:3.87});
+ assert.equal(adjusted.balance,20.86);
+ assert.equal(Math.round((original.balance-(-9.25))*100)/100,64.67);
+});
+test("Nova seção esclarece diferenças de tributação e oferece exemplo NFS",()=>{
+ assert.match(javascript,/fs_comparePanel/);
+ assert.match(javascript,/fs_applyNfs/);
+ assert.match(javascript,/fs_legacyMatrix/);
+ assert.match(javascript,/fs_issOutsideDas/);
+ assert.match(javascript,/Selecione o regime real/);
+});
 test("ICMS e ISS dependem do documento e da alíquota informada",()=>{
  const cte=calculate({...base,driverType:"PJ",icmsRate:12,issRate:5,cte:"CTE"});
  const nfs=calculate({...base,driverType:"PJ",icmsRate:12,issRate:5,cte:"NFS"});

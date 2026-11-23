@@ -9,7 +9,7 @@ body.fs-show{overflow:hidden!important}
  display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;
  backdrop-filter:blur(5px)}
 .fs-modal{background:#f1f5fb;color:#112d48;overflow:hidden;width:min(1180px,100%);
- max-height:calc(100dvh - 32px);display:flex;flex-direction:column;border-radius:19px;
+ max-height:calc(100dvh - 32px);min-height:0;display:flex;flex-direction:column;border-radius:19px;
  box-shadow:0 35px 125px rgba(0,0,0,.35);font-family:Inter,Arial,sans-serif}
 .fs-head{background:linear-gradient(120deg,#102945,#114a6a 65%,#08795d);
  color:#fff;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;gap:18px}
@@ -18,8 +18,19 @@ body.fs-show{overflow:hidden!important}
 .fs-head p{font-size:12px;color:#c6e2e6;margin:0;line-height:1.5}
 .fs-head button{border:1px solid rgba(255,255,255,.35);background:#ffffff17;
  border-radius:12px;color:#fff;width:44px;height:44px;min-width:44px;font-size:28px;cursor:pointer}
-.fs-content{padding:18px;overflow:auto;flex:1;display:grid;gap:14px;
- grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+/* Resultados e conferência ficam em fluxo vertical. Só os campos usam grid. */
+.fs-content{padding:18px;overflow-x:hidden;overflow-y:auto;flex:1 1 auto;
+ min-height:0;min-width:0;display:flex;flex-direction:column;gap:14px;
+ overscroll-behavior:contain;scrollbar-gutter:stable}
+.fs-content > .fs-form-grid,.fs-content > .fs-result,
+.fs-content > .fs-reconcile,.fs-content > .fs-notes{
+ width:100%;max-width:100%;min-width:0;box-sizing:border-box;flex:0 0 auto;
+ position:relative;inset:auto;height:auto;margin:0;clear:both;
+}
+.fs-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;align-items:start;min-width:0}
+.fs-form-grid > .fs-section{min-width:0;box-sizing:border-box}
+.fs-head,.fs-foot{flex:0 0 auto}
 .fs-section,.fs-result{background:#fff;padding:18px;border:1px solid #d5e3f0;border-radius:14px;
  min-width:0;box-shadow:0 5px 14px rgba(25,68,108,.025)}
 .fs-section h3,.fs-breakdown h3{font-size:14px;color:#163c58;font-weight:900;margin:0 0 16px}
@@ -83,7 +94,7 @@ body.fs-show{overflow:hidden!important}
 .fs-foot button{min-height:42px;padding:10px 15px;border:1px solid #c5d7e5;
  background:#f3f8fc;border-radius:9px;color:#164363;cursor:pointer;font-size:12px;font-weight:850}
 .fs-foot button:last-child{background:#0a9870;color:#fff;border-color:#0a9870}
-@media(max-width:850px){.fs-content{grid-template-columns:1fr}.fs-result,.fs-notes{grid-column:auto}
+@media(max-width:850px){.fs-form-grid{grid-template-columns:1fr}
  .fs-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.fs-overlay{padding:0}.fs-modal{max-height:100dvh;height:100dvh;border-radius:0}
  .fs-head{padding:17px}.fs-content{padding:10px}.fs-section{padding:14px}
@@ -120,4 +131,24 @@ body.fs-show{overflow:hidden!important}
  .fs-reconcile-kpis>div:last-child{grid-column:1/-1}
  .fs-reconcile-matrix{grid-template-columns:1fr}
  .fs-reconcile-tools button{flex:1}
+}
+
+/* Seção de avisos recolhível: não ocupa o espaço do resultado ao rolar. */
+.fs-notes{overflow:visible}
+.fs-notes > summary{display:list-item;cursor:pointer;list-style:revert;
+ font-size:14px;line-height:1.5;font-weight:900;color:#163c58;
+ padding:12px 8px;min-height:44px;box-sizing:border-box}
+.fs-notes[open] > summary{margin-bottom:8px;border-bottom:1px solid #e1ebf2}
+.fs-notes > #fs_warnings{min-width:0;overflow-wrap:anywhere}
+.fs-notes > .fs-sources{margin-top:12px;padding-top:10px;border-top:1px solid #e4edf3}
+.fs-reconcile{overflow:visible}
+.fs-reconcile > summary{min-height:44px;box-sizing:border-box;padding:12px 0}
+.fs-reconcile-matrix .fs-line{min-width:0}
+.fs-reconcile-matrix .fs-line span{overflow-wrap:anywhere}
+@media(max-width:560px){
+ .fs-modal{min-height:0}
+ .fs-content{padding:12px;scrollbar-gutter:auto}
+ .fs-form-grid{gap:12px}
+ .fs-reconcile-tools{align-items:stretch}
+ .fs-reconcile-kpis strong{overflow-wrap:anywhere}
 }

@@ -23,7 +23,7 @@ body.fs-show{overflow:hidden!important}
  min-height:0;min-width:0;display:flex;flex-direction:column;gap:14px;
  overscroll-behavior:contain;scrollbar-gutter:stable}
 .fs-content > .fs-form-grid,.fs-content > .fs-result,
-.fs-content > .fs-reconcile,.fs-content > .fs-notes{
+.fs-content > .fs-notes{
  width:100%;max-width:100%;min-width:0;box-sizing:border-box;flex:0 0 auto;
  position:relative;inset:auto;height:auto;margin:0;clear:both;
 }
@@ -108,31 +108,6 @@ body.fs-show{overflow:hidden!important}
  .fs-head,.fs-kpis{-webkit-print-color-adjust:exact;print-color-adjust:exact}
  .fs-overlay .fs-section:not(.fs-notes){display:none}}
 
-/* Conferência orientada da planilha NFS: compara diferenças sem assumir
-   que as alíquotas históricas equivalem à apuração fiscal atual. */
-.fs-reconcile{grid-column:1/-1;background:#fafdff}
-.fs-reconcile>summary{font-size:14px;color:#173f60;font-weight:900;cursor:pointer;
- list-style-position:inside;line-height:1.4;padding:3px 0}
-.fs-reconcile .fs-help{font-size:11px;color:#57788c;line-height:1.5}
-.fs-reconcile-tools{display:flex;align-items:end;gap:13px;flex-wrap:wrap;margin:15px 0}
-.fs-reconcile-tools .fs-field{flex:1;min-width:185px}
-.fs-reconcile-tools button{min-height:42px;border:1px solid #0b9372;border-radius:9px;
- padding:9px 14px;color:#fff;background:#0b9372;font-size:12px;font-weight:800;cursor:pointer}
-.fs-reconcile-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
-.fs-reconcile-kpis>div{background:#edf6fc;border:1px solid #cbe0ec;padding:12px;
- border-radius:11px;display:grid;gap:7px;min-width:0}
-.fs-reconcile-kpis small{font-size:11px;color:#53718a;font-weight:750}
-.fs-reconcile-kpis strong{font-size:clamp(16px,2vw,23px);font-weight:900;color:#164561}
-.fs-reconcile-matrix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
-.fs-reconcile-note{background:#fff7e8;border:1px solid #ecd49f;color:#81521c;
- border-radius:9px;padding:11px 13px;font-size:11px;line-height:1.7;margin:12px 0 0}
-@media(max-width:700px){
- .fs-reconcile-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
- .fs-reconcile-kpis>div:last-child{grid-column:1/-1}
- .fs-reconcile-matrix{grid-template-columns:1fr}
- .fs-reconcile-tools button{flex:1}
-}
-
 /* Seção de avisos recolhível: não ocupa o espaço do resultado ao rolar. */
 .fs-notes{overflow:visible}
 .fs-notes > summary{display:list-item;cursor:pointer;list-style:revert;
@@ -141,14 +116,8 @@ body.fs-show{overflow:hidden!important}
 .fs-notes[open] > summary{margin-bottom:8px;border-bottom:1px solid #e1ebf2}
 .fs-notes > #fs_warnings{min-width:0;overflow-wrap:anywhere}
 .fs-notes > .fs-sources{margin-top:12px;padding-top:10px;border-top:1px solid #e4edf3}
-.fs-reconcile{overflow:visible}
-.fs-reconcile > summary{min-height:44px;box-sizing:border-box;padding:12px 0}
-.fs-reconcile-matrix .fs-line{min-width:0}
-.fs-reconcile-matrix .fs-line span{overflow-wrap:anywhere}
 @media(max-width:560px){
  .fs-modal{min-height:0}
  .fs-content{padding:12px;scrollbar-gutter:auto}
  .fs-form-grid{gap:12px}
- .fs-reconcile-tools{align-items:stretch}
- .fs-reconcile-kpis strong{overflow-wrap:anywhere}
 }

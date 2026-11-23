@@ -1,7 +1,7 @@
 /* PORTAL FRETE - Simulador financeiro indicativo (2026). Sem persistência de dados. */
 (function(){
 "use strict";
-const VERSION="20261123-v3";
+const VERSION="20261123-v4";
 const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const fmt=n=>BRL.format(Math.round((n+Number.EPSILON)*100)/100);
 const max=n=>Math.max(0,Number.isFinite(n)?n:0);
@@ -42,7 +42,9 @@ function calculate(v){
  const csll=round(gross*(v.regime==="PRESUMIDO"?1.08:v.regime==="REAL"?max(v.csllReal):0)/100);
  const das=round(gross*(v.regime==="SIMPLES"?max(v.dasRate):0)/100);
  const icms=round(gross*max(v.cte==="CTE"&&(v.regime!=="SIMPLES"||v.icmsOutsideDas)?v.icmsRate:0)/100);
- const iss=round(gross*max(v.cte==="NFS"?v.issRate:0)/100);
+ // No Simples o ISS costuma compor o DAS. Só somar separadamente quando
+ // a contabilidade confirmar retenção/recolhimento fora do DAS.
+ const iss=round(gross*max(v.cte==="NFS"&&(v.regime!=="SIMPLES"||v.issOutsideDas)?v.issRate:0)/100);
  const totalTax=round(pis+cofins+irpj+csll+das+icms+iss);
  const toll=round(max(v.tons)*max(v.tollRate)+max(v.tollFixed));
  const insurance=round(max(v.tons)*max(v.merchandiseRate)*max(v.insuranceRate)/100);
@@ -80,9 +82,11 @@ function fill(){
  id("fs_pfPanel").hidden=!(typ==="PF"||(typ==="EQUIP"&&equip==="PF"));
  id("fs_icmsPanel").hidden=getstr("cte")!=="CTE";
  id("fs_issPanel").hidden=getstr("cte")!=="NFS";
+ id("fs_issStandalone").hidden=!(getstr("cte")==="NFS"&&regime==="SIMPLES");
  const v={driverType:typ,equipRule:equip,regime,cte:getstr("cte"),
   chargeEmployer:id("fs_chargeEmployer").checked,
   icmsOutsideDas:id("fs_icmsOutsideDas").checked,
+  issOutsideDas:id("fs_issOutsideDas").checked,
   companyRate:getnum("companyRate"),driverRate:getnum("driverRate"),tons:getnum("tons"),
   tollRate:getnum("tollRate"),tollFixed:getnum("tollFixed"),
   merchandiseRate:getnum("merchandiseRate"),insuranceRate:getnum("insuranceRate"),
@@ -128,7 +132,12 @@ function fill(){
   "Equiparado não determina automaticamente o INSS/IRRF. Selecione o tratamento fiscal confirmado.");
  if(regime==="SIMPLES"&&!v.dasRate)
   warnings.push("Simples Nacional exige alíquota efetiva de DAS obtida no PGDAS-D e RBT12. Sem ela, saldo é provisório.");
- if(regime==="SIMPLES")warnings.push("ICMS normalmente já compõe o DAS do transporte intermunicipal/interestadual. Só marque ICMS separado quando a contabilidade confirmar recolhimento fora do DAS.");
+ if(regime==="SIMPLES")warnings.push("No Simples, PIS e COFINS integram o DAS. Não reproduza os descontos isolados da planilha sem validar o tratamento tributário.");
+ if(regime==="SIMPLES"&&v.cte==="NFS"){
+  warnings.push("O ISS da NFS normalmente integra o DAS. Só marque ISS separado se houver retenção/recolhimento fora do DAS e o DAS informado estiver ajustado para não contar esse ISS duas vezes.");
+  if(v.issRate&&!v.issOutsideDas)warnings.push("ISS informado de "+v.issRate.toFixed(2).replace(".",",")+"%, mas não debitado separadamente porque já pode integrar o DAS.");
+ }
+ if(regime==="SIMPLES"&&v.cte==="CTE")warnings.push("ICMS normalmente já compõe o DAS do transporte intermunicipal/interestadual. Só marque ICMS separado quando a contabilidade confirmar recolhimento fora do DAS.");
  if(regime==="REAL")warnings.push("Lucro Real: créditos de PIS/COFINS e IRPJ/CSLL reais dependem da apuração; preencher estimativas.");
  if(regime==="PRESUMIDO")warnings.push("Lucro Presumido: 1,20% IRPJ + 1,08% CSLL são aproximações para transporte de cargas, sem adicional trimestral de IRPJ.");
  if(v.cte==="NFS")warnings.push("NFS: incidência de ISS e presunção de IRPJ/CSLL variam conforme o serviço; confirme os parâmetros contábeis.");
@@ -173,7 +182,8 @@ function attach(){
  input("csllReal","CSLL efetiva estimada",0,"%"),'</div>',
  '<div id="fs_icmsPanel">',input("icmsRate","ICMS embutido no frete",0,"%"),
  '<label class="fs-check"><input id="fs_icmsOutsideDas" type="checkbox">No Simples: ICMS devido fora do DAS</label></div>',
- '<div id="fs_issPanel" hidden>',input("issRate","ISS embutido no frete",0,"%"),'</div>',
+ '<div id="fs_issPanel" hidden>',input("issRate","ISS sobre NFS, se devido fora do DAS",0,"%"),
+ '<label class="fs-check" id="fs_issStandalone" hidden><input id="fs_issOutsideDas" type="checkbox">Descontar ISS separadamente do DAS (retenção/recolhimento confirmado)</label></div>',
  '</div><p class="fs-help">ICMS depende de UF, trajeto, benefício e incidência. Não presumimos uma alíquota fixa.</p>',
  '</section><section class="fs-section"><h3>03 · Custos e retenções</h3><div class="fs-fields">',
  input("insuranceRate","Seguro sobre mercadoria",.06,"%"),
@@ -222,7 +232,7 @@ function attach(){
    icmsRate:0,issRate:0,dasRate:0,irpjReal:0,csllReal:0,
    previousFreight:0,inssPreviousBase:0,inssAlready:0,dependents:0}))id("fs_"+name).value=val;
   id("fs_regime").value="";id("fs_driverType").value="PF";id("fs_equipRule").value="";
-  id("fs_cte").value="CTE";id("fs_chargeEmployer").checked=true;id("fs_icmsOutsideDas").checked=false;fill();
+  id("fs_cte").value="CTE";id("fs_chargeEmployer").checked=true;id("fs_icmsOutsideDas").checked=false;id("fs_issOutsideDas").checked=false;fill();
  };
  const root=id("fs_sources");
  for(const [title,url] of src){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=title;root.append(a)}

@@ -1,7 +1,7 @@
 /* PORTAL FRETE - Simulador financeiro indicativo (2026). Sem persistência de dados. */
 (function(){
 "use strict";
-const VERSION="20261123-v6";
+const VERSION="20261123-layout-v7";
 const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const fmt=n=>BRL.format(Math.round((n+Number.EPSILON)*100)/100);
 const max=n=>Math.max(0,Number.isFinite(n)?n:0);
@@ -207,7 +207,7 @@ function attach(){
  '<h2 id="fs_heading">Simulador de Resultado do Frete</h2>',
  '<p>Frete da empresa, motorista, impostos e saldo. Valores iniciais são exemplos da planilha anexada.</p></div>',
  '<button type="button" id="fs_close" aria-label="Fechar simulador">×</button></header>',
- '<div class="fs-content"><section class="fs-section"><h3>01 · Frete e peso</h3><div class="fs-fields">',
+ '<div class="fs-content"><div class="fs-form-grid"><section class="fs-section"><h3>01 · Frete e peso</h3><div class="fs-fields">',
  input("companyRate","Frete empresa / tonelada",240,"R$/t"),
  input("driverRate","Frete motorista / tonelada",230,"R$/t"),
  input("tons","Peso transportado",30,"t"),
@@ -249,7 +249,7 @@ function attach(){
  input("inssPreviousBase","Base de INSS já utilizada no mês",0,"R$"),
  input("inssAlready","INSS já descontado no mês",0,"R$"),
  input("dependents","Dependentes para IR",0,"", "1"),
- '</div></details></section>',
+ '</div></details></section></div>',
  '<section class="fs-result"><div class="fs-kpis">',
  '<div><small>Frete bruto empresa</small><strong id="fs_gross"></strong></div>',
  '<div><small>Frete bruto motorista</small><strong id="fs_driverGross"></strong></div>',
@@ -275,8 +275,8 @@ function attach(){
  '<p id="fs_legacyMismatch" class="fs-help" hidden>Os valores atuais diferem do exemplo original. Clique em “Usar o exemplo NFS” para conciliar os mesmos R$ 33/t, R$ 30/t e 31 toneladas.</p>',
  '<p class="fs-reconcile-note">A coluna AUTÔNOMO da planilha aplica ISS R$ 30,69, PIS R$ 5,37, COFINS R$ 24,74, INSS R$ 37,20 e custos R$ 4,25. No Portal Simples, o DAS precisa ser informado conforme o PGDAS-D e o ISS só deve ser descontado fora do DAS quando isso estiver confirmado. Não copie as alíquotas da planilha diretamente para o DAS.</p>',
  '</details>',
- '<section class="fs-section fs-notes"><h3>Premissas e alertas</h3><div id="fs_warnings"></div>',
- '<details><summary>Fontes tributárias oficiais (2026)</summary><div id="fs_sources"></div></details></section></div>',
+ '<details id="fs_notesPanel" class="fs-section fs-notes"><summary>Premissas e alertas · clique para expandir</summary><div id="fs_warnings"></div>',
+ '<details class="fs-sources"><summary>Fontes tributárias oficiais (2026)</summary><div id="fs_sources"></div></details></details></div>',
  '<footer class="fs-foot"><span>Simulador local. Não altera o frete salvo.</span>',
  '<div><button type="button" id="fs_reset">Reiniciar</button>',
  '<button type="button" id="fs_print">Imprimir cálculo</button>',

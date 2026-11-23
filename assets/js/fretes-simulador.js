@@ -1,7 +1,7 @@
 /* PORTAL FRETE - Simulador financeiro indicativo (2026). Sem persistência de dados. */
 (function(){
 "use strict";
-const VERSION="20261123-v2";
+const VERSION="20261123-v3";
 const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const fmt=n=>BRL.format(Math.round((n+Number.EPSILON)*100)/100);
 const max=n=>Math.max(0,Number.isFinite(n)?n:0);
@@ -47,11 +47,12 @@ function calculate(v){
  const toll=round(max(v.tons)*max(v.tollRate)+max(v.tollFixed));
  const insurance=round(max(v.tons)*max(v.merchandiseRate)*max(v.insuranceRate)/100);
  const other=round(max(v.other)+max(v.cteCost)+driver*max(v.ciotRate)/100);
- const cost=round(driver+patronal+totalTax+toll+insurance+other);
+ const extraCost=round(max(v.extraCost));
+ const cost=round(driver+patronal+totalTax+toll+insurance+other+extraCost);
  const balance=round(gross-cost);
  return {gross,driver,netDriver,spread:round(gross-driver),inssBase,inss,sest,senat,
   patronal,irrf,pis,cofins,irpj,csll,das,icms,iss,totalTax,toll,insurance,other,
-  cost,balance,margin:gross?balance/gross:0,auto};
+  cost,extraCost,balance,margin:gross?balance/gross:0,auto};
 }
 function input(name,label,value,unit,step){
  return '<label class="fs-field"><span>'+label+'</span><div class="fs-input">'+
@@ -86,6 +87,7 @@ function fill(){
   tollRate:getnum("tollRate"),tollFixed:getnum("tollFixed"),
   merchandiseRate:getnum("merchandiseRate"),insuranceRate:getnum("insuranceRate"),
   cteCost:getnum("cteCost"),ciotRate:getnum("ciotRate"),other:getnum("other"),
+  extraCost:getnum("extraCost"),
   icmsRate:getnum("icmsRate"),issRate:getnum("issRate"),
   irpjReal:getnum("irpjReal"),csllReal:getnum("csllReal"),dasRate:getnum("dasRate"),
   previousFreight:getnum("previousFreight"),inssPreviousBase:getnum("inssPreviousBase"),
@@ -105,6 +107,7 @@ function fill(){
   line("ICMS",-r.icms),line("ISS",-r.iss),
   line("Pedágio",-r.toll,"Já embutido no preço da empresa, conforme a planilha"),
   line("Seguro",-r.insurance),line("Outros custos",-r.other),
+  line("Custo extra da viagem",-r.extraCost,"Ex.: lona para envelopamento, despesas adicionais"),
   line("SALDO DA TRANSPORTADORA",r.balance,"Projeção financeira, não apuração fiscal",true)
  );
  id("fs_driverDetails").replaceChildren(
@@ -177,6 +180,7 @@ function attach(){
  input("cteCost","Taxa fixa por CT-e (planilha)",.38,"R$"),
  input("ciotRate","Tarifa operacional CIOT (não imposto)",0,"%"),
  input("other","Outros custos diretos",0,"R$"),
+ input("extraCost","Custo extra da viagem (ex.: lona)",0,"R$"),
  '<label class="fs-check"><input id="fs_chargeEmployer" type="checkbox" checked>Incluir INSS patronal de autônomo</label>',
  '</div><details id="fs_pfPanel" class="fs-advanced"><summary>Dados acumulados PF no mês (opcional)</summary>',
  '<div class="fs-fields">',
@@ -214,7 +218,7 @@ function attach(){
  id("fs_print").onclick=()=>window.print();
  id("fs_reset").onclick=()=>{
   for(const [name,val] of Object.entries({companyRate:240,driverRate:230,tons:30,tollRate:0,
-   tollFixed:0,merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,
+   tollFixed:0,merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,
    icmsRate:0,issRate:0,dasRate:0,irpjReal:0,csllReal:0,
    previousFreight:0,inssPreviousBase:0,inssAlready:0,dependents:0}))id("fs_"+name).value=val;
   id("fs_regime").value="";id("fs_driverType").value="PF";id("fs_equipRule").value="";

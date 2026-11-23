@@ -4,6 +4,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 const read=path=>fs.readFileSync(new URL("../../"+path,import.meta.url),"utf8");
 const javascript=read("assets/js/fretes-simulador.js");
+const styles=read("assets/css/fretes-simulador.css");
 const screen1=read("pages/fretes.html"),screen2=read("pages/fretes2.html");
 const context={window:{},document:{readyState:"loading",addEventListener(){}},Intl};
 vm.runInNewContext(javascript,context);
@@ -15,11 +16,45 @@ const base={companyRate:240,driverRate:230,tons:30,tollRate:0,tollFixed:0,
 test("Calculadora e telas carregam com sintaxe válida",()=>{
  assert.doesNotThrow(()=>new vm.Script(javascript));
  for(const page of [screen1,screen2]){
-  assert.match(page,/fretes-simulador\.js\?v=20261123-v6/);
-  assert.match(page,/fretes-simulador\.css\?v=20261123-v2/);
+  assert.match(page,/fretes-simulador\.js\?v=20261123-layout-v7/);
+  assert.match(page,/fretes-simulador\.css\?v=20261123-layout-v3/);
   assert.match(page,/id="btnOrdem"/);
  }
  assert.match(javascript,/order\.insertAdjacentElement\("afterend",btn\)/);
+});
+test("Layout do modal respeita ordem e fluxo vertical sem sobreposição",()=>{
+ const fakeDoc={
+  readyState:"complete",
+  body:{},
+  getElementById:name=>name==="btnOrdem"?{insertAdjacentElement(){}}:null,
+  createElement:name=>({tagName:name}),addEventListener(){}
+ };
+ const capture=javascript.replace("document.body.append(overlay);",
+  "document.__captured=overlay.innerHTML;return;");
+ vm.runInNewContext(capture,{window:{},document:fakeDoc,Intl});
+ const html=fakeDoc.__captured;
+ assert.ok(html,"Falha ao gerar HTML do modal");
+ const order=["class=\"fs-form-grid\"","class=\"fs-result\"",
+  "id=\"fs_comparePanel\"","id=\"fs_notesPanel\""];
+ let offset=-1;
+ for(const term of order){
+  const pos=html.indexOf(term);
+  assert.ok(pos>offset, "Elemento fora da ordem: "+term);offset=pos;
+ }
+ assert.match(html,/fs-form-grid/);
+ assert.match(html,/fs_notesPanel" class="fs-section fs-notes"/);
+ const open=[],voidTags=new Set(["input","br","hr","img","meta","link"]);
+ for(const match of html.matchAll(/<(\/?)([A-Za-z][\w-]*)\b[^>]*>/g)){
+  const tag=match[2].toLowerCase();
+  if(voidTags.has(tag)||match[0].endsWith("/>"))continue;
+  if(match[1])assert.equal(open.pop(),tag, "Tag HTML sem fechamento correto");
+  else open.push(tag);
+ }
+ assert.equal(open.length,0,"Tags abertas no layout");
+ assert.match(styles,/\.fs-content\{[^}]*display:flex;flex-direction:column/);
+ assert.match(styles,/\.fs-form-grid\{display:grid/);
+ assert.match(styles,/\.fs-content > \.fs-form-grid/);
+ assert.match(styles,/\.fs-notes > summary/);
 });
 test("Exemplo da planilha: PF frete 7200 motorista 6900",()=>{
  const result=calculate({...base,driverType:"PF"});

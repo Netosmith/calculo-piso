@@ -56,6 +56,38 @@ function calculate(v){
   patronal,irrf,pis,cofins,irpj,csll,das,icms,iss,totalTax,toll,insurance,other,
   cost,extraCost,balance,margin:gross?balance/gross:0,auto};
 }
+// Comparação fiel aos números exibidos na imagem da aba NFS.
+// Este modelo é uma RECONCILIAÇÃO HISTÓRICA, não uma tabela de impostos atuais.
+const PLANILHA_NFS={
+ "REAL":{label:"REAL/PRESUMIDO",iss:30.69,pis:1.53,cofins:7.07,patronal:0,other:.38},
+ "SIMPLES":{label:"SIMPLES (planilha)",iss:30.69,pis:5.37,cofins:24.74,patronal:0,other:.38},
+ "AUTONOMO":{label:"AUTÔNOMO (planilha)",iss:30.69,pis:5.37,cofins:24.74,patronal:37.2,other:4.25}
+};
+function historicalNfs(name){
+ const x=PLANILHA_NFS[name]||PLANILHA_NFS.AUTONOMO;
+ return {...x,receita:1023,motorista:930,
+  saldo:round(1023-930-x.iss-x.pis-x.cofins-x.patronal-x.other)};
+}
+function reconcile(v,r){
+ const panel=id("fs_comparePanel");if(!panel)return;
+ panel.hidden=v.cte!=="NFS";
+ const key=getstr("legacyColumn")||"AUTONOMO",old=historicalNfs(key);
+ text("legacyLabel",old.label);text("legacyBalance",fmt(old.saldo));
+ text("legacyPortal",fmt(r.balance));text("legacyGap",fmt(round(r.balance-old.saldo)));
+ const matches=v.companyRate===33&&v.driverRate===30&&v.tons===31;
+ id("fs_legacyLive").hidden=!matches;
+ id("fs_legacyMismatch").hidden=matches;
+ const matrix=id("fs_legacyMatrix");
+ matrix.replaceChildren(
+  line("ISS · planilha",old.iss),line("ISS · Portal",r.iss),
+  line("PIS + COFINS · planilha",round(old.pis+old.cofins)),
+  line("Tributos empresa · Portal (PIS/COFINS/DAS)",round(r.pis+r.cofins+r.das)),
+  line("INSS patronal · planilha",old.patronal),
+  line("INSS patronal · Portal",r.patronal),
+  line("Outros custos · planilha",old.other),
+  line("Outros custos · Portal",round(r.other+r.extraCost))
+ );
+}
 function input(name,label,value,unit,step){
  return '<label class="fs-field"><span>'+label+'</span><div class="fs-input">'+
  '<input type="number" id="fs_'+name+'" min="0" step="'+(step||"0.01")+'" inputmode="decimal" value="'+value+'"><small>'+unit+'</small></div></label>';
@@ -145,6 +177,7 @@ function fill(){
  warnings.push("2026: IBS/CBS têm regras de teste e compensação, não somamos 1% automaticamente ao custo do frete.");
  warnings.push("Para PF, IRRF/INSS são estimativas por viagem e dependem das demais remunerações no mês. SEST e SENAT são retenções do motorista.");
  id("fs_warnings").replaceChildren(...warnings.map(s=>{const p=document.createElement("p");p.textContent=s;return p}));
+ reconcile(v,r);
  id("fs_preliminary").hidden=!pending;
  text("titleBalance",pending?"Saldo provisório (faltam parâmetros)":"Saldo líquido estimado");
  window.__FRETES_SIMULACAO__={entradas:v,resultado:r,provisorio:pending};
@@ -211,6 +244,19 @@ function attach(){
  '<span>Custo total: <b id="fs_cost"></b></span></div>',
  '<div class="fs-breakdown"><section><h3>Transportadora</h3><div id="fs_companyDetails"></div></section>',
  '<section><h3>Motorista</h3><div id="fs_driverDetails"></div></section></div></section>',
+ '<details id="fs_comparePanel" class="fs-section fs-reconcile" hidden open>',
+ '<summary>Conferência da planilha NFS · por que o saldo é diferente?</summary>',
+ '<p class="fs-help">Valores extraídos da imagem da planilha NFS. Comparação contábil histórica, não alíquotas fiscais recomendadas.</p>',
+ '<div class="fs-reconcile-tools">',
+ select("legacyColumn","Coluna da planilha",[["AUTONOMO","Autônomo: -R$ 9,25"],["SIMPLES","Simples: R$ 31,82"],["REAL","Real/Presumido: R$ 53,33"]]),
+ '<button type="button" id="fs_applyNfs">Usar o exemplo NFS (33 / 30 / 31 t)</button></div>',
+ '<div id="fs_legacyLive"><div class="fs-reconcile-kpis"><div><small>Planilha · <span id="fs_legacyLabel"></span></small><strong id="fs_legacyBalance"></strong></div>',
+ '<div><small>Portal · parâmetros informados</small><strong id="fs_legacyPortal"></strong></div>',
+ '<div><small>Diferença Portal − planilha</small><strong id="fs_legacyGap"></strong></div></div>',
+ '<div id="fs_legacyMatrix" class="fs-reconcile-matrix"></div></div>',
+ '<p id="fs_legacyMismatch" class="fs-help" hidden>Os valores atuais diferem do exemplo original. Clique em “Usar o exemplo NFS” para conciliar os mesmos R$ 33/t, R$ 30/t e 31 toneladas.</p>',
+ '<p class="fs-reconcile-note">A coluna AUTÔNOMO da planilha aplica ISS R$ 30,69, PIS R$ 5,37, COFINS R$ 24,74, INSS R$ 37,20 e custos R$ 4,25. No Portal Simples, o DAS precisa ser informado conforme o PGDAS-D e o ISS só deve ser descontado fora do DAS quando isso estiver confirmado. Não copie as alíquotas da planilha diretamente para o DAS.</p>',
+ '</details>',
  '<section class="fs-section fs-notes"><h3>Premissas e alertas</h3><div id="fs_warnings"></div>',
  '<details><summary>Fontes tributárias oficiais (2026)</summary><div id="fs_sources"></div></details></section></div>',
  '<footer class="fs-foot"><span>Simulador local. Não altera o frete salvo.</span>',
@@ -226,6 +272,15 @@ function attach(){
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!overlay.hidden)close()});
  overlay.addEventListener("input",fill);overlay.addEventListener("change",fill);
  id("fs_print").onclick=()=>window.print();
+ id("fs_applyNfs").onclick=()=>{
+  Object.entries({companyRate:33,driverRate:30,tons:31,tollRate:0,tollFixed:0,
+   merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,
+   issRate:3,dasRate:0,icmsRate:0,previousFreight:0,inssPreviousBase:0,
+   inssAlready:0,dependents:0}).forEach(([name,val])=>{id("fs_"+name).value=val});
+  id("fs_cte").value="NFS";id("fs_driverType").value="PF";id("fs_regime").value="SIMPLES";
+  id("fs_chargeEmployer").checked=true;id("fs_issOutsideDas").checked=false;
+  id("fs_legacyColumn").value="AUTONOMO";fill();
+ };
  id("fs_reset").onclick=()=>{
   for(const [name,val] of Object.entries({companyRate:240,driverRate:230,tons:30,tollRate:0,
    tollFixed:0,merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,
@@ -238,7 +293,7 @@ function attach(){
  for(const [title,url] of src){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=title;root.append(a)}
  fill();
 }
-window.PortalFreteSimulador=Object.freeze({calculate,ir2026,version:VERSION});
+window.PortalFreteSimulador=Object.freeze({calculate,ir2026,historicalNfs,version:VERSION});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",attach,{once:true});
 else attach();
 })();

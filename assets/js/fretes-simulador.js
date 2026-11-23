@@ -172,6 +172,7 @@ function fill(){
  if(regime==="SIMPLES"&&v.cte==="CTE")warnings.push("ICMS normalmente já compõe o DAS do transporte intermunicipal/interestadual. Só marque ICMS separado quando a contabilidade confirmar recolhimento fora do DAS.");
  if(regime==="REAL")warnings.push("Lucro Real: créditos de PIS/COFINS e IRPJ/CSLL reais dependem da apuração; preencher estimativas.");
  if(regime==="PRESUMIDO")warnings.push("Lucro Presumido: 1,20% IRPJ + 1,08% CSLL são aproximações para transporte de cargas, sem adicional trimestral de IRPJ.");
+ if(v.cte==="NFS")warnings.push("Para transporte de carga, NFS/ISS normalmente se aplica a serviço municipal. Transporte intermunicipal ou interestadual costuma exigir CT-e/ICMS. Confirme a natureza da operação.");
  if(v.cte==="NFS")warnings.push("NFS: incidência de ISS e presunção de IRPJ/CSLL variam conforme o serviço; confirme os parâmetros contábeis.");
  if(v.insuranceRate&&v.merchandiseRate===0)warnings.push("Seguro está em zero porque o valor da mercadoria por tonelada não foi informado.");
  warnings.push("2026: IBS/CBS têm regras de teste e compensação, não somamos 1% automaticamente ao custo do frete.");

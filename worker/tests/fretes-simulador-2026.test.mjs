@@ -9,13 +9,13 @@ const context={window:{},document:{readyState:"loading",addEventListener(){}},In
 vm.runInNewContext(javascript,context);
 const {calculate,ir2026}=context.window.PortalFreteSimulador;
 const base={companyRate:240,driverRate:230,tons:30,tollRate:0,tollFixed:0,
- merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,icmsRate:0,issRate:0,
+ merchandiseRate:0,insuranceRate:.06,cteCost:.38,ciotRate:0,other:0,extraCost:0,icmsRate:0,issRate:0,
  irpjReal:0,csllReal:0,dasRate:0,previousFreight:0,inssPreviousBase:0,inssAlready:0,
  dependents:0,cte:"CTE",regime:"PRESUMIDO",chargeEmployer:true};
 test("Calculadora e telas carregam com sintaxe válida",()=>{
  assert.doesNotThrow(()=>new vm.Script(javascript));
  for(const page of [screen1,screen2]){
-  assert.match(page,/fretes-simulador\.js\?v=20261123-v2/);
+  assert.match(page,/fretes-simulador\.js\?v=20261123-v3/);
   assert.match(page,/fretes-simulador\.css\?v=20261123-v1/);
   assert.match(page,/id="btnOrdem"/);
  }
@@ -75,6 +75,25 @@ test("Pedágio, custos e seguro são descontados uma única vez",()=>{
  assert.equal(p.toll,70);
  assert.equal(p.insurance,18);
  assert.equal(p.other,15.38);
+});
+test("Custo extra (lona) diminui apenas o saldo e não afeta impostos ou motorista",()=>{
+ const sem=calculate({...base,driverType:"PF",extraCost:0});
+ const lona=calculate({...base,driverType:"PF",extraCost:180});
+ assert.equal(lona.extraCost,180);
+ assert.equal(lona.cost,Math.round((sem.cost+180)*100)/100);
+ assert.equal(lona.balance,Math.round((sem.balance-180)*100)/100);
+ assert.equal(lona.gross,sem.gross);
+ assert.equal(lona.driver,sem.driver);
+ assert.equal(lona.netDriver,sem.netDriver);
+ assert.equal(lona.totalTax,sem.totalTax);
+ assert.match(javascript,/Custo extra da viagem \(ex\.: lona\)/);
+ assert.match(javascript,/extraCost:getnum\("extraCost"\)/);
+});
+test("Custo extra negativo é descartado",()=>{
+ const baseCalc=calculate({...base,driverType:"PJ"});
+ const withNegative=calculate({...base,driverType:"PJ",extraCost:-120});
+ assert.equal(baseCalc.balance,withNegative.balance);
+ assert.equal(withNegative.extraCost,0);
 });
 test("2026 IRRF usa a redução de imposto mensal",()=>{
  assert.equal(ir2026(4000),0);

@@ -15,7 +15,7 @@ const base={companyRate:240,driverRate:230,tons:30,tollRate:0,tollFixed:0,
 test("Calculadora e telas carregam com sintaxe válida",()=>{
  assert.doesNotThrow(()=>new vm.Script(javascript));
  for(const page of [screen1,screen2]){
-  assert.match(page,/fretes-simulador\.js\?v=20261123-v5/);
+  assert.match(page,/fretes-simulador\.js\?v=20261123-v6/);
   assert.match(page,/fretes-simulador\.css\?v=20261123-v2/);
   assert.match(page,/id="btnOrdem"/);
  }
@@ -105,6 +105,34 @@ test("Limite do INSS PF considera a base já utilizada no mês",()=>{
  assert.equal(result.inss,0);
  assert.equal(result.sest,20.7);
  assert.equal(result.senat,13.8);
+});
+test("NFS somente ISSQN não exige DAS e mostra saldo operacional parcial",()=>{
+ const input={...base,companyRate:33,driverRate:30,tons:31,driverType:"PF",
+  cte:"NFS",regime:"SIMPLES",dasRate:8.2,issRate:3,cashIssOnly:true};
+ const calc=calculate(input);
+ assert.equal(calc.gross,1023);
+ assert.equal(calc.driver,930);
+ assert.equal(calc.iss,30.69);
+ assert.equal(calc.das,0);
+ assert.equal(calc.pis,0);
+ assert.equal(calc.cofins,0);
+ assert.equal(calc.irpj,0);
+ assert.equal(calc.csll,0);
+ assert.equal(calc.patronal,37.2);
+ assert.equal(calc.balance,24.73);
+ assert.equal(calculate({...input,extraCost:10}).balance,14.73);
+ assert.match(javascript,/Somente ISSQN pago na nota \(cálculo parcial\)/);
+ assert.match(javascript,/Saldo operacional parcial \(somente ISSQN\)/);
+ assert.match(javascript,/Cenário operacional parcial/);
+});
+test("DAS permanece no cálculo fiscal quando Simples for selecionado",()=>{
+ const fiscal=calculate({...base,driverType:"PJ",cte:"NFS",
+  regime:"SIMPLES",issRate:3,issOutsideDas:false,dasRate:8.2});
+ assert.equal(fiscal.iss,0);
+ assert.equal(fiscal.das,590.4);
+ const retido=calculate({...base,driverType:"PJ",cte:"NFS",
+  regime:"SIMPLES",issRate:3,issOutsideDas:true,dasRate:8.2});
+ assert.equal(retido.iss,216);
 });
 test("Conciliação NFS reproduz os valores vistos nas três colunas da planilha",()=>{
  const old=context.window.PortalFreteSimulador.historicalNfs;

@@ -41,7 +41,7 @@ function calculate(v){
  const irpj=round(gross*(v.regime==="PRESUMIDO"?1.2:v.regime==="REAL"?max(v.irpjReal):0)/100);
  const csll=round(gross*(v.regime==="PRESUMIDO"?1.08:v.regime==="REAL"?max(v.csllReal):0)/100);
  const das=round(gross*(v.regime==="SIMPLES"?max(v.dasRate):0)/100);
- const icms=round(gross*max(v.cte==="CTE"?v.icmsRate:0)/100);
+ const icms=round(gross*max(v.cte==="CTE"&&(v.regime!=="SIMPLES"||v.icmsOutsideDas)?v.icmsRate:0)/100);
  const iss=round(gross*max(v.cte==="NFS"?v.issRate:0)/100);
  const totalTax=round(pis+cofins+irpj+csll+das+icms+iss);
  const toll=round(max(v.tons)*max(v.tollRate)+max(v.tollFixed));
@@ -81,6 +81,7 @@ function fill(){
  id("fs_issPanel").hidden=getstr("cte")!=="NFS";
  const v={driverType:typ,equipRule:equip,regime,cte:getstr("cte"),
   chargeEmployer:id("fs_chargeEmployer").checked,
+  icmsOutsideDas:id("fs_icmsOutsideDas").checked,
   companyRate:getnum("companyRate"),driverRate:getnum("driverRate"),tons:getnum("tons"),
   tollRate:getnum("tollRate"),tollFixed:getnum("tollFixed"),
   merchandiseRate:getnum("merchandiseRate"),insuranceRate:getnum("insuranceRate"),
@@ -115,7 +116,8 @@ function fill(){
  );
  const warnings=[];
  const pending=!regime||typ==="EQUIP"&&!equip||
-  regime==="SIMPLES"&&!v.dasRate||regime==="REAL"&&!v.irpjReal&&!v.csllReal;
+  regime==="SIMPLES"&&!v.dasRate||regime==="REAL"&&!v.irpjReal&&!v.csllReal||
+  regime==="PRESUMIDO"&&v.cte==="NFS";
  if(!regime)warnings.push("Informe o regime tributário real da transportadora.");
  if(typ==="EQUIP")warnings.push(equip?
   "Equiparado: tratamento de "+(equip==="PF"?"contribuinte individual":"PJ")+
@@ -123,6 +125,7 @@ function fill(){
   "Equiparado não determina automaticamente o INSS/IRRF. Selecione o tratamento fiscal confirmado.");
  if(regime==="SIMPLES"&&!v.dasRate)
   warnings.push("Simples Nacional exige alíquota efetiva de DAS obtida no PGDAS-D e RBT12. Sem ela, saldo é provisório.");
+ if(regime==="SIMPLES")warnings.push("ICMS normalmente já compõe o DAS do transporte intermunicipal/interestadual. Só marque ICMS separado quando a contabilidade confirmar recolhimento fora do DAS.");
  if(regime==="REAL")warnings.push("Lucro Real: créditos de PIS/COFINS e IRPJ/CSLL reais dependem da apuração; preencher estimativas.");
  if(regime==="PRESUMIDO")warnings.push("Lucro Presumido: 1,20% IRPJ + 1,08% CSLL são aproximações para transporte de cargas, sem adicional trimestral de IRPJ.");
  if(v.cte==="NFS")warnings.push("NFS: incidência de ISS e presunção de IRPJ/CSLL variam conforme o serviço; confirme os parâmetros contábeis.");
@@ -146,7 +149,7 @@ function attach(){
  '<div class="fs-modal" role="dialog" aria-modal="true" aria-labelledby="fs_heading">',
  '<header class="fs-head"><div><span>PORTAL FRETE · FINANCEIRO 2026</span>',
  '<h2 id="fs_heading">Simulador de Resultado do Frete</h2>',
- '<p>Frete da empresa, motorista, impostos e saldo. Parâmetros ajustáveis.</p></div>',
+ '<p>Frete da empresa, motorista, impostos e saldo. Valores iniciais são exemplos da planilha anexada.</p></div>',
  '<button type="button" id="fs_close" aria-label="Fechar simulador">×</button></header>',
  '<div class="fs-content"><section class="fs-section"><h3>01 · Frete e peso</h3><div class="fs-fields">',
  input("companyRate","Frete empresa / tonelada",240,"R$/t"),
@@ -165,7 +168,8 @@ function attach(){
  input("dasRate","DAS efetivo do PGDAS-D",0,"%"),'</div>',
  '<div id="fs_realPanel" hidden>',input("irpjReal","IRPJ efetivo estimado",0,"%"),
  input("csllReal","CSLL efetiva estimada",0,"%"),'</div>',
- '<div id="fs_icmsPanel">',input("icmsRate","ICMS embutido no frete",0,"%"),'</div>',
+ '<div id="fs_icmsPanel">',input("icmsRate","ICMS embutido no frete",0,"%"),
+ '<label class="fs-check"><input id="fs_icmsOutsideDas" type="checkbox">No Simples: ICMS devido fora do DAS</label></div>',
  '<div id="fs_issPanel" hidden>',input("issRate","ISS embutido no frete",0,"%"),'</div>',
  '</div><p class="fs-help">ICMS depende de UF, trajeto, benefício e incidência. Não presumimos uma alíquota fixa.</p>',
  '</section><section class="fs-section"><h3>03 · Custos e retenções</h3><div class="fs-fields">',
@@ -214,7 +218,7 @@ function attach(){
    icmsRate:0,issRate:0,dasRate:0,irpjReal:0,csllReal:0,
    previousFreight:0,inssPreviousBase:0,inssAlready:0,dependents:0}))id("fs_"+name).value=val;
   id("fs_regime").value="";id("fs_driverType").value="PF";id("fs_equipRule").value="";
-  id("fs_cte").value="CTE";id("fs_chargeEmployer").checked=true;fill();
+  id("fs_cte").value="CTE";id("fs_chargeEmployer").checked=true;id("fs_icmsOutsideDas").checked=false;fill();
  };
  const root=id("fs_sources");
  for(const [title,url] of src){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=title;root.append(a)}

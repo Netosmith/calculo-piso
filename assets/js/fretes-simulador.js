@@ -1,7 +1,7 @@
 /* PORTAL FRETE - Simulador financeiro indicativo (2026). Sem persistência de dados. */
 (function(){
 "use strict";
-const VERSION="20261123-v5";
+const VERSION="20261123-v6";
 const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const fmt=n=>BRL.format(Math.round((n+Number.EPSILON)*100)/100);
 const max=n=>Math.max(0,Number.isFinite(n)?n:0);
@@ -35,16 +35,16 @@ function calculate(v){
  const irrf=auto?max(round(ir2026(prevFrete+driver*.10,max(v.inssAlready)+inss,v.dependents)-
    ir2026(prevFrete,max(v.inssAlready),v.dependents))):0;
  const netDriver=round(driver-inss-sest-senat-irrf);
- const pisPct=v.regime==="PRESUMIDO"?.65:v.regime==="REAL"?1.65:0;
- const cofinsPct=v.regime==="PRESUMIDO"?3:v.regime==="REAL"?7.6:0;
+ const pisPct=v.cashIssOnly?0:v.regime==="PRESUMIDO"?.65:v.regime==="REAL"?1.65:0;
+ const cofinsPct=v.cashIssOnly?0:v.regime==="PRESUMIDO"?3:v.regime==="REAL"?7.6:0;
  const pis=round(gross*pisPct/100),cofins=round(gross*cofinsPct/100);
- const irpj=round(gross*(v.regime==="PRESUMIDO"?1.2:v.regime==="REAL"?max(v.irpjReal):0)/100);
- const csll=round(gross*(v.regime==="PRESUMIDO"?1.08:v.regime==="REAL"?max(v.csllReal):0)/100);
- const das=round(gross*(v.regime==="SIMPLES"?max(v.dasRate):0)/100);
+ const irpj=round(gross*(v.cashIssOnly?0:v.regime==="PRESUMIDO"?1.2:v.regime==="REAL"?max(v.irpjReal):0)/100);
+ const csll=round(gross*(v.cashIssOnly?0:v.regime==="PRESUMIDO"?1.08:v.regime==="REAL"?max(v.csllReal):0)/100);
+ const das=round(gross*(v.cashIssOnly?0:v.regime==="SIMPLES"?max(v.dasRate):0)/100);
  const icms=round(gross*max(v.cte==="CTE"&&(v.regime!=="SIMPLES"||v.icmsOutsideDas)?v.icmsRate:0)/100);
  // No Simples o ISS costuma compor o DAS. Só somar separadamente quando
  // a contabilidade confirmar retenção/recolhimento fora do DAS.
- const iss=round(gross*max(v.cte==="NFS"&&(v.regime!=="SIMPLES"||v.issOutsideDas)?v.issRate:0)/100);
+ const iss=round(gross*max(v.cte==="NFS"&&(v.cashIssOnly||v.regime!=="SIMPLES"||v.issOutsideDas)?v.issRate:0)/100);
  const totalTax=round(pis+cofins+irpj+csll+das+icms+iss);
  const toll=round(max(v.tons)*max(v.tollRate)+max(v.tollFixed));
  const insurance=round(max(v.tons)*max(v.merchandiseRate)*max(v.insuranceRate)/100);
@@ -108,14 +108,17 @@ function getstr(name){return id("fs_"+name)?.value||""}
 function text(name,v){if(id("fs_"+name))id("fs_"+name).textContent=v}
 function fill(){
  const typ=getstr("driverType"),equip=getstr("equipRule"),regime=getstr("regime");
+ const cashIssOnly=getstr("cte")==="NFS"&&getstr("nfsMode")==="ISS_ONLY";
  id("fs_equipPanel").hidden=typ!=="EQUIP";
- id("fs_simplesPanel").hidden=regime!=="SIMPLES";
- id("fs_realPanel").hidden=regime!=="REAL";
+ id("fs_regimePanel").hidden=cashIssOnly;
+ id("fs_nfsModePanel").hidden=getstr("cte")!=="NFS";
+ id("fs_simplesPanel").hidden=cashIssOnly||regime!=="SIMPLES";
+ id("fs_realPanel").hidden=cashIssOnly||regime!=="REAL";
  id("fs_pfPanel").hidden=!(typ==="PF"||(typ==="EQUIP"&&equip==="PF"));
  id("fs_icmsPanel").hidden=getstr("cte")!=="CTE";
  id("fs_issPanel").hidden=getstr("cte")!=="NFS";
- id("fs_issStandalone").hidden=!(getstr("cte")==="NFS"&&regime==="SIMPLES");
- const v={driverType:typ,equipRule:equip,regime,cte:getstr("cte"),
+ id("fs_issStandalone").hidden=cashIssOnly||!(getstr("cte")==="NFS"&&regime==="SIMPLES");
+ const v={driverType:typ,equipRule:equip,regime,cte:getstr("cte"),cashIssOnly,
   chargeEmployer:id("fs_chargeEmployer").checked,
   icmsOutsideDas:id("fs_icmsOutsideDas").checked,
   issOutsideDas:id("fs_issOutsideDas").checked,
@@ -154,24 +157,25 @@ function fill(){
   line("MOTORISTA RECEBE",r.netDriver,"Retenções não são custo extra da transportadora",true)
  );
  const warnings=[];
- const pending=!regime||typ==="EQUIP"&&!equip||
+ const pending=cashIssOnly||!regime||typ==="EQUIP"&&!equip||
   regime==="SIMPLES"&&!v.dasRate||regime==="REAL"&&!v.irpjReal&&!v.csllReal||
   regime==="PRESUMIDO"&&v.cte==="NFS";
- if(!regime)warnings.push("Informe o regime tributário real da transportadora.");
+ if(!regime&&!cashIssOnly)warnings.push("Informe o regime tributário real da transportadora.");
+ if(cashIssOnly)warnings.push("Cenário operacional parcial: somente ISSQN desta NFS e os custos/encargos informados. DAS, PIS, COFINS, IRPJ e CSLL empresariais não são provisionados. Isso não comprova isenção dos demais tributos.");
  if(typ==="EQUIP")warnings.push(equip?
   "Equiparado: tratamento de "+(equip==="PF"?"contribuinte individual":"PJ")+
   " selecionado para simulação. Confirme com a contabilidade.":
   "Equiparado não determina automaticamente o INSS/IRRF. Selecione o tratamento fiscal confirmado.");
- if(regime==="SIMPLES"&&!v.dasRate)
+ if(regime==="SIMPLES"&&!cashIssOnly&&!v.dasRate)
   warnings.push("Simples Nacional exige alíquota efetiva de DAS obtida no PGDAS-D e RBT12. Sem ela, saldo é provisório.");
- if(regime==="SIMPLES")warnings.push("No Simples, PIS e COFINS integram o DAS. Não reproduza os descontos isolados da planilha sem validar o tratamento tributário.");
- if(regime==="SIMPLES"&&v.cte==="NFS"){
+ if(regime==="SIMPLES"&&!cashIssOnly)warnings.push("No Simples, PIS e COFINS integram o DAS. Não reproduza os descontos isolados da planilha sem validar o tratamento tributário.");
+ if(regime==="SIMPLES"&&!cashIssOnly&&v.cte==="NFS"){
   warnings.push("O ISS da NFS normalmente integra o DAS. Só marque ISS separado se houver retenção/recolhimento fora do DAS e o DAS informado estiver ajustado para não contar esse ISS duas vezes.");
   if(v.issRate&&!v.issOutsideDas)warnings.push("ISS informado de "+v.issRate.toFixed(2).replace(".",",")+"%, mas não debitado separadamente porque já pode integrar o DAS.");
  }
- if(regime==="SIMPLES"&&v.cte==="CTE")warnings.push("ICMS normalmente já compõe o DAS do transporte intermunicipal/interestadual. Só marque ICMS separado quando a contabilidade confirmar recolhimento fora do DAS.");
- if(regime==="REAL")warnings.push("Lucro Real: créditos de PIS/COFINS e IRPJ/CSLL reais dependem da apuração; preencher estimativas.");
- if(regime==="PRESUMIDO")warnings.push("Lucro Presumido: 1,20% IRPJ + 1,08% CSLL são aproximações para transporte de cargas, sem adicional trimestral de IRPJ.");
+ if(regime==="SIMPLES"&&!cashIssOnly&&v.cte==="CTE")warnings.push("ICMS normalmente já compõe o DAS do transporte intermunicipal/interestadual. Só marque ICMS separado quando a contabilidade confirmar recolhimento fora do DAS.");
+ if(regime==="REAL"&&!cashIssOnly)warnings.push("Lucro Real: créditos de PIS/COFINS e IRPJ/CSLL reais dependem da apuração; preencher estimativas.");
+ if(regime==="PRESUMIDO"&&!cashIssOnly)warnings.push("Lucro Presumido: 1,20% IRPJ + 1,08% CSLL são aproximações para transporte de cargas, sem adicional trimestral de IRPJ.");
  if(v.cte==="NFS")warnings.push("Para transporte de carga, NFS/ISS normalmente se aplica a serviço municipal. Transporte intermunicipal ou interestadual costuma exigir CT-e/ICMS. Confirme a natureza da operação.");
  if(v.cte==="NFS")warnings.push("NFS: incidência de ISS e presunção de IRPJ/CSLL variam conforme o serviço; confirme os parâmetros contábeis.");
  if(v.insuranceRate&&v.merchandiseRate===0)warnings.push("Seguro está em zero porque o valor da mercadoria por tonelada não foi informado.");
@@ -180,7 +184,11 @@ function fill(){
  id("fs_warnings").replaceChildren(...warnings.map(s=>{const p=document.createElement("p");p.textContent=s;return p}));
  reconcile(v,r);
  id("fs_preliminary").hidden=!pending;
- text("titleBalance",pending?"Saldo provisório (faltam parâmetros)":"Saldo líquido estimado");
+ id("fs_preliminary").textContent=cashIssOnly?
+  "Cenário de caixa: apenas ISSQN desta nota. Outros tributos empresariais não estão incluídos. Não utilize como lucro líquido fiscal.":
+  "Complete os parâmetros obrigatórios antes de usar o resultado como referência.";
+ text("titleBalance",cashIssOnly?"Saldo operacional parcial (somente ISSQN)":
+  pending?"Saldo provisório (faltam parâmetros)":"Saldo líquido estimado");
  window.__FRETES_SIMULACAO__={entradas:v,resultado:r,provisorio:pending};
 }
 function attach(){
@@ -206,8 +214,15 @@ function attach(){
  input("merchandiseRate","Valor da mercadoria / tonelada",0,"R$/t"),
  '</div></section><section class="fs-section"><h3>02 · Tipo e impostos</h3><div class="fs-fields">',
  select("driverType","Tipo do motorista",[["PF","Físico · TAC/RPA"],["PJ","Jurídico · CNPJ"],["EQUIP","Equiparado"]]),
+ '<div id="fs_regimePanel">',
  select("regime","Regime tributário da transportadora",[["","Selecione o regime real"],["PRESUMIDO","Lucro Presumido"],["REAL","Lucro Real"],["SIMPLES","Simples Nacional"]]),
+ '</div>',
  select("cte","Documento de transporte",[["CTE","CT-e · Transporte de carga"],["NFS","NFS · Serviços municipais"]]),
+ '<div id="fs_nfsModePanel" hidden>',
+ select("nfsMode","Cenário de cálculo da NFS",[
+ ["FISCAL","Tributos conforme regime fiscal"],
+ ["ISS_ONLY","Somente ISSQN pago na nota (cálculo parcial)"]]),
+ '</div>',
  '<div id="fs_equipPanel" hidden>',
  select("equipRule","Tratamento confirmado do equiparado",[["","Selecione"],["PJ","Tributação como PJ"],["PF","Retenções do contribuinte individual"]]),
  '</div><div id="fs_simplesPanel" hidden>',
@@ -216,7 +231,7 @@ function attach(){
  input("csllReal","CSLL efetiva estimada",0,"%"),'</div>',
  '<div id="fs_icmsPanel">',input("icmsRate","ICMS embutido no frete",0,"%"),
  '<label class="fs-check"><input id="fs_icmsOutsideDas" type="checkbox">No Simples: ICMS devido fora do DAS</label></div>',
- '<div id="fs_issPanel" hidden>',input("issRate","ISS sobre NFS, se devido fora do DAS",0,"%"),
+ '<div id="fs_issPanel" hidden>',input("issRate","ISSQN da NFS",0,"%"),
  '<label class="fs-check" id="fs_issStandalone" hidden><input id="fs_issOutsideDas" type="checkbox">Descontar ISS separadamente do DAS (retenção/recolhimento confirmado)</label></div>',
  '</div><p class="fs-help">ICMS depende de UF, trajeto, benefício e incidência. Não presumimos uma alíquota fixa.</p>',
  '</section><section class="fs-section"><h3>03 · Custos e retenções</h3><div class="fs-fields">',
@@ -288,7 +303,7 @@ function attach(){
    icmsRate:0,issRate:0,dasRate:0,irpjReal:0,csllReal:0,
    previousFreight:0,inssPreviousBase:0,inssAlready:0,dependents:0}))id("fs_"+name).value=val;
   id("fs_regime").value="";id("fs_driverType").value="PF";id("fs_equipRule").value="";
-  id("fs_cte").value="CTE";id("fs_chargeEmployer").checked=true;id("fs_icmsOutsideDas").checked=false;id("fs_issOutsideDas").checked=false;fill();
+  id("fs_cte").value="CTE";id("fs_nfsMode").value="FISCAL";id("fs_chargeEmployer").checked=true;id("fs_icmsOutsideDas").checked=false;id("fs_issOutsideDas").checked=false;fill();
  };
  const root=id("fs_sources");
  for(const [title,url] of src){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=title;root.append(a)}

@@ -303,6 +303,22 @@
       letter-spacing:.035em;
     }
 
+    /* Ordenação dos cabeçalhos: botão acessível, mantendo a primeira linha fixa. */
+    th:has(.sortHeader){padding:0}
+    .sortHeader{
+      width:100%;min-height:38px;padding:9px 10px;border:0;background:transparent;
+      color:inherit;display:inline-flex;align-items:center;justify-content:space-between;
+      gap:7px;text-align:left;text-transform:inherit;letter-spacing:inherit;
+      font:inherit;font-weight:900;cursor:pointer;white-space:nowrap;
+    }
+    .sortHeader:hover{background:#e9f0fa;color:#164d91}
+    .sortHeader:focus-visible{outline:2px solid #2563eb;outline-offset:-3px;border-radius:4px}
+    th[aria-sort="ascending"],th[aria-sort="descending"]{background:#e9f2ff;color:#174c9f}
+    .sortIndicator{font-size:13px;font-weight:900;color:#71839c;min-width:10px;text-align:center}
+    th[aria-sort="ascending"] .sortIndicator,th[aria-sort="descending"] .sortIndicator{color:#174c9f}
+    .sortHeader:disabled{cursor:default;opacity:.65}
+    .sortHeader:disabled:hover{background:transparent;color:inherit}
+
     tbody tr{cursor:pointer}
     tbody tr:nth-child(even){background:#fbfcfe}
     tbody tr:hover,tbody tr.selected{background:#eef4ff}
@@ -638,9 +654,20 @@
           <table>
             <thead>
               <tr>
-                <th>Status</th><th>Cliente</th><th>CTe</th><th>NF</th><th>Placa</th>
-                <th>Origem</th><th>Destino</th><th>Chegada</th><th>Saída</th>
-                <th>Horas a pagar</th><th>Valor</th><th>Valor Pago</th><th>Responsável</th><th>Ações</th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="status" data-title="Status" aria-label="Ordenar por Status"><span>Status</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="cliente" data-title="Cliente" aria-label="Ordenar por Cliente"><span>Cliente</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="cte" data-title="CTe" aria-label="Ordenar por CTe"><span>CTe</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="nf" data-title="NF" aria-label="Ordenar por NF"><span>NF</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="placa" data-title="Placa" aria-label="Ordenar por Placa"><span>Placa</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="origem" data-title="Origem" aria-label="Ordenar por Origem"><span>Origem</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="destino" data-title="Destino" aria-label="Ordenar por Destino"><span>Destino</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="dataHoraChegada" data-title="Chegada" aria-label="Ordenar por Chegada"><span>Chegada</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="dataHoraSaida" data-title="Saída" aria-label="Ordenar por Saída"><span>Saída</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="horasPagar" data-title="Horas a pagar" aria-label="Ordenar por Horas a pagar"><span>Horas a pagar</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="valorTotal" data-title="Valor" aria-label="Ordenar por Valor"><span>Valor</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="valorPago" data-title="Valor Pago" aria-label="Ordenar por Valor Pago"><span>Valor Pago</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th aria-sort="none"><button type="button" class="sortHeader" data-sort="responsavel" data-title="Responsável" aria-label="Ordenar por Responsável"><span>Responsável</span><span class="sortIndicator" aria-hidden="true">↕</span></button></th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaEstadias">
@@ -746,7 +773,7 @@
 
   <div class="loading" id="loading"><div class="loadingBox" id="loadingText">Processando...</div></div>
 
-  <script src="../assets/js/estadias.js?v=9"></script>
+  <script src="../assets/js/estadias.js?v=20261125-sort-v1"></script>
   <script>
     (async()=>{
       try{

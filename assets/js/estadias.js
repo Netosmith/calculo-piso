@@ -24,6 +24,8 @@ const $=id=>document.getElementById(id);
 let dados=[];
 let filtrados=[];
 let paginaAtual=1;
+let colunaOrdenada="";
+let direcaoOrdenacao="asc";
 
 const ESTADIAS_CACHE_TTL_MS=10*60*1000;
 function estadiasCacheKey(){
@@ -222,7 +224,77 @@ async function loadData(options={}){
 function populateSelect(id,values){const el=$(id);if(!el)return;const old=el.value;const first=el.querySelector("option")?.outerHTML||'<option value="">Todos</option>';el.innerHTML=first+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");el.value=values.includes(old)?old:""}
 function popularFiltros(){const unique=field=>[...new Set(dados.map(r=>txt(r[field])).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));populateSelect("filtroCliente",unique("cliente"));populateSelect("filtroProduto",unique("produto"));populateSelect("filtroResponsavel",unique("responsavel"))}
 function applyDateFilter(row){const ini=$("dataInicio")?.value;const fim=$("dataFim")?.value;if(!ini&&!fim)return true;const d=new Date(row.dataHoraChegada||row.dataNf);if(Number.isNaN(d.getTime()))return false;if(ini&&d<new Date(`${ini}T00:00:00`))return false;if(fim&&d>new Date(`${fim}T23:59:59`))return false;return true}
-function aplicarFiltros(){const query=up($("busca")?.value);const cliente=up($("filtroCliente")?.value);const status=up($("filtroStatus")?.value);const produto=up($("filtroProduto")?.value);const responsavel=up($("filtroResponsavel")?.value);filtrados=dados.filter(r=>{const haystack=up([r.chamado,r.cliente,r.cte,r.nf,r.placa,r.motorista,r.origem,r.destino,r.produto,r.status,r.responsavel].join(" "));return (!query||haystack.includes(query))&&(!cliente||up(r.cliente)===cliente)&&(!status||up(r.status)===status)&&(!produto||up(r.produto)===produto)&&(!responsavel||up(r.responsavel)===responsavel)&&applyDateFilter(r)});paginaAtual=1;renderTudo()}
+// Ordenação local de todos os registros filtrados (antes da paginação).
+// Ações não são ordenáveis. A coluna Valor segue a permissão já aplicada à tabela.
+const CAMPOS_ORDENACAO=Object.freeze({
+  status:"texto",cliente:"texto",cte:"texto",nf:"texto",placa:"texto",
+  origem:"texto",destino:"texto",dataHoraChegada:"data",dataHoraSaida:"data",
+  horasPagar:"numero",valorTotal:"numero",valorPago:"numero",responsavel:"texto"
+});
+const comparadorPtBr=new Intl.Collator("pt-BR",{numeric:true,sensitivity:"base"});
+function valorOrdenacao(row,campo){
+  const tipo=CAMPOS_ORDENACAO[campo];
+  if(!tipo)return null;
+  if(tipo==="data"){
+    const d=parseDateValue(row[campo]);
+    return d?d.getTime():null;
+  }
+  if(tipo==="numero"){
+    const valor=row[campo];
+    return valor===null||valor===undefined||valor===""?null:num(valor);
+  }
+  const valor=txt(row[campo]);
+  return valor&&valor!=="-"?valor:null;
+}
+function compararEstadias(a,b,campo,direcao="asc"){
+  const va=valorOrdenacao(a,campo),vb=valorOrdenacao(b,campo);
+  // Campos vazios vão sempre ao final, em ambas as direções.
+  if(va===null&&vb===null)return 0;
+  if(va===null)return 1;
+  if(vb===null)return -1;
+  const cmp=CAMPOS_ORDENACAO[campo]==="texto"?
+    comparadorPtBr.compare(va,vb):(va-vb);
+  return direcao==="desc"?-cmp:cmp;
+}
+function ordenarFiltrados(){
+  if(!Object.hasOwn(CAMPOS_ORDENACAO,colunaOrdenada))return;
+  // Ordenação estável para preservar a ordem de registros com valores iguais.
+  filtrados=filtrados.map((row,index)=>({row,index}))
+    .sort((a,b)=>compararEstadias(a.row,b.row,colunaOrdenada,direcaoOrdenacao)||a.index-b.index)
+    .map(item=>item.row);
+}
+function atualizarIndicadoresOrdenacao(){
+  document.querySelectorAll(".sortHeader[data-sort]").forEach(button=>{
+    const campo=button.dataset.sort;
+    const restrito=campo==="valorTotal"&&!canWrite();
+    button.disabled=restrito;
+    const ativo=!restrito&&colunaOrdenada===campo;
+    const th=button.closest("th");
+    if(th)th.setAttribute("aria-sort",ativo?
+      (direcaoOrdenacao==="asc"?"ascending":"descending"):"none");
+    const indicador=button.querySelector(".sortIndicator");
+    if(indicador)indicador.textContent=ativo?
+      (direcaoOrdenacao==="asc"?"↑":"↓"):"↕";
+    const titulo=button.dataset.title||button.textContent.trim();
+    button.setAttribute("aria-label",restrito?
+      titulo+" indisponível para ordenação neste perfil":
+      "Ordenar "+titulo+(ativo?
+        (direcaoOrdenacao==="asc"?" de Z a A / maior para menor":" de A a Z / menor para maior"):
+        " em ordem crescente"));
+  });
+}
+function alternarOrdenacao(campo){
+  if(!Object.hasOwn(CAMPOS_ORDENACAO,campo))return;
+  if(campo==="valorTotal"&&!canWrite())return;
+  direcaoOrdenacao=colunaOrdenada===campo&&direcaoOrdenacao==="asc"?"desc":"asc";
+  colunaOrdenada=campo;
+  ordenarFiltrados();
+  paginaAtual=1;
+  renderTable();
+  renderPagination();
+  atualizarIndicadoresOrdenacao();
+}
+function aplicarFiltros(){const query=up($("busca")?.value);const cliente=up($("filtroCliente")?.value);const status=up($("filtroStatus")?.value);const produto=up($("filtroProduto")?.value);const responsavel=up($("filtroResponsavel")?.value);filtrados=dados.filter(r=>{const haystack=up([r.chamado,r.cliente,r.cte,r.nf,r.placa,r.motorista,r.origem,r.destino,r.produto,r.status,r.responsavel].join(" "));return (!query||haystack.includes(query))&&(!cliente||up(r.cliente)===cliente)&&(!status||up(r.status)===status)&&(!produto||up(r.produto)===produto)&&(!responsavel||up(r.responsavel)===responsavel)&&applyDateFilter(r)});ordenarFiltrados();paginaAtual=1;renderTudo()}
 function renderKpis(){const total=filtrados.length;const aguardando=filtrados.filter(r=>up(r.status).includes("AGUARD")).length;const liberadas=filtrados.filter(r=>up(r.status).includes("LIBER")).length;const negadas=filtrados.filter(r=>up(r.status).includes("NEGAD")).length;const valor=filtrados.reduce((sum,r)=>sum+num(r.valorTotal),0);const valorPago=filtrados.reduce((sum,r)=>sum+num(r.valorPago),0);const lucro=roundMoney(filtrados.reduce((sum,r)=>sum+lucroLinha(r),0));$("kpiTotal").textContent=total.toLocaleString("pt-BR");$("kpiAguardando").textContent=aguardando.toLocaleString("pt-BR");$("kpiLiberadas").textContent=liberadas.toLocaleString("pt-BR");$("kpiNegadas").textContent=negadas.toLocaleString("pt-BR");$("kpiValor").textContent=money(valor);const kpiLucro=$("kpiLucro");if(kpiLucro){const cardLucro=kpiLucro.closest(".kpi");if(canWrite()){kpiLucro.textContent=money(lucro);if(cardLucro)cardLucro.style.display=""}else{kpiLucro.textContent="";if(cardLucro)cardLucro.style.display="none"}}}
 function getPageRows(){const size=num($("porPagina")?.value)||10;const start=(paginaAtual-1)*size;return filtrados.slice(start,start+size)}
 function statusOptionsHtml(current){return STATUS_OPTIONS.map(status=>`<option value="${esc(status)}" ${up(status)===up(current)?"selected":""}>${esc(status)}</option>`).join("")}
@@ -231,7 +303,7 @@ function renderValorPagoCell(r){if(canWrite()){const raw=Math.max(0,num(r.valorP
 function renderActionsCell(r){const actions=[];if(canWrite())actions.push(`<button class="btn ghost btnEdit" data-id="${esc(r.id)}" data-estadias-write style="min-height:28px;padding:0 9px">✏ Editar</button>`);if(r.anexoUrl)actions.push(`<a class="btn ghost" href="${esc(r.anexoUrl)}" target="_blank" rel="noopener" style="min-height:28px;padding:0 9px">📎</a>`);if(canDelete())actions.push(`<button class="btn red btnDelete" data-id="${esc(r.id)}" data-estadias-delete style="min-height:28px;padding:0 9px">🗑</button>`);return actions.length?`<div style="display:flex;gap:5px;align-items:center">${actions.join("")}</div>`:'<span style="color:#8795aa">Consulta</span>'}
 function renderTable(){const tbody=$("tabelaEstadias");const rows=getPageRows();if($("tableMeta"))$("tableMeta").textContent=`${filtrados.length} registro(s)`;if(!rows.length){tbody.innerHTML='<tr><td colspan="14" class="empty">Nenhuma estadia encontrada para os filtros selecionados.</td></tr>';return}tbody.innerHTML=rows.map(r=>`<tr data-id="${esc(r.id)}"><td>${renderStatusCell(r)}</td><td>${esc(r.cliente||"-")}</td><td>${esc(r.cte||"-")}</td><td>${esc(r.nf||"-")}</td><td><b>${esc(r.placa||"-")}</b></td><td>${esc(r.origem||"-")}</td><td>${esc(r.destino||"-")}</td><td>${esc(dateTimeBR(r.dataHoraChegada))}</td><td>${esc(dateTimeBR(r.dataHoraSaida))}</td><td>${r.horasPagar>0?hoursText(r.horasPagar):"-"}</td><td class="moneyCell">${canWrite()?(r.valorTotal>0?money(r.valorTotal):"-"):"••••••"}</td><td class="paidValueCell">${renderValorPagoCell(r)}</td><td>${esc(r.responsavel||"-")}</td><td>${renderActionsCell(r)}</td></tr>`).join("");tbody.querySelectorAll(".paidValueInput").forEach(input=>{input.addEventListener("click",e=>e.stopPropagation());input.addEventListener("mouseenter",()=>{if(document.activeElement!==input){input.style.borderColor="#dfe6ef";input.style.background="#fff";input.style.padding="0 8px"}});input.addEventListener("mouseleave",()=>{if(document.activeElement!==input){input.style.borderColor="transparent";input.style.background="transparent";input.style.padding="0"}});input.addEventListener("focus",()=>{input.style.borderColor="#4d83f3";input.style.background="#fff";input.style.padding="0 8px";input.style.boxShadow="0 0 0 3px rgba(37,99,235,.12)";input.select()});input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}if(e.key==="Escape"){const item=dados.find(r=>r.id===input.dataset.id);input.value=moneyInput(Math.max(0,num(item?.valorPago)));input.blur()}});input.addEventListener("blur",async e=>{e.stopPropagation();const id=input.dataset.id;const valor=Math.max(0,num(input.value));input.value=moneyInput(valor);input.style.borderColor="transparent";input.style.background="transparent";input.style.padding="0";input.style.boxShadow="none";await updateValorPago(id,valor,input)})});tbody.querySelectorAll(".statusSelect").forEach(select=>{select.addEventListener("click",e=>e.stopPropagation());select.addEventListener("change",async e=>{e.stopPropagation();const oldStatus=select.dataset.oldStatus||"AGUARDANDO";const newStatus=normalizeStatus(select.value);select.className=`statusSelect ${statusClass(newStatus)}`;const ok=await updateStatus(select.dataset.id,newStatus,oldStatus);if(!ok){select.value=oldStatus;select.className=`statusSelect ${statusClass(oldStatus)}`}})});tbody.querySelectorAll(".btnEdit").forEach(btn=>btn.onclick=e=>{e.stopPropagation();const item=dados.find(r=>r.id===btn.dataset.id);if(item)openModal(item)});tbody.querySelectorAll(".btnDelete").forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteItem(btn.dataset.id)})}
 function renderPagination(){const wrap=$("paginacao");const size=num($("porPagina")?.value)||10;const pages=Math.max(1,Math.ceil(filtrados.length/size));if(paginaAtual>pages)paginaAtual=pages;const items=[];items.push(`<button class="pageBtn" data-page="${paginaAtual-1}" ${paginaAtual===1?"disabled":""}>‹</button>`);const start=Math.max(1,paginaAtual-2);const end=Math.min(pages,start+4);for(let p=start;p<=end;p++)items.push(`<button class="pageBtn ${p===paginaAtual?"active":""}" data-page="${p}">${p}</button>`);items.push(`<button class="pageBtn" data-page="${paginaAtual+1}" ${paginaAtual===pages?"disabled":""}>›</button>`);wrap.innerHTML=items.join("");wrap.querySelectorAll("button:not(:disabled)").forEach(btn=>{btn.onclick=()=>{paginaAtual=Number(btn.dataset.page);renderTable();renderPagination()}})}
-function renderTudo(){renderKpis();renderTable();renderPagination();if(typeof applyEstadiasAccessUI==="function")applyEstadiasAccessUI()}
+function renderTudo(){renderKpis();renderTable();renderPagination();atualizarIndicadoresOrdenacao();if(typeof applyEstadiasAccessUI==="function")applyEstadiasAccessUI()}
 function clearForm(){
   $("formEstadia").reset();
   $("registroId").value="";
@@ -384,6 +456,9 @@ function bind(){
   $("btnAtualizar").onclick=()=>loadData({silent:false});
   $("btnExportar").onclick=exportCsv;
   $("btnFiltrar").onclick=aplicarFiltros;
+  document.querySelectorAll(".sortHeader[data-sort]").forEach(btn=>{
+    btn.addEventListener("click",()=>alternarOrdenacao(btn.dataset.sort));
+  });
   $("btnLimparFiltros").onclick=clearFilters;
   $("btnFecharModal").onclick=closeModal;
   $("btnCancelarModal").onclick=closeModal;

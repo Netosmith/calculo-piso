@@ -156,7 +156,7 @@ test("Criação e listagem restritas ao monitoramento Nova Frota",async()=>{
  assert.equal(db.rows.size,0);
 });
 test("Página pública só solicita localização com interação e não acompanha movimento",()=>{
- const page=readFileSync(new URL("../../pages/localizacao-pontual.html",import.meta.url),"utf8");
+ const page=readFileSync(new URL("../../pages/validacao.html",import.meta.url),"utf8");
  const scripts=[...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
  assert.ok(scripts.length);
  for(const match of scripts)new Script(match[1]);

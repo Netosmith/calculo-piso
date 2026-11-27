@@ -785,7 +785,7 @@ $("#spotForm").onsubmit=async e=>{
  try{
   const details=Object.fromEntries(new FormData(form));
   const data=await request("/v1/monitor/spot/requests","POST",details);
-  const link=new URL("/pages/localizacao-pontual.html",location.origin);
+  const link=new URL("/pages/validacao.html",location.origin);
   link.hash=data.token; // O token não é transmitido nas requisições do GitHub Pages.
   $("#spotLinkValue").value=link.href;
   $("#spotLinkBox").hidden=false;form.reset();

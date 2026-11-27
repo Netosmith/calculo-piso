@@ -131,7 +131,7 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
    }finally{busy=false}
   },error=>{
    busy=false;button.disabled=false;
-   if(error.code===1)message("A validação foi negada. Autorize o GPS no navegador se deseja receber o link de validação biometrica.","error");
+   if(error.code===1)message("A validação foi negada. Autorize a localização no navegador se deseja receber o link de validação biometrica.","error");
    else if(error.code===3)message("A validação demorou a responder. Verifique o sinal e tente novamente.","error");
    else message("Não foi possível obter a validação. Ative o GPS do celular e tente novamente.","error");
   },{enableHighAccuracy:true,maximumAge:0,timeout:25000});

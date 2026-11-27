@@ -24,7 +24,7 @@ Não solicita foto, selfie, cadastro, início de viagem ou rastreamento contínu
 
 ## Implantação
 
-- Página pública: pages/localizacao-pontual.html
+- Página pública: pages/validacao.html
 - Painel e mapa: pages/monitoramento.html
 - Backend: worker/src/controllers/monitor-spot.js
 - Roteador: worker/src/router.js

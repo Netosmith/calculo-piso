@@ -164,7 +164,7 @@ test("Página pública só solicita localização com interação e não acompan
  assert.match(page,/navigator\.geolocation\.getCurrentPosition/);
  assert.doesNotMatch(page,/watchPosition|capture="|getUserMedia|INICIAR VIAGEM/i);
  assert.match(page,/consent:true,purpose:"ponto-descarga-v1"/);
- assert.match(page,/Sem.*rastreamento contínuo/i);
+ assert.match(page,/Não há rastreamento contínuo/i);
 });
 test("Central tem gerador, mapa e Google Maps separados do rastreamento",()=>{
  const page=readFileSync(new URL("../../pages/monitoramento.html",import.meta.url),"utf8");

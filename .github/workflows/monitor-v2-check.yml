@@ -7,7 +7,7 @@ on:
       - 'pages/monitorar-motorista.html'
       - 'worker/src/controllers/monitor.js'
       - 'worker/src/controllers/monitor-spot.js'
-      - 'pages/localizacao-pontual.html'
+      - 'pages/validacao.html'
       - 'worker/migrations/0030_monitor_spot_link.sql'
       - 'worker/src/controllers/monitor-proof.js'
       - 'worker/src/middleware/cors.js'

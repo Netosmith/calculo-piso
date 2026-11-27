@@ -88,7 +88,7 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
  }
  async function preview(){
   if(!/^[0-9a-f]{64}$/.test(token)){
-   message("Link inválido. Peça outro link à transportadora.","error");return;
+   message("Link de validação inválido.","error");return;
   }
   try{
    const info=await api("/v1/monitor/spot/preview",{token});
@@ -98,7 +98,10 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
    }
    available=true;button.disabled=false;
    message("Link válido. Toque no botão para enviar um único ponto de validação e autorize o acesso se solicitado.");
-  }catch(error){message(error.message,"error")}
+  }catch(error){
+   const invalid=/link.*inv[aá]lido/i.test(String(error.message||""));
+   message(invalid?"Link de validação inválido.":error.message,"error");
+  }
  }
  button.onclick=async()=>{
   if(!available||busy)return;

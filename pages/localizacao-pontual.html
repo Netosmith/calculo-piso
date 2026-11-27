@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<title>Endereço atualizado | Nova Frota</title>
+<title>Link de validação inválido | Nova Frota</title>
 <style>
 body{min-height:100vh;margin:0;background:#eef4fa;color:#123b56;font:16px/1.5 Arial,sans-serif;display:grid;place-items:center;padding:20px;box-sizing:border-box}
 main{max-width:480px;background:white;border:1px solid #d4e2ed;border-radius:16px;padding:25px;text-align:center}
@@ -14,16 +14,18 @@ a{font-weight:700;color:#087758}
 </head>
 <body>
 <main>
-<h1>Endereço atualizado</h1>
-<p>A página de localização pontual agora está em <strong>validacao.html</strong>.</p>
-<p>Você será redirecionado para a nova página, onde poderá autorizar o envio de um único ponto GPS.</p>
-<p><a id="next" href="/pages/validacao.html">Abrir a nova página</a></p>
+<h1>Link de validação inválido</h1>
+<p>Este link de validação é inválido ou está incompleto.</p>
+<p>Solicite um novo link de validação à transportadora.</p>
+
 </main>
 <script>
 (()=>{"use strict";
- const destination="/pages/validacao.html"+window.location.hash;
- document.getElementById("next").href=destination;
- window.location.replace(destination);
+ const token=window.location.hash.replace(/^#/,"").trim();
+ // Preserva links antigos com token válido; endereço sem token exibe o aviso.
+ if(/^[a-f0-9]{64}$/.test(token)){
+  window.location.replace("/pages/validacao.html#"+token);
+ }
 })();
 </script>
 </body>

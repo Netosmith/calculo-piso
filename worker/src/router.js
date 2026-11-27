@@ -2,6 +2,7 @@ import { superAdminController } from "./controllers/super-admin.js";
 import { modulePinController } from "./controllers/module-pin.js";
 import { fleetController } from "./controllers/fleet.js";
 import { monitorController } from "./controllers/monitor.js";
+import { monitorSpotController } from "./controllers/monitor-spot.js";
 import {driverFreightsController} from "./controllers/driver-freights.js";
 import { employeesController } from "./controllers/employees.js";
 import {gamesController} from "../../games/server/api.js";
@@ -47,6 +48,11 @@ export async function routeRequest(request, env, ctx) {
   // Client brand images are intentionally common to all transportadoras.
   // Tenant cookies may GET/HEAD a public client logo, but NEVER write it or
   // access any other legacy Nova Frota API endpoint.
+  // O link público de localização pontual não exige login do destinatário.
+  // Somente as ações preview/submit são públicas; listagem e criação não são.
+  const publicSpot=path==="/v1/monitor/spot/preview"||
+    path==="/v1/monitor/spot/submit";
+  if(publicSpot)return monitorSpotController(request,env);
   const sharedLogoRead=path.startsWith("/v1/client-logos/") &&
     ["GET","HEAD"].includes(request.method);
   if(hasTenantSessionCookie(request) &&
@@ -77,6 +83,7 @@ export async function routeRequest(request, env, ctx) {
    }catch{return errorResponse("Não foi possível validar a liberação do módulo.",503);}
   }
   if (path.startsWith("/v1/fleet/")) return fleetController(request, env);
+  if (path.startsWith("/v1/monitor/spot/")) return monitorSpotController(request,env);
   if (path.startsWith("/v1/monitor/")) return monitorController(request, env);
   if (path.startsWith("/v1/driver-freights/")) return driverFreightsController(request,env);
   if (path === "/v1/funcionarios" || path.startsWith("/v1/funcionarios/")) return employeesController(request, env);
